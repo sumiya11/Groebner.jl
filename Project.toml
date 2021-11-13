@@ -1,3 +1,7 @@
 name = "GroebnerBases"
 authors = ["sumiya11"]
 version = "0.1.0"
+
+[deps]
+LocalCoverage = "5f6e1e16-694c-5876-87ef-16b5274f298e"
+Traceur = "37b6cedf-1f77-55f8-9503-c64b63398394"

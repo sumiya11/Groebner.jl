@@ -9,8 +9,12 @@ using .GroebnerBases.AbstractAlgebra
 
 @info "Testing started"
 
+⊂(xs, ys) = all(in(ys), xs)
+# set equality
+≂(xs, ys) = ⊂(xs, ys) && ⊂(ys, xs)
+
 @testset "All tests" begin
 
+    # @includetests ARGS
     @includetests ARGS
-
 end

@@ -2,15 +2,18 @@
 module GroebnerBases
 
 import AbstractAlgebra
+import AbstractAlgebra.Generic: MPoly, GFElem
 import AbstractAlgebra: leading_term, QQ, PolynomialRing, terms,
                         coeff, divides, base_ring, elem_type,
                         rref, isconstant, leading_coefficient,
                         map_coefficients, monomials, degree,
                         degrees, isconstant, leading_monomial,
-                        GF, gens
+                        GF, gens, MatrixSpace
 
 using Combinatorics
 
+
+include("modular.jl")
 
 include("common.jl")
 

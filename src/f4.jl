@@ -7,6 +7,19 @@
 
 #------------------------------------------------------------------------------
 
+# Stores the state of Groebner basis and pairs to assess
+struct GroebnerState
+    G::Vector{MPoly{GFElem{Int}}}
+    P::Vector{Tuple{MPoly{GFElem{Int}}, MPoly{GFElem{Int}}}}
+end
+
+Base.iterate(x::GroebnerState) = (x.G, 1)
+Base.iterate(x::GroebnerState, state) = state == 1 ? (x.P, 2) : nothing
+
+GroebnerState() = GroebnerState([], [])
+
+#------------------------------------------------------------------------------
+
 function HT(polys)
     map(leading_monomial, polys)
 end
@@ -33,7 +46,7 @@ function selectnormal(criticalpairs)
     d = minimum(pairdegree(pair) for pair in criticalpairs)
     selected = filter(p -> pairdegree(p) == d, criticalpairs)
     filter!(p -> !(p in selected), criticalpairs)
-    selected, criticalpairs
+    selected
 end
 
 # Just fot testing:
@@ -55,8 +68,10 @@ end
 # Given pairs (f, g) constructs an array of pairs (t, f) such that
 #   t*lead(f) == m*lead(g)
 function leftright(ps)
-    left = []
-    right = []
+    T = eltype(ps)
+
+    left = T[]
+    right = T[]
 
     for (fi, fj) in ps
         lti = leading_monomial(fi)
@@ -67,7 +82,6 @@ function leftright(ps)
         push!(right, (div(lcmij, ltj), fj))
     end
 
-    @debug "Left & Right" left right
     union!(left, right)
 end
 
@@ -80,8 +94,6 @@ function constructmatrix(F, Tf)
     ground = base_ring(first(Tf))
     FF = elem_type(ground)
 
-    @debug "Constructing matrix of shape $shape"
-
     A = Array{FF}(undef, shape...)
     for (i, f) in enumerate(F)
         for (j, t) in enumerate(Tf)
@@ -89,9 +101,7 @@ function constructmatrix(F, Tf)
         end
     end
 
-    MSpace = AbstractAlgebra.MatrixSpace(ground, shape...)
-
-    MSpace(A)
+    A
 end
 
 # Constructs polynomials from the rows coefficients of the given matrix Arref
@@ -99,10 +109,9 @@ end
 function constructpolys(Arref, Tf)
     k, A = Arref
     m, n = size(A)
-    ground = base_ring(A)
+    ground = base_ring(first(A))
     targetring = parent(first(Tf))
 
-    @debug "Reconstructing polynomials"
     ans = Array{elem_type(targetring), 1}()
 
     for i in 1:k
@@ -123,11 +132,12 @@ end
 function linear_algebra(F)
     Tf = sort(monomials(F), rev=true)
 
-    A = constructmatrix(F, Tf)
-    @debug "Matrix before " A
+    MSpace = AbstractAlgebra.MatrixSpace(base_ring(first(F)), length(F), length(Tf))
 
-    Arref = rref(A)
-    @debug "Matrix after " Arref[2]
+    A = constructmatrix(F, Tf)
+
+    Am = MSpace(A)
+    Arref = rref(Am)
 
     constructpolys(Arref, Tf)
 end
@@ -137,7 +147,6 @@ end
 function reduction(L, G, Fs)
     F = symbolic_preprocessing(L, G, Fs)
 
-    @debug "Polynomials for matrix: $F"
     F⁺ = linear_algebra(F)
 
     Tf = Set(HT(F))
@@ -154,35 +163,28 @@ function simplify(t, f, Fs)
     return t, f
 end
 
-# Eliminates redundant polynomials from L with respct to ideal G
+# Eliminates redundant polynomials from L with respect to ideal G
 function symbolic_preprocessing(L, G, Fs)
-    F = [prod(simplify(t, f, Fs)) for (t, f) in L]
+    PolyT = eltype(G)
+
+    F = unique(PolyT[prod(simplify(t, f, Fs)) for (t, f) in L])
     Done = Set(HT(F))
 
     Tf = Set(filter(x -> !(x in Done), monomials(F)))
 
-    @debug "symbolic : " Done Tf F G
-
-    i = 0
     while !isempty(Tf)
-        i += 1
         m = pop!(Tf)
         push!(Done, m)
-        @debug "" Done Tf F
-        @debug "obtained m = $m"
         for f in G
             flag, t = divides(m, leading_monomial(f))
-            @debug "--> flag=$flag t=$t f = $f"
             if flag
                 tf = prod(simplify(t, f, Fs))
                 Ttf = filter!(x -> x != leading_monomial(tf), collect(monomials(tf)))
-                push!(F, tf)
+                union!(F, [tf])
                 union!(Tf, Ttf)
             end
         end
     end
-
-    @debug "Preprocessed F = \n $F"
 
     F
 end
@@ -192,17 +194,20 @@ end
 # "Adds" h to the set of generators G and set of pairs P, while applying some
 # heuristics to reduce the number of pairs on fly
 # Returns new generator and pair sets G, P
-function update!(G, P, h)
+function update!(state, h)
     # The algorithm and notation is taken from the book
     # Gröbner Bases - A Computational Approach to Commutative Algebra, 1993
     # Thomas Becker and Volker Weispfenning, Corrected second printing, page 230
 
-    # heuristic 1
-    C = [(h, g) for g in G]
+    G, P = state
+    PolyT = eltype(G)
+
+    C = Tuple{PolyT, PolyT}[(h, g) for g in G]
     D = similar(C, 0)
 
     lmh = leading_monomial(h)
 
+    # heuristic 1
     while !isempty(C)
         h, g = pop!(C)
         lmg = leading_monomial(g)
@@ -234,8 +239,8 @@ function update!(G, P, h)
 
     # heuristic 3
     Pnew = similar(E, 0)
-    while !isempty(P)
-        g1, g2 = pop!(P)
+    while !isempty(state.P)
+        g1, g2 = pop!(state.P)
         lmg1 = leading_monomial(g1)
         lmg2 = leading_monomial(g2)
 
@@ -250,9 +255,9 @@ function update!(G, P, h)
     union!(Pnew, E)
 
     # heuristic 4
-    Gnew = similar(G, 0)
-    while !isempty(G)
-        g = pop!(G)
+    Gnew = similar(state.G, 0)
+    while !isempty(state.G)
+        g = pop!(state.G)
         if !first(divides(leading_monomial(g), lmh))
             push!(Gnew, g)
         end
@@ -260,7 +265,8 @@ function update!(G, P, h)
 
     push!(Gnew, h)
 
-    return Gnew, Pnew
+    copy!(state.G, Gnew)
+    copy!(state.P, Pnew)
 end
 
 #------------------------------------------------------------------------------
@@ -272,36 +278,31 @@ end
 # select : strategy for selection to perform on each iteration.
 #          Must accept an array of pairs and return its partition (selected, not)
 # reduced: reduce the basis so that the result is unique
-function f4(F; select=selectnormal, reduced=true)
+function f4(F::Vector{MPoly{GFElem{Int}}};
+            select=selectnormal, reduced=true)
 
-    G = []
-    P = []
+    state = GroebnerState()
     for f in F
-        G, P = update!(G, P, f)
+        update!(state, f)
     end
 
     Fs = []
 
-    d = 1
-    while !isempty(P)
-        @debug "$d-th iteration" G P
-
-        Pd, P = select(P)
-        @debug "Selected $Pd"
+    d = 0
+    while !isempty(state.P)
+        Pd = select(state.P)
 
         Ld = leftright(Pd)
-        @debug "Union Left + Right $Ld"
 
-        Fd⁺, Fd = reduction(Ld, G, Fs)
-        push!(Fs, Fd)
-        @debug "After reduction $Fd"
+        Fd⁺, Fd = reduction(Ld, state.G, Fs)
+        # push!(Fs, Fd)
 
         for h in Fd⁺
-            G, P = update!(G, P, h)
+            update!(state, h)
         end
 
         d += 1
-        @debug "d = $d"
+        @info "d = $d"
 
         if d > 100
             @error "Something is probably wrong.."
@@ -310,17 +311,37 @@ function f4(F; select=selectnormal, reduced=true)
     end
 
     if reduced
-        G = reducegb(G)
+        reduced_gb = reducegb(state.G)
+        copy!(state.G, reduced_gb)
     end
 
-    G
+    state.G
 end
 
+function f4(F::Vector{MPoly{Rational{BigInt}}};
+            select=selectnormal, reduced=true)
+
+
+end
+
+#------------------------------------------------------------------------------
 
 #=
-println("reducing..")
-for (i, f) in enumerate(gb)
-    println("$f -> ", normal_form(f, gb[1:end .!= i]))
-end
-println()
+ground = GF(2^31 - 1)
+
+gb = f4(rootn(5, ground=ground))
+
+println(gb)
+
+
+R, (x, y, z, w) = PolynomialRing(ground, ["x", "y", "z", "w"])
+fs = [
+    x + y,
+    x^2 + z^2,
+    y^2 + w^2,
+    x + 2*y + 3*z + 4*w
+]
+G = f4(fs, reduced=true)
+
+println(G)
 =#
