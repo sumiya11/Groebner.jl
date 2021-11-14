@@ -5,6 +5,11 @@
         A new efficient algorithm for computing Grobner bases
 """
 
+#=
+    TODO:
+        - warning if input set is empty / zero 
+=#
+
 #------------------------------------------------------------------------------
 
 # Stores the state of Groebner basis and pairs to assess
