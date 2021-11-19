@@ -7,7 +7,7 @@
 
 #=
     TODO:
-        - warning if input set is empty / zero 
+        - warning if input set is empty / zero
 =#
 
 #------------------------------------------------------------------------------
@@ -140,7 +140,10 @@ function linear_algebra(F)
     MSpace = AbstractAlgebra.MatrixSpace(base_ring(first(F)), length(F), length(Tf))
 
     A = constructmatrix(F, Tf)
-
+    @info "Matrix $(size(A))"
+    if eltype(A) <: GFElem{Int}
+        println(spy(AbstractAlgebra.lift.(A)))
+    end
     Am = MSpace(A)
     Arref = rref(Am)
 
@@ -323,10 +326,17 @@ function f4(F::Vector{MPoly{GFElem{Int}}};
     state.G
 end
 
-function f4(F::Vector{MPoly{Rational{BigInt}}};
-            select=selectnormal, reduced=true)
+#------------------------------------------------------------------------------
 
+function groebner(
+    fs::Vector{MPoly{Rational{BigInt}}})
 
+    
+
+end
+
+function groebner(fs::Vector{MPoly{GFElem{Int}}})
+    f4(fs)
 end
 
 #------------------------------------------------------------------------------

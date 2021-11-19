@@ -12,6 +12,8 @@ import AbstractAlgebra: leading_term, QQ, PolynomialRing, terms,
 
 using Combinatorics
 
+using UnicodePlots
+
 
 include("modular.jl")
 

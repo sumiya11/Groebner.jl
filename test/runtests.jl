@@ -18,3 +18,7 @@ using .GroebnerBases.AbstractAlgebra
     # @includetests ARGS
     @includetests ARGS
 end
+
+# @info "Benchmarking"
+
+# include("../benchmark/benchmarks.jl")
