@@ -8,7 +8,15 @@ import AbstractAlgebra: leading_term, QQ, PolynomialRing, terms,
                         rref, isconstant, leading_coefficient,
                         map_coefficients, monomials, degree,
                         degrees, isconstant, leading_monomial,
-                        GF, gens, MatrixSpace
+                        GF, gens, MatrixSpace, coefficients,
+                        crt, ordering, exponent_vectors, lift,
+                        MPolyBuildCtx, finish, push_term!, ZZ,
+                        content, change_base_ring
+
+import Primes: nextprime
+
+# hmm??
+import Nemo
 
 using Combinatorics
 

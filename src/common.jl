@@ -28,3 +28,26 @@ function reducegb(G)
     GG = map(f -> map_coefficients(c -> c // leading_coefficient(f), f), GG)
     sort(GG, by=leading_monomial)
 end
+
+# Normal form of `h` with respect to `G`
+function normal_form(h, G)
+    i = 0
+    while true
+        if iszero(h)
+            return h
+        end
+        i = 1
+        while i <= length(G)
+            mul = div(leading_monomial(h), leading_monomial(G[i]))
+            if !iszero(mul)
+                h -= leading_coefficient(h) * 1//leading_coefficient(G[i]) * mul * G[i]
+                i = 1
+                break
+            end
+            i = i + 1
+        end
+        if i > length(G)
+            return h
+        end
+    end
+end
