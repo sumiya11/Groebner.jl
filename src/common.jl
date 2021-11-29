@@ -51,3 +51,12 @@ function normal_form(h, G)
         end
     end
 end
+
+
+change_ordering(f, ordering) = change_ordering([f], ordering)
+
+function change_ordering(fs::AbstractArray, ordering)
+    R = parent(first(fs))
+    Rord, _ = PolynomialRing(base_ring(R), string.(gens(R)), ordering=ordering)
+    map(f -> change_base_ring(base_ring(R), f, parent=Rord), fs)
+end

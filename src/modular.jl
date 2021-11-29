@@ -1,4 +1,8 @@
 
+# Ask about Nemo
+import Nemo
+
+
 # Rational number reconstruction implementation borrowed from CLUE
 # and modified a bit to suit the 'Modern Computer Algebra' definitions
 # Returns a rational r // h of QQ field in a canonical form such that
@@ -48,7 +52,9 @@ end
 
 #------------------------------------------------------------------------------
 
-function reduce_modulo(fs, modulo)
+reduce_modulo(f, modulo) = reduce_modulo([f], modulo)
+
+function reduce_modulo(fs::T, modulo) where {T<:AbstractArray}
     ground = GF(modulo)
     Rin = parent(first(fs))
     Rgf, _ = PolynomialRing(ground, string.(gens(Rin)), ordering=ordering(Rin))
@@ -68,7 +74,7 @@ function scale_denominators(fs::Array)
     Rzz, _ = PolynomialRing(ZZ, string.(gens(Rin)), ordering=ordering(Rin))
     ans = zeros(Rzz, length(fs))
     for i in 1:length(fs)
-        scaled = map_coefficients(c -> c // content(fs[i]), fs[i])
+        scaled = map_coefficients(c -> numerator(c // content(fs[i])), fs[i])
         ans[i] = change_base_ring(ZZ, scaled, parent=Rzz)
     end
     ans
@@ -76,7 +82,7 @@ end
 
 #------------------------------------------------------------------------------
 
-function crt(rs::T, ms::T) where {T<:AbstractArray}
+function AbstractAlgebra.crt(rs::T, ms::T) where {T<:AbstractArray}
     n = length(rs)
     r1 = Nemo.ZZ(rs[1])
     m1 = Nemo.ZZ(ms[1])

@@ -25,15 +25,15 @@ GroebnerState() = GroebnerState([], [])
 
 #------------------------------------------------------------------------------
 
-function HT(polys)
+function HT(polys::AbstractArray)
     map(leading_monomial, polys)
 end
 
-function AbstractAlgebra.terms(polys)
+function AbstractAlgebra.terms(polys::AbstractArray)
     union(map(collect ∘ terms, polys)...)
 end
 
-function AbstractAlgebra.monomials(polys)
+function AbstractAlgebra.monomials(polys::AbstractArray)
     union(map(collect ∘ monomials, polys)...)
 end
 
@@ -332,52 +332,6 @@ function correctness_checks(gb_reconstructed)
     return true
 end
 
-function groebner(
-    fs::Vector{MPoly{Rational{BigInt}}})
-
-    moduli = Int[ 2^30 + 3 ]
-    gbs = []
-
-    # scale each polynomial to integer coefficients
-    fs_zz = scale_denominators(fs)
-    i = 0
-
-    while true
-        prime = last(moduli)
-
-        # compute the image of fs in GF(prime),
-        # by coercing each coefficient into the finite field
-        fs_reduced = reduce_modulo(fs_zz, prime)
-
-        # groebner basis of the reduced ideal
-        gb_reduced = f4(fs_reduced)
-
-        push!(gbs, gb_reduced)
-
-        # TODO: add majority rule based choice
-
-        # trying to reconstruct gbs into rationals
-        gb_crt, modulo = reconstruct_crt(gbs, moduli, parent(first(fs_zz)))
-        gb_reconstructed = reconstruct_modulo(gb_crt, modulo, parent(first(fs)))
-
-        if correctness_checks(gb_reconstructed)
-            return gb_reconstructed
-        end
-
-        push!(moduli, nextprime(prime))
-
-        i += 1
-        if i > 10
-            @error "Something went wrong"
-            return
-        end
-    end
-
-end
-
-function groebner(fs::Vector{MPoly{GFElem{Int}}})
-    f4(fs)
-end
 
 #------------------------------------------------------------------------------
 

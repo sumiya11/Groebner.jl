@@ -31,11 +31,18 @@ include("testgens.jl")
 
 include("buchberger.jl")
 
-# main functionality
+# f4 implementation over finite fields
 include("f4.jl")
+
+# fglm implementation over finite fields
+include("fglm.jl")
+
+# everything above is composed here
+include("algorithm.jl")
 
 
 export f4
 export rootn
+export groebner
 
 end
