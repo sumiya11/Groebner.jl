@@ -1,5 +1,5 @@
 
-# Ask about Nemo
+# TODO: Ask about Nemo
 import Nemo
 
 
@@ -10,6 +10,7 @@ import Nemo
 #
 # let n = max( λ(a), λ(m) ) , where λ(x) is a number of bits for x
 # O(n^2)
+# TODO: ask about Union
 function rational_reconstruction(a::I, m::I) where {I<:Union{Int, BigInt}}
     a = mod(a, m)
     if a == 0 || m == 0
@@ -110,10 +111,13 @@ function reconstruct_crt(gbs, moduli, Rzz)
     for poly_i in 1:length(modelgb)
         builder = MPolyBuildCtx(Rzz)
         for monom in exponent_vectors(modelgb[poly_i])
+            # this looks bad
+            # We need to lift GF elements to Ints
             mcoeffs = [
                 Int(lift(coeff(fs[poly_i], monom)))
                 for fs in gbs
             ]
+            # we need to lift ZZ to BigInt
             newcoeff = BigInt(crt(mcoeffs, moduli))
             push_term!(builder, newcoeff, monom)
         end
@@ -130,15 +134,4 @@ function reconstruct_modulo(fs, modulo, Rqq)
         ans[i] = change_base_ring(base_ring(Rqq), coerced, parent=Rqq)
     end
     ans
-end
-
-function run_modular(ps)
-    ans = QQ(0)
-
-    for (a, m) in ps
-        ans += rational_reconstruction_2(a, m)
-        ans -= rational_reconstruction_2(a, m)
-    end
-
-    return ans
 end

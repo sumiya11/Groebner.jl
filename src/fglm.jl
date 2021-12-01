@@ -2,11 +2,6 @@
 
 import Nemo
 
-function insert_nexts!(nextmonomials, monom)
-    xs = sort(gens(parent(monom)))
-    append!(nextmonomials, monom .* xs)
-    sort!(unique!(nextmonomials))
-end
 
 function findpivot(Mvectors, row, col)
     m = length(Mvectors)
@@ -25,10 +20,11 @@ function findpivot(Mvectors, row, col)
     return (0, 0)
 end
 
-function rowreduce!(Mvectors)
+function rowreduce!(Mvectors, vector)
     m = length(Mvectors)
     n = length(first(Mvectors))
     pivots = Tuple{Int, Int}[]
+    roworder = collect(1:n)
 
     i, j = 1, 1
     while true
@@ -36,32 +32,64 @@ function rowreduce!(Mvectors)
         if ip == 0
             break
         end
-        push!(pivots, (ip, jp))
+
         Mvectors[i], Mvectors[ip] = Mvectors[ip], Mvectors[i]
-        Mvectors[i] = Mvectors[i] .* inv(Mvectors[i][jp])
-        for k in 1:m
+        vector[i], vector[ip] = vector[ip], vector[i]
+
+        vector[i] = vector[i] .// Mvectors[i][jp]
+        Mvectors[i] = Mvectors[i] .// Mvectors[i][jp]
+
+        push!(pivots, (i, jp))
+
+        for k in i+1:m
             if k == i
                 continue
             end
-            Mvectors[k] = Mvectors[k] .- Mvectors[k][jp] .* Mvectors[i]
+            vector[k] = vector[k] - vector[i] * Mvectors[k][jp]
+            Mvectors[k] = Mvectors[k] .- Mvectors[i] .* Mvectors[k][jp]
         end
-        i, j = ip+1, jp
+        i, j = i + 1, jp
     end
-    Mvectors, pivots
+
+    for (i, j) in pivots
+        for k in 1:i-1
+            vector[k] = vector[k] - vector[i] * Mvectors[k][j]
+            Mvectors[k] = Mvectors[k] .- Mvectors[i] .* Mvectors[k][j]
+        end
+    end
+
+    Mvectors, vector, pivots
 end
 
 function linear_relation!(Mvectors, vector)
     ground = parent(first(vector))
-    Mreduced, pivots = rowreduce!(Mvectors)
 
-    relation = zeros(ground, length(pivots))
-    for (pivot, (ip, jp)) in enumerate(pivots)
-        relation[pivot] = vector[jp]
-        vector .-= vector[jp] .* Mreduced[ip]
+    Mmatrix = [hcat(Mvectors...)[i, :] for i in 1:length(vector)]
+    Mreduced, vector, pivots = rowreduce!(Mmatrix, vector)
+
+    λ = zeros(ground, length(Mvectors))
+
+    for (ip, jp) in pivots
+        λ[jp] = vector[ip]
     end
 
-    return relation, iszero(vector)
+    return λ, all(iszero, vector[length(pivots)+1:end])
 end
+
+
+# TODO: revise this criterion
+function insert_nexts!(nextmonomials, monom)
+    xs = gens(parent(monom))
+    append!(nextmonomials, xs .* monom)
+    sort!(unique!(nextmonomials), rev=false)
+end
+
+function insert_nexts_2!(nextmonomials, monom, state=(1, 0))
+    xs = sort(gens(parent(monom)))[state[1]]
+    push!(nextmonomials, xs^state[2])
+    sort!(unique!(nextmonomials), rev=false)
+end
+
 
 """
     Represents the given polynomial as an element from Kⁿ
@@ -97,41 +125,46 @@ function fglm(G)
     xs = gens(R)
     ground = base_ring(R)
 
+    @assert ordering(R) == :degrevlex
+
     newR, _ = PolynomialRing(ground, string.(xs), ordering=:lex)
 
-    newG = []
-    staircase = []
-    MBasis = []
+    newG = []      #  lex
+    staircase = [] #  orderless
+    MBasis = []    #  <a, b>   a = nf wrt newBasis, b = nf(a) wrt oldBasis
+    nextmonomials = [ newR(1) ] # lex
 
-    monoms = []
-
-    nextmonomials = [ newR(1) ]
     i = 0
+    monoms = []    # orderless
 
     while !isempty(nextmonomials)
 
+        print("$i,")
+
         i += 1
-        if i > 10
+        if i > 1000
+            @error "Something is wrong in FGLM"
             break
         end
 
-        m = pop!(nextmonomials)
-        oldm = change_base_ring(ground, m, parent=R)
+        @debug "NEXT = $nextmonomials"
+        m_lex = popfirst!(nextmonomials)
+        m_deg = change_base_ring(ground, m_lex, parent=R)
 
-        println("m = $m")
-        if any(x -> divides(x, m)[1], staircase)
+        @debug "m = $m_lex"
+        if any(x -> divides(m_lex, x)[1], staircase)
             continue
         end
 
-        nf = R( GroebnerBases.normal_form(oldm, G) )
+        nf = R( GroebnerBases.normal_form(m_deg, G) )
         union!(monoms, monomials(nf))
 
-        println("nf = $nf, monoms = $monoms")
+        @debug "nf = $nf, monoms = $monoms"
         vector = decompose_poly(nf, monoms)
         Mvectors = [decompose_poly(v, monoms) for (x, v) in MBasis]
 
-        println(MBasis, " // ", Mvectors)
-        println(vector)
+        @debug MBasis Mvectors
+        @debug vector
 
         if !isempty(Mvectors)
             λ, exists = linear_relation!(Mvectors, vector)
@@ -139,23 +172,26 @@ function fglm(G)
             exists = false
         end
 
-        println("exists ?? $exists")
+        @debug "exists ?? $exists"
 
         if exists
-            println("λ = $λ")
+            @debug "λ = $λ"
 
-            poly = m + sum(c * first(x) for (c, x) in zip(λ, MBasis))
+            poly = m_lex - sum(c * first(x) for (c, x) in zip(λ, MBasis))
             push!(newG, poly)
-            push!(staircase, m)
+            push!(staircase, m_lex)
+
         else
-            push!(MBasis, (m, nf))
-            println(typeof(m), typeof(nf))
+            push!(MBasis, (m_lex, nf))
+            # # println(typeof(m_lex), typeof(nf))
             union!(monoms, monomials(nf))
-            insert_nexts!(nextmonomials, m)
+
+            insert_nexts!(nextmonomials, m_lex)
+
         end
 
-        println(newG, "\n", MBasis)
-        println("--------------------")
+        @debug "next = $nextmonomials"
+        @debug "" newG MBasis
     end
 
     return newG

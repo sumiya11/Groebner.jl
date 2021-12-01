@@ -11,22 +11,25 @@ import AbstractAlgebra: leading_term, QQ, PolynomialRing, terms,
                         GF, gens, MatrixSpace, coefficients,
                         crt, ordering, exponent_vectors, lift,
                         MPolyBuildCtx, finish, push_term!, ZZ,
-                        content, change_base_ring
-
-import Primes: nextprime
+                        content, change_base_ring, exponent_vector
 
 # hmm??
+# We do not want this
 import Nemo
 
-using Combinatorics
+import Combinatorics
+import Primes: nextprime
 
-using UnicodePlots
+import UnicodePlots
 
+include("utils.jl")
 
+# Modular computations: reduction and reconstrction of coefficients
 include("modular.jl")
 
 include("common.jl")
 
+# generating sets of test polynomials
 include("testgens.jl")
 
 include("buchberger.jl")

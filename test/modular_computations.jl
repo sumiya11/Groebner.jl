@@ -29,6 +29,9 @@ Rz, (xz, yz, zz, wz) = PolynomialRing(ZZ, ["x", "y", "z", "w"])
                         parent=parent(first(scaled)))
                     ]
 
+    Rdeg,(xd, yd) = PolynomialRing(QQ, ["x", "y"], ordering=:degrevlex)
+    rx = scale_denominators( xd )
+    @test ordering(parent(rx)) == :degrevlex
 
 end
 
@@ -41,10 +44,15 @@ end
     reduced = reduce_modulo(fs, modulo)
     Rgf, (xg, yg, zg, wg) = parent(first(reduced)), gens(parent(first(reduced)))
     @test reduced == [xg, 2yg, 3zg, 0wg, 4xg + yg^2]
+    @test ordering(Rgf) == :lex
 
     f = 5xz
     freduced = reduce_modulo(f, modulo)
     @test freduced == [0]
+
+    Rdeg,(xd, yd) = PolynomialRing(QQ, ["x", "y"], ordering=:degrevlex)
+    rx = reduce_modulo( xd, modulo )
+    @test ordering(parent(rx)) == :degrevlex
 
 end
 

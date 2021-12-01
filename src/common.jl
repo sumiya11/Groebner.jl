@@ -53,6 +53,35 @@ function normal_form(h, G)
 end
 
 
+function muls(f, g)
+    lmi = leading_monomial(f)
+    lmj = leading_monomial(g)
+    lcm = lcm(lmi, lmj)
+    mji = div(lcm, lmi)
+    mij = div(lcm, lmj)
+    return mji, mij
+end
+
+# generation of spolynomial of G[i] and G[j]
+function spoly(f, g)
+    mji, mij  = muls(f, g)
+    h = 1//leading_coefficient(f) * mji * f - 1//leading_coefficient(g) * mij * g
+    return h
+end
+
+function is_groebner(fs)
+    for f in fs
+        for g in fs
+            if !iszero( normal_form(spoly(f, g)) )
+                return false
+            end
+        end
+    end
+    return true
+end
+
+
+
 change_ordering(f, ordering) = change_ordering([f], ordering)
 
 function change_ordering(fs::AbstractArray, ordering)

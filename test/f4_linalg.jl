@@ -1,7 +1,7 @@
 
 
 using .GroebnerBases: constructmatrix, constructpolys,
-                    linear_algebra
+                    linear_algebra_aa
 
 R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"])
 
@@ -78,14 +78,14 @@ end
 end
 
 @testset "F4 linear algebra reduction" begin
-    @test linear_algebra([x]) ⊂ [x]
-    @test linear_algebra([x, x^2]) ⊂ [x^2, x]
-    @test linear_algebra([x + 1, x, R(1)]) ⊂ [x, 1]
+    @test linear_algebra_aa([x]) ⊂ [x]
+    @test linear_algebra_aa([x, x^2]) ⊂ [x^2, x]
+    @test linear_algebra_aa([x + 1, x, R(1)]) ⊂ [x, 1]
 
-    @test linear_algebra([x + 5, x - 5y]) ⊂ [x + 5, y + 1]
-    @test linear_algebra([x + y + z, y + z, z]) ⊂ [x, y, z]
+    @test linear_algebra_aa([x + 5, x - 5y]) ⊂ [x + 5, y + 1]
+    @test linear_algebra_aa([x + y + z, y + z, z]) ⊂ [x, y, z]
 
     fs = [x^2 + y^2 + z^2 + 1, x^2 + 2y^2, R(1)]
-    @test linear_algebra(fs) ⊂ [y^2 - z^2, x^2 + 2z^2, R(1)]
+    @test linear_algebra_aa(fs) ⊂ [y^2 - z^2, x^2 + 2z^2, R(1)]
 
 end
