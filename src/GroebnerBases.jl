@@ -48,5 +48,6 @@ include("algorithm.jl")
 export f4
 export rootn
 export groebner
+export is_groebner
 
 end
