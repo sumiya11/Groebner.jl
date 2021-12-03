@@ -1,9 +1,14 @@
 name = "GroebnerBases"
+uuid = "55bfbd90-5432-11ec-1062-af1f2dc96c36"
 authors = ["sumiya11"]
 version = "0.1.0"
 
 [deps]
+AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
 LocalCoverage = "5f6e1e16-694c-5876-87ef-16b5274f298e"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+Nemo = "2edaba10-b0f1-5616-af89-8c11ac63239a"
 Traceur = "37b6cedf-1f77-55f8-9503-c64b63398394"
 UnicodePlots = "b8865327-cd53-5732-bb35-84acbb429228"
