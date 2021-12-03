@@ -8,14 +8,14 @@ This repository contains a Julia implementation of the algorithms for Groebner b
 
 ## How to use GroebnerBases.jl?
 
-We will demonstrate the usage on a simple example. Let's first add our package
+We will demonstrate the usage on a simple example. Let's first add `GroebnerBases.jl`
 
 ```julia
 julia> import Pkg
-Pkg.add(url="https://github.com/sumiya11/GroebnerBases")
+julia> Pkg.add(url="https://github.com/sumiya11/GroebnerBases")
 ```
 
-The package defines several test systems. We will check the algorithm for the set of cyclic polynomials of degree `3` by calling `rootn(3)`
+The package provides definitions for several test systems. We obtain one of them, the set of cyclic polynomials of degree `3`, by calling `rootn(3)`
 
 ```julia
 julia> polys = rootn(3)
@@ -25,9 +25,10 @@ julia> polys = rootn(3)
  x1*x2*x3 - 1
 ```
 
+Call `groebner` providing the system
+
 ```julia
 julia> G = groebner(polys)
-julia> G
 
 3-element Array{AbstractAlgebra.Generic.MPoly{Rational{BigInt}},1}:
  x3^3 - 1
@@ -35,7 +36,7 @@ julia> G
  x1 + x2 + x3
 ```
 
-Finally, we may want to check if the basis is correct
+Finally, we can check if the basis is correct
 
 ```julia
 julia> is_groebner(G)
