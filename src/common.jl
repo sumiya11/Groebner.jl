@@ -1,10 +1,15 @@
 
-# The file contains definitions of some common functions
+# The file contains definitions of some commonly used functions
 
 
-# Constructs reduced groebner basis given that G is itself a groebner basis,
-# strightforward approach :D
-# Note: groebner bases generating same ideal meet same reduced form
+"""
+    Constructs the reduced Groebner basis given that G is itself a Groebner basis,
+    strightforward approach for now :D
+    Note: groebner bases generating the same ideal meet the same reduced form
+
+    Guaranteed that If <f1..fn> equals <g1..gm> as ideals, then
+        reducegb(groebner(<f1..fn>)) = reducegb(groebner(<g1..gm>))
+"""
 function reducegb(G)
     GG = deepcopy(G)
     n = length(G)
@@ -29,7 +34,7 @@ function reducegb(G)
     sort(GG, by=leading_monomial)
 end
 
-# Normal form of `h` with respect to `G`
+# Normal form of `h` with respect to generators `G`
 function normal_form(h, G)
     i = 0
     while true
@@ -56,7 +61,7 @@ end
 function muls(f, g)
     lmi = leading_monomial(f)
     lmj = leading_monomial(g)
-    lcm = lcm(lmi, lmj)
+    lcm = AbstractAlgebra.lcm(lmi, lmj)
     mji = div(lcm, lmi)
     mij = div(lcm, lmj)
     return mji, mij
@@ -69,21 +74,32 @@ function spoly(f, g)
     return h
 end
 
-function is_groebner(fs)
+
+"""
+    Checks if the given set of polynomials `fs` are a Groebner basis.
+
+    If `initial_gens` is provided, also checks `initial_gens ⊆ <fs>`
+"""
+function is_groebner(fs; initial_gens=[])
     for f in fs
         for g in fs
-            if !iszero( normal_form(spoly(f, g)) )
+            if !iszero( normal_form(spoly(f, g), fs) )
                 return false
             end
         end
     end
+    if !isempty(initial_gens)
+        return all(
+            i -> normal_form( i, fs ) == 0,
+            initial_gens
+        )
+    end
     return true
 end
 
-
-
 change_ordering(f, ordering) = change_ordering([f], ordering)
 
+# changes the ordering of set of polynomials into `ordering`
 function change_ordering(fs::AbstractArray, ordering)
     R = parent(first(fs))
     Rord, _ = PolynomialRing(base_ring(R), string.(gens(R)), ordering=ordering)

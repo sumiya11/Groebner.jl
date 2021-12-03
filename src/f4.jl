@@ -1,9 +1,9 @@
 
-"""
+#=
     The file contains implementation of the F4 algorithm,
     described originally by Jean-Charles Faugere in
         A new efficient algorithm for computing Grobner bases
-"""
+=#
 
 #=
     TODO:
@@ -239,7 +239,7 @@ function linear_algebra_dense_det(F)
     A = constructrows_dense(F, Tf)
 
     m, n = length(A), length(first(A))
-    @info "Constructed matrix of size $((m, n)) and $(sum(map(x->count(!iszero, x), A)) / (m*n)) nnz"
+    @debug "Constructed matrix of size $((m, n)) and $(sum(map(x->count(!iszero, x), A)) / (m*n)) nnz"
 
     Arref = rref_dense!(A)
 
@@ -300,6 +300,8 @@ end
 
 #------------------------------------------------------------------------------
 
+# Hereinafter a set of heuristics is defined to be used in update! (see below)
+# They assess which polynomials are worthy of adding to the current pairset
 
 function update_heuristic_1(C, h)
     lmh = leading_monomial(h)
@@ -400,9 +402,10 @@ end
     Main function to calculate the Groebner basis of the given polynomial ideal.
     Specialized to work only over finite fields.
 
-    F      : an array of polynomials over finite field
-    select : a strategy for polynomial selection on each iteration
-    reduced: reduce the basis so that the result is unique
+    Parameters
+        . F       - an array of polynomials over finite field
+        . select  - a strategy for polynomial selection on each iteration
+        . reduced - reduce the basis so that the result is unique
 """
 function f4(F::Vector{MPoly{GFElem{Int}}};
                 select=selectnormal, reduced=true)
@@ -422,7 +425,7 @@ function f4(F::Vector{MPoly{GFElem{Int}}};
     # while there are pairs to be reduced
     while !isempty(state.P)
         d += 1
-        @info "F4 iter $d"
+        @debug "F4 iter $d"
 
         # vector{MPoly, MPoly}
         @vtime selected_pairs = select(state.P)

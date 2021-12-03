@@ -1,5 +1,8 @@
 
+# The file contains test examples definitions
+
 # nearest TODO: generate answers for these
+# and also consider doing this in another way
 
 function rootn(n; ground=QQ)
     R, xs = PolynomialRing(ground, ["x$i" for i in 1:n])

@@ -1,4 +1,8 @@
 
+#=
+    The file contains functions to operate modular reduction and reconstrction 
+=#
+
 # TODO: Ask about Nemo
 import Nemo
 
@@ -27,6 +31,8 @@ function rational_reconstruction(a::I, m::I) where {I<:Union{Int, BigInt}}
     end
     bnd = sqrt(float(m) / 2)
 
+    # an issue: we can not make good use of staticarrays here
+    # as long as BigInts are heap allocated anyways
     U = I[1, 0, m]
     V = I[0, 1, a]
     while abs(V[3]) >= bnd

@@ -1,5 +1,10 @@
 
 
+#=
+    The file contains the implementation of the FGLM algorithm,
+    an algorithm for ordering conversion
+=#
+
 import Nemo
 
 
@@ -21,10 +26,8 @@ function findpivot(Mvectors, row, col)
 end
 
 function rowreduce!(Mvectors, vector)
-    m = length(Mvectors)
-    n = length(first(Mvectors))
+    m, n = length(Mvectors), length(first(Mvectors))
     pivots = Tuple{Int, Int}[]
-    roworder = collect(1:n)
 
     i, j = 1, 1
     while true
@@ -138,9 +141,6 @@ function fglm(G)
     monoms = []    # orderless
 
     while !isempty(nextmonomials)
-
-        print("$i,")
-
         i += 1
         if i > 1000
             @error "Something is wrong in FGLM"

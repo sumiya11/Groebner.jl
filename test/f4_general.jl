@@ -1,6 +1,6 @@
 
 
-using .GroebnerBases: f4, rootn, katsura6
+using .GroebnerBases: f4, rootn, katsura6, is_groebner
 
 @testset "F4 over Finite Fields" begin
 
@@ -20,6 +20,13 @@ using .GroebnerBases: f4, rootn, katsura6
 
     @test G == [x3^3 - 1, x2^2 + x2*x3 + x3^2, x1 + x2 + x3]
 
+    @test is_groebner(G, initial_gens=fs)
+    @test !is_groebner( append!(G, [x3]) , initial_gens=fs)
+
+    G = [x3^3 - 1, x2^2 + x2*x3 + x3^2, x1 + x2 + x3]
+    # we want to omit duplicates for now, broken test !
+    @test !is_groebner( append!(G, [x1 + x2 + x3]) , initial_gens=fs)
+
     #########
     fs = [
         x + y,
@@ -31,6 +38,7 @@ using .GroebnerBases: f4, rootn, katsura6
 
     @test G == [w^3, z*w + 894784854*w^2, z^2 - w^2,
                 y + 3*z + 4*w, x - 3*z - 4*w]
+    @test is_groebner(G, initial_gens=fs)
 
     #########
     fs = [
@@ -45,7 +53,7 @@ using .GroebnerBases: f4, rootn, katsura6
                 y^9 + y^5*w^6 + y^3 + z*w^2, x*z^2*w^3,
                 x*y*z*w, x*y^3 + x*z*w^2 - y^8 - y^4*w^6,
                 x^2 + y^4 + w^6]
+    @test is_groebner(G)
 
-    
 
 end

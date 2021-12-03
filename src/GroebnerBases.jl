@@ -11,7 +11,8 @@ import AbstractAlgebra: leading_term, QQ, PolynomialRing, terms,
                         GF, gens, MatrixSpace, coefficients,
                         crt, ordering, exponent_vectors, lift,
                         MPolyBuildCtx, finish, push_term!, ZZ,
-                        content, change_base_ring, exponent_vector
+                        content, change_base_ring, exponent_vector,
+                        lcm
 
 # hmm??
 # We do not want this
@@ -21,6 +22,8 @@ import Combinatorics
 import Primes: nextprime
 
 import UnicodePlots
+import Logging
+
 
 include("utils.jl")
 
@@ -31,8 +34,6 @@ include("common.jl")
 
 # generating sets of test polynomials
 include("testgens.jl")
-
-include("buchberger.jl")
 
 # f4 implementation over finite fields
 include("f4.jl")
