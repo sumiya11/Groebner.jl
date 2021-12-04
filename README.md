@@ -13,6 +13,7 @@ We will demonstrate the usage on a simple example. Let's first add `GroebnerBase
 ```julia
 julia> import Pkg
 julia> Pkg.add(url="https://github.com/sumiya11/GroebnerBases")
+julia> using GroebnerBases
 ```
 
 The package provides definitions for several test systems. We obtain one of them, the set of cyclic polynomials of degree `3`, by calling `rootn(3)`
@@ -29,7 +30,6 @@ Call `groebner` providing the system
 
 ```julia
 julia> G = groebner(polys)
-
 3-element Array{AbstractAlgebra.Generic.MPoly{Rational{BigInt}},1}:
  x3^3 - 1
  x2^2 + x2*x3 + x3^2
@@ -40,6 +40,5 @@ Finally, we can check if the basis is correct
 
 ```julia
 julia> is_groebner(G)
-
 true
 ```
