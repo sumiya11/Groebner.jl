@@ -2,7 +2,7 @@
 using .GroebnerBases: reduce_modulo, scale_denominators,
                     rational_reconstruction, crt
 
-using .GroebnerBases: Primes
+using Primes
 
 R, (x, y, z, w) = PolynomialRing(QQ, ["x", "y", "z", "w"])
 Rz, (xz, yz, zz, wz) = PolynomialRing(ZZ, ["x", "y", "z", "w"])
@@ -31,7 +31,7 @@ Rz, (xz, yz, zz, wz) = PolynomialRing(ZZ, ["x", "y", "z", "w"])
 
     Rdeg,(xd, yd) = PolynomialRing(QQ, ["x", "y"], ordering=:degrevlex)
     rx = scale_denominators( xd )
-    @test ordering(parent(rx)) == :degrevlex
+    @test ordering(parent(rx[1])) == :degrevlex
 
 end
 
@@ -47,12 +47,12 @@ end
     @test ordering(Rgf) == :lex
 
     f = 5xz
-    freduced = reduce_modulo(f, modulo)
+    freduced = reduce_modulo([f], modulo)
     @test freduced == [0]
 
-    Rdeg,(xd, yd) = PolynomialRing(QQ, ["x", "y"], ordering=:degrevlex)
-    rx = reduce_modulo( xd, modulo )
-    @test ordering(parent(rx)) == :degrevlex
+    Rdeg,(xd, yd) = PolynomialRing(ZZ, ["x", "y"], ordering=:degrevlex)
+    rx = reduce_modulo( [xd], modulo )
+    @test ordering(parent(rx[1])) == :degrevlex
 
 end
 

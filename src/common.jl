@@ -11,31 +11,22 @@
         reducegb(groebner(<f1..fn>)) = reducegb(groebner(<g1..gm>))
 """
 function reducegb(G)
-    GG = deepcopy(G)
-    n = length(G)
-    updated = true
-    while updated
-        updated = false
-        for (i, f) in enumerate(GG)
-            for m in collect(terms(f))
-                for (j, g) in enumerate(GG[1:end .!= i])
-                    flag, t = divides(m, leading_term(g))
-                    if flag
-                        GG[i] -= t*g
-                        updated = true
-                        break
-                    end
-                end
-            end
-        end
+    reduced = deepcopy(G)
+    for i in 1:length(G)
+        reduced[i] = normal_form(reduced[i], reduced[1:end .!= i])
     end
-    GG = filter!(!iszero, GG)
-    GG = map(f -> map_coefficients(c -> c // leading_coefficient(f), f), GG)
-    sort(GG, by=leading_monomial)
+    filter!(!iszero, reduced)
+    scale = f -> map_coefficients(c -> c // leading_coefficient(f), f)
+    # TODO: questionable over QQ
+    reduced = map(scale, reduced)
+    sort!(reduced, by=leading_monomial)
 end
 
 # Normal form of `h` with respect to generators `G`
-function normal_form(h, G)
+#
+# The function is taken from Christian Eder course
+# https://www.mathematik.uni-kl.de/~ederc/teaching/2019/computeralgebra.html#news
+function normal_form_eder(h, G)
     i = 0
     while true
         if iszero(h)
@@ -57,6 +48,27 @@ function normal_form(h, G)
     end
 end
 
+# Normal form of `h` with respect to generators `G`
+function normal_form(h, G)
+    flag = false
+    while true
+        for t in terms(h)
+            for g in G
+                does, mul = divides(t, leading_term(g))
+                if does
+                    h -= mul * g
+                    flag = true
+                    break
+                end
+            end
+            flag && break
+        end
+        !flag && break
+        flag = false
+    end
+    h
+end
+
 
 function muls(f, g)
     lmi = leading_monomial(f)
@@ -68,6 +80,9 @@ function muls(f, g)
 end
 
 # generation of spolynomial of G[i] and G[j]
+#
+# The function is taken from Christian Eder course
+# https://www.mathematik.uni-kl.de/~ederc/teaching/2019/computeralgebra.html#news
 function spoly(f, g)
     mji, mij  = muls(f, g)
     h = 1//leading_coefficient(f) * mji * f - 1//leading_coefficient(g) * mij * g

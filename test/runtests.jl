@@ -15,7 +15,7 @@ using .GroebnerBases.AbstractAlgebra
 
 @testset "All tests" begin
 
-    # @includetests ARGS
+    # @includetests fglm_general
     @includetests ARGS
 end
 

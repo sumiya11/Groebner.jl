@@ -12,6 +12,9 @@
                   (i.e. originates from a system with finitely many solutions)
         . reduced  - if The reduced Groebner basis to be returned
         . loglevel - sets verbosity level
+        . maxpairs - maximal number of pairs selected for one matrix; default is
+                      0, i.e. no restriction. If matrices get too big or consume
+                      too much memory this is a good parameter to play with.
 
     Supported input orderings:
         . lex
@@ -25,6 +28,8 @@ function groebner(
             fs::Vector{MPoly{Rational{BigInt}}};
             zerodim=false,
             reduced=true,
+            linalg=:dense,
+            maxpairs=0,
             loglevel=Logging.Debug)
 
     # I guess we want to init this when initializing the package
@@ -46,6 +51,8 @@ function groebner(
     usefglm = initial_ordering == :lex && computing_ordering == :degrevlex
 
     @debug "orderings" initial_ordering computing_ordering usefglm
+    @debug "f4: $linalg linear algebra"
+    @debug "fglm: $(:dense) linear algebra"
 
     # convert polynomials into computing ordering
     fs_ord = change_ordering(fs, computing_ordering)
@@ -69,7 +76,10 @@ function groebner(
         fs_ord_gf = reduce_modulo(fs_ord_zz, prime)
 
         # groebner basis of the reduced ideal
-        gb_ord_gf = f4(fs_ord_gf, reduced=reduced)
+        gb_ord_gf = f4(fs_ord_gf,
+                        reduced=reduced,
+                        maxpairs=maxpairs,
+                        linalg=linalg)
 
         # return back to the initial ordering
         if usefglm
@@ -94,7 +104,7 @@ function groebner(
         push!(moduli, nextprime(prime + 1))
 
         i += 1
-        if i > 10
+        if i > 100
             @error "Something probably went wrong in reconstructing in groebner.."
             return
         end

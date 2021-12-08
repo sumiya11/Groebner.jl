@@ -83,7 +83,7 @@ end
 # TODO: revise this criterion
 function insert_nexts!(nextmonomials, monom)
     xs = gens(parent(monom))
-    append!(nextmonomials, xs .* monom)
+    append!(nextmonomials, monom .* xs)
     sort!(unique!(nextmonomials), rev=false)
 end
 
@@ -118,19 +118,20 @@ function compose_poly(v, monoms)
     f
 end
 
+
+"""
+    Converts the basis into the :lex ordering
+"""
 function fglm(G)
-    """
+    origR = parent(first(G))
+    origxs = gens(origR)
+    ground = base_ring(origR)
 
+    @assert ordering(origR) != :lex
 
-    """
+    @info "converting from $(ordering(origR)) to :lex with fglm"
 
-    R = parent(first(G))
-    xs = gens(R)
-    ground = base_ring(R)
-
-    @assert ordering(R) == :degrevlex
-
-    newR, _ = PolynomialRing(ground, string.(xs), ordering=:lex)
+    newR, _ = PolynomialRing(ground, string.(origxs), ordering=:lex)
 
     newG = []      #  lex
     staircase = [] #  orderless
@@ -138,33 +139,29 @@ function fglm(G)
     nextmonomials = [ newR(1) ] # lex
 
     i = 0
-    monoms = []    # orderless
+    monoms = []    # orderless (?)
 
     while !isempty(nextmonomials)
         i += 1
         if i > 1000
-            @error "Something is wrong in FGLM"
+            @error "Something is probably wrong in FGLM"
             break
         end
 
-        @debug "NEXT = $nextmonomials"
         m_lex = popfirst!(nextmonomials)
-        m_deg = change_base_ring(ground, m_lex, parent=R)
+        m_deg = change_base_ring(ground, m_lex, parent=origR)
 
-        @debug "m = $m_lex"
         if any(x -> divides(m_lex, x)[1], staircase)
             continue
         end
 
-        nf = R( GroebnerBases.normal_form(m_deg, G) )
+        # we convert to origR to ensure the output lives there
+        nf = origR( normal_form(m_deg, G) )
         union!(monoms, monomials(nf))
+        sort!(monoms, rev=false)
 
-        @debug "nf = $nf, monoms = $monoms"
         vector = decompose_poly(nf, monoms)
         Mvectors = [decompose_poly(v, monoms) for (x, v) in MBasis]
-
-        @debug MBasis Mvectors
-        @debug vector
 
         if !isempty(Mvectors)
             λ, exists = linear_relation!(Mvectors, vector)
@@ -172,11 +169,7 @@ function fglm(G)
             exists = false
         end
 
-        @debug "exists ?? $exists"
-
         if exists
-            @debug "λ = $λ"
-
             poly = m_lex - sum(c * first(x) for (c, x) in zip(λ, MBasis))
             push!(newG, poly)
             push!(staircase, m_lex)
@@ -187,11 +180,7 @@ function fglm(G)
             union!(monoms, monomials(nf))
 
             insert_nexts!(nextmonomials, m_lex)
-
         end
-
-        @debug "next = $nextmonomials"
-        @debug "" newG MBasis
     end
 
     return newG

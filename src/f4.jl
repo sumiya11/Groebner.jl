@@ -33,6 +33,7 @@ function AbstractAlgebra.terms(polys::T) where {T<:AbstractArray}
     union(map(collect ∘ terms, polys)...)
 end
 
+# This is VERY slow
 function AbstractAlgebra.monomials(polys::T) where {T<:AbstractArray}
     union(map(collect ∘ monomials, polys)...)
 end
@@ -47,25 +48,16 @@ pairdegree(p) = pairdegree(p...)
 # Normal selection strategy
 # Given an array of pairs, selects all of the lowest degree
 # where the degree of (f, g) is equal to the degree of lcm(lm(f), lm(g))
-function selectnormal(criticalpairs)
+function selectnormal(criticalpairs; maxpairs=0)
     d = minimum(pairdegree(pair) for pair in criticalpairs)
     selected = filter(p -> pairdegree(p) == d, criticalpairs)
+
+    if maxpairs != 0
+        selected = selected[1:min(maxpairs, length(selected))]
+    end
+
     filter!(p -> !(p in selected), criticalpairs)
     selected
-end
-
-# Just fot testing:
-
-# Strange selection strategy
-# Given an array of pairs, selects and returns all
-function selectall(polys)
-    polys, []
-end
-
-# Strange selection strategy
-# Given an array of pairs, selects and returns one
-function selectone(polys)
-    [polys[1]], polys[2:end]
 end
 
 #------------------------------------------------------------------------------
@@ -88,72 +80,6 @@ function leftright(ps)
     end
 
     union!(left, right)
-end
-
-#------------------------------------------------------------------------------
-
-# Constructs a numeric matrix for reduction from the
-# given polynomials F wrt monomials Tf
-function constructmatrix(F, Tf)
-    """
-    Function is not used
-    """
-    shape = length(F), length(Tf)
-    ground = base_ring(first(Tf))
-    FF = elem_type(ground)
-
-    A = Array{FF}(undef, shape...)
-    for (i, f) in enumerate(F)
-        for (j, t) in enumerate(Tf)
-            A[i, j] = coeff(f, t)
-        end
-    end
-
-    A
-end
-
-# Constructs polynomials from the rows coefficients of the given matrix Arref
-# and the given monomials Tf
-function constructpolys(Arref, Tf)
-    """
-    Function is not used
-    """
-    k, A = Arref
-    m, n = size(A)
-    ground = base_ring(first(A))
-    targetring = parent(first(Tf))
-
-    ans = Array{elem_type(targetring), 1}()
-
-    for i in 1:k
-        f = targetring(0)
-        for j in 1:n
-            f += A[i, j] * Tf[j]
-        end
-        if f != 0
-            push!(ans, f)
-        end
-    end
-
-    ans
-end
-
-# Simultaneosly reduces the given set of polynomials by constructing a matrix
-# and performing forward and backward gaussian elimination on it
-function linear_algebra_aa(F)
-    """
-    Function is not used
-    """
-    Tf = sort(monomials(F), rev=true)
-
-    MSpace = AbstractAlgebra.MatrixSpace(base_ring(first(F)), length(F), length(Tf))
-
-    A = constructmatrix(F, Tf)
-
-    Am = MSpace(A)
-    Arref = rref(Am)
-
-    constructpolys(Arref, Tf)
 end
 
 #------------------------------------------------------------------------------
@@ -228,31 +154,149 @@ end
 
 #------------------------------------------------------------------------------
 
+# constructs the matrix rows from the given polynomials F wrt monomials Tf
+# and sorts them to obtain triangular shape
+#
+# We returns the vectors sorted by pivot and then by sparsity
+function constructrows_sparse(F, Tf)
+    # zero rows to fill
+    ground = base_ring(first(Tf))
+    rows = map(
+        f -> SparseVectorAA(
+                    length(Tf),
+                    collect(1:length(F[f])),
+                    zeros(ground, length(F[f])),
+                    ground(0) ),
+        1:length(F)
+    )
+
+    for i in 1:length(F)
+        for (j, c, m) in zip(1:length(F[i]), coefficients(F[i]), monomials(F[i]))
+            ind = searchsortedfirst(Tf, m, rev=true)
+            rows[i].nzval[j] = c
+            rows[i].nzind[j] = ind
+        end
+    end
+
+    triangular_pred = row -> (first(row.nzind), -nnz(row))
+    sort!(rows, by=triangular_pred, rev=true)
+end
+
+# performs (almost backward) gaussian elimination
+# in a dense deterministic format,
+# assumes the given matrix is in triangular shape
+function rref_sparse!(A)
+    m, n = length(A), length(first(A))
+
+    i = 1
+
+    while i <= m
+        while i <= m && nnz(A[i]) == 0
+            i += 1
+        end
+        (i > m) && break
+
+        pivot = first(nonzeroinds(A[i]))
+        mul!(A[i], inv(A[i][pivot]))
+
+        for j in i+1:m
+            A[j][pivot] == 0 && continue
+
+            A[j] = A[j] - A[i] * A[j][pivot]
+
+            #=
+            pivot_value = A[j][pivot]
+            println(pivot_value)
+            mul!(A[i], pivot_value)
+            A[j] = A[j] - A[i]
+            println(pivot_value)
+            mul!(A[i], inv(pivot_value))
+            =#
+
+            dropzeros!(A[j])
+        end
+        i += 1
+    end
+
+    A
+end
+
+# Constructs polynomials from the coefficients of rows
+# given in rref
+function constructpolys_sparse(rrefrows, Tf)
+    m, n = length(rrefrows), length(first(rrefrows))
+    targetring = parent(first(Tf))
+    ground = base_ring(targetring)
+
+    ans = zeros(targetring, 0)
+
+    # for each row..
+    for i in 1:m
+        if iszero(rrefrows[i])
+            continue
+        end
+
+        builder = MPolyBuildCtx(targetring)
+        # for each coeff in a row..
+        for (j, val) in zip(nonzeroinds(rrefrows[i]), nonzeros(rrefrows[i]))
+            iszero(val) && continue
+            push_term!(builder, val, exponent_vector(Tf[j], 1))
+        end
+
+        push!(ans, finish(builder))
+    end
+
+    ans
+end
+
+#------------------------------------------------------------------------------
+
 # constructs vectors from the given polynomials,
 # then performs reduction (i.e, gaussian elimination),
 # and transforms resulting row vectors back into polynomials
 #
 # This is standard dense linear algebra backend
-function linear_algebra_dense_det(F)
-    Tf = sort(monomials(F), rev=true)
-
+function linear_algebra_dense_det(F, Tf)
     A = constructrows_dense(F, Tf)
 
     m, n = length(A), length(first(A))
-    @debug "Constructed matrix of size $((m, n)) and $(sum(map(x->count(!iszero, x), A)) / (m*n)) nnz"
+    @debug "Constructed *dense* matrix of size $((m, n)) and $(sum(map(x->count(!iszero, x), A)) / (m*n)) nnz"
 
     Arref = rref_dense!(A)
 
     constructpolys_dense(Arref, Tf)
 end
 
+# Same as above but in sparse algebra
+function linear_algebra_sparse_det(F, Tf)
+    A = constructrows_sparse(F, Tf)
+
+    m, n = length(A), length(first(A))
+    @debug "Constructed *sparse* matrix of size $((m, n)) and $(sum(map(nnz, A)) / (m*n)) nnz"
+
+    Arref = rref_sparse!(A)
+
+    constructpolys_sparse(Arref, Tf)
+end
+
+#------------------------------------------------------------------------------
+
 # Prepares the given set of polynomials L to be reduced by the ideal G,
 # starts the reduction routine,
 # and returns reduced polynomials
-function reduction(L, G)
-    F = symbolic_preprocessing(L, G)
+function reduction(L, G; linalg=:dense)
 
-    F⁺ = linear_algebra_dense_det(F)
+    @vtime F = symbolic_preprocessing(L, G)
+
+    @vtime Tf = sort(monomials(F), rev=true)
+
+    @debug "Going to build a matrix of sizes $((length(F), length(Tf)))"
+
+    if linalg == :dense
+        @vtime F⁺ = linear_algebra_dense_det(F, Tf)
+    else # sparse
+        @vtime F⁺ = linear_algebra_sparse_det(F, Tf)
+    end
 
     Tf = Set(leading_monomials(F))
 
@@ -266,6 +310,22 @@ end
 # Simplifies... well, not yet
 function simplify(t, f)
     return t, f
+end
+
+function monomial_divides(m, h)
+    R = parent(m)
+    em, eh = exponent_vector(m, 1), exponent_vector(h, 1)
+    diff = em .- eh
+
+    flag = all(diff .>= 0)
+    qu = R(0)
+
+    if flag
+        qu = R( coeff(m, 1) // coeff(h, 1) )
+        set_exponent_vector!(qu, 1, diff)
+    end
+
+    flag, qu
 end
 
 # Given the set of polynomials L and the basis G,
@@ -283,13 +343,19 @@ function symbolic_preprocessing(L, G)
         m = pop!(Tf)
         push!(Done, m)
         for f in G
-            flag, t = divides(m, leading_monomial(f))
+            # PROFILER: this takes long
+            # flag, t = divides(m, leading_monomial(f))
+            flag, t = monomial_divides(m, leading_monomial(f))
+
             if flag
                 tf = t * f
                 Ttf = filter!(
                         x -> x != leading_monomial(tf),
                         collect(monomials(tf)))
-                union!(F, [tf])
+                # union!(F, [tf])
+                if !(tf in F)
+                    push!(F, tf)
+                end
                 union!(Tf, Ttf)
             end
         end
@@ -380,6 +446,7 @@ function update!(state, h)
 
     C = [(h, g) for g in state.G]
 
+    # PROFILER: Usually the slowest one
     D = update_heuristic_1(C, h)
 
     E = update_heuristic_2(D, h)
@@ -403,12 +470,19 @@ end
     Specialized to work only over finite fields.
 
     Parameters
-        . F       - an array of polynomials over finite field
-        . select  - a strategy for polynomial selection on each iteration
-        . reduced - reduce the basis so that the result is unique
+        . F        - an array of polynomials over finite field
+        . select   - a strategy for polynomial selection on each iteration
+        . reduced  - reduce the basis so that the result is unique
+        . linalg   - linear algebra backend to use (possible are :dense and :sparse)
+        . maxpairs - maximal number of pairs selected for one matrix; default is
+                      0, i.e. no restriction. If matrices get too big or consume
+                      too much memory this is a good parameter to play with.
 """
 function f4(F::Vector{MPoly{GFElem{Int}}};
-                select=selectnormal, reduced=true)
+                select=selectnormal,
+                reduced=true,
+                linalg=:dense,
+                maxpairs=0)
 
     # vector{MPoly}, vector{MPoly, MPoly}
     # stores currently accumulated groebner basis,
@@ -428,14 +502,16 @@ function f4(F::Vector{MPoly{GFElem{Int}}};
         @debug "F4 iter $d"
 
         # vector{MPoly, MPoly}
-        @vtime selected_pairs = select(state.P)
+        @vtime selected_pairs = select(state.P, maxpairs=maxpairs)
+
+        @debug "Seleted $(length(selected_pairs)) pairs for reduction"
 
         # vector{Monom, MPoly}
         @vtime to_be_reduced = leftright(selected_pairs)
 
         # reduce polys and obtain new elements
         # to add to basis potentially
-        @vtime Fd⁺, Fd = reduction(to_be_reduced, state.G)
+        @vtime Fd⁺, Fd = reduction(to_be_reduced, state.G, linalg=linalg)
 
         # update the current basis,
         # allow copy

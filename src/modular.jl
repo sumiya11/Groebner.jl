@@ -1,6 +1,6 @@
 
 #=
-    The file contains functions to operate modular reduction and reconstrction 
+    The file contains functions to operate modular reduction and reconstrction
 =#
 
 # TODO: Ask about Nemo
@@ -58,8 +58,6 @@ function rational_reconstruction(a::I, m::I) where {I<:Union{Int, BigInt}}
 end
 
 #------------------------------------------------------------------------------
-
-reduce_modulo(f, modulo) = reduce_modulo([f], modulo)
 
 function reduce_modulo(fs::T, modulo) where {T<:AbstractArray}
     ground = GF(modulo)

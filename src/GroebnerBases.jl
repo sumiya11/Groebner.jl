@@ -12,18 +12,23 @@ import AbstractAlgebra: leading_term, QQ, PolynomialRing, terms,
                         crt, ordering, exponent_vectors, lift,
                         MPolyBuildCtx, finish, push_term!, ZZ,
                         content, change_base_ring, exponent_vector,
-                        lcm
+                        lcm, monomial, RingElem, set_exponent_vector!
+
 
 # hmm??
 # We do not want this
 import Nemo
 
 import Combinatorics
+import Primes
 import Primes: nextprime
+import SparseArrays: SparseVector, findnz, nnz
 
 import UnicodePlots
 import Logging
 
+# SparseVector from SparseArrays modified to work with AA
+include("SparseArrays/sparsevectoraa.jl")
 
 include("utils.jl")
 
@@ -45,7 +50,7 @@ include("fglm.jl")
 include("algorithm.jl")
 
 
-export f4
+export f4, fglm
 export rootn
 export groebner
 export is_groebner

@@ -64,8 +64,8 @@ function noon3(;ground=QQ)
     fs
 end
 
-function noon4()
-    R, (x1, x2, x3, x4) = PolynomialRing(GF(1073741827), ["x$i" for i in 1:4])
+function noon4(; ground=QQ)
+    R, (x1, x2, x3, x4) = PolynomialRing(ground, ["x$i" for i in 1:4])
 
     fs = [
     10*x1^2*x4+10*x2^2*x4+10*x3^2*x4-11*x4+10,
@@ -76,8 +76,8 @@ function noon4()
     fs
 end
 
-function noon5()
-    R, (x1, x2, x3, x4, x5) = PolynomialRing(GF(1073741827), ["x$i" for i in 1:5])
+function noon5(;ground=QQ)
+    R, (x1, x2, x3, x4, x5) = PolynomialRing(ground, ["x$i" for i in 1:5])
 
     fs = [
     10*x1^2*x5+10*x2^2*x5+10*x3^2*x5+10*x4^2*x5-11*x5+10,
@@ -89,8 +89,8 @@ function noon5()
     fs
 end
 
-function noon6()
-    R, (x1, x2, x3, x4, x5, x6) = PolynomialRing(GF(1073741827), ["x$i" for i in 1:6])
+function noon6(;ground=QQ)
+    R, (x1, x2, x3, x4, x5, x6) = PolynomialRing(ground, ["x$i" for i in 1:6])
 
     fs = [
     10*x1^2*x6+10*x2^2*x6+10*x3^2*x6+10*x4^2*x6+10*x5^2*x6-11*x6+10,
