@@ -15,6 +15,7 @@
         . maxpairs - maximal number of pairs selected for one matrix; default is
                       0, i.e. no restriction. If matrices get too big or consume
                       too much memory this is a good parameter to play with.
+        . linalg   - linear algebra backend to use
 
     Supported input orderings:
         . lex
@@ -28,11 +29,12 @@ function groebner(
             fs::Vector{MPoly{Rational{BigInt}}};
             zerodim=false,
             reduced=true,
-            linalg=:dense,
+            linalg=:sparse,
             maxpairs=0,
             loglevel=Logging.Debug)
 
     # I guess we want to init this when initializing the package
+    # old_logger     = Logging.current_logger()
     package_logger = Logging.ConsoleLogger(stderr, loglevel)
     Logging.global_logger(package_logger)
 
@@ -63,7 +65,10 @@ function groebner(
 
     # reduction moduli
     moduli = Int[ 2^30 + 3 ]
-    gbs_gf = [ ]
+
+    T = elem_type(Qring)
+    gbs_gf = []
+    gb_qq  = T[]
 
     i = 0
     while true
@@ -91,12 +96,15 @@ function groebner(
         # TODO: add majority rule based choice
 
         # trying to reconstruct gbs into rationals
+
         gb_zz_crt, modulo = reconstruct_crt(gbs_gf, moduli, Zring)
         gb_qq = reconstruct_modulo(gb_zz_crt, modulo, Qring)
 
+        @info "gb of $(length(gb_qq)) polys modulo $(prod(BigInt.(moduli)))"
 
+        @debug "running correctness check.."
         if correctness_checks(gb_qq, fs) # TODO
-            return reducegb(gb_qq)
+            break
         end
 
         @debug "reconstruction failed.. starting over"
@@ -104,12 +112,18 @@ function groebner(
         push!(moduli, nextprime(prime + 1))
 
         i += 1
-        if i > 100
+        if i > 1000
             @error "Something probably went wrong in reconstructing in groebner.."
             return
         end
     end
 
+    @info "used $(length(moduli)) primes of total product $(prod(BigInt.(moduli)))"
+    @info "resulting basis has $(length(gb_qq)) polynomials"
+
+    # Logging.global_logger(old_logger)
+
+    reducegb(gb_qq)
 end
 
 function groebner(fs::Vector{MPoly{GFElem{Int}}})

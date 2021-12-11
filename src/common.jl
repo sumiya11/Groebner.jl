@@ -22,6 +22,8 @@ function reducegb(G)
     sort!(reduced, by=leading_monomial)
 end
 
+#------------------------------------------------------------------------------
+
 # Normal form of `h` with respect to generators `G`
 #
 # The function is taken from Christian Eder course
@@ -52,10 +54,15 @@ end
 function normal_form(h, G)
     flag = false
     while true
+        # PROFILER: we can do better instead of terms
+        #           Probably change iteration order
         for t in terms(h)
             for g in G
-                does, mul = divides(t, leading_term(g))
-                if does
+                # does, mul = term_divides_3(t, g)
+                is_divisible = is_term_divisible(t, g)
+                if is_divisible
+                    mul = unsafe_term_divide(t, g)
+                    # PROFILER: slow
                     h -= mul * g
                     flag = true
                     break
@@ -69,6 +76,7 @@ function normal_form(h, G)
     h
 end
 
+#------------------------------------------------------------------------------
 
 function muls(f, g)
     lmi = leading_monomial(f)
@@ -79,7 +87,7 @@ function muls(f, g)
     return mji, mij
 end
 
-# generation of spolynomial of G[i] and G[j]
+# generation of spolynomial of f and g
 #
 # The function is taken from Christian Eder course
 # https://www.mathematik.uni-kl.de/~ederc/teaching/2019/computeralgebra.html#news
@@ -88,6 +96,8 @@ function spoly(f, g)
     h = 1//leading_coefficient(f) * mji * f - 1//leading_coefficient(g) * mij * g
     return h
 end
+
+#------------------------------------------------------------------------------
 
 
 """
@@ -111,6 +121,8 @@ function is_groebner(fs; initial_gens=[])
     end
     return true
 end
+
+#------------------------------------------------------------------------------
 
 change_ordering(f, ordering) = change_ordering([f], ordering)
 

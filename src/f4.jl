@@ -243,6 +243,7 @@ function constructpolys_sparse(rrefrows, Tf)
             push_term!(builder, val, exponent_vector(Tf[j], 1))
         end
 
+        # we may eliminate sorting of terms here !
         push!(ans, finish(builder))
     end
 
@@ -312,29 +313,16 @@ function simplify(t, f)
     return t, f
 end
 
-function monomial_divides(m, h)
-    R = parent(m)
-    em, eh = exponent_vector(m, 1), exponent_vector(h, 1)
-    diff = em .- eh
-
-    flag = all(diff .>= 0)
-    qu = R(0)
-
-    if flag
-        qu = R( coeff(m, 1) // coeff(h, 1) )
-        set_exponent_vector!(qu, 1, diff)
-    end
-
-    flag, qu
-end
 
 # Given the set of polynomials L and the basis G,
-# extends L to contain possible polys for reduction,
+# extends L to contain possible polys for reduction by G,
 # and returns it
 function symbolic_preprocessing(L, G)
     PolyT = eltype(G)
 
-    F = unique(PolyT[t * f for (t, f) in L])
+    F     = unique(PolyT[t * f for (t, f) in L])
+    Fhash = Set(F)
+
     Done = Set(leading_monomials(F))
 
     Tf = Set(filter(x -> !(x in Done), monomials(F)))
@@ -344,17 +332,17 @@ function symbolic_preprocessing(L, G)
         push!(Done, m)
         for f in G
             # PROFILER: this takes long
-            # flag, t = divides(m, leading_monomial(f))
-            flag, t = monomial_divides(m, leading_monomial(f))
-
+            flag = is_term_divisible(m, f)
             if flag
+                t = unsafe_term_divide(m, f)
                 tf = t * f
                 Ttf = filter!(
-                        x -> x != leading_monomial(tf),
+                        x -> !term_equal(x, tf),
                         collect(monomials(tf)))
-                # union!(F, [tf])
-                if !(tf in F)
-                    push!(F, tf)
+
+                if !(tf in Fhash)
+                    push!(F,     tf)
+                    push!(Fhash, tf)
                 end
                 union!(Tf, Ttf)
             end
@@ -376,14 +364,14 @@ function update_heuristic_1(C, h)
         h, g = pop!(C)
         lmg = leading_monomial(g)
 
-        flag1 = isconstant(gcd(lmg, lmh))
-        flag2 = all(t -> !first(divides(
-                            lcm(lmh, lmg),
-                            lcm(lmh, leading_monomial(t[2])))),
+        flag1 = is_term_gcd_constant(lmg, lmh)
+        flag2 = all(t -> !is_term_divisible(
+                            term_lcm(lmh, lmg),
+                            term_lcm(lmh, t[2])),
                     C)
-        flag3 = all(t -> !first(divides(
-                            lcm(lmh, lmg),
-                            lcm(lmh, leading_monomial(t[2])))),
+        flag3 = all(t -> !is_term_divisible(
+                            term_lcm(lmh, lmg),
+                            term_lcm(lmh, t[2])),
                     D)
 
         if flag1 || (flag2 && flag3)
@@ -398,8 +386,7 @@ function update_heuristic_2(D, h)
     E = similar(D, 0)
     while !isempty(D)
         h, g = pop!(D)
-        lmg = leading_monomial(g)
-        if !isconstant(gcd(lmg, lmh))
+        if !is_term_gcd_constant(g, lmh)
             push!(E, (h, g))
         end
     end
@@ -414,9 +401,9 @@ function update_heuristic_3!(E, h, P)
         lmg1 = leading_monomial(g1)
         lmg2 = leading_monomial(g2)
 
-        flag1 = !first(divides(lcm(lmg1, lmg2), lmh))
-        flag2 = lcm(lmg1, lmh) == lcm(lmg1, lmg2)
-        flag3 = lcm(lmg2, lmh) == lcm(lmg1, lmg2)
+        flag1 = !is_term_divisible(term_lcm(lmg1, lmg2), lmh)
+        flag2 = term_lcm(lmg1, lmh) == term_lcm(lmg1, lmg2)
+        flag3 = term_lcm(lmg2, lmh) == term_lcm(lmg1, lmg2)
         if flag1 || flag2 || flag3
             push!(Pnew, (g1, g2))
         end
@@ -429,7 +416,7 @@ function update_heuristic_4!(G, h)
     Gnew = similar(G, 0)
     while !isempty(G)
         g = pop!(G)
-        if !first(divides(leading_monomial(g), lmh))
+        if !is_term_divisible(leading_monomial(g), lmh)
             push!(Gnew, g)
         end
     end

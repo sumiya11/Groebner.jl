@@ -33,8 +33,8 @@ function rational_reconstruction(a::I, m::I) where {I<:Union{Int, BigInt}}
 
     # an issue: we can not make good use of staticarrays here
     # as long as BigInts are heap allocated anyways
-    U = I[1, 0, m]
-    V = I[0, 1, a]
+    U = (I(1), I(0), m)
+    V = (I(0), I(1), a)
     while abs(V[3]) >= bnd
         q = div(U[3], V[3])
         T = U .- q .* V
@@ -125,6 +125,7 @@ function reconstruct_crt(gbs, moduli, Rzz)
             newcoeff = BigInt(crt(mcoeffs, moduli))
             push_term!(builder, newcoeff, monom)
         end
+        # we can eliminate sorting!
         reconstructed[poly_i] = finish(builder)
     end
 

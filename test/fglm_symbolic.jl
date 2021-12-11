@@ -6,9 +6,21 @@ R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"])
 
 @testset "fglm insert nexts" begin
 
-    @test insert_nexts!(elem_type(R)[], x) == [z*x, y*x, x^2]
-    @test insert_nexts!([x^3], x^2) == [x^2*z, x^2*y, x^3]
-    @test insert_nexts!([x, y, z], R(1)) == [z, y, x]
+    v = elem_type(R)[]
+    insert_nexts!(v, x)
+    @test v == [z*x, y*x, x^2]
+
+    v = [x^3]
+    insert_nexts!(v, x^2)
+    @test v == [x^2*z, x^2*y, x^3]
+
+    v = [z, y, x]
+    insert_nexts!(v, R(1))
+    @test v == [z, y, x]
+
+    v = [z^2, x, x^2]
+    insert_nexts!(v, x)
+    @test v == [z^2, x, x*z, x*y, x^2]
 
 end
 

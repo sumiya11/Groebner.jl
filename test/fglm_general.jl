@@ -9,7 +9,6 @@ using .GroebnerBases: fglm, groebner, f4, change_ordering,
     ground = GF(2^30+3)
     R, (x, y, z) = PolynomialRing(ground, ["x", "y", "z"], ordering=:degrevlex)
 
-
     # What is wrong ?..
     # LOL
     fs_deg = [
@@ -18,18 +17,14 @@ using .GroebnerBases: fglm, groebner, f4, change_ordering,
         x^3 + y^3 - z^2 + 1
     ]
 
-
     fs_deg = [
         x^2 - 1,
         y^2 - 1,
         x^3 + y^3 - z^2
     ]
 
-
     gb_deg = f4(fs_deg)
-
     gb_lex_fglm = fglm(gb_deg)
-
     fs_lex = change_ordering(fs_deg, :lex)
     gb_lex = f4(fs_lex)
 
@@ -61,7 +56,6 @@ using .GroebnerBases: fglm, groebner, f4, change_ordering,
 
         gb_deg = f4(fs_deg)
 
-        println(gb_lex, " // \n", gb_deg)
         gb_lex_fglm = fglm(gb_deg)
 
         @test reducegb(gb_lex) == reducegb(gb_lex_fglm)
@@ -93,7 +87,6 @@ using .GroebnerBases: fglm, groebner, f4, change_ordering,
     gb_lex = f4(fs_lex)
     gb_deg = fglm(f4(fs_deg))
     @test reducegb(gb_lex) == reducegb(gb_deg)
-
 
 
     R, (x, y, a, b) = PolynomialRing(ground, ["x", "y", "a", "b"], ordering=:lex)
@@ -133,7 +126,7 @@ using .GroebnerBases: fglm, groebner, f4, change_ordering,
     fs_deg = change_ordering(fs_lex, :degrevlex)
 
     gb_lex = f4(fs_lex)
-    gb_deg = fglm(f4(fs_deg))
+    gb_deg = GroebnerBases.fglm(f4(fs_deg))
     @test reducegb(gb_lex) == reducegb(gb_deg)
 
 end

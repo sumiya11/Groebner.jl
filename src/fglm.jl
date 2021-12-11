@@ -8,91 +8,23 @@
 import Nemo
 
 
-function findpivot(Mvectors, row, col)
-    m = length(Mvectors)
-    n = length(first(Mvectors))
-    i, j = row, col
-    while j <= n
-        while i <= m
-            if Mvectors[i][j] != 0
-                return (i, j)
-            end
-            i += 1
-        end
-        i = row
-        j += 1
+# does not insert duplicates
+function insertsorted!(array, item, rev=false)
+    pos = searchsortedfirst(array, item, rev=rev)
+    if !isempty(array) && pos <= length(array) && array[pos] == item
+        return array
     end
-    return (0, 0)
+    insert!(array, pos, item)
+    return array
 end
-
-function rowreduce!(Mvectors, vector)
-    m, n = length(Mvectors), length(first(Mvectors))
-    pivots = Tuple{Int, Int}[]
-
-    i, j = 1, 1
-    while true
-        ip, jp = findpivot(Mvectors, i, j)
-        if ip == 0
-            break
-        end
-
-        Mvectors[i], Mvectors[ip] = Mvectors[ip], Mvectors[i]
-        vector[i], vector[ip] = vector[ip], vector[i]
-
-        vector[i] = vector[i] .// Mvectors[i][jp]
-        Mvectors[i] = Mvectors[i] .// Mvectors[i][jp]
-
-        push!(pivots, (i, jp))
-
-        for k in i+1:m
-            if k == i
-                continue
-            end
-            vector[k] = vector[k] - vector[i] * Mvectors[k][jp]
-            Mvectors[k] = Mvectors[k] .- Mvectors[i] .* Mvectors[k][jp]
-        end
-        i, j = i + 1, jp
-    end
-
-    for (i, j) in pivots
-        for k in 1:i-1
-            vector[k] = vector[k] - vector[i] * Mvectors[k][j]
-            Mvectors[k] = Mvectors[k] .- Mvectors[i] .* Mvectors[k][j]
-        end
-    end
-
-    Mvectors, vector, pivots
-end
-
-function linear_relation!(Mvectors, vector)
-    ground = parent(first(vector))
-
-    Mmatrix = [hcat(Mvectors...)[i, :] for i in 1:length(vector)]
-    Mreduced, vector, pivots = rowreduce!(Mmatrix, vector)
-
-    λ = zeros(ground, length(Mvectors))
-
-    for (ip, jp) in pivots
-        λ[jp] = vector[ip]
-    end
-
-    return λ, all(iszero, vector[length(pivots)+1:end])
-end
-
 
 # TODO: revise this criterion
 function insert_nexts!(nextmonomials, monom)
     xs = gens(parent(monom))
-    append!(nextmonomials, monom .* xs)
-    sort!(unique!(nextmonomials), rev=false)
+    for new_monom in monom .* xs
+        insertsorted!(nextmonomials, new_monom)
+    end
 end
-
-function insert_nexts_2!(nextmonomials, monom, state=(1, 0))
-    xs = sort(gens(parent(monom)))[state[1]]
-    push!(nextmonomials, xs^state[2])
-    sort!(unique!(nextmonomials), rev=false)
-end
-
 
 """
     Represents the given polynomial as an element from Kⁿ
@@ -100,8 +32,9 @@ end
 """
 function decompose_poly(f, monoms)
     v = zeros(base_ring(f), length(monoms))
-    for (i, m) in enumerate(monoms)
-        v[i] = coeff(f, m)
+    for (j, c, m) in zip(1:length(f), coefficients(f), monomials(f))
+        ind = findfirst(c -> c == m, monoms)
+        v[ind] = c
     end
     v
 end
@@ -118,14 +51,83 @@ function compose_poly(v, monoms)
     f
 end
 
+struct RrefBasis{C}
+    rref_vectors::Vector{Vector{C}} # vectors stored in rref form
+    monoms::Vector{MPoly{C}}   # monomials corresponding to columns of rref
+    new_monoms::Vector{MPoly{C}} # monomials from the new basis
+end
+
+RrefBasis{C}() where {C} = RrefBasis(Vector{Vector{C}}(), Vector{MPoly{C}}(), Vector{MPoly{C}}())
+
+function update_basis!(basis::RrefBasis, newpoly)
+    ground = base_ring(newpoly)
+
+    n = length(basis.monoms)
+    for new_monom in monomials(newpoly)
+        (new_monom in basis.monoms) && continue
+        push!(basis.monoms, new_monom)
+    end
+
+    for vec in basis.rref_vectors
+        append!(vec, zeros(ground, length(basis.monoms) - n))
+    end
+end
+
+function solve_in_rref(rref_vectors, vector)
+    coeffs = zeros(parent(first(vector)), length(rref_vectors))
+    for (i, basis_vector) in enumerate(rref_vectors)
+        pivot = findfirst(!iszero, basis_vector)
+        iszero(vector[pivot]) && continue
+        coeffs[i] = vector[pivot]
+        vector .-= coeffs[i] .* basis_vector
+    end
+    exists = iszero(vector)
+    coeffs, exists, vector
+end
+
+function linear_relation!(basis::RrefBasis, poly)
+    vector = decompose_poly(poly, basis.monoms)
+    coeffs, exists, vector = solve_in_rref(basis.rref_vectors, vector)
+    coeffs, exists, vector
+end
+
+function update_rref!(basis::RrefBasis, new_monom, new_vector, coeffs)
+    push!(basis.new_monoms, new_monom)
+    pivot = findfirst(!iszero, new_vector)
+
+    n_coeff = new_vector[pivot]
+    new_vector .//= n_coeff
+
+
+    for (i, c) in enumerate(coeffs)
+        basis.new_monoms[end] -= c * basis.new_monoms[i]
+    end
+    basis.new_monoms[end] *= inv(n_coeff)
+
+
+    es = basis.rref_vectors
+    for i in 1:length(es)
+        iszero(es[i][pivot]) && continue
+        basis.new_monoms[i] -= es[i][pivot] * basis.new_monoms[end]
+        es[i] .-= es[i][pivot] .* new_vector
+    end
+    push!(basis.rref_vectors, new_vector)
+
+end
+
+function linear_combination(basis::RrefBasis, coeffs)
+    sum(c*x  for (c, x) in zip(coeffs, basis.new_monoms))
+end
 
 """
     Converts the basis into the :lex ordering
 """
-function fglm(G)
-    origR = parent(first(G))
+function fglm(G; linalg=:dense)
+
+    origR  = parent(first(G))
     origxs = gens(origR)
     ground = base_ring(origR)
+    T      = elem_type(origR)
 
     @assert ordering(origR) != :lex
 
@@ -133,52 +135,47 @@ function fglm(G)
 
     newR, _ = PolynomialRing(ground, string.(origxs), ordering=:lex)
 
-    newG = []      #  lex
-    staircase = [] #  orderless
-    MBasis = []    #  <a, b>   a = nf wrt newBasis, b = nf(a) wrt oldBasis
-    nextmonomials = [ newR(1) ] # lex
+    newG      = T[]            #  lex
+    staircase = T[]            #  orderless
+    nextmonomials = T[newR(1)] # lex
 
     i = 0
-    monoms = []    # orderless (?)
+    basis = RrefBasis{elem_type(ground)}()
 
     while !isempty(nextmonomials)
         i += 1
-        if i > 1000
-            @error "Something is probably wrong in FGLM"
+        if i > 10000
+            @error "Something probably went wrong in FGLM"
             break
+        end
+        if i % 10 == 0
+            @debug "fglm iter $i" size(newG)
         end
 
         m_lex = popfirst!(nextmonomials)
         m_deg = change_base_ring(ground, m_lex, parent=origR)
 
-        if any(x -> divides(m_lex, x)[1], staircase)
+        # do we even need this ?
+        if any(x -> is_term_divisible(m_lex, x), staircase)
             continue
         end
 
         # we convert to origR to ensure the output lives there
-        nf = origR( normal_form(m_deg, G) )
-        union!(monoms, monomials(nf))
-        sort!(monoms, rev=false)
+        nf = normal_form(m_deg, G)
 
-        vector = decompose_poly(nf, monoms)
-        Mvectors = [decompose_poly(v, monoms) for (x, v) in MBasis]
+        # pad vectors with zeros and add new monoms
+        update_basis!(basis, nf)
 
-        if !isempty(Mvectors)
-            λ, exists = linear_relation!(Mvectors, vector)
-        else
-            exists = false
-        end
+        # try to find linear relation between vectors of basis
+        # resulting to nf
+        λ, exists, reduced = linear_relation!(basis, nf)
 
         if exists
-            poly = m_lex - sum(c * first(x) for (c, x) in zip(λ, MBasis))
+            poly = m_lex - linear_combination(basis, λ)
             push!(newG, poly)
             push!(staircase, m_lex)
-
         else
-            push!(MBasis, (m_lex, nf))
-            # # println(typeof(m_lex), typeof(nf))
-            union!(monoms, monomials(nf))
-
+            update_rref!(basis, m_lex, reduced, λ)
             insert_nexts!(nextmonomials, m_lex)
         end
     end

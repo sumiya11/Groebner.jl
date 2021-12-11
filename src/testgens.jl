@@ -14,9 +14,9 @@ function rootn(n; ground=QQ)
     ans
 end
 
-function henrion5()
+function henrion5(;ground=QQ)
 
-    R, (f1,f2,f3,f4,f5,t) = PolynomialRing(QQ, ["f1","f2","f3","f4","f5","t"])
+    R, (f1,f2,f3,f4,f5,t) = PolynomialRing(ground, ["f1","f2","f3","f4","f5","t"])
     fs = [
         2*f1*f2*f3*f4*f5-9823275,
         21//5*f1*f2*f4*f5+16//5*f1*f3*f4*f5+9//5*f2*f3*f4*f5+24//5*f1*f2*f3*f5+5*f4*f3*f1*f2-4465125,

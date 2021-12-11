@@ -12,7 +12,8 @@ import AbstractAlgebra: leading_term, QQ, PolynomialRing, terms,
                         crt, ordering, exponent_vectors, lift,
                         MPolyBuildCtx, finish, push_term!, ZZ,
                         content, change_base_ring, exponent_vector,
-                        lcm, monomial, RingElem, set_exponent_vector!
+                        lcm, monomial, RingElem, set_exponent_vector!,
+                        MPolyRing, nvars
 
 
 # hmm??
@@ -24,6 +25,8 @@ import Primes
 import Primes: nextprime
 import SparseArrays: SparseVector, findnz, nnz
 
+import DataStructures: SortedSet
+
 import UnicodePlots
 import Logging
 
@@ -34,6 +37,8 @@ include("utils.jl")
 
 # Modular computations: reduction and reconstrction of coefficients
 include("modular.jl")
+
+include("monomial_ops.jl")
 
 include("common.jl")
 
