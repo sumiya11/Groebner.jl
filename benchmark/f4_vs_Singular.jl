@@ -1,5 +1,7 @@
 
-import GroebnerBases: katsura6, change_ordering
+include("../src/GroebnerBases.jl")
+using .GroebnerBases
+
 import AbstractAlgebra
 import Singular
 
@@ -16,9 +18,9 @@ end
 
 function benchmark_katsura()
     modulo = 2^31 - 1
-    system = change_ordering(katsura6(ground=AbstractAlgebra.GF(2^31-1), :degrevlex))
+    system = change_ordering(katsura6(ground=AbstractAlgebra.GF(modulo), :degrevlex))
 
-    ground_s = Singular.N_ZpField(2^31 - 1)
+    ground_s = Singular.N_ZpField(modulo)
     R_s, _ = Singular.PolynomialRing(ground_s, ["x$i" for i in 1:7], ordering=:degrevlex)
 
     system_s = map(
