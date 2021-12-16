@@ -33,9 +33,15 @@ function AbstractAlgebra.terms(polys::T) where {T<:AbstractArray}
     union(map(collect ∘ terms, polys)...)
 end
 
-# This is VERY slow
-function AbstractAlgebra.monomials(polys::T) where {T<:AbstractArray}
-    union(map(collect ∘ monomials, polys)...)
+# This is slow
+function AbstractAlgebra.monomials(polys::Vector{T}) where {T}
+    ans = Set{T}()
+    for poly in polys
+        for m in monomials(poly)
+            push!(ans, m)
+        end
+    end
+    collect(ans)
 end
 
 #------------------------------------------------------------------------------
@@ -173,6 +179,7 @@ function constructrows_sparse(F, Tf)
     for i in 1:length(F)
         for (j, c, m) in zip(1:length(F[i]), coefficients(F[i]), monomials(F[i]))
             ind = searchsortedfirst(Tf, m, rev=true)
+            # we can eliminate these allocations
             rows[i].nzval[j] = c
             rows[i].nzind[j] = ind
         end
@@ -200,18 +207,9 @@ function rref_sparse!(A)
         mul!(A[i], inv(A[i][pivot]))
 
         for j in i+1:m
-            A[j][pivot] == 0 && continue
+            iszero(A[j][pivot]) && continue
 
-            A[j] = A[j] - A[i] * A[j][pivot]
-
-            #=
-            pivot_value = A[j][pivot]
-            println(pivot_value)
-            mul!(A[i], pivot_value)
-            A[j] = A[j] - A[i]
-            println(pivot_value)
-            mul!(A[i], inv(pivot_value))
-            =#
+            A[j] -= A[i] * A[j][pivot]
 
             dropzeros!(A[j])
         end
@@ -236,6 +234,16 @@ function constructpolys_sparse(rrefrows, Tf)
             continue
         end
 
+        # we may eliminate sorting if the monomials are already ordered
+        # important invariant: monomials are sorted in reverse order,
+        #                     exponents in AA polys are stored in reverse order
+        # another important invariant: all monomial orderings within this function
+        #                             are same
+        #
+        poly = unsafe_sparsevector_to_poly(rrefrows[i], Tf)
+        push!(ans, poly)
+
+        #=
         builder = MPolyBuildCtx(targetring)
         # for each coeff in a row..
         for (j, val) in zip(nonzeroinds(rrefrows[i]), nonzeros(rrefrows[i]))
@@ -245,6 +253,7 @@ function constructpolys_sparse(rrefrows, Tf)
 
         # we may eliminate sorting of terms here !
         push!(ans, finish(builder))
+        =#
     end
 
     ans
@@ -295,7 +304,7 @@ function reduction(L, G; linalg=:dense)
 
     if linalg == :dense
         @vtime F⁺ = linear_algebra_dense_det(F, Tf)
-    else # sparse
+    elseif linalg == :sparse
         @vtime F⁺ = linear_algebra_sparse_det(F, Tf)
     end
 
@@ -329,13 +338,14 @@ function symbolic_preprocessing(L, G)
 
     while !isempty(Tf)
         m = pop!(Tf)
-        push!(Done, m)
         for f in G
             # PROFILER: this takes long
             flag = is_term_divisible(m, f)
             if flag
-                t = unsafe_term_divide(m, f)
-                tf = t * f
+                # strange..
+                (iszero(m) || iszero(f)) && continue
+                t = GC.@preserve m f unsafe_term_divide(m, f)
+                tf = GC.@preserve t f multiplie_by_term(t, f)
                 Ttf = filter!(
                         x -> !term_equal(x, tf),
                         collect(monomials(tf)))
@@ -344,7 +354,9 @@ function symbolic_preprocessing(L, G)
                     push!(F,     tf)
                     push!(Fhash, tf)
                 end
-                union!(Tf, Ttf)
+                for ttf in Ttf
+                    push!(Tf, ttf)
+                end
             end
         end
     end
@@ -460,7 +472,8 @@ end
         . F        - an array of polynomials over finite field
         . select   - a strategy for polynomial selection on each iteration
         . reduced  - reduce the basis so that the result is unique
-        . linalg   - linear algebra backend to use (possible are :dense and :sparse)
+        . linalg   - linear algebra backend to use. Possible options
+                      are :dense , :sparse , and :sparserand
         . maxpairs - maximal number of pairs selected for one matrix; default is
                       0, i.e. no restriction. If matrices get too big or consume
                       too much memory this is a good parameter to play with.
@@ -468,7 +481,7 @@ end
 function f4(F::Vector{MPoly{GFElem{Int}}};
                 select=selectnormal,
                 reduced=true,
-                linalg=:dense,
+                linalg=:sparse,
                 maxpairs=0)
 
     # vector{MPoly}, vector{MPoly, MPoly}
@@ -482,7 +495,7 @@ function f4(F::Vector{MPoly{GFElem{Int}}};
         update!(state, f)
     end
 
-    d = 0
+    d::Int64 = 0
     # while there are pairs to be reduced
     while !isempty(state.P)
         d += 1

@@ -3,7 +3,7 @@
     The file contains some code from the Julia repository
     https://github.com/JuliaLang/julia
 
-    Namely, we use the source of SparseVectorAA from Julia/SparseArrays in
+    Namely, we use the source of SparseVector from Julia/SparseArrays in
     our own implementation
 =#
 

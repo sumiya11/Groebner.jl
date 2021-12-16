@@ -51,6 +51,10 @@ function normal_form_eder(h, G)
 end
 
 # Normal form of `h` with respect to generators `G`
+"""
+    Returns the normal form of polynomial h w.r.t Groebner basis G
+
+"""
 function normal_form(h, G)
     flag = false
     while true
@@ -61,7 +65,8 @@ function normal_form(h, G)
                 # does, mul = term_divides_3(t, g)
                 is_divisible = is_term_divisible(t, g)
                 if is_divisible
-                    mul = unsafe_term_divide(t, g)
+                    (iszero(t) || iszero(g)) && continue
+                    mul = GC.@preserve t g unsafe_term_divide(t, g)
                     # PROFILER: slow
                     h -= mul * g
                     flag = true
@@ -101,9 +106,9 @@ end
 
 
 """
-    Checks if the given set of polynomials `fs` are a Groebner basis.
+    Checks if the given set of polynomials `fs` is a Groebner basis.
 
-    If `initial_gens` is provided, also checks `initial_gens ⊆ <fs>`
+    If `initial_gens` parameter is provided, also assess `initial_gens ⊆ fs` as ideals
 """
 function is_groebner(fs; initial_gens=[])
     for f in fs

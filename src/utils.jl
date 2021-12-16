@@ -17,3 +17,26 @@ macro vtime(ex)
         val
     end
 end
+
+
+# wraps nested loops into one for convenience
+#   @uwu for (i, j) in (arr1,arr2)
+# is equivalent to
+#   for i in arr1
+#       for j in arr2
+macro uwu(forloop)
+    head, body = forloop.args
+    iters, iterables = head.args
+
+    stri   = map(string, iters.args)
+
+    strhead = reduce(*,
+        map(x -> "for "*x[1]*" in "*string(:($(x[2])))*" ",
+        zip(stri, iterables.args))
+    )
+
+    strbody = string(body)
+    whole = strhead*"\n"*strbody*"\nend"^length(stri)
+
+    Meta.parse(whole)
+end

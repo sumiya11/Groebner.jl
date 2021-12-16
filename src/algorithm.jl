@@ -122,8 +122,11 @@ function groebner(
     @info "resulting basis has $(length(gb_qq)) polynomials"
 
     # Logging.global_logger(old_logger)
+    if reduced
+        gb_qq = reducegb(gb_qq)
+    end
 
-    reducegb(gb_qq)
+    gb_qq
 end
 
 function groebner(fs::Vector{MPoly{GFElem{Int}}})

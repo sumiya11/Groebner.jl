@@ -31,16 +31,19 @@ import UnicodePlots
 import Logging
 
 # SparseVector from SparseArrays modified to work with AA
-include("SparseArrays/sparsevectoraa.jl")
+include("add_ons_to_sa/sparsevectoraa.jl")
 
 include("utils.jl")
 
 # Modular computations: reduction and reconstrction of coefficients
 include("modular.jl")
 
-include("monomial_ops.jl")
+#
+include("add_ons_to_aa/monomial_ops.jl")
+include("add_ons_to_aa/poly_conversions.jl")
 
 include("common.jl")
+
 
 # generating sets of test polynomials
 include("testgens.jl")
