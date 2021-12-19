@@ -13,15 +13,15 @@
 #------------------------------------------------------------------------------
 
 # Stores the state of the Groebner basis and pairs to be assessed
-mutable struct GroebnerState
-    G::Vector{MPoly{GFElem{Int}}}
-    P::Vector{Tuple{MPoly{GFElem{Int}}, MPoly{GFElem{Int}}}}
+mutable struct GroebnerState{Tv}
+    G::Vector{HashedPolynomial{Tv}}
+    P::Vector{Tuple{HashedPolynomial{Tv}, HashedPolynomial{Tv}}}
 end
 
 Base.iterate(x::GroebnerState) = (x.G, 1)
 Base.iterate(x::GroebnerState, state) = state == 1 ? (x.P, 2) : nothing
 
-GroebnerState() = GroebnerState([], [])
+GroebnerState{Tv}() where {Tv} = GroebnerState{Tv}([], [])
 
 #------------------------------------------------------------------------------
 
@@ -35,7 +35,7 @@ end
 
 # This is slow
 function AbstractAlgebra.monomials(polys::Vector{T}) where {T}
-    ans = Set{T}()
+    ans = Set{HashedMonomial}()
     for poly in polys
         for m in monomials(poly)
             push!(ans, m)
@@ -48,15 +48,14 @@ end
 
 # Returns degree of the given pair of polynomials, defined as
 # the degree of the LCM of the leading terms of these polys
-pairdegree(x, y) = sum(degrees(lcm(leading_monomial(x), leading_monomial(y))))
-pairdegree(p) = pairdegree(p...)
+pairdegree(x, y, HT) = sum(HT[monom_lcm(leading_monomial(x), leading_monomial(y), HT)])
 
 # Normal selection strategy
 # Given an array of pairs, selects all of the lowest degree
 # where the degree of (f, g) is equal to the degree of lcm(lm(f), lm(g))
-function selectnormal(criticalpairs; maxpairs=0)
-    d = minimum(pairdegree(pair) for pair in criticalpairs)
-    selected = filter(p -> pairdegree(p) == d, criticalpairs)
+function selectnormal(criticalpairs, HT; maxpairs=0)
+    d = minimum(pairdegree(pair..., HT) for pair in criticalpairs)
+    selected = filter(p -> pairdegree(p..., HT) == d, criticalpairs)
 
     if maxpairs != 0
         selected = selected[1:min(maxpairs, length(selected))]
@@ -70,19 +69,20 @@ end
 
 # Given pairs (f, g) constructs an array of pairs (t, f) such that
 #   t*lead(f) == m*lead(g)
-function leftright(ps)
-    T = eltype(ps)
+function leftright(
+        ps::Vector{Tuple{HashedPolynomial{Tv}, HashedPolynomial{Tv}}},
+        HT) where {Tv}
 
-    left = T[]
-    right = T[]
+    left = Vector{Tuple{HashedMonomial, HashedPolynomial{Tv}}}(undef, 0)
+    right = Vector{Tuple{HashedMonomial, HashedPolynomial{Tv}}}(undef, 0)
 
     for (fi, fj) in ps
         lti = leading_monomial(fi)
         ltj = leading_monomial(fj)
-        lcmij = lcm(lti, ltj)
+        lcmij = monom_lcm(lti, ltj, HT)
 
-        push!(left, (div(lcmij, lti), fi))
-        push!(right, (div(lcmij, ltj), fj))
+        push!(left, (monom_divide(lcmij, lti, HT), fi))
+        push!(right, (monom_divide(lcmij, ltj, HT), fj))
     end
 
     union!(left, right)
@@ -92,7 +92,7 @@ end
 
 # constructs the matrix rows from the given polynomials F wrt monomials Tf
 # and sorts them to obtain triangular shape
-function constructrows_dense(F, Tf)
+function constructrows_dense(F, Tf, HT)
     # zero rows to fill
     rows = map(_ -> zeros(base_ring(first(F)), length(Tf)), 1:length(F))
     for i in 1:length(F)
@@ -130,7 +130,7 @@ end
 
 # Constructs polynomials from the coefficients of rows
 # given in rref
-function constructpolys_dense(rrefrows, Tf)
+function constructpolys_dense(rrefrows, Tf, HT)
     m, n = length(rrefrows), length(first(rrefrows))
     targetring = parent(first(Tf))
     ground = base_ring(targetring)
@@ -164,9 +164,9 @@ end
 # and sorts them to obtain triangular shape
 #
 # We returns the vectors sorted by pivot and then by sparsity
-function constructrows_sparse(F, Tf)
+function constructrows_sparse(F, Tf, HT)
     # zero rows to fill
-    ground = base_ring(first(Tf))
+    ground = base_ring(first(F))
     rows = map(
         f -> SparseVectorAA(
                     length(Tf),
@@ -176,9 +176,11 @@ function constructrows_sparse(F, Tf)
         1:length(F)
     )
 
+    hash2idx = Dict(Tf[i] => i for i in 1:length(Tf))
+
     for i in 1:length(F)
         for (j, c, m) in zip(1:length(F[i]), coefficients(F[i]), monomials(F[i]))
-            ind = searchsortedfirst(Tf, m, rev=true)
+            ind = hash2idx[m]
             # we can eliminate these allocations
             rows[i].nzval[j] = c
             rows[i].nzind[j] = ind
@@ -207,9 +209,13 @@ function rref_sparse!(A)
         mul!(A[i], inv(A[i][pivot]))
 
         for j in i+1:m
+            # iszero(A[j][pivot]) && break
             iszero(A[j][pivot]) && continue
 
-            A[j] -= A[i] * A[j][pivot]
+            pivoto = A[j][pivot]
+            mul!(A[i], pivoto)
+            A[j] -= A[i]
+            mul!(A[i], inv(pivoto))
 
             dropzeros!(A[j])
         end
@@ -221,16 +227,15 @@ end
 
 # Constructs polynomials from the coefficients of rows
 # given in rref
-function constructpolys_sparse(rrefrows, Tf)
+function constructpolys_sparse(rrefrows, Tf, targetring::MPolyRing{Tv}, HT) where {Tv}
     m, n = length(rrefrows), length(first(rrefrows))
-    targetring = parent(first(Tf))
     ground = base_ring(targetring)
 
-    ans = zeros(targetring, 0)
+    ans = Vector{HashedPolynomial{Tv}}(undef, 0)
 
     # for each row..
     for i in 1:m
-        if iszero(rrefrows[i])
+        if nnz(rrefrows[i]) == 0
             continue
         end
 
@@ -240,20 +245,8 @@ function constructpolys_sparse(rrefrows, Tf)
         # another important invariant: all monomial orderings within this function
         #                             are same
         #
-        poly = unsafe_sparsevector_to_poly(rrefrows[i], Tf)
+        poly = sparsevector_to_hashpoly(rrefrows[i], Tf, targetring, HT)
         push!(ans, poly)
-
-        #=
-        builder = MPolyBuildCtx(targetring)
-        # for each coeff in a row..
-        for (j, val) in zip(nonzeroinds(rrefrows[i]), nonzeros(rrefrows[i]))
-            iszero(val) && continue
-            push_term!(builder, val, exponent_vector(Tf[j], 1))
-        end
-
-        # we may eliminate sorting of terms here !
-        push!(ans, finish(builder))
-        =#
     end
 
     ans
@@ -300,27 +293,31 @@ end
 # and transforms resulting row vectors back into polynomials
 #
 # This is standard dense linear algebra backend
-function linear_algebra_dense_det(F, Tf)
-    A = constructrows_dense(F, Tf)
+function linear_algebra_dense_det(F, Tf, HT)
+    A = constructrows_dense(F, Tf, HT)
 
     m, n = length(A), length(first(A))
     @debug "Constructed *dense* matrix of size $((m, n)) and $(sum(map(x->count(!iszero, x), A)) / (m*n)) nnz"
 
     Arref = rref_dense!(A)
 
-    constructpolys_dense(Arref, Tf)
+    @debug "After reduction: $(sum(map(x->count(!iszero, x), Arref)) / (m*n)) nnz"
+
+    constructpolys_dense(Arref, Tf, HT)
 end
 
 # Same as above but in sparse algebra
-function linear_algebra_sparse_det(F, Tf)
-    A = constructrows_sparse(F, Tf)
+function linear_algebra_sparse_det(F, Tf, HT)
+    A = constructrows_sparse(F, Tf, HT)
 
     m, n = length(A), length(first(A))
     @debug "Constructed *sparse* matrix of size $((m, n)) and $(sum(map(nnz, A)) / (m*n)) nnz"
 
     Arref = rref_sparse!(A)
 
-    constructpolys_sparse(Arref, Tf)
+    @debug "After reduction $(sum(map(nnz, A)) / (m*n)) nnz"
+
+    constructpolys_sparse(Arref, Tf, parent(first(F)), HT)
 end
 
 # Same as above but in sparse random algebra
@@ -337,21 +334,26 @@ end
 
 #------------------------------------------------------------------------------
 
+
+
+#------------------------------------------------------------------------------
+
 # Prepares the given set of polynomials L to be reduced by the ideal G,
 # starts the reduction routine,
 # and returns reduced polynomials
-function reduction(L, G; linalg=:dense)
+function reduction(L, G, HT; linalg=:sparse)
 
-     F = symbolic_preprocessing(L, G)
+     @vtime F = symbolic_preprocessing(L, G, HT)
 
-     Tf = sort(monomials(F), rev=true)
+     cmp(x, y) = monom_is_less(x, y, parent(first(F)), HT)
+     Tf = sort(monomials(F), lt=cmp, rev=true)
 
     @debug "Going to build a matrix of sizes $((length(F), length(Tf)))"
 
     if linalg == :dense
-         F⁺ = linear_algebra_dense_det(F, Tf)
+         F⁺ = linear_algebra_dense_det(F, Tf, HT)
     elseif linalg == :sparse
-         F⁺ = linear_algebra_sparse_det(F, Tf)
+         @vtime F⁺ = linear_algebra_sparse_det(F, Tf, HT)
     elseif linalg == :randomsparse
          F⁺ = linear_algebra_sparse_rand(F, Tf)
     end
@@ -368,17 +370,17 @@ end
 # Given the set of polynomials L and the basis G,
 # extends L to contain possible polys for reduction by G,
 # and returns it
-function symbolic_preprocessing(L, G)
+function symbolic_preprocessing(L, G, HT)
     PolyT = eltype(G)
 
     # F ~ several polys
-    F     = unique(PolyT[t * f for (t, f) in L])
+    F     = unique(PolyT[monom_poly_product(t, f, HT) for (t, f) in L])
     Fhash = Set(F)
 
-    Done = Set(leading_monomials(F))
+    Done = Set(leading_monomial(f) for f in F)
 
     # Tf ~ many monomials from F
-    Tf = Set(filter(x -> !(x in Done), monomials(F)))
+    Tf = Set(filter(x -> !(x in Done), monomials(F))) # lm == buchberger
 
     # essentially for each in Tf
     while !isempty(Tf)
@@ -387,14 +389,12 @@ function symbolic_preprocessing(L, G)
         for f in G
             # PROFILER: this takes long
             # isdivisible: monom, lt(poly)
-            flag = is_term_divisible(m, f)
+            flag = is_monom_divisible(m, leading_monomial(f), HT)
             if flag
-                # strange..
-                (iszero(m) || iszero(f)) && continue
                 # divide: monom, lt(poly)
-                t = GC.@preserve m f unsafe_term_divide(m, f)
+                t = term_divide(m, leading_term(f), HT)
                 # multiplie: monom, poly
-                tf = GC.@preserve t f multiplie_by_term(t, f)
+                tf = term_poly_product(t, f, HT)
 
                 # poly in set of polys?
                 if !(tf in Fhash)
@@ -408,7 +408,6 @@ function symbolic_preprocessing(L, G)
                     (midx == 1) && continue
                     push!(Tf, ttf)
                 end
-
             end
         end
     end
@@ -421,19 +420,21 @@ end
 # Hereinafter a set of heuristics is defined to be used in update! (see below)
 # They assess which polynomials are worthy of adding to the current pairset
 
-function update_heuristic_1(C, h)
+function update_heuristic_1(C, h, HT)
     D = similar(C, 0)
     while !isempty(C)
         h, g = pop!(C)
 
-        flag1 = is_term_gcd_constant(g, h)
-        flag2 = !any(t -> is_term_divisible(
-                            term_lcm(h, g),
-                            term_lcm(h, t[2])),
+        flag1 = is_monom_gcd_constant(leading_monomial(g), leading_monomial(h), HT)
+        flag2 = !any(t -> is_monom_divisible(
+                            monom_lcm(leading_monomial(h), leading_monomial(g), HT),
+                            monom_lcm(leading_monomial(h), leading_monomial(t[2]), HT),
+                            HT),
                     C)
-        flag3 = !any(t -> is_term_divisible(
-                            term_lcm(h, g),
-                            term_lcm(h, t[2])),
+        flag3 = !any(t -> is_monom_divisible(
+                            monom_lcm(leading_monomial(h), leading_monomial(g), HT),
+                            monom_lcm(leading_monomial(h), leading_monomial(t[2]), HT),
+                            HT),
                     D)
 
         if flag1 || (flag2 && flag3)
@@ -443,28 +444,28 @@ function update_heuristic_1(C, h)
     D
 end
 
-function update_heuristic_2(D, h)
-    filter!(hg -> !is_term_gcd_constant(hg[1], hg[2]), D)
+function update_heuristic_2(D, h, HT)
+    filter!(hg -> !is_monom_gcd_constant(leading_monomial(hg[1]), leading_monomial(hg[2]), HT), D)
 end
 
 
-function update_heuristic_3!(P, h)
-    flag1 = (g1, g2, h) -> !is_term_divisible(term_lcm(g1, g2), h)
-    flag2 = (g1, g2, h) -> term_lcm(g1, h) == term_lcm(g1, g2)
-    flag3 = (g1, g2, h) -> term_lcm(g2, h) == term_lcm(g1, g2)
+function update_heuristic_3!(P, h, HT)
+    flag1 = (g1, g2, h) -> !is_monom_divisible(monom_lcm(leading_monomial(g1), leading_monomial(g2), HT), leading_monomial(h), HT)
+    flag2 = (g1, g2, h) -> monom_lcm(leading_monomial(g1), leading_monomial(h), HT) == monom_lcm(leading_monomial(g1), leading_monomial(g2), HT)
+    flag3 = (g1, g2, h) -> monom_lcm(leading_monomial(g2), leading_monomial(h), HT) == monom_lcm(leading_monomial(g1), leading_monomial(g2), HT)
     flag  = (g1, g2, h) -> flag1(g1, g2, h) ||  flag2(g1, g2, h) || flag3(g1, g2, h)
 
     filter!(g -> flag(g[1], g[2], h), P)
 end
 
-function update_heuristic_4!(G, h)
-    filter!(g -> !is_term_divisible(g, h), G)
+function update_heuristic_4!(G, h, HT)
+    filter!(g -> !is_monom_divisible(leading_monomial(g), leading_monomial(h), HT), G)
 end
 
 # "Adds" h to the set of generators G and set of pairs P, while applying some
 # heuristics to reduce the number of pairs on fly
 # Returns new generator and pair sets G, P
-function update!(state, h)
+function update!(state, h, HT)
     # The algorithm and notation is taken from the book
     # Gröbner Bases - A Computational Approach to Commutative Algebra, 1993
     # Thomas Becker and Volker Weispfenning, Corrected second printing, page 230
@@ -472,14 +473,14 @@ function update!(state, h)
     C = [(h, g) for g in state.G]
 
     # PROFILER: Usually the slowest one
-    D = update_heuristic_1(C, h)
+    D = update_heuristic_1(C, h, HT)
 
-    E = update_heuristic_2(D, h)
+    E = update_heuristic_2(D, h, HT)
 
-    update_heuristic_3!(state.P, h)
+    update_heuristic_3!(state.P, h, HT)
     append!(state.P, E)
 
-    update_heuristic_4!(state.G, h)
+    update_heuristic_4!(state.G, h, HT)
     push!(state.G, h)
 end
 
@@ -491,30 +492,36 @@ end
     Specialized to work only over finite fields.
 
     Parameters
-        . F        - an array of polynomials over finite field
-        . select   - a strategy for polynomial selection on each iteration
-        . reduced  - reduce the basis so that the result is unique
-        . linalg   - linear algebra backend to use. Possible options
-                      are :dense , :sparse , and :sparserand
-        . maxpairs - maximal number of pairs selected for one matrix; default is
+        . F         - an array of polynomials over finite field
+        . select    - a strategy for polynomial selection on each iteration
+        . reduced   - reduce the basis so that the result is unique
+        . linalg    - linear algebra backend to use. Possible options
+                      are :dense , :sparse , and :sparserand. Default is :sparse
+        . maxpairs  - maximal number of pairs selected for one matrix; default is
                       0, i.e. no restriction. If matrices get too big or consume
                       too much memory this is a good parameter to play with.
+        . tablesize -
 """
-function f4(F::Vector{MPoly{GFElem{Int}}};
-                select=selectnormal,
-                reduced=true,
-                linalg=:sparse,
-                maxpairs=0)
+function f4(polys::Vector{MPoly{GFElem{Int}}};
+            select=selectnormal,
+            reduced=true,
+            linalg=:sparse,
+            maxpairs=0,
+            tablesize=2^16)
 
     # vector{MPoly}, vector{MPoly, MPoly}
     # stores currently accumulated groebner basis,
     # and an array of pairs to be reduced
-    state = GroebnerState()
+    state = GroebnerState{GFElem{Int}}()
+
+    HT = MonomialHashtable(parent(first(polys)))
+
+    @vtime internal_polys = convert_to_hash_repr(polys, HT)
 
     # init with the given polys,
     # allow copy
-    for f in F
-        update!(state, f)
+    for poly in internal_polys
+        update!(state, poly, HT)
     end
 
     d::Int64 = 0
@@ -524,22 +531,21 @@ function f4(F::Vector{MPoly{GFElem{Int}}};
         @debug "F4 iter $d"
 
         # vector{MPoly, MPoly}
-        selected_pairs = select(state.P, maxpairs=maxpairs)
+        @vtime selected_pairs = select(state.P, HT, maxpairs=maxpairs)
 
         @debug "Seleted $(length(selected_pairs)) pairs for reduction"
 
         # vector{Monom, MPoly}
-        to_be_reduced = leftright(selected_pairs)
+        @vtime to_be_reduced = leftright(selected_pairs, HT)
 
         # reduce polys and obtain new elements
         # to add to basis potentially
-         Fd⁺, Fd = reduction(to_be_reduced, state.G, linalg=linalg)
+        @vtime Fd⁺, Fd = reduction(to_be_reduced, state.G, HT, linalg=linalg)
 
         # update the current basis,
         # allow copy
-        @info "uwu"
-        @time for h in Fd⁺
-            update!(state, h)
+        @vtime for h in Fd⁺
+            update!(state, h, HT)
         end
 
         if d > 1000
@@ -548,12 +554,15 @@ function f4(F::Vector{MPoly{GFElem{Int}}};
         end
     end
 
+    ans = convert_to_original_repr(state.G, HT)
+
+    @debug "Filled $(length(HT.expmap)) elems in hashtable"
+
     if reduced
-        reduced_gb = reducegb(state.G)
-        copy!(state.G, reduced_gb)
+        @vtime ans = reducegb(ans)
     end
 
-    state.G
+    ans
 end
 
 #------------------------------------------------------------------------------

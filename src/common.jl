@@ -9,18 +9,24 @@
 
     Guaranteed that If <f1..fn> equals <g1..gm> as ideals, then
         reducegb(groebner(<f1..fn>)) = reducegb(groebner(<g1..gm>))
+
+    Normalizes generators and sorts them by leading monomial, which is controversial
 """
 function reducegb(G)
-    reduced = deepcopy(G)
+    reducegb!(deepcopy(G))
+end
+
+function reducegb!(G)
     for i in 1:length(G)
-        reduced[i] = normal_form(reduced[i], reduced[1:end .!= i])
+        G[i] = normal_form(G[i], G[1:end .!= i])
     end
-    filter!(!iszero, reduced)
+    filter!(!iszero, G)
     scale = f -> map_coefficients(c -> c // leading_coefficient(f), f)
     # TODO: questionable over QQ
-    reduced = map(scale, reduced)
-    sort!(reduced, by=leading_monomial)
+    map!(scale, G, G)
+    sort!(G, by=leading_monomial)
 end
+
 
 #------------------------------------------------------------------------------
 
@@ -106,7 +112,8 @@ end
 
 
 """
-    Checks if the given set of polynomials `fs` is a Groebner basis.
+    Checks if the given set of polynomials `fs` is a Groebner basis,
+         i.e all spoly's are reduced to zero.
 
     If `initial_gens` parameter is provided, also assess `initial_gens ⊆ fs` as ideals
 """

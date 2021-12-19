@@ -21,11 +21,11 @@ end
 
 
     nvariables = [2, 3]
-    exps       = [1:2, 2:4, 1:5, 5:5]
-    nterms     = [1:1, 1:2, 2:4, 1:5, 4:5]
-    npolys     = [1:1, 1:3, 2:4, 1:5, 4:5]
+    exps       = [1:2, 2:4, 1:4]
+    nterms     = [1:1, 1:2, 2:4]
+    npolys     = [1:1, 1:3, 2:4]
     grounds    = [GF(1031), GF(2^31 - 1)]
-    orderings  = [:degrevlex, :lex]
+    orderings  = [:degrevlex]
 
     p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings)))
 

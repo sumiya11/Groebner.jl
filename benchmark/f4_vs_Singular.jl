@@ -12,7 +12,7 @@ using BenchmarkTools
 
 function benchmark_katsura()
     modulo = 2^31 - 1
-    system = change_ordering(katsura6(ground=AbstractAlgebra.GF(modulo), :degrevlex))
+    system = change_ordering(katsura6(ground=AbstractAlgebra.GF(modulo)), :degrevlex)
 
     ground_s = Singular.N_ZpField(modulo)
     R_s, _ = Singular.PolynomialRing(ground_s, ["x$i" for i in 1:7], ordering=:degrevlex)
@@ -32,14 +32,11 @@ function benchmark_katsura()
     @benchmark gb1 = GroebnerBases.f4($system)
     @benchmark gb2 = Singular.std($ideal_s)
 
-    println(gb1)
-    println("###############")
-    println(gb2)
 end
 
 function benchmark_root()
     modulo = 2^31 - 1
-    system = change_ordering(rootn(5, ground=AbstractAlgebra.GF(modulo), :degrevlex))
+    system = change_ordering(rootn(5, ground=AbstractAlgebra.GF(modulo)), :degrevlex)
 
     ground_s = Singular.N_ZpField(modulo)
     R_s, _ = Singular.PolynomialRing(ground_s, ["x$i" for i in 1:5], ordering=:degrevlex)
@@ -59,9 +56,6 @@ function benchmark_root()
     @benchmark gb1 = GroebnerBases.f4($system)
     @benchmark gb2 = Singular.std($ideal_s)
 
-    println(gb1)
-    println("###############")
-    println(gb2)
 end
 
 benchmark_root()

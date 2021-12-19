@@ -1,5 +1,6 @@
 
-using .GroebnerBases: normal_form, reducegb
+using .GroebnerBases: normal_form, reducegb, reducegb!,
+                    change_ordering, rootn, f4
 
 @testset "Normal Form" begin
 
@@ -42,6 +43,46 @@ using .GroebnerBases: normal_form, reducegb
 
 end
 
+@testset "Change ordering" begin
+    R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"])
+
+    fs = [1x + 2y*z + 3z^3, y*z, 5x]
+    fs_deg = change_ordering(fs, :degrevlex)
+    R_deg = parent(first(fs_deg))
+
+    @test ordering(R_deg) == :degrevlex
+    @test collect(exponent_vectors(fs_deg[1])) == [[0, 0, 3], [0, 1, 1], [1, 0, 0]]
+    @test collect(exponent_vectors(fs_deg[2])) == [[0, 1, 1]]
+    @test collect(exponent_vectors(fs_deg[3])) == [[1, 0, 0]]
+
+    fs_vv = change_ordering(fs, :lex)
+    @test fs_vv == fs
+end
+
 @testset "Basis reduction" begin
-    # HOW
+    # not really comprehensive
+    
+    R, (x, y, z) = PolynomialRing(GF(2^31 - 1), ["x", "y", "z"])
+
+    fs = change_ordering(rootn(3, ground=GF(2^31 - 1)), :degrevlex)
+    gb = GroebnerBases.f4(fs, reduced=false)
+
+    @test is_groebner(gb)
+
+    x1, x2, x3 = gens(parent(first(fs)))
+    ans = [x1 + x2 + x3, x2^2 + x2*x3 + x3^2, x3^3 + 2147483646]
+    push!(gb, gb[1])
+    @test GroebnerBases.reducegb!(gb) == ans
+    @test gb == ans
+
+    fs = rootn(3, ground=GF(2^31 - 1))
+    gb = GroebnerBases.f4(fs, reduced=false)
+
+    @test is_groebner(gb)
+
+    x1, x2, x3 = gens(parent(first(fs)))
+    ans = [x3^3 + 2147483646, x2^2 + x2*x3 + x3^2, x1 + x2 + x3]
+    append!(gb, gb)
+    @test GroebnerBases.reducegb!(gb) == ans
+    @test gb == ans
 end

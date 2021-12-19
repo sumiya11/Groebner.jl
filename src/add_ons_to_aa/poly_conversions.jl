@@ -1,5 +1,6 @@
 
 
+#* Not used currently *#
 
 # given sparse vector of coefficients wrt monomial basis monom_basis
 # constructs and returns corresponding polynomial (almost) inplace

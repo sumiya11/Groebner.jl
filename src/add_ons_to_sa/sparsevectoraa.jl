@@ -4,8 +4,12 @@
     https://github.com/JuliaLang/julia
 
     Namely, we use the source of SparseVector from Julia/SparseArrays in
-    our own implementation
+    our implementation but allowing coefficients to live in AA fields
 =#
+
+# TODO: add inplace v = v + c × w
+
+#------------------------------------------------------------------------------
 
 import SparseArrays: AbstractSparseVector, nnz, nonzeros, nonzeroinds,
                     findnz, mul!
@@ -13,6 +17,7 @@ import SparseArrays: AbstractSparseVector, nnz, nonzeros, nonzeroinds,
 import Base: size, count, getindex, min, max, map
 import Base: +, -, *
 
+#------------------------------------------------------------------------------
 
 struct SparseVectorAA{Tv,Ti<:Integer} <: AbstractSparseVector{Tv,Ti}
     n::Int              # Length of the sparse vector

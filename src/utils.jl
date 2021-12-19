@@ -10,7 +10,7 @@ macro vtime(ex)
         local val = $(esc(ex))
         elapsedtime = time_ns() - elapsedtime
         local diff = Base.GC_Diff(Base.gc_num(), stats)
-        println($(Meta.quot(ex))) # print
+        Logging.@debug $(Meta.quot(ex)) # print
         Base.time_print(elapsedtime, diff.allocd, diff.total_time,
                         Base.gc_alloc_count(diff))
         println()
