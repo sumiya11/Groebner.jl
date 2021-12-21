@@ -51,10 +51,10 @@ include("common.jl")
 include("testgens.jl")
 
 # f4 implementation over finite fields
-# include("f4.jl")
-include("polynomials.jl")
-include("hashes.jl")
-include("hash_f4.jl")
+include("f4.jl")
+#include("polynomials.jl")
+#include("hashes.jl")
+#include("hash_f4.jl")
 
 # fglm implementation over finite fields
 include("fglm.jl")
