@@ -343,6 +343,7 @@ end
 function reduction(L, G; linalg=:dense)
 
      F = symbolic_preprocessing(L, G)
+     @info "F after symbolic" F
 
      Tf = sort(monomials(F), rev=true)
 
@@ -359,6 +360,9 @@ function reduction(L, G; linalg=:dense)
     Tf = Set(leading_monomials(F))
 
     F⁺ = filter!(f -> !in(leading_monomial(f), Tf), F⁺)
+
+    @info "F+ after linalg" F⁺
+
 
     F⁺, F
 end
@@ -379,6 +383,8 @@ function symbolic_preprocessing(L, G)
 
     # Tf ~ many monomials from F
     Tf = Set(filter(x -> !(x in Done), monomials(F)))
+
+    Tf = Set(leading_monomials(F))
 
     # essentially for each in Tf
     while !isempty(Tf)
@@ -522,6 +528,7 @@ function f4(F::Vector{MPoly{GFElem{Int}}};
     while !isempty(state.P)
         d += 1
         @debug "F4 iter $d"
+        @debug "State: " state
 
         # vector{MPoly, MPoly}
         selected_pairs = select(state.P, maxpairs=maxpairs)
@@ -531,9 +538,13 @@ function f4(F::Vector{MPoly{GFElem{Int}}};
         # vector{Monom, MPoly}
         to_be_reduced = leftright(selected_pairs)
 
+        @debug to_be_reduced
+
         # reduce polys and obtain new elements
         # to add to basis potentially
-         Fd⁺, Fd = reduction(to_be_reduced, state.G, linalg=linalg)
+        Fd⁺, Fd = reduction(to_be_reduced, state.G, linalg=linalg)
+
+        @debug Fd⁺
 
         # update the current basis,
         # allow copy
@@ -541,6 +552,8 @@ function f4(F::Vector{MPoly{GFElem{Int}}};
         @time for h in Fd⁺
             update!(state, h)
         end
+
+        @debug state
 
         if d > 1000
             @error "Something is probably wrong in f4.."

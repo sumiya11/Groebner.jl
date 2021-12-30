@@ -24,7 +24,7 @@ end
 
 # A hashed-based representation for a polynomial.
 # Internally stores hashed monomials, coefficients, and base ring
-struct HashedPolynomial{Tv}
+struct 
     monoms::Vector{HashedMonomial}  # hashed monoms, sorted wrt ordering(parent)
     coeffs::Vector{Tv}              # coeffs, -//-
     parent::MPolyRing{Tv}
@@ -68,13 +68,13 @@ end
 function is_monom_gcd_constant(
             monom1::HashedMonomial,
             monom2::HashedMonomial,
-            HT)
+            ht)
 
-    e1 = HT[monom1]
-    e2 = HT[monom2]
+    e1 = ht[monom1]
+    e2 = ht[monom2]
 
     N = length(e1)
-    if HT.R.ord == :degrevlex
+    if ht.R.ord == :degrevlex
         N -= 1
     end
 
@@ -92,18 +92,18 @@ end
 function monom_gcd(
             monom1::HashedMonomial,
             monom2::HashedMonomial,
-            HT)
+            ht)
 
-    gcdexp = min.(HT[monom1], HT[monom2])
+    gcdexp = min.(ht[monom1], ht[monom2])
 
-    if HT.R.ord == :degrevlex
+    if ht.R.ord == :degrevlex
         gcdexp[end] = 0
         for i in 1:length(gcdexp) - 1
             gcdexp[end] += gcdexp[i]
         end
     end
 
-    h = add_monomial!(HT, gcdexp)
+    h = add_monomial!(ht, gcdexp)
 
     h
 end
@@ -113,15 +113,15 @@ end
 function monom_lcm(
             monom1::HashedMonomial,
             monom2::HashedMonomial,
-            HT)
+            ht)
 
-    lcmexp = max.(HT[monom1], HT[monom2])
+    lcmexp = max.(ht[monom1], ht[monom2])
 
-    if HT.R.ord == :degrevlex
+    if ht.R.ord == :degrevlex
         lcmexp[end] = sum(lcmexp[1:end-1])
     end
 
-    h = add_monomial!(HT, lcmexp)
+    h = add_monomial!(ht, lcmexp)
 
     h
 end
@@ -132,10 +132,10 @@ end
 function is_monom_divisible(
             monom1::HashedMonomial,
             monom2::HashedMonomial,
-            HT)
+            ht)
 
-    e1 = HT[monom1]
-    e2 = HT[monom2]
+    e1 = ht[monom1]
+    e2 = ht[monom2]
     for i in 1:length(e1)
         if e1[i] < e2[i]
             return false
@@ -149,10 +149,10 @@ end
 function monom_divide(
         monom1::HashedMonomial,
         monom2::HashedMonomial,
-        HT) where {Tv}
+        ht) where {Tv}
 
-    divisor = HT[monom1] .- HT[monom2]
-    h = add_monomial!(HT, divisor)
+    divisor = ht[monom1] .- ht[monom2]
+    h = add_monomial!(ht, divisor)
 
     h
 end
@@ -162,12 +162,12 @@ end
 function term_divide(
         term1::HashedTerm,
         term2::HashedTerm,
-        HT) where {Tv}
+        ht) where {Tv}
 
-    divisor = HT[term1] .- HT[term2]
+    divisor = ht[term1] .- ht[term2]
     coeff   = term1.coeff // term2.coeff
 
-    h = add_monomial!(HT, divisor)
+    h = add_monomial!(ht, divisor)
 
     HashedTerm(h.e, coeff)
 end
@@ -177,12 +177,12 @@ end
 function term_divide(
         monom1::HashedMonomial,
         term2::HashedTerm,
-        HT) where {Tv}
+        ht) where {Tv}
 
-    divisor = HT[monom1] .- HT[HashedMonomial(term2.e)]
+    divisor = ht[monom1] .- ht[HashedMonomial(term2.e)]
     coeff   = 1 // term2.coeff
 
-    h = add_monomial!(HT, divisor)
+    h = add_monomial!(ht, divisor)
 
     HashedTerm(h.e, coeff)
 end
@@ -194,17 +194,17 @@ end
 function monom_poly_product(
         monom::HashedMonomial,
         f::HashedPolynomial,
-        HT)
+        ht)
 
-    hm = HT[monom]
+    hm = ht[monom]
     exps = [
-        add_monomial!(HT, hm .+ HT[e])
+        add_monomial!(ht, hm .+ ht[e])
         for e in f.monoms
     ]
 
     #=
     exps = [
-        add_product!(HT, monom, e)
+        add_product!(ht, monom, e)
         for e in f.monoms
     ]=#
 
@@ -216,21 +216,21 @@ end
 function term_poly_product(
         term::HashedTerm,
         f::HashedPolynomial,
-        HT)
+        ht)
 
     coeffs = term.coeff .* f.coeffs
 
     #=
     for e in f.monoms
-        ee = HT[HashedMonomial(term.e)] .+ HT[e]
-        if haskey(HT.expmap, hash(ee))
+        ee = ht[HashedMonomial(term.e)] .+ ht[e]
+        if haskey(ht.expmap, hash(ee))
             @warn "hit prod!"
         end
     end
     =#
 
     exps = [
-        add_monomial!(HT, HT[HashedMonomial(term.e)] .+ HT[e])
+        add_monomial!(ht, ht[HashedMonomial(term.e)] .+ ht[e])
         for e in f.monoms
     ]
 
@@ -245,9 +245,9 @@ function monom_is_less(
         monom1::HashedMonomial,
         monom2::HashedMonomial,
         R,
-        HT)
+        ht)
 
-    A1, A2 = HT[monom1], HT[monom2]
+    A1, A2 = ht[monom1], ht[monom2]
     if R.ord == :degrevlex
       N = nvars(R) + 1
       if A1[N] < A2[N]
@@ -283,10 +283,10 @@ function sparsevector_to_hashpoly(
                 vector::SparseVectorAA{Tv, Ti},
                 monom_basis,
                 R,
-                HT) where {Tv, Ti}
+                ht) where {Tv, Ti}
 
     len  = nnz(vector)
-    raw_explen = length(HT[first(monom_basis)])
+    raw_explen = length(ht[first(monom_basis)])
 
     cfs  = Vector{Tv}(undef, len)
     exps = Vector{HashedMonomial}(undef, len)
@@ -301,43 +301,43 @@ end
 
 #------------------------------------------------------------------------------
 
-function convert_to_hash_repr(orig_poly::MPoly{Tv}, HT) where {Tv}
+function convert_to_hash_repr(orig_poly::MPoly{Tv}, ht) where {Tv}
     n = length(orig_poly)
     imonoms = Vector{HashedMonomial}(undef, n)
     icoeffs = Vector{Tv}(undef, n)
     for (i, c) in zip(1:n, coefficients(orig_poly))
-        h = add_monomial!(HT, orig_poly.exps[:, i])
+        h = add_monomial!(ht, orig_poly.exps[:, i])
         imonoms[i] = h
         icoeffs[i] = c
     end
     HashedPolynomial(imonoms, icoeffs, parent(orig_poly))
 end
 
-function convert_to_hash_repr(polys::Vector{MPoly{Tv}}, HT) where {Tv}
-    ans = Vector{HashedPolynomial{Tv}}(undef, length(polys))
+function convert_to_hash_repr(polys::Vector{MPoly{Tv}}, ht) where {Tv}
+    ans = Vector{}(undef, length(polys))
     for i in 1:length(polys)
-        ans[i] = convert_to_hash_repr(polys[i], HT)
+        ans[i] = convert_to_hash_repr(polys[i], ht)
     end
     ans
 end
 
 #------------------------------------------------------------------------------
 
-function convert_to_original_repr(orig_poly::HashedPolynomial{Tv}, HT) where {Tv}
+function convert_to_original_repr(orig_poly::, ht) where {Tv}
     n = length(orig_poly)
-    iexps = Matrix{UInt}(undef, length(HT[first(orig_poly.monoms)]), n)
+    iexps = Matrix{UInt}(undef, length(ht[first(orig_poly.monoms)]), n)
     icoeffs = Vector{Tv}(undef, n)
     for (i, c, m) in zip(1:n, coefficients(orig_poly), monomials(orig_poly))
-        iexps[:, i] .= HT[m]
+        iexps[:, i] .= ht[m]
         icoeffs[i] = c
     end
     MPoly{Tv}(parent(orig_poly), icoeffs, iexps)
 end
 
-function convert_to_original_repr(polys::Vector{HashedPolynomial{Tv}}, HT) where {Tv}
+function convert_to_original_repr(polys::Vector{}, ht) where {Tv}
     ans = Vector{MPoly{Tv}}(undef, length(polys))
     for i in 1:length(polys)
-        ans[i] = convert_to_original_repr(polys[i], HT)
+        ans[i] = convert_to_original_repr(polys[i], ht)
     end
     ans
 end

@@ -20,21 +20,21 @@ end
     ground = GF(2^31 - 1)
     R, (x, y, z) = PolynomialRing(ground, ["x", "y", "z"])
 
-    HT = MonomialHashtable(R)
+    ht = MonomialHashtable(R)
 
     polys = [R(1), x, 4x^2, 3x*z + z*y, z^2*y - z*y, 2x*y*z, x*y^2*z + 3x, 3x^2]
     true_lengths = [1, 2, 3, 5, 6, 7, 8, 8]
 
     for (i, poly) in enumerate(polys)
-        hashpoly = convert_to_hash_repr(poly, HT)
-        @test hcat(map(m -> HT[m], hashpoly.monoms)...) == poly.exps
+        hashpoly = convert_to_hash_repr(poly, ht)
+        @test hcat(map(m -> ht[m], hashpoly.monoms)...) == poly.exps
         @test hashpoly.coeffs == poly.coeffs
         @test hashpoly.parent == poly.parent
 
-        origpoly = convert_to_original_repr(hashpoly, HT)
+        origpoly = convert_to_original_repr(hashpoly, ht)
         @test origpoly == poly
 
-        @test length(HT.expmap) == true_lengths[i]
+        @test length(ht.expmap) == true_lengths[i]
     end
 end
 
@@ -42,7 +42,7 @@ end
 
     ground = GF(2^31-1)
     R, (x, y, z) = PolynomialRing(ground, ["x", "y", "z"])
-    HT = MonomialHashtable(R)
+    ht = MonomialHashtable(R)
 
     ms = [R(1), x, x, x^2, x*y, x*z, y^2, y*z, z^2,
             x*y*z, x^2*y^3*z^4]
@@ -55,15 +55,15 @@ end
             # test custom division components
 
             # is_term_divisible
-            mh1 = leading_monomial(convert_to_hash_repr(m1, HT))
-            mh2 = leading_monomial(convert_to_hash_repr(m2, HT))
-            flag = is_monom_divisible(mh1, mh2, HT)
+            mh1 = leading_monomial(convert_to_hash_repr(m1, ht))
+            mh2 = leading_monomial(convert_to_hash_repr(m2, ht))
+            flag = is_monom_divisible(mh1, mh2, ht)
             @test flag == true_flag
 
             if flag
-                q = monom_divide(mh1, mh2, HT)
+                q = monom_divide(mh1, mh2, ht)
                 qpoly = HashedPolynomial([q], [ground(1)], R)
-                @test convert_to_original_repr(qpoly, HT) == true_q
+                @test convert_to_original_repr(qpoly, ht) == true_q
             end
         end
     end
@@ -74,7 +74,7 @@ end
 
     ground = GF(2^31-1)
     R, (x, y, z) = PolynomialRing(ground, ["x", "y", "z"])
-    HT = MonomialHashtable(R)
+    ht = MonomialHashtable(R)
 
     ms = [R(1), x, x, x^2, x*y, x*z, y^2, y*z, z^2,
             x*y*z, x^2*y^3*z^4]
@@ -87,18 +87,18 @@ end
 
             # test custom gcd components
 
-            mh1 = leading_monomial(convert_to_hash_repr(m1, HT))
-            mh2 = leading_monomial(convert_to_hash_repr(m2, HT))
-            flag = is_monom_gcd_constant(mh1, mh2, HT)
+            mh1 = leading_monomial(convert_to_hash_repr(m1, ht))
+            mh2 = leading_monomial(convert_to_hash_repr(m2, ht))
+            flag = is_monom_gcd_constant(mh1, mh2, ht)
             @test flag == true_flag
 
-            q = monom_gcd(mh1, mh2, HT)
+            q = monom_gcd(mh1, mh2, ht)
             qpoly = HashedPolynomial([q], [ground(1)], R)
-            @test convert_to_original_repr(qpoly, HT) == true_gcd
+            @test convert_to_original_repr(qpoly, ht) == true_gcd
 
-            q = monom_lcm(mh1, mh2, HT)
+            q = monom_lcm(mh1, mh2, ht)
             qpoly = HashedPolynomial([q], [ground(1)], R)
-            @test convert_to_original_repr(qpoly, HT) == lcm(m1, m2)
+            @test convert_to_original_repr(qpoly, ht) == lcm(m1, m2)
         end
     end
 
@@ -108,7 +108,7 @@ end
 
     ground = GF(2^31-1)
     R, (x, y, z) = PolynomialRing(ground, ["x", "y", "z"])
-    HT = MonomialHashtable(R)
+    ht = MonomialHashtable(R)
 
     ms = [R(1), x, 5x, x^2, x*y, 4x*z, y^2, y*z, z^2,
             3x*y*z, x^2*y^3*z^4]
@@ -118,19 +118,19 @@ end
     for m in ms
         for H in Hs
             true_prod = leading_monomial(m) * H
-            mh1 = leading_monomial(convert_to_hash_repr(m, HT))
-            Hh2 = convert_to_hash_repr(H, HT)
+            mh1 = leading_monomial(convert_to_hash_repr(m, ht))
+            Hh2 = convert_to_hash_repr(H, ht)
 
-            my_prod = monom_poly_product(mh1, Hh2, HT)
-            @test true_prod == convert_to_original_repr(my_prod, HT)
+            my_prod = monom_poly_product(mh1, Hh2, ht)
+            @test true_prod == convert_to_original_repr(my_prod, ht)
 
             ########
 
             true_prod = m * H
 
-            mh1 = leading_term(convert_to_hash_repr(m, HT))
-            my_prod = term_poly_product(mh1, Hh2, HT)
-            @test true_prod == convert_to_original_repr(my_prod, HT)
+            mh1 = leading_term(convert_to_hash_repr(m, ht))
+            my_prod = term_poly_product(mh1, Hh2, ht)
+            @test true_prod == convert_to_original_repr(my_prod, ht)
         end
     end
 

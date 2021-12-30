@@ -27,13 +27,17 @@ import SparseArrays: SparseVector, findnz, nnz
 
 import DataStructures: SortedSet
 
+# we want RadixSort to sort exponents (?)
+import SortingAlgorithms
+
 import IterTools
 
 import UnicodePlots
+using PrettyPrinting
 import Logging
 
 # SparseVector from SparseArrays modified to work with AA
-include("add_ons_to_sa/sparsevectoraa.jl")
+# include("add_ons_to_sa/sparsevectoraa.jl")
 
 include("utils.jl")
 
@@ -41,8 +45,8 @@ include("utils.jl")
 include("modular.jl")
 
 #
-include("add_ons_to_aa/monomial_ops.jl")
-include("add_ons_to_aa/poly_conversions.jl")
+# include("add_ons_to_aa/monomial_ops.jl")
+# include("add_ons_to_aa/poly_conversions.jl")
 
 include("common.jl")
 
@@ -51,21 +55,27 @@ include("common.jl")
 include("testgens.jl")
 
 # f4 implementation over finite fields
-include("f4.jl")
+include("io.jl")
+include("f4/hashes_v2.jl")
+include("f4/hash_f4_v2.jl")
+include("f4/linear.jl")
+include("f4/sorting.jl")
+
+#include("f4.jl")
 #include("polynomials.jl")
 #include("hashes.jl")
 #include("hash_f4.jl")
 
 # fglm implementation over finite fields
-include("fglm.jl")
+# include("fglm.jl")
 
 # everything above is composed here
-include("algorithm.jl")
+# include("algorithm.jl")
 
 
-export f4, fglm
-export rootn
-export groebner
-export is_groebner
+# export f4, fglm
+# export rootn
+# export groebner
+# export is_groebner
 
 end

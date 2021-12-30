@@ -130,6 +130,11 @@ function groebner(
 end
 
 function groebner(fs::Vector{MPoly{GFElem{Int}}})
+    length(fs) > 0 || error("Empty input")
+
+    R = parent(first(fs))
+    ordering(R) in (:degrevlex, ) || error("Only :degrevlex is supported")
+
     f4(fs)
 end
 

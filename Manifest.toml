@@ -443,6 +443,11 @@ git-tree-sha1 = "00cfd92944ca9c760982747e9a1d0d5d86ab1e5a"
 uuid = "21216c6a-2e73-6563-6e65-726566657250"
 version = "1.2.2"
 
+[[PrettyPrinting]]
+git-tree-sha1 = "a5db8a42938bc65c2679406c51a8f5fe9597c6e7"
+uuid = "54e16d92-306c-5ea0-a30b-337be88ac337"
+version = "0.3.2"
+
 [[PrettyTables]]
 deps = ["Crayons", "Formatting", "Markdown", "Reexport", "Tables"]
 git-tree-sha1 = "d940010be611ee9d67064fe559edbb305f8cc0eb"
