@@ -1,47 +1,79 @@
 
 #------------------------------------------------------------------------------
 
-mutable struct Matrix
+mutable struct Matrix{Tv}
     #=
         Matrix of the following structure
 
         | A  B |
         | C  D |
 
-        where A consists of pivots corresponding to
-        first leading monomials in reduction
+        A contains known pivots of reducing rows,
+        and CD are rows to be reduced by AB
+
     =#
 
+    # rows from upper, AB part of the matrix,
+    # stored as vectors of corresponding exponents (already hashed)
+    uprows::Vector{Vector{Int}}
+    # rows from lower, CD part of the matrix,
+    # stored as vectors of corresponding exponents (already hashed)
+    lowrows::Vector{Vector{Int}}
+
+    # maps column idx {1 ... ncols} to monomial hash {2 ... ht.load}
+    # in some (?) hashtable
+    col2hash::Vector{Int}
+
+    # row coefficients
+    # (some of the rows are stored in the basis,
+    #  and some are stored here)
+    coeffs::Vector{Vector{Tv}}
+
+    #= sizes info =#
+    # total number of allocated rows
     size::Int
+    # number of pivots,
+    # ie new basis elements discovered after matrix reduction
     npivots::Int
+    # number of filled rows, nrows <= size
     nrows::Int
+    # number of columns
     ncols::Int
 
-    # number of upper rows (in A and B section)
+    # number of upper rows (in AB section)
     nup::Int
-    # number of lower rows (in C and D section)
+    # number of lower rows (in CD section)
     nlow::Int
-    # number of left cols  (in A and C section)
+    # number of left cols  (in AC section)
     nleft::Int
-    # number of right cols (in B and D section)
+    # number of right cols (in BD section)
     nright::Int
-
-    reducer
-    reduced
-
-    col2hash
-
-    coeffs # hmm
-
 end
 
-function initialize_matrix()
-    return Matrix(0, 0, 0, 0, 0, 0, 0, 0, [], [], [], [])
+function initialize_matrix(ring::PolyRing{Tv}) where {Tv}
+    uprows   = Vector{Vector{Int}}(undef, 0)
+    lowrows  = Vector{Vector{Int}}(undef, 0)
+    col2hash = Vector{Int}(undef, 0)
+    coeffs   = Vector{Vector{Tv}}(undef, 0)
+
+    size    = 0
+    npivots = 0
+    nrows   = 0
+    ncols   = 0
+
+    nup    = 0
+    nlow   = 0
+    nleft  = 0
+    nright = 0
+
+    Matrix(uprows, lowrows, col2hash, coeffs,
+            size, npivots, nrows, ncols,
+            nup, nlow, nleft, nright)
 end
 
 function reinitialize_matrix!(matrix, npairs)
-    resize!(matrix.reducer, npairs*2)
-    resize!(matrix.reduced, npairs*2)
+    resize!(matrix.uprows, npairs*2)
+    resize!(matrix.lowrows, npairs*2)
     matrix.size = 2*npairs
     matrix
 end
@@ -127,11 +159,11 @@ function exact_sparse_rref!(matrix, basis)
     @info ground
 
     # known pivots
-    pivs = copy(matrix.reducer)
+    pivs = copy(matrix.uprows)
 
     # unknown pivots
     # (not discovered yet)
-    upivs = matrix.reduced
+    upivs = matrix.lowrows
 
     col = 1
 
@@ -174,17 +206,17 @@ function exact_sparse_rref!(matrix, basis)
                 dr[ds[j]] = cfs[j]
             end
             npivs += 1
-            matrix.reduced[npivs] = reduce_dense_row_by_known_pivots_sparse!(drl, matrix, basis, pivs, col, 1)
+            matrix.lowrows[npivs] = reduce_dense_row_by_known_pivots_sparse!(drl, matrix, basis, pivs, col, 1)
         end
     end
 
     # shrink matrix
     matrix.npivots = matrix.nrows = matrix.size = npivs
-    resize!(matrix.reduced, npivs)
+    resize!(matrix.lowrows, npivs)
 end
 
 function exact_sparse_linear_algebra!(matrix, basis)
-    resize!(matrix.reduced, matrix.nlow)
+    resize!(matrix.lowrows, matrix.nlow)
     exact_sparse_rref!(matrix, basis)
 end
 
@@ -234,7 +266,7 @@ function convert_hashes_to_columns!(matrix, symbol_ht)
 
     nterms = 0
     for k in 1:matrix.nup
-        row = matrix.reducer[k]
+        row = matrix.uprows[k]
 
         for j in 1:length(row)
             row[j] = hdata[row[j]].idx
@@ -245,7 +277,7 @@ function convert_hashes_to_columns!(matrix, symbol_ht)
     end
 
     for k in 1:matrix.nlow
-        row = matrix.reduced[k]
+        row = matrix.lowrows[k]
 
         for j in 1:length(row)
             row[j] = hdata[row[j]].idx
@@ -256,7 +288,7 @@ function convert_hashes_to_columns!(matrix, symbol_ht)
     end
 
     matrix.ncols = matrix.nleft + matrix.nright
-    
+
     @assert matrix.nleft + matrix.nright == symbol_ht.load == matrix.ncols
     @assert matrix.nlow + matrix.nup == matrix.nrows
 

@@ -76,7 +76,7 @@ function initialize_basis_hash_table(ring::PolyRing{Tv}; initial_size=2^3) where
     ord = ring.ord
 
     # initialize hashing vector
-    hasher = zero(UInt32, explen)
+    hasher = zeros(UInt32, explen)
     for i in 1:explen
         # we don't want hash vector components to be zero
         while hasher[i] == 0
@@ -374,6 +374,32 @@ end
 
 #------------------------------------------------------------------------------
 
+function check_monomial_division_in_update(a, first, last, lcm, ht)
+    # pairs are sorted, we only need to check entries above starting point
+
+    divmask = ht.hashdata[lcm].divmask
+    lcmexp  = ht.exponents[lcm]
+
+    j = first + 1
+    @label Restart
+    while j < last
+        a[j] == 0 && continue
+        (~ht.hashdata[a[j]].divmask & divmask != 0) && continue
+        ea = ht.exponents[a[j]]
+        for i in 1:ht.explen
+            if ea[i] < lcmexp[i]
+                j += 1
+                @goto Restart
+            end
+        end
+        # mark as redundant
+        a[j] = 0
+    end
+
+end
+
+#------------------------------------------------------------------------------
+
 # add monomials from `poly` multiplied by exponent vector `etmp`
 # with hash `htmp` to hashtable `symbol_ht`
 # Who is `row` then?
@@ -416,7 +442,7 @@ function insert_multiplied_poly_in_hash_table!(
         e = bexps[poly[l]]
         println("monom of index $(poly[l]) : $e")
 
-        lastidx = symbolic_ht.load + 1
+        lastidx = symbol_ht.load + 1
         sexps[lastidx] = Vector{UInt16}(undef, explen)
         enew = sexps[lastidx]
         for j in 1:explen
@@ -541,25 +567,34 @@ end
 
 function insert_plcms_in_basis_hash_table!(
         pairset,
+        off,
         ht,
         update_ht,
         basis,
+        plcm,
         ifirst, ilast)
 
     gens  = basis.gens
     mod   = ht.size
+    ps    = pairset.pairs
 
-    # why 1 ?
+    @info "insert plcms in basis hash table" plcm ifirst ilast
+
+    m = ifirst
     l = 1
     @label Letsgo
-    while l < ilast
+    while l <= ilast
         # what? why??
-        if is_gcd_const(gens[pairs[l].poly1][1], gens[pairs[1].poly2][1], ht)
+        if is_gcd_const(gens[ps[off + l].poly1][1], gens[ps[off + 1].poly2][1], ht)
             continue
         end
 
-        h = update_ht.hashdata[pairs[l].lcm].hash
-        ht.exponents[ht.load+1] = copy(update_ht.exponents[update_ht.load+1])
+        ps[m] = ps[off + l]
+
+        @debug "hmm" ht.load ht.size plcm[l] update_ht.size update_ht.load
+
+        h = update_ht.hashdata[plcm[l]].hash
+        ht.exponents[ht.load+1] = copy(update_ht.exponents[plcm[l]])
         n = ht.exponents[ht.load+1]
 
         k = h
@@ -568,12 +603,10 @@ function insert_plcms_in_basis_hash_table!(
         while i < ht.size
             k = (k + i) % mod
             hm = ht.hashtable[k]
-            if hm != 0
-                break
-            end
-            if ht.hashdata[hm].hash != h
-                continue
-            end
+
+            hm != 0 && break
+            ht.hashdata[hm].hash != h && continue
+
             ehm = ht.exponents[hm]
             for j in 1:ht.explen
                 if ehm[j] != n[j]
@@ -582,23 +615,22 @@ function insert_plcms_in_basis_hash_table!(
                 end
             end
 
-            pairs[m].lcm = hm
+            ps[m] = SPair(ps[m].poly1, ps[m].poly2, hm, ps[m].deg)
             m += 1
             l += 1
             @goto Letsgo
         end
 
-        ht.hashtable[k] = pos = ht.load+1
+        ht.hashtable[k] = pos = ht.load + 1
 
         uhd = update_ht.hashdata
 
-        # TODO
-        ht.hashdata[ht.load+1] = Hashvalue(h, 0, 0, 0)
+        ll = plcm[l]
+        ht.hashdata[ht.load + 1] = Hashvalue(h, uhd[ll].divmask, 0, uhd[ll].deg)
 
         ht.load += 1
-        pairs[m].lcm = pos
+        ps[m] = SPair(ps[m].poly1, ps[m].poly2, pos, ps[m].deg)
         m += 1
-
     end
 
 end
