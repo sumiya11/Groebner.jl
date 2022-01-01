@@ -48,6 +48,17 @@ mutable struct Matrix{Tv}
     nleft::Int
     # number of right cols (in BD section)
     nright::Int
+
+    # maps column idx {1 ... ncols} to index of coefficient array
+    # First nleft indices point to coefficients from AB part of the matrix
+    # (these coefficients are owned by the basis struct)
+    # Last nright indices point to coefficients from CD part of the matrix
+    # (these are owned by this object and stored in coeffs array)
+    # Essentially each coefficient array from the first part represents a reducer row,
+    # and each array from the second part stands for a reduced *nonzero* row
+    # should be row to coef
+    up2coef::Vector{Int}
+    low2coef::Vector{Int}
 end
 
 function initialize_matrix(ring::PolyRing{Tv}) where {Tv}
@@ -66,15 +77,26 @@ function initialize_matrix(ring::PolyRing{Tv}) where {Tv}
     nleft  = 0
     nright = 0
 
+    up2coef   = Vector{Int}(undef, 0)
+    low2coef   = Vector{Int}(undef, 0)
+
     Matrix(uprows, lowrows, col2hash, coeffs,
             size, npivots, nrows, ncols,
-            nup, nlow, nleft, nright)
+            nup, nlow, nleft, nright,
+            up2coef, low2coef)
 end
 
 function reinitialize_matrix!(matrix, npairs)
     resize!(matrix.uprows, npairs*2)
     resize!(matrix.lowrows, npairs*2)
+    resize!(matrix.up2coef, npairs*2)
+    resize!(matrix.low2coef, npairs*2)
     matrix.size = 2*npairs
+    matrix.ncols = 0
+    matrix.nleft = 0
+    matrix.nright = 0
+    matrix.nup   = 0
+    matrix.nlow  = 0
     matrix
 end
 
@@ -85,7 +107,7 @@ function normalize_sparse_row!(row)
     for i in 2:length(row)
         row[i] *= pinv
     end
-    row[1] = 1
+    row[1] = one(row[1])
     row
 end
 
@@ -94,16 +116,16 @@ function reduce_dense_row_by_known_pivots_sparse!(
 
     ncols = matrix.ncols
     nleft = matrix.nleft
-    k = 1
+    k = 0
     np = -1
 
     for i in dpiv:ncols
-        # if zero - no reduction
+        # if row element zero - no reduction
         if dr[i] == 0
             continue
         end
         # if pivot not defined
-        if pivs[i] == 0
+        if !isassigned(pivs, i)
             if np == -1
                 np = i
             end
@@ -115,21 +137,24 @@ function reduce_dense_row_by_known_pivots_sparse!(
         dts = pivs[i]
 
         if i <= nleft
-            cfs = basis.coeffs[dts[1]]
+            cfs = basis.coeffs[matrix.up2coef[i]]
         else
-            cfs = matrix.coeffs
+            cfs = matrix.coeffs[matrix.low2coef[i]]
         end
 
+        # TODO: Try doing better //
         for j in 1:length(dts)
-            dr[ds[j]] += mul * cfs[j]
+            dr[dts[j]] -= mul * cfs[j]
         end
     end
 
+    # all reduced !
     if k == 0
-        return C_NULL
+        return Vector{UInt}(undef, k)
     end
 
     # store new row in sparse format
+    # where k - number of structural nonzeros in new reduced row, k > 0
     row = Vector{UInt}(undef, k)
     cf  = Vector{valtype(basis.coeffs[1])}(undef, k)
     j = 1
@@ -170,53 +195,67 @@ function exact_sparse_rref!(matrix, basis)
     for i in 1:nlow
         @debug "low row $i.."
 
+        # select next row to be reduced
         npiv = upivs[i]
+
         # corresponding coefficients from basis
+        # (no need to copy)
         # we need to locate it somehow
-        cfs  = basis.coeffs[i] # TODO
+        cfs  = basis.coeffs[matrix.up2coef[i]] # TODO
 
         k = 0
-        drl = zeros(ground, ncols)
 
+        # we load coefficients into dense array
+        # TODO: move this
+        drl = zeros(ground, ncols)
         for j in 1:length(npiv)
             drl[npiv[j]] = cfs[j]
         end
 
+        # reduce it with known pivots from matrix.up
         npiv = reduce_dense_row_by_known_pivots_sparse!(drl, matrix, basis, pivs, col, i)
-        (npiv == 0) && break
+        # if fully reduced
+        isempty(npiv) && continue
 
-        if matrix.coeffs[npiv[1]][1] != 1
-            normalize_sparse_row!(matrix.coeffs[npiv[1]])
+        if matrix.coeffs[i][1] != 1
+            normalize_sparse_row!(matrix.coeffs[i])
         end
-
-        cfs = matrix.coeffs[npiv[1]]
     end
 
+    @debug "interreducing rows.."
+    @info "matrix before::"
+    dump(matrix, maxdepth=4)
     # number of new pivots
     npivs = 0
 
     # interreduce new pivots
     for i in 1:nright
-        k = ncols - 1 - i
-        if pivs[k]
+        k = ncols - i
+        @info "interrrrreducing " k
+        if isassigned(matrix.lowrows, k)
+            ds = matrix.lowrows[k]
             col = ds[1]
-            dr = zeros(Int, ncols)
-            cfs = matrix.coeffs[pivs[k][1]]
+            dr = zeros(ground, ncols)
+            cfs = matrix.coeffs[k]
             for j in 1:length(cfs)
                 dr[ds[j]] = cfs[j]
             end
             npivs += 1
-            matrix.lowrows[npivs] = reduce_dense_row_by_known_pivots_sparse!(drl, matrix, basis, pivs, col, 1)
+            matrix.lowrows[npivs] = reduce_dense_row_by_known_pivots_sparse!(dr, matrix, basis, pivs, col, 1)
         end
     end
 
     # shrink matrix
     matrix.npivots = matrix.nrows = matrix.size = npivs
-    resize!(matrix.lowrows, npivs)
+    # resize!(matrix.lowrows, npivs)
 end
 
 function exact_sparse_linear_algebra!(matrix, basis)
-    resize!(matrix.lowrows, matrix.nlow)
+    resize!(matrix.coeffs, matrix.nlow)
+
+    @info "matrix in reduction"
+    dump(matrix, maxdepth=3)
+
     exact_sparse_rref!(matrix, basis)
 end
 
@@ -296,18 +335,25 @@ function convert_hashes_to_columns!(matrix, symbol_ht)
 end
 
 
-function convert_matrix_rows_to_basis_elements(
-            matrix, state, basis_ht, symbol_ht, col2hash)
+function convert_matrix_rows_to_basis_elements!(
+            matrix, basis, ht, symbol_ht)
 
     # we mutate basis array directly by adding new elements
 
-    crs = state.basis.load
+    check_enlarge_basis!(basis, matrix.npivots)
+    rows = matrix.lowrows
+    crs = basis.ndone
 
-    for i in 1:matrix.np
-        insert_in_basis_hash_table_pivots(rows[i], basis_ht, symbol_ht, col2hash)
+    dump(matrix, maxdepth=4)
+
+    for i in 1:matrix.npivots
+        @info "converting matrix to basis" i rows[i]
+        insert_in_basis_hash_table_pivots(rows[i], ht, symbol_ht, matrix.col2hash)
         # TODO : a constant
 
-        state.basis.coeffs[crs + i]      = matrix.coeffs[i]
-        state.basis.basis_polys[crs + i] = matrix.reduced[i]
+        basis.coeffs[crs + i] = matrix.coeffs[i]
+        basis.gens[crs + i] = matrix.lowrows[i]
     end
+
+    basis.ntotal += matrix.npivots
 end

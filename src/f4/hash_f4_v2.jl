@@ -72,7 +72,7 @@ mutable struct Basis{Tv}
 
     #= Keeping track of redundancy =#
     #= invariant =#
-    #= length(lead) == length(nonred) == count(isred) =#
+    #= length(lead) == length(nonred) == count(isred) == nlead =#
     # if element of the basis
     # is redundant
     isred::Vector{Int8}
@@ -81,6 +81,8 @@ mutable struct Basis{Tv}
     # division masks of leading monomials of
     # non redundant basis elements
     lead::Vector{UInt32}
+    # number of filled elements in lead
+    nlead::Int
 end
 
 function initialize_basis(ring::PolyRing{Tv}, ngens) where {Tv}
@@ -96,10 +98,21 @@ function initialize_basis(ring::PolyRing{Tv}, ngens) where {Tv}
     gens   = Vector{Vector{Int}}(undef, sz)
     coeffs = Vector{Vector{Tv}}(undef, sz)
     isred  = zeros(Int8, sz)
-    nonred = Vector{Int}(undef, ndone)
-    lead = Vector{UInt32}(undef, ndone)
+    nonred = Vector{Int}(undef, sz)
+    lead = Vector{UInt32}(undef, sz)
 
-    return Basis{Tv}(gens, coeffs, sz, ndone, ntotal, isred, nonred, lead)
+    return Basis{Tv}(gens, coeffs, sz, ndone, ntotal, isred, nonred, lead, 0)
+end
+
+function check_enlarge_basis!(basis, added::Int)
+    if basis.ndone + added >= basis.size
+        basis.size = max(basis.size * 2, basis.ndone + added)
+        resize!(basis.gens, basis.size)
+        resize!(basis.coeffs, basis.size)
+        resize!(basis.isred, basis.size)
+        resize!(basis.nonred, basis.size)
+        resize!(basis.lead, basis.size)
+    end
 end
 
 function normalize_basis!(basis)
@@ -115,26 +128,24 @@ end
 
 #------------------------------------------------------------------------------
 
-# Normal selection strategy
-# Given an array of pairs, selects all of the lowest degree
-# where the degree of (f, g) is equal to the degree of lcm(lm(f), lm(g))
+
 function select_normal!(pairset, basis, matrix, ht, symbol_ht; maxpairs=0)
 
     println("Pairsload: $(pairset.load)")
     println("Critical pairs: $(pairset.pairs[1:pairset.load])")
 
-    sort_pairset_by_degree!(pairset)
+    sort_pairset_by_degree!(pairset, pairset.load)
     # sort by degree
 
-    pairs = pairset.pairs
-    min_deg = pairs[1].deg
+    ps = pairset.pairs
+    min_deg = ps[1].deg
 
     println("Critical pairs: $(pairset.pairs[1:pairset.load])")
     @info "Min degree is " min_deg
 
     min_idx = 0
     # beda with boundaries
-    while min_idx < pairset.load && pairs[min_idx + 1].deg == min_deg
+    while min_idx < pairset.load && ps[min_idx + 1].deg == min_deg
         min_idx += 1
     end
 
@@ -158,17 +169,17 @@ function select_normal!(pairset, basis, matrix, ht, symbol_ht; maxpairs=0)
     while i <= npairs
         matrix.ncols += 1
         load = 1
-        lcm = pairs[i].lcm
+        lcm = ps[i].lcm
         j = i
 
         @info "handling pair $i with lcm $lcm"
         @info "btw, its exponent is" ht.exponents[lcm]
         # we collect all generators with same lcm into gens
 
-        while j <= npairs && pairs[j].lcm == lcm
-            gens[load] = pairs[j].poly1
+        while j <= npairs && ps[j].lcm == lcm
+            gens[load] = ps[j].poly1
             load += 1
-            gens[load] = pairs[j].poly2
+            gens[load] = ps[j].poly2
             load += 1
             j += 1
         end
@@ -181,6 +192,7 @@ function select_normal!(pairset, basis, matrix, ht, symbol_ht; maxpairs=0)
         # sort by sparsity ?
         # upd: yes!
         # upd: no!
+        # sort by number in the basis (sort by itself)
         sort_generators_by_something!(gens, load, basis)
 
         println("sorted gens:", gens)
@@ -213,6 +225,8 @@ function select_normal!(pairset, basis, matrix, ht, symbol_ht; maxpairs=0)
         # add row as a reducer
         matrix.nup += 1
         uprows[matrix.nup] = multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly)
+        # map upper row to index in basis
+        matrix.up2coef[matrix.nup] = prev
         @info "inserted reducer row " matrix.nup uprows[matrix.nup]
 
         # TODO: nreduce increment
@@ -235,8 +249,9 @@ function select_normal!(pairset, basis, matrix, ht, symbol_ht; maxpairs=0)
             prev = gens[k]
             # poly of indices of monoms in hash table
             poly = basis.gens[prev]
+            vidx = poly[1]
             # leading monom idx
-            eidx = ht.exponents[poly[1]]
+            eidx = ht.exponents[vidx]
             for u in 1:ht.explen
                 etmp[u] = elcm[u] - eidx[u]
             end
@@ -246,7 +261,8 @@ function select_normal!(pairset, basis, matrix, ht, symbol_ht; maxpairs=0)
             # add row to be reduced
             matrix.nlow += 1
             lowrows[matrix.nlow] = multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly)
-
+            # map lower row to index in basis
+            matrix.low2coef[matrix.nlow] = prev
             @info "inserted reduced row " matrix.nlow lowrows[matrix.nlow]
 
             symbol_ht.hashdata[lowrows[matrix.nlow][1]].idx = 2
@@ -259,6 +275,12 @@ function select_normal!(pairset, basis, matrix, ht, symbol_ht; maxpairs=0)
     end
 
     resize!(matrix.lowrows, matrix.nrows - matrix.ncols)
+
+    # remove selected parirs from pairset
+    for i in 1:pairset.load - npairs
+        ps[i] = ps[i + npairs]
+    end
+    pairset.load -= npairs
 
 end
 
@@ -281,7 +303,11 @@ function reduction!(basis, matrix, ht, symbol_ht; linalg=:sparse)
 
      exact_sparse_linear_algebra!(matrix, basis)
 
-     convert_matrix_rows_to_basis_elems!(matrix, basis, symbol_ht)
+
+     printstyled("### AFTER RREF ###\n", color=:red)
+     dump(matrix, maxdepth=4)
+     
+     convert_matrix_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 end
 
 #------------------------------------------------------------------------------
@@ -323,7 +349,8 @@ function find_multiplied_reducer!(basis, matrix, ht, symbol_ht, vidx)
         h = symbol_ht.hashdata[vidx].hash - ht.hashdata[rpoly[1]].hash
 
         nreducer = matrix.nup
-        matrix.reducer[matrix.nup + 1] = multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, rpoly)
+        matrix.uprows[matrix.nup + 1] = multiplied_poly_to_matrix_row!(symbol_ht, ht, h, copy(etmp), rpoly)
+        matrix.up2coef[matrix.nup + 1] = rpoly
 
         # upsize matrix
         symbol_ht.hashdata[vidx].idx = 2
@@ -367,7 +394,7 @@ function symbolic_preprocessing!(
     i = 2
     #= First round, we add multiplied polynomials which divide  =#
     #= a monomial exponent from selected spairs                 =#
-    while i < symbol_load
+    while i <= symbol_load
         # not a reducer
         if symbol_ht.hashdata[i].idx == 0
             @info "find_multiplied_reducer for $i"
@@ -382,7 +409,7 @@ function symbolic_preprocessing!(
 
     #= Second round, we add multiplied polynomials which divide  =#
     #= lcm added on previous for loop                             =#
-    while i < symbol_ht.load
+    while i <= symbol_ht.load
         if matrix.size == nrr
             matrix.size *= 2
             resize!(matrix.uprows, matrix.size)
@@ -433,6 +460,7 @@ function update_pairset!(
     # generate a pair
     for i in 1:basis.ntotal
         plcm[i] = get_lcm(basis.gens[i][1], new_lead, ht, update_ht)
+        @debug "new plcm" plcm[i]
         deg = update_ht.hashdata[plcm[i]].deg
         newidx = pl + i
         if basis.isred[i] == 0
@@ -442,6 +470,8 @@ function update_pairset!(
             ps[newidx] = SPair(i, idx, 0, deg)
         end
     end
+
+    @debug "INSIDE 1" ht update_ht
 
     @info "generated pairset" pairset
 
@@ -515,7 +545,7 @@ function update_pairset!(
 
     # mark redundant elements in masis
     nonred = basis.nonred
-    lml = length(nonred)
+    lml = basis.nlead
     for i in 1:lml
         if basis.isred[nonred[i]] == 0
             if is_monom_divisible(basis.gens[nonred[i]][1], new_lead, ht)
@@ -524,7 +554,6 @@ function update_pairset!(
         end
     end
 
-    basis.load += 1
 end
 
 function update_basis!(
@@ -538,29 +567,31 @@ function update_basis!(
     lead   = basis.lead
     nonred = basis.nonred
 
-    @info "updating basis & lead" lead nonred basis.isred
-    for i in 1:length(nonred)
-        if basis.red[nonred[i]] == 0
+    @info "basis" basis.ndone basis.ntotal
+    @info "updating basis & lead" lead nonred basis.isred basis.nlead
+    for i in 1:basis.nlead
+        if basis.isred[nonred[i]] == 0
             basis.lead[k]   = lead[i]
             basis.nonred[k] = nonred[i]
             k += 1
         end
     end
-    resize!(nonred, k - 1)
+    basis.nlead = k - 1
 
-    @info "updated #1" lead nonred basis.isred
+    @info "updated #1" lead nonred basis.isred basis.nlead
 
     for i in basis.ndone+1:basis.ntotal
-        if basis.red[i] == 0
+        if basis.isred[i] == 0
             lead[k]   = ht.hashdata[basis.gens[i][1]].divmask
             nonred[k] = i
             k += 1
         end
     end
 
-    @info "updated #2" lead nonred basis.isred
-
+    basis.nlead = k - 1
     basis.ndone = basis.ntotal
+
+    @info "updated #2" lead nonred basis.isred basis.nlead
 end
 
 # checks if element of basis at position idx is redundant
@@ -594,7 +625,6 @@ function is_redundant!(
             pairs[psidx] = SPair(i, idx, lcm_new, ht.hashdata[lcm_new].deg)
 
             basis.isred[idx] = 1
-            basis.ndone  += 1
             pairset.load += 1
 
             return true
@@ -633,7 +663,7 @@ function update!(
     # TODO: better to reinitialize here, or in is_redundant! ?
     reinitialize_hash_table!(update_ht, basis.ntotal)
 
-    @debug "status" pairset update_ht
+    @debug "status ONE" pairset ht update_ht
 
     # for each new element in basis
     for i in basis.ndone+1:basis.ntotal
@@ -645,7 +675,11 @@ function update!(
         end
         @info "Not redundant!"
 
+        @debug "status TWO $i" pairset ht update_ht
+
         update_pairset!(pairset, basis, ht, update_ht, i)
+
+        @debug "status THREE $i" pairset ht update_ht
     end
 
     update_basis!(basis, ht, update_ht)
@@ -754,9 +788,11 @@ function f4(polys::Vector{MPoly{Tv}};
             tablesize=2^16) where {Tv}
 
     ring, exps, coeffs = convert_to_internal(polys)
-    f4(ring, exps, coeffs;
+    gb, ht = f4(ring, exps, coeffs;
         select=select, reduced=reduced,
         linalg=linalg, maxpairs=maxpairs, tablesize=tablesize )
+
+    export_basis(parent(first(polys)), gb, ht)
 end
 
 #
@@ -844,10 +880,11 @@ function f4(ring::PolyRing,
     end
 
     if reduced
-        reduce_basis!(basis, matrix)
+        # TODO
+        # reduce_basis!(basis, matrix)
     end
 
-    basis
+    basis, ht
 end
 
 #------------------------------------------------------------------------------

@@ -18,7 +18,7 @@ import AbstractAlgebra: leading_term, QQ, PolynomialRing, terms,
 
 # hmm??
 # We do not want this
-import Nemo
+# import Nemo
 
 import Combinatorics
 import Primes
@@ -42,7 +42,7 @@ import Logging
 include("utils.jl")
 
 # Modular computations: reduction and reconstrction of coefficients
-include("modular.jl")
+# include("modular.jl")
 
 #
 # include("add_ons_to_aa/monomial_ops.jl")
@@ -60,6 +60,8 @@ include("f4/hashes_v2.jl")
 include("f4/hash_f4_v2.jl")
 include("f4/linear.jl")
 include("f4/sorting.jl")
+include("f4/statistics.jl")
+
 
 #include("f4.jl")
 #include("polynomials.jl")

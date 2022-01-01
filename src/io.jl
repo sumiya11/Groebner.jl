@@ -41,3 +41,13 @@ function convert_to_internal(orig_polys::Vector{MPoly{Tv}}) where {Tv}
     println(exps, coeffs)
     return ring, exps, coeffs
 end
+
+function export_basis(ring::MPolyRing{T}, basis, ht) where {T}
+    ans = Vector{elem_type(ring)}(undef, basis.ndone)
+    for i in 1:basis.ndone
+        cfs  = basis.coeffs[i]
+        exps = [ht.exponents[vidx] for vidx in basis.gens[i]]
+        ans[i] = MPoly{T}(ring, cfs, UInt.(hcat(exps...)))
+    end
+    ans
+end

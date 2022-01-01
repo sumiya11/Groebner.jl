@@ -19,6 +19,10 @@ mutable struct Hashvalue
     deg::Int
 end
 
+#=
+    Hashtable implementing linear probing
+    and designed to store and operate with monomials
+=#
 mutable struct CustomMonomialHashtable
     # stores monomial exponent vectors,
     # assumes degrees are < 2^16
@@ -80,6 +84,7 @@ function initialize_basis_hash_table(ring::PolyRing{Tv}; initial_size=2^3) where
     for i in 1:explen
         # we don't want hash vector components to be zero
         while hasher[i] == 0
+            # TODO: pass random generator
             hasher[i] = rand(UInt32)
         end
     end
@@ -461,7 +466,10 @@ function insert_multiplied_poly_in_hash_table!(
             # if index is free
             vidx == 0 && break
             # if different exponent is stored here
-            sdata[vidx].hash != h && continue
+            if sdata[vidx].hash != h
+                i += 1
+                continue
+            end
 
             estored = sexps[vidx]
             for j in 1:explen
@@ -524,6 +532,7 @@ function insert_in_basis_hash_table_pivots(
     l = 1
     @label Letsgo
     while l <= length(row)
+        @debug "iter " l col2hash row
         hidx = col2hash[row[l]]
         h    = sdata[hidx].hash
 
@@ -534,14 +543,17 @@ function insert_in_basis_hash_table_pivots(
         k = h
         i = 0
         @label Restart
-        while i < ht.size
+        while i <= ht.size
             k = (k + i) % mod + 1
             hm = bhash[k]
 
             hm == 0 && break
-            bdata[hm].hash != h && continue
+            if bdata[hm].hash != h
+                i += 1
+                continue
+            end
 
-            ehm = exps[hm]
+            ehm = bexps[hm]
             for j in 1:explen
                 if e[j] != ehm[j]
                     i += 1
@@ -554,8 +566,9 @@ function insert_in_basis_hash_table_pivots(
             @goto Letsgo
         end
 
-        hmap[k] = pos = lastidx
+        bhash[k] = pos = lastidx
         row[l] = pos
+        l += 1
 
         bdata[k] = Hashvalue(h, sdata[hidx].divmask,
                              sdata[hidx].idx, sdata[hidx].deg)
@@ -574,18 +587,29 @@ function insert_plcms_in_basis_hash_table!(
         plcm,
         ifirst, ilast)
 
+    # AAAAAAAAAAA
+
     gens  = basis.gens
     mod   = ht.size
     ps    = pairset.pairs
 
     @info "insert plcms in basis hash table" plcm ifirst ilast
 
+    printstyled("## DUMP BASIS HASHMAP ##" , color=:red)
+    dump(ht, maxdepth=3)
+
     m = ifirst
     l = 1
     @label Letsgo
     while l <= ilast
+        if plcm[l] == 0
+            l += 1
+            continue
+        end
+
         # what? why??
         if is_gcd_const(gens[ps[off + l].poly1][1], gens[ps[off + 1].poly2][1], ht)
+            l += 1
             continue
         end
 
@@ -593,21 +617,30 @@ function insert_plcms_in_basis_hash_table!(
 
         @debug "hmm" ht.load ht.size plcm[l] update_ht.size update_ht.load
 
+        # IT IS NOT CORRECT
         h = update_ht.hashdata[plcm[l]].hash
+        # TODO: move below Restart scope
         ht.exponents[ht.load+1] = copy(update_ht.exponents[plcm[l]])
         n = ht.exponents[ht.load+1]
 
         k = h
         i = 0
         @label Restart
-        while i < ht.size
-            k = (k + i) % mod
+        while i <= ht.size
+            k = (k + i) % mod + 1
             hm = ht.hashtable[k]
 
-            hm != 0 && break
-            ht.hashdata[hm].hash != h && continue
+            @info "hashes are " k hm h
+
+            hm == 0 && break
+            if ht.hashdata[hm].hash != h
+                i += 1
+                continue
+            end
 
             ehm = ht.exponents[hm]
+
+            @info "SO, we have " n ehm
             for j in 1:ht.explen
                 if ehm[j] != n[j]
                     i += 1
@@ -641,7 +674,7 @@ end
 function get_lcm(he1, he2, ht1, ht2)
     e1   = ht1.exponents[he1]
     e2   = ht1.exponents[he2]
-    etmp = ht1.exponents[1]
+    etmp = copy(ht1.exponents[1])
 
     # TODO: degrevlex only
     etmp[end] = 0
@@ -649,6 +682,8 @@ function get_lcm(he1, he2, ht1, ht2)
         etmp[i]    = max(e1[i], e2[i])
         etmp[end] += etmp[i]
     end
+
+    @debug "inserting $etmp into update!!"
 
     insert_in_hash_table!(ht2, etmp)
 end
