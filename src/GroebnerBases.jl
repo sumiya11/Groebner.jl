@@ -15,15 +15,11 @@ import AbstractAlgebra: leading_term, QQ, PolynomialRing, terms,
                         lcm, monomial, RingElem, set_exponent_vector!,
                         MPolyRing, nvars
 
-
-# hmm??
-# We do not want this
-# import Nemo
-
 import Combinatorics
 import Primes
 import Primes: nextprime
 import SparseArrays: SparseVector, findnz, nnz
+import Random
 
 import DataStructures: SortedSet
 
@@ -56,8 +52,8 @@ include("testgens.jl")
 
 # f4 implementation over finite fields
 include("io.jl")
-include("f4/hashes_v2.jl")
-include("f4/hash_f4_v2.jl")
+include("f4/hash.jl")
+include("f4/f4.jl")
 include("f4/linear.jl")
 include("f4/sorting.jl")
 include("f4/statistics.jl")
@@ -69,7 +65,7 @@ include("f4/statistics.jl")
 #include("hash_f4.jl")
 
 # fglm implementation over finite fields
-# include("fglm.jl")
+# include("fglm/fglm.jl")
 
 # everything above is composed here
 # include("algorithm.jl")

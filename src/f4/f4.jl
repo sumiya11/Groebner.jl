@@ -2,337 +2,297 @@
 #=
     The file contains implementation of the F4 algorithm,
     described originally by Jean-Charles Faugere in
-        A new efficient algorithm for computing Grobner bases
-=#
-
-#=
-    TODO:
-        - warning if input set is empty / zero ?
+        "A new efficient algorithm for computing Grobner bases"
 =#
 
 #------------------------------------------------------------------------------
 
-# Stores the state of the Groebner basis and pairs to be assessed
-mutable struct GroebnerState
-    G::Vector{MPoly{GFElem{Int}}}
-    P::Vector{Tuple{MPoly{GFElem{Int}}, MPoly{GFElem{Int}}}}
-end
-
-Base.iterate(x::GroebnerState) = (x.G, 1)
-Base.iterate(x::GroebnerState, state) = state == 1 ? (x.P, 2) : nothing
-
-GroebnerState() = GroebnerState([], [])
+#
 
 #------------------------------------------------------------------------------
 
-function leading_monomials(polys::T) where {T<:AbstractArray}
-    map(leading_monomial, polys)
+# s-pair, a pair of polynomials
+struct SPair
+    # first generator as index from the basis array
+    poly1::Int
+    # second generator -//-
+    poly2::Int
+    # position of lcm(poly1, poly2) in hashtable
+    lcm::Int
+    # total degree of lcm
+    deg::UInt
 end
 
-function AbstractAlgebra.terms(polys::T) where {T<:AbstractArray}
-    union(map(collect ∘ terms, polys)...)
+mutable struct Pairset
+    pairs::Vector{SPair}
+    # number of filled pairs,
+    # Initially zero
+    load::Int
 end
 
-# This is slow
-function AbstractAlgebra.monomials(polys::Vector{T}) where {T}
-    ans = Set{T}()
-    for poly in polys
-        for m in monomials(poly)
-            push!(ans, m)
+function initialize_pairset(; initial_size=2^6) # TODO: why 64?
+    pairs = Vector{SPair}(undef, initial_size)
+    return Pairset(pairs, 0)
+end
+
+function Base.isempty(ps::Pairset)
+    return ps.load == 0
+end
+
+function check_enlarge_pairset!(ps::Pairset, added::Int)
+    sz = length(ps.pairs)
+    if ps.load + added >= sz
+        newsz = max(2 * sz, ps.load + added)
+        resize!(ps.pairs, newsz)
+    end
+end
+
+#------------------------------------------------------------------------------
+
+# TODO: get rid of `Tv` dependency
+mutable struct Basis{Tv}
+    # vector of polynomials, each polynomial is a vector of monomials,
+    # each monomial is represented with it's position in hashtable
+    gens::Vector{Vector{Int}}
+    # polynomial coefficients
+    coeffs::Vector{Vector{Tv}}
+
+    #= Keeping track of sizes   =#
+    #=  ndone <= ntotal <= size =#
+    # total allocated size,
+    # size == length(gens) is always true
+    size::Int
+    # number of processed polynomials in `gens`
+    # Iitially a zero
+    ndone::Int
+    # total number of polys filled in `gens`
+    # (these will be handled during next update! call)
+    # Iitially a zero
+    ntotal::Int
+
+    #= Keeping track of redundancy =#
+    #= invariant =#
+    #= length(lead) == length(nonred) == count(isred) == nlead =#
+    # if element of the basis
+    # is redundant
+    isred::Vector{Int8}
+    # positions of non-redundant elements in the basis
+    nonred::Vector{Int}
+    # division masks of leading monomials of
+    # non redundant basis elements
+    lead::Vector{UInt32}
+    # number of filled elements in lead
+    nlead::Int
+end
+
+function initialize_basis(ring::PolyRing{Tv}, ngens) where {Tv}
+    #=
+        always true
+        length(gens) == length(coeffs) == length(isred) == size
+    =#
+
+    sz     = ngens * 2
+    ndone  = 0
+    ntotal = 0
+    nlead  = 0
+
+    gens   = Vector{Vector{Int}}(undef, sz)
+    coeffs = Vector{Vector{Tv}}(undef, sz)
+    isred  = zeros(Int8, sz)
+    nonred = Vector{Int}(undef, sz)
+    lead = Vector{UInt32}(undef, sz)
+
+    return Basis{Tv}(gens, coeffs, sz, ndone, ntotal, isred, nonred, lead, nlead)
+end
+
+function check_enlarge_basis!(basis, added::Int)
+    if basis.ndone + added >= basis.size
+        basis.size = max(basis.size * 2, basis.ndone + added)
+        resize!(basis.gens, basis.size)
+        resize!(basis.coeffs, basis.size)
+        resize!(basis.isred, basis.size)
+        resize!(basis.nonred, basis.size)
+        resize!(basis.lead, basis.size)
+    end
+end
+
+function normalize_basis!(basis)
+    cfs = basis.coeffs
+    for i in 1:basis.ntotal
+        mul = inv(cfs[i][1])
+        for j in 2:length(cfs[i])
+            cfs[i][j] *= mul
         end
+        cfs[i][1] = one(cfs[i][1])
     end
-    collect(ans)
 end
 
 #------------------------------------------------------------------------------
 
-# Returns degree of the given pair of polynomials, defined as
-# the degree of the LCM of the leading terms of these polys
-pairdegree(x, y) = sum(degrees(lcm(leading_monomial(x), leading_monomial(y))))
-pairdegree(p) = pairdegree(p...)
 
-# Normal selection strategy
-# Given an array of pairs, selects all of the lowest degree
-# where the degree of (f, g) is equal to the degree of lcm(lm(f), lm(g))
-function selectnormal(criticalpairs; maxpairs=0)
-    d = minimum(pairdegree(pair) for pair in criticalpairs)
-    selected = filter(p -> pairdegree(p) == d, criticalpairs)
+function select_normal!(pairset, basis, matrix, ht, symbol_ht; maxpairs=0)
 
-    if maxpairs != 0
-        selected = selected[1:min(maxpairs, length(selected))]
+    println("Pairsload: $(pairset.load)")
+    println("Critical pairs: $(pairset.pairs[1:pairset.load])")
+
+    sort_pairset_by_degree!(pairset, 1, pairset.load)
+    # sort by degree
+
+    ps = pairset.pairs
+    min_deg = ps[1].deg
+
+    println("Critical pairs: $(pairset.pairs[1:pairset.load])")
+    @info "Min degree is " min_deg
+
+    min_idx = 0
+    # beda with boundaries
+    while min_idx < pairset.load && ps[min_idx + 1].deg == min_deg
+        min_idx += 1
     end
 
-    filter!(p -> !(p in selected), criticalpairs)
-    selected
-end
+    # number of selected pairs
+    npairs = min_idx
 
-#------------------------------------------------------------------------------
+    sort_pairset_by_lcm!(pairset, npairs, ht)
 
-# Given pairs (f, g) constructs an array of pairs (t, f) such that
-#   t*lead(f) == m*lead(g)
-function leftright(ps)
-    T = eltype(ps)
+    reinitialize_matrix!(matrix, npairs)
 
-    left = T[]
-    right = T[]
+    uprows  = matrix.uprows
+    lowrows = matrix.lowrows
 
-    for (fi, fj) in ps
-        lti = leading_monomial(fi)
-        ltj = leading_monomial(fj)
-        lcmij = lcm(lti, ltj)
+    # polynomials from pairs in order (p11, p12)(p21, p21)
+    # (future rows of the matrix)
+    gens   = Vector{Int}(undef, 2*npairs)
 
-        push!(left, (div(lcmij, lti), fi))
-        push!(right, (div(lcmij, ltj), fj))
-    end
+    # buffer !
+    etmp = ht.exponents[1]
 
-    union!(left, right)
-end
-
-#------------------------------------------------------------------------------
-
-# constructs the matrix rows from the given polynomials F wrt monomials Tf
-# and sorts them to obtain triangular shape
-function constructrows_dense(F, Tf)
-    # zero rows to fill
-    rows = map(_ -> zeros(base_ring(first(F)), length(Tf)), 1:length(F))
-    for i in 1:length(F)
-        for j in 1:length(Tf)
-            rows[i][j] = coeff(F[i], Tf[j])
-        end
-    end
-    triangular_pred = row -> (findfirst(!iszero, row), count(iszero, row))
-    sort!(rows, by=triangular_pred, rev=true)
-end
-
-# performs (almost backward) gaussian elimination
-# in a dense deterministic format,
-# assumes the given matrix is in triangular shape
-function rref_dense!(A)
-    m, n = length(A), length(first(A))
+    @info "Other things " min_idx npairs
 
     i = 1
-    while i <= m
-        while i <= m && iszero(A[i])
-            i += 1
+    while i <= npairs
+        matrix.ncols += 1
+        load = 1
+        lcm = ps[i].lcm
+        j = i
+
+        @info "handling pair $i with lcm $lcm"
+        @info "btw, its exponent is" ht.exponents[lcm]
+        # we collect all generators with same lcm into gens
+
+        while j <= npairs && ps[j].lcm == lcm
+            gens[load] = ps[j].poly1
+            load += 1
+            gens[load] = ps[j].poly2
+            load += 1
+            j += 1
         end
-        (i > m) && break
+        load -= 1
 
-        pivot = findfirst(!iszero, A[i])
-        A[i] .//= A[i][pivot]
-        for j in i+1:m
-            A[j] .-= A[i] .* A[j][pivot]
+        @info "collected $(load) polys with same lcm"
+        println("gens now:", gens)
+
+
+        # sort by sparsity ?
+        # upd: yes!
+        # upd: no!
+        # sort by number in the basis (by=identity)
+        sort_generators_by_position!(gens, load)
+
+        println("sorted gens:", gens)
+
+        # now we collect reducers, and reduced
+
+        # first generator index in groebner basis
+        prev = gens[1]
+        # first generator in hash table
+        poly = basis.gens[prev]
+        # first generator lead monomial index in hash data
+        vidx = poly[1]
+
+        # first generator exponent
+        eidx = ht.exponents[vidx]
+        # exponent of lcm corresponding to first generator
+        elcm = ht.exponents[lcm]
+
+        @info "? divides" elcm eidx
+
+        for u in 1:ht.explen
+            etmp[u] = elcm[u] - eidx[u]
         end
-        i += 1
-    end
+        # now etmp contents complement to eidx in elcm
+        @info "q = " etmp
 
-    A
-end
+        # hash of complement
+        htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
 
-# Constructs polynomials from the coefficients of rows
-# given in rref
-function constructpolys_dense(rrefrows, Tf)
-    m, n = length(rrefrows), length(first(rrefrows))
-    targetring = parent(first(Tf))
-    ground = base_ring(targetring)
+        # add row as a reducer
+        matrix.nup += 1
+        uprows[matrix.nup] = multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly)
+        # map upper row to index in basis
+        matrix.up2coef[matrix.nup] = prev
+        @info "inserted reducer row " matrix.nup uprows[matrix.nup]
 
-    ans = zeros(targetring, 0)
+        # TODO: nreduce increment
 
-    # for each row..
-    for i in 1:m
-        if iszero(rrefrows[i])
-            continue
-        end
+        # mark lcm column as reducer in symbolic hashtable
+        symbol_ht.hashdata[uprows[matrix.nup][1]].idx = 2
+        # increase number of rows set
+        matrix.nrows += 1
 
-        builder = MPolyBuildCtx(targetring)
-        # for each coeff in a row..
-        for j in findfirst(!iszero, rrefrows[i]):n
-            if iszero(rrefrows[i][j])
+        # over all polys with same lcm,
+        # add them to the lower part of matrix
+        for k in 1:load
+            # duplicate generator,
+            # we can do so as long as generators are sorted
+            if gens[k] == prev
                 continue
             end
-            push_term!(builder, rrefrows[i][j], exponent_vector(Tf[j], 1))
-        end
 
-        push!(ans, finish(builder))
-    end
+            # if the table was reallocated
+            elcm = ht.exponents[lcm]
 
-    ans
-end
-
-#------------------------------------------------------------------------------
-
-# constructs the matrix rows from the given polynomials F wrt monomials Tf
-# and sorts them to obtain triangular shape
-#
-# We returns the vectors sorted by pivot and then by sparsity
-function constructrows_sparse(F, Tf)
-    # zero rows to fill
-    ground = base_ring(first(Tf))
-    rows = map(
-        f -> SparseVectorAA(
-                    length(Tf),
-                    collect(1:length(F[f])),
-                    zeros(ground, length(F[f])),
-                    ground(0) ),
-        1:length(F)
-    )
-
-    for i in 1:length(F)
-        for (j, c, m) in zip(1:length(F[i]), coefficients(F[i]), monomials(F[i]))
-            ind = searchsortedfirst(Tf, m, rev=true)
-            # we can eliminate these allocations
-            rows[i].nzval[j] = c
-            rows[i].nzind[j] = ind
-        end
-    end
-
-    triangular_pred = row -> (first(row.nzind), -nnz(row))
-    sort!(rows, by=triangular_pred, rev=true)
-end
-
-# performs (almost backward) gaussian elimination
-# in a dense deterministic format,
-# assumes the given matrix is in triangular shape
-function rref_sparse!(A)
-    m, n = length(A), length(first(A))
-
-    i = 1
-
-    while i <= m
-        while i <= m && nnz(A[i]) == 0
-            i += 1
-        end
-        (i > m) && break
-
-        pivot = first(nonzeroinds(A[i]))
-        mul!(A[i], inv(A[i][pivot]))
-
-        for j in i+1:m
-            iszero(A[j][pivot]) && continue
-
-            A[j] -= A[i] * A[j][pivot]
-
-            dropzeros!(A[j])
-        end
-        i += 1
-    end
-
-    A
-end
-
-# Constructs polynomials from the coefficients of rows
-# given in rref
-function constructpolys_sparse(rrefrows, Tf)
-    m, n = length(rrefrows), length(first(rrefrows))
-    targetring = parent(first(Tf))
-    ground = base_ring(targetring)
-
-    ans = zeros(targetring, 0)
-
-    # for each row..
-    for i in 1:m
-        if iszero(rrefrows[i])
-            continue
-        end
-
-        # we may eliminate sorting if the monomials are already ordered
-        # important invariant: monomials are sorted in reverse order,
-        #                     exponents in AA polys are stored in reverse order
-        # another important invariant: all monomial orderings within this function
-        #                             are same
-        #
-        poly = unsafe_sparsevector_to_poly(rrefrows[i], Tf)
-        push!(ans, poly)
-
-        #=
-        builder = MPolyBuildCtx(targetring)
-        # for each coeff in a row..
-        for (j, val) in zip(nonzeroinds(rrefrows[i]), nonzeros(rrefrows[i]))
-            iszero(val) && continue
-            push_term!(builder, val, exponent_vector(Tf[j], 1))
-        end
-
-        # we may eliminate sorting of terms here !
-        push!(ans, finish(builder))
-        =#
-    end
-
-    ans
-end
-
-#------------------------------------------------------------------------------
-
-# performs (almost backward) gaussian elimination
-# in a dense deterministic format,
-# assumes the given matrix is in triangular shape
-function rref_sparse_randomized!(A)
-    m, n = length(A), length(first(A))
-
-    ground = base_ring(first(first(A)))
-
-    ell = 5
-    buf = zeros(ground, n)
-
-    pivot_vectors = zeros(1)
-
-    i = 1
-
-    for sector in 1:m // ell
-        for i in 1:ell
-            for vector in sector
-                cf = rand(ground)
-                buf += cf * vector
+            # index in gb
+            prev = gens[k]
+            # poly of indices of monoms in hash table
+            poly = basis.gens[prev]
+            vidx = poly[1]
+            # leading monom idx
+            eidx = ht.exponents[vidx]
+            for u in 1:ht.explen
+                etmp[u] = elcm[u] - eidx[u]
             end
-            reduce_vector!(buf, pivot_vectors)
-            if !iszero(buf)
-                add_vector!(pivot_vectors, buf)
-            end
+
+            htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
+
+            # add row to be reduced
+            matrix.nlow += 1
+            lowrows[matrix.nlow] = multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly)
+            # map lower row to index in basis
+            matrix.low2coef[matrix.nlow] = prev
+            @info "inserted reduced row " matrix.nlow lowrows[matrix.nlow]
+
+            symbol_ht.hashdata[lowrows[matrix.nlow][1]].idx = 2
+
+            matrix.nrows += 1
+
         end
-        buf .= zero(ground)
+
+        i = j
     end
 
-    A
-end
+    @info "after select" matrix.nrows matrix.ncols matrix.nlow matrix.nup
 
-#------------------------------------------------------------------------------
+    resize!(matrix.lowrows, matrix.nrows - matrix.ncols)
 
-# constructs vectors from the given polynomials,
-# then performs reduction (i.e, gaussian elimination),
-# and transforms resulting row vectors back into polynomials
-#
-# This is standard dense linear algebra backend
-function linear_algebra_dense_det(F, Tf)
-    A = constructrows_dense(F, Tf)
+    # remove selected parirs from pairset
+    for i in 1:pairset.load - npairs
+        ps[i] = ps[i + npairs]
+    end
+    pairset.load -= npairs
 
-    m, n = length(A), length(first(A))
-    @debug "Constructed *dense* matrix of size $((m, n)) and $(sum(map(x->count(!iszero, x), A)) / (m*n)) nnz"
+    @info "after select" pairset.load
 
-    Arref = rref_dense!(A)
-
-    constructpolys_dense(Arref, Tf)
-end
-
-# Same as above but in sparse algebra
-function linear_algebra_sparse_det(F, Tf)
-    A = constructrows_sparse(F, Tf)
-
-    m, n = length(A), length(first(A))
-    @debug "Constructed *sparse* matrix of size $((m, n)) and $(sum(map(nnz, A)) / (m*n)) nnz"
-
-    Arref = rref_sparse!(A)
-
-    constructpolys_sparse(Arref, Tf)
-end
-
-# Same as above but in sparse random algebra
-function linear_algebra_sparse_rand(F, Tf)
-    A = constructrows_sparse(F, Tf)
-
-    m, n = length(A), length(first(A))
-    @debug "Constructed *sparse* matrix of size $((m, n)) and $(sum(map(nnz, A)) / (m*n)) nnz"
-
-    Arref = rref_sparse_randomized!(A)
-
-    constructpolys_sparse(Arref, Tf)
 end
 
 #------------------------------------------------------------------------------
@@ -340,156 +300,546 @@ end
 # Prepares the given set of polynomials L to be reduced by the ideal G,
 # starts the reduction routine,
 # and returns reduced polynomials
-function reduction(L, G; linalg=:dense)
+function reduction!(basis, matrix, ht, symbol_ht; linalg=:sparse)
 
-     F = symbolic_preprocessing(L, G)
-     @info "F after symbolic" F
+     convert_hashes_to_columns!(matrix, symbol_ht)
 
-     Tf = sort(monomials(F), rev=true)
+     sort_matrix_rows_decreasing!(matrix) # for pivots,  A part
+     sort_matrix_rows_increasing!(matrix) # for reduced, B part
 
-    @debug "Going to build a matrix of sizes $((length(F), length(Tf)))"
+     printstyled("### PREPARED MATRIX ###\n", color=:red)
+     # matrix.ncols beda
 
-    if linalg == :dense
-         F⁺ = linear_algebra_dense_det(F, Tf)
-    elseif linalg == :sparse
-         F⁺ = linear_algebra_sparse_det(F, Tf)
-    elseif linalg == :randomsparse
-         F⁺ = linear_algebra_sparse_rand(F, Tf)
-    end
+     dump(matrix, maxdepth=2)
 
-    Tf = Set(leading_monomials(F))
-
-    F⁺ = filter!(f -> !in(leading_monomial(f), Tf), F⁺)
-
-    @info "F+ after linalg" F⁺
+     exact_sparse_linear_algebra!(matrix, basis)
 
 
-    F⁺, F
+     printstyled("### AFTER RREF ###\n", color=:red)
+     dump(matrix, maxdepth=4)
+
+     convert_matrix_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 end
 
 #------------------------------------------------------------------------------
+
+function find_multiplied_reducer!(basis, matrix, ht, symbol_ht, vidx)
+
+    e = symbol_ht.exponents[vidx]
+    etmp = ht.exponents[1]
+    divmask = symbol_ht.hashdata[vidx].divmask
+
+    blen = basis.ndone     #
+    leaddiv = basis.lead  #
+
+    # searching for a poly from state.basis whose leading monom
+    # divides the given exponent e
+    i = 1
+    @label Letsgo
+    while i <= blen && (leaddiv[i] & divmask) != 0
+        i += 1
+    end
+
+    # here found polynomial from basis with leading monom
+    # dividing symbol_ht.exponents[vidx]
+    if i <= blen
+        # reducers index and exponent in hash table
+        rpoly = basis.gens[i]
+        rexp  = ht.exponents[rpoly[1]]
+
+        for j in 1:ht.explen
+            # if it actually does not divide and divmask lies
+            if e[j] < rexp[j]
+                i += 1
+                @goto Letsgo
+            end
+            etmp[j] = e[j] - rexp[j]
+        end
+        # now etmp = e // rexp in terms of monomias,
+        # hash is linear
+        h = symbol_ht.hashdata[vidx].hash - ht.hashdata[rpoly[1]].hash
+
+        nreducer = matrix.nup
+        matrix.uprows[matrix.nup + 1] = multiplied_poly_to_matrix_row!(symbol_ht, ht, h, copy(etmp), rpoly)
+        matrix.up2coef[matrix.nup + 1] = i
+
+        # upsize matrix
+        symbol_ht.hashdata[vidx].idx = 2
+        matrix.nup += 1
+        nreducer += 1
+    end
+
+end
 
 # Given the set of polynomials L and the basis G,
 # extends L to contain possible polys for reduction by G,
 # and returns it
-function symbolic_preprocessing(L, G)
-    PolyT = eltype(G)
+function symbolic_preprocessing!(
+                basis, matrix,
+                ht, symbol_ht;
+                linalg=:sparse)
 
-    # F ~ several polys
-    F     = unique(PolyT[t * f for (t, f) in L])
-    Fhash = Set(F)
+    # check matrix sizes (we want to omit this I guess)
 
-    Done = Set(leading_monomials(F))
+    symbol_load = symbol_ht.load
 
-    # Tf ~ many monomials from F
-    Tf = Set(filter(x -> !(x in Done), monomials(F)))
+    nrr    = matrix.ncols
+    onrr   = matrix.ncols
 
-    Tf = Set(leading_monomials(F))
+    @info "Entering symbolic symbolic_preprocessing! with " symbol_load nrr onrr
 
-    # essentially for each in Tf
-    while !isempty(Tf)
-        m = pop!(Tf)
-        # for each poly in G
-        for f in G
-            # PROFILER: this takes long
-            # isdivisible: monom, lt(poly)
-            flag = is_term_divisible(m, f)
-            if flag
-                # strange..
-                (iszero(m) || iszero(f)) && continue
-                # divide: monom, lt(poly)
-                t = GC.@preserve m f unsafe_term_divide(m, f)
-                # multiplie: monom, poly
-                tf = GC.@preserve t f multiplie_by_term(t, f)
+    #=
+        TODO: matrix_enlarge!
+    =#
+    # wait a minute..
+    while matrix.size <= nrr + symbol_load
+        matrix.size *= 2
+        resize!(matrix.uprows, matrix.size)
+        resize!(matrix.up2coef, matrix.size)
+    end
 
-                # poly in set of polys?
-                if !(tf in Fhash)
-                    push!(F,     tf)
-                    push!(Fhash, tf)
-                end
+    @info "Now matrix is of size $(matrix.size)"
 
-                # several monomials in set of monoms
+    # for each lcm present in symbolic_ht set on select stage
+    # !!! remember that first index is for buffer
+    # TODO
+    i = symbol_ht.offset
+    #= First round, we add multiplied polynomials which divide  =#
+    #= a monomial exponent from selected spairs                 =#
+    while i <= symbol_load
+        # not a reducer
+        if symbol_ht.hashdata[i].idx == 0
+            @info "find_multiplied_reducer for $i"
+            symbol_ht.hashdata[i].idx = 1
+            matrix.ncols += 1
+            find_multiplied_reducer!(basis, matrix, ht, symbol_ht, i)
+        end
+        i += 1
+    end
 
-                for (midx, ttf) in zip(1:length(tf), monomials(tf))
-                    (midx == 1) && continue
-                    push!(Tf, ttf)
-                end
+    @info "round 2"
 
+    #= Second round, we add multiplied polynomials which divide  =#
+    #= lcm added on previous for loop                             =#
+    while i <= symbol_ht.load
+        if matrix.size == nrr
+            matrix.size *= 2
+            resize!(matrix.uprows, matrix.size)
+        end
+        @info "find_multiplied_reducer for $i"
+
+        symbol_ht.hashdata[i].idx = 1
+        matrix.ncols += 1
+        find_multiplied_reducer!(basis, matrix, ht, symbol_ht, i)
+        i += 1
+    end
+
+    @info "in symbolic_preprocessing" nrr matrix.ncols matrix.nrows matrix.size matrix.uprows
+
+    # shrink matrix sizes, set constants
+    resize!(matrix.uprows, matrix.nup)
+    matrix.nrows += matrix.nup - onrr
+    matrix.nlow  = matrix.nrows - matrix.nup
+    matrix.size  = matrix.nrows
+
+end
+
+
+
+function update_pairset!(
+            pairset,
+            basis,
+            ht,
+            update_ht,
+            idx)
+
+    pl = pairset.load
+    bl = basis.ntotal
+    nl = pl + bl
+    ps = pairset.pairs
+
+    new_lead  = basis.gens[idx][1]
+
+    @info "entering update_pairset" pl bl nl ps
+    @info "new poly is " new_lead ht.exponents[new_lead]
+
+    # initialize new critical lcms
+    plcm = Vector{Int}(undef, basis.ntotal + 1)
+
+    # for each combination (new_Lead, basis.gens[i][1])
+    # generate a pair
+    for i in 1:basis.ntotal
+        plcm[i] = get_lcm(basis.gens[i][1], new_lead, ht, update_ht)
+        @debug "new plcm" plcm[i]
+        deg = update_ht.hashdata[plcm[i]].deg
+        newidx = pl + i
+        if basis.isred[i] == 0
+            ps[newidx] = SPair(i, idx, plcm[i], deg)
+        else
+            # lcm == 0 will mark redundancy of spair
+            ps[newidx] = SPair(i, idx, 0, deg)
+        end
+    end
+
+    @debug "INSIDE 1" ht update_ht
+
+    @info "generated pairset" pairset
+
+    # traverse existing pairs
+    for i in 1:pl
+        j = ps[i].poly1
+        l = ps[i].poly2
+        m = max(ps[pl + l].deg, ps[pl + j].deg)
+
+        @info "traverse existing" j l m
+        # if an existing pair is divisible by lead of new poly
+        # and has a greater degree than newly generated one
+        if is_monom_divisible(ps[i].lcm, new_lead, ht) && ps[i].deg > m
+            # mark lcm as 0
+            ps[i] = SPair(ps[i].poly1, ps[i].poly2, 0, ps[i].deg)
+        end
+    end
+    # TODO: this can be done faster is we
+    # create only non-redundant pairs at first
+
+    # traverse new pairs to check for redundancy
+    j = 1
+    for i in 1:bl
+        if basis.isred[i] == 0
+            ps[pl + j] = ps[pl + i]
+            j += 1
+        end
+    end
+    @info "after sifting through new pairs" pairset j
+
+    sort_pairset_by_degree!(pairset, pl + 1, j - 1)
+    @info "after sorting" pairset
+
+    for i in 1:j - 1
+        plcm[i] = ps[pl + i].lcm
+    end
+    plcm[j] = 0
+    pc = j
+
+    @info "plcm" plcm pc
+    pc -= 1
+
+    # mark redundancy of some pairs from plcm
+    for j in 1:pc
+        # if is not redundant
+        if plcm[j] > 0
+            check_monomial_division_in_update(plcm, j + 1, pc, plcm[j], update_ht)
+        end
+    end
+
+    # remove useless pairs from pairset
+    # by moving them to the end
+    j = 1
+    for i in 1:pl
+        ps[i].lcm == 0 && continue
+        ps[j] = ps[i]
+        j += 1
+    end
+
+    @info "after removing redundant" ps
+
+    # assure that basis hashtable can store new lcms
+    if ht.size - ht.load <= pc
+        enlarge_hash_table!(ht)
+    end
+
+    # add new lcms to the basis hashtable
+    insert_plcms_in_basis_hash_table!(pairset, pl, ht, update_ht, basis, plcm, j, pc)
+
+    @info "after insert plcms" ht
+
+    # mark redundant elements in masis
+    nonred = basis.nonred
+    lml = basis.nlead
+    for i in 1:lml
+        if basis.isred[nonred[i]] == 0
+            if is_monom_divisible(basis.gens[nonred[i]][1], new_lead, ht)
+                basis.isred[nonred[i]] = 1
             end
         end
     end
 
-    F
+    basis.ndone += 1
 end
 
-#------------------------------------------------------------------------------
+function update_basis!(
+            basis,
+            ht::CustomMonomialHashtable,
+            update_ht::CustomMonomialHashtable)
 
-# Hereinafter a set of heuristics is defined to be used in update! (see below)
-# They assess which polynomials are worthy of adding to the current pairset
+    # here we could check overall redundancy and update basis.lead
 
-function update_heuristic_1(C, h)
-    D = similar(C, 0)
-    while !isempty(C)
-        h, g = pop!(C)
+    k = 1
+    lead   = basis.lead
+    nonred = basis.nonred
 
-        flag1 = is_term_gcd_constant(g, h)
-        flag2 = !any(t -> is_term_divisible(
-                            term_lcm(h, g),
-                            term_lcm(h, t[2])),
-                    C)
-        flag3 = !any(t -> is_term_divisible(
-                            term_lcm(h, g),
-                            term_lcm(h, t[2])),
-                    D)
-
-        if flag1 || (flag2 && flag3)
-            push!(D, (h, g))
+    @info "basis" basis.ndone basis.ntotal
+    @info "updating basis & lead" lead nonred basis.isred basis.nlead
+    for i in 1:basis.nlead
+        if basis.isred[nonred[i]] == 0
+            basis.lead[k]   = lead[i]
+            basis.nonred[k] = nonred[i]
+            k += 1
         end
     end
-    D
+    basis.nlead = k - 1
+
+    @info "updated #1" lead nonred basis.isred basis.nlead
+
+    for i in basis.ndone+1:basis.ntotal
+        if basis.isred[i] == 0
+            lead[k]   = ht.hashdata[basis.gens[i][1]].divmask
+            nonred[k] = i
+            k += 1
+        end
+    end
+
+    basis.nlead = k - 1
+    @assert basis.ndone == basis.ntotal
+
+    @info "updated #2" lead nonred basis.isred basis.nlead
 end
 
-function update_heuristic_2(D, h)
-    filter!(hg -> !is_term_gcd_constant(hg[1], hg[2]), D)
+# checks if element of basis at position idx is redundant
+function is_redundant!(
+            pairset, basis, ht, update_ht, idx)
+
+    reinitialize_hash_table!(update_ht, basis.ntotal)
+
+    ps = pairset.pairs
+
+    # lead of new polynomial
+    lead_new = basis.gens[idx][1]
+    # degree of lead
+    lead_deg = ht.hashdata[lead_new].deg
+
+    start = basis.ndone + 1
+    for i in 1:basis.ndone
+        i == idx && continue
+        if basis.isred[i] == 1
+            continue
+        end
+
+        lead_i = basis.gens[i][1]
+
+        @info "?? divisibility" lead_new lead_i
+        @info "" ht.exponents[lead_new] ht.exponents[lead_i]
+
+        if is_monom_divisible(lead_new, lead_i, ht)
+            println("Delit !")
+            lcm_new = get_lcm(lead_i, lead_new, ht, ht)
+            @info "lcm is " lcm_new ht.exponents[lcm_new]
+
+            psidx = pairset.load + 1
+            ps[psidx] = SPair(i, idx, lcm_new, ht.hashdata[lcm_new].deg)
+
+            basis.isred[idx] = 1
+            pairset.load += 1
+            basis.ndone += 1
+
+            return true
+        end
+        @info "not divisible"
+    end
+
+    return false
 end
 
+# I am doing this
 
-function update_heuristic_3!(P, h)
-    flag1 = (g1, g2, h) -> !is_term_divisible(term_lcm(g1, g2), h)
-    flag2 = (g1, g2, h) -> term_lcm(g1, h) == term_lcm(g1, g2)
-    flag3 = (g1, g2, h) -> term_lcm(g2, h) == term_lcm(g1, g2)
-    flag  = (g1, g2, h) -> flag1(g1, g2, h) ||  flag2(g1, g2, h) || flag3(g1, g2, h)
+function update!(
+        pairset::Pairset,
+        basis::Basis{Tv},
+        ht::CustomMonomialHashtable,
+        update_ht::CustomMonomialHashtable) where {Tv}
 
-    filter!(g -> flag(g[1], g[2], h), P)
-end
+    #=
+        Always check redundancy, for now
+    =#
 
-function update_heuristic_4!(G, h)
-    filter!(g -> !is_term_divisible(g, h), G)
-end
+    # reinitialize_hash_table!(update_ht, length(basis.gens))
 
-# "Adds" h to the set of generators G and set of pairs P, while applying some
-# heuristics to reduce the number of pairs on fly
-# Returns new generator and pair sets G, P
-function update!(state, h)
-    # The algorithm and notation is taken from the book
-    # Gröbner Bases - A Computational Approach to Commutative Algebra, 1993
-    # Thomas Becker and Volker Weispfenning, Corrected second printing, page 230
+    # number of added elements
+    npivs = basis.ntotal
 
-    C = [(h, g) for g in state.G]
+    # number of potential critical pairs to add
+    npairs = basis.ndone * npivs
+    for i in 1:npivs
+        npairs += i
+    end
 
-    # PROFILER: Usually the slowest one
-    D = update_heuristic_1(C, h)
+    @info "" basis.ndone basis.ntotal
+    @info "potentially adding $npairs pairs from $npivs pivots"
 
-    E = update_heuristic_2(D, h)
+    # make sure pairset and update hashtable have enough
+    # space to store new pairs
+    check_enlarge_pairset!(pairset, npairs)
 
-    update_heuristic_3!(state.P, h)
-    append!(state.P, E)
+    # TODO: better to reinitialize here, or in is_redundant! ?
+    # not here
 
-    update_heuristic_4!(state.G, h)
-    push!(state.G, h)
+    @debug "status ONE" pairset ht update_ht
+
+    # for each new element in basis
+    for i in basis.ndone+1:basis.ntotal
+        @info "adding $i th poly in update"
+        # check redundancy of new poly
+        if is_redundant!(pairset, basis, ht, update_ht, i)
+            @info "Redundant!"
+            continue
+        end
+        @info "Not redundant!"
+
+        @debug "status TWO $i" pairset.pairs[1:pairset.load]
+
+        update_pairset!(pairset, basis, ht, update_ht, i)
+
+        @debug "status THREE $i" pairset.pairs[1:pairset.load]
+    end
+
+    update_basis!(basis, ht, update_ht)
 end
 
 #------------------------------------------------------------------------------
+
+function filter_redundant!(basis)
+    j = 1
+    for i in 1:basis.nlead
+        if basis.isred[basis.nonred[i]] == 0
+            basis.lead[j] = basis.lead[i]
+            basis.nonred[j] = basis.nonred[i]
+            basis.coeffs[j] = basis.coeffs[basis.nonred[i]]
+            basis.gens[j] = basis.gens[basis.nonred[i]]
+            j += 1
+        end
+    end
+    basis.nlead = j - 1
+    basis.ndone = basis.ntotal = basis.nlead
+    basis
+end
+
+#------------------------------------------------------------------------------
+
+# given input exponent and coefficient vectors hashes exponents into `ht`
+# and then constructs hashed polynomial vectors for `basis`
+function fill_data!(basis, ht, exponents, coeffs)
+    ngens = length(exponents)
+
+    for i in 1:ngens
+        while length(exponents[i]) >= ht.size - ht.load
+            enlarge_hash_table!(ht)
+        end
+        # ht.exponents one can be reallocated together with ht,
+        # so we need to reset it on each iteration
+        etmp = ht.exponents[1]
+
+        nterms = length(coeffs[i])
+        basis.coeffs[i] = coeffs[i]
+        basis.gens[i] = Vector{Int}(undef, nterms)
+        poly = basis.gens[i]
+        for j in 1:nterms
+            poly[j] = insert_in_hash_table!(ht, exponents[i][j])
+        end
+
+        # sort terms (not needed),
+        # beautify coefficients (not needed),
+        # and all
+    end
+
+    # the initial update traverses all elements in
+    # basis.ndone+1:basis.ntotal
+    # which is 1:ngens
+    basis.ntotal = ngens
+end
+
+function initialize_structures(
+            ring::PolyRing,
+            exponents::Vector{Vector{Vector{UInt16}}},
+            coeffs::Vector{Vector{Tv}},
+            tablesize,
+            seed) where {Tv}
+
+    rng = Random.MersenneTwister(seed)
+
+    # basis for storing basis elements,
+    # pairset for storing critical pairs of basis elements to assess,
+    # hashtable for hashing monomials occuring in the basis
+    basis    = initialize_basis(ring, length(exponents))
+    basis_ht = initialize_basis_hash_table(ring, rng)
+
+    # filling the basis and hashtable with the given inputs
+    fill_data!(basis, basis_ht, exponents, coeffs)
+
+    # every monomial in hashtable is associated with its divmask
+    # to perform divisions faster. Filling those
+    fill_divmask!(basis_ht)
+
+    # sort input, smaller leading terms first
+    sort_gens_by_lead_increasing!(basis, basis_ht)
+
+    @info "sorted basis gens" basis.gens
+    @info "leads:" [basis_ht.exponents[e] for e in first.(basis.gens[1:basis.ntotal])]
+
+    # divide each polynomial by leading coefficient
+    normalize_basis!(basis)
+
+    basis, basis_ht
+end
+
+#------------------------------------------------------------------------------
+
+function dump_all(msg, pairset, basis, matrix, ht, update_ht, symbol_ht)
+    printstyled("### $msg ###\n", color=:yellow)
+    printstyled("internal repr\n", color=:red)
+
+    printstyled(". pairset filled $(pairset.load) / $(length(pairset.pairs))\n", color=:red)
+    println(pairset.pairs[1:pairset.load+1])
+
+    printstyled(". basis filled $(basis.ntotal) / $(length(basis.gens)), where $(basis.ndone) are done\n", color=:red)
+    dump(basis, maxdepth=3)
+
+    printstyled(". matrix size $(matrix.size), npivs $(matrix.npivots), nrows $(matrix.nrows), ncols $(matrix.ncols)\n", color=:red)
+    printstyled("nup $(matrix.nup), nlow $(matrix.nlow), nleft $(matrix.nleft), nright $(matrix.nright)\n", color=:red)
+    dump(matrix, maxdepth=2)
+
+    printstyled(". basis hashtable filled $(ht.load) / $(ht.size)\n", color=:red)
+    dump(ht, maxdepth=3)
+
+    printstyled(". update hashtable filled $(update_ht.load) / $(update_ht.size)\n", color=:red)
+    dump(update_ht, maxdepth=2)
+
+    printstyled(". symbol hashtable filled $(symbol_ht.load) / $(symbol_ht.size)\n", color=:red)
+    dump(symbol_ht, maxdepth=2)
+
+    printstyled("nice repr\n", color=:green)
+
+
+
+    printstyled("##################\n", color=:yellow)
+end
+
+#------------------------------------------------------------------------------
+
+function f4(polys::Vector{MPoly{Tv}};
+            select=select_normal!,
+            reduced=true,
+            linalg=:sparse,
+            maxpairs=0,
+            tablesize=2^16,
+            seed=42) where {Tv}
+
+    ring, exps, coeffs = convert_to_internal(polys)
+    gb, ht = f4(ring, exps, coeffs;
+        select=select, reduced=reduced,
+        linalg=linalg, maxpairs=maxpairs, tablesize=tablesize )
+
+    export_basis(parent(first(polys)), gb, ht)
+end
 
 #
 """
@@ -497,63 +847,86 @@ end
     Specialized to work only over finite fields.
 
     Parameters
-        . F        - an array of polynomials over finite field
-        . select   - a strategy for polynomial selection on each iteration
-        . reduced  - reduce the basis so that the result is unique
-        . linalg   - linear algebra backend to use. Possible options
-                      are :dense , :sparse , and :sparserand
-        . maxpairs - maximal number of pairs selected for one matrix; default is
+        . F         - an array of polynomials over finite field
+        . select    - a strategy for polynomial selection on each iteration
+        . reduced   - reduce the basis so that the result is unique
+        . linalg    - linear algebra backend to use. Possible options
+                      are :dense , :sparse , and :sparserand. Default is :sparse
+        . maxpairs  - maximal number of pairs selected for one matrix; default is
                       0, i.e. no restriction. If matrices get too big or consume
                       too much memory this is a good parameter to play with.
+        . tablesize -
 """
-function f4(F::Vector{MPoly{GFElem{Int}}};
-                select=selectnormal,
-                reduced=true,
-                linalg=:sparse,
-                maxpairs=0)
+function f4(ring::PolyRing,
+            exponents::Vector{Vector{Vector{UInt16}}},
+            coeffs::Vector{Vector{Tv}};
+            select=selectnormal,
+            reduced=true,
+            linalg=:sparse,
+            maxpairs=0,
+            tablesize=2^16,
+            seed=42) where {Tv}
 
-    # vector{MPoly}, vector{MPoly, MPoly}
-    # stores currently accumulated groebner basis,
-    # and an array of pairs to be reduced
-    state = GroebnerState()
+    printstyled("### INPUT ###\n", color=:red)
+    println("coeffs = $coeffs")
+    println("exps = $exponents")
 
-    # init with the given polys,
-    # allow copy
-    for f in F
-        update!(state, f)
-    end
+    # initialize basis and hashtable with input polynomials,
+    # fields are not meaningful yet and will be set during update! step
+    basis, ht = initialize_structures(
+                        ring, exponents, coeffs,
+                        tablesize, seed)
 
-    d::Int64 = 0
+    # matrix storing coefficients in rows
+    # wrt columns representing the current monomial basis
+    matrix = initialize_matrix(ring)
+
+    # initialize hash tables for update and symbolic preprocessing steps
+    update_ht  = initialize_secondary_hash_table(ht)
+    symbol_ht  = initialize_secondary_hash_table(ht)
+
+    # a set to store critical pairs of polynomials to be reduced
+    pairset = initialize_pairset()
+
+    dump_all("AFTER INIT", pairset, basis, matrix, ht, update_ht, symbol_ht)
+
+
+    # makes basis fields valid,
+    # does not copy,
+    # checks for redundancy of new elems
+    update!(pairset, basis, ht, update_ht)
+    dump_all("INITIAL UPDATE", pairset, basis, matrix, ht, update_ht, symbol_ht)
+
+    d = 0
     # while there are pairs to be reduced
-    while !isempty(state.P)
+    while !isempty(pairset)
         d += 1
-        @debug "F4 iter $d"
-        @debug "State: " state
+        @warn "F4 ITER $d"
 
-        # vector{MPoly, MPoly}
-        selected_pairs = select(state.P, maxpairs=maxpairs)
+        # selects pairs for reduction from pairset following normal strategy
+        # (minimal lcm degrees are selected),
+        # and puts these into the matrix rows
+        select_normal!(pairset, basis, matrix, ht, symbol_ht, maxpairs=maxpairs)
+        dump_all("AFTER SELECT", pairset, basis, matrix, ht, update_ht, symbol_ht)
 
-        @debug "Seleted $(length(selected_pairs)) pairs for reduction"
+        symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
+        dump_all("AFTER SYMBOLIC", pairset, basis, matrix, ht, update_ht, symbol_ht)
 
-        # vector{Monom, MPoly}
-        to_be_reduced = leftright(selected_pairs)
+        # reduces polys and obtains new potential basis elements
+        reduction!(basis, matrix, ht, symbol_ht, linalg=linalg)
+        dump_all("AFTER REDUCTION", pairset, basis, matrix, ht, update_ht, symbol_ht)
 
-        @debug to_be_reduced
+        # update the current basis with polynomials produced from reduction,
+        # does not copy,
+        # checks for redundancy
+        update!(pairset, basis, ht, update_ht)
+        dump_all("AFTER UPDATE", pairset, basis, matrix, ht, update_ht, symbol_ht)
 
-        # reduce polys and obtain new elements
-        # to add to basis potentially
-        Fd⁺, Fd = reduction(to_be_reduced, state.G, linalg=linalg)
-
-        @debug Fd⁺
-
-        # update the current basis,
-        # allow copy
-        @info "uwu"
-        @time for h in Fd⁺
-            update!(state, h)
-        end
-
-        @debug state
+        # TODO: is this okay hm ?
+        matrix    = initialize_matrix(ring)
+        symbol_ht = initialize_secondary_hash_table(ht)
+        # clear symbolic hashtable
+        # clear matrix
 
         if d > 1000
             @error "Something is probably wrong in f4.."
@@ -562,11 +935,15 @@ function f4(F::Vector{MPoly{GFElem{Int}}};
     end
 
     if reduced
-        reduced_gb = reducegb(state.G)
-        copy!(state.G, reduced_gb)
+        # TODO
+        # reduce_basis!(basis, matrix)
     end
 
-    state.G
+    filter_redundant!(basis)
+
+
+
+    basis, ht
 end
 
 #------------------------------------------------------------------------------

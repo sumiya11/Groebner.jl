@@ -70,7 +70,11 @@ end
 # initialize and set fields for basis hashtable
 # TODO: Initial size is a nice parameter to play with
 # TODO: Get rid of `Tv` dependency
-function initialize_basis_hash_table(ring::PolyRing{Tv}; initial_size=2^3) where {Tv}
+function initialize_basis_hash_table(
+        ring::PolyRing{Tv},
+        rng::Random.MersenneTwister;
+        initial_size=2^3) where {Tv}
+
     exponents = Vector{Vector{UInt16}}(undef, initial_size)
     hashdata  = Vector{Hashvalue}(undef, initial_size)
     hashtable = zeros(Int, initial_size)
@@ -85,7 +89,7 @@ function initialize_basis_hash_table(ring::PolyRing{Tv}; initial_size=2^3) where
         # we don't want hash vector components to be zero
         while hasher[i] == 0
             # TODO: pass random generator
-            hasher[i] = rand(UInt32)
+            hasher[i] = rand(rng, UInt32)
         end
     end
 
@@ -148,6 +152,7 @@ function initialize_secondary_hash_table(basis_ht)
     ndivbits = basis_ht.ndivbits
 
     # TODO: preserve hasher?
+    # yes
     hasher = basis_ht.hasher
 
     load = 1
@@ -189,7 +194,7 @@ function enlarge_hash_table!(ht::CustomMonomialHashtable)
 
     ht.hashtable = zeros(Int, ht.size)
 
-    mod = ht.size - 1
+    mod = ht.size
     for i in ht.offset:ht.load  # TODO: hardcoding 2 is bad
         # hash for this elem is already computed
         he = ht.hashdata[i].hash
@@ -215,10 +220,15 @@ function insert_in_hash_table!(ht::CustomMonomialHashtable, e::Vector{UInt16})
     @debug "new hash:" he
 
     # find new elem position in the table
-    hidx = he
-    mod = ht.size
 
-    for i in 0:ht.size - 1
+    hidx = he
+    # power of twoooo
+    mod = ht.size
+    i = 0
+
+    @label Restart
+    while i < ht.size
+        # TODO: & instead of %
         hidx = (hidx + i) % mod + 1
         vidx  = ht.hashtable[hidx]
 
@@ -229,6 +239,7 @@ function insert_in_hash_table!(ht::CustomMonomialHashtable, e::Vector{UInt16})
 
         # if not free and not same hash
         if ht.hashdata[vidx].hash != he
+            i += 1
             continue
         end
 
@@ -236,7 +247,8 @@ function insert_in_hash_table!(ht::CustomMonomialHashtable, e::Vector{UInt16})
         for j in 1:ht.explen
             # if hash collision
             if present[j] != e[j]
-                continue
+                i += 1
+                @goto Restart
             end
         end
 
@@ -247,7 +259,7 @@ function insert_in_hash_table!(ht::CustomMonomialHashtable, e::Vector{UInt16})
     # add its position to hashtable, and insert exponent to that position
     vidx = ht.load + 1
     ht.hashtable[hidx] = vidx
-    ht.exponents[vidx] = e
+    ht.exponents[vidx] = copy(e)
 
     divmask = generate_monomial_divmask(e, ht)
     ht.hashdata[vidx] = Hashvalue(he, divmask, 0, e[end])
@@ -385,11 +397,17 @@ function check_monomial_division_in_update(a, first, last, lcm, ht)
     divmask = ht.hashdata[lcm].divmask
     lcmexp  = ht.exponents[lcm]
 
-    j = first + 1
+    j = first
     @label Restart
-    while j < last
-        a[j] == 0 && continue
-        (~ht.hashdata[a[j]].divmask & divmask != 0) && continue
+    while j <= last
+        if a[j] == 0
+            j += 1
+            continue
+        end
+        if (~ht.hashdata[a[j]].divmask & divmask != 0)
+            j += 1
+            continue
+        end
         ea = ht.exponents[a[j]]
         for i in 1:ht.explen
             if ea[i] < lcmexp[i]
@@ -422,7 +440,7 @@ function insert_multiplied_poly_in_hash_table!(
     len    = length(poly)
     explen = ht.explen
 
-    mod = ht.size - 1
+    mod = symbol_ht.size
 
     bexps = ht.exponents
     bdata = ht.hashdata
@@ -523,7 +541,7 @@ function insert_in_basis_hash_table_pivots(
     sdata = symbol_ht.hashdata
     sexps = symbol_ht.exponents
 
-    mod    = ht.size - 1
+    mod    = ht.size
     explen = ht.explen
     bdata  = ht.hashdata
     bexps  = ht.exponents
@@ -534,11 +552,15 @@ function insert_in_basis_hash_table_pivots(
     while l <= length(row)
         @debug "iter " l col2hash row
         hidx = col2hash[row[l]]
+
+        # symbolic hash
         h    = sdata[hidx].hash
 
         lastidx = ht.load + 1
         bexps[lastidx] = copy(sexps[hidx])
         e = bexps[lastidx]
+
+        @debug "new exponent to basis ht" e lastidx
 
         k = h
         i = 0
@@ -561,6 +583,8 @@ function insert_in_basis_hash_table_pivots(
                 end
             end
 
+            @debug "not adding::same exp" l hm ehm
+
             row[l] = hm
             l += 1
             @goto Letsgo
@@ -570,11 +594,14 @@ function insert_in_basis_hash_table_pivots(
         row[l] = pos
         l += 1
 
-        bdata[k] = Hashvalue(h, sdata[hidx].divmask,
+        bdata[pos] = Hashvalue(h, sdata[hidx].divmask,
                              sdata[hidx].idx, sdata[hidx].deg)
 
         ht.load += 1
     end
+
+
+    @debug "inserting finished" ht.load row
 
 end
 

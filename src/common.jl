@@ -66,13 +66,13 @@ function normal_form(h, G)
     while true
         # PROFILER: we can do better instead of terms
         #           Probably change iteration order
+        hprev = deepcopy(h)
         for t in terms(h)
             for g in G
                 # does, mul = term_divides_3(t, g)
-                is_divisible = is_term_divisible(t, g)
+                is_divisible, _ = divides(t, leading_monomial(g))
                 if is_divisible
-                    (iszero(t) || iszero(g)) && continue
-                    mul = GC.@preserve t g unsafe_term_divide(t, g)
+                    mul = AbstractAlgebra.divexact(t, leading_term(g))
                     # PROFILER: slow
                     h -= mul * g
                     flag = true
@@ -83,6 +83,8 @@ function normal_form(h, G)
         end
         !flag && break
         flag = false
+        # LOL
+        hprev == h && break
     end
     h
 end
@@ -117,7 +119,7 @@ end
 
     If `initial_gens` parameter is provided, also assess `initial_gens ⊆ fs` as ideals
 """
-function is_groebner(fs; initial_gens=[])
+function isgroebner(fs; initial_gens=[])
     for f in fs
         for g in fs
             if !iszero( normal_form(spoly(f, g), fs) )

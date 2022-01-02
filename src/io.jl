@@ -48,6 +48,12 @@ function export_basis(ring::MPolyRing{T}, basis, ht) where {T}
         cfs  = basis.coeffs[i]
         exps = [ht.exponents[vidx] for vidx in basis.gens[i]]
         ans[i] = MPoly{T}(ring, cfs, UInt.(hcat(exps...)))
+
+        # TODO
+        AbstractAlgebra.sort_terms!(ans[i])
+
+        @info "poly built"
+        dump(ans[i], maxdepth=3)
     end
     ans
 end
