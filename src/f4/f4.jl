@@ -304,8 +304,8 @@ function reduction!(basis, matrix, ht, symbol_ht; linalg=:sparse)
 
      convert_hashes_to_columns!(matrix, symbol_ht)
 
-     sort_matrix_rows_decreasing!(matrix) # for pivots,  A part
-     sort_matrix_rows_increasing!(matrix) # for reduced, B part
+     sort_matrix_rows_decreasing!(matrix) # for pivots,  AB part
+     sort_matrix_rows_increasing!(matrix) # for reduced, CD part
 
      printstyled("### PREPARED MATRIX ###\n", color=:red)
      # matrix.ncols beda
@@ -336,15 +336,17 @@ function find_multiplied_reducer!(basis, matrix, ht, symbol_ht, vidx)
     # divides the given exponent e
     i = 1
     @label Letsgo
-    while i <= blen && (leaddiv[i] & divmask) != 0
+    while i <= basis.nlead && (leaddiv[i] & ~divmask) != 0
         i += 1
     end
 
+    @info "$(basis.nonred[i]) th poly lead divides the given one"
+
     # here found polynomial from basis with leading monom
     # dividing symbol_ht.exponents[vidx]
-    if i <= blen
+    if i <= basis.nlead
         # reducers index and exponent in hash table
-        rpoly = basis.gens[i]
+        rpoly = basis.gens[basis.nonred[i]]
         rexp  = ht.exponents[rpoly[1]]
 
         for j in 1:ht.explen
@@ -359,14 +361,13 @@ function find_multiplied_reducer!(basis, matrix, ht, symbol_ht, vidx)
         # hash is linear
         h = symbol_ht.hashdata[vidx].hash - ht.hashdata[rpoly[1]].hash
 
-        nreducer = matrix.nup
         matrix.uprows[matrix.nup + 1] = multiplied_poly_to_matrix_row!(symbol_ht, ht, h, copy(etmp), rpoly)
-        matrix.up2coef[matrix.nup + 1] = i
+        matrix.up2coef[matrix.nup + 1] = basis.nonred[i]
 
         # upsize matrix
         symbol_ht.hashdata[vidx].idx = 2
         matrix.nup += 1
-        nreducer += 1
+        i += 1
     end
 
 end
@@ -407,9 +408,11 @@ function symbolic_preprocessing!(
     #= First round, we add multiplied polynomials which divide  =#
     #= a monomial exponent from selected spairs                 =#
     while i <= symbol_load
-        # not a reducer
+        @debug "$i th element of symbolic table: " symbol_ht.exponents[i]
+        # not a reducer already
         if symbol_ht.hashdata[i].idx == 0
-            @info "find_multiplied_reducer for $i"
+            @debug "not a reducer.. find reducer"
+            # @info "find_multiplied_reducer for $i"
             symbol_ht.hashdata[i].idx = 1
             matrix.ncols += 1
             find_multiplied_reducer!(basis, matrix, ht, symbol_ht, i)
@@ -417,16 +420,24 @@ function symbolic_preprocessing!(
         i += 1
     end
 
+    dump(matrix, maxdepth=4)
+    dump(symbol_ht, maxdepth=5)
+
     @info "round 2"
 
     #= Second round, we add multiplied polynomials which divide  =#
     #= lcm added on previous for loop                             =#
     while i <= symbol_ht.load
-        if matrix.size == nrr
+        # @debug matrix.size matrix.nup
+        # TODO:big loop hm
+        @debug "$i th element of symbolic table: " symbol_ht.exponents[i]
+
+        if matrix.size == matrix.nup
             matrix.size *= 2
             resize!(matrix.uprows, matrix.size)
+            resize!(matrix.up2coef, matrix.size)
         end
-        @info "find_multiplied_reducer for $i"
+        # @info "find_multiplied_reducer for $i"
 
         symbol_ht.hashdata[i].idx = 1
         matrix.ncols += 1
@@ -435,6 +446,9 @@ function symbolic_preprocessing!(
     end
 
     @info "in symbolic_preprocessing" nrr matrix.ncols matrix.nrows matrix.size matrix.uprows
+
+    dump(matrix, maxdepth=4)
+    dump(symbol_ht, maxdepth=5)
 
     # shrink matrix sizes, set constants
     resize!(matrix.uprows, matrix.nup)
@@ -454,7 +468,7 @@ function update_pairset!(
             idx)
 
     pl = pairset.load
-    bl = basis.ntotal
+    bl = idx
     nl = pl + bl
     ps = pairset.pairs
 
@@ -464,11 +478,11 @@ function update_pairset!(
     @info "new poly is " new_lead ht.exponents[new_lead]
 
     # initialize new critical lcms
-    plcm = Vector{Int}(undef, basis.ntotal + 1)
+    plcm = Vector{Int}(undef, bl + 1)
 
     # for each combination (new_Lead, basis.gens[i][1])
     # generate a pair
-    for i in 1:basis.ntotal
+    for i in 1:bl-1
         plcm[i] = get_lcm(basis.gens[i][1], new_lead, ht, update_ht)
         @debug "new plcm" plcm[i]
         deg = update_ht.hashdata[plcm[i]].deg
@@ -504,7 +518,7 @@ function update_pairset!(
 
     # traverse new pairs to check for redundancy
     j = 1
-    for i in 1:bl
+    for i in 1:bl-1
         if basis.isred[i] == 0
             ps[pl + j] = ps[pl + i]
             j += 1
@@ -535,21 +549,23 @@ function update_pairset!(
     # remove useless pairs from pairset
     # by moving them to the end
     j = 1
-    for i in 1:pl
+    for i in 1:pairset.load
         ps[i].lcm == 0 && continue
         ps[j] = ps[i]
         j += 1
     end
 
-    @info "after removing redundant" ps
+    @info "after removing redundant" ps plcm
 
     # assure that basis hashtable can store new lcms
     if ht.size - ht.load <= pc
         enlarge_hash_table!(ht)
     end
 
-    # add new lcms to the basis hashtable
-    insert_plcms_in_basis_hash_table!(pairset, pl, ht, update_ht, basis, plcm, j, pc)
+    # add new lcms to the basis hashtable,
+    # including j and not including pc
+    @info "insert plcms in range [$j : $(pc+1))"
+    insert_plcms_in_basis_hash_table!(pairset, pl, ht, update_ht, basis, plcm, j, pc+1)
 
     @info "after insert plcms" ht
 
@@ -564,7 +580,8 @@ function update_pairset!(
         end
     end
 
-    basis.ndone += 1
+    @info "So, pairset is " pairset
+
 end
 
 function update_basis!(
@@ -600,7 +617,7 @@ function update_basis!(
     end
 
     basis.nlead = k - 1
-    @assert basis.ndone == basis.ntotal
+    basis.ndone = basis.ntotal
 
     @info "updated #2" lead nonred basis.isred basis.nlead
 end
@@ -609,8 +626,9 @@ end
 function is_redundant!(
             pairset, basis, ht, update_ht, idx)
 
-    reinitialize_hash_table!(update_ht, basis.ntotal)
+    reinitialize_hash_table!(update_ht, 2*idx)
 
+    @info "checking redundancy of $idx" basis.ndone basis.ntotal
     ps = pairset.pairs
 
     # lead of new polynomial
@@ -618,8 +636,7 @@ function is_redundant!(
     # degree of lead
     lead_deg = ht.hashdata[lead_new].deg
 
-    start = basis.ndone + 1
-    for i in 1:basis.ndone
+    for i in idx+1:basis.ntotal
         i == idx && continue
         if basis.isred[i] == 1
             continue
@@ -640,7 +657,6 @@ function is_redundant!(
 
             basis.isred[idx] = 1
             pairset.load += 1
-            basis.ndone += 1
 
             return true
         end
@@ -818,6 +834,16 @@ function dump_all(msg, pairset, basis, matrix, ht, update_ht, symbol_ht)
 
     printstyled("nice repr\n", color=:green)
 
+    println("basis")
+    for pidx in 1:basis.ndone
+        poly = basis.gens[pidx]
+        for i in 1:length(poly)
+            e = ht.exponents[poly[i]]
+            c = basis.coeffs[pidx][i]
+            print("$c*$e + ")
+        end
+        println()
+    end
 
 
     printstyled("##################\n", color=:yellow)

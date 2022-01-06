@@ -163,7 +163,7 @@ function sort_matrix_rows_increasing!(matrix)
     println(matrix.low2coef)
 
     inds = collect(1:matrix.nlow)
-    cmp  = (x, y) ->  matrix_row_decreasing_cmp(matrix.lowrows[x], matrix.lowrows[y])
+    cmp  = (x, y) ->  matrix_row_increasing_cmp(matrix.lowrows[x], matrix.lowrows[y])
     sort!(inds, lt=cmp)
 
     matrix.lowrows[1:matrix.nlow] .= matrix.lowrows[1:matrix.nlow][inds]
@@ -176,6 +176,12 @@ function sort_matrix_rows_increasing!(matrix)
     matrix
 end
 
-function sort_gens_terms_increasing(basis, ht)
-    
+function sort_gens_terms_decreasing!(basis, ht, i)
+    inds = collect(1:length(basis.gens[i]))
+    gen = basis.gens[i]
+    cmp  = (x, y) -> exponent_isless(ht.exponents[gen[x]], ht.exponents[gen[y]])
+    sort!(inds, lt=cmp)
+    basis.gens[i] = basis.gens[i][inds]
+    basis.coeffs[i] = basis.coeffs[i][inds]
+    basis
 end

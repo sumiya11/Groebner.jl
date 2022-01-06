@@ -114,6 +114,9 @@ end
 function reduce_dense_row_by_known_pivots_sparse!(
             densecoeffs, matrix, basis, pivs, startcol, tmp_pos)
 
+    @info "reducing $densecoeffs by"
+    println("pivs = ", pivs)
+
     ncols = matrix.ncols
     nleft = matrix.nleft
 
@@ -271,7 +274,13 @@ function exact_sparse_rref!(matrix, basis)
             @info "pivot $k exists"
 
             densecfs = zeros(ground, ncols)
-            cfsref = matrix.coeffs[matrix.low2coef[k]]
+
+            if k <= nleft
+                cfsref = basis.coeffs[matrix.up2coef[k]]
+            else # of lower part of matrix
+                cfsref = matrix.coeffs[matrix.low2coef[k]]
+            end
+
             startcol = pivs[k][1]
 
             @assert length(cfsref) == length(pivs[k])
@@ -415,6 +424,7 @@ function convert_matrix_rows_to_basis_elements!(
 
         basis.coeffs[crs + i] = matrix.coeffs[i]
         basis.gens[crs + i] = matrix.lowrows[i]
+        # sort_gens_terms_decreasing!(basis, ht, crs + i)
     end
 
     basis.ntotal += matrix.npivots

@@ -1,5 +1,8 @@
 
 
+# TODO: make all insertions to be carried via one method (?)
+#       Is that possible? Yes
+
 # TODO: make immutable
 #=
     stores hash of a monomial,
@@ -200,7 +203,7 @@ function enlarge_hash_table!(ht::CustomMonomialHashtable)
         he = ht.hashdata[i].hash
         hidx = he
         for j in 0:ht.size-1
-            hidx = (hidx + j) % mod + 1
+            hidx = (he + j) % mod + 1
             ht.hashtable[hidx] != 0 && continue
             ht.hashtable[hidx] = i
             break
@@ -229,7 +232,7 @@ function insert_in_hash_table!(ht::CustomMonomialHashtable, e::Vector{UInt16})
     @label Restart
     while i < ht.size
         # TODO: & instead of %
-        hidx = (hidx + i) % mod + 1
+        hidx = (he + i) % mod + 1
         vidx  = ht.hashtable[hidx]
 
         @info "" i hidx vidx
@@ -391,6 +394,7 @@ end
 
 #------------------------------------------------------------------------------
 
+# compare pairwise divisibility of lcms from a[first:last] with lcm
 function check_monomial_division_in_update(a, first, last, lcm, ht)
     # pairs are sorted, we only need to check entries above starting point
 
@@ -400,11 +404,13 @@ function check_monomial_division_in_update(a, first, last, lcm, ht)
     j = first
     @label Restart
     while j <= last
+        # bad lcm
         if a[j] == 0
             j += 1
             continue
         end
-        if (~ht.hashdata[a[j]].divmask & divmask != 0)
+        # fast division check
+        if (~ht.hashdata[a[j]].divmask & divmask) != 0
             j += 1
             continue
         end
@@ -424,8 +430,8 @@ end
 #------------------------------------------------------------------------------
 
 # add monomials from `poly` multiplied by exponent vector `etmp`
-# with hash `htmp` to hashtable `symbol_ht`
-# Who is `row` then?
+# with hash `htmp` to hashtable `symbol_ht`,
+# and substitute hashes in row
 function insert_multiplied_poly_in_hash_table!(
         row,
         htmp,
@@ -448,7 +454,7 @@ function insert_multiplied_poly_in_hash_table!(
     sexps = symbol_ht.exponents
     sdata = symbol_ht.hashdata
 
-    @info "adding poly $poly mult by $etmp to symbolic hashtable"
+    # @info "adding poly $poly mult by $etmp to symbolic hashtable"
 
     l = 1 # hardcoding 1 does not seem nice =(
     @label Letsgo
@@ -463,7 +469,7 @@ function insert_multiplied_poly_in_hash_table!(
         # between all created hashtables
         h = htmp + bdata[poly[l]].hash
         e = bexps[poly[l]]
-        println("monom of index $(poly[l]) : $e")
+        # println("monom of index $(poly[l]) : $e")
 
         lastidx = symbol_ht.load + 1
         sexps[lastidx] = Vector{UInt16}(undef, explen)
@@ -473,13 +479,13 @@ function insert_multiplied_poly_in_hash_table!(
             enew[j] = etmp[j] + e[j]
         end
 
-        @info "product is $enew"
+        # @info "product is $enew"
         # now insert into hashtable
         k = h
         i = 0
         @label Restart
         while i <= symbol_ht.size  # TODO: < or <= ?
-            k = (k + i) % mod + 1
+            k = (h + i) % mod + 1
             vidx = symbol_ht.hashtable[k]
             # if index is free
             vidx == 0 && break
@@ -566,7 +572,7 @@ function insert_in_basis_hash_table_pivots(
         i = 0
         @label Restart
         while i <= ht.size
-            k = (k + i) % mod + 1
+            k = (h + i) % mod + 1
             hm = bhash[k]
 
             hm == 0 && break
@@ -614,27 +620,30 @@ function insert_plcms_in_basis_hash_table!(
         plcm,
         ifirst, ilast)
 
+    # including ifirst and not including ilast
+
     # AAAAAAAAAAA
 
     gens  = basis.gens
     mod   = ht.size
     ps    = pairset.pairs
 
-    @info "insert plcms in basis hash table" plcm ifirst ilast
+    @info "insert plcms in basis hash table" plcm ifirst ilast off
 
-    printstyled("## DUMP BASIS HASHMAP ##" , color=:red)
-    dump(ht, maxdepth=3)
+    printstyled("## DUMP BASIS HASHMAP ##\n" , color=:red)
+    dump(ht, maxdepth=4)
 
     m = ifirst
     l = 1
     @label Letsgo
-    while l <= ilast
+    while l < ilast
         if plcm[l] == 0
             l += 1
             continue
         end
 
         # what? why??
+        # aaaa, okay
         if is_gcd_const(gens[ps[off + l].poly1][1], gens[ps[off + 1].poly2][1], ht)
             l += 1
             continue
@@ -642,7 +651,7 @@ function insert_plcms_in_basis_hash_table!(
 
         ps[m] = ps[off + l]
 
-        @debug "hmm" ht.load ht.size plcm[l] update_ht.size update_ht.load
+        @debug "hmm" ht.load ht.size plcm[l] update_ht.size update_ht.load m
 
         # IT IS NOT CORRECT
         h = update_ht.hashdata[plcm[l]].hash
@@ -654,10 +663,10 @@ function insert_plcms_in_basis_hash_table!(
         i = 0
         @label Restart
         while i <= ht.size
-            k = (k + i) % mod + 1
+            k = (h + i) % mod + 1
             hm = ht.hashtable[k]
 
-            @info "hashes are " k hm h
+            @info "hashes are " k hm h m
 
             hm == 0 && break
             if ht.hashdata[hm].hash != h
@@ -667,7 +676,7 @@ function insert_plcms_in_basis_hash_table!(
 
             ehm = ht.exponents[hm]
 
-            @info "SO, we have " n ehm
+            @info "SO, we have " n ehm m
             for j in 1:ht.explen
                 if ehm[j] != n[j]
                     i += 1
@@ -678,6 +687,7 @@ function insert_plcms_in_basis_hash_table!(
             ps[m] = SPair(ps[m].poly1, ps[m].poly2, hm, ps[m].deg)
             m += 1
             l += 1
+            @info "add new and inc m and l" m l
             @goto Letsgo
         end
 
@@ -691,7 +701,11 @@ function insert_plcms_in_basis_hash_table!(
         ht.load += 1
         ps[m] = SPair(ps[m].poly1, ps[m].poly2, pos, ps[m].deg)
         m += 1
+        l += 1
     end
+
+    @info "m in the end" m
+    pairset.load = m - 1
 
 end
 
