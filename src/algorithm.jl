@@ -52,9 +52,9 @@ function groebner(
     end
     usefglm = initial_ordering == :lex && computing_ordering == :degrevlex
 
-    @debug "orderings" initial_ordering computing_ordering usefglm
-    @debug "f4: $linalg linear algebra"
-    @debug "fglm: $(:dense) linear algebra"
+    # @debug "orderings" initial_ordering computing_ordering usefglm
+    # @debug "f4: $linalg linear algebra"
+    # @debug "fglm: $(:dense) linear algebra"
 
     # convert polynomials into computing ordering
     fs_ord = change_ordering(fs, computing_ordering)
@@ -74,7 +74,7 @@ function groebner(
     while true
         prime = last(moduli)
 
-        @debug "selected prime" prime
+        # @debug "selected prime" prime
 
         # compute the image of fs in GF(prime),
         # by coercing each coefficient into the finite field
@@ -100,14 +100,14 @@ function groebner(
         gb_zz_crt, modulo = reconstruct_crt(gbs_gf, moduli, Zring)
         gb_qq = reconstruct_modulo(gb_zz_crt, modulo, Qring)
 
-        @info "gb of $(length(gb_qq)) polys modulo $(prod(BigInt.(moduli)))"
+        # @info "gb of $(length(gb_qq)) polys modulo $(prod(BigInt.(moduli)))"
 
-        @debug "running correctness check.."
+        # @debug "running correctness check.."
         if correctness_checks(gb_qq, fs) # TODO
             break
         end
 
-        @debug "reconstruction failed.. starting over"
+        # @debug "reconstruction failed.. starting over"
 
         push!(moduli, nextprime(prime + 1))
 
@@ -118,8 +118,8 @@ function groebner(
         end
     end
 
-    @info "used $(length(moduli)) primes of total product $(prod(BigInt.(moduli)))"
-    @info "resulting basis has $(length(gb_qq)) polynomials"
+    # @info "used $(length(moduli)) primes of total product $(prod(BigInt.(moduli)))"
+    # @info "resulting basis has $(length(gb_qq)) polynomials"
 
     # Logging.global_logger(old_logger)
     if reduced

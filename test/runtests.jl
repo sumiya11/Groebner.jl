@@ -7,7 +7,7 @@ include("../src/GroebnerBases.jl")
 using .GroebnerBases
 using .GroebnerBases.AbstractAlgebra
 
-@info "Testing started"
+# @info "Testing started"
 
 ⊂(xs, ys) = all(in(ys), xs)
 # set equality
@@ -19,6 +19,6 @@ using .GroebnerBases.AbstractAlgebra
     @includetests f4
 end
 
-# @info "Benchmarking"
+# # @info "Benchmarking"
 
 # include("../benchmark/benchmarks.jl")

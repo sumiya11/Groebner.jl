@@ -29,7 +29,7 @@ end
 
     p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings)))
 
-    @debug "producing $p small tests for f4"
+    # @debug "producing $p small tests for f4"
 
     for n in nvariables
         for e in exps

@@ -131,7 +131,7 @@ function fglm(G; linalg=:dense)
 
     @assert ordering(origR) != :lex
 
-    @info "converting from $(ordering(origR)) to :lex with fglm"
+    # @info "converting from $(ordering(origR)) to :lex with fglm"
 
     newR, _ = PolynomialRing(ground, string.(origxs), ordering=:lex)
 
@@ -149,7 +149,7 @@ function fglm(G; linalg=:dense)
             break
         end
         if i % 10 == 0
-            @debug "fglm iter $i" size(newG)
+            # @debug "fglm iter $i" size(newG)
         end
 
         m_lex = popfirst!(nextmonomials)

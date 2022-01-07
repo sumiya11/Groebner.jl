@@ -220,7 +220,7 @@ function insert_in_hash_table!(ht::MonomialHashtable, e::Vector{UInt16})
         he += ht.hasher[i] * e[i]
     end
 
-    @debug "new hash:" he
+    # @debug "new hash:" he
 
     # find new elem position in the table
 
@@ -235,7 +235,7 @@ function insert_in_hash_table!(ht::MonomialHashtable, e::Vector{UInt16})
         hidx = (he + i) % mod + 1
         vidx  = ht.hashtable[hidx]
 
-        @info "" i hidx vidx
+        # @info "" i hidx vidx
 
         # if free
         vidx == 0 && break
@@ -304,7 +304,7 @@ function fill_divmask!(ht::MonomialHashtable)
         end
     end
 
-    @info "filling divmask" min_exp max_exp ht.ndivbits
+    # @info "filling divmask" min_exp max_exp ht.ndivbits
 
     ctr   = 1
     steps = UInt32(0)
@@ -318,7 +318,7 @@ function fill_divmask!(ht::MonomialHashtable)
         end
     end
 
-    @info "filling divmask" ht.divmap
+    # @info "filling divmask" ht.divmap
 
     # TODO: offset
     for vidx in ht.offset:ht.load
@@ -362,7 +362,7 @@ end
 function is_monom_divisible(h1::Int, h2::Int, ht::MonomialHashtable)
 
     if (ht.hashdata[h2].divmask & ~ht.hashdata[h1].divmask) != 0
-        @debug "used divmask"
+        # @debug "used divmask"
         return false
     end
 
@@ -436,12 +436,12 @@ end
 # with hash `htmp` to hashtable `symbol_ht`,
 # and substitute hashes in row
 function insert_multiplied_poly_in_hash_table!(
-        row,
-        htmp,
-        etmp,
-        poly,
-        ht,
-        symbol_ht)
+        row::Vector{Int},
+        htmp::UInt32,
+        etmp::Vector{UInt16},
+        poly::Vector{Int},
+        ht::MonomialHashtable,
+        symbol_ht::MonomialHashtable)
 
     # oof
 
@@ -457,7 +457,7 @@ function insert_multiplied_poly_in_hash_table!(
     sexps = symbol_ht.exponents
     sdata = symbol_ht.hashdata
 
-    # @info "adding poly $poly mult by $etmp to symbolic hashtable"
+    # # @info "adding poly $poly mult by $etmp to symbolic hashtable"
 
     l = 1 # hardcoding 1 does not seem nice =(
     @label Letsgo
@@ -475,14 +475,16 @@ function insert_multiplied_poly_in_hash_table!(
         # println("monom of index $(poly[l]) : $e")
 
         lastidx = symbol_ht.load + 1
-        sexps[lastidx] = Vector{UInt16}(undef, explen)
+        if !isassigned(sexps, lastidx)
+            sexps[lastidx] = Vector{UInt16}(undef, explen)
+        end
         enew = sexps[lastidx]
         for j in 1:explen
             # multiplied monom exponent
             enew[j] = etmp[j] + e[j]
         end
 
-        # @info "product is $enew"
+        # # @info "product is $enew"
         # now insert into hashtable
         k = h
         i = 0
@@ -499,7 +501,7 @@ function insert_multiplied_poly_in_hash_table!(
             end
 
             estored = sexps[vidx]
-            for j in 1:explen
+            @inbounds for j in 1:explen
                 # hash collision, restarting search
                 if estored[j] != enew[j]
                     i += 1
@@ -544,7 +546,7 @@ function insert_in_basis_hash_table_pivots(
         row::Vector{Int},
         ht::MonomialHashtable,
         symbol_ht::MonomialHashtable,
-        col2hash)
+        col2hash::Vector{Int})
 
     while ht.size - ht.load <= length(row)
         enlarge_hash_table!(ht)
@@ -562,7 +564,7 @@ function insert_in_basis_hash_table_pivots(
     l = 1
     @label Letsgo
     while l <= length(row)
-        @debug "iter " l col2hash row
+        # @debug "iter " l col2hash row
         hidx = col2hash[row[l]]
 
         # symbolic hash
@@ -572,7 +574,7 @@ function insert_in_basis_hash_table_pivots(
         bexps[lastidx] = copy(sexps[hidx])
         e = bexps[lastidx]
 
-        @debug "new exponent to basis ht" e lastidx
+        # @debug "new exponent to basis ht" e lastidx
 
         k = h
         i = 0
@@ -595,7 +597,7 @@ function insert_in_basis_hash_table_pivots(
                 end
             end
 
-            @debug "not adding::same exp" l hm ehm
+            # @debug "not adding::same exp" l hm ehm
 
             row[l] = hm
             l += 1
@@ -613,7 +615,7 @@ function insert_in_basis_hash_table_pivots(
     end
 
 
-    @debug "inserting finished" ht.load row
+    # @debug "inserting finished" ht.load row
 
 end
 
@@ -634,7 +636,7 @@ function insert_plcms_in_basis_hash_table!(
     mod   = ht.size
     ps    = pairset.pairs
 
-    @info "insert plcms in basis hash table" plcm ifirst ilast off
+    # @info "insert plcms in basis hash table" plcm ifirst ilast off
 
     #printstyled("## DUMP BASIS HASHMAP ##\n" , color=:red)
     #dump(ht, maxdepth=4)
@@ -657,7 +659,7 @@ function insert_plcms_in_basis_hash_table!(
 
         ps[m] = ps[off + l]
 
-        @debug "hmm" ht.load ht.size plcm[l] update_ht.size update_ht.load m
+        # @debug "hmm" ht.load ht.size plcm[l] update_ht.size update_ht.load m
 
         # IT IS NOT CORRECT
         h = update_ht.hashdata[plcm[l]].hash
@@ -672,7 +674,7 @@ function insert_plcms_in_basis_hash_table!(
             k = (h + i) % mod + 1
             hm = ht.hashtable[k]
 
-            @info "hashes are " k hm h m
+            # @info "hashes are " k hm h m
 
             hm == 0 && break
             if ht.hashdata[hm].hash != h
@@ -682,7 +684,7 @@ function insert_plcms_in_basis_hash_table!(
 
             ehm = ht.exponents[hm]
 
-            @info "SO, we have " n ehm m
+            # @info "SO, we have " n ehm m
             for j in 1:ht.explen
                 if ehm[j] != n[j]
                     i += 1
@@ -693,7 +695,7 @@ function insert_plcms_in_basis_hash_table!(
             ps[m] = SPair(ps[m].poly1, ps[m].poly2, hm, ps[m].deg)
             m += 1
             l += 1
-            @info "add new and inc m and l" m l
+            # @info "add new and inc m and l" m l
             @goto Letsgo
         end
 
@@ -710,7 +712,7 @@ function insert_plcms_in_basis_hash_table!(
         l += 1
     end
 
-    @info "m in the end" m
+    # @info "m in the end" m
     pairset.load = m - 1
 
 end
@@ -733,7 +735,7 @@ function get_lcm(he1::Int, he2::Int,
         etmp[end] += etmp[i]
     end
 
-    @debug "inserting $etmp into update!!"
+    # @debug "inserting $etmp into update!!"
 
     insert_in_hash_table!(ht2, etmp)
 end

@@ -12,7 +12,7 @@ end
 # returns x + y*a modulo ch
 @inline function umultsummod(
         x::T, y::T, a::T, ch::T) where {T<:Unsigned}
-    ya = y*a % ch
+    ya = y*a % ch   # TODO: omit % ch
     (x + ya) % ch
 end
 

@@ -86,7 +86,8 @@ function initialize_matrix(ring::PolyRing)
             up2coef, low2coef)
 end
 
-function reinitialize_matrix!(matrix, npairs)
+# TODO: change semantic
+function reinitialize_matrix!(matrix::MacaulayMatrix, npairs::Int)
     resize!(matrix.uprows, npairs*2)
     resize!(matrix.lowrows, npairs*2)
     resize!(matrix.up2coef, npairs*2)
@@ -114,9 +115,9 @@ end
 
 function reduce_dense_row_by_known_pivots_sparse!(
             densecoeffs::Vector{UInt64}, matrix::MacaulayMatrix, basis::Basis,
-            pivs, startcol, tmp_pos)
+            pivs::Vector{Vector{Int}}, startcol::Int, tmp_pos::Int)
 
-    @info "reducing $densecoeffs by"
+    # @info "reducing $densecoeffs by"
     #println("pivs = ", pivs)
 
     ncols = matrix.ncols
@@ -163,7 +164,7 @@ function reduce_dense_row_by_known_pivots_sparse!(
         #println(reducerexps)
         #println(cfs)
 
-        for j in 1:length(reducerexps)
+        @inbounds for j in 1:length(reducerexps)
             # densecoeffs[reducerexps[j]] += mul * cfs[j]
             densecoeffs[reducerexps[j]] = umultsummod(densecoeffs[reducerexps[j]], mul, cfs[j], ch)
         end
@@ -200,8 +201,8 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
     # TODO
     # ground = parent(basis.coeffs[1][1])
 
-    @info "entering sparse rref" matrix.nrows matrix.nlow matrix.nup
-    @info "..."  ncols nright nleft
+    # @info "entering sparse rref" matrix.nrows matrix.nlow matrix.nup
+    # @info "..."  ncols nright nleft
 
     # known pivots
     pivs = Vector{Vector{Int}}(undef, ncols)
@@ -227,18 +228,19 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
 
     resize!(matrix.low2coef, ncols)
 
-    @info "known pivots" pivs
+    # @info "known pivots" pivs
 
     # unknown pivots
     # (not discovered yet)
     # we will modify them inplace when reducing by pivs
     upivs = matrix.lowrows
 
-    @info "unknown pivots" upivs
+    # @info "unknown pivots" upivs
 
-    rowcoeffs = zeros(UInt64, ncols)
+    densecoeffs = zeros(UInt64, ncols)
+
     for i in 1:nlow
-        @debug "low row $i.."
+        # @debug "low row $i.."
 
         # select next row to be reduced
         # npiv ~ exponents
@@ -253,7 +255,7 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
         # we load coefficients into dense array
         # into rowexps indices
         # TODO: move this
-        densecoeffs = zeros(UInt64, ncols)
+        densecoeffs .= UInt64(0)
         for j in 1:length(rowexps)
             densecoeffs[rowexps[j]] = cfsref[j]
         end
@@ -262,7 +264,7 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
         # first nonzero in densecoeffs is at startcol position
         startcol = rowexps[1]
         zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(densecoeffs, matrix, basis, pivs, startcol, -1)
-        @debug "low row $i reduced into" zeroed newrow newcfs
+        # @debug "low row $i reduced into" zeroed newrow newcfs
 
         # if fully reduced
         zeroed && continue
@@ -284,8 +286,8 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
         end
     end
 
-    @debug "interreducing rows.."
-    @info "matrix before::"
+    # @debug "interreducing rows.."
+    # @info "matrix before::"
     #dump(matrix, maxdepth=4)
     #println("PIVS ARE : \n", pivs)
     # number of new pivots
@@ -299,9 +301,9 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
     # .. for each right (non-pivotal) column
     for i in 1:nright
         k = ncols - i + 1
-        @info "interrrrreducing right column" k
+        # @info "interrrrreducing right column" k
         if isassigned(pivs, k)
-            @info "pivot $k exists"
+            # @info "pivot $k exists"
 
             densecfs = zeros(UInt64, ncols)
 
@@ -320,10 +322,10 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
             end
             newpivs += 1
 
-            @debug "reducing" densecfs startcol
+            # @debug "reducing" densecfs startcol
 
             zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(densecfs, matrix, basis, pivs, startcol, startcol)
-            @debug "reduced" zeroed newrow newcfs
+            # @debug "reduced" zeroed newrow newcfs
             # TODO: fails
             # @assert !zeroed
 
@@ -334,8 +336,8 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
         end
     end
 
-    @debug "INTERREDUCED" newpivs
-    @info "matrix is::"
+    # @debug "INTERREDUCED" newpivs
+    # @info "matrix is::"
     #dump(matrix, maxdepth=4)
     #println("PIVS ARE : \n", pivs)
 
@@ -347,7 +349,7 @@ end
 function exact_sparse_linear_algebra!(matrix::MacaulayMatrix, basis::Basis)
     resize!(matrix.coeffs, matrix.nlow)
 
-    @info "matrix in reduction"
+    # @info "matrix in reduction"
     #dump(matrix, maxdepth=3)
 
     exact_sparse_rref!(matrix, basis)
@@ -363,10 +365,10 @@ function convert_hashes_to_columns!(
     hdata    = symbol_ht.hashdata
     load     = symbol_ht.load
 
-    @info "Converting hashes to columnds" symbol_ht.load
+    # @info "Converting hashes to columnds" symbol_ht.load
     # monoms from symbolic table represent one column in the matrix
 
-    col2hash = Vector{UInt}(undef, load - 1)
+    col2hash = Vector{Int}(undef, load - 1)
     j = 1
     # number of pivotal cols
     k = 0
@@ -381,23 +383,23 @@ function convert_hashes_to_columns!(
         end
     end
 
-    @info "init col2hash" col2hash
+    # @info "init col2hash" col2hash
 
     # sort columns
     # TODO
     sort_columns_by_hash!(col2hash, symbol_ht)
 
-    @info "hashtable"
+    # @info "hashtable"
     #println(symbol_ht.exponents, "\nload: ", symbol_ht.load)
     #println(symbol_ht.hashdata)
 
-    @info "after sort col2hash" col2hash
+    # @info "after sort col2hash" col2hash
 
     matrix.nleft = k
     # -1 as long as hashtable load is always 1 more than actual
     matrix.nright = load - matrix.nleft - 1
 
-    @info "updated matrix info" matrix.nleft matrix.nright
+    # @info "updated matrix info" matrix.nleft matrix.nright
 
     # store the other direction of mapping,
     # hash -> column
@@ -438,7 +440,8 @@ end
 
 
 function convert_matrix_rows_to_basis_elements!(
-            matrix, basis, ht, symbol_ht)
+            matrix::MacaulayMatrix, basis::Basis,
+            ht::MonomialHashtable, symbol_ht::MonomialHashtable)
 
     # we mutate basis array directly by adding new elements
 
@@ -448,15 +451,15 @@ function convert_matrix_rows_to_basis_elements!(
 
     #dump(matrix, maxdepth=4)
 
-    @info "before insert_in_basis_hash_table_pivots"
+    # @info "before insert_in_basis_hash_table_pivots"
     #println(ht.exponents, "\n load: ", ht.load)
-    @info "symbolic::"
+    # @info "symbolic::"
     #println(symbol_ht.exponents, "\n symbol_ht: ", symbol_ht.load)
 
-    @info "col2hash" matrix.col2hash
+    # @info "col2hash" matrix.col2hash
 
     for i in 1:matrix.npivots
-        @info "converting matrix to basis" i rows[i]
+        # @info "converting matrix to basis" i rows[i]
         colidx = rows[i][1]
 
         insert_in_basis_hash_table_pivots(rows[i], ht, symbol_ht, matrix.col2hash)

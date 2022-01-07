@@ -1,7 +1,7 @@
 
 
 function sort_pairset_by_degree!(ps::Pairset, from::Int, sz::Int)
-    @info "Sorting by min degree"
+    # @info "Sorting by min degree"
     part = ps.pairs[from:sz]
     # TODO
     sort!(part, by=p -> p.deg)
@@ -14,7 +14,7 @@ function sort_pairset_by_degree!(ps::Pairset)
 end
 
 function sort_generators_by_position!(gens, load)
-    @info "Sorting first $load gens"
+    # @info "Sorting first $load gens"
     part = gens[1:load]
     sort!(part)
     gens[1:load] .= part
@@ -61,7 +61,7 @@ function exponent_isless(ea, eb)
 end
 
 function sort_gens_by_lead_increasing!(basis, ht)
-    @info "Sorting input" basis.gens basis.coeffs
+    # @info "Sorting input" basis.gens basis.coeffs
 
     gens = basis.gens
 
@@ -72,7 +72,7 @@ function sort_gens_by_lead_increasing!(basis, ht)
     basis.gens[1:basis.ntotal] .= basis.gens[1:basis.ntotal][inds]
     basis.coeffs[1:basis.ntotal] .= basis.coeffs[1:basis.ntotal][inds]
 
-    @info "Sorted input" basis.gens basis.coeffs
+    # @info "Sorted input" basis.gens basis.coeffs
 
     basis
 end
@@ -140,7 +140,7 @@ function sort_matrix_rows_decreasing!(matrix)
     #= smaller means  pivot being more left  =#
     #= and density being smaller             =#
 
-    @info "before up sort"
+    # @info "before up sort"
     #println(matrix.uprows)
     #println(matrix.up2coef)
 
@@ -151,7 +151,7 @@ function sort_matrix_rows_decreasing!(matrix)
     matrix.uprows[1:matrix.nup] .= matrix.uprows[1:matrix.nup][inds]
     matrix.up2coef[1:matrix.nup] .= matrix.up2coef[1:matrix.nup][inds]
 
-    @info "after up sort"
+    # @info "after up sort"
     #println(matrix.uprows)
     #println(matrix.up2coef)
 
@@ -163,7 +163,7 @@ function sort_matrix_rows_increasing!(matrix)
     #= smaller means  pivot being more right =#
     #= and density being larger =#
 
-    @info "before low sort"
+    # @info "before low sort"
     #println(matrix.lowrows)
     #println(matrix.low2coef)
 
@@ -174,7 +174,7 @@ function sort_matrix_rows_increasing!(matrix)
     matrix.lowrows[1:matrix.nlow] .= matrix.lowrows[1:matrix.nlow][inds]
     matrix.low2coef[1:matrix.nlow] .= matrix.low2coef[1:matrix.nlow][inds]
 
-    @info "after low sort"
+    # @info "after low sort"
     #println(matrix.lowrows)
     #println(matrix.low2coef)
 

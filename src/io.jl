@@ -41,7 +41,7 @@ function convert_to_internal(orig_polys::Vector{MPoly{Tv}}) where {Tv}
 
     @assert ch < 2^32
     @assert ord == :degrevlex
-    @assert nvars > 1 && nvars + 1 == explen 
+    @assert nvars > 1 && nvars + 1 == explen
 
     ring = PolyRing(nvars, explen, ord, UInt64(ch))
 
@@ -61,9 +61,9 @@ function export_basis(ring::MPolyRing{T}, basis, ht) where {T}
 
         # we will omit sorting here (?)
         # TODO
-        AbstractAlgebra.sort_terms!(ans[i])
+        # AbstractAlgebra.sort_terms!(ans[i])
 
-        @info "poly built"
+        # @info "poly built"
     end
     ans
 end

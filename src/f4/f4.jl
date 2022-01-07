@@ -22,7 +22,7 @@ function select_normal!(
     min_deg = ps[1].deg
 
     # println("Critical pairs: $(pairset.pairs[1:pairset.load])")
-    @info "Min degree is " min_deg
+    # @info "Min degree is " min_deg
 
     min_idx = 0
     # beda with boundaries
@@ -47,7 +47,7 @@ function select_normal!(
     # buffer !
     etmp = ht.exponents[1]
 
-    @info "Other things " min_idx npairs
+    # @info "Other things " min_idx npairs
 
     i = 1
     while i <= npairs
@@ -56,8 +56,8 @@ function select_normal!(
         lcm = ps[i].lcm
         j = i
 
-        @info "handling pair $i with lcm $lcm"
-        @info "btw, its exponent is" ht.exponents[lcm]
+        # @info "handling pair $i with lcm $lcm"
+        # @info "btw, its exponent is" ht.exponents[lcm]
         # we collect all generators with same lcm into gens
 
         while j <= npairs && ps[j].lcm == lcm
@@ -69,7 +69,7 @@ function select_normal!(
         end
         load -= 1
 
-        @info "collected $(load) polys with same lcm"
+        # @info "collected $(load) polys with same lcm"
         # println("gens now:", gens)
 
 
@@ -95,13 +95,13 @@ function select_normal!(
         # exponent of lcm corresponding to first generator
         elcm = ht.exponents[lcm]
 
-        @info "? divides" elcm eidx
+        # @info "? divides" elcm eidx
 
         for u in 1:ht.explen
             etmp[u] = elcm[u] - eidx[u]
         end
         # now etmp contents complement to eidx in elcm
-        @info "q = " etmp
+        # @info "q = " etmp
 
         # hash of complement
         htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
@@ -111,7 +111,7 @@ function select_normal!(
         uprows[matrix.nup] = multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly)
         # map upper row to index in basis
         matrix.up2coef[matrix.nup] = prev
-        @info "inserted reducer row " matrix.nup uprows[matrix.nup]
+        # @info "inserted reducer row " matrix.nup uprows[matrix.nup]
 
         # TODO: nreduce increment
 
@@ -150,7 +150,7 @@ function select_normal!(
             lowrows[matrix.nlow] = multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly)
             # map lower row to index in basis
             matrix.low2coef[matrix.nlow] = prev
-            @info "inserted reduced row " matrix.nlow lowrows[matrix.nlow]
+            # @info "inserted reduced row " matrix.nlow lowrows[matrix.nlow]
 
             symbol_ht.hashdata[lowrows[matrix.nlow][1]].idx = 2
 
@@ -161,7 +161,7 @@ function select_normal!(
         i = j
     end
 
-    @info "after select" matrix.nrows matrix.ncols matrix.nlow matrix.nup
+    # @info "after select" matrix.nrows matrix.ncols matrix.nlow matrix.nup
 
     resize!(matrix.lowrows, matrix.nrows - matrix.ncols)
 
@@ -171,7 +171,7 @@ function select_normal!(
     end
     pairset.load -= npairs
 
-    @info "after select" pairset.load
+    # @info "after select" pairset.load
 
 end
 
@@ -225,7 +225,7 @@ function find_multiplied_reducer!(
         i += 1
     end
 
-    @info "$(basis.nonred[i]) th poly lead divides the given one"
+    # @info "$(basis.nonred[i]) th poly lead divides the given one"
 
     # here found polynomial from basis with leading monom
     # dividing symbol_ht.exponents[vidx]
@@ -246,7 +246,7 @@ function find_multiplied_reducer!(
         # hash is linear
         h = symbol_ht.hashdata[vidx].hash - ht.hashdata[rpoly[1]].hash
 
-        matrix.uprows[matrix.nup + 1] = multiplied_poly_to_matrix_row!(symbol_ht, ht, h, copy(etmp), rpoly)
+        matrix.uprows[matrix.nup + 1] = multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, rpoly)
         matrix.up2coef[matrix.nup + 1] = basis.nonred[i]
 
         # upsize matrix
@@ -272,7 +272,7 @@ function symbolic_preprocessing!(
     nrr    = matrix.ncols
     onrr   = matrix.ncols
 
-    @info "Entering symbolic symbolic_preprocessing! with " symbol_load nrr onrr
+    # @info "Entering symbolic symbolic_preprocessing! with " symbol_load nrr onrr
 
     #=
         TODO: matrix_enlarge!
@@ -284,7 +284,7 @@ function symbolic_preprocessing!(
         resize!(matrix.up2coef, matrix.size)
     end
 
-    @info "Now matrix is of size $(matrix.size)"
+    # @info "Now matrix is of size $(matrix.size)"
 
     # for each lcm present in symbolic_ht set on select stage
     # !!! remember that first index is for buffer
@@ -293,11 +293,11 @@ function symbolic_preprocessing!(
     #= First round, we add multiplied polynomials which divide  =#
     #= a monomial exponent from selected spairs                 =#
     while i <= symbol_load
-        @debug "$i th element of symbolic table: " symbol_ht.exponents[i]
+        # @debug "$i th element of symbolic table: " symbol_ht.exponents[i]
         # not a reducer already
         if symbol_ht.hashdata[i].idx == 0
-            @debug "not a reducer.. find reducer"
-            # @info "find_multiplied_reducer for $i"
+            # @debug "not a reducer.. find reducer"
+            # # @info "find_multiplied_reducer for $i"
             symbol_ht.hashdata[i].idx = 1
             matrix.ncols += 1
             find_multiplied_reducer!(basis, matrix, ht, symbol_ht, i)
@@ -308,21 +308,21 @@ function symbolic_preprocessing!(
     #dump(matrix, maxdepth=4)
     #dump(symbol_ht, maxdepth=5)
 
-    @info "round 2"
+    # @info "round 2"
 
     #= Second round, we add multiplied polynomials which divide  =#
     #= lcm added on previous for loop                             =#
     while i <= symbol_ht.load
-        # @debug matrix.size matrix.nup
+        # # @debug matrix.size matrix.nup
         # TODO:big loop hm
-        @debug "$i th element of symbolic table: " symbol_ht.exponents[i]
+        # @debug "$i th element of symbolic table: " symbol_ht.exponents[i]
 
         if matrix.size == matrix.nup
             matrix.size *= 2
             resize!(matrix.uprows, matrix.size)
             resize!(matrix.up2coef, matrix.size)
         end
-        # @info "find_multiplied_reducer for $i"
+        # # @info "find_multiplied_reducer for $i"
 
         symbol_ht.hashdata[i].idx = 1
         matrix.ncols += 1
@@ -330,7 +330,7 @@ function symbolic_preprocessing!(
         i += 1
     end
 
-    @info "in symbolic_preprocessing" nrr matrix.ncols matrix.nrows matrix.size matrix.uprows
+    # @info "in symbolic_preprocessing" nrr matrix.ncols matrix.nrows matrix.size matrix.uprows
 
     #dump(matrix, maxdepth=4)
     #dump(symbol_ht, maxdepth=5)
@@ -359,8 +359,8 @@ function update_pairset!(
 
     new_lead  = basis.gens[idx][1]
 
-    @info "entering update_pairset" pl bl nl ps
-    @info "new poly is " new_lead ht.exponents[new_lead]
+    # @info "entering update_pairset" pl bl nl ps
+    # @info "new poly is " new_lead ht.exponents[new_lead]
 
     # initialize new critical lcms
     plcm = Vector{Int}(undef, bl + 1)
@@ -369,7 +369,7 @@ function update_pairset!(
     # generate a pair
     for i in 1:bl-1
         plcm[i] = get_lcm(basis.gens[i][1], new_lead, ht, update_ht)
-        @debug "new plcm" plcm[i]
+        # @debug "new plcm" plcm[i]
         deg = update_ht.hashdata[plcm[i]].deg
         newidx = pl + i
         if basis.isred[i] == 0
@@ -380,9 +380,9 @@ function update_pairset!(
         end
     end
 
-    @debug "INSIDE 1" ht update_ht
+    # @debug "INSIDE 1" ht update_ht
 
-    @info "generated pairset" pairset
+    # @info "generated pairset" pairset
 
     # traverse existing pairs
     for i in 1:pl
@@ -390,7 +390,7 @@ function update_pairset!(
         l = ps[i].poly2
         m = max(ps[pl + l].deg, ps[pl + j].deg)
 
-        @info "traverse existing" j l m
+        # @info "traverse existing" j l m
         # if an existing pair is divisible by lead of new poly
         # and has a greater degree than newly generated one
         if is_monom_divisible(ps[i].lcm, new_lead, ht) && ps[i].deg > m
@@ -409,10 +409,10 @@ function update_pairset!(
             j += 1
         end
     end
-    @info "after sifting through new pairs" pairset j
+    # @info "after sifting through new pairs" pairset j
 
     sort_pairset_by_degree!(pairset, pl + 1, j - 1)
-    @info "after sorting" pairset
+    # @info "after sorting" pairset
 
     for i in 1:j - 1
         plcm[i] = ps[pl + i].lcm
@@ -420,7 +420,7 @@ function update_pairset!(
     plcm[j] = 0
     pc = j
 
-    @info "plcm" plcm pc
+    # @info "plcm" plcm pc
     pc -= 1
 
     # mark redundancy of some pairs from plcm
@@ -440,7 +440,7 @@ function update_pairset!(
         j += 1
     end
 
-    @info "after removing redundant" ps plcm
+    # @info "after removing redundant" ps plcm
 
     # assure that basis hashtable can store new lcms
     if ht.size - ht.load <= pc
@@ -449,10 +449,10 @@ function update_pairset!(
 
     # add new lcms to the basis hashtable,
     # including j and not including pc
-    @info "insert plcms in range [$j : $(pc+1))"
+    # @info "insert plcms in range [$j : $(pc+1))"
     insert_plcms_in_basis_hash_table!(pairset, pl, ht, update_ht, basis, plcm, j, pc+1)
 
-    @info "after insert plcms" ht
+    # @info "after insert plcms" ht
 
     # mark redundant elements in masis
     nonred = basis.nonred
@@ -465,7 +465,7 @@ function update_pairset!(
         end
     end
 
-    @info "So, pairset is " pairset
+    # @info "So, pairset is " pairset
 
 end
 
@@ -480,8 +480,8 @@ function update_basis!(
     lead   = basis.lead
     nonred = basis.nonred
 
-    @info "basis" basis.ndone basis.ntotal
-    @info "updating basis & lead" lead nonred basis.isred basis.nlead
+    # @info "basis" basis.ndone basis.ntotal
+    # @info "updating basis & lead" lead nonred basis.isred basis.nlead
     for i in 1:basis.nlead
         if basis.isred[nonred[i]] == 0
             basis.lead[k]   = lead[i]
@@ -491,7 +491,7 @@ function update_basis!(
     end
     basis.nlead = k - 1
 
-    @info "updated #1" lead nonred basis.isred basis.nlead
+    # @info "updated #1" lead nonred basis.isred basis.nlead
 
     for i in basis.ndone+1:basis.ntotal
         if basis.isred[i] == 0
@@ -504,7 +504,7 @@ function update_basis!(
     basis.nlead = k - 1
     basis.ndone = basis.ntotal
 
-    @info "updated #2" lead nonred basis.isred basis.nlead
+    # @info "updated #2" lead nonred basis.isred basis.nlead
 end
 
 # checks if element of basis at position idx is redundant
@@ -513,7 +513,7 @@ function is_redundant!(
 
     reinitialize_hash_table!(update_ht, 2*idx)
 
-    @info "checking redundancy of $idx" basis.ndone basis.ntotal
+    # @info "checking redundancy of $idx" basis.ndone basis.ntotal
     ps = pairset.pairs
 
     # lead of new polynomial
@@ -529,13 +529,13 @@ function is_redundant!(
 
         lead_i = basis.gens[i][1]
 
-        @info "?? divisibility" lead_new lead_i
-        @info "" ht.exponents[lead_new] ht.exponents[lead_i]
+        # @info "?? divisibility" lead_new lead_i
+        # @info "" ht.exponents[lead_new] ht.exponents[lead_i]
 
         if is_monom_divisible(lead_new, lead_i, ht)
             # println("Delit !")
             lcm_new = get_lcm(lead_i, lead_new, ht, ht)
-            @info "lcm is " lcm_new ht.exponents[lcm_new]
+            # @info "lcm is " lcm_new ht.exponents[lcm_new]
 
             psidx = pairset.load + 1
             ps[psidx] = SPair(i, idx, lcm_new, ht.hashdata[lcm_new].deg)
@@ -545,7 +545,7 @@ function is_redundant!(
 
             return true
         end
-        @info "not divisible"
+        # @info "not divisible"
     end
 
     return false
@@ -574,8 +574,8 @@ function update!(
         npairs += i
     end
 
-    @info "" basis.ndone basis.ntotal
-    @info "potentially adding $npairs pairs from $npivs pivots"
+    # @info "" basis.ndone basis.ntotal
+    # @info "potentially adding $npairs pairs from $npivs pivots"
 
     # make sure pairset and update hashtable have enough
     # space to store new pairs
@@ -584,23 +584,23 @@ function update!(
     # TODO: better to reinitialize here, or in is_redundant! ?
     # not here
 
-    @debug "status ONE" pairset ht update_ht
+    # @debug "status ONE" pairset ht update_ht
 
     # for each new element in basis
     for i in basis.ndone+1:basis.ntotal
-        @info "adding $i th poly in update"
+        # @info "adding $i th poly in update"
         # check redundancy of new poly
         if is_redundant!(pairset, basis, ht, update_ht, i)
-            @info "Redundant!"
+            # @info "Redundant!"
             continue
         end
-        @info "Not redundant!"
+        # @info "Not redundant!"
 
-        @debug "status TWO $i" pairset.pairs[1:pairset.load]
+        # @debug "status TWO $i" pairset.pairs[1:pairset.load]
 
         update_pairset!(pairset, basis, ht, update_ht, i)
 
-        @debug "status THREE $i" pairset.pairs[1:pairset.load]
+        # @debug "status THREE $i" pairset.pairs[1:pairset.load]
     end
 
     update_basis!(basis, ht, update_ht)
@@ -685,8 +685,8 @@ function initialize_structures(
     # sort input, smaller leading terms first
     sort_gens_by_lead_increasing!(basis, basis_ht)
 
-    @info "sorted basis gens" basis.gens
-    @info "leads:" [basis_ht.exponents[e] for e in first.(basis.gens[1:basis.ntotal])]
+    # @info "sorted basis gens" basis.gens
+    # @info "leads:" [basis_ht.exponents[e] for e in first.(basis.gens[1:basis.ntotal])]
 
     # divide each polynomial by leading coefficient
     normalize_basis!(basis)
@@ -745,21 +745,21 @@ function f4(ring::PolyRing,
     # while there are pairs to be reduced
     while !isempty(pairset)
         d += 1
-        @info "F4 ITER $d"
-        @info "Available TODO pairs"
+        # @info "F4 ITER $d"
+        # @info "Available TODO pairs"
 
         # selects pairs for reduction from pairset following normal strategy
         # (minimal lcm degrees are selected),
         # and puts these into the matrix rows
         select_normal!(pairset, basis, matrix, ht, symbol_ht)
-        @info "Selected TODO pairs"
+        # @info "Selected TODO pairs"
 
         symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
-        @info "Matrix of size TODO, density TODO"
+        # @info "Matrix of size TODO, density TODO"
 
         # reduces polys and obtains new potential basis elements
         reduction!(basis, matrix, ht, symbol_ht)
-        @info "Matrix reduced, density TODO"
+        # @info "Matrix reduced, density TODO"
 
         # update the current basis with polynomials produced from reduction,
         # does not copy,
