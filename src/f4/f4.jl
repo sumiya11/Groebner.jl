@@ -987,8 +987,6 @@ function f4(ring::PolyRing,
 
     filter_redundant!(basis)
 
-
-
     basis, ht
 end
 

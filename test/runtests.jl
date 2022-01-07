@@ -16,7 +16,7 @@ using .GroebnerBases.AbstractAlgebra
 @testset "All tests" begin
 
     # @includetests fglm_general
-    @includetests
+    @includetests f4
 end
 
 # @info "Benchmarking"
