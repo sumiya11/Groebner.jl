@@ -115,7 +115,7 @@ function reduce_dense_row_by_known_pivots_sparse!(
             densecoeffs, matrix, basis, pivs, startcol, tmp_pos)
 
     @info "reducing $densecoeffs by"
-    println("pivs = ", pivs)
+    #println("pivs = ", pivs)
 
     ncols = matrix.ncols
     nleft = matrix.nleft
@@ -132,6 +132,8 @@ function reduce_dense_row_by_known_pivots_sparse!(
             continue
         end
         # if pivot not defined
+        #= WARNING =#
+
         if !isassigned(pivs, i) || (tmp_pos != -1 && tmp_pos == i)
             if np == -1
                 np = i
@@ -140,7 +142,8 @@ function reduce_dense_row_by_known_pivots_sparse!(
             continue
         end
 
-        mul = inv(densecoeffs[i])
+
+        mul = -densecoeffs[i]
         # exponents of reducer row at column i
         reducerexps = pivs[i]
 
@@ -151,8 +154,11 @@ function reduce_dense_row_by_known_pivots_sparse!(
             cfs = matrix.coeffs[matrix.low2coef[i]]
         end
 
+        #println(reducerexps)
+        #println(cfs)
+
         for j in 1:length(reducerexps)
-            densecoeffs[reducerexps[j]] -= mul * cfs[j]
+            densecoeffs[reducerexps[j]] += mul * cfs[j]
         end
     end
 
@@ -196,6 +202,23 @@ function exact_sparse_rref!(matrix, basis)
     for i in 1:matrix.nup
         pivs[i] = copy(matrix.uprows[i])
     end
+
+    #=
+    WARNing. TODO
+    =#
+    #=
+    pivs = Vector{Vector{Int}}(undef, ncols)
+    up2coef = Vector{Int}(undef, ncols)
+    for ui in 1:matrix.nup
+        pivs[matrix.uprows[ui][1]] = copy(matrix.uprows[ui])
+        up2coef[matrix.uprows[ui][1]] = matrix.up2coef[ui]
+    end
+    matrix.up2coef = up2coef
+    =#
+    #=
+    WARNing. TODO
+    =#
+
     resize!(matrix.low2coef, ncols)
 
     @info "known pivots" pivs
@@ -245,6 +268,7 @@ function exact_sparse_rref!(matrix, basis)
         if !isassigned(pivs, newrow[1])
             pivs[newrow[1]]  = newrow
             # set ref to coefficient to matrix
+            # guaranteed to be from lower part
             matrix.low2coef[newrow[1]] = i
         end
 
@@ -256,8 +280,8 @@ function exact_sparse_rref!(matrix, basis)
 
     @debug "interreducing rows.."
     @info "matrix before::"
-    dump(matrix, maxdepth=4)
-    println("PIVS ARE : \n", pivs)
+    #dump(matrix, maxdepth=4)
+    #println("PIVS ARE : \n", pivs)
     # number of new pivots
     newpivs = 0
 
@@ -306,8 +330,8 @@ function exact_sparse_rref!(matrix, basis)
 
     @debug "INTERREDUCED" newpivs
     @info "matrix is::"
-    dump(matrix, maxdepth=4)
-    println("PIVS ARE : \n", pivs)
+    #dump(matrix, maxdepth=4)
+    #println("PIVS ARE : \n", pivs)
 
     # shrink matrix
     matrix.npivots = matrix.nrows = matrix.size = newpivs
@@ -318,7 +342,7 @@ function exact_sparse_linear_algebra!(matrix, basis)
     resize!(matrix.coeffs, matrix.nlow)
 
     @info "matrix in reduction"
-    dump(matrix, maxdepth=3)
+    #dump(matrix, maxdepth=3)
 
     exact_sparse_rref!(matrix, basis)
 end
@@ -336,9 +360,10 @@ function convert_hashes_to_columns!(matrix, symbol_ht)
 
     col2hash = Vector{UInt}(undef, load - 1)
     j = 1
+    # number of pivotal cols
     k = 0
     for i in symbol_ht.offset:load
-        # map hash to column
+        # column to hash index
         col2hash[j] = i
         j += 1
 
@@ -352,7 +377,11 @@ function convert_hashes_to_columns!(matrix, symbol_ht)
 
     # sort columns
     # TODO
-    # sort_columns_by_hash!(col2hash, symbol_ht)
+    sort_columns_by_hash!(col2hash, symbol_ht)
+
+    @info "hashtable"
+    #println(symbol_ht.exponents, "\nload: ", symbol_ht.load)
+    #println(symbol_ht.hashdata)
 
     @info "after sort col2hash" col2hash
 
@@ -409,20 +438,24 @@ function convert_matrix_rows_to_basis_elements!(
     rows = matrix.lowrows
     crs = basis.ndone
 
-    dump(matrix, maxdepth=4)
+    #dump(matrix, maxdepth=4)
 
     @info "before insert_in_basis_hash_table_pivots"
-    dump(ht, maxdepth=4)
+    #println(ht.exponents, "\n load: ", ht.load)
     @info "symbolic::"
-    dump(symbol_ht, maxdepth=4)
+    #println(symbol_ht.exponents, "\n symbol_ht: ", symbol_ht.load)
 
+    @info "col2hash" matrix.col2hash
 
     for i in 1:matrix.npivots
         @info "converting matrix to basis" i rows[i]
+        colidx = rows[i][1]
+
         insert_in_basis_hash_table_pivots(rows[i], ht, symbol_ht, matrix.col2hash)
         # TODO : a constant
 
-        basis.coeffs[crs + i] = matrix.coeffs[i]
+        # an interesing way to find coefficients
+        basis.coeffs[crs + i] = matrix.coeffs[matrix.low2coef[colidx]]
         basis.gens[crs + i] = matrix.lowrows[i]
         # sort_gens_terms_decreasing!(basis, ht, crs + i)
     end

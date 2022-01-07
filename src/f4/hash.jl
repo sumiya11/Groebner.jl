@@ -630,8 +630,8 @@ function insert_plcms_in_basis_hash_table!(
 
     @info "insert plcms in basis hash table" plcm ifirst ilast off
 
-    printstyled("## DUMP BASIS HASHMAP ##\n" , color=:red)
-    dump(ht, maxdepth=4)
+    #printstyled("## DUMP BASIS HASHMAP ##\n" , color=:red)
+    #dump(ht, maxdepth=4)
 
     m = ifirst
     l = 1

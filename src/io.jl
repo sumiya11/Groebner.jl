@@ -38,7 +38,7 @@ function convert_to_internal(orig_polys::Vector{MPoly{Tv}}) where {Tv}
 
     ring = PolyRing{Tv}(nvars, explen, ord)
 
-    println(exps, coeffs)
+    #println(exps, coeffs)
     return ring, exps, coeffs
 end
 
@@ -53,7 +53,6 @@ function export_basis(ring::MPolyRing{T}, basis, ht) where {T}
         AbstractAlgebra.sort_terms!(ans[i])
 
         @info "poly built"
-        dump(ans[i], maxdepth=3)
     end
     ans
 end

@@ -45,14 +45,19 @@ end
 #=
     :degrevlex exponent vector comparison
 =#
-function exponent_isless(e1, e2)
-    n = length(e1)
-    for i in 1:n
-        if e1[i] > e2[i]
-            return false
-        end
+function exponent_isless(ea, eb)
+    if ea[end] < eb[end]
+        return true
+    elseif ea[end] != eb[end]
+        return false
     end
-    return e1[end] < e2[end]
+
+    i = length(ea) - 1
+    while i > 1 && ea[i] == eb[i]
+        i -= 1
+    end
+
+    return ea[i] < eb[i] ? false : true
 end
 
 function sort_gens_by_lead_increasing!(basis, ht)
@@ -81,10 +86,10 @@ function matrix_row_decreasing_cmp(a, b)
     vb = b[1]
 
     if va > vb
-        return true
+        return false
     end
     if va < vb
-        return false
+        return true
     end
 
     # same column index => compare density of rows
@@ -92,10 +97,10 @@ function matrix_row_decreasing_cmp(a, b)
     va = length(a)
     vb = length(b)
     if va > vb
-        return true
+        return false
     end
     if va < vb
-        return false
+        return true
     end
 
     # hmm, equal rows?
@@ -136,8 +141,8 @@ function sort_matrix_rows_decreasing!(matrix)
     #= and density being smaller             =#
 
     @info "before up sort"
-    println(matrix.uprows)
-    println(matrix.up2coef)
+    #println(matrix.uprows)
+    #println(matrix.up2coef)
 
     inds = collect(1:matrix.nup)
     cmp  = (x, y) ->  matrix_row_decreasing_cmp(matrix.uprows[x], matrix.uprows[y])
@@ -147,8 +152,8 @@ function sort_matrix_rows_decreasing!(matrix)
     matrix.up2coef[1:matrix.nup] .= matrix.up2coef[1:matrix.nup][inds]
 
     @info "after up sort"
-    println(matrix.uprows)
-    println(matrix.up2coef)
+    #println(matrix.uprows)
+    #println(matrix.up2coef)
 
     matrix
 end
@@ -159,8 +164,8 @@ function sort_matrix_rows_increasing!(matrix)
     #= and density being larger =#
 
     @info "before low sort"
-    println(matrix.lowrows)
-    println(matrix.low2coef)
+    #println(matrix.lowrows)
+    #println(matrix.low2coef)
 
     inds = collect(1:matrix.nlow)
     cmp  = (x, y) ->  matrix_row_increasing_cmp(matrix.lowrows[x], matrix.lowrows[y])
@@ -170,8 +175,8 @@ function sort_matrix_rows_increasing!(matrix)
     matrix.low2coef[1:matrix.nlow] .= matrix.low2coef[1:matrix.nlow][inds]
 
     @info "after low sort"
-    println(matrix.lowrows)
-    println(matrix.low2coef)
+    #println(matrix.lowrows)
+    #println(matrix.low2coef)
 
     matrix
 end
@@ -184,4 +189,25 @@ function sort_gens_terms_decreasing!(basis, ht, i)
     basis.gens[i] = basis.gens[i][inds]
     basis.coeffs[i] = basis.coeffs[i][inds]
     basis
+end
+
+function sort_columns_by_hash!(col2hash, symbol_ht)
+    hd = symbol_ht.hashdata
+    es = symbol_ht.exponents
+    len = symbol_ht.explen
+
+    function cmp(a, b)
+        ha = hd[a]
+        hb = hd[b]
+
+        if ha.idx != hb.idx
+            return ha.idx > hb.idx
+        end
+
+        ea = es[a]
+        eb = es[b]
+        !exponent_isless(ea, eb)
+    end
+
+    sort!(col2hash, lt = cmp)
 end

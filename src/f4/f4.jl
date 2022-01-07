@@ -132,8 +132,8 @@ end
 
 function select_normal!(pairset, basis, matrix, ht, symbol_ht; maxpairs=0)
 
-    println("Pairsload: $(pairset.load)")
-    println("Critical pairs: $(pairset.pairs[1:pairset.load])")
+    # println("Pairsload: $(pairset.load)")
+    # println("Critical pairs: $(pairset.pairs[1:pairset.load])")
 
     sort_pairset_by_degree!(pairset, 1, pairset.load)
     # sort by degree
@@ -141,7 +141,7 @@ function select_normal!(pairset, basis, matrix, ht, symbol_ht; maxpairs=0)
     ps = pairset.pairs
     min_deg = ps[1].deg
 
-    println("Critical pairs: $(pairset.pairs[1:pairset.load])")
+    # println("Critical pairs: $(pairset.pairs[1:pairset.load])")
     @info "Min degree is " min_deg
 
     min_idx = 0
@@ -190,7 +190,7 @@ function select_normal!(pairset, basis, matrix, ht, symbol_ht; maxpairs=0)
         load -= 1
 
         @info "collected $(load) polys with same lcm"
-        println("gens now:", gens)
+        # println("gens now:", gens)
 
 
         # sort by sparsity ?
@@ -199,7 +199,7 @@ function select_normal!(pairset, basis, matrix, ht, symbol_ht; maxpairs=0)
         # sort by number in the basis (by=identity)
         sort_generators_by_position!(gens, load)
 
-        println("sorted gens:", gens)
+        # println("sorted gens:", gens)
 
         # now we collect reducers, and reduced
 
@@ -304,19 +304,37 @@ function reduction!(basis, matrix, ht, symbol_ht; linalg=:sparse)
 
      convert_hashes_to_columns!(matrix, symbol_ht)
 
+     #=
+     for (i, row) in enumerate(matrix.uprows)
+         println("$i up row: $row, coeffs: $(basis.coeffs[matrix.up2coef[i]])")
+         print("nicely: ")
+         for k in 1:length(row)
+             print(basis.coeffs[matrix.up2coef[i]][k], "*", symbol_ht.exponents[matrix.col2hash[row[k]]], " + ")
+         end
+         println()
+     end
+     for (i, row) in enumerate(matrix.lowrows)
+         println("$i low row: $row, coeffs: $(basis.coeffs[matrix.low2coef[i]])")
+         print("nicely: ")
+         for k in 1:length(row)
+             print(basis.coeffs[matrix.low2coef[i]][k], "*", symbol_ht.exponents[matrix.col2hash[row[k]]], " + ")
+         end
+         println()
+     end
+     =#
+
      sort_matrix_rows_decreasing!(matrix) # for pivots,  AB part
      sort_matrix_rows_increasing!(matrix) # for reduced, CD part
 
-     printstyled("### PREPARED MATRIX ###\n", color=:red)
+     # printstyled("### PREPARED MATRIX ###\n", color=:red)
      # matrix.ncols beda
 
-     dump(matrix, maxdepth=2)
+     # dump(matrix, maxdepth=2)
 
      exact_sparse_linear_algebra!(matrix, basis)
 
-
-     printstyled("### AFTER RREF ###\n", color=:red)
-     dump(matrix, maxdepth=4)
+     # printstyled("### AFTER RREF ###\n", color=:red)
+     # dump(matrix, maxdepth=4)
 
      convert_matrix_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 end
@@ -420,8 +438,8 @@ function symbolic_preprocessing!(
         i += 1
     end
 
-    dump(matrix, maxdepth=4)
-    dump(symbol_ht, maxdepth=5)
+    #dump(matrix, maxdepth=4)
+    #dump(symbol_ht, maxdepth=5)
 
     @info "round 2"
 
@@ -447,8 +465,8 @@ function symbolic_preprocessing!(
 
     @info "in symbolic_preprocessing" nrr matrix.ncols matrix.nrows matrix.size matrix.uprows
 
-    dump(matrix, maxdepth=4)
-    dump(symbol_ht, maxdepth=5)
+    #dump(matrix, maxdepth=4)
+    #dump(symbol_ht, maxdepth=5)
 
     # shrink matrix sizes, set constants
     resize!(matrix.uprows, matrix.nup)
@@ -648,7 +666,7 @@ function is_redundant!(
         @info "" ht.exponents[lead_new] ht.exponents[lead_i]
 
         if is_monom_divisible(lead_new, lead_i, ht)
-            println("Delit !")
+            # println("Delit !")
             lcm_new = get_lcm(lead_i, lead_new, ht, ht)
             @info "lcm is " lcm_new ht.exponents[lcm_new]
 
@@ -810,6 +828,7 @@ end
 #------------------------------------------------------------------------------
 
 function dump_all(msg, pairset, basis, matrix, ht, update_ht, symbol_ht)
+    #=
     printstyled("### $msg ###\n", color=:yellow)
     printstyled("internal repr\n", color=:red)
 
@@ -847,6 +866,7 @@ function dump_all(msg, pairset, basis, matrix, ht, update_ht, symbol_ht)
 
 
     printstyled("##################\n", color=:yellow)
+    =#
 end
 
 #------------------------------------------------------------------------------
@@ -893,9 +913,9 @@ function f4(ring::PolyRing,
             tablesize=2^16,
             seed=42) where {Tv}
 
-    printstyled("### INPUT ###\n", color=:red)
-    println("coeffs = $coeffs")
-    println("exps = $exponents")
+    #printstyled("### INPUT ###\n", color=:red)
+    #println("coeffs = $coeffs")
+    #println("exps = $exponents")
 
     # initialize basis and hashtable with input polynomials,
     # fields are not meaningful yet and will be set during update! step
