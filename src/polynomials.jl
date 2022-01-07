@@ -325,7 +325,7 @@ end
 
 function convert_to_original_repr(orig_poly::, ht) where {Tv}
     n = length(orig_poly)
-    iexps = Matrix{UInt}(undef, length(ht[first(orig_poly.monoms)]), n)
+    iexps = MacaulayMatrix{UInt}(undef, length(ht[first(orig_poly.monoms)]), n)
     icoeffs = Vector{Tv}(undef, n)
     for (i, c, m) in zip(1:n, coefficients(orig_poly), monomials(orig_poly))
         iexps[:, i] .= ht[m]

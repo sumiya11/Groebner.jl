@@ -7,130 +7,10 @@
 
 #------------------------------------------------------------------------------
 
-#
-
-#------------------------------------------------------------------------------
-
-# s-pair, a pair of polynomials
-struct SPair
-    # first generator as index from the basis array
-    poly1::Int
-    # second generator -//-
-    poly2::Int
-    # position of lcm(poly1, poly2) in hashtable
-    lcm::Int
-    # total degree of lcm
-    deg::UInt
-end
-
-mutable struct Pairset
-    pairs::Vector{SPair}
-    # number of filled pairs,
-    # Initially zero
-    load::Int
-end
-
-function initialize_pairset(; initial_size=2^6) # TODO: why 64?
-    pairs = Vector{SPair}(undef, initial_size)
-    return Pairset(pairs, 0)
-end
-
-function Base.isempty(ps::Pairset)
-    return ps.load == 0
-end
-
-function check_enlarge_pairset!(ps::Pairset, added::Int)
-    sz = length(ps.pairs)
-    if ps.load + added >= sz
-        newsz = max(2 * sz, ps.load + added)
-        resize!(ps.pairs, newsz)
-    end
-end
-
-#------------------------------------------------------------------------------
-
-# TODO: get rid of `Tv` dependency
-mutable struct Basis{Tv}
-    # vector of polynomials, each polynomial is a vector of monomials,
-    # each monomial is represented with it's position in hashtable
-    gens::Vector{Vector{Int}}
-    # polynomial coefficients
-    coeffs::Vector{Vector{Tv}}
-
-    #= Keeping track of sizes   =#
-    #=  ndone <= ntotal <= size =#
-    # total allocated size,
-    # size == length(gens) is always true
-    size::Int
-    # number of processed polynomials in `gens`
-    # Iitially a zero
-    ndone::Int
-    # total number of polys filled in `gens`
-    # (these will be handled during next update! call)
-    # Iitially a zero
-    ntotal::Int
-
-    #= Keeping track of redundancy =#
-    #= invariant =#
-    #= length(lead) == length(nonred) == count(isred) == nlead =#
-    # if element of the basis
-    # is redundant
-    isred::Vector{Int8}
-    # positions of non-redundant elements in the basis
-    nonred::Vector{Int}
-    # division masks of leading monomials of
-    # non redundant basis elements
-    lead::Vector{UInt32}
-    # number of filled elements in lead
-    nlead::Int
-end
-
-function initialize_basis(ring::PolyRing{Tv}, ngens) where {Tv}
-    #=
-        always true
-        length(gens) == length(coeffs) == length(isred) == size
-    =#
-
-    sz     = ngens * 2
-    ndone  = 0
-    ntotal = 0
-    nlead  = 0
-
-    gens   = Vector{Vector{Int}}(undef, sz)
-    coeffs = Vector{Vector{Tv}}(undef, sz)
-    isred  = zeros(Int8, sz)
-    nonred = Vector{Int}(undef, sz)
-    lead = Vector{UInt32}(undef, sz)
-
-    return Basis{Tv}(gens, coeffs, sz, ndone, ntotal, isred, nonred, lead, nlead)
-end
-
-function check_enlarge_basis!(basis, added::Int)
-    if basis.ndone + added >= basis.size
-        basis.size = max(basis.size * 2, basis.ndone + added)
-        resize!(basis.gens, basis.size)
-        resize!(basis.coeffs, basis.size)
-        resize!(basis.isred, basis.size)
-        resize!(basis.nonred, basis.size)
-        resize!(basis.lead, basis.size)
-    end
-end
-
-function normalize_basis!(basis)
-    cfs = basis.coeffs
-    for i in 1:basis.ntotal
-        mul = inv(cfs[i][1])
-        for j in 2:length(cfs[i])
-            cfs[i][j] *= mul
-        end
-        cfs[i][1] = one(cfs[i][1])
-    end
-end
-
-#------------------------------------------------------------------------------
-
-
-function select_normal!(pairset, basis, matrix, ht, symbol_ht; maxpairs=0)
+function select_normal!(
+            pairset::Pairset, basis::Basis, matrix::MacaulayMatrix,
+            ht::MonomialHashtable, symbol_ht::MonomialHashtable;
+            maxpairs::Int=0)
 
     # println("Pairsload: $(pairset.load)")
     # println("Critical pairs: $(pairset.pairs[1:pairset.load])")
@@ -300,28 +180,12 @@ end
 # Prepares the given set of polynomials L to be reduced by the ideal G,
 # starts the reduction routine,
 # and returns reduced polynomials
-function reduction!(basis, matrix, ht, symbol_ht; linalg=:sparse)
+function reduction!(
+            basis::Basis, matrix::MacaulayMatrix,
+            ht::MonomialHashtable, symbol_ht::MonomialHashtable;
+            linalg::Symbol=:sparse)
 
      convert_hashes_to_columns!(matrix, symbol_ht)
-
-     #=
-     for (i, row) in enumerate(matrix.uprows)
-         println("$i up row: $row, coeffs: $(basis.coeffs[matrix.up2coef[i]])")
-         print("nicely: ")
-         for k in 1:length(row)
-             print(basis.coeffs[matrix.up2coef[i]][k], "*", symbol_ht.exponents[matrix.col2hash[row[k]]], " + ")
-         end
-         println()
-     end
-     for (i, row) in enumerate(matrix.lowrows)
-         println("$i low row: $row, coeffs: $(basis.coeffs[matrix.low2coef[i]])")
-         print("nicely: ")
-         for k in 1:length(row)
-             print(basis.coeffs[matrix.low2coef[i]][k], "*", symbol_ht.exponents[matrix.col2hash[row[k]]], " + ")
-         end
-         println()
-     end
-     =#
 
      sort_matrix_rows_decreasing!(matrix) # for pivots,  AB part
      sort_matrix_rows_increasing!(matrix) # for reduced, CD part
@@ -341,7 +205,10 @@ end
 
 #------------------------------------------------------------------------------
 
-function find_multiplied_reducer!(basis, matrix, ht, symbol_ht, vidx)
+function find_multiplied_reducer!(
+            basis::Basis, matrix::MacaulayMatrix,
+            ht::MonomialHashtable, symbol_ht::MonomialHashtable,
+            vidx::Int)
 
     e = symbol_ht.exponents[vidx]
     etmp = ht.exponents[1]
@@ -394,9 +261,9 @@ end
 # extends L to contain possible polys for reduction by G,
 # and returns it
 function symbolic_preprocessing!(
-                basis, matrix,
-                ht, symbol_ht;
-                linalg=:sparse)
+                basis::Basis, matrix::MacaulayMatrix,
+                ht::MonomialHashtable, symbol_ht::MonomialHashtable;
+                linalg::Symbol=:sparse)
 
     # check matrix sizes (we want to omit this I guess)
 
@@ -604,8 +471,8 @@ end
 
 function update_basis!(
             basis,
-            ht::CustomMonomialHashtable,
-            update_ht::CustomMonomialHashtable)
+            ht::MonomialHashtable,
+            update_ht::MonomialHashtable)
 
     # here we could check overall redundancy and update basis.lead
 
@@ -688,9 +555,9 @@ end
 
 function update!(
         pairset::Pairset,
-        basis::Basis{Tv},
-        ht::CustomMonomialHashtable,
-        update_ht::CustomMonomialHashtable) where {Tv}
+        basis::Basis,
+        ht::MonomialHashtable,
+        update_ht::MonomialHashtable)
 
     #=
         Always check redundancy, for now
@@ -794,9 +661,9 @@ end
 function initialize_structures(
             ring::PolyRing,
             exponents::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{Tv}},
-            tablesize,
-            seed) where {Tv}
+            coeffs::Vector{Vector{UInt64}},
+            tablesize::Int,
+            seed)
 
     rng = Random.MersenneTwister(seed)
 
@@ -804,7 +671,7 @@ function initialize_structures(
     # pairset for storing critical pairs of basis elements to assess,
     # hashtable for hashing monomials occuring in the basis
     basis    = initialize_basis(ring, length(exponents))
-    basis_ht = initialize_basis_hash_table(ring, rng)
+    basis_ht = initialize_basis_hash_table(ring, rng, initial_size=tablesize)
 
     # filling the basis and hashtable with the given inputs
     fill_data!(basis, basis_ht, exponents, coeffs)
@@ -827,66 +694,6 @@ end
 
 #------------------------------------------------------------------------------
 
-function dump_all(msg, pairset, basis, matrix, ht, update_ht, symbol_ht)
-    #=
-    printstyled("### $msg ###\n", color=:yellow)
-    printstyled("internal repr\n", color=:red)
-
-    printstyled(". pairset filled $(pairset.load) / $(length(pairset.pairs))\n", color=:red)
-    println(pairset.pairs[1:pairset.load+1])
-
-    printstyled(". basis filled $(basis.ntotal) / $(length(basis.gens)), where $(basis.ndone) are done\n", color=:red)
-    dump(basis, maxdepth=3)
-
-    printstyled(". matrix size $(matrix.size), npivs $(matrix.npivots), nrows $(matrix.nrows), ncols $(matrix.ncols)\n", color=:red)
-    printstyled("nup $(matrix.nup), nlow $(matrix.nlow), nleft $(matrix.nleft), nright $(matrix.nright)\n", color=:red)
-    dump(matrix, maxdepth=2)
-
-    printstyled(". basis hashtable filled $(ht.load) / $(ht.size)\n", color=:red)
-    dump(ht, maxdepth=3)
-
-    printstyled(". update hashtable filled $(update_ht.load) / $(update_ht.size)\n", color=:red)
-    dump(update_ht, maxdepth=2)
-
-    printstyled(". symbol hashtable filled $(symbol_ht.load) / $(symbol_ht.size)\n", color=:red)
-    dump(symbol_ht, maxdepth=2)
-
-    printstyled("nice repr\n", color=:green)
-
-    println("basis")
-    for pidx in 1:basis.ndone
-        poly = basis.gens[pidx]
-        for i in 1:length(poly)
-            e = ht.exponents[poly[i]]
-            c = basis.coeffs[pidx][i]
-            print("$c*$e + ")
-        end
-        println()
-    end
-
-
-    printstyled("##################\n", color=:yellow)
-    =#
-end
-
-#------------------------------------------------------------------------------
-
-function f4(polys::Vector{MPoly{Tv}};
-            select=select_normal!,
-            reduced=true,
-            linalg=:sparse,
-            maxpairs=0,
-            tablesize=2^16,
-            seed=42) where {Tv}
-
-    ring, exps, coeffs = convert_to_internal(polys)
-    gb, ht = f4(ring, exps, coeffs;
-        select=select, reduced=reduced,
-        linalg=linalg, maxpairs=maxpairs, tablesize=tablesize )
-
-    export_basis(parent(first(polys)), gb, ht)
-end
-
 #
 """
     Main function to calculate the Groebner basis of the given polynomial ideal.
@@ -905,17 +712,10 @@ end
 """
 function f4(ring::PolyRing,
             exponents::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{Tv}};
-            select=selectnormal,
-            reduced=true,
-            linalg=:sparse,
-            maxpairs=0,
-            tablesize=2^16,
+            coeffs::Vector{Vector{UInt64}};
+            reduced::Bool=true,
+            tablesize::Int=2^16,
             seed=42) where {Tv}
-
-    #printstyled("### INPUT ###\n", color=:red)
-    #println("coeffs = $coeffs")
-    #println("exps = $exponents")
 
     # initialize basis and hashtable with input polynomials,
     # fields are not meaningful yet and will be set during update! step
@@ -934,39 +734,35 @@ function f4(ring::PolyRing,
     # a set to store critical pairs of polynomials to be reduced
     pairset = initialize_pairset()
 
-    dump_all("AFTER INIT", pairset, basis, matrix, ht, update_ht, symbol_ht)
-
-
     # makes basis fields valid,
     # does not copy,
     # checks for redundancy of new elems
     update!(pairset, basis, ht, update_ht)
-    dump_all("INITIAL UPDATE", pairset, basis, matrix, ht, update_ht, symbol_ht)
 
     d = 0
     # while there are pairs to be reduced
     while !isempty(pairset)
         d += 1
-        @warn "F4 ITER $d"
+        @info "F4 ITER $d"
+        @info "Available TODO pairs"
 
         # selects pairs for reduction from pairset following normal strategy
         # (minimal lcm degrees are selected),
         # and puts these into the matrix rows
-        select_normal!(pairset, basis, matrix, ht, symbol_ht, maxpairs=maxpairs)
-        dump_all("AFTER SELECT", pairset, basis, matrix, ht, update_ht, symbol_ht)
+        select_normal!(pairset, basis, matrix, ht, symbol_ht)
+        @info "Selected TODO pairs"
 
         symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
-        dump_all("AFTER SYMBOLIC", pairset, basis, matrix, ht, update_ht, symbol_ht)
+        @info "Matrix of size TODO, density TODO"
 
         # reduces polys and obtains new potential basis elements
-        reduction!(basis, matrix, ht, symbol_ht, linalg=linalg)
-        dump_all("AFTER REDUCTION", pairset, basis, matrix, ht, update_ht, symbol_ht)
+        reduction!(basis, matrix, ht, symbol_ht)
+        @info "Matrix reduced, density TODO"
 
         # update the current basis with polynomials produced from reduction,
         # does not copy,
         # checks for redundancy
         update!(pairset, basis, ht, update_ht)
-        dump_all("AFTER UPDATE", pairset, basis, matrix, ht, update_ht, symbol_ht)
 
         # TODO: is this okay hm ?
         matrix    = initialize_matrix(ring)

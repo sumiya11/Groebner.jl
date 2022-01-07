@@ -1,6 +1,6 @@
 
 #= Finite field aritmhetic implemented in unsigned integers =#
-#= It is generally faster than AbstractAlgebra.GF interface =# 
+#= It is generally faster than AbstractAlgebra.GF interface =#
 
 # returns x - y*a modulo ch
 @inline function umultsubmod(
@@ -9,9 +9,22 @@
     (x + ch - ya) % ch
 end
 
+# returns x + y*a modulo ch
+@inline function umultsummod(
+        x::T, y::T, a::T, ch::T) where {T<:Unsigned}
+    ya = y*a % ch
+    (x + ya) % ch
+end
+
 # returns x⁻¹ modulo ch
 @inline function uinvmod(x::T, ch::T) where {T<:Unsigned}
-    invmod(x, ch)
+    # seems like we dont need % ch
+    invmod(x, ch) % ch
+end
+
+# returns -x modulo ch
+@inline function ucompmod(x::T, ch::T) where {T<:Unsigned}
+    ch - x
 end
 
 # returns x*y modulo ch

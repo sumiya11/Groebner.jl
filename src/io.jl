@@ -1,6 +1,6 @@
 
 
-struct PolyRing{Tv}
+struct PolyRing
     #= Ring information =#
     # number of variables
     nvars::Int
@@ -9,6 +9,8 @@ struct PolyRing{Tv}
     # ring monomial ordering,
     # possible are :lex and :degrevlex
     ord::Symbol
+    # characteristic of coefficient field
+    ch::UInt64
 end
 
 
@@ -19,7 +21,7 @@ function convert_to_internal(orig_polys::Vector{MPoly{Tv}}) where {Tv}
     # orig_polys is not empty here
     npolys = length(orig_polys)
     exps   = Vector{Vector{Vector{UInt16}}}(undef, npolys)
-    coeffs = Vector{Vector{Tv}}(undef, npolys)
+    coeffs = Vector{Vector{UInt64}}(undef, npolys)
 
     for i in 1:npolys
         poly = orig_polys[i]
@@ -28,27 +30,36 @@ function convert_to_internal(orig_polys::Vector{MPoly{Tv}}) where {Tv}
             # TODO: ask
             exps[i][j] = poly.exps[:, j]
         end
-        coeffs[i] = copy(poly.coeffs)
+        coeffs[i] = map(UInt64 ∘ data, poly.coeffs)
     end
 
     R = parent(first(orig_polys))
     explen = R.N
     nvars  = R.num_vars
     ord    = R.ord
+    ch     = characteristic(R)
 
-    ring = PolyRing{Tv}(nvars, explen, ord)
+    @assert ch < 2^32
+    @assert ord == :degrevlex
+    @assert nvars > 1 && nvars + 1 == explen 
+
+    ring = PolyRing(nvars, explen, ord, UInt64(ch))
 
     #println(exps, coeffs)
     return ring, exps, coeffs
 end
 
 function export_basis(ring::MPolyRing{T}, basis, ht) where {T}
+    ground = base_ring(ring)
     ans = Vector{elem_type(ring)}(undef, basis.ndone)
     for i in 1:basis.ndone
-        cfs  = basis.coeffs[i]
+        # cfs  = basis.coeffs[i]
+        cfs = map(ground, basis.coeffs[i])
+
         exps = [ht.exponents[vidx] for vidx in basis.gens[i]]
         ans[i] = MPoly{T}(ring, cfs, UInt.(hcat(exps...)))
 
+        # we will omit sorting here (?)
         # TODO
         AbstractAlgebra.sort_terms!(ans[i])
 

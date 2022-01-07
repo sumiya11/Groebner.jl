@@ -13,7 +13,7 @@ import AbstractAlgebra: leading_term, QQ, PolynomialRing, terms,
                         MPolyBuildCtx, finish, push_term!, ZZ,
                         content, change_base_ring, exponent_vector,
                         lcm, monomial, RingElem, set_exponent_vector!,
-                        MPolyRing, nvars
+                        MPolyRing, nvars, data, characteristic
 
 import Combinatorics
 import Primes
@@ -52,11 +52,16 @@ include("testgens.jl")
 
 # f4 implementation over finite fields
 include("io.jl")
+include("arithmetic.jl")
+
 include("f4/hash.jl")
-include("f4/f4.jl")
+include("f4/symbolic.jl")
 include("f4/linear.jl")
 include("f4/sorting.jl")
+include("f4/f4.jl")
 include("f4/statistics.jl")
+
+include("algorithm.jl")
 
 
 #include("f4.jl")

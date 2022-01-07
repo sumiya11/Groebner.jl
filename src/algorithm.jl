@@ -129,13 +129,18 @@ function groebner(
     gb_qq
 end
 
-function groebner(fs::Vector{MPoly{GFElem{Int}}};)
-    length(fs) > 0 || error("Empty input")
+function groebner(polys::Vector{MPoly{GFElem{Int}}};)
+    length(polys) > 0 || error("Empty input")
 
-    R = parent(first(fs))
+    R = parent(first(polys))
     ordering(R) in (:degrevlex, ) || error("Only :degrevlex is supported")
 
-    f4(fs)
+    ring, exps, coeffs = convert_to_internal(polys)
+
+    gb, ht = f4(ring, exps, coeffs)
+
+    export_basis(parent(first(polys)), gb, ht)
+
 end
 
 # Checks if the given polynomial set gb_reconstructed

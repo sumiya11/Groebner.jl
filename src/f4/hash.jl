@@ -26,7 +26,7 @@ end
     Hashtable implementing linear probing
     and designed to store and operate with monomials
 =#
-mutable struct CustomMonomialHashtable
+mutable struct MonomialHashtable
     # stores monomial exponent vectors,
     # assumes degrees are < 2^16
     exponents::Vector{Vector{UInt16}}
@@ -74,9 +74,9 @@ end
 # TODO: Initial size is a nice parameter to play with
 # TODO: Get rid of `Tv` dependency
 function initialize_basis_hash_table(
-        ring::PolyRing{Tv},
+        ring::PolyRing,
         rng::Random.MersenneTwister;
-        initial_size=2^3) where {Tv}
+        initial_size=2^3)
 
     exponents = Vector{Vector{UInt16}}(undef, initial_size)
     hashdata  = Vector{Hashvalue}(undef, initial_size)
@@ -124,7 +124,7 @@ function initialize_basis_hash_table(
     # first stored exponent used as buffer lately
     exponents[1] = zeros(UInt16, explen)
 
-    CustomMonomialHashtable(
+    MonomialHashtable(
         exponents, hashtable, hashdata, hasher,
         nvars, explen, ord,
         divmap, divvars, ndivvars, ndivbits,
@@ -164,7 +164,7 @@ function initialize_secondary_hash_table(basis_ht)
 
     exponents[1] = zeros(UInt16, explen)
 
-    CustomMonomialHashtable(
+    MonomialHashtable(
         exponents, hashtable, hashdata, hasher,
         nvars, explen, ord,
         divmap, divvars, ndivvars, ndivbits,
@@ -175,7 +175,7 @@ end
 
 # resizes (if needed) ht so that it can store `size` elements,
 # and clears all previoud data
-function reinitialize_hash_table!(ht::CustomMonomialHashtable, size::Int)
+function reinitialize_hash_table!(ht::MonomialHashtable, size::Int)
     if size > ht.size
         while size > ht.size
             ht.size *= 2
@@ -190,7 +190,7 @@ end
 
 # doubles the size of storage in `ht`,
 # and rehashes all elements
-function enlarge_hash_table!(ht::CustomMonomialHashtable)
+function enlarge_hash_table!(ht::MonomialHashtable)
     ht.size *= 2
     resize!(ht.hashdata,  ht.size)
     resize!(ht.exponents, ht.size)
@@ -213,7 +213,7 @@ end
 
 #------------------------------------------------------------------------------
 
-function insert_in_hash_table!(ht::CustomMonomialHashtable, e::Vector{UInt16})
+function insert_in_hash_table!(ht::MonomialHashtable, e::Vector{UInt16})
     # generate hash
     he = UInt32(0)
     for i in 1:ht.explen
@@ -278,7 +278,7 @@ end
     Having `ht` filled with monomials from input polys,
     computes ht.divmap and divmask for each of already stored monomials
 =#
-function fill_divmask!(ht::CustomMonomialHashtable)
+function fill_divmask!(ht::MonomialHashtable)
     ndivvars = ht.ndivvars
     divvars  = ht.divvars
 
@@ -335,7 +335,7 @@ end
 =#
 function generate_monomial_divmask(
             e::Vector{UInt16},
-            ht::CustomMonomialHashtable)
+            ht::MonomialHashtable)
 
     divvars = ht.divvars
     divmap  = ht.divmap
@@ -359,7 +359,7 @@ end
 #------------------------------------------------------------------------------
 
 # h1 divisible by h2
-function is_monom_divisible(h1::Int, h2::Int, ht::CustomMonomialHashtable)
+function is_monom_divisible(h1::Int, h2::Int, ht::MonomialHashtable)
 
     if (ht.hashdata[h2].divmask & ~ht.hashdata[h1].divmask) != 0
         @debug "used divmask"
@@ -378,7 +378,7 @@ function is_monom_divisible(h1::Int, h2::Int, ht::CustomMonomialHashtable)
     return true
 end
 
-function is_gcd_const(h1::Int, h2::Int, ht::CustomMonomialHashtable)
+function is_gcd_const(h1::Int, h2::Int, ht::MonomialHashtable)
     e1 = ht.exponents[h1]
     e2 = ht.exponents[h2]
 

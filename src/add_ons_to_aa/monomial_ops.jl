@@ -45,7 +45,7 @@ function unsafe_term_divide(m::MPoly{T}, H::MPoly{T}) where {T}
     N = size(m.exps, 1)
     ord = exponent_ordering(R, N)
 
-    diff = Matrix{UInt64}(undef, N, 1)
+    diff = MacaulayMatrix{UInt64}(undef, N, 1)
     for i in 1:N
         diff[i] = m.exps[i, 1] - H.exps[i, 1]
     end

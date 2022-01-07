@@ -13,7 +13,7 @@ function unsafe_sparsevector_to_poly(
     raw_explen = size(first(monom_basis).exps, 1)
 
     cfs  = Vector{Tv}(undef, len)
-    exps = Matrix{UInt64}(undef, raw_explen, len)
+    exps = MacaulayMatrix{UInt64}(undef, raw_explen, len)
 
     for (i, midx, val) in zip(1:len, nonzeroinds(vector), nonzeros(vector))
         cfs[i] = val

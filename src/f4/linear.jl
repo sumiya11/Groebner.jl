@@ -1,7 +1,7 @@
 
 #------------------------------------------------------------------------------
 
-mutable struct Matrix{Tv}
+mutable struct MacaulayMatrix
     #=
         Matrix of the following structure
 
@@ -27,7 +27,7 @@ mutable struct Matrix{Tv}
     # row coefficients
     # (some of the rows are stored in the basis,
     #  and some are stored here)
-    coeffs::Vector{Vector{Tv}}
+    coeffs::Vector{Vector{UInt64}}
 
     #= sizes info =#
     # total number of allocated rows
@@ -61,11 +61,11 @@ mutable struct Matrix{Tv}
     low2coef::Vector{Int}
 end
 
-function initialize_matrix(ring::PolyRing{Tv}) where {Tv}
+function initialize_matrix(ring::PolyRing)
     uprows   = Vector{Vector{Int}}(undef, 0)
     lowrows  = Vector{Vector{Int}}(undef, 0)
     col2hash = Vector{Int}(undef, 0)
-    coeffs   = Vector{Vector{Tv}}(undef, 0)
+    coeffs   = Vector{Vector{UInt64}}(undef, 0)
 
     size    = 0
     npivots = 0
@@ -80,7 +80,7 @@ function initialize_matrix(ring::PolyRing{Tv}) where {Tv}
     up2coef   = Vector{Int}(undef, 0)
     low2coef   = Vector{Int}(undef, 0)
 
-    Matrix(uprows, lowrows, col2hash, coeffs,
+    MacaulayMatrix(uprows, lowrows, col2hash, coeffs,
             size, npivots, nrows, ncols,
             nup, nlow, nleft, nright,
             up2coef, low2coef)
@@ -102,23 +102,27 @@ end
 
 #------------------------------------------------------------------------------
 
-function normalize_sparse_row!(row)
-    pinv = inv(row[1])
+function normalize_sparse_row!(row::Vector{UInt64}, ch::UInt64)
+    pinv = uinvmod(row[1], ch)
     for i in 2:length(row)
-        row[i] *= pinv
+        # row[i] *= pinv
+        row[i] = umultmod(row[i], pinv, ch)
     end
     row[1] = one(row[1])
     row
 end
 
 function reduce_dense_row_by_known_pivots_sparse!(
-            densecoeffs, matrix, basis, pivs, startcol, tmp_pos)
+            densecoeffs::Vector{UInt64}, matrix::MacaulayMatrix, basis::Basis,
+            pivs, startcol, tmp_pos)
 
     @info "reducing $densecoeffs by"
     #println("pivs = ", pivs)
 
     ncols = matrix.ncols
     nleft = matrix.nleft
+
+    ch = basis.ch
 
     # new row nonzero elements count
     k = 0
@@ -143,7 +147,9 @@ function reduce_dense_row_by_known_pivots_sparse!(
         end
 
 
-        mul = -densecoeffs[i]
+        # mul = -densecoeffs[i]
+        mul = ucompmod(densecoeffs[i], ch)
+
         # exponents of reducer row at column i
         reducerexps = pivs[i]
 
@@ -158,12 +164,13 @@ function reduce_dense_row_by_known_pivots_sparse!(
         #println(cfs)
 
         for j in 1:length(reducerexps)
-            densecoeffs[reducerexps[j]] += mul * cfs[j]
+            # densecoeffs[reducerexps[j]] += mul * cfs[j]
+            densecoeffs[reducerexps[j]] = umultsummod(densecoeffs[reducerexps[j]], mul, cfs[j], ch)
         end
     end
 
     newrow = Vector{Int}(undef, k)
-    newcfs = Vector{valtype(basis.coeffs[1])}(undef, k)
+    newcfs = Vector{UInt64}(undef, k)
 
     # all reduced !
     if k == 0
@@ -176,7 +183,7 @@ function reduce_dense_row_by_known_pivots_sparse!(
     for i in np:ncols # from new pivot
         if densecoeffs[i] != 0
             newrow[j] = i
-            newcfs[j]  = densecoeffs[i]
+            newcfs[j] = densecoeffs[i]
             j += 1
         end
     end
@@ -184,19 +191,18 @@ function reduce_dense_row_by_known_pivots_sparse!(
     return false, newrow, newcfs
 end
 
-function exact_sparse_rref!(matrix, basis)
+function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
     ncols  = matrix.ncols
     nlow   = matrix.nlow
     nright = matrix.nright
     nleft  = matrix.nleft
 
     # TODO
-    ground = parent(basis.coeffs[1][1])
+    # ground = parent(basis.coeffs[1][1])
 
     @info "entering sparse rref" matrix.nrows matrix.nlow matrix.nup
     @info "..."  ncols nright nleft
-    @info ground
-
+    
     # known pivots
     pivs = Vector{Vector{Int}}(undef, ncols)
     for i in 1:matrix.nup
@@ -230,7 +236,7 @@ function exact_sparse_rref!(matrix, basis)
 
     @info "unknown pivots" upivs
 
-    rowcoeffs = zeros(ground, ncols)
+    rowcoeffs = zeros(UInt64, ncols)
     for i in 1:nlow
         @debug "low row $i.."
 
@@ -247,7 +253,7 @@ function exact_sparse_rref!(matrix, basis)
         # we load coefficients into dense array
         # into rowexps indices
         # TODO: move this
-        densecoeffs = zeros(ground, ncols)
+        densecoeffs = zeros(UInt64, ncols)
         for j in 1:length(rowexps)
             densecoeffs[rowexps[j]] = cfsref[j]
         end
@@ -274,7 +280,7 @@ function exact_sparse_rref!(matrix, basis)
 
         # normalize if needed
         if matrix.coeffs[i][1] != 1
-            normalize_sparse_row!(matrix.coeffs[i])
+            normalize_sparse_row!(matrix.coeffs[i], basis.ch)
         end
     end
 
@@ -285,7 +291,7 @@ function exact_sparse_rref!(matrix, basis)
     # number of new pivots
     newpivs = 0
 
-    densecfs = zeros(ground, ncols)
+    densecfs = zeros(UInt64, ncols)
     # a row to be reduced for each column
     resize!(matrix.lowrows, matrix.nright)
 
@@ -297,7 +303,7 @@ function exact_sparse_rref!(matrix, basis)
         if isassigned(pivs, k)
             @info "pivot $k exists"
 
-            densecfs = zeros(ground, ncols)
+            densecfs = zeros(UInt64, ncols)
 
             if k <= nleft
                 cfsref = basis.coeffs[matrix.up2coef[k]]
@@ -338,7 +344,7 @@ function exact_sparse_rref!(matrix, basis)
     resize!(matrix.lowrows, newpivs)
 end
 
-function exact_sparse_linear_algebra!(matrix, basis)
+function exact_sparse_linear_algebra!(matrix::MacaulayMatrix, basis::Basis)
     resize!(matrix.coeffs, matrix.nlow)
 
     @info "matrix in reduction"
@@ -350,7 +356,9 @@ end
 
 #------------------------------------------------------------------------------
 
-function convert_hashes_to_columns!(matrix, symbol_ht)
+function convert_hashes_to_columns!(
+            matrix::MacaulayMatrix, symbol_ht::MonomialHashtable)
+
     # col2hash = matrix.col2hash
     hdata    = symbol_ht.hashdata
     load     = symbol_ht.load
