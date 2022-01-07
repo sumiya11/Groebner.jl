@@ -202,7 +202,7 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
 
     @info "entering sparse rref" matrix.nrows matrix.nlow matrix.nup
     @info "..."  ncols nright nleft
-    
+
     # known pivots
     pivs = Vector{Vector{Int}}(undef, ncols)
     for i in 1:matrix.nup

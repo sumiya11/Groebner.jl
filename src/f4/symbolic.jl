@@ -77,7 +77,7 @@ mutable struct Basis
     ch::UInt64
 end
 
-function initialize_basis(ring::PolyRing, ngens)
+function initialize_basis(ring::PolyRing, ngens::Int)
     #=
         always true
         length(gens) == length(coeffs) == length(isred) == size
@@ -96,10 +96,10 @@ function initialize_basis(ring::PolyRing, ngens)
 
     ch = ring.ch
 
-    return Basis(gens, coeffs, sz, ndone, ntotal, isred, nonred, lead, nlead, ch)
+    Basis(gens, coeffs, sz, ndone, ntotal, isred, nonred, lead, nlead, ch)
 end
 
-function check_enlarge_basis!(basis, added::Int)
+function check_enlarge_basis!(basis::Basis, added::Int)
     if basis.ndone + added >= basis.size
         basis.size = max(basis.size * 2, basis.ndone + added)
         resize!(basis.gens, basis.size)

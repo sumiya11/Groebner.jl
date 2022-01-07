@@ -75,8 +75,8 @@ end
 # TODO: Get rid of `Tv` dependency
 function initialize_basis_hash_table(
         ring::PolyRing,
-        rng::Random.MersenneTwister;
-        initial_size=2^3)
+        rng::Random.AbstractRNG;
+        initial_size::Int=2^3)
 
     exponents = Vector{Vector{UInt16}}(undef, initial_size)
     hashdata  = Vector{Hashvalue}(undef, initial_size)
@@ -106,10 +106,10 @@ function initialize_basis_hash_table(
     offset = 2
 
     # initialize fast divisibility params
-    charbit   = 8 # TODO ??
-    int32bits = charbit * sizeof(Int32)
-    int32bits!= 32 && error("Strange story with ints")
-    ndivbits  = div(int32bits, nvars)
+    charbit    = 8 # TODO ??
+    int32bits  = charbit * sizeof(Int32)
+    int32bits != 32 && error("Strange story with ints")
+    ndivbits   = div(int32bits, nvars)
     # division mask stores at least 1 bit
     # per each of first charbit*sizeof(Int32) variables
     ndivbits == 0 && (ndivbits += 1)
@@ -134,7 +134,7 @@ end
 # initialize hashtable either for `symbolic_preprocessing` or for `update` functions
 # These are of the same purpose and structure as basis hashtable,
 # but are more local oriented
-function initialize_secondary_hash_table(basis_ht)
+function initialize_secondary_hash_table(basis_ht::MonomialHashtable)
 
     # hmm TODO
     initial_size = 2^3
@@ -395,7 +395,10 @@ end
 #------------------------------------------------------------------------------
 
 # compare pairwise divisibility of lcms from a[first:last] with lcm
-function check_monomial_division_in_update(a, first, last, lcm, ht)
+function check_monomial_division_in_update(
+            a::Vector{Int}, first::Int, last::Int,
+            lcm::Int, ht::MonomialHashtable)
+
     # pairs are sorted, we only need to check entries above starting point
 
     divmask = ht.hashdata[lcm].divmask
@@ -524,7 +527,10 @@ function insert_multiplied_poly_in_hash_table!(
     row
 end
 
-function multiplied_poly_to_matrix_row!(symbolic_ht, basis_ht, htmp, etmp, poly)
+function multiplied_poly_to_matrix_row!(
+        symbolic_ht::MonomialHashtable, basis_ht::MonomialHashtable,
+        htmp::UInt32, etmp::Vector{UInt16}, poly::Vector{Int})
+
     row = copy(poly)
     while symbolic_ht.load + length(poly) >= symbolic_ht.size
         enlarge_hash_table!(symbolic_ht)
@@ -535,9 +541,9 @@ end
 #------------------------------------------------------------------------------
 
 function insert_in_basis_hash_table_pivots(
-        row,
-        ht,
-        symbol_ht,
+        row::Vector{Int},
+        ht::MonomialHashtable,
+        symbol_ht::MonomialHashtable,
         col2hash)
 
     while ht.size - ht.load <= length(row)
@@ -612,13 +618,13 @@ function insert_in_basis_hash_table_pivots(
 end
 
 function insert_plcms_in_basis_hash_table!(
-        pairset,
-        off,
-        ht,
-        update_ht,
-        basis,
-        plcm,
-        ifirst, ilast)
+        pairset::Pairset,
+        off::Int,
+        ht::MonomialHashtable,
+        update_ht::MonomialHashtable,
+        basis::Basis,
+        plcm::Vector{Int},
+        ifirst::Int, ilast::Int)
 
     # including ifirst and not including ilast
 
@@ -711,8 +717,11 @@ end
 
 #------------------------------------------------------------------------------
 
-# computes lcm of he1 and he2 and inserts it in ht2
-function get_lcm(he1, he2, ht1, ht2)
+# computes lcm of he1 and he2 as exponent vectors from ht1
+# and inserts it in ht2
+function get_lcm(he1::Int, he2::Int,
+                    ht1::MonomialHashtable, ht2::MonomialHashtable)
+
     e1   = ht1.exponents[he1]
     e2   = ht1.exponents[he2]
     etmp = copy(ht1.exponents[1])

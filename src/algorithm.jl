@@ -129,7 +129,11 @@ function groebner(
     gb_qq
 end
 
-function groebner(polys::Vector{MPoly{GFElem{Int}}};)
+function groebner(
+            polys::Vector{MPoly{GFElem{Int}}};
+            rng::Rng=Random.MersenneTwister(42)
+            ) where {Rng<:Random.AbstractRNG}
+
     length(polys) > 0 || error("Empty input")
 
     R = parent(first(polys))
@@ -137,7 +141,7 @@ function groebner(polys::Vector{MPoly{GFElem{Int}}};)
 
     ring, exps, coeffs = convert_to_internal(polys)
 
-    gb, ht = f4(ring, exps, coeffs)
+    gb, ht = f4(ring, exps, coeffs, rng)
 
     export_basis(parent(first(polys)), gb, ht)
 

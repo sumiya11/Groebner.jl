@@ -658,14 +658,16 @@ function fill_data!(basis, ht, exponents, coeffs)
     basis.ntotal = ngens
 end
 
+# Initializes Basis and MonomialHashtable structures,
+# fills input data from exponents and coeffs
+#
+# Hashtable initial size is set to tablesize
 function initialize_structures(
             ring::PolyRing,
             exponents::Vector{Vector{Vector{UInt16}}},
             coeffs::Vector{Vector{UInt64}},
-            tablesize::Int,
-            seed)
-
-    rng = Random.MersenneTwister(seed)
+            rng::Random.AbstractRNG,
+            tablesize::Int)
 
     # basis for storing basis elements,
     # pairset for storing critical pairs of basis elements to assess,
@@ -712,16 +714,16 @@ end
 """
 function f4(ring::PolyRing,
             exponents::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{UInt64}};
+            coeffs::Vector{Vector{UInt64}},
+            rng::Rng;
             reduced::Bool=true,
-            tablesize::Int=2^16,
-            seed=42) where {Tv}
+            tablesize::Int=2^16
+            ) where {Rng<:Random.AbstractRNG}
 
     # initialize basis and hashtable with input polynomials,
     # fields are not meaningful yet and will be set during update! step
     basis, ht = initialize_structures(
-                        ring, exponents, coeffs,
-                        tablesize, seed)
+                        ring, exponents, coeffs, rng, tablesize)
 
     # matrix storing coefficients in rows
     # wrt columns representing the current monomial basis
