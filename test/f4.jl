@@ -12,7 +12,7 @@ fs = [
     x + y^2,
     x*y - y^2
 ]
-gb = GroebnerBases.f4(fs)
+gb = GroebnerBases.groebner(fs)
 # println(gb)
 @test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
 #=
@@ -27,7 +27,7 @@ fs = [
     x + y,
     x^2 + y
 ]
-gb = GroebnerBases.f4(fs)
+gb = GroebnerBases.groebner(fs)
 # println(gb)
 @test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
 
@@ -35,7 +35,7 @@ fs = [
     x + y,
     x^2 + y
 ]
-gb = GroebnerBases.f4(fs)
+gb = GroebnerBases.groebner(fs)
 # println(gb)
 @test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
 
@@ -43,7 +43,7 @@ fs = [
     x^2 + 5,
     2y^2 + 3
 ]
-gb = GroebnerBases.f4(fs)
+gb = GroebnerBases.groebner(fs)
 # println(gb)
 @test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
 
@@ -51,7 +51,7 @@ fs = [
     y,
     x*y + x
 ]
-gb = GroebnerBases.f4(fs)
+gb = GroebnerBases.groebner(fs)
 # println(gb)
 @test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
 
@@ -59,7 +59,7 @@ fs = [
     5y,
     4x*y + 8x
 ]
-gb = GroebnerBases.f4(fs)
+gb = GroebnerBases.groebner(fs)
 # println(gb)
 @test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
 
@@ -68,7 +68,7 @@ fs = [
     x^2*y + y,
     y + 1
 ]
-gb = GroebnerBases.f4(fs)
+gb = GroebnerBases.groebner(fs)
 # println(gb)
 @test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
 @test gb == [R(1)]
@@ -77,24 +77,38 @@ fs = [
     x*y + y,
     y - 5
 ]
-gb = GroebnerBases.f4(fs)
+gb = GroebnerBases.groebner(fs)
 # println(gb)
 @test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
 
 root = GroebnerBases.change_ordering(GroebnerBases.rootn(3, ground=GF(2^31 - 1)), :degrevlex)
-gb = GroebnerBases.f4(root)
+gb = GroebnerBases.groebner(root)
 @test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
 
-root = GroebnerBases.change_ordering(GroebnerBases.rootn(6, ground=GF(2^31 - 1)), :degrevlex)
-gb = GroebnerBases.f4(root)
+root = GroebnerBases.change_ordering(GroebnerBases.rootn(4, ground=GF(2^31 - 1)), :degrevlex)
+gb = GroebnerBases.groebner(root)
+@test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
+
+for proot in Combinatorics.permutations(root)
+    gb = GroebnerBases.groebner(proot)
+    @test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
+end
+
+root = GroebnerBases.change_ordering(GroebnerBases.rootn(8, ground=GF(2^31 - 1)), :degrevlex)
+gb = GroebnerBases.groebner(root)
 @test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
 
 noon = GroebnerBases.change_ordering(GroebnerBases.noon3(ground=GF(2^31 - 1)), :degrevlex)
-gb = GroebnerBases.f4(noon)
+gb = GroebnerBases.groebner(noon)
 @test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
 
+for pnoon in Combinatorics.permutations(noon)
+    gb = GroebnerBases.groebner(pnoon)
+    @test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
+end
+
 noon = GroebnerBases.change_ordering(GroebnerBases.noon4(ground=GF(2^31 - 1)), :degrevlex)
-gb = GroebnerBases.f4(noon)
+gb = GroebnerBases.groebner(noon)
 @test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
 
 end

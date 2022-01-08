@@ -31,6 +31,7 @@ import IterTools
 import UnicodePlots
 using PrettyPrinting
 import Logging
+import Cthulhu
 
 # SparseVector from SparseArrays modified to work with AA
 # include("add_ons_to_sa/sparsevectoraa.jl")
@@ -59,26 +60,14 @@ include("f4/hash.jl")
 include("f4/linear.jl")
 include("f4/sorting.jl")
 include("f4/f4.jl")
+
+
 include("f4/statistics.jl")
 
 include("algorithm.jl")
 
 
-#include("f4.jl")
-#include("polynomials.jl")
-#include("hashes.jl")
-#include("hash_f4.jl")
-
-# fglm implementation over finite fields
-# include("fglm/fglm.jl")
-
-# everything above is composed here
-# include("algorithm.jl")
-
-
-# export f4, fglm
-# export rootn
-# export groebner
-# export is_groebner
+export groebner
+export isgroebner
 
 end

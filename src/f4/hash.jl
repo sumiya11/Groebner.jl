@@ -72,7 +72,6 @@ end
 
 # initialize and set fields for basis hashtable
 # TODO: Initial size is a nice parameter to play with
-# TODO: Get rid of `Tv` dependency
 function initialize_basis_hash_table(
         ring::PolyRing,
         rng::Random.AbstractRNG;
@@ -137,7 +136,7 @@ end
 function initialize_secondary_hash_table(basis_ht::MonomialHashtable)
 
     # hmm TODO
-    initial_size = 2^3
+    initial_size = 2^6
 
     exponents = Vector{Vector{UInt16}}(undef, initial_size)
     hashdata  = Vector{Hashvalue}(undef, initial_size)
@@ -220,7 +219,7 @@ function insert_in_hash_table!(ht::MonomialHashtable, e::Vector{UInt16})
         he += ht.hasher[i] * e[i]
     end
     # find new elem position in the table
-    hidx = he
+    hidx = Int(he)  # Int for type stability
     # power of twoooo
     mod = ht.size
     i = 0
@@ -336,7 +335,7 @@ function generate_monomial_divmask(
             if e[divvars[i]] >= divmap[ctr]
                 res |= UInt32(1) << (ctr - 1)
             end
-            ctr += 1
+            ctr += UInt32(1)  # for typ stability
         end
     end
 

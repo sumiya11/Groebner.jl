@@ -1,17 +1,41 @@
 
+# sorts generators and corresponding coefficients from basis
+# by their leading monomial in increasing ordering
+#
+# Used only once to sort input generators
+function sort_gens_by_lead_increasing!(basis::Basis, ht::MonomialHashtable)
+    gens = basis.gens
+    exps = ht.exponents
 
+    inds = collect(1:basis.ntotal)
+    cmp  = (x, y) -> exponent_isless(exps[gens[x][1]], exps[gens[y][1]])
+    sort!(inds, lt=cmp)
+
+    # use array assignment insted of elemewise assignment
+    # Reason: slice array assignment uses fast setindex! based on unsafe copy
+    basis.gens[1:basis.ntotal]   = basis.gens[inds]
+    basis.coeffs[1:basis.ntotal] = basis.coeffs[inds]
+end
+
+#------------------------------------------------------------------------------
+
+# Sorts pairs from pairset in range [from, from+size]
+# by lcm degrees in increasing order
+#
+# Used only once per one f4 iteration to sort pairs in pairset
 function sort_pairset_by_degree!(ps::Pairset, from::Int, sz::Int)
-    # @info "Sorting by min degree"
-    part = ps.pairs[from:sz]
-    # TODO
+    #= WARNING: BUG =#
+    # sz is size !
+    # the correct should be ps.pairs[from:from + sz]
+
+    part = ps.pairs[from:from + sz]
+
     sort!(part, by=p -> p.deg)
-    ps.pairs[from:sz] .= part
-    ps
+
+    ps.pairs[from:from + sz] = part
 end
 
-function sort_pairset_by_degree!(ps::Pairset)
-    sort_pairset_by_degree!(ps, 1, ps.load)
-end
+#------------------------------------------------------------------------------
 
 function sort_generators_by_position!(gens, load)
     # @info "Sorting first $load gens"
@@ -26,18 +50,6 @@ function sort_pairset_by_lcm!(pairset, npairs, ht)
     sort!(part, lt=(x, y) -> exponent_isless(ht.exponents[x.lcm], ht.exponents[y.lcm]))
     pairset.pairs[1:npairs] .= part
     pairset
-end
-
-function sort_columns_by_hash!(col2hash, symbol_ht)
-    function cmp(x, y, ht)
-        ha = ht.hashdata[x]
-        hb = ht.hashdata[y]
-
-        exponent_isless(ht.exponents[x], ht.exponents[y])
-    end
-
-    closedcmp = (x, y) -> cmp(x, y, symbol_ht)
-    sort!(col2hash, lt=closedcmp)
 end
 
 #------------------------------------------------------------------------------
@@ -58,23 +70,6 @@ function exponent_isless(ea, eb)
     end
 
     return ea[i] < eb[i] ? false : true
-end
-
-function sort_gens_by_lead_increasing!(basis, ht)
-    # @info "Sorting input" basis.gens basis.coeffs
-
-    gens = basis.gens
-
-    inds = collect(1:basis.ntotal)
-    cmp  = (x, y) -> exponent_isless(ht.exponents[gens[x][1]], ht.exponents[gens[y][1]])
-    sort!(inds, lt=cmp)
-
-    basis.gens[1:basis.ntotal] .= basis.gens[1:basis.ntotal][inds]
-    basis.coeffs[1:basis.ntotal] .= basis.coeffs[1:basis.ntotal][inds]
-
-    # @info "Sorted input" basis.gens basis.coeffs
-
-    basis
 end
 
 #------------------------------------------------------------------------------

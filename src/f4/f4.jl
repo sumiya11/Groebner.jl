@@ -12,7 +12,7 @@ function select_normal!(
             ht::MonomialHashtable, symbol_ht::MonomialHashtable;
             maxpairs::Int=0)
 
-    sort_pairset_by_degree!(pairset, 1, pairset.load)
+    sort_pairset_by_degree!(pairset, 1, pairset.load - 1)
     # sort by degree
 
     ps = pairset.pairs
@@ -330,7 +330,7 @@ function update_pairset!(
         end
     end
 
-    sort_pairset_by_degree!(pairset, pl + 1, j - 1)
+    sort_pairset_by_degree!(pairset, pl + 1, j - 2)
 
     for i in 1:j - 1
         plcm[i] = ps[pl + i].lcm
