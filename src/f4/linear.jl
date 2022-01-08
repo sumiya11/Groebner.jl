@@ -304,6 +304,61 @@ function exact_sparse_linear_algebra!(matrix::MacaulayMatrix, basis::Basis)
     exact_sparse_rref!(matrix, basis)
 end
 
+#------------------------------------------------------------------------------
+
+function interreduce_matrix_rows!(matrix::MacaulayMatrix, basis::Basis)
+    resize!(matrix.lowrows, matrix.ncols)
+    resize!(matrix.up2coef, matrix.ncols)
+    resize!(matrix.low2coef, matrix.ncols)
+    resize!(matrix.coeffs, matrix.ncols)
+
+    # same pivs as for rref
+    # pivs: column idx --> vector of present columns
+    pivs = Vector{Vector{Int}}(undef, matrix.ncols)
+    for i in 1:matrix.nrows
+        pivs[matrix.uprows[i][1]] = matrix.uprows[i]
+        matrix.low2coef[matrix.uprows[i][1]] = i
+        matrix.coeffs[i] = copy(basis.coeffs[matrix.up2coef[i]])
+    end
+    #=
+    println(pivs)
+    println(matrix.up2coef)
+    println(matrix.low2coef)
+    =#
+
+    densecfs = Vector{UInt64}(undef, matrix.ncols)
+    k = matrix.nrows
+
+    for i in 1:matrix.ncols
+        l = matrix.ncols - i + 1
+        if isassigned(pivs, l)
+            #@info "$l is assigned"
+            densecfs .= UInt64(0)
+            cfs = matrix.coeffs[matrix.low2coef[l]]
+            reducexps = pivs[l]
+            startcol = reducexps[1]
+            #@info "row info" i l startcol
+            #println(reducexps, " cfs : $cfs" )
+            for j in 1:length(reducexps)
+                densecfs[reducexps[j]] = cfs[j]
+            end
+
+            zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(densecfs, matrix, basis, pivs, startcol, startcol)
+
+            #@info "reduced" zeroed newrow newcfs
+
+            matrix.lowrows[k] = newrow
+            matrix.coeffs[matrix.low2coef[l]] = newcfs
+            pivs[l] = matrix.lowrows[k]
+            k -= 1
+        end
+    end
+
+    # hmm
+    # TODO
+    matrix.npivots = matrix.nrows
+end
+
 
 #------------------------------------------------------------------------------
 
@@ -376,6 +431,7 @@ function convert_hashes_to_columns!(
     matrix.col2hash = col2hash
 end
 
+#------------------------------------------------------------------------------
 
 function convert_matrix_rows_to_basis_elements!(
             matrix::MacaulayMatrix, basis::Basis,
@@ -399,4 +455,26 @@ function convert_matrix_rows_to_basis_elements!(
     end
 
     basis.ntotal += matrix.npivots
+end
+
+
+function convert_matrix_rows_to_basis_elements_use_symbol!(
+            matrix::MacaulayMatrix, basis::Basis)
+
+    check_enlarge_basis!(basis, matrix.npivots)
+
+    crs = basis.ndone
+    rows = matrix.lowrows
+
+    for i in 1:matrix.npivots
+        row = rows[i]
+        colidx = row[1]
+
+        for j in 1:length(row)
+            row[j] = matrix.col2hash[row[j]]
+        end
+
+        basis.coeffs[crs + i] = matrix.coeffs[matrix.low2coef[colidx]]
+        basis.gens[crs + i] = row
+    end
 end

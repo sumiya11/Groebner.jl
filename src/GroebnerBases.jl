@@ -28,7 +28,6 @@ import SortingAlgorithms
 
 import IterTools
 
-import UnicodePlots
 using PrettyPrinting
 
 import Logging

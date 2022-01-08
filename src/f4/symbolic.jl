@@ -105,6 +105,7 @@ function check_enlarge_basis!(basis::Basis, added::Int)
         resize!(basis.gens, basis.size)
         resize!(basis.coeffs, basis.size)
         resize!(basis.isred, basis.size)
+        basis.isred[basis.ndone+1:end] .= 0
         resize!(basis.nonred, basis.size)
         resize!(basis.lead, basis.size)
     end

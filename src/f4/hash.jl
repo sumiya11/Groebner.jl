@@ -504,7 +504,7 @@ function insert_multiplied_poly_in_hash_table!(
         sdata[lastidx] = Hashvalue(h, divmask, 0, enew[end])
 
         row[l] = lastidx
-
+        l += 1
         symbol_ht.load += 1
     end
 

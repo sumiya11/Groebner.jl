@@ -32,10 +32,8 @@ And compute the Groebner basis passing the system to `groebner`
 ```julia
 julia> using GroebnerBases
 julia> G = groebner(polys)
-5-element Vector{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.GFElem{Int64}}}:  
+3-element Vector{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.GFElem{Int64}}}:  
  x1 + x2 + x3
- x1*x2 + x1*x3 + x2*x3
- x1*x2*x3 + 2147483646
  x2^2 + x2*x3 + x3^2
  x3^3 + 2147483646
 ```

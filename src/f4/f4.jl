@@ -491,28 +491,35 @@ function filter_redundant!(basis::Basis)
         if basis.isred[basis.nonred[i]] == 0
             basis.lead[j] = basis.lead[i]
             basis.nonred[j] = basis.nonred[i]
+            basis.isred[j] = 0
+            #=
             basis.coeffs[j] = basis.coeffs[basis.nonred[i]]
             basis.gens[j] = basis.gens[basis.nonred[i]]
+            =#
             j += 1
         end
     end
     basis.nlead = j - 1
-    basis.ndone = basis.ntotal = basis.nlead
+    @assert basis.ndone == basis.ntotal
+    # basis.ndone = basis.ntotal = basis.nlead
     basis
 end
 
-function convert_hashes_to_exps(basis::Basis, ht::MonomialHashtable)
-    exps   = Vector{Vector{Vector{UInt16}}}(undef, basis.ndone)
+function export_basis_data(basis::Basis, ht::MonomialHashtable)
+    exps   = Vector{Vector{Vector{UInt16}}}(undef, basis.nlead)
+    coeffs = Vector{Vector{UInt64}}(undef, basis.nlead)
 
-    for i in 1:basis.ndone
-        poly = basis.gens[i]
+    for i in 1:basis.nlead
+        idx = basis.nonred[i]
+        poly = basis.gens[idx]
         exps[i] = Vector{Vector{UInt16}}(undef, length(poly))
         for j in 1:length(poly)
             exps[i][j] = ht.exponents[poly[j]]
         end
+        coeffs[i] = basis.coeffs[idx]
     end
 
-    exps, resize!(basis.coeffs, basis.ndone)
+    exps, coeffs
 end
 
 #------------------------------------------------------------------------------
@@ -584,8 +591,105 @@ end
 
 #------------------------------------------------------------------------------
 
-#
-"""
+function reducegb_f4!(
+            basis::Basis, matrix::MacaulayMatrix,
+            ht::MonomialHashtable, symbol_ht::MonomialHashtable)
+
+    etmp  = ht.exponents[1]
+    etmp .= UInt16(0)
+    # etmp is now set to zero, and has a zero hash
+
+    reinitialize_matrix!(matrix, basis.nlead)
+    uprows = matrix.uprows
+
+    # add all non redundant elements from basis
+    # as matrix upper rows
+    for i in 1:basis.nlead
+        matrix.nrows += 1
+        uprows[matrix.nrows] = multiplied_poly_to_matrix_row!(
+                                    symbol_ht, ht, UInt32(0), etmp,
+                                    basis.gens[basis.nonred[i]])
+        matrix.up2coef[matrix.nrows] = basis.nonred[i]
+        # set lead index as 1
+        symbol_ht.hashdata[uprows[matrix.nrows][1]].idx = 1
+    end
+
+    #@info "another dump"
+    #dump(matrix, maxdepth=5)
+
+    # needed for correct counting in symbol
+    matrix.ncols = matrix.nrows
+    matrix.nup = matrix.nrows
+
+    symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
+    # all pivots are unknown
+    for i in symbol_ht.offset:symbol_ht.load
+        symbol_ht.hashdata[i].idx = 1
+    end
+    #@warn "second"
+    #dump(matrix, maxdepth=5)
+    #println(symbol_ht.exponents)
+
+    convert_hashes_to_columns!(matrix, symbol_ht)
+    matrix.ncols = matrix.nleft + matrix.nright
+
+    sort_matrix_rows_decreasing!(matrix)
+
+    #dump(matrix, maxdepth=5)
+
+    interreduce_matrix_rows!(matrix, basis)
+
+    convert_matrix_rows_to_basis_elements_use_symbol!(matrix, basis)
+
+    #dump(matrix, maxdepth=5)
+    #@info "and basis"
+    #dump(basis, maxdepth=5)
+
+    # no longer need in two hashtables
+    ht = symbol_ht
+
+    basis.ntotal = matrix.npivots + basis.ndone
+    basis.ndone = matrix.npivots
+
+    #@info "gens"
+    #println(basis.gens)
+
+    #=
+    for gen in basis.gens[1:]
+        println(map(x -> symbol_ht.exponents[x]), gen)
+    end
+    =#
+    #= we may have added some multiples of reduced basis polynomials
+    * from the matrix, so we get rid of them. =#
+    k = 0
+    i = 1
+    @label Letsgo
+    while i <= basis.ndone
+        for j in 1:k
+            if is_monom_divisible(
+                    basis.gens[basis.ntotal - i + 1][1],
+                    basis.gens[basis.nonred[j]][1],
+                    ht)
+
+                i += 1
+                @goto Letsgo
+            end
+        end
+        k += 1
+        basis.nonred[k] = basis.ntotal - i + 1
+        # xd
+        basis.lead[k] = ht.hashdata[basis.gens[basis.ntotal - i + 1][1]].divmask
+        i += 1
+    end
+    basis.nlead = k
+
+    #@info "and basis"
+    #dump(basis, maxdepth=5)
+end
+
+#------------------------------------------------------------------------------
+
+#=
     Main function to calculate the Groebner basis of the given polynomial ideal.
     Specialized to work only over finite fields.
 
@@ -599,7 +703,7 @@ end
                       0, i.e. no restriction. If matrices get too big or consume
                       too much memory this is a good parameter to play with.
         . tablesize -
-"""
+=#
 function f4(ring::PolyRing,
             exponents::Vector{Vector{Vector{UInt16}}},
             coeffs::Vector{Vector{UInt64}},
@@ -655,6 +759,7 @@ function f4(ring::PolyRing,
         update!(pairset, basis, ht, update_ht)
 
         # TODO: is this okay hm ?
+        # to be changed
         matrix    = initialize_matrix(ring)
         symbol_ht = initialize_secondary_hash_table(ht)
         # clear symbolic hashtable
@@ -666,18 +771,14 @@ function f4(ring::PolyRing,
         end
     end
 
-    if reduced
-        # TODO
-        # reduce_basis!(basis, matrix)
-    end
-
-    # TODO: do this in final reduction?
+    # remove redundant elements
     filter_redundant!(basis)
 
-    # TODO: merge this with previous?
-    bexps, bcoeffs = convert_hashes_to_exps(basis, ht)
+    if reduced
+        reducegb_f4!(basis, matrix, ht, symbol_ht)
+    end
 
-    bexps, bcoeffs
+    export_basis_data(basis, ht)
 end
 
 #------------------------------------------------------------------------------

@@ -17,6 +17,7 @@ function reducegb(G)
 end
 
 function reducegb!(G)
+    sort!(G, by=leading_monomial)
     for i in 1:length(G)
         G[i] = normal_form(G[i], G[1:end .!= i])
     end
@@ -120,6 +121,7 @@ end
     If `initial_gens` parameter is provided, also assess `initial_gens ⊆ fs` as ideals
 """
 function isgroebner(fs; initial_gens=[])
+    sort!(fs, by=leading_monomial)
     for f in fs
         for g in fs
             if !iszero( normal_form(spoly(f, g), fs) )
