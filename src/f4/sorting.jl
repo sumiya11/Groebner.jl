@@ -20,9 +20,10 @@ end
 #------------------------------------------------------------------------------
 
 # Sorts pairs from pairset in range [from, from+size]
-# by lcm degrees in increasing order
+# by lcm total degrees in increasing order
 #
-# Used only once per one f4 iteration to sort pairs in pairset
+# Used in update once per one f4 iteration to sort pairs in pairset
+# Also used in normal selection strategy also once per iteration
 function sort_pairset_by_degree!(ps::Pairset, from::Int, sz::Int)
     #= WARNING: BUG =#
     # sz is size !
@@ -37,19 +38,32 @@ end
 
 #------------------------------------------------------------------------------
 
-function sort_generators_by_position!(gens, load)
-    # @info "Sorting first $load gens"
-    part = gens[1:load]
-    sort!(part)
-    gens[1:load] .= part
-    gens
+# sorts first npairs pairs from pairset by increasing of
+# lcm exponent wrt the given monomial ordering
+#
+# Used only in normal selection strategy once per f4 iteration
+function sort_pairset_by_lcm!(
+        pairset::Pairset, npairs::Int, ht::MonomialHashtable)
+
+    part = pairset.pairs[1:npairs]
+    exps = ht.exponents
+
+    sort!(part, lt=(x, y) -> exponent_isless(exps[x.lcm], exps[y.lcm]))
+
+    pairset.pairs[1:npairs] = part
 end
 
-function sort_pairset_by_lcm!(pairset, npairs, ht)
-    part = pairset.pairs[1:npairs]
-    sort!(part, lt=(x, y) -> exponent_isless(ht.exponents[x.lcm], ht.exponents[y.lcm]))
-    pairset.pairs[1:npairs] .= part
-    pairset
+#------------------------------------------------------------------------------
+
+# sorts generators selected in normal strategy function
+# by their ordering in the current basis (identity sort)
+function sort_generators_by_position!(gens::Vector{Int}, load::Int)
+    # @info "Sorting first $load gens"
+    part = gens[1:load]
+
+    sort!(part)
+
+    gens[1:load] = part
 end
 
 #------------------------------------------------------------------------------
@@ -143,8 +157,8 @@ function sort_matrix_rows_decreasing!(matrix)
     cmp  = (x, y) ->  matrix_row_decreasing_cmp(matrix.uprows[x], matrix.uprows[y])
     sort!(inds, lt=cmp)
 
-    matrix.uprows[1:matrix.nup] .= matrix.uprows[1:matrix.nup][inds]
-    matrix.up2coef[1:matrix.nup] .= matrix.up2coef[1:matrix.nup][inds]
+    matrix.uprows[1:matrix.nup]  = matrix.uprows[inds]
+    matrix.up2coef[1:matrix.nup] = matrix.up2coef[inds]
 
     # @info "after up sort"
     #println(matrix.uprows)
@@ -166,24 +180,14 @@ function sort_matrix_rows_increasing!(matrix)
     cmp  = (x, y) ->  matrix_row_increasing_cmp(matrix.lowrows[x], matrix.lowrows[y])
     sort!(inds, lt=cmp)
 
-    matrix.lowrows[1:matrix.nlow] .= matrix.lowrows[1:matrix.nlow][inds]
-    matrix.low2coef[1:matrix.nlow] .= matrix.low2coef[1:matrix.nlow][inds]
+    matrix.lowrows[1:matrix.nlow]  = matrix.lowrows[inds]
+    matrix.low2coef[1:matrix.nlow] = matrix.low2coef[inds]
 
     # @info "after low sort"
     #println(matrix.lowrows)
     #println(matrix.low2coef)
 
     matrix
-end
-
-function sort_gens_terms_decreasing!(basis, ht, i)
-    inds = collect(1:length(basis.gens[i]))
-    gen = basis.gens[i]
-    cmp  = (x, y) -> exponent_isless(ht.exponents[gen[x]], ht.exponents[gen[y]])
-    sort!(inds, lt=cmp)
-    basis.gens[i] = basis.gens[i][inds]
-    basis.coeffs[i] = basis.coeffs[i][inds]
-    basis
 end
 
 function sort_columns_by_hash!(col2hash, symbol_ht)

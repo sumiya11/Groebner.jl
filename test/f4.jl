@@ -111,4 +111,13 @@ noon = GroebnerBases.change_ordering(GroebnerBases.noon4(ground=GF(2^31 - 1)), :
 gb = GroebnerBases.groebner(noon)
 @test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
 
+eco = GroebnerBases.change_ordering(GroebnerBases.eco5(), :degrevlex)
+gb = GroebnerBases.groebner(eco)
+@test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
+
+ku = GroebnerBases.change_ordering(GroebnerBases.ku10(ground=GF(2^31 - 1)), :degrevlex)
+gb = GroebnerBases.groebner(ku)
+@test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
+
+
 end
