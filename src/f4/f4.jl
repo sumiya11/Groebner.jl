@@ -501,6 +501,20 @@ function filter_redundant!(basis::Basis)
     basis
 end
 
+function convert_hashes_to_exps(basis::Basis, ht::MonomialHashtable)
+    exps   = Vector{Vector{Vector{UInt16}}}(undef, basis.ndone)
+
+    for i in 1:basis.ndone
+        poly = basis.gens[i]
+        exps[i] = Vector{Vector{UInt16}}(undef, length(poly))
+        for j in 1:length(poly)
+            exps[i][j] = ht.exponents[poly[j]]
+        end
+    end
+
+    exps, resize!(basis.coeffs, basis.ndone)
+end
+
 #------------------------------------------------------------------------------
 
 # given input exponent and coefficient vectors hashes exponents into `ht`
@@ -660,7 +674,10 @@ function f4(ring::PolyRing,
     # TODO: do this in final reduction?
     filter_redundant!(basis)
 
-    basis, ht
+    # TODO: merge this with previous?
+    bexps, bcoeffs = convert_hashes_to_exps(basis, ht)
+
+    bexps, bcoeffs
 end
 
 #------------------------------------------------------------------------------

@@ -5,8 +5,6 @@
     an algorithm for ordering conversion
 =#
 
-import Nemo
-
 
 # does not insert duplicates
 function insertsorted!(array, item, rev=false)

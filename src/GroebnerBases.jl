@@ -30,42 +30,43 @@ import IterTools
 
 import UnicodePlots
 using PrettyPrinting
+
 import Logging
+import Logging: ConsoleLogger, LogLevel
+
 import Cthulhu
 
-# SparseVector from SparseArrays modified to work with AA
-# include("add_ons_to_sa/sparsevectoraa.jl")
-
+#
 include("utils.jl")
 
-# Modular computations: reduction and reconstrction of coefficients
-# include("modular.jl")
-
 #
-# include("add_ons_to_aa/monomial_ops.jl")
-# include("add_ons_to_aa/poly_conversions.jl")
-
 include("common.jl")
 
-
-# generating sets of test polynomials
-include("testgens.jl")
-
-# f4 implementation over finite fields
+# input-output conversions for polynomials
 include("io.jl")
-include("arithmetic.jl")
 
+#= operations with numbers =#
+# unsigned arithmetic for finite field computations
+include("arithmetic/unsigned.jl")
+# modular arithmetic for CRT and rational reconstruction
+include("arithmetic/modular.jl")
+# basis coefficients manipulations
+include("arithmetic/coeffs.jl")
+
+#= f4 implementation over finite fields =#
 include("f4/symbolic.jl")
 include("f4/hash.jl")
 include("f4/linear.jl")
 include("f4/sorting.jl")
 include("f4/f4.jl")
-
-
 include("f4/statistics.jl")
 
-include("algorithm.jl")
 
+# the heart of this library
+include("groebner.jl")
+
+# example systems definitions
+include("testgens.jl")
 
 export groebner
 export isgroebner
