@@ -57,4 +57,4 @@ The bases are computed in `degrevlex` monomial ordering over finite fields havin
 
 ## Acknowledgement
 
-I would like to acknowledge Jérémy Berthomieu, Christian Eder and Mohab Safey El Din as this Library was adapted from their work "A Library for Solving Polynomial Systems". I also thank Vladimir Kuznetsov for providing the sources of his F4 implementation.
+I would like to acknowledge Jérémy Berthomieu, Christian Eder and Mohab Safey El Din as this Library was adapted from their work ["msolve: A Library for Solving Polynomial Systems"](https://arxiv.org/abs/2104.03572). I also thank Vladimir Kuznetsov for providing the sources of his F4 implementation.
