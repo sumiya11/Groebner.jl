@@ -219,11 +219,7 @@ function insert_in_hash_table!(ht::MonomialHashtable, e::Vector{UInt16})
     for i in 1:ht.explen
         he += ht.hasher[i] * e[i]
     end
-
-    # @debug "new hash:" he
-
     # find new elem position in the table
-
     hidx = he
     # power of twoooo
     mod = ht.size
@@ -234,8 +230,6 @@ function insert_in_hash_table!(ht::MonomialHashtable, e::Vector{UInt16})
         # TODO: & instead of %
         hidx = (he + i) % mod + 1
         vidx  = ht.hashtable[hidx]
-
-        # @info "" i hidx vidx
 
         # if free
         vidx == 0 && break
@@ -304,8 +298,6 @@ function fill_divmask!(ht::MonomialHashtable)
         end
     end
 
-    # @info "filling divmask" min_exp max_exp ht.ndivbits
-
     ctr   = 1
     steps = UInt32(0)
     for i in 1:ndivvars
@@ -318,9 +310,6 @@ function fill_divmask!(ht::MonomialHashtable)
         end
     end
 
-    # @info "filling divmask" ht.divmap
-
-    # TODO: offset
     for vidx in ht.offset:ht.load
         unmasked = ht.hashdata[vidx]
         e = ht.exponents[vidx]
@@ -340,8 +329,6 @@ function generate_monomial_divmask(
     divvars = ht.divvars
     divmap  = ht.divmap
 
-    # TODO: we miss one bit of space here
-    # upd: not anymore
     ctr = UInt32(1)
     res = UInt32(0)
     for i in 1:ht.ndivvars
@@ -362,7 +349,6 @@ end
 function is_monom_divisible(h1::Int, h2::Int, ht::MonomialHashtable)
 
     if (ht.hashdata[h2].divmask & ~ht.hashdata[h1].divmask) != 0
-        # @debug "used divmask"
         return false
     end
 
@@ -457,8 +443,6 @@ function insert_multiplied_poly_in_hash_table!(
     sexps = symbol_ht.exponents
     sdata = symbol_ht.hashdata
 
-    # # @info "adding poly $poly mult by $etmp to symbolic hashtable"
-
     l = 1 # hardcoding 1 does not seem nice =(
     @label Letsgo
     while l <= len
@@ -484,7 +468,6 @@ function insert_multiplied_poly_in_hash_table!(
             enew[j] = etmp[j] + e[j]
         end
 
-        # # @info "product is $enew"
         # now insert into hashtable
         k = h
         i = 0
@@ -564,17 +547,14 @@ function insert_in_basis_hash_table_pivots(
     l = 1
     @label Letsgo
     while l <= length(row)
-        # @debug "iter " l col2hash row
         hidx = col2hash[row[l]]
 
         # symbolic hash
-        h    = sdata[hidx].hash
+        h = sdata[hidx].hash
 
         lastidx = ht.load + 1
         bexps[lastidx] = copy(sexps[hidx])
         e = bexps[lastidx]
-
-        # @debug "new exponent to basis ht" e lastidx
 
         k = h
         i = 0
@@ -597,8 +577,6 @@ function insert_in_basis_hash_table_pivots(
                 end
             end
 
-            # @debug "not adding::same exp" l hm ehm
-
             row[l] = hm
             l += 1
             @goto Letsgo
@@ -613,10 +591,6 @@ function insert_in_basis_hash_table_pivots(
 
         ht.load += 1
     end
-
-
-    # @debug "inserting finished" ht.load row
-
 end
 
 function insert_plcms_in_basis_hash_table!(
@@ -630,16 +604,9 @@ function insert_plcms_in_basis_hash_table!(
 
     # including ifirst and not including ilast
 
-    # AAAAAAAAAAA
-
     gens  = basis.gens
     mod   = ht.size
     ps    = pairset.pairs
-
-    # @info "insert plcms in basis hash table" plcm ifirst ilast off
-
-    #printstyled("## DUMP BASIS HASHMAP ##\n" , color=:red)
-    #dump(ht, maxdepth=4)
 
     m = ifirst
     l = 1
@@ -650,8 +617,6 @@ function insert_plcms_in_basis_hash_table!(
             continue
         end
 
-        # what? why??
-        # aaaa, okay
         if is_gcd_const(gens[ps[off + l].poly1][1], gens[ps[off + 1].poly2][1], ht)
             l += 1
             continue
@@ -659,11 +624,9 @@ function insert_plcms_in_basis_hash_table!(
 
         ps[m] = ps[off + l]
 
-        # @debug "hmm" ht.load ht.size plcm[l] update_ht.size update_ht.load m
-
-        # IT IS NOT CORRECT
+        # TODO: IT IS NOT CORRECT
+        # upd: it is, but it can be done better
         h = update_ht.hashdata[plcm[l]].hash
-        # TODO: move below Restart scope
         ht.exponents[ht.load+1] = copy(update_ht.exponents[plcm[l]])
         n = ht.exponents[ht.load+1]
 
@@ -673,8 +636,6 @@ function insert_plcms_in_basis_hash_table!(
         while i <= ht.size
             k = (h + i) % mod + 1
             hm = ht.hashtable[k]
-
-            # @info "hashes are " k hm h m
 
             hm == 0 && break
             if ht.hashdata[hm].hash != h
@@ -695,7 +656,6 @@ function insert_plcms_in_basis_hash_table!(
             ps[m] = SPair(ps[m].poly1, ps[m].poly2, hm, ps[m].deg)
             m += 1
             l += 1
-            # @info "add new and inc m and l" m l
             @goto Letsgo
         end
 
@@ -712,9 +672,7 @@ function insert_plcms_in_basis_hash_table!(
         l += 1
     end
 
-    # @info "m in the end" m
     pairset.load = m - 1
-
 end
 
 #------------------------------------------------------------------------------
@@ -734,8 +692,6 @@ function get_lcm(he1::Int, he2::Int,
         etmp[i]    = max(e1[i], e2[i])
         etmp[end] += etmp[i]
     end
-
-    # @debug "inserting $etmp into update!!"
 
     insert_in_hash_table!(ht2, etmp)
 end

@@ -117,9 +117,6 @@ function reduce_dense_row_by_known_pivots_sparse!(
             densecoeffs::Vector{UInt64}, matrix::MacaulayMatrix, basis::Basis,
             pivs::Vector{Vector{Int}}, startcol::Int, tmp_pos::Int)
 
-    # @info "reducing $densecoeffs by"
-    #println("pivs = ", pivs)
-
     ncols = matrix.ncols
     nleft = matrix.nleft
 
@@ -147,7 +144,6 @@ function reduce_dense_row_by_known_pivots_sparse!(
             continue
         end
 
-
         # mul = -densecoeffs[i]
         mul = ucompmod(densecoeffs[i], ch)
 
@@ -161,12 +157,10 @@ function reduce_dense_row_by_known_pivots_sparse!(
             cfs = matrix.coeffs[matrix.low2coef[i]]
         end
 
-        #println(reducerexps)
-        #println(cfs)
-
         @inbounds for j in 1:length(reducerexps)
             # densecoeffs[reducerexps[j]] += mul * cfs[j]
-            densecoeffs[reducerexps[j]] = umultsummod(densecoeffs[reducerexps[j]], mul, cfs[j], ch)
+            idx = reducerexps[j]
+            densecoeffs[idx] = umultsummod(densecoeffs[idx], mul, cfs[j], ch)
         end
     end
 
@@ -198,50 +192,23 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
     nright = matrix.nright
     nleft  = matrix.nleft
 
-    # TODO
-    # ground = parent(basis.coeffs[1][1])
-
-    # @info "entering sparse rref" matrix.nrows matrix.nlow matrix.nup
-    # @info "..."  ncols nright nleft
-
     # known pivots
     pivs = Vector{Vector{Int}}(undef, ncols)
     for i in 1:matrix.nup
-        pivs[i] = copy(matrix.uprows[i])
+        pivs[i] = matrix.uprows[i]
     end
 
-    #=
-    WARNing. TODO
-    =#
-    #=
-    pivs = Vector{Vector{Int}}(undef, ncols)
-    up2coef = Vector{Int}(undef, ncols)
-    for ui in 1:matrix.nup
-        pivs[matrix.uprows[ui][1]] = copy(matrix.uprows[ui])
-        up2coef[matrix.uprows[ui][1]] = matrix.up2coef[ui]
-    end
-    matrix.up2coef = up2coef
-    =#
-    #=
-    WARNing. TODO
-    =#
-
+    #= WARNING =#
     resize!(matrix.low2coef, ncols)
-
-    # @info "known pivots" pivs
 
     # unknown pivots
     # (not discovered yet)
     # we will modify them inplace when reducing by pivs
     upivs = matrix.lowrows
 
-    # @info "unknown pivots" upivs
-
     densecoeffs = zeros(UInt64, ncols)
 
     for i in 1:nlow
-        # @debug "low row $i.."
-
         # select next row to be reduced
         # npiv ~ exponents
         rowexps = upivs[i]
@@ -264,7 +231,6 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
         # first nonzero in densecoeffs is at startcol position
         startcol = rowexps[1]
         zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(densecoeffs, matrix, basis, pivs, startcol, -1)
-        # @debug "low row $i reduced into" zeroed newrow newcfs
 
         # if fully reduced
         zeroed && continue
@@ -286,10 +252,6 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
         end
     end
 
-    # @debug "interreducing rows.."
-    # @info "matrix before::"
-    #dump(matrix, maxdepth=4)
-    #println("PIVS ARE : \n", pivs)
     # number of new pivots
     newpivs = 0
 
@@ -301,10 +263,7 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
     # .. for each right (non-pivotal) column
     for i in 1:nright
         k = ncols - i + 1
-        # @info "interrrrreducing right column" k
         if isassigned(pivs, k)
-            # @info "pivot $k exists"
-
             densecfs = zeros(UInt64, ncols)
 
             if k <= nleft
@@ -322,10 +281,7 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
             end
             newpivs += 1
 
-            # @debug "reducing" densecfs startcol
-
             zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(densecfs, matrix, basis, pivs, startcol, startcol)
-            # @debug "reduced" zeroed newrow newcfs
             # TODO: fails
             # @assert !zeroed
 
@@ -336,11 +292,6 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
         end
     end
 
-    # @debug "INTERREDUCED" newpivs
-    # @info "matrix is::"
-    #dump(matrix, maxdepth=4)
-    #println("PIVS ARE : \n", pivs)
-
     # shrink matrix
     matrix.npivots = matrix.nrows = matrix.size = newpivs
     resize!(matrix.lowrows, newpivs)
@@ -348,10 +299,6 @@ end
 
 function exact_sparse_linear_algebra!(matrix::MacaulayMatrix, basis::Basis)
     resize!(matrix.coeffs, matrix.nlow)
-
-    # @info "matrix in reduction"
-    #dump(matrix, maxdepth=3)
-
     exact_sparse_rref!(matrix, basis)
 end
 
@@ -365,7 +312,6 @@ function convert_hashes_to_columns!(
     hdata    = symbol_ht.hashdata
     load     = symbol_ht.load
 
-    # @info "Converting hashes to columnds" symbol_ht.load
     # monoms from symbolic table represent one column in the matrix
 
     col2hash = Vector{Int}(undef, load - 1)
@@ -383,23 +329,13 @@ function convert_hashes_to_columns!(
         end
     end
 
-    # @info "init col2hash" col2hash
-
     # sort columns
     # TODO
     sort_columns_by_hash!(col2hash, symbol_ht)
 
-    # @info "hashtable"
-    #println(symbol_ht.exponents, "\nload: ", symbol_ht.load)
-    #println(symbol_ht.hashdata)
-
-    # @info "after sort col2hash" col2hash
-
     matrix.nleft = k
     # -1 as long as hashtable load is always 1 more than actual
     matrix.nright = load - matrix.nleft - 1
-
-    # @info "updated matrix info" matrix.nleft matrix.nright
 
     # store the other direction of mapping,
     # hash -> column
@@ -415,7 +351,7 @@ function convert_hashes_to_columns!(
             row[j] = hdata[row[j]].idx
         end
 
-        # TODO
+        # TODO: not needed for now
         nterms += length(row)
     end
 
@@ -449,17 +385,7 @@ function convert_matrix_rows_to_basis_elements!(
     rows = matrix.lowrows
     crs = basis.ndone
 
-    #dump(matrix, maxdepth=4)
-
-    # @info "before insert_in_basis_hash_table_pivots"
-    #println(ht.exponents, "\n load: ", ht.load)
-    # @info "symbolic::"
-    #println(symbol_ht.exponents, "\n symbol_ht: ", symbol_ht.load)
-
-    # @info "col2hash" matrix.col2hash
-
     for i in 1:matrix.npivots
-        # @info "converting matrix to basis" i rows[i]
         colidx = rows[i][1]
 
         insert_in_basis_hash_table_pivots(rows[i], ht, symbol_ht, matrix.col2hash)
@@ -468,7 +394,6 @@ function convert_matrix_rows_to_basis_elements!(
         # an interesing way to find coefficients
         basis.coeffs[crs + i] = matrix.coeffs[matrix.low2coef[colidx]]
         basis.gens[crs + i] = matrix.lowrows[i]
-        # sort_gens_terms_decreasing!(basis, ht, crs + i)
     end
 
     basis.ntotal += matrix.npivots
