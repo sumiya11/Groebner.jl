@@ -468,6 +468,7 @@ function update!(
 
     # make sure pairset and update hashtable have enough
     # space to store new pairs
+    # TODO: we create too big array, can be fixed
     check_enlarge_pairset!(pairset, npairs)
 
     # for each new element in basis

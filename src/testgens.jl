@@ -69,6 +69,25 @@ function eco7()
     fs
 end
 
+function eco11()
+    R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = PolynomialRing(GF(1073741827), ["x$i" for i in 1:11])
+
+    fs = [
+        x0*x1*x10+x1*x2*x10+x2*x3*x10+x3*x4*x10+x4*x5*x10+x5*x6*x10+x6*x7*x10+x7*x8*x10+x8*x9*x10+x0*x10-1,
+        x0*x2*x10+x1*x3*x10+x2*x4*x10+x3*x5*x10+x4*x6*x10+x5*x7*x10+x6*x8*x10+x7*x9*x10+x1*x10-2,
+        x0*x3*x10+x1*x4*x10+x2*x5*x10+x3*x6*x10+x4*x7*x10+x5*x8*x10+x6*x9*x10+x2*x10-3,
+        x0*x4*x10+x1*x5*x10+x2*x6*x10+x3*x7*x10+x4*x8*x10+x5*x9*x10+x3*x10-4,
+        x0*x5*x10+x1*x6*x10+x2*x7*x10+x3*x8*x10+x4*x9*x10+x4*x10-5,
+        x0*x6*x10+x1*x7*x10+x2*x8*x10+x3*x9*x10+x5*x10-6,
+        x0*x7*x10+x1*x8*x10+x2*x9*x10+x6*x10-7,
+        x0*x8*x10+x1*x9*x10+x7*x10-8,
+        x0*x9*x10+x8*x10-9,
+        x9*x10-10,
+        x0+x1+x2+x3+x4+x5+x6+x7+x8+x9+1
+    ]
+    fs
+end
+
 function noon3(;ground=QQ)
     R, (x1, x2, x3) = PolynomialRing(ground, ["x$i" for i in 1:3])
     fs = [
@@ -115,6 +134,18 @@ function noon6(;ground=QQ)
     10*x1*x2^2+10*x1*x3^2+10*x1*x4^2+10*x1*x5^2+10*x1*x6^2-11*x1+10,
     10*x1^2*x2+10*x2*x3^2+10*x2*x4^2+10*x2*x5^2+10*x2*x6^2-11*x2+10
     ]
+    fs
+end
+
+function noonn(n; ground=QQ)
+    without(x, k) = x[1:end .!= k]
+
+    R, xs = PolynomialRing(ground, ["x$i" for i in 1:n])
+    fs = zeros(R, n)
+    for i in 1:n
+        other = without(xs, i)
+        fs[i] = xs[i] * (10*sum(other .^ 2) - 11) + 10
+    end
     fs
 end
 

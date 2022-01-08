@@ -552,6 +552,7 @@ function insert_in_basis_hash_table_pivots(
         h = sdata[hidx].hash
 
         lastidx = ht.load + 1
+        # TODO: speed this up
         bexps[lastidx] = copy(sexps[hidx])
         e = bexps[lastidx]
 
@@ -683,7 +684,7 @@ function get_lcm(he1::Int, he2::Int,
 
     e1   = ht1.exponents[he1]
     e2   = ht1.exponents[he2]
-    etmp = copy(ht1.exponents[1])
+    etmp = ht1.exponents[1]
 
     # TODO: degrevlex only
     etmp[end] = 0

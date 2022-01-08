@@ -261,10 +261,12 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
 
     # interreduce new pivots..
     # .. for each right (non-pivotal) column
+    densecfs = zeros(UInt64, ncols)
+
     for i in 1:nright
         k = ncols - i + 1
         if isassigned(pivs, k)
-            densecfs = zeros(UInt64, ncols)
+            densecfs .= UInt64(0)
 
             if k <= nleft
                 cfsref = basis.coeffs[matrix.up2coef[k]]
