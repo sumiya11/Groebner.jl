@@ -11,12 +11,13 @@ function benchmark_system_my(system)
     system = GroebnerBases.change_ordering(system, :degrevlex)
     GroebnerBases.groebner([system[1]])
     @btime gb = GroebnerBases.groebner($system)
+    # println("length = $(length(GroebnerBases.groebner(system)))")
 end
 
 function benchmark_system_singular(system)
-    R = parent(system[1])
-    modulo = characteristic(R)
-    n = nvars(R)
+    R = AbstractAlgebra.parent(system[1])
+    modulo = AbstractAlgebra.characteristic(R)
+    n = AbstractAlgebra.nvars(R)
     ground_s = Singular.N_ZpField(modulo)
     R_s, _ = Singular.PolynomialRing(ground_s, ["x$i" for i in 1:n], ordering=:degrevlex)
 
