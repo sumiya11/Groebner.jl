@@ -15,5 +15,6 @@ makedocs(
 
 deploydocs(
    repo = "github.com/sumiya11/GroebnerBases.git";
-   push_preview = true
+   push_preview = true,
+   devbranch = "main"
 )
