@@ -320,11 +320,6 @@ function interreduce_matrix_rows!(matrix::MacaulayMatrix, basis::Basis)
         matrix.low2coef[matrix.uprows[i][1]] = i
         matrix.coeffs[i] = copy(basis.coeffs[matrix.up2coef[i]])
     end
-    #=
-    println(pivs)
-    println(matrix.up2coef)
-    println(matrix.low2coef)
-    =#
 
     densecfs = Vector{UInt64}(undef, matrix.ncols)
     k = matrix.nrows
@@ -332,20 +327,15 @@ function interreduce_matrix_rows!(matrix::MacaulayMatrix, basis::Basis)
     for i in 1:matrix.ncols
         l = matrix.ncols - i + 1
         if isassigned(pivs, l)
-            #@info "$l is assigned"
             densecfs .= UInt64(0)
             cfs = matrix.coeffs[matrix.low2coef[l]]
             reducexps = pivs[l]
             startcol = reducexps[1]
-            #@info "row info" i l startcol
-            #println(reducexps, " cfs : $cfs" )
             for j in 1:length(reducexps)
                 densecfs[reducexps[j]] = cfs[j]
             end
 
             zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(densecfs, matrix, basis, pivs, startcol, startcol)
-
-            #@info "reduced" zeroed newrow newcfs
 
             matrix.lowrows[k] = newrow
             matrix.coeffs[matrix.low2coef[l]] = newcfs

@@ -614,9 +614,6 @@ function reducegb_f4!(
         symbol_ht.hashdata[uprows[matrix.nrows][1]].idx = 1
     end
 
-    #@info "another dump"
-    #dump(matrix, maxdepth=5)
-
     # needed for correct counting in symbol
     matrix.ncols = matrix.nrows
     matrix.nup = matrix.nrows
@@ -626,24 +623,15 @@ function reducegb_f4!(
     for i in symbol_ht.offset:symbol_ht.load
         symbol_ht.hashdata[i].idx = 1
     end
-    #@warn "second"
-    #dump(matrix, maxdepth=5)
-    #println(symbol_ht.exponents)
 
     convert_hashes_to_columns!(matrix, symbol_ht)
     matrix.ncols = matrix.nleft + matrix.nright
 
     sort_matrix_rows_decreasing!(matrix)
 
-    #dump(matrix, maxdepth=5)
-
     interreduce_matrix_rows!(matrix, basis)
 
     convert_matrix_rows_to_basis_elements_use_symbol!(matrix, basis)
-
-    #dump(matrix, maxdepth=5)
-    #@info "and basis"
-    #dump(basis, maxdepth=5)
 
     # no longer need in two hashtables
     ht = symbol_ht
@@ -651,14 +639,6 @@ function reducegb_f4!(
     basis.ntotal = matrix.npivots + basis.ndone
     basis.ndone = matrix.npivots
 
-    #@info "gens"
-    #println(basis.gens)
-
-    #=
-    for gen in basis.gens[1:]
-        println(map(x -> symbol_ht.exponents[x]), gen)
-    end
-    =#
     #= we may have added some multiples of reduced basis polynomials
     * from the matrix, so we get rid of them. =#
     k = 0
@@ -682,9 +662,6 @@ function reducegb_f4!(
         i += 1
     end
     basis.nlead = k
-
-    #@info "and basis"
-    #dump(basis, maxdepth=5)
 end
 
 #------------------------------------------------------------------------------
@@ -776,9 +753,10 @@ function f4(ring::PolyRing,
 
     if reduced
         reducegb_f4!(basis, matrix, ht, symbol_ht)
+        ht = symbol_ht
     end
 
-    export_basis_data(basis, symbol_ht)
+    export_basis_data(basis, ht)
 end
 
 #------------------------------------------------------------------------------
