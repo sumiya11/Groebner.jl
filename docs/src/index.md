@@ -2,7 +2,7 @@
 # GroebnerBases
 
 ```@meta
-CurrentModule = Example
+CurrentModule = GroebnerBases
 ```
 
 ```@docs
