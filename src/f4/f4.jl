@@ -778,7 +778,7 @@ function f4(ring::PolyRing,
         reducegb_f4!(basis, matrix, ht, symbol_ht)
     end
 
-    export_basis_data(basis, ht)
+    export_basis_data(basis, symbol_ht)
 end
 
 #------------------------------------------------------------------------------
