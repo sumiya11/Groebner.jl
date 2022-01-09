@@ -1,5 +1,8 @@
 # GroebnerBases
 
+[![Runtests](https://github.com/sumiya11/GroebnerBases/actions/workflows/Runtests.yml/badge.svg?branch=master)](https://github.com/sumiya11/GroebnerBases/actions/workflows/Runtests.yml)
+
+
 The package provides Groebner bases computation interface with the *performance
 comparable to Singular*.
 

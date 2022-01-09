@@ -1,5 +1,4 @@
 
-using .GroebnerBases: f4, is_groebner
 
 function generate_set(nvariables, exps, nterms, npolys;
                             ground=GF(2^31 - 1), ordering=:lex)
@@ -17,7 +16,7 @@ function generate_set(nvariables, exps, nterms, npolys;
 end
 
 
-@testset "F4 random stress tests" begin
+@testset "f4 random stress tests" begin
 
 
     nvariables = [2, 3]
@@ -29,7 +28,7 @@ end
 
     p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings)))
 
-    # @debug "producing $p small tests for f4"
+    @info "producing $p small tests for f4"
 
     for n in nvariables
         for e in exps
@@ -41,10 +40,11 @@ end
                                 n, e, nt, np, ground=gr, ordering=ord
                             )
 
-                            gb = f4(set)
-                            @test is_groebner(gb, initial_gens=set)
+                            println(set)
+                            gb = GroebnerBases.groebner(set)
+                            @test GroebnerBases.isgroebner(gb)
 
-                            if !is_groebner(gb, initial_gens=set)
+                            if !GroebnerBases.isgroebner(gb)
                                 @error "BEDA" n e nt np gr ord
                             end
                         end

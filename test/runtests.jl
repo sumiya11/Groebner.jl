@@ -15,10 +15,5 @@ using .GroebnerBases.AbstractAlgebra
 
 @testset "All tests" begin
 
-    # @includetests fglm_general
-    @includetests 
+    @includetests
 end
-
-# # @info "Benchmarking"
-
-# include("../benchmark/benchmarks.jl")

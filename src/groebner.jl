@@ -14,7 +14,7 @@ function groebner(
 
     Suported monomial orderings are:
     - `degrevlex`
-    
+
 """
 function groebner(
             polys::Vector{Poly};
@@ -102,7 +102,7 @@ function groebner_qq(
 
         # reconstruct basis coeffs into integers
         # from the previously accumulated basis and the new one,
-        @info "CRT with ($modulo, $(ring_ff.ch))"
+        @info "CRT modulo ($modulo, $(ring_ff.ch))"
         gbcoeffs_zz, modulo = reconstruct_crt!(
                             gbcoeffs_accum, modulo,
                             gbcoeffs_ff, ring_ff.ch)
@@ -116,7 +116,7 @@ function groebner_qq(
 
         # run correctness checks to assure the reconstrction is correct
         # TODO: correctness_checks
-        if true || correctness_checks(gbexps, gbcoeffs_qq, exps, coeffs)
+        if reconstruction_check(gbcoeffs_qq, modulo)
             @info "Reconstructed successfully!"
             break
         end
@@ -133,6 +133,29 @@ function groebner_qq(
     end
 
     gbexps, gbcoeffs_qq
+end
+
+#------------------------------------------------------------------------------
+
+"""
+function isgroebner(polys::Vector{Poly}) where {Poly}
+
+    Checkes if the input set of polynomials is a Groebner basis.
+
+    At the moment only finite field coefficients are supported.
+"""
+function isgroebner(polys::Vector{Poly}) where {Poly}
+    ring, exps, coeffs = convert_to_internal(polys)
+    isgroebner_ff(ring, exps, coeffs)
+end
+
+
+function isgroebner_ff(
+            ring::PolyRing,
+            exps::Vector{Vector{Vector{UInt16}}},
+            coeffs::Vector{Vector{UInt64}};)
+
+    isgroebner_f4(ring, exps, coeffs)
 end
 
 #------------------------------------------------------------------------------

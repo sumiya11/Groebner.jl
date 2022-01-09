@@ -60,3 +60,23 @@ function reduce_modulo(
 end
 
 #------------------------------------------------------------------------------
+
+# checks if coefficients in coeffs are not large compared to modulo
+# Having relatively large coeffs would mean that reconstruction probably failed
+function reconstruction_check(
+        coeffs::Vector{Vector{Rational{BigInt}}},
+        modulo::BigInt
+    )
+
+    @inbounds for i in 1:length(coeffs)
+        for j in 1:length(coeffs[i])
+            c = coeffs[i][j]
+            pval = ( numerator(c) * denominator(c) ) ^ 2
+            if pval >= modulo
+                return false
+            end
+        end
+    end
+
+    return true
+end

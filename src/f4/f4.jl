@@ -664,6 +664,14 @@ function reducegb_f4!(
     basis.nlead = k
 end
 
+function isgroebner_f4(
+            ring::PolyRing,
+            exps::Vector{Vector{Vector{UInt16}}},
+            coeffs::Vector{Vector{UInt64}})
+
+
+end
+
 #------------------------------------------------------------------------------
 
 #=
@@ -714,21 +722,21 @@ function f4(ring::PolyRing,
     # while there are pairs to be reduced
     while !isempty(pairset)
         d += 1
-        @info "F4 ITER $d"
-        @info "Available TODO pairs"
+        @debug "F4 ITER $d"
+        @debug "Available TODO pairs"
 
         # selects pairs for reduction from pairset following normal strategy
         # (minimal lcm degrees are selected),
         # and puts these into the matrix rows
         select_normal!(pairset, basis, matrix, ht, symbol_ht)
-        @info "Selected TODO pairs"
+        @debug "Selected TODO pairs"
 
         symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
-        @info "Matrix of size TODO, density TODO"
+        @debug "Matrix of size TODO, density TODO"
 
         # reduces polys and obtains new potential basis elements
         reduction!(basis, matrix, ht, symbol_ht)
-        @info "Matrix reduced, density TODO"
+        @debug "Matrix reduced, density TODO"
 
         # update the current basis with polynomials produced from reduction,
         # does not copy,

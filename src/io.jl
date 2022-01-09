@@ -21,6 +21,7 @@ end
 # converts MPoly representation to internal polynomial representation
 # extracting base ring, exponents, and coefficients
 function convert_to_internal(orig_polys::Vector{MPoly{GFElem{Int64}}})
+
     # orig_polys is not empty here
     npolys = length(orig_polys)
     exps   = Vector{Vector{Vector{UInt16}}}(undef, npolys)
@@ -33,7 +34,7 @@ function convert_to_internal(orig_polys::Vector{MPoly{GFElem{Int64}}})
             # TODO: ask
             exps[i][j] = poly.exps[:, j]
         end
-        coeffs[i] = map(UInt64 ∘ data, poly.coeffs)
+        coeffs[i] = map(UInt64 ∘ data, coefficients(poly))
     end
 
     R = parent(first(orig_polys))

@@ -58,31 +58,3 @@ end
     fs_vv = change_ordering(fs, :lex)
     @test fs_vv == fs
 end
-
-@testset "Basis reduction" begin
-    # not really comprehensive
-    
-    R, (x, y, z) = PolynomialRing(GF(2^31 - 1), ["x", "y", "z"])
-
-    fs = change_ordering(rootn(3, ground=GF(2^31 - 1)), :degrevlex)
-    gb = GroebnerBases.f4(fs, reduced=false)
-
-    @test is_groebner(gb)
-
-    x1, x2, x3 = gens(parent(first(fs)))
-    ans = [x1 + x2 + x3, x2^2 + x2*x3 + x3^2, x3^3 + 2147483646]
-    push!(gb, gb[1])
-    @test GroebnerBases.reducegb!(gb) == ans
-    @test gb == ans
-
-    fs = rootn(3, ground=GF(2^31 - 1))
-    gb = GroebnerBases.f4(fs, reduced=false)
-
-    @test is_groebner(gb)
-
-    x1, x2, x3 = gens(parent(first(fs)))
-    ans = [x3^3 + 2147483646, x2^2 + x2*x3 + x3^2, x1 + x2 + x3]
-    append!(gb, gb)
-    @test GroebnerBases.reducegb!(gb) == ans
-    @test gb == ans
-end

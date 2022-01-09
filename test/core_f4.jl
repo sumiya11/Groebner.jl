@@ -1,8 +1,7 @@
 
 using AbstractAlgebra
-using Logging
 
-@testset "f4" begin
+@testset "ff f4 noreduce" begin
 
 R, (x, y) = PolynomialRing(GF(2^31 - 1), ["x", "y"], ordering=:degrevlex)
 
@@ -19,7 +18,6 @@ gb = GroebnerBases.groebner(fs, reduced=false)
     x^2 + x,
     x*y + x
 =#
-
 
 fs = [
     x + y,
