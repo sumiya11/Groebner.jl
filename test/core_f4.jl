@@ -115,5 +115,38 @@ ku = GroebnerBases.change_ordering(GroebnerBases.ku10(ground=GF(2^31 - 1)), :deg
 gb = GroebnerBases.groebner(ku, reduced=false)
 @test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
 
+end
 
+@testset "ff f4 corner cases" begin
+    R, (x, y) = PolynomialRing(GF(2^31 - 1), ["x", "y"], ordering=:degrevlex)
+
+    fs = [x, x, x]
+    @test GroebnerBases.groebner(fs) ≂ [x]
+
+    fs = [x, x, y, y, y, x, x, y]
+    @test GroebnerBases.groebner(fs) ≂ [x, y]
+
+    fs = [R(1)]
+    @test GroebnerBases.groebner(fs) ≂ [R(1)]
+
+    fs = [x^2 + y, y*x - 1, R(1), y^4]
+    @test GroebnerBases.groebner(fs) ≂ [R(1)]
+
+    fs = [2x, 3y, 4x + 5y]
+    @test GroebnerBases.groebner(fs) ≂ [x, y]
+
+
+    R, (x1, x2) = PolynomialRing(GF(2^31 - 1), ["x1", "x2"], ordering=:degrevlex)
+
+    # TODO reduction does not work
+    fs = [1926960473*x1^2*x2^2 + 832122707*x1^2*x2,
+        296198992*x1^2*x2^2 + 1456925099*x1^2*x2 + 325693338*x1*x2^2,
+        2060243142*x1^2*x2^2]
+    gb = GroebnerBases.groebner(fs)
+
+    # TODO: reduction does not work
+    fs = [x1*x2^2 + x1*x2, x1^2*x2^2 + 2*x1*x2, 2*x1^2*x2^2 + x1*x2]
+    gb = GroebnerBases.groebner(fs)
+    @test gb ≂ [x1*x2]
+    
 end

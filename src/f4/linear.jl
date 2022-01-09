@@ -136,7 +136,9 @@ function reduce_dense_row_by_known_pivots_sparse!(
         # if pivot not defined
         #= WARNING =#
 
+        # @warn "inner iter $i" startcol tmp_pos pivs
         if !isassigned(pivs, i) || (tmp_pos != -1 && tmp_pos == i)
+            # println("skipped")
             if np == -1
                 np = i
             end
@@ -198,8 +200,13 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
         pivs[i] = matrix.uprows[i]
     end
 
-    #= WARNING =#
-    resize!(matrix.low2coef, ncols)
+    # CHANGED in order to prevent bug
+    # when several rows in the matrix are equal
+    l2c_tmp = Vector{Int}(undef, max(ncols, matrix.nrows))
+    for i in 1:nlow
+        l2c_tmp[matrix.lowrows[i][1]] = matrix.low2coef[i]
+    end
+    matrix.low2coef = l2c_tmp
 
     # unknown pivots
     # (not discovered yet)
@@ -208,6 +215,9 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
 
     densecoeffs = zeros(UInt64, ncols)
 
+    # @warn "before reducing low"
+    # dump(matrix, maxdepth=5)
+
     for i in 1:nlow
         # select next row to be reduced
         # npiv ~ exponents
@@ -215,7 +225,7 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
 
         # corresponding coefficients from basis
         # (no need to copy here)
-        cfsref  = basis.coeffs[matrix.low2coef[i]]
+        cfsref  = basis.coeffs[matrix.low2coef[rowexps[1]]]
 
         k = 0
 
@@ -231,7 +241,7 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
         # first nonzero in densecoeffs is at startcol position
         startcol = rowexps[1]
         zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(densecoeffs, matrix, basis, pivs, startcol, -1)
-
+        # @warn "reduced " zeroed newrow newcfs
         # if fully reduced
         zeroed && continue
 
@@ -251,6 +261,10 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
             normalize_sparse_row!(matrix.coeffs[i], basis.ch)
         end
     end
+
+    # @warn "after reducing low"
+    # dump(matrix, maxdepth=5)
+    # println(pivs)
 
     # number of new pivots
     newpivs = 0
@@ -284,12 +298,11 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
             newpivs += 1
 
             zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(densecfs, matrix, basis, pivs, startcol, startcol)
-            # TODO: fails
-            # @assert !zeroed
 
             # update row and coeffs
             matrix.lowrows[newpivs] = newrow
             matrix.coeffs[matrix.low2coef[k]] = newcfs
+            matrix.low2coef[k] = matrix.low2coef[k]
             pivs[k] = matrix.lowrows[newpivs]
         end
     end

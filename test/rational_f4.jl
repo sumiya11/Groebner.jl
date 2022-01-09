@@ -3,6 +3,7 @@ using .GroebnerBases: groebner
 
 R, (x, y, z, w) = PolynomialRing(QQ, ["x", "y", "z", "w"], ordering=:degrevlex)
 
+# fails
 
 @testset "Groebner with reconstruction" begin
 

@@ -734,9 +734,27 @@ function f4(ring::PolyRing,
         symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
         @debug "Matrix of size TODO, density TODO"
 
+        #@warn "xd $d"
+        #dump(basis, maxdepth = 5)
+        #dump(matrix, maxdepth = 5)
+
         # reduces polys and obtains new potential basis elements
         reduction!(basis, matrix, ht, symbol_ht)
         @debug "Matrix reduced, density TODO"
+
+        #@warn "after reduction"
+        #dump(matrix, maxdepth = 5)
+        #=
+        printstyled("nice basis\n", color=:red)
+        for (_, cfs, poly) in zip(1:basis.ntotal, basis.coeffs, basis.gens)
+            for i in 1:length(poly)
+                c = cfs[i]
+                e = ht.exponents[poly[i]]
+                #print("$c*$e + ")
+            end
+            #println("")
+        end
+        =#
 
         # update the current basis with polynomials produced from reduction,
         # does not copy,

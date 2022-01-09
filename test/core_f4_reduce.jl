@@ -23,8 +23,11 @@
         x6^6 + 2147483646]
 
     ku = GroebnerBases.change_ordering(GroebnerBases.ku10(ground=GF(2^31-1)), :degrevlex)
-    x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = gens(parent(first(eco)))
-    gb = GroebnerBases.groebner(eco, reduced=true)
+    x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = gens(parent(first(ku)))
+    gb = GroebnerBases.groebner(ku, reduced=true)
+
+    # TODO
+    # Fails due to reduction problema
     @test gb == [
         x9 + 1272065637*x10 + 875418006,
         x8 + 1529540685*x10 + 617942964,
