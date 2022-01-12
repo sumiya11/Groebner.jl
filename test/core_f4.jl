@@ -139,14 +139,20 @@ end
     R, (x1, x2) = PolynomialRing(GF(2^31 - 1), ["x1", "x2"], ordering=:degrevlex)
 
     # TODO reduction does not work
+    #=
     fs = [1926960473*x1^2*x2^2 + 832122707*x1^2*x2,
         296198992*x1^2*x2^2 + 1456925099*x1^2*x2 + 325693338*x1*x2^2,
         2060243142*x1^2*x2^2]
+    =#
+    fs = [1*x1^2*x2^2 + 2*x1^2*x2,
+        1*x1^2*x2^2 + 3*x1^2*x2 + 5*x1*x2^2,
+        1*x1^2*x2^2]
     gb = GroebnerBases.groebner(fs)
+    @test gb ≂ [x1*x2^2, x1^2*x2]
 
     # TODO: reduction does not work
     fs = [x1*x2^2 + x1*x2, x1^2*x2^2 + 2*x1*x2, 2*x1^2*x2^2 + x1*x2]
     gb = GroebnerBases.groebner(fs)
     @test gb ≂ [x1*x2]
-    
+
 end

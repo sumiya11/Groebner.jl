@@ -63,11 +63,12 @@ end
 
 """
 function normal_form(h, G)
+    R = parent(h)
     flag = false
     while true
         # PROFILER: we can do better instead of terms
         #           Probably change iteration order
-        hprev = deepcopy(h)
+        hprev = R(h)
         for t in terms(h)
             for g in G
                 # does, mul = term_divides_3(t, g)

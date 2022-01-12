@@ -195,6 +195,7 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
     nleft  = matrix.nleft
 
     # known pivots
+    # no_copy
     pivs = Vector{Vector{Int}}(undef, ncols)
     for i in 1:matrix.nup
         pivs[i] = matrix.uprows[i]
@@ -206,6 +207,9 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
     for i in 1:nlow
         l2c_tmp[matrix.lowrows[i][1]] = matrix.low2coef[i]
     end
+    # CHANGED
+    # no_copy
+    rowidx2coef = matrix.low2coef
     matrix.low2coef = l2c_tmp
 
     # unknown pivots
@@ -215,8 +219,11 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
 
     densecoeffs = zeros(UInt64, ncols)
 
+    #=
     @warn "before reducing low"
     dump(matrix, maxdepth=5)
+    @warn "lowrow2coef" rowidx2coef
+    =#
 
     for i in 1:nlow
         # select next row to be reduced
@@ -225,7 +232,7 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
 
         # corresponding coefficients from basis
         # (no need to copy here)
-        cfsref  = basis.coeffs[matrix.low2coef[rowexps[1]]]
+        cfsref  = basis.coeffs[rowidx2coef[i]]
 
         k = 0
 
@@ -240,8 +247,9 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
         # reduce it with known pivots from matrix.uprows
         # first nonzero in densecoeffs is at startcol position
         startcol = rowexps[1]
+        # zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(densecoeffs, matrix, basis, pivs, startcol, -1)
         zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(densecoeffs, matrix, basis, pivs, startcol, -1)
-        @warn "reduced " zeroed newrow newcfs
+        # @warn "reduced " zeroed newrow newcfs
         # if fully reduced
         zeroed && continue
 
@@ -262,9 +270,11 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
         end
     end
 
+    #=
     @warn "after reducing low"
     dump(matrix, maxdepth=5)
     println("PIVS: ", pivs)
+    =#
 
     # number of new pivots
     newpivs = 0

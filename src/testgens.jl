@@ -227,3 +227,21 @@ function sparse5(; ground=QQ)
         x1^2*x2^2*x3^2*x4^2*x5^2 + x1^2 + x2^2 + x3^2 + x4^2 + 3*x5^2 + x1*x2*x3*x4*x5 + 5
     ]
 end
+
+function generate_set(nvariables, exps, nterms, npolys, csz, rng;
+                            ground=GF(2^31 - 1), ordering=:lex)
+
+    R, _ = PolynomialRing(
+        ground,
+        ["x$i" for i in 1:nvariables],
+        ordering=ordering
+    )
+
+    return filter!(!iszero, [
+        map_coefficients(
+            c -> ground(data(c) % csz),
+            rand(rng, R, exps, nterms)
+        )
+        for _ in 1:rand(rng, npolys)
+    ])
+end
