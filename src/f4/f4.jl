@@ -18,7 +18,7 @@ function select_normal!(
     ps = pairset.pairs
     min_deg = ps[1].deg
     min_idx = 0
-    # beda with boundaries
+
     while min_idx < pairset.load && ps[min_idx + 1].deg == min_deg
         min_idx += 1
     end
@@ -674,26 +674,19 @@ end
 
 #------------------------------------------------------------------------------
 
-#=
-    Main function to calculate the Groebner basis of the given polynomial ideal.
-    Specialized to work only over finite fields.
+"""
+    Main function to calculate the Groebner basis of the given polynomial ideal
+    in degrevlex ordering and finite fields coefficients.
 
     Parameters
-        . F         - an array of polynomials over finite field
-        . select    - a strategy for polynomial selection on each iteration
-        . reduced   - reduce the basis so that the result is unique
-        . linalg    - linear algebra backend to use. Possible options
-                      are :dense , :sparse , and :sparserand. Default is :sparse
-        . maxpairs  - maximal number of pairs selected for one matrix; default is
-                      0, i.e. no restriction. If matrices get too big or consume
-                      too much memory this is a good parameter to play with.
-        . tablesize -
-=#
+    .
+
+"""
 function f4(ring::PolyRing,
             exponents::Vector{Vector{Vector{UInt16}}},
             coeffs::Vector{Vector{UInt64}},
-            rng::Rng;
-            reduced::Bool=true,
+            rng::Rng,
+            reduced::Bool;
             tablesize::Int=2^16
             ) where {Rng<:Random.AbstractRNG}
 
@@ -734,27 +727,27 @@ function f4(ring::PolyRing,
         symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
         @debug "Matrix of size TODO, density TODO"
 
-        #@warn "xd $d"
-        #dump(basis, maxdepth = 5)
-        #dump(matrix, maxdepth = 5)
+        @warn "xd $d"
+        dump(basis, maxdepth = 5)
+        dump(matrix, maxdepth = 5)
 
         # reduces polys and obtains new potential basis elements
         reduction!(basis, matrix, ht, symbol_ht)
         @debug "Matrix reduced, density TODO"
 
-        #@warn "after reduction"
-        #dump(matrix, maxdepth = 5)
-        #=
+        @warn "after reduction"
+        dump(matrix, maxdepth = 5)
+
         printstyled("nice basis\n", color=:red)
         for (_, cfs, poly) in zip(1:basis.ntotal, basis.coeffs, basis.gens)
             for i in 1:length(poly)
                 c = cfs[i]
                 e = ht.exponents[poly[i]]
-                #print("$c*$e + ")
+                print("$c*$e + ")
             end
-            #println("")
+            println("")
         end
-        =#
+
 
         # update the current basis with polynomials produced from reduction,
         # does not copy,

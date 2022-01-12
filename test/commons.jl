@@ -1,6 +1,6 @@
 
 using .GroebnerBases: normal_form, reducegb, reducegb!,
-                    change_ordering, rootn, f4
+                    change_ordering, rootn
 
 @testset "Normal Form" begin
 

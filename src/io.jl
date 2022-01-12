@@ -1,7 +1,7 @@
 
 #------------------------------------------------------------------------------
 
-struct PolyRing
+mutable struct PolyRing
     #= Ring information =#
     # number of variables
     nvars::Int
@@ -21,6 +21,7 @@ end
 # converts MPoly representation to internal polynomial representation
 # extracting base ring, exponents, and coefficients
 function convert_to_internal(orig_polys::Vector{MPoly{GFElem{Int64}}})
+    isempty(orig_polys) && error("Empty groebner input")
 
     # orig_polys is not empty here
     npolys = length(orig_polys)
@@ -45,9 +46,9 @@ function convert_to_internal(orig_polys::Vector{MPoly{GFElem{Int64}}})
 
     ring = PolyRing(nvars, explen, ord, UInt64(ch))
 
-    @assert ch < 2^32
-    @assert ord == :degrevlex
-    @assert nvars > 1 && nvars + 1 == explen
+    @assert 0 < ch < 2^32
+    # @assert ord == :degrevlex
+    # @assert nvars > 1 && nvars + 1 == explen
 
     return ring, exps, coeffs
 end
@@ -80,8 +81,8 @@ function convert_to_internal(orig_polys::Vector{MPoly{Rational{BigInt}}})
 
     ring = PolyRing(nvars, explen, ord, UInt64(ch))
 
-    @assert ord == :degrevlex
-    @assert nvars > 1 && nvars + 1 == explen
+    # @assert ord == :degrevlex
+    # @assert nvars > 1 && nvars + 1 == explen
 
     return ring, exps, coeffs
 end

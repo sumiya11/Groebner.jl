@@ -118,16 +118,23 @@ function linear_combination(basis::RrefBasis, coeffs)
 end
 
 """
-    Converts the basis into the :lex ordering
+    Converts the basis `G` into the :lex ordering
 """
-function fglm(G; linalg=:dense)
+function fglm(ring, gbexps, gbcoeffs, rng)
+
+    # TODO #
+    RR, _ = PolynomialRing(GF(Int(ring.ch)), ["x$i" for i in 1:length(gbcoeffs)], ordering=:degrevlex)
+    println(typeof(RR))
+    G = export_basis(RR, gbexps, gbcoeffs)
+    ###
 
     origR  = parent(first(G))
     origxs = gens(origR)
     ground = base_ring(origR)
     T      = elem_type(origR)
 
-    @assert ordering(origR) != :lex
+    @assert ordering(origR) == :degrevlex
+    @assert characteristic(ground) > 0
 
     # @info "converting from $(ordering(origR)) to :lex with fglm"
 
@@ -178,5 +185,7 @@ function fglm(G; linalg=:dense)
         end
     end
 
-    return newG
+    _, newexps, newcoeffs = convert_to_internal(newG)
+
+    newexps, newcoeffs
 end

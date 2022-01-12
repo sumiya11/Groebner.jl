@@ -2,7 +2,7 @@
 module GroebnerBases
 
 import AbstractAlgebra
-import AbstractAlgebra.Generic: MPoly, GFElem
+import AbstractAlgebra.Generic: MPoly, GFElem, MPolyRing
 import AbstractAlgebra: leading_term, QQ, PolynomialRing, terms,
                         coeff, divides, base_ring, elem_type,
                         rref, isconstant, leading_coefficient,
@@ -13,7 +13,7 @@ import AbstractAlgebra: leading_term, QQ, PolynomialRing, terms,
                         MPolyBuildCtx, finish, push_term!, ZZ,
                         content, change_base_ring, exponent_vector,
                         lcm, monomial, RingElem, set_exponent_vector!,
-                        MPolyRing, nvars, data, characteristic
+                        nvars, data, characteristic
 
 import Combinatorics
 import Primes
@@ -60,6 +60,8 @@ include("f4/sorting.jl")
 include("f4/f4.jl")
 include("f4/statistics.jl")
 
+#= fglm implementation over finite fields =#
+include("fglm/fglm.jl")
 
 # the heart of this library
 include("groebner.jl")
