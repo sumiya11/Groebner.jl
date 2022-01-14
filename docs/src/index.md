@@ -6,5 +6,5 @@ CurrentModule = FastGroebner
 ```
 
 ```@docs
-groebner(polys)
+groebner
 ```

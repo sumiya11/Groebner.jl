@@ -14,7 +14,6 @@ makedocs(
 )
 
 deploydocs(
-   repo = "github.com/sumiya11/FastGroebner.git";
-   push_preview = true,
-   devbranch = "main"
+   repo = "github.com/sumiya11/FastGroebner.jl.git";
+   push_preview = true
 )
