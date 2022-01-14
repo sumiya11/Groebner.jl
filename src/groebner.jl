@@ -12,6 +12,9 @@ function groebner(
     If `reduced` is set to true, returns the reduced basis, which is unique.
     Otherwise, there are no guarantees on uniqueness (and also on minimality).
 
+    Uses the ordering on `polys` for computation by default.
+    If `ordering` is specialized, it takes precedence.
+
     Random generator `rng` is responsible for hashing monomials during computation.
 
     By default, the function executes silently.
@@ -25,6 +28,7 @@ function groebner(
 function groebner(
             polys::Vector{Poly};
             reduced::Bool=true,
+            ordering::Symbol=:input,
             rng::Rng=Random.MersenneTwister(42),
             loglevel::LogLevel=Logging.Warn
             ) where {Poly, Rng<:Random.AbstractRNG}
@@ -56,7 +60,7 @@ function groebner(
     Logging.global_logger(prev_logger)
 
     #= convert result back to representation of input =#
-    export_basis(parent(first(polys)), bexps, bcoeffs)
+    export_basis(ring, polys, bexps, bcoeffs)
 end
 
 #######################################

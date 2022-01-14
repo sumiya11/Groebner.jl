@@ -85,4 +85,9 @@ end
     G = FastGroebner.groebner(G)
     @test G ≂ [y - 12, x - 1]
 
+    R, (x, y, z, w) = PolynomialRing(QQ, ["x", "y", "z", "w"], ordering=:lex)
+    fs = [(12345678//12347)x,
+          (222222221111123//2131232232097)y + z]
+    G = FastGroebner.groebner(fs)
+    @test G ≂ [y + 2131232232097//222222221111123*z, x]
 end

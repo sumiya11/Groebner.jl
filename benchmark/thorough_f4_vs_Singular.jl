@@ -44,9 +44,9 @@ function run_f4_ff_degrevlex_benchmarks(ground)
         ("katsura 10",FastGroebner.katsura10(ground=ground)),
         ("katsura 11",FastGroebner.katsura11(ground=ground)),
         ("katsura 12",FastGroebner.katsura12(ground=ground)),
-        ("eco 10",FastGroebner.eco10(ground=ground)),
-        ("eco 11",FastGroebner.eco11(ground=ground)),
-        ("eco 12",FastGroebner.eco12(ground=ground)),
+        ("eco 10",FastGroebner.eco10()),
+        ("eco 11",FastGroebner.eco11()),
+        ("eco 12",FastGroebner.eco12()),
         ("noon 6"    ,FastGroebner.noonn(6, ground=ground)),
         ("noon 7"    ,FastGroebner.noonn(7, ground=ground)),
         ("noon 8"    ,FastGroebner.noonn(8, ground=ground))

@@ -764,7 +764,7 @@ function f4(ring::PolyRing,
     while !isempty(pairset)
         d += 1
         @debug "F4 ITER $d"
-        @debug "Available TODO pairs"
+        @debug "Available $(pairset.load) pairs"
 
         #=
         @warn "start of $d"
@@ -776,10 +776,10 @@ function f4(ring::PolyRing,
         # (minimal lcm degrees are selected),
         # and puts these into the matrix rows
         select_normal!(pairset, basis, matrix, ht, symbol_ht)
-        @debug "Selected TODO pairs"
+        @debug "Selected $(divexact(matrix.nrows, 2)) pairs"
 
         symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
-        @debug "Matrix of size TODO, density TODO"
+        @debug "Matrix of size $((matrix.nrows, matrix.ncols)), density TODO"
 
         #=
         @warn "xd $d"

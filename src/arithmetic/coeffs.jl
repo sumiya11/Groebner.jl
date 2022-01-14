@@ -56,7 +56,7 @@ function reduce_modulo(
     for i in 1:length(coeffs)
         ffcoeffs[i] = coerce_coeffs(coeffs[i], prime)
     end
-    ring_ff = PolyRing(ring.nvars, ring.explen, ring.ord, prime)
+    ring_ff = PolyRing(ring.nvars, ring.explen, ring.ord, prime, :abstract)
     ring_ff, ffcoeffs
 end
 
@@ -74,7 +74,7 @@ function reconstruction_check(
             c = coeffs[i][j]
             # heuristic
             # TODO: a better one
-            pval = ( numerator(c) * denominator(c) ) ^ 2
+            pval = ( 2*numerator(c) * denominator(c) ) ^ 2
             if pval >= modulo
                 return false
             end

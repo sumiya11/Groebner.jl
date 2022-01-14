@@ -20,6 +20,11 @@ mutable struct PolyRing
     ord::Symbol
     # characteristic of coefficient field
     ch::UInt64
+    # information about the original ring of input. Options are:
+    #    :abstract for AbstractAlgebra,
+    #    :dynamic for DynamicPolynomials,
+    #    :hasparent for polynomials constructed with parent ring
+    origring::Symbol
 end
 
 #------------------------------------------------------------------------------
@@ -28,14 +33,111 @@ end
     Converts input polynomials to internal representation used by the algorithm.
     Extracts base ring information, exponents, and coefficients.
 
-    Currently, there are specializations for:
-        `AbstractAlgebra.MPoly` polynomials
+    This is the most general implementation.
+    It happened to work for polynomials from
+        . `Nemo`
+
+    Currently, there are more efficient specializations for:
+        . `AbstractAlgebra.MPoly`
 """
 function convert_to_internal(orig_polys::Vector{T}) where {T}
     isempty(orig_polys) && error("Empty input")
 
-    convert_to_internal(orig_polys)
+    if hasmethod(parent, Tuple{typeof(first(orig_polys))})
+        convert_to_internal(orig_polys, Val(:hasparent))
+    else
+        error("Sorry, we don't work with this type of polynomials yet. Feel free to open a github issue")
+        # convert_to_internal(orig_polys, Val(:noparent))
+    end
 end
+
+function extract_ring(R::T) where {T}
+    @assert hasmethod(nvars, Tuple{typeof(R)})
+    @assert hasmethod(ordering, Tuple{typeof(R)})
+    @assert hasmethod(characteristic, Tuple{typeof(R)})
+
+    nv     = nvars(R)
+    explen = nv + 1
+    ord    = ordering(R)
+    ch     = characteristic(R)
+
+    @assert nv + 1 == explen
+    @assert ord in (:lex, :degrevlex)
+    @assert 0 <= ch < 2^32
+
+    PolyRing(nv, explen, ord, UInt64(ch), :hasparent)
+end
+
+function extract_polys(ring::PolyRing, orig_polys::Vector{T}) where {T}
+    if ring.ch > 0
+        extract_polys_ff(ring, orig_polys)
+    else
+        extract_polys_qq(ring, orig_polys)
+    end
+end
+
+function extract_polys_ff(ring::PolyRing, orig_polys::Vector{T}) where {T}
+    npolys = length(orig_polys)
+    exps   = Vector{Vector{Vector{UInt16}}}(undef, npolys)
+    coeffs = Vector{Vector{UInt64}}(undef, npolys)
+
+    f = first(orig_polys)
+    @assert hasmethod(exponent_vector, Tuple{typeof(f)})
+    @assert hasmethod(coefficients, Tuple{typeof(f)})
+
+    for i in 1:npolys
+        poly = orig_polys[i]
+        exps[i] = Vector{Vector{UInt16}}(undef, length(poly))
+        for j in 1:length(poly)
+            exps[i][j] = Vector{UInt16}(undef, ring.explen)
+            exps[i][j][1:ring.nvars] .= exponent_vector(poly, j)
+            exps[i][j][end] = sum(exps[i][j][k] for k in 1:ring.nvars)
+        end
+        coeffs[i] = map(UInt64 ∘ data, coefficients(poly))
+    end
+
+    exps, coeffs
+end
+
+function extract_polys_qq(ring::PolyRing, orig_polys::Vector{T}) where {T}
+    npolys = length(orig_polys)
+    exps   = Vector{Vector{Vector{UInt16}}}(undef, npolys)
+    coeffs = Vector{Vector{Rational{BigInt}}}(undef, npolys)
+
+    f = first(orig_polys)
+    @assert hasmethod(exponent_vector, Tuple{typeof(f), Int})
+    @assert hasmethod(coefficients, Tuple{typeof(f)})
+    @assert hasmethod(Rational, Tuple{typeof(leading_coefficient(f))})
+
+    for i in 1:npolys
+        poly = orig_polys[i]
+        exps[i] = Vector{Vector{UInt16}}(undef, length(poly))
+        for j in 1:length(poly)
+            exps[i][j] = Vector{UInt16}(undef, ring.explen)
+            exps[i][j][1:ring.nvars] .= exponent_vector(poly, j)
+            exps[i][j][end] = sum(exps[i][j][k] for k in 1:ring.nvars)
+        end
+        coeffs[i] = map(Rational, coefficients(poly))
+    end
+
+    exps, coeffs
+end
+
+function convert_to_internal(
+            orig_polys::Vector{T},
+            ::Val{:hasparent}) where {T}
+
+    R = parent(first(orig_polys))
+    ring = extract_ring(R)
+    exps, cfs = extract_polys(ring, orig_polys)
+
+    ring, exps, cfs
+end
+
+#------------------------------------------------------------------------------
+
+
+#------------------------------------------------------------------------------
 
 """
     `AbstractAlgebra.MPoly` conversion specialization
@@ -66,7 +168,7 @@ function convert_to_internal(
     ord    = R.ord
     ch     = characteristic(R)
 
-    ring = PolyRing(nvars, explen, ord, UInt64(ch))
+    ring = PolyRing(nvars, explen, ord, UInt64(ch), :abstract)
 
     @assert 0 < ch < 2^32
     @assert ord == :degrevlex
@@ -102,7 +204,7 @@ function convert_to_internal(
     nvars  = R.num_vars
     ord    = R.ord
     ch     = characteristic(R)
-    ring = PolyRing(nvars, explen, ord, UInt64(ch))
+    ring = PolyRing(nvars, explen, ord, UInt64(ch), :abstract)
 
     @assert 0 < ch < 2^32
     @assert ord == :lex
@@ -143,7 +245,7 @@ function convert_to_internal(
     nvars  = R.num_vars
     ord    = R.ord
     ch     = 0
-    ring = PolyRing(nvars, explen, ord, UInt64(ch))
+    ring = PolyRing(nvars, explen, ord, UInt64(ch), :abstract)
 
     @assert ord == :degrevlex
     @assert nvars > 1 && nvars + 1 == explen
@@ -179,7 +281,7 @@ function convert_to_internal(
     nvars  = R.num_vars
     ord    = R.ord
     ch     = 0
-    ring = PolyRing(nvars, explen, ord, UInt64(ch))
+    ring = PolyRing(nvars, explen, ord, UInt64(ch), :abstract)
 
     @assert ord == :lex
     @assert nvars > 1 && nvars + 1 == explen
@@ -206,21 +308,68 @@ end
 """
     Converts internal polynomials for export as elements of `origring`.
 
-    Currently, there are specializations for:
-        `AbstractAlgebra.MPolyRing`
+    This is the most general implementation.
+    It happened to work for polynomials from
+        . `Nemo`
+
+    Currently, there are more efficient specializations for:
+        . `AbstractAlgebra.MPoly`
 """
 function export_basis(
-            origring::T,
+            ring::PolyRing,
+            origpolys::Vector{P},
             gbexps::Vector{Vector{Vector{UInt16}}},
-            gbcoeffs::Vector{Vector{I}}) where {T, I}
+            gbcoeffs::Vector{Vector{I}}) where {P, I}
+
+    if ring.origring == :abstract
+        export_basis(ring, parent(first(origpolys)), gbexps, gbcoeffs)
+    elseif ring.origring == :dynamic
+        # export_basis(ring, parent(first(origpolys)), gbexps, gbcoeffs)
+    elseif ring.origring == :hasparent
+        export_basis(ring, parent(first(origpolys)), gbexps, gbcoeffs)
+    else
+        error("Sorry, unknown polynomial ring.")
+    end
+end
+
+#------------------------------------------------------------------------------
+
+"""
+    `hasparent` conversion specialization
+"""
+function export_basis(
+            ring::PolyRing,
+            origring::M,
+            gbexps::Vector{Vector{Vector{UInt16}}},
+            gbcoeffs::Vector{Vector{I}}) where {M, T, I}
 
     export_basis(origring, gbexps, gbcoeffs)
 end
+
+function export_basis(
+            origring::M,
+            gbexps::Vector{Vector{Vector{UInt16}}},
+            gbcoeffs::Vector{Vector{I}}) where{M, I}
+
+    @assert hasmethod(base_ring, Tuple{typeof(origring)})
+
+    ground   = base_ring(origring)
+    exported = Vector{elem_type(origring)}(undef, length(gbexps))
+    for i in 1:length(gbexps)
+        cfs    = map(ground, gbcoeffs[i])
+        exps   = [Int.(gbexps[i][j][1:end-1]) for j in 1:length(gbexps[i])]
+        exported[i] = origring(cfs, exps)
+    end
+    exported
+end
+
+#------------------------------------------------------------------------------
 
 """
     `AbstractAlgebra.MPolyRing` conversion specialization
 """
 function export_basis(
+            ring::PolyRing,
             origring::MPolyRing{T},
             gbexps::Vector{Vector{Vector{UInt16}}},
             gbcoeffs::Vector{Vector{I}}) where {T, I}
