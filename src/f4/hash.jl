@@ -235,7 +235,7 @@ function insert_in_hash_table!(ht::MonomialHashtable, e::Vector{UInt16})
 
         # if not free and not same hash
         if ht.hashdata[vidx].hash != he
-            i += 1
+            i += UInt32(1)
             continue
         end
 
@@ -243,7 +243,7 @@ function insert_in_hash_table!(ht::MonomialHashtable, e::Vector{UInt16})
         for j in 1:ht.explen
             # if hash collision
             if present[j] != e[j]
-                i += 1
+                i += UInt32(1)
                 @goto Restart
             end
         end
@@ -332,7 +332,7 @@ function generate_monomial_divmask(
     res = UInt32(0)
     for i in 1:ht.ndivvars
         for j in 1:ht.ndivbits
-            if e[divvars[i]] >= divmap[ctr]
+            @inbounds if e[divvars[i]] >= divmap[ctr]
                 res |= UInt32(1) << (ctr - 1)
             end
             ctr += UInt32(1)  # for typ stability
@@ -433,7 +433,7 @@ function insert_multiplied_poly_in_hash_table!(
     len    = length(poly)
     explen = ht.explen
 
-    mod = symbol_ht.size - 1
+    mod = UInt32(symbol_ht.size - 1)
 
     bexps = ht.exponents
     bdata = ht.hashdata
@@ -478,7 +478,7 @@ function insert_multiplied_poly_in_hash_table!(
             vidx == 0 && break
             # if different exponent is stored here
             if sdata[vidx].hash != h
-                i += 1
+                i += UInt32(1)
                 continue
             end
 
@@ -486,7 +486,7 @@ function insert_multiplied_poly_in_hash_table!(
             @inbounds for j in 1:explen
                 # hash collision, restarting search
                 if estored[j] != enew[j]
-                    i += 1
+                    i += UInt32(1)
                     @goto Restart
                 end
             end
@@ -565,14 +565,14 @@ function insert_in_basis_hash_table_pivots(
 
             hm == 0 && break
             if bdata[hm].hash != h
-                i += 1
+                i += UInt32(1)
                 continue
             end
 
             ehm = bexps[hm]
             for j in 1:explen
                 if e[j] != ehm[j]
-                    i += 1
+                    i += UInt32(1)
                     @goto Restart
                 end
             end
@@ -639,7 +639,7 @@ function insert_plcms_in_basis_hash_table!(
 
             hm == 0 && break
             if ht.hashdata[hm].hash != h
-                i += 1
+                i += UInt32(1)
                 continue
             end
 

@@ -48,7 +48,7 @@ function run_f4_ff_degrevlex_benchmarks(ground)
         ("eco 11",FastGroebner.eco11(ground=ground)),
         ("eco 12",FastGroebner.eco12(ground=ground)),
         ("noon 6"    ,FastGroebner.noonn(6, ground=ground)),
-        ("noon 7"    ,FastGroebner.noonn(7, ground=ground))
+        ("noon 7"    ,FastGroebner.noonn(7, ground=ground)),
         ("noon 8"    ,FastGroebner.noonn(8, ground=ground))
     ]
 

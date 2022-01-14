@@ -175,13 +175,13 @@ function convert_to_internal(
     coeffs = Vector{Vector{Rational{BigInt}}}(undef, npolys)
 
     R = parent(first(orig_polys))
-    explen = R.N
+    explen = R.N + 1
     nvars  = R.num_vars
     ord    = R.ord
     ch     = 0
     ring = PolyRing(nvars, explen, ord, UInt64(ch))
 
-    @assert ord == :degrevlex
+    @assert ord == :lex
     @assert nvars > 1 && nvars + 1 == explen
 
     for i in 1:npolys
