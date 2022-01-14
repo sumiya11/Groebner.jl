@@ -34,9 +34,6 @@ using PrettyPrinting
 import Logging
 import Logging: ConsoleLogger, LogLevel
 
-# for testing
-import Cthulhu
-
 #
 include("utils.jl")
 
