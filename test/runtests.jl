@@ -2,10 +2,10 @@
 using Test
 using TestSetExtensions
 
-include("../src/GroebnerBases.jl")
+include("../src/FastGroebner.jl")
 
-using .GroebnerBases
-using .GroebnerBases.AbstractAlgebra
+using .FastGroebner
+using .FastGroebner.AbstractAlgebra
 
 # @info "Testing started"
 

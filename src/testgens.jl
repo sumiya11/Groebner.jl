@@ -228,9 +228,8 @@ function sparse5(; ground=QQ)
     ]
 end
 
-function generate_set(nvariables, exps, nterms, npolys, csz, rng;
-                            ground=GF(2^31 - 1), ordering=:lex)
-
+function generate_set(nvariables, exps, nterms, npolys, csz, rng,
+                            ground, ordering)
     R, _ = PolynomialRing(
         ground,
         ["x$i" for i in 1:nvariables],
@@ -240,6 +239,29 @@ function generate_set(nvariables, exps, nterms, npolys, csz, rng;
     return filter!(!iszero, [
         map_coefficients(
             c -> ground(data(c) % csz),
+            rand(rng, R, exps, nterms)
+        )
+        for _ in 1:rand(rng, npolys)
+    ])
+end
+
+function generate_set(nvariables, exps, nterms, npolys, csz, rng,
+                        ground::AbstractAlgebra.Rationals, ordering)
+
+    semiground = GF(2^31 - 1)
+    R, _ = PolynomialRing(
+        semiground,
+        ["x$i" for i in 1:nvariables],
+        ordering=ordering
+    )
+
+    csz = BigInt(csz)
+    zzbase = BigInt(9223372036854775837)
+    randzz() = rand(-zzbase:zzbase)
+
+    return filter!(!iszero, [
+        map_coefficients(
+            c -> ground(mod(randzz(), csz), mod(randzz(), csz) + 1),
             rand(rng, R, exps, nterms)
         )
         for _ in 1:rand(rng, npolys)

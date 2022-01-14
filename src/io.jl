@@ -212,7 +212,7 @@ end
 function export_basis(
             origring::T,
             gbexps::Vector{Vector{Vector{UInt16}}},
-            gbcoeffs::Vector{Vector{UInt64}}) where {T}
+            gbcoeffs::Vector{Vector{I}}) where {T, I}
 
     export_basis(origring, gbexps, gbcoeffs)
 end
@@ -223,7 +223,7 @@ end
 function export_basis(
             origring::MPolyRing{T},
             gbexps::Vector{Vector{Vector{UInt16}}},
-            gbcoeffs::Vector{Vector{UInt64}}) where {T}
+            gbcoeffs::Vector{Vector{I}}) where {T, I}
 
     ord = ordering(origring)
     export_basis(origring, gbexps, gbcoeffs, Val(ord))

@@ -1,6 +1,8 @@
 
-module GroebnerBases
+module FastGroebner
 
+# most of these are not needed
+# TODO
 import AbstractAlgebra
 import AbstractAlgebra.Generic: MPoly, GFElem, MPolyRing
 import AbstractAlgebra: leading_term, QQ, PolynomialRing, terms,
@@ -13,26 +15,26 @@ import AbstractAlgebra: leading_term, QQ, PolynomialRing, terms,
                         MPolyBuildCtx, finish, push_term!, ZZ,
                         content, change_base_ring, exponent_vector,
                         lcm, monomial, RingElem, set_exponent_vector!,
-                        nvars, data, characteristic
+                        nvars, data, characteristic, isdivisible_by,
+                        divexact
 
+# for testing
 import Combinatorics
+
 import Primes
 import Primes: nextprime
-import SparseArrays: SparseVector, findnz, nnz
-import Random
 
-import DataStructures: SortedSet
+import Random
 
 # we want RadixSort to sort exponents (?)
 import SortingAlgorithms
-
-import IterTools
 
 using PrettyPrinting
 
 import Logging
 import Logging: ConsoleLogger, LogLevel
 
+# for testing
 import Cthulhu
 
 #
@@ -69,6 +71,7 @@ include("groebner.jl")
 
 # example systems definitions
 include("testgens.jl")
+
 
 export groebner
 export isgroebner

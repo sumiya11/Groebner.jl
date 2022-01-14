@@ -10,8 +10,8 @@ using Primes
         for a in as
             gf = GF(m)
             ac = lift( numerator(a) // gf(denominator(a)) )
-            ar1 = GroebnerBases.rational_reconstruction(ac, BigInt(m))
-            ar2 = GroebnerBases.rational_reconstruction(Int(ac), m)
+            ar1 = FastGroebner.rational_reconstruction(ac, BigInt(m))
+            ar2 = FastGroebner.rational_reconstruction(Int(ac), m)
             @test ar1 == ar2 == a
         end
     end
@@ -23,8 +23,8 @@ using Primes
         for a in as
             gf = GF(m)
             ac = lift( numerator(a) // gf(denominator(a)) )
-            ar1 = GroebnerBases.rational_reconstruction(ac, BigInt(m))
-            ar2 = GroebnerBases.rational_reconstruction(Int(ac), m)
+            ar1 = FastGroebner.rational_reconstruction(ac, BigInt(m))
+            ar2 = FastGroebner.rational_reconstruction(Int(ac), m)
             @test ar1 == ar2 == a
         end
     end

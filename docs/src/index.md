@@ -1,8 +1,8 @@
 
-# GroebnerBases
+# FastGroebner
 
 ```@meta
-CurrentModule = GroebnerBases
+CurrentModule = FastGroebner
 ```
 
 ```@docs

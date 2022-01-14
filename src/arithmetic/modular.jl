@@ -12,7 +12,6 @@
 #
 # let n = max( λ(a), λ(m) ) , where λ(x) is a number of bits for x
 # O(n^2)
-# TODO: ask about Union
 function rational_reconstruction(a::I, m::I) where {I<:Union{Int, BigInt}}
     a = mod(a, m)
     if a == 0 || m == 0
@@ -89,6 +88,7 @@ function CRT(a1::BigInt, m1::BigInt, a2::BigInt, m2::BigInt)
     mod(a1*t1*Ms1 + a2*t2*Ms2, M)::BigInt
 end
 
+# TODO: move to coeffs.jl
 function reconstruct_crt!(
             gbcoeffs_ff::Vector{Vector{UInt64}}, ch::UInt64)
 

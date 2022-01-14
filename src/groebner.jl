@@ -17,11 +17,9 @@ function groebner(
     By default, the function executes silently.
     This can be changed adjusting the `loglevel`.
 
-    At the moment only `AbstractAlgebra.MPoly` polynomials are valid input.
-    Coefficients can be either from finite or rational field.
-
     Suported monomial orderings are:
     - `degrevlex`
+    - `lex`
 
 """
 function groebner(
@@ -40,8 +38,6 @@ function groebner(
     # Also, changes any input ordering into :degrevlex representation
     # with length of exponent vector being n+1 for n variable ring
     ring, exps, coeffs = convert_to_internal(polys)
-
-    @info "ring" ring
 
     #= compute the groebner basis =#
     if ring.ch != 0
@@ -72,11 +68,12 @@ function groebner_ff(
             coeffs::Vector{Vector{UInt64}},
             reduced::Bool,
             rng::Rng) where {Rng<:Random.AbstractRNG}
-    # specialize on ordering
+    # specialize on ordering (not yet)
     # groebner_ff(ring, exps, coeffs, reduced, rng, Val(ring.ord))
     f4(ring, exps, coeffs, rng, reduced)
 end
 
+# TODO
 function groebner_ff(
             ring::PolyRing,
             exps::Vector{Vector{Vector{UInt16}}},
@@ -88,6 +85,7 @@ function groebner_ff(
     f4(ring, exps, coeffs, rng, reduced)
 end
 
+# TODO
 function groebner_ff(
             ring::PolyRing,
             exps::Vector{Vector{Vector{UInt16}}},
@@ -124,6 +122,7 @@ function modular_f4_step(
             ::Val{:lex}
             ) where {Rng<:Random.AbstractRNG}
 
+    # TODO
     # f4
     # gbexps, gbcoeffs = f4(ring, exps, coeffs, rng, reduced)
     # fglm(ring, gbexps, gbcoeffs, rng)
@@ -145,16 +144,14 @@ function groebner_qq(
     gbexps = Vector{Vector{Vector{UInt16}}}(undef, 0)
     gbcoeffs_qq = Vector{Vector{Rational{BigInt}}}(undef, 0)
 
-    # reduction moduli
-    moduli = Int[ 2^30 + 3 ]
-    # modulo = prod(moduli)
+    prime::Int64 = 1
     modulo = BigInt(1)
 
     i = 1
     while true
-        prime = last(moduli)
-
-        @info "$i: selected prime $prime"
+        # lucky reduction prime
+        prime  = nextluckyprime(coeffs_zz, prime)
+        @info "$i: selected lucky prime $prime"
 
         # compute the image of coeffs_zz in GF(prime),
         # by coercing each coefficient into the finite field
@@ -162,6 +159,7 @@ function groebner_qq(
 
         # groebner basis over finite field ideal
         # TODO: gbexps can be only computed once
+        @info "Computing Groebner basis"
         gbexps, gbcoeffs_ff = modular_f4_step(
                                     ring_ff, exps, coeffs_ff,
                                     rng, reduced, Val(ring.ord))
@@ -190,9 +188,6 @@ function groebner_qq(
         end
 
         # not correct, goto next prime
-
-        push!(moduli, nextprime(prime + 1))
-
         i += 1
         if i > 1000
             @error "Something probably went wrong in groebner.."

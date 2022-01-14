@@ -8,10 +8,10 @@ using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error))
 
 function benchmark_system_my(system)
-    system = GroebnerBases.change_ordering(system, :degrevlex)
-    GroebnerBases.groebner([system[1]])
-    @btime gb = GroebnerBases.groebner($system)
-    # println("length = $(length(GroebnerBases.groebner(system)))")
+    system = FastGroebner.change_ordering(system, :degrevlex)
+    FastGroebner.groebner([system[1]])
+    @btime gb = FastGroebner.groebner($system)
+    # println("length = $(length(FastGroebner.groebner(system)))")
 end
 
 function benchmark_system_singular(system)
@@ -38,12 +38,12 @@ end
 function run_f4_ff_degrevlex_benchmarks()
     ground = AbstractAlgebra.GF(2^31 - 1)
     systems = [
-        ("cyclic 12", GroebnerBases.rootn(12, ground=ground)),
-        ("cyclic 13", GroebnerBases.rootn(13, ground=ground)),
-        ("katsura 9", GroebnerBases.katsura9(ground=ground)),
-        ("katsura 10",GroebnerBases.katsura10(ground=ground)),
-        ("noon 6"    ,GroebnerBases.noonn(6, ground=ground)),
-        ("noon 7"    ,GroebnerBases.noonn(7, ground=ground))
+        ("cyclic 12", FastGroebner.rootn(12, ground=ground)),
+        ("cyclic 13", FastGroebner.rootn(13, ground=ground)),
+        ("katsura 9", FastGroebner.katsura9(ground=ground)),
+        ("katsura 10",FastGroebner.katsura10(ground=ground)),
+        ("noon 6"    ,FastGroebner.noonn(6, ground=ground)),
+        ("noon 7"    ,FastGroebner.noonn(7, ground=ground))
     ]
 
     for (name, system) in systems

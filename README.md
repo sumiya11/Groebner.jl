@@ -1,6 +1,6 @@
-# GroebnerBases
+# FastGroebner
 
-[![Runtests](https://github.com/sumiya11/GroebnerBases/actions/workflows/Runtests.yml/badge.svg?branch=master)](https://github.com/sumiya11/GroebnerBases/actions/workflows/Runtests.yml)
+[![Runtests](https://github.com/sumiya11/FastGroebner/actions/workflows/Runtests.yml/badge.svg?branch=master)](https://github.com/sumiya11/FastGroebner/actions/workflows/Runtests.yml)
 
 
 The package provides Groebner bases computation interface with the *performance
@@ -9,7 +9,7 @@ comparable to Singular*.
 **Please note that the package is still very WIP.**
 Not to forget: we need to change the name.
 
-## How to use GroebnerBases.jl?
+## How to use FastGroebner.jl?
 
 We will demonstrate the usage on a simple example. Lets first import `AbstractAlgebra`
 and create a ring of polynomials in 3 variables over finite field
@@ -33,7 +33,7 @@ And compute the Groebner basis passing the system to `groebner`
 
 
 ```julia
-julia> using GroebnerBases
+julia> using FastGroebner
 julia> G = groebner(polys)
 3-element Vector{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.GFElem{Int64}}}:  
  x1 + x2 + x3

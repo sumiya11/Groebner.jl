@@ -19,7 +19,8 @@ function remove_content!(coeffs::Vector{Rational{BigInt}})
     den = common_denominator(coeffs)
     for i in 1:length(coeffs)
         # TODO: MutableArithmetics
-        intcoeffs[i] = den * numerator(coeffs[i])
+        delta = divexact(den, denominator(coeffs[i]))
+        intcoeffs[i] = numerator(coeffs[i]) * delta
     end
     intcoeffs
 end
@@ -71,6 +72,8 @@ function reconstruction_check(
     @inbounds for i in 1:length(coeffs)
         for j in 1:length(coeffs[i])
             c = coeffs[i][j]
+            # heuristic
+            # TODO: a better one
             pval = ( numerator(c) * denominator(c) ) ^ 2
             if pval >= modulo
                 return false
@@ -79,4 +82,37 @@ function reconstruction_check(
     end
 
     return true
+end
+
+#------------------------------------------------------------------------------
+
+function isluckyprime(
+        coeffs::Vector{Vector{BigInt}},
+        prime::Int)
+    for poly in coeffs
+        for c in poly
+            if c % prime == 0
+                 return false
+            end
+        end
+    end
+    return true
+end
+
+function nextluckyprime(
+        coeffs::Vector{Vector{BigInt}},
+        prevprime::Int)
+
+    if prevprime == 1
+        candidate = 2^31 - 1
+    else
+        candidate = nextprime(prevprime + 1)
+    end
+    @assert candidate isa Int
+
+    if !isluckyprime(coeffs, candidate)
+        candidate = nextluckyprime(coeffs, candidate)
+    end
+
+    candidate
 end
