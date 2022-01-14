@@ -212,10 +212,8 @@ end
     gb = FastGroebner.groebner(fs)
     @test gb ≂ [x1*x2^2, x1^2*x2]
 
-    # TODO: reduction does not work
     fs = [x1*x2^2 + x1*x2, x1^2*x2^2 + 2*x1*x2, 2*x1^2*x2^2 + x1*x2]
     gb = FastGroebner.groebner(fs)
     @test gb ≂ [x1*x2]
-
 
 end

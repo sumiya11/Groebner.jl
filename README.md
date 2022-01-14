@@ -12,17 +12,17 @@ comparable to Singular*.
 ## How to use FastGroebner.jl?
 
 We will demonstrate the usage on a simple example. Lets first import `AbstractAlgebra`
-and create a ring of polynomials in 3 variables over finite field
+and create a ring of polynomials in 3 variables over rationals
 
 ```julia
-using AbstractAlgebra
-R, (x1, x2, x3) = PolynomialRing(GF(2^31 - 1), ["x1", "x2", "x3"], ordering=:degrevlex);
+julia> using AbstractAlgebra
+julia> R, (x1, x2, x3) = PolynomialRing(GF(2^31 - 1), ["x1", "x2", "x3"], ordering=:degrevlex);
 ```
 
 Then we can define a simple cyclic polynomial system
 
 ```julia
-polys = [
+julia> polys = [
   x1 + x2 + x3,
   x1*x2 + x1*x3 + x2*x3,
   x1*x2*x3 - 1
@@ -35,10 +35,10 @@ And compute the Groebner basis passing the system to `groebner`
 ```julia
 julia> using FastGroebner
 julia> G = groebner(polys)
-3-element Vector{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.GFElem{Int64}}}:  
+3-element Vector{AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}:
  x1 + x2 + x3
  x2^2 + x2*x3 + x3^2
- x3^3 + 2147483646
+ x3^3 - 1
 ```
 
 ## Performance

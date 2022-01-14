@@ -24,6 +24,27 @@ using .FastGroebner: groebner
                 x*y + 7//13*x,
                 x^2 - 3//22*x + 39//539*y]
 
+
+    root = FastGroebner.change_ordering(FastGroebner.rootn(3, ground=QQ), :degrevlex)
+    gb = FastGroebner.groebner(root)
+    @test FastGroebner.isgroebner(FastGroebner.reducegb(gb))
+
+    root = FastGroebner.change_ordering(FastGroebner.rootn(4, ground=QQ), :degrevlex)
+    gb = FastGroebner.groebner(root)
+    @test FastGroebner.isgroebner(gb)
+
+    root = FastGroebner.change_ordering(FastGroebner.rootn(8, ground=QQ), :degrevlex)
+    gb = FastGroebner.groebner(root)
+    @test FastGroebner.isgroebner(gb)
+
+    noon = FastGroebner.change_ordering(FastGroebner.noon3(ground=QQ), :degrevlex)
+    gb = FastGroebner.groebner(noon)
+    @test FastGroebner.isgroebner(gb, initial_gens=noon)
+
+    noon = FastGroebner.change_ordering(FastGroebner.noonn(4, ground=QQ), :degrevlex)
+    gb = FastGroebner.groebner(noon)
+    @test FastGroebner.isgroebner(gb, initial_gens=noon)
+
 end
 
 @testset "Groebner modular corner cases" begin
