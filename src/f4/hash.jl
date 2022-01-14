@@ -75,7 +75,7 @@ end
 function initialize_basis_hash_table(
         ring::PolyRing,
         rng::Random.AbstractRNG;
-        initial_size::Int=2^3)
+        initial_size::Int=2^16)
 
     exponents = Vector{Vector{UInt16}}(undef, initial_size)
     hashdata  = Vector{Hashvalue}(undef, initial_size)

@@ -7,8 +7,6 @@
 The package provides Groebner bases computation interface with the *performance
 comparable to Singular*.
 
-**Please note that the package is still very WIP.**
-
 ## How to use FastGroebner.jl?
 
 We will demonstrate the usage on a simple example. Lets first import `AbstractAlgebra`
@@ -47,12 +45,12 @@ We compare the runtime of our implementation against the one of Singular Groebne
 
 |   System    | Size  | Ours    | Singular |
 | :---:       | :---: |  :----: |  :---:   |
-| cyclic-12   |  23   |  0.18s  | **0.03s**    |
-| cyclic-13   |  25   |  0.58s  | **0.10s**    |
-| katsura-9   |  145   |  **0.97s**  | 2.81s    |
-| katsura-10  |  274   |  **7.82s**  | 25.426s    |
-| noon-6      |  187   |  **0.09s**  | 0.11s    |
-| noon-7      |  495   |  **0.71s**  | 0.89s    |
+| cyclic-12   |  23   |  0.13s  | **0.03s**    |
+| cyclic-13   |  25   |  0.43s  | **0.10s**    |
+| katsura-9   |  145   |  **0.70s**  | 2.76s    |
+| katsura-10  |  274   |  **5.53s**  | 25.15s    |
+| noon-7      |  495   |  **0.56s**  | 0.88s    |
+| noon-8      |  1338  |  **5.42s**  | 8.04s    |
 
 The bases are computed in `degrevlex` monomial ordering over finite fields having all operations single-threaded. Benchmarks sources are located in the `benchmark` folder.
 
