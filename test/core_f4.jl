@@ -1,7 +1,8 @@
 
 using AbstractAlgebra
 
-@testset "ff f4 noreduce" begin
+
+@testset "ff f4 noreduce degrevlex" begin
 
 R, (x, y) = PolynomialRing(GF(2^31 - 1), ["x", "y"], ordering=:degrevlex)
 
@@ -117,6 +118,73 @@ gb = GroebnerBases.groebner(ku, reduced=false)
 
 end
 
+
+@testset "ff f4 noreduce lex" begin
+
+R, (x, y) = PolynomialRing(GF(2^31 - 1), ["x", "y"], ordering=:lex)
+
+fs = [
+    x + y^2,
+    x*y - y^2
+]
+gb = GroebnerBases.groebner(fs, reduced=false)
+@test gb ≂ [x + y^2, x*y + 2147483646*y^2, y^3 + y^2]
+
+fs = [
+    x + y,
+    x^2 + y
+]
+gb = GroebnerBases.groebner(fs, reduced=false)
+@test gb ≂ [x + y, x^2 + y, y^2 + y]
+
+fs = [
+    y,
+    x*y + x
+]
+gb = GroebnerBases.groebner(fs, reduced=false)
+@test gb ≂ [x, y]
+
+fs = [
+    x^2 + 5,
+    2y^2 + 3
+]
+gb = GroebnerBases.groebner(fs, reduced=false)
+@test gb ≂ [ y^2 + 1073741825, x^2 + 5]
+
+fs = [
+    y^2 + x,
+    x^2*y + y,
+    y + 1
+]
+gb = GroebnerBases.groebner(fs, reduced=false)
+@test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
+@test gb == [R(1)]
+
+fs = [
+    x^2*y^2,
+    2*x*y^2 + 3*x*y
+]
+gb = GroebnerBases.groebner(fs, reduced=false)
+@test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
+@test gb ≂ [ x*y^2 + 1073741825*x*y, x^2*y]
+
+
+root = GroebnerBases.rootn(3, ground=GF(2^31 - 1))
+gb = GroebnerBases.groebner(root, reduced=false)
+@test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
+
+root = GroebnerBases.rootn(4, ground=GF(2^31 - 1))
+gb = GroebnerBases.groebner(root, reduced=false)
+@test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
+
+#=
+noon = GroebnerBases.noon3(ground=GF(2^31 - 1))
+gb = GroebnerBases.groebner(noon, reduced=false)
+@test GroebnerBases.isgroebner(GroebnerBases.reducegb(gb))
+=#
+
+end
+
 @testset "ff f4 corner cases" begin
     R, (x, y) = PolynomialRing(GF(2^31 - 1), ["x", "y"], ordering=:degrevlex)
 
@@ -138,12 +206,6 @@ end
 
     R, (x1, x2) = PolynomialRing(GF(2^31 - 1), ["x1", "x2"], ordering=:degrevlex)
 
-    # TODO reduction does not work
-    #=
-    fs = [1926960473*x1^2*x2^2 + 832122707*x1^2*x2,
-        296198992*x1^2*x2^2 + 1456925099*x1^2*x2 + 325693338*x1*x2^2,
-        2060243142*x1^2*x2^2]
-    =#
     fs = [1*x1^2*x2^2 + 2*x1^2*x2,
         1*x1^2*x2^2 + 3*x1^2*x2 + 5*x1*x2^2,
         1*x1^2*x2^2]
@@ -154,5 +216,6 @@ end
     fs = [x1*x2^2 + x1*x2, x1^2*x2^2 + 2*x1*x2, 2*x1^2*x2^2 + x1*x2]
     gb = GroebnerBases.groebner(fs)
     @test gb ≂ [x1*x2]
+
 
 end

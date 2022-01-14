@@ -58,7 +58,8 @@ include("f4/hash.jl")
 include("f4/linear.jl")
 include("f4/sorting.jl")
 include("f4/f4.jl")
-include("f4/statistics.jl")
+include("f4/normalform.jl")
+# include("f4/statistics.jl")
 
 #= fglm implementation over finite fields =#
 include("fglm/fglm.jl")

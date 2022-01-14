@@ -489,7 +489,6 @@ function filter_redundant!(basis::Basis)
         if basis.isred[basis.nonred[i]] == 0
             basis.lead[j] = basis.lead[i]
             basis.nonred[j] = basis.nonred[i]
-            basis.isred[j] = 0
             #=
             basis.coeffs[j] = basis.coeffs[basis.nonred[i]]
             basis.gens[j] = basis.gens[basis.nonred[i]]
@@ -600,6 +599,16 @@ function reducegb_f4!(
     reinitialize_matrix!(matrix, basis.nlead)
     uprows = matrix.uprows
 
+    #=
+    @warn "entering reduce"
+    dump(basis, maxdepth=5)
+    @warn "ht"
+    println(ht.exponents[1:10])
+    @warn "symbol"
+    println(symbol_ht.exponents[1:10])
+    println("NONRED ", basis.nonred)
+    =#
+
     # add all non redundant elements from basis
     # as matrix upper rows
     for i in 1:basis.nlead
@@ -607,6 +616,7 @@ function reducegb_f4!(
         uprows[matrix.nrows] = multiplied_poly_to_matrix_row!(
                                     symbol_ht, ht, UInt32(0), etmp,
                                     basis.gens[basis.nonred[i]])
+
         matrix.up2coef[matrix.nrows] = basis.nonred[i]
         # set lead index as 1
         symbol_ht.hashdata[uprows[matrix.nrows][1]].idx = 1
@@ -616,18 +626,48 @@ function reducegb_f4!(
     matrix.ncols = matrix.nrows
     matrix.nup = matrix.nrows
 
+    #=
+    @warn "after multiplied_poly_to_matrix_row"
+    dump(basis, maxdepth=5)
+    @warn "matrix"
+    dump(matrix, maxdepth=5)
+    @warn "ht"
+    println(ht.exponents[1:10])
+    =#
+
     symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
     # all pivots are unknown
     for i in symbol_ht.offset:symbol_ht.load
         symbol_ht.hashdata[i].idx = 1
     end
 
+    #=
+    @warn "after symbolic"
+    dump(basis, maxdepth=5)
+    @warn "matrix"
+    dump(matrix, maxdepth=5)
+    @warn "ht"
+    println(ht.exponents[1:10])
+    =#
+
+    # x1*x2^6 + 413612941*x1*x2^3
+    #  x1^2*x2^3 + 174101409*x1*x2^5
     convert_hashes_to_columns!(matrix, symbol_ht)
     matrix.ncols = matrix.nleft + matrix.nright
+
+    #=
+    @warn "after convert"
+    dump(matrix, maxdepth=5)
+    =#
 
     sort_matrix_rows_decreasing!(matrix)
 
     interreduce_matrix_rows!(matrix, basis)
+
+    #=
+    @warn "after interreduce"
+    dump(matrix, maxdepth=5)
+    =#
 
     convert_matrix_rows_to_basis_elements_use_symbol!(matrix, basis)
 
@@ -636,6 +676,11 @@ function reducegb_f4!(
 
     basis.ntotal = matrix.npivots + basis.ndone
     basis.ndone = matrix.npivots
+
+    #=
+    @warn "basis"
+    dump(basis, maxdepth=5)
+    =#
 
     #= we may have added some multiples of reduced basis polynomials
     * from the matrix, so we get rid of them. =#
@@ -709,12 +754,23 @@ function f4(ring::PolyRing,
     # checks for redundancy of new elems
     update!(pairset, basis, ht, update_ht)
 
+    #=
+    @warn "initial update"
+    dump(basis, maxdepth = 5)
+    =#
+
     d = 0
     # while there are pairs to be reduced
     while !isempty(pairset)
         d += 1
         @debug "F4 ITER $d"
         @debug "Available TODO pairs"
+
+        #=
+        @warn "start of $d"
+        dump(basis, maxdepth = 5)
+        println(ht.exponents[1:10])
+        =#
 
         # selects pairs for reduction from pairset following normal strategy
         # (minimal lcm degrees are selected),
@@ -748,12 +804,28 @@ function f4(ring::PolyRing,
             end
             println("")
         end
+        println(basis.nonred)
         =#
+
 
         # update the current basis with polynomials produced from reduction,
         # does not copy,
         # checks for redundancy
         update!(pairset, basis, ht, update_ht)
+
+        #=
+        @warn "after update"
+        printstyled("nice basis\n", color=:red)
+        for (_, cfs, poly) in zip(1:basis.ntotal, basis.coeffs, basis.gens)
+            for i in 1:length(poly)
+                c = cfs[i]
+                e = ht.exponents[poly[i]]
+                print("$c*$e + ")
+            end
+            println("")
+        end
+        println(basis.nonred)
+        =#
 
         # TODO: is this okay hm ?
         # to be changed
@@ -771,10 +843,40 @@ function f4(ring::PolyRing,
     # remove redundant elements
     filter_redundant!(basis)
 
+    #=
+    @warn "after filter red"
+    printstyled("nice basis\n", color=:red)
+    for (_, cfs, poly) in zip(1:basis.ntotal, basis.coeffs, basis.gens)
+        for i in 1:length(poly)
+            c = cfs[i]
+            e = ht.exponents[poly[i]]
+            print("$c*$e + ")
+        end
+        println("")
+    end
+    println("NONRED ", basis.nonred)
+    println(basis.isred)
+    println(basis.nlead)
+    =#
+
     if reduced
         reducegb_f4!(basis, matrix, ht, symbol_ht)
         ht = symbol_ht
     end
+
+    #=
+    @warn "after reduce"
+    printstyled("nice basis\n", color=:red)
+    for (_, cfs, poly) in zip(1:basis.ntotal, basis.coeffs, basis.gens)
+        for i in 1:length(poly)
+            c = cfs[i]
+            e = ht.exponents[poly[i]]
+            print("$c*$e + ")
+        end
+        println("")
+    end
+    println(basis.nonred)
+    =#
 
     export_basis_data(basis, ht)
 end

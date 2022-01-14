@@ -27,8 +27,6 @@
     x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = gens(parent(first(ku)))
     gb = GroebnerBases.groebner(ku, reduced=true)
 
-    # TODO
-    # Fails due to reduction problema
     @test gb == [
         x9 + 1272065637*x10 + 875418006,
         x8 + 1529540685*x10 + 617942964,

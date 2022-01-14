@@ -367,7 +367,6 @@ function is_gcd_const(h1::Int, h2::Int, ht::MonomialHashtable)
     e1 = ht.exponents[h1]
     e2 = ht.exponents[h2]
 
-    # TODO: explen - 1
     for i in 1:ht.explen - 1
         if e1[i] != 0 && e2[i] != 0
             return false

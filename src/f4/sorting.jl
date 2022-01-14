@@ -8,7 +8,12 @@ function sort_gens_by_lead_increasing!(basis::Basis, ht::MonomialHashtable)
     exps = ht.exponents
 
     inds = collect(1:basis.ntotal)
-    cmp  = (x, y) -> exponent_isless(exps[gens[x][1]], exps[gens[y][1]])
+
+    if ht.ord == :degrevlex
+        cmp  = (x, y) -> exponent_isless_drl(exps[gens[x][1]], exps[gens[y][1]])
+    else
+        cmp  = (x, y) -> exponent_isless_lex(exps[gens[x][1]], exps[gens[y][1]])
+    end
     sort!(inds, lt=cmp)
 
     # use array assignment insted of elemewise assignment
@@ -48,7 +53,11 @@ function sort_pairset_by_lcm!(
     part = pairset.pairs[1:npairs]
     exps = ht.exponents
 
-    sort!(part, lt=(x, y) -> exponent_isless(exps[x.lcm], exps[y.lcm]))
+    if ht.ord == :degrevlex
+        sort!(part, lt=(x, y) -> exponent_isless_drl(exps[x.lcm], exps[y.lcm]))
+    else
+        sort!(part, lt=(x, y) -> exponent_isless_lex(exps[x.lcm], exps[y.lcm]))
+    end
 
     pairset.pairs[1:npairs] = part
 end
@@ -71,7 +80,8 @@ end
 #=
     :degrevlex exponent vector comparison
 =#
-function exponent_isless(ea, eb)
+function exponent_isless_drl(ea::Vector{UInt16}, eb::Vector{UInt16})
+
     if ea[end] < eb[end]
         return true
     elseif ea[end] != eb[end]
@@ -84,6 +94,19 @@ function exponent_isless(ea, eb)
     end
 
     return ea[i] < eb[i] ? false : true
+end
+
+#=
+    :lex exponent vector comparison
+=#
+function exponent_isless_lex(ea::Vector{UInt16}, eb::Vector{UInt16})
+    i = 1
+
+    while i < length(ea) - 1 && ea[i] == eb[i]
+        i += 1
+    end
+
+    return ea[i] < eb[i] ? true : false
 end
 
 #------------------------------------------------------------------------------
@@ -194,6 +217,12 @@ function sort_columns_by_hash!(col2hash, symbol_ht)
     hd = symbol_ht.hashdata
     es = symbol_ht.exponents
     len = symbol_ht.explen
+
+    if symbol_ht.ord == :degrevlex
+        exponent_isless = exponent_isless_drl
+    else
+        exponent_isless = exponent_isless_lex
+    end
 
     function cmp(a, b)
         ha = hd[a]

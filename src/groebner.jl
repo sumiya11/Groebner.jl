@@ -73,7 +73,8 @@ function groebner_ff(
             reduced::Bool,
             rng::Rng) where {Rng<:Random.AbstractRNG}
     # specialize on ordering
-    groebner_ff(ring, exps, coeffs, reduced, rng, Val(ring.ord))
+    # groebner_ff(ring, exps, coeffs, reduced, rng, Val(ring.ord))
+    f4(ring, exps, coeffs, rng, reduced)
 end
 
 function groebner_ff(
@@ -124,9 +125,9 @@ function modular_f4_step(
             ) where {Rng<:Random.AbstractRNG}
 
     # f4
-    gbexps, gbcoeffs = f4(ring, exps, coeffs, rng, reduced)
-
-    fglm(ring, gbexps, gbcoeffs, rng)
+    # gbexps, gbcoeffs = f4(ring, exps, coeffs, rng, reduced)
+    # fglm(ring, gbexps, gbcoeffs, rng)
+    f4(ring, exps, coeffs, rng, reduced)
 end
 
 function groebner_qq(
