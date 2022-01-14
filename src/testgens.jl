@@ -75,6 +75,43 @@ function katsura10(;ground=QQ)
     ]
 end
 
+function katsura11(;ground=QQ)
+    R, (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11) = PolynomialRing(ground, ["x$i" for i in 1:11])
+
+    fs = [
+        x1+2*x2+2*x3+2*x4+2*x5+2*x6+2*x7+2*x8+2*x9+2*x10+2*x11-1,
+        x1^2+2*x2^2+2*x3^2+2*x4^2+2*x5^2+2*x6^2+2*x7^2+2*x8^2+2*x9^2+2*x10^2+2*x11^2-x1,
+        2*x1*x2+2*x2*x3+2*x3*x4+2*x4*x5+2*x5*x6+2*x6*x7+2*x7*x8+2*x8*x9+2*x9*x10+2*x10*x11-x2,
+        x2^2+2*x1*x3+2*x2*x4+2*x3*x5+2*x4*x6+2*x5*x7+2*x6*x8+2*x7*x9+2*x8*x10+2*x9*x11-x3,
+        2*x2*x3+2*x1*x4+2*x2*x5+2*x3*x6+2*x4*x7+2*x5*x8+2*x6*x9+2*x7*x10+2*x8*x11-x4,
+        x3^2+2*x2*x4+2*x1*x5+2*x2*x6+2*x3*x7+2*x4*x8+2*x5*x9+2*x6*x10+2*x7*x11-x5,
+        2*x3*x4+2*x2*x5+2*x1*x6+2*x2*x7+2*x3*x8+2*x4*x9+2*x5*x10+2*x6*x11-x6,
+        x4^2+2*x3*x5+2*x2*x6+2*x1*x7+2*x2*x8+2*x3*x9+2*x4*x10+2*x5*x11-x7,
+        2*x4*x5+2*x3*x6+2*x2*x7+2*x1*x8+2*x2*x9+2*x3*x10+2*x4*x11-x8,
+        x5^2+2*x4*x6+2*x3*x7+2*x2*x8+2*x1*x9+2*x2*x10+2*x3*x11-x9,
+        2*x5*x6+2*x4*x7+2*x3*x8+2*x2*x9+2*x1*x10+2*x2*x11-x10
+    ]
+end
+
+function katsura12(;ground=QQ)
+    R, (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12) = PolynomialRing(ground, ["x$i" for i in 1:12])
+
+    fs = [
+        x1+2*x2+2*x3+2*x4+2*x5+2*x6+2*x7+2*x8+2*x9+2*x10+2*x11+2*x12-1,
+        x1^2+2*x2^2+2*x3^2+2*x4^2+2*x5^2+2*x6^2+2*x7^2+2*x8^2+2*x9^2+2*x10^2+2*x11^2+2*x12^2-x1,
+        2*x1*x2+2*x2*x3+2*x3*x4+2*x4*x5+2*x5*x6+2*x6*x7+2*x7*x8+2*x8*x9+2*x9*x10+2*x10*x11+2*x11*x12-x2,
+        x2^2+2*x1*x3+2*x2*x4+2*x3*x5+2*x4*x6+2*x5*x7+2*x6*x8+2*x7*x9+2*x8*x10+2*x9*x11+2*x10*x12-x3,
+        2*x2*x3+2*x1*x4+2*x2*x5+2*x3*x6+2*x4*x7+2*x5*x8+2*x6*x9+2*x7*x10+2*x8*x11+2*x9*x12-x4,
+        x3^2+2*x2*x4+2*x1*x5+2*x2*x6+2*x3*x7+2*x4*x8+2*x5*x9+2*x6*x10+2*x7*x11+2*x8*x12-x5,
+        2*x3*x4+2*x2*x5+2*x1*x6+2*x2*x7+2*x3*x8+2*x4*x9+2*x5*x10+2*x6*x11+2*x7*x12-x6,
+        x4^2+2*x3*x5+2*x2*x6+2*x1*x7+2*x2*x8+2*x3*x9+2*x4*x10+2*x5*x11+2*x6*x12-x7,
+        2*x4*x5+2*x3*x6+2*x2*x7+2*x1*x8+2*x2*x9+2*x3*x10+2*x4*x11+2*x5*x12-x8,
+        x5^2+2*x4*x6+2*x3*x7+2*x2*x8+2*x1*x9+2*x2*x10+2*x3*x11+2*x4*x12-x9,
+        2*x5*x6+2*x4*x7+2*x3*x8+2*x2*x9+2*x1*x10+2*x2*x11+2*x3*x12-x10,
+        x6^2+2*x5*x7+2*x4*x8+2*x3*x9+2*x2*x10+2*x1*x11+2*x2*x12-x11
+    ]
+end
+
 function eco5()
     R, (x1, x2, x3, x4, x5) = PolynomialRing(GF(1073741827), ["x$i" for i in 1:5])
 
@@ -102,6 +139,24 @@ function eco7()
     fs
 end
 
+function eco10()
+    R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9) = PolynomialRing(GF(1073741827), ["x$i" for i in 1:11])
+
+    fs = [
+        x0*x1*x9+x1*x2*x9+x2*x3*x9+x3*x4*x9+x4*x5*x9+x5*x6*x9+x6*x7*x9+x7*x8*x9+x0*x9-1,
+        x0*x2*x9+x1*x3*x9+x2*x4*x9+x3*x5*x9+x4*x6*x9+x5*x7*x9+x6*x8*x9+x1*x9-2,
+        x0*x3*x9+x1*x4*x9+x2*x5*x9+x3*x6*x9+x4*x7*x9+x5*x8*x9+x2*x9-3,
+        x0*x4*x9+x1*x5*x9+x2*x6*x9+x3*x7*x9+x4*x8*x9+x3*x9-4,
+        x0*x5*x9+x1*x6*x9+x2*x7*x9+x3*x8*x9+x4*x9-5,
+        x0*x6*x9+x1*x7*x9+x2*x8*x9+x5*x9-6,
+        x0*x7*x9+x1*x8*x9+x6*x9-7,
+        x0*x8*x9+x7*x9-8,
+        x8*x9-9,
+        x0+x1+x2+x3+x4+x5+x6+x7+x8+1
+    ]
+    fs
+end
+
 function eco11()
     R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = PolynomialRing(GF(1073741827), ["x$i" for i in 1:11])
 
@@ -117,6 +172,26 @@ function eco11()
         x0*x9*x10+x8*x10-9,
         x9*x10-10,
         x0+x1+x2+x3+x4+x5+x6+x7+x8+x9+1
+    ]
+    fs
+end
+
+function eco12()
+    R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11) = PolynomialRing(GF(1073741827), ["x$i" for i in 1:11])
+
+    fs = [
+        x0*x1*x11+x1*x2*x11+x2*x3*x11+x3*x4*x11+x4*x5*x11+x5*x6*x11+x6*x7*x11+x7*x8*x11+x8*x9*x11+x9*x10*x11+x0*x11-1,
+        x0*x2*x11+x1*x3*x11+x2*x4*x11+x3*x5*x11+x4*x6*x11+x5*x7*x11+x6*x8*x11+x7*x9*x11+x8*x10*x11+x1*x11-2,
+        x0*x3*x11+x1*x4*x11+x2*x5*x11+x3*x6*x11+x4*x7*x11+x5*x8*x11+x6*x9*x11+x7*x10*x11+x2*x11-3,
+        x0*x4*x11+x1*x5*x11+x2*x6*x11+x3*x7*x11+x4*x8*x11+x5*x9*x11+x6*x10*x11+x3*x11-4,
+        x0*x5*x11+x1*x6*x11+x2*x7*x11+x3*x8*x11+x4*x9*x11+x5*x10*x11+x4*x11-5,
+        x0*x6*x11+x1*x7*x11+x2*x8*x11+x3*x9*x11+x4*x10*x11+x5*x11-6,
+        x0*x7*x11+x1*x8*x11+x2*x9*x11+x3*x10*x11+x6*x11-7,
+        x0*x8*x11+x1*x9*x11+x2*x10*x11+x7*x11-8,
+        x0*x9*x11+x1*x10*x11+x8*x11-9,
+        x0*x10*x11+x9*x11-10,
+        x10*x11-11,
+        x0+x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+1
     ]
     fs
 end

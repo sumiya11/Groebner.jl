@@ -113,6 +113,18 @@ function normalize_sparse_row!(row::Vector{UInt64}, ch::UInt64)
     row
 end
 
+# reduces row by mul*cfs at indices positions
+function reduce_by_pivot!(row::Vector{UInt64}, indices::Vector{Int},
+            mul::UInt64, cfs::Vector{UInt64}, ch::UInt64)
+
+    # length(row) / length(indices) varies from 10 to 100
+    @inbounds for j in 1:length(indices)
+        idx = indices[j]
+        row[idx] = (row[idx] + mul*cfs[j]) % ch
+    end
+    nothing
+end
+
 function reduce_dense_row_by_known_pivots_sparse!(
             densecoeffs::Vector{UInt64}, matrix::MacaulayMatrix, basis::Basis,
             pivs::Vector{Vector{Int}}, startcol::Int, tmp_pos::Int)
@@ -159,11 +171,7 @@ function reduce_dense_row_by_known_pivots_sparse!(
             cfs = matrix.coeffs[matrix.low2coef[i]]
         end
 
-        @inbounds for j in 1:length(reducerexps)
-            # densecoeffs[reducerexps[j]] += mul * cfs[j]
-            idx = reducerexps[j]
-            densecoeffs[idx] = umultsummod(densecoeffs[idx], mul, cfs[j], ch)
-        end
+        reduce_by_pivot!(densecoeffs, reducerexps, mul, cfs, ch)
     end
 
     newrow = Vector{Int}(undef, k)
