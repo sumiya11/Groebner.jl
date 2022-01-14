@@ -16,7 +16,7 @@ and create a ring of polynomials in 3 variables over rationals
 
 ```julia
 julia> using AbstractAlgebra
-julia> R, (x1, x2, x3) = PolynomialRing(GF(2^31 - 1), ["x1", "x2", "x3"], ordering=:degrevlex);
+julia> R, (x1, x2, x3) = PolynomialRing(QQ, ["x1", "x2", "x3"], ordering=:degrevlex);
 ```
 
 Then we can define a simple cyclic polynomial system
