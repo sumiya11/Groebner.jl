@@ -1,13 +1,11 @@
-# FastGroebner
+# FastGroebner.jl
 
-[![Runtests](https://github.com/sumiya11/FastGroebner/actions/workflows/Runtests.yml/badge.svg?branch=master)](https://github.com/sumiya11/FastGroebner/actions/workflows/Runtests.yml)
-
+[![Runtests](https://github.com/sumiya11/FastGroebner.jl/actions/workflows/Runtests.yml/badge.svg)](https://github.com/sumiya11/FastGroebner.jl/actions/workflows/Runtests.yml)
 
 The package provides Groebner bases computation interface with the *performance
 comparable to Singular*.
 
 **Please note that the package is still very WIP.**
-Not to forget: we need to change the name.
 
 ## How to use FastGroebner.jl?
 
