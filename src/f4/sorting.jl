@@ -10,9 +10,13 @@ function sort_gens_by_lead_increasing!(basis::Basis, ht::MonomialHashtable)
     inds = collect(1:basis.ntotal)
 
     if ht.ord == :degrevlex
-        cmp  = (x, y) -> exponent_isless_drl(exps[gens[x][1]], exps[gens[y][1]])
+        cmp  = (x, y) -> exponent_isless_drl(
+                                @inbounds(exps[gens[x][1]]),
+                                @inbounds(exps[gens[y][1]]))
     else
-        cmp  = (x, y) -> exponent_isless_lex(exps[gens[x][1]], exps[gens[y][1]])
+        cmp  = (x, y) -> exponent_isless_lex(
+                                @inbounds(exps[gens[x][1]]),
+                                @inbounds(exps[gens[y][1]]))
     end
     sort!(inds, lt=cmp)
 
@@ -54,9 +58,13 @@ function sort_pairset_by_lcm!(
     exps = ht.exponents
 
     if ht.ord == :degrevlex
-        sort!(part, lt=(x, y) -> exponent_isless_drl(exps[x.lcm], exps[y.lcm]))
+        sort!(part, lt=(x, y) -> exponent_isless_drl(
+                                        @inbounds(exps[x.lcm]),
+                                        @inbounds(exps[y.lcm])))
     else
-        sort!(part, lt=(x, y) -> exponent_isless_lex(exps[x.lcm], exps[y.lcm]))
+        sort!(part, lt=(x, y) -> exponent_isless_lex(
+                                        @inbounds(exps[x.lcm]),
+                                        @inbounds(exps[y.lcm])))
     end
 
     pairset.pairs[1:npairs] = part
@@ -82,14 +90,14 @@ end
 =#
 function exponent_isless_drl(ea::Vector{UInt16}, eb::Vector{UInt16})
 
-    if ea[end] < eb[end]
+    if @inbounds ea[end] < eb[end]
         return true
-    elseif ea[end] != eb[end]
+    elseif @inbounds ea[end] != eb[end]
         return false
     end
 
     i = length(ea) - 1
-    while i > 1 && ea[i] == eb[i]
+    @inbounds while i > 1 && ea[i] == eb[i]
         i -= 1
     end
 
@@ -102,7 +110,7 @@ end
 function exponent_isless_lex(ea::Vector{UInt16}, eb::Vector{UInt16})
     i = 1
 
-    while i < length(ea) - 1 && ea[i] == eb[i]
+    @inbounds while i < length(ea) - 1 && ea[i] == eb[i]
         i += 1
     end
 
@@ -114,8 +122,8 @@ end
 function matrix_row_decreasing_cmp(a, b)
     #= a, b - rows as arrays of exponent hashes =#
 
-    va = a[1]
-    vb = b[1]
+    @inbounds va = a[1]
+    @inbounds vb = b[1]
 
     if va > vb
         return false
@@ -142,8 +150,8 @@ end
 function matrix_row_increasing_cmp(a, b)
     #= a, b - rows as arrays of exponent hashes =#
 
-    va = a[1]
-    vb = b[1]
+    @inbounds va = a[1]
+    @inbounds vb = b[1]
 
     if va > vb
         return false
@@ -177,7 +185,9 @@ function sort_matrix_rows_decreasing!(matrix)
     #println(matrix.up2coef)
 
     inds = collect(1:matrix.nup)
-    cmp  = (x, y) ->  matrix_row_decreasing_cmp(matrix.uprows[x], matrix.uprows[y])
+    cmp  = (x, y) ->  matrix_row_decreasing_cmp(
+                                    @inbounds(matrix.uprows[x]),
+                                    @inbounds(matrix.uprows[y]))
     sort!(inds, lt=cmp)
 
     matrix.uprows[1:matrix.nup]  = matrix.uprows[inds]
@@ -200,7 +210,9 @@ function sort_matrix_rows_increasing!(matrix)
     #println(matrix.low2coef)
 
     inds = collect(1:matrix.nlow)
-    cmp  = (x, y) ->  matrix_row_increasing_cmp(matrix.lowrows[x], matrix.lowrows[y])
+    cmp  = (x, y) ->  matrix_row_increasing_cmp(
+                                        @inbounds(matrix.lowrows[x]),
+                                        @inbounds(matrix.lowrows[y]))
     sort!(inds, lt=cmp)
 
     matrix.lowrows[1:matrix.nlow]  = matrix.lowrows[inds]
@@ -218,24 +230,22 @@ function sort_columns_by_hash!(col2hash, symbol_ht)
     es = symbol_ht.exponents
     len = symbol_ht.explen
 
-    if symbol_ht.ord == :degrevlex
-        exponent_isless = exponent_isless_drl
-    else
-        exponent_isless = exponent_isless_lex
-    end
-
-    function cmp(a, b)
-        ha = hd[a]
-        hb = hd[b]
-
+    function cmp(a, b, exponent_isless)
+        @inbounds ha = hd[a]
+        @inbounds hb = hd[b]
         if ha.idx != hb.idx
             return ha.idx > hb.idx
         end
-
-        ea = es[a]
-        eb = es[b]
+        @inbounds ea = es[a]
+        @inbounds eb = es[b]
         !exponent_isless(ea, eb)
     end
 
-    sort!(col2hash, lt = cmp)
+    if symbol_ht.ord == :degrevlex
+        ordcmp = (x, y) -> cmp(x, y, exponent_isless_drl)
+    else
+        ordcmp = (x, y) -> cmp(x, y, exponent_isless_lex)
+    end
+
+    sort!(col2hash, lt = ordcmp)
 end

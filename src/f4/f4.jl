@@ -177,7 +177,7 @@ function find_multiplied_reducer!(
     # divides the given exponent e
     i = 1
     @label Letsgo
-    while i <= basis.nlead && (leaddiv[i] & ~divmask) != 0
+    @inbounds while i <= basis.nlead && (leaddiv[i] & ~divmask) != 0
         i += 1
     end
 
@@ -185,10 +185,10 @@ function find_multiplied_reducer!(
     # dividing symbol_ht.exponents[vidx]
     if i <= basis.nlead
         # reducers index and exponent in hash table
-        rpoly = basis.gens[basis.nonred[i]]
-        rexp  = ht.exponents[rpoly[1]]
+        @inbounds rpoly = basis.gens[basis.nonred[i]]
+        @inbounds rexp  = ht.exponents[rpoly[1]]
 
-        for j in 1:ht.explen
+        @inbounds for j in 1:ht.explen
             # if it actually does not divide and divmask lies
             if e[j] < rexp[j]
                 i += 1

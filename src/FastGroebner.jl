@@ -21,6 +21,7 @@ import AbstractAlgebra: leading_term, QQ, PolynomialRing, terms,
 # for testing
 import Combinatorics
 
+# controversial
 using LoopVectorization
 
 import Primes

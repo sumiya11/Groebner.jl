@@ -105,7 +105,7 @@ end
 
 function normalize_sparse_row!(row::Vector{UInt64}, ch::UInt64)
     pinv = uinvmod(row[1], ch)
-    for i in 2:length(row)
+    @inbounds for i in 2:length(row)
         # row[i] *= pinv
         row[i] = umultmod(row[i], pinv, ch)
     end
@@ -118,7 +118,7 @@ function reduce_by_pivot!(row::Vector{UInt64}, indices::Vector{Int},
             mul::UInt64, cfs::Vector{UInt64}, ch::UInt64)
 
     # length(row) / length(indices) varies from 10 to 100
-    @turbo for j in 1:length(indices)
+    @inbounds for j in 1:length(indices)
         idx = indices[j]
         row[idx] = (row[idx] + mul*cfs[j]) % ch
     end
@@ -142,7 +142,7 @@ function reduce_dense_row_by_known_pivots_sparse!(
 
     for i in startcol:ncols
         # if row element zero - no reduction
-        if densecoeffs[i] == 0
+        @inbounds if densecoeffs[i] == 0
             continue
         end
         # if pivot not defined
@@ -166,9 +166,9 @@ function reduce_dense_row_by_known_pivots_sparse!(
 
         # if reducer is from upper
         if i <= nleft
-            cfs = basis.coeffs[matrix.up2coef[i]]
+            @inbounds cfs = basis.coeffs[matrix.up2coef[i]]
         else # of lower part of matrix
-            cfs = matrix.coeffs[matrix.low2coef[i]]
+            @inbounds cfs = matrix.coeffs[matrix.low2coef[i]]
         end
 
         reduce_by_pivot!(densecoeffs, reducerexps, mul, cfs, ch)
@@ -185,7 +185,7 @@ function reduce_dense_row_by_known_pivots_sparse!(
     # store new row in sparse format
     # where k - number of structural nonzeros in new reduced row, k > 0
     j = 1
-    for i in np:ncols # from new pivot
+    @inbounds for i in np:ncols # from new pivot
         if densecoeffs[i] != 0
             newrow[j] = i
             newcfs[j] = densecoeffs[i]
@@ -205,14 +205,14 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
     # known pivots
     # no_copy
     pivs = Vector{Vector{Int}}(undef, ncols)
-    for i in 1:matrix.nup
+    @inbounds for i in 1:matrix.nup
         pivs[i] = matrix.uprows[i]
     end
 
     # CHANGED in order to prevent bug
     # when several rows in the matrix are equal
-    l2c_tmp = Vector{Int}(undef, max(ncols, matrix.nrows))
-    for i in 1:nlow
+    l2c_tmp = Vector{Int}(undef, max(ncols, matrix.nlow))
+    @inbounds for i in 1:nlow
         l2c_tmp[matrix.lowrows[i][1]] = matrix.low2coef[i]
     end
     # CHANGED
@@ -248,7 +248,7 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
         # into rowexps indices
         # TODO: move this
         densecoeffs .= UInt64(0)
-        for j in 1:length(rowexps)
+        @inbounds for j in 1:length(rowexps)
             densecoeffs[rowexps[j]] = cfsref[j]
         end
 
@@ -287,7 +287,6 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
     # number of new pivots
     newpivs = 0
 
-    densecfs = zeros(UInt64, ncols)
     # a row to be reduced for each column
     resize!(matrix.lowrows, matrix.nright)
 
@@ -310,7 +309,7 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
 
             @assert length(cfsref) == length(pivs[k])
 
-            for j in 1:length(pivs[k])
+            @inbounds for j in 1:length(pivs[k])
                 densecfs[pivs[k][j]] = cfsref[j]
             end
             newpivs += 1
@@ -346,7 +345,7 @@ function interreduce_matrix_rows!(matrix::MacaulayMatrix, basis::Basis)
     # same pivs as for rref
     # pivs: column idx --> vector of present columns
     pivs = Vector{Vector{Int}}(undef, matrix.ncols)
-    for i in 1:matrix.nrows
+    @inbounds for i in 1:matrix.nrows
         pivs[matrix.uprows[i][1]] = matrix.uprows[i]
         matrix.low2coef[matrix.uprows[i][1]] = i
         matrix.coeffs[i] = copy(basis.coeffs[matrix.up2coef[i]])
@@ -362,7 +361,7 @@ function interreduce_matrix_rows!(matrix::MacaulayMatrix, basis::Basis)
             cfs = matrix.coeffs[matrix.low2coef[l]]
             reducexps = pivs[l]
             startcol = reducexps[1]
-            for j in 1:length(reducexps)
+            @inbounds for j in 1:length(reducexps)
                 densecfs[reducexps[j]] = cfs[j]
             end
 
@@ -396,7 +395,7 @@ function convert_hashes_to_columns!(
     j = 1
     # number of pivotal cols
     k = 0
-    for i in symbol_ht.offset:load
+    @inbounds for i in symbol_ht.offset:load
         # column to hash index
         col2hash[j] = i
         j += 1
@@ -425,7 +424,7 @@ function convert_hashes_to_columns!(
     for k in 1:matrix.nup
         row = matrix.uprows[k]
 
-        for j in 1:length(row)
+        @inbounds for j in 1:length(row)
             row[j] = hdata[row[j]].idx
         end
 
@@ -436,7 +435,7 @@ function convert_hashes_to_columns!(
     for k in 1:matrix.nlow
         row = matrix.lowrows[k]
 
-        for j in 1:length(row)
+        @inbounds for j in 1:length(row)
             row[j] = hdata[row[j]].idx
         end
 
@@ -465,7 +464,7 @@ function convert_matrix_rows_to_basis_elements!(
     crs = basis.ndone
 
     for i in 1:matrix.npivots
-        colidx = rows[i][1]
+        @inbounds colidx = rows[i][1]
 
         insert_in_basis_hash_table_pivots(rows[i], ht, symbol_ht, matrix.col2hash)
         # TODO : a constant
@@ -491,7 +490,7 @@ function convert_matrix_rows_to_basis_elements_use_symbol!(
         row = rows[i]
         colidx = row[1]
 
-        for j in 1:length(row)
+        @inbounds for j in 1:length(row)
             row[j] = matrix.col2hash[row[j]]
         end
 

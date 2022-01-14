@@ -196,13 +196,13 @@ function enlarge_hash_table!(ht::MonomialHashtable)
 
     ht.hashtable = zeros(Int, ht.size)
 
-    mod = ht.size
+    mod = UInt32(ht.size - 1)
     for i in ht.offset:ht.load  # TODO: hardcoding 2 is bad
         # hash for this elem is already computed
         he = ht.hashdata[i].hash
         hidx = he
-        for j in 0:ht.size-1
-            hidx = (he + j) % mod + 1
+        for j in UInt32(1):UInt32(ht.size)
+            hidx = (he + j) & mod + UInt32(1)
             ht.hashtable[hidx] != 0 && continue
             ht.hashtable[hidx] = i
             break
@@ -221,14 +221,14 @@ function insert_in_hash_table!(ht::MonomialHashtable, e::Vector{UInt16})
     # find new elem position in the table
     hidx = Int(he)  # Int for type stability
     # power of twoooo
-    mod = ht.size
-    i = 0
+    mod = UInt32(ht.size - 1)
+    i = UInt32(1)
 
     @label Restart
     while i < ht.size
         # TODO: & instead of %
-        hidx = (he + i) % mod + 1
-        vidx  = ht.hashtable[hidx]
+        hidx = (he + i) & mod + UInt32(1)
+        @inbounds vidx  = ht.hashtable[hidx]
 
         # if free
         vidx == 0 && break
@@ -433,7 +433,7 @@ function insert_multiplied_poly_in_hash_table!(
     len    = length(poly)
     explen = ht.explen
 
-    mod = symbol_ht.size
+    mod = symbol_ht.size - 1
 
     bexps = ht.exponents
     bdata = ht.hashdata
@@ -461,18 +461,19 @@ function insert_multiplied_poly_in_hash_table!(
             sexps[lastidx] = Vector{UInt16}(undef, explen)
         end
         enew = sexps[lastidx]
-        for j in 1:explen
+        @inbounds for j in 1:explen
             # multiplied monom exponent
             enew[j] = etmp[j] + e[j]
         end
 
         # now insert into hashtable
         k = h
-        i = 0
+        i = UInt32(1)
         @label Restart
         while i <= symbol_ht.size  # TODO: < or <= ?
-            k = (h + i) % mod + 1
-            vidx = symbol_ht.hashtable[k]
+            # @assert ispow2(mod + 1)
+            k = (h + i) & mod + UInt32(1)
+            @inbounds vidx = symbol_ht.hashtable[k]
             # if index is free
             vidx == 0 && break
             # if different exponent is stored here
@@ -536,7 +537,7 @@ function insert_in_basis_hash_table_pivots(
     sdata = symbol_ht.hashdata
     sexps = symbol_ht.exponents
 
-    mod    = ht.size
+    mod    = UInt32(ht.size - 1)
     explen = ht.explen
     bdata  = ht.hashdata
     bexps  = ht.exponents
@@ -556,10 +557,10 @@ function insert_in_basis_hash_table_pivots(
         e = bexps[lastidx]
 
         k = h
-        i = 0
+        i = UInt32(1)
         @label Restart
         while i <= ht.size
-            k = (h + i) % mod + 1
+            k = (h + i) & mod + UInt32(1)
             hm = bhash[k]
 
             hm == 0 && break
@@ -604,7 +605,7 @@ function insert_plcms_in_basis_hash_table!(
     # including ifirst and not including ilast
 
     gens  = basis.gens
-    mod   = ht.size
+    mod   = UInt32(ht.size - 1)
     ps    = pairset.pairs
 
     m = ifirst
@@ -630,10 +631,10 @@ function insert_plcms_in_basis_hash_table!(
         n = ht.exponents[ht.load+1]
 
         k = h
-        i = 0
+        i = UInt32(1)
         @label Restart
         while i <= ht.size
-            k = (h + i) % mod + 1
+            k = (h + i) & mod + UInt32(1)
             hm = ht.hashtable[k]
 
             hm == 0 && break
