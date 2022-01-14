@@ -2,6 +2,8 @@
 import Singular
 import AbstractAlgebra
 
+using FastGroebner
+
 using BenchmarkTools
 
 using Logging

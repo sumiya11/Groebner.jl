@@ -3,6 +3,7 @@ import Singular
 import AbstractAlgebra
 
 using BenchmarkTools
+using FastGroebner
 
 using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error))
