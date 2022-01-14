@@ -13,7 +13,7 @@ function benchmark_system_my(system)
     system = FastGroebner.change_ordering(system, :degrevlex)
     FastGroebner.groebner([system[1]])
     @btime gb = FastGroebner.groebner($system, reduced=false)
-    # println("length = $(length(FastGroebner.groebner(system)))")
+    println("length = $(length(FastGroebner.groebner(system)))")
 end
 
 function benchmark_system_singular(system)
@@ -43,8 +43,8 @@ function run_f4_ff_degrevlex_benchmarks(ground)
         ("cyclic 13", FastGroebner.rootn(13, ground=ground)),
         ("katsura 9", FastGroebner.katsura9(ground=ground)),
         ("katsura 10",FastGroebner.katsura10(ground=ground)),
-        ("noon 6"    ,FastGroebner.noonn(6, ground=ground)),
-        ("noon 7"    ,FastGroebner.noonn(7, ground=ground))
+        ("noon 7"    ,FastGroebner.noonn(7, ground=ground)),
+        ("noon 8"    ,FastGroebner.noonn(8, ground=ground))
     ]
 
     for (name, system) in systems
