@@ -1,6 +1,8 @@
 # FastGroebner.jl
 
 [![Runtests](https://github.com/sumiya11/FastGroebner.jl/actions/workflows/Runtests.yml/badge.svg)](https://github.com/sumiya11/FastGroebner.jl/actions/workflows/Runtests.yml)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](http://si.sciml.ai/dev/)
+
 
 The package provides Groebner bases computation interface with the *performance
 comparable to Singular*.
