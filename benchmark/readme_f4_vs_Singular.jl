@@ -12,7 +12,7 @@ global_logger(ConsoleLogger(stderr, Logging.Error))
 function benchmark_system_my(system)
     system = FastGroebner.change_ordering(system, :degrevlex)
     FastGroebner.groebner([system[1]])
-    @btime gb = FastGroebner.groebner($system)
+    @btime gb = FastGroebner.groebner($system, reduced=false)
     # println("length = $(length(FastGroebner.groebner(system)))")
 end
 
@@ -34,7 +34,7 @@ function benchmark_system_singular(system)
 
     Singular.std(Singular.Ideal(R_s, [system_s[1]]))
 
-    @btime gb = Singular.std($ideal_s)
+    @btime gb = Singular.std($ideal_s, complete_reduction=false)
 end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
@@ -58,3 +58,9 @@ end
 
 ground = AbstractAlgebra.GF(2^31 - 1)
 run_f4_ff_degrevlex_benchmarks(ground)
+
+#=
+
+     readme_f4_vs_Singular.jl                                                                         cyclic 12                                                                                         my                                                                                                  834.491 ms (342159 allocations: 71.10 MiB)                                                      singular                                                                                            32.055 ms (2 allocations: 48 bytes)                                                             cyclic 13                                                                                         my                                                                                                  3.517 s (868686 allocations: 188.93 MiB)                                                        singular                                                                                            103.037 ms (2 allocations: 48 bytes)                                                            katsura 9                                                                                         my                                                                                                  717.322 ms (83858 allocations: 23.48 MiB)                                                       singular                                                                                            2.751 s (2 allocations: 48 bytes)                                                               katsura 10                                                                                        my                                                                                                  5.621 s (252687 allocations: 78.50 MiB)                                                         singular                                                                                            25.076 s (2 allocations: 48 bytes)                                                              noon 6                                                                                            my                                                                                                  91.861 ms (103667 allocations: 22.10 MiB)                                                       singular                                                                                            102.661 ms (2 allocations: 48 bytes)                                                            noon 7                                                                                            my                                                                                                  691.087 ms (501602 allocations: 104.85 MiB)                                                     singular                                                                                            896.953 ms (2 allocations: 48 bytes)
+     
+=#

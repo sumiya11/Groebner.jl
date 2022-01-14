@@ -11,7 +11,7 @@ global_logger(ConsoleLogger(stderr, Logging.Error))
 function benchmark_system_my(system)
     system = FastGroebner.change_ordering(system, :degrevlex)
     FastGroebner.groebner([system[1]])
-    @btime gb = FastGroebner.groebner($system)
+    @btime gb = FastGroebner.groebner($system, reduced=false)
     println("length = $(length(FastGroebner.groebner(system)))")
 end
 
@@ -33,7 +33,7 @@ function benchmark_system_singular(system)
 
     Singular.std(Singular.Ideal(R_s, [system_s[1]]))
 
-    @btime gb = Singular.std($ideal_s)
+    @btime gb = Singular.std($ideal_s, complete_reduction=false)
 end
 
 function run_f4_ff_degrevlex_benchmarks(ground)

@@ -118,7 +118,7 @@ function reduce_by_pivot!(row::Vector{UInt64}, indices::Vector{Int},
             mul::UInt64, cfs::Vector{UInt64}, ch::UInt64)
 
     # length(row) / length(indices) varies from 10 to 100
-    @inbounds for j in 1:length(indices)
+    @turbo for j in 1:length(indices)
         idx = indices[j]
         row[idx] = (row[idx] + mul*cfs[j]) % ch
     end
