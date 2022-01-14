@@ -14,8 +14,8 @@ makedocs(
 )
 
 deploydocs(
-   branch = "gh-pages",
    repo = "github.com/sumiya11/FastGroebner.jl.git",
+   branch = "main",
    devbranch = "main",
    push_preview = true
 )
