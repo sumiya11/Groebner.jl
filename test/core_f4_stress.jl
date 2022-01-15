@@ -64,6 +64,18 @@ end
     @info "producing $p $(orderings[1]) tests for f4"
     test_params(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings)
 
+    # :deglex finite case tests
+    nvariables = [2, 3, 4]
+    exps       = [1:2, 2:4, 2:3]
+    nterms     = [1:1, 1:2, 2:3]
+    npolys     = [1:1, 1:3, 2:3]
+    grounds    = [GF(1031), GF(2^31 - 1)]
+    coeffssize = [3, 1000, 2^31 - 1]
+    orderings  = [:deglex]
+    p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize)))
+    @info "producing $p $(orderings[1]) tests for f4"
+    test_params(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings)
+
     # :degrevlex rational case tests
     nvariables = [2, 3, 4]
     exps       = [1:2, 2:4, 2:3]
@@ -72,6 +84,18 @@ end
     grounds    = [QQ]
     coeffssize = [3, 1000, 2^31 - 1, 9223372036854775837]
     orderings  = [:degrevlex]
+    p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize)))
+    @info "producing $p $(orderings[1]) rational tests for f4"
+    test_params(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings)
+
+    # :deglex rational case tests
+    nvariables = [2, 3, 4]
+    exps       = [1:2, 2:4, 2:3]
+    nterms     = [1:1, 1:2, 2:3]
+    npolys     = [1:1, 1:3, 2:3]
+    grounds    = [QQ]
+    coeffssize = [3, 1000, 2^31 - 1, 9223372036854775837]
+    orderings  = [:deglex]
     p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize)))
     @info "producing $p $(orderings[1]) rational tests for f4"
     test_params(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings)

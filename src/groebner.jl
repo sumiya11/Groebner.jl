@@ -15,14 +15,15 @@ function groebner(
     Uses the ordering on `polys` for computation by default.
     If `ordering` is specialized, it takes precedence.
 
-    Random generator `rng` is responsible for hashing monomials during computation.
-
     By default, the function executes silently.
     This can be changed adjusting the `loglevel`.
 
     Suported monomial orderings are:
     - `degrevlex`
+    - `deglex`
     - `lex`
+
+    Random generator `rng` is responsible for hashing monomials during computation.
 
 """
 function groebner(
@@ -39,9 +40,7 @@ function groebner(
     #= extract ring information, exponents and coefficients
        from input polynomials =#
     # Copies input, so that polys would not be changed itself.
-    # Also, changes any input ordering into :degrevlex representation
-    # with length of exponent vector being n+1 for n variable ring
-    ring, exps, coeffs = convert_to_internal(polys)
+    ring, exps, coeffs = convert_to_internal(polys, ordering)
 
     #= compute the groebner basis =#
     if ring.ch != 0
@@ -59,8 +58,9 @@ function groebner(
     #= revert logger =#
     Logging.global_logger(prev_logger)
 
+    # ring contains ordering of computation, it is the requested ordering
     #= convert result back to representation of input =#
-    export_basis(ring, polys, bexps, bcoeffs)
+    convert_to_output(ring, polys, bexps, bcoeffs)
 end
 
 #######################################
@@ -112,6 +112,18 @@ function modular_f4_step(
             rng::Rng,
             reduced::Bool,
             ::Val{:degrevlex}
+            ) where {Rng<:Random.AbstractRNG}
+
+    f4(ring, exps, coeffs, rng, reduced)
+end
+
+function modular_f4_step(
+            ring::PolyRing,
+            exps::Vector{Vector{Vector{UInt16}}},
+            coeffs::Vector{Vector{UInt64}},
+            rng::Rng,
+            reduced::Bool,
+            ::Val{:deglex}
             ) where {Rng<:Random.AbstractRNG}
 
     f4(ring, exps, coeffs, rng, reduced)

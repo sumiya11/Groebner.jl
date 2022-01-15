@@ -13,8 +13,12 @@ function sort_gens_by_lead_increasing!(basis::Basis, ht::MonomialHashtable)
         cmp  = (x, y) -> exponent_isless_drl(
                                 @inbounds(exps[gens[x][1]]),
                                 @inbounds(exps[gens[y][1]]))
-    else
+    elseif ht.ord == :lex
         cmp  = (x, y) -> exponent_isless_lex(
+                                @inbounds(exps[gens[x][1]]),
+                                @inbounds(exps[gens[y][1]]))
+    else
+        cmp  = (x, y) -> exponent_isless_dl(
                                 @inbounds(exps[gens[x][1]]),
                                 @inbounds(exps[gens[y][1]]))
     end
@@ -34,10 +38,6 @@ end
 # Used in update once per one f4 iteration to sort pairs in pairset
 # Also used in normal selection strategy also once per iteration
 function sort_pairset_by_degree!(ps::Pairset, from::Int, sz::Int)
-    #= WARNING: BUG =#
-    # sz is size !
-    # the correct should be ps.pairs[from:from + sz]
-
     part = ps.pairs[from:from + sz]
 
     sort!(part, by=p -> p.deg)
@@ -61,8 +61,12 @@ function sort_pairset_by_lcm!(
         sort!(part, lt=(x, y) -> exponent_isless_drl(
                                         @inbounds(exps[x.lcm]),
                                         @inbounds(exps[y.lcm])))
-    else
+    elseif ht.ord == :lex
         sort!(part, lt=(x, y) -> exponent_isless_lex(
+                                        @inbounds(exps[x.lcm]),
+                                        @inbounds(exps[y.lcm])))
+    else
+        sort!(part, lt=(x, y) -> exponent_isless_dl(
                                         @inbounds(exps[x.lcm]),
                                         @inbounds(exps[y.lcm])))
     end
@@ -105,15 +109,31 @@ function exponent_isless_drl(ea::Vector{UInt16}, eb::Vector{UInt16})
 end
 
 #=
+    :deglex exponent vector comparison
+=#
+function exponent_isless_dl(ea::Vector{UInt16}, eb::Vector{UInt16})
+
+    if @inbounds ea[end] < eb[end]
+        return true
+    elseif @inbounds ea[end] != eb[end]
+        return false
+    end
+
+    i = 1
+    @inbounds while i < length(ea) && ea[i] == eb[i]
+        i += 1
+    end
+    return ea[i] < eb[i] ? true : false
+end
+
+#=
     :lex exponent vector comparison
 =#
 function exponent_isless_lex(ea::Vector{UInt16}, eb::Vector{UInt16})
     i = 1
-
     @inbounds while i < length(ea) - 1 && ea[i] == eb[i]
         i += 1
     end
-
     return ea[i] < eb[i] ? true : false
 end
 
@@ -243,8 +263,10 @@ function sort_columns_by_hash!(col2hash, symbol_ht)
 
     if symbol_ht.ord == :degrevlex
         ordcmp = (x, y) -> cmp(x, y, exponent_isless_drl)
-    else
+    elseif symbol_ht.ord == :lex
         ordcmp = (x, y) -> cmp(x, y, exponent_isless_lex)
+    else
+        ordcmp = (x, y) -> cmp(x, y, exponent_isless_dl)
     end
 
     sort!(col2hash, lt = ordcmp)

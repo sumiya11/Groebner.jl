@@ -37,6 +37,9 @@ using PrettyPrinting
 import Logging
 import Logging: ConsoleLogger, LogLevel
 
+import MultivariatePolynomials
+import MultivariatePolynomials: AbstractPolynomial
+
 #
 include("utils.jl")
 

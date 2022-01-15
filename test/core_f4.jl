@@ -185,6 +185,75 @@ gb = FastGroebner.groebner(noon, reduced=false)
 
 end
 
+@testset "ff f4 noreduce deglex" begin
+
+R, (x, y) = PolynomialRing(GF(2^31 - 1), ["x", "y"], ordering=:deglex)
+
+fs = [
+    x + y^2,
+    x*y - y^2
+]
+gb = FastGroebner.groebner(fs, reduced=true)
+@test FastGroebner.isgroebner(gb, initial_gens=fs)
+
+fs = [
+    x + y,
+    x^2 + y
+]
+gb = FastGroebner.groebner(fs, reduced=true)
+@test FastGroebner.isgroebner(gb, initial_gens=fs)
+
+fs = [
+    y,
+    x*y + x
+]
+gb = FastGroebner.groebner(fs, reduced=false)
+@test FastGroebner.isgroebner(gb, initial_gens=fs)
+
+fs = [
+    x^2 + 5,
+    2y^2 + 3
+]
+gb = FastGroebner.groebner(fs, reduced=false)
+@test FastGroebner.isgroebner(gb, initial_gens=fs)
+
+fs = [
+    y^2 + x,
+    x^2*y + y,
+    y + 1
+]
+gb = FastGroebner.groebner(fs, reduced=false)
+@test FastGroebner.isgroebner(FastGroebner.reducegb(gb))
+@test FastGroebner.isgroebner(gb, initial_gens=fs)
+
+fs = [
+    x^2*y^2,
+    2*x*y^2 + 3*x*y
+]
+gb = FastGroebner.groebner(fs, reduced=false)
+@test FastGroebner.isgroebner(FastGroebner.reducegb(gb))
+@test FastGroebner.isgroebner(gb, initial_gens=fs)
+
+
+root = FastGroebner.change_ordering(FastGroebner.rootn(3, ground=GF(2^31 - 1)), :deglex)
+gb = FastGroebner.groebner(root, reduced=true)
+@test FastGroebner.isgroebner(FastGroebner.reducegb(gb))
+
+
+root = FastGroebner.change_ordering(FastGroebner.rootn(4, ground=GF(2^31 - 1)), :deglex)
+gb = FastGroebner.groebner(root, reduced=true)
+@test FastGroebner.isgroebner(gb, initial_gens=root)
+
+noon = FastGroebner.change_ordering(FastGroebner.noonn(3, ground=GF(2^31 - 1)), :deglex)
+gb = FastGroebner.groebner(noon, reduced=false)
+@test FastGroebner.isgroebner(FastGroebner.reducegb(gb))
+
+noon = FastGroebner.change_ordering(FastGroebner.noonn(4, ground=GF(2^31 - 1)), :deglex)
+gb = FastGroebner.groebner(noon, reduced=false)
+@test FastGroebner.isgroebner(FastGroebner.reducegb(gb))
+
+end
+
 @testset "ff f4 corner cases" begin
     R, (x, y) = PolynomialRing(GF(2^31 - 1), ["x", "y"], ordering=:degrevlex)
 
