@@ -350,7 +350,9 @@ function convert_to_output(
 
     @assert hasmethod(base_ring, Tuple{typeof(origring)})
 
-    if elem_type(base_ring(M)) <: Integer
+    etype = elem_type(base_ring(origring))
+    # rather weak but okay for now
+    if etype <: Integer
         coeffs_zz = scale_denominators!(gbcoeffs)
         convert_to_output(origring, gbexps, coeffs_zz)
     else
