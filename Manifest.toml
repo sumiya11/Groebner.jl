@@ -260,6 +260,12 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 [[MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
 
+[[MultivariatePolynomials]]
+deps = ["DataStructures", "LinearAlgebra", "MutableArithmetics"]
+git-tree-sha1 = "fa6ce8c91445e7cd54de662064090b14b1089a6d"
+uuid = "102ac46a-7ee4-5c85-9060-abc95bfdeaa3"
+version = "0.4.2"
+
 [[MutableArithmetics]]
 deps = ["LinearAlgebra", "SparseArrays", "Test"]
 git-tree-sha1 = "73deac2cbae0820f43971fad6c08f6c4f2784ff2"
