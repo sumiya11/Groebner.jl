@@ -45,9 +45,11 @@ function groebner(
     #= compute the groebner basis =#
     if ring.ch != 0
         # if finite field
+        # Always returns UInt coefficients #
         bexps, bcoeffs = groebner_ff(ring, exps, coeffs, reduced, rng)
     else
         # if rational coefficients
+        # Always returns rational coefficients #
         bexps, bcoeffs = groebner_qq(ring, exps, coeffs, reduced, rng)
     end
 
