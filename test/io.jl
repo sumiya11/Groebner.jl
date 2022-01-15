@@ -108,10 +108,11 @@ end
     @test fsfs == fs
 end
 
-using DynamicPolynomials
+# using DynamicPolynomials
 
 @testset "Input-output DynamicPolynomials" begin
 
+    #=
     ff = GF(2^31 - 1)
     @polyvar x y
 
@@ -119,7 +120,8 @@ using DynamicPolynomials
     ring, exps, cfs = FastGroebner.convert_to_internal(fs, :input)
     fsfs = FastGroebner.convert_to_output(ring, fs, exps, cfs)
     @test fsfs == fs
-
+    =#
+    
     #=
     fs = [x^2 + 1, (2^31 - 5)*x - (2^31 - 4)*y]
     ring, exps, cfs = FastGroebner.convert_to_internal(fs, :input)
