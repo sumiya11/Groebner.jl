@@ -1,5 +1,5 @@
 
-using .FastGroebner: normal_form, reducegb, reducegb!,
+using .Groebner: normal_form, reducegb, reducegb!,
                     change_ordering, rootn
 
 @testset "Normal Form" begin

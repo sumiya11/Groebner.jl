@@ -3,16 +3,16 @@ import Singular
 import AbstractAlgebra
 
 using BenchmarkTools
-using FastGroebner
+using Groebner
 
 using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error))
 
 function benchmark_system_my(system)
-    system = FastGroebner.change_ordering(system, :degrevlex)
-    FastGroebner.groebner([system[1]])
-    @btime gb = FastGroebner.groebner($system, reduced=false)
-    println("length = $(length(FastGroebner.groebner(system)))")
+    system = Groebner.change_ordering(system, :degrevlex)
+    Groebner.groebner([system[1]])
+    @btime gb = Groebner.groebner($system, reduced=false)
+    println("length = $(length(Groebner.groebner(system)))")
 end
 
 function benchmark_system_singular(system)
@@ -38,18 +38,18 @@ end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
-        ("cyclic 12", FastGroebner.rootn(12, ground=ground)),
-        ("cyclic 13", FastGroebner.rootn(13, ground=ground)),
-        ("cyclic 14", FastGroebner.rootn(14, ground=ground)),
-        ("katsura 10",FastGroebner.katsura10(ground=ground)),
-        ("katsura 11",FastGroebner.katsura11(ground=ground)),
-        ("katsura 12",FastGroebner.katsura12(ground=ground)),
-        ("eco 10",FastGroebner.eco10()),
-        ("eco 11",FastGroebner.eco11()),
-        ("eco 12",FastGroebner.eco12()),
-        ("noon 6"    ,FastGroebner.noonn(6, ground=ground)),
-        ("noon 7"    ,FastGroebner.noonn(7, ground=ground)),
-        ("noon 8"    ,FastGroebner.noonn(8, ground=ground))
+        ("cyclic 12", Groebner.rootn(12, ground=ground)),
+        ("cyclic 13", Groebner.rootn(13, ground=ground)),
+        ("cyclic 14", Groebner.rootn(14, ground=ground)),
+        ("katsura 10",Groebner.katsura10(ground=ground)),
+        ("katsura 11",Groebner.katsura11(ground=ground)),
+        ("katsura 12",Groebner.katsura12(ground=ground)),
+        ("eco 10",Groebner.eco10()),
+        ("eco 11",Groebner.eco11()),
+        ("eco 12",Groebner.eco12()),
+        ("noon 6"    ,Groebner.noonn(6, ground=ground)),
+        ("noon 7"    ,Groebner.noonn(7, ground=ground)),
+        ("noon 8"    ,Groebner.noonn(8, ground=ground))
     ]
 
     for (name, system) in systems

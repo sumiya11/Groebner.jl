@@ -1,12 +1,12 @@
 
 push!(LOAD_PATH, "../src/")
 
-using Documenter, FastGroebner
+using Documenter, Groebner
 
 makedocs(
-   sitename="FastGroebner.jl",
+   sitename="Groebner.jl",
    authors="sumiya11",
-   modules=[FastGroebner],
+   modules=[Groebner],
 
    pages=[
       "Home" => "index.md",
@@ -14,7 +14,7 @@ makedocs(
 )
 
 deploydocs(
-   repo = "github.com/sumiya11/FastGroebner.jl.git",
+   repo = "github.com/sumiya11/Groebner.jl.git",
    branch = "main",
    devbranch = "main",
    push_preview = true

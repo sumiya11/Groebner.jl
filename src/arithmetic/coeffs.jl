@@ -25,11 +25,15 @@ function remove_content!(coeffs::Vector{Rational{BigInt}})
     intcoeffs
 end
 
+function scale_denominators!(coeffs::Vector{Rational{BigInt}})
+    remove_content!(coeffs)
+end
+
 # scales denominators inplace, returning new vector of integer coefficients
 function scale_denominators!(coeffs::Vector{Vector{Rational{BigInt}}})
     intcoeffs = Vector{Vector{BigInt}}(undef, length(coeffs))
     for i in 1:length(coeffs)
-        intcoeffs[i] = remove_content!(coeffs[i])
+        intcoeffs[i] = scale_denominators!(coeffs[i])
     end
     intcoeffs
 end
@@ -42,6 +46,9 @@ function coerce_coeffs(coeffs::Vector{BigInt}, prime::Int)
     for i in 1:length(coeffs)
         # TODO: faster
         # convert is guaranteed to be exact
+        while coeffs[i] < 0
+            coeffs[i] += prime
+        end
         ffcoeffs[i] = UInt64((coeffs[i] + prime) % prime)
     end
     ffcoeffs

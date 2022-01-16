@@ -74,7 +74,7 @@ function normal_form(h, G)
                 # does, mul = term_divides_3(t, g)
                 is_divisible, _ = divides(t, leading_monomial(g))
                 if is_divisible
-                    mul = AbstractAlgebra.divexact(t, leading_term(g))
+                    mul = AbstractAlgebra.divexact(t, leading_monomial(g))
                     # PROFILER: slow
                     h -= mul * g
                     flag = true
@@ -96,7 +96,7 @@ end
 function muls(f, g)
     lmi = leading_monomial(f)
     lmj = leading_monomial(g)
-    lcm = AbstractAlgebra.lcm(lmi, lmj)
+    lcm = AbstractAlgebra.lcm(leading_coefficient(f), leading_coefficient(g))*AbstractAlgebra.lcm(lmi, lmj)
     mji = div(lcm, lmi)
     mij = div(lcm, lmj)
     return mji, mij
@@ -108,7 +108,7 @@ end
 # https://www.mathematik.uni-kl.de/~ederc/teaching/2019/computeralgebra.html#news
 function spoly(f, g)
     mji, mij  = muls(f, g)
-    h = 1//leading_coefficient(f) * mji * f - 1//leading_coefficient(g) * mij * g
+    h = divexact(mji, leading_coefficient(f)) * f - divexact(mij, leading_coefficient(g)) * g
     return h
 end
 

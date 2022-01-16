@@ -1,4 +1,4 @@
-name = "FastGroebner"
+name = "Groebner"
 uuid = "0b43b601-686d-58a3-8a1c-6623616c7cd4"
 authors = ["sumiya11"]
 version = "0.1.0"

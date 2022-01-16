@@ -12,14 +12,14 @@ function test_params(rng, nvariables, exps, nterms,
                     for gr in grounds
                         for ord in orderings
                             for csz in coeffssize
-                                set = FastGroebner.generate_set(
+                                set = Groebner.generate_set(
                                     n, e, nt, np, csz, rng, gr, ord
                                 )
                                 isempty(set) && continue
-                                gb = FastGroebner.groebner(set)
-                                @test FastGroebner.isgroebner(gb, initial_gens=set)
+                                gb = Groebner.groebner(set)
+                                @test Groebner.isgroebner(gb, initial_gens=set)
 
-                                if !FastGroebner.isgroebner(gb, initial_gens=set)
+                                if !Groebner.isgroebner(gb, initial_gens=set)
                                     @error "Beda!" n e nt np gr ord
                                     println("Rng ", rng)
                                     println("Set ", set)

@@ -1,14 +1,14 @@
 
 @testset "ff f4 yesreduce" begin
 
-    root = FastGroebner.change_ordering(FastGroebner.rootn(3, ground=GF(2^31 - 1)), :degrevlex)
+    root = Groebner.change_ordering(Groebner.rootn(3, ground=GF(2^31 - 1)), :degrevlex)
     x1, x2, x3 = gens(parent(first(root)))
-    gb = FastGroebner.groebner(root, reduced=true)
+    gb = Groebner.groebner(root, reduced=true)
     @test gb == [x1 + x2 + x3, x2^2 + x2*x3 + x3^2, x3^3 + 2147483646]
 
-    root = FastGroebner.change_ordering(FastGroebner.rootn(6, ground=GF(2^31 - 1)), :degrevlex)
+    root = Groebner.change_ordering(Groebner.rootn(6, ground=GF(2^31 - 1)), :degrevlex)
     x1, x2, x3, x4, x5, x6 = gens(parent(first(root)))
-    gb = FastGroebner.groebner(root, reduced=true)
+    gb = Groebner.groebner(root, reduced=true)
     @test gb == [
         x1 + x2 + x3 + x4 + x5 + x6,
         x2^2 + x2*x3 + x3^2 + x2*x4 + x3*x4 + x4^2 +
@@ -23,9 +23,9 @@
         x5^4*x6 + x5^3*x6^2 + x5^2*x6^3 + x5*x6^4 + x6^5,
         x6^6 + 2147483646]
 
-    ku = FastGroebner.change_ordering(FastGroebner.ku10(ground=GF(2^31-1)), :degrevlex)
+    ku = Groebner.change_ordering(Groebner.ku10(ground=GF(2^31-1)), :degrevlex)
     x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = gens(parent(first(ku)))
-    gb = FastGroebner.groebner(ku, reduced=true)
+    gb = Groebner.groebner(ku, reduced=true)
 
     @test gb == [
         x9 + 1272065637*x10 + 875418006,

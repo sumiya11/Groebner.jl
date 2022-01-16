@@ -1,6 +1,6 @@
 
-if !isdefined(Main, :FastGroebner)
-    import FastGroebner
+if !isdefined(Main, :Groebner)
+    import Groebner
 end
 
 import AbstractAlgebra
@@ -9,19 +9,19 @@ using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error))
 
 function benchmark_system_my(system)
-    system = FastGroebner.change_ordering(system, :degrevlex)
-    FastGroebner.groebner([system[1]])
-    @btime gb = FastGroebner.groebner($system, reduced=false)
+    system = Groebner.change_ordering(system, :degrevlex)
+    Groebner.groebner([system[1]])
+    @btime gb = Groebner.groebner($system, reduced=false)
 end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
-        ("cyclic 12", FastGroebner.rootn(12, ground=ground)),
-        ("cyclic 13", FastGroebner.rootn(13, ground=ground)),
-        ("katsura 9", FastGroebner.katsura9(ground=ground)),
-        ("katsura 10",FastGroebner.katsura10(ground=ground)),
-        ("noon 6"    ,FastGroebner.noonn(6, ground=ground)),
-        ("noon 7"    ,FastGroebner.noonn(7, ground=ground))
+        ("cyclic 12", Groebner.rootn(12, ground=ground)),
+        ("cyclic 13", Groebner.rootn(13, ground=ground)),
+        ("katsura 9", Groebner.katsura9(ground=ground)),
+        ("katsura 10",Groebner.katsura10(ground=ground)),
+        ("noon 6"    ,Groebner.noonn(6, ground=ground)),
+        ("noon 7"    ,Groebner.noonn(7, ground=ground))
     ]
 
     for (name, system) in systems

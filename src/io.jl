@@ -147,7 +147,7 @@ function extract_ring(
 
     f = first(orig_polys)
 
-    nv = maximum(map(FastGroebner.MultivariatePolynomials.nvariables, orig_polys))
+    nv = maximum(map(Groebner.MultivariatePolynomials.nvariables, orig_polys))
     explen = nv + 1
     ord    = :deglex
     ch     = T <: Union{Integer, Rational} ? 0 : characteristic(parent(first(coefficients(f))))
@@ -173,7 +173,7 @@ end
 
 function exponents_wrt_vars(t, var2idx)
     exp = zeros(UInt16, length(var2idx))
-    for (v, p) in FastGroebner.MultivariatePolynomials.powers(t)
+    for (v, p) in Groebner.MultivariatePolynomials.powers(t)
         exp[var2idx[v]] = p
     end
     exp
@@ -185,10 +185,14 @@ function extract_exponents(
 
     npolys = length(orig_polys)
     exps = Vector{Vector{Vector{UInt16}}}(undef, npolys)
+    vars = MultivariatePolynomials.variables(orig_polys)
+    @assert issorted(vars, rev=true)
+
+    var2idx = Dict(vars[i] => i for i in 1:length(vars))
     for i in 1:npolys
         poly = orig_polys[i]
         exps[i] = Vector{Vector{UInt16}}(undef, length(poly))
-        for (j, t) in enumerate(FastGroebner.MultivariatePolynomials.monomials(poly))
+        for (j, t) in enumerate(Groebner.MultivariatePolynomials.monomials(poly))
             exps[i][j] = Vector{UInt16}(undef, ring.explen)
             exps[i][j][end] = zero(exps[i][j][end])
             et = exponents_wrt_vars(t, var2idx)
@@ -303,7 +307,7 @@ function convert_to_output(
 
     if ring.origring == :abstract
         convert_to_output(ring, parent(first(origpolys)), gbexps, gbcoeffs)
-    elseif ring.origring == :dynamic
+    elseif ring.origring == :multivariate
         convert_to_output(ring, origpolys, gbexps, gbcoeffs)
     elseif ring.origring == :hasparent
         convert_to_output(ring, parent(first(origpolys)), gbexps, gbcoeffs)
@@ -315,6 +319,40 @@ end
 
 #------------------------------------------------------------------------------
 
+checkexact(c, T::Type{BigInt}) = true
+checkexact(c, T::Type{Rational{U}}) where {U} = checkexact(numerator(c), U) && checkexact(denominator(c), U)
+function checkexact(c, T)
+    if typemin(T) <= c <= typemax(T)
+        return true
+    else
+        # TODO
+        throw(DomainError(c, "Coefficient $c in the final basis cannot be converted exactly to $T. Using big arithmetic in input should fix this."))
+        return false
+    end
+end
+
+function check_and_convert_coeffs(coeffs_zz, T)
+    cfs = Vector{T}(undef, length(coeffs_zz))
+    for i in 1:length(coeffs_zz)
+        checkexact(coeffs_zz[i], T)
+        cfs[i] = coeffs_zz[i]
+    end
+    cfs
+end
+
+function convert_coeffs_to_output(
+        polycoeffs::Vector{Rational{BigInt}},
+        ::Type{T}) where {T<:Rational}
+    check_and_convert_coeffs(polycoeffs, T)
+end
+
+function convert_coeffs_to_output(
+        polycoeffs::Vector{Rational{BigInt}},
+        ::Type{T}) where {T<:Integer}
+    coeffs_zz = scale_denominators!(polycoeffs)
+    check_and_convert_coeffs(coeffs_zz, T)
+end
+
 """
     `multivariate` conversion specialization
 """
@@ -324,14 +362,12 @@ function convert_to_output(
             gbexps::Vector{Vector{Vector{UInt16}}},
             gbcoeffs::Vector{Vector{I}}) where {P<:AbstractPolynomial{J}, I<:Rational} where {J}
 
-    coeffs_zz = scale_denominators!(gbcoeffs)
-
     origvars = MultivariatePolynomials.variables(first(origpolys))
     exported = Vector{P}(undef, length(gbexps))
     for i in 1:length(gbexps)
-        cfs    = copy(gbcoeffs[i])
+        cfs::Vector{J} = convert_coeffs_to_output(gbcoeffs[i], J)
         expvectors = [gbexps[i][j][1:end-1] for j in 1:length(gbexps[i])]
-        expvars = map(ev -> prod(origvars .^ ev), expvectors)
+        expvars = map(ev -> prod(origvars .^ Int.(ev)), expvectors)
         exported[i] = P(cfs, expvars)
     end
     exported
