@@ -413,6 +413,16 @@ end
 
 #------------------------------------------------------------------------------
 
+function create_polynomial(
+            origring::MPolyRing{T}, coeffs::Vector{T}, exps) where {T}
+    ground   = base_ring(origring)
+    if !isempty(coeffs)
+        MPoly{elem_type(ground)}(origring, coeffs, exps)
+    else
+        MPoly{elem_type(ground)}(origring)
+    end
+end
+
 """
     `AbstractAlgebra.MPolyRing` conversion specialization
 """
@@ -446,7 +456,7 @@ function convert_to_output(
     for i in 1:length(gbexps)
         cfs    = map(ground, gbcoeffs[i])
         exps   = UInt64.(hcat(gbexps[i]...))
-        exported[i] = MPoly{elem_type(ground)}(origring, cfs, exps)
+        exported[i] = create_polynomial(origring, cfs, exps)
     end
     exported
 end
@@ -466,7 +476,7 @@ function convert_to_output(
     for i in 1:length(gbexps)
         cfs    = map(ground, gbcoeffs[i])
         exps   = UInt64.(hcat(map(x -> x[end-1:-1:1], gbexps[i])...))
-        exported[i] = MPoly{elem_type(ground)}(origring, cfs, exps)
+        exported[i] = create_polynomial(origring, cfs, exps)
     end
     exported
 end
@@ -486,7 +496,7 @@ function convert_to_output(
     for i in 1:length(gbexps)
         cfs    = map(ground, gbcoeffs[i])
         exps   = UInt64.(hcat(map(x -> [x[end-1:-1:1]..., x[end]], gbexps[i])...))
-        exported[i] = MPoly{elem_type(ground)}(origring, cfs, exps)
+        exported[i] = create_polynomial(origring, cfs, exps)
     end
     exported
 end

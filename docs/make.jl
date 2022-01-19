@@ -10,6 +10,10 @@ makedocs(
 
    pages=[
       "Home" => "index.md",
+      "Tutorials" => Any[
+            "tutorials/system_solving.md",
+       ],
+       "Notes on theory" => "theory.md"
    ]
 )
 

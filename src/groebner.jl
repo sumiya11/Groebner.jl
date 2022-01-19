@@ -71,6 +71,7 @@ include("fglm/fglm.jl")
 
 # the heart of this library
 include("algorithm.jl")
+include("normalform.jl")
 
 # example systems definitions
 include("testgens.jl")
@@ -78,5 +79,6 @@ include("testgens.jl")
 
 export groebner
 export isgroebner
+export normalform
 
 end

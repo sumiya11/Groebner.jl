@@ -586,6 +586,35 @@ function initialize_structures(
     basis, basis_ht
 end
 
+
+# Initializes Basis with the given hashtable,
+# fills input data from exponents and coeffs
+function initialize_structures(
+            ring::PolyRing,
+            exponents::Vector{Vector{Vector{UInt16}}},
+            coeffs::Vector{Vector{UInt64}},
+            rng::Random.AbstractRNG,
+            tablesize::Int,
+            present_ht::MonomialHashtable)
+
+    # basis for storing basis elements,
+    # pairset for storing critical pairs of basis elements to assess,
+    # hashtable for hashing monomials occuring in the basis
+    basis    = initialize_basis(ring, length(exponents))
+
+    # filling the basis and hashtable with the given inputs
+    fill_data!(basis, present_ht, exponents, coeffs)
+
+    # sort input, smaller leading terms first
+    sort_gens_by_lead_increasing!(basis, present_ht)
+
+    # divide each polynomial by leading coefficient
+    # We do not need normalization for normal forms
+    # normalize_basis!(basis)
+
+    basis, present_ht
+end
+
 #------------------------------------------------------------------------------
 
 function reducegb_f4!(

@@ -26,13 +26,13 @@ using .Groebner: normal_form, reducegb, reducegb!,
     @test normal_form(y^3, G) == normal_form(y^4, G) == y
 
     G = [
-        3x*y + y,
-        4z + 5,
+        x*y + y,
+        z + 5,
     ]
-    @test normal_form(x*y, G) == -y//3
-    @test normal_form(3z - 1, G) == -19//4
+    @test normal_form(x*y, G) == -y
+    @test normal_form(3z - 1, G) == -16
 
-    @test normal_form(8x*y + 88z, [R(5)]) == 0
+    @test normal_form(8x*y + 88z, [R(1)]) == 0
 
     R, (x, y, z) = PolynomialRing(QQ, ["x","y","z"], ordering=:degrevlex)
     G = [
