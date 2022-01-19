@@ -23,6 +23,10 @@ Pkg.add("https://github.com/sumiya11/Groebner.jl")
 
 ## Interface
 
+```julia:load_groebner
+using Groebner # hide
+```
+
 {{doc groebner groebner fn}}
 
 {{doc isgroebner isgroebner fn}}
