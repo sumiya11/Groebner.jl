@@ -34,7 +34,7 @@ jobs:
     - run: julia -e '
             using Pkg;
             Pkg.add(["NodeJS", "PkgPage"]);
-            Pkg.develop("Groebner");
+            Pkg.add(url="https://github.com/sumiya11/Groebner.jl");
             using NodeJS;
             run(`$(npm_cmd()) install highlight.js purgecss`);
             import PkgPage;
