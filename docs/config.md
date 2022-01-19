@@ -18,12 +18,12 @@ The latter allows you to plug in values that you would have defined here.
              `prepath` to an empty string. Finally, adjust this if you want the
              deployed page to be in a subfolder e.g.: `YourPackage.jl/web/`.
 -->
-@def title       = "SymbolicUtils.jl"
+@def title       = "Groebner.jl"
 @def prepath     = ""
 @def description = """
-                   Parallelly process file trees
+                   Groebner basis computation
                    """
-@def authors     = "Shashi Gowda, Yingbo Ma, Mason Protter"
+@def authors     = "Alexander Demin"
 
 <!--  NAVBAR SPECS
   NOTE:
@@ -78,7 +78,7 @@ The latter allows you to plug in values that you would have defined here.
 
 @def add_github_view  = true
 @def add_github_star  = true
-@def github_repo      = "JuliaSymbolics/SymbolicUtils.jl"
+@def github_repo      = "sumiya11/Groebner.jl"
 
 <!-- SECTION LAYOUT
 NOTE:
