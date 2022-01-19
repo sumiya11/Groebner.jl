@@ -747,11 +747,11 @@ end
 #------------------------------------------------------------------------------
 
 """
-    Main function to calculate the Groebner basis of the given polynomial ideal
-    in degrevlex ordering and finite fields coefficients.
+Main function to calculate the Groebner basis of the given polynomial ideal
+in degrevlex ordering and finite fields coefficients.
 
-    Parameters
-    .
+Parameters
+.
 
 """
 function f4(ring::PolyRing,
