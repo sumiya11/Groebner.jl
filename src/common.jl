@@ -3,12 +3,12 @@
 
 
 #=
-    Constructs the reduced Groebner basis given that G is itself a Groebner basis,
-    strightforward approach for now :D
-    Note: groebner bases generating the same ideal meet the same reduced form
+Constructs the reduced Groebner basis given that G is itself a Groebner basis,
+strightforward approach for now :D
+Note: groebner bases generating the same ideal meet the same reduced form
 
-    Guaranteed that If <f1..fn> equals <g1..gm> as ideals, then
-        reducegb(groebner(<f1..fn>)) = reducegb(groebner(<g1..gm>))
+Guaranteed that If <f1..fn> equals <g1..gm> as ideals, then
+    reducegb(groebner(<f1..fn>)) = reducegb(groebner(<g1..gm>))
 
     Normalizes generators and sorts them by leading monomial, which is controversial
 =#
@@ -58,8 +58,13 @@ function normal_form_eder(h, G)
 end
 
 # Normal form of `h` with respect to generators `G`
+<<<<<<< HEAD
 #=
     Returns the normal form of polynomial h w.r.t Groebner basis G
+=======
+"""
+Returns the normal form of polynomial h w.r.t Groebner basis G
+>>>>>>> 87a0412823792bb991fe9dcbe63b086e82896a9c
 
 =#
 function _normal_form_reference(h, G)
@@ -115,12 +120,21 @@ end
 #------------------------------------------------------------------------------
 
 
+<<<<<<< HEAD
 #=
     Checks if the given set of polynomials `fs` is a Groebner basis,
          i.e all spoly's are reduced to zero.
     If `initial_gens` parameter is provided, also assess `initial_gens ⊆ fs` as ideals
 =#
 function _isgroebner_reference(fs::Vector{MPoly{T}}; initial_gens=[]) where {T}
+=======
+"""
+Checks if the given set of polynomials `fs` is a Groebner basis,
+     i.e all spoly's are reduced to zero.
+If `initial_gens` parameter is provided, also assess `initial_gens ⊆ fs` as ideals
+"""
+function isgroebner(fs::Vector{MPoly{T}}; initial_gens=[]) where {T}
+>>>>>>> 87a0412823792bb991fe9dcbe63b086e82896a9c
     sort!(fs, by=leading_monomial)
     for f in fs
         for g in fs

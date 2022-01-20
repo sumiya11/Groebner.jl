@@ -1,7 +1,11 @@
 # Groebner.jl
 
 [![Runtests](https://github.com/sumiya11/Groebner.jl/actions/workflows/Runtests.yml/badge.svg)](https://github.com/sumiya11/Groebner.jl/actions/workflows/Runtests.yml)
+<<<<<<< HEAD
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://sumiya11.github.io/Groebner.jl)
+=======
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://sumiya11.github.io/Groebner.jl/)
+>>>>>>> 87a0412823792bb991fe9dcbe63b086e82896a9c
 
 
 The package provides Groebner bases computation interface with the performance
