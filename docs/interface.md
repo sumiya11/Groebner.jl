@@ -8,8 +8,6 @@ where appropriate -->
 
 # Interface
 
-\tableofcontents
-
 ```julia:load_groebner
 using Groebner # hide
 ```
