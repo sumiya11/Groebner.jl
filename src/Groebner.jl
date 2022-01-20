@@ -40,10 +40,10 @@ import Logging: ConsoleLogger, LogLevel
 import MultivariatePolynomials
 import MultivariatePolynomials: AbstractPolynomial
 
-#
+# so, what is that exactly?
 include("utils.jl")
 
-#
+# some simple reference implementations
 include("common.jl")
 
 # input-output conversions for polynomials

@@ -15,11 +15,11 @@ The latter is assumed to be a Groebner basis.
 
 Uses the ordering on `basispolys` by default.
 If `ordering` is explicitly specialized, it takes precedence.
-**(On the fly ordering change not implemented yet :D)**
+*(On the fly ordering change not implemented yet :D)*
 
 The algorithm is randomized by default, but
 this can be changed with the `randomized` param.
-**(Derandomized version not implemented yet :D)**
+*(Derandomized version not implemented yet :D)*
 
 """
 function normalform(
