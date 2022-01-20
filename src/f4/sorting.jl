@@ -30,6 +30,38 @@ function sort_gens_by_lead_increasing!(basis::Basis, ht::MonomialHashtable)
     basis.coeffs[1:basis.ntotal] = basis.coeffs[inds]
 end
 
+# sorts generators and corresponding coefficients from basis
+# by their leading monomial in increasing ordering
+#
+# Used only once to sort output generators
+function sort_gens_by_lead_increasing_in_reduce!(basis::Basis, ht::MonomialHashtable)
+    gens = basis.gens
+    exps = ht.exponents
+    nnr  = basis.nonred
+
+    inds = collect(1:basis.nlead)
+
+    if ht.ord == :degrevlex
+        cmp  = (x, y) -> exponent_isless_drl(
+                                @inbounds(exps[gens[nnr[x]][1]]),
+                                @inbounds(exps[gens[nnr[y]][1]]))
+    elseif ht.ord == :lex
+        cmp  = (x, y) -> exponent_isless_lex(
+                                @inbounds(exps[gens[nnr[x]][1]]),
+                                @inbounds(exps[gens[nnr[y]][1]]))
+    else
+        cmp  = (x, y) -> exponent_isless_dl(
+                                @inbounds(exps[gens[nnr[x]][1]]),
+                                @inbounds(exps[gens[nnr[y]][1]]))
+    end
+    sort!(inds, lt=cmp)
+
+    # use array assignment insted of elemewise assignment
+    # Reason: slice array assignment uses fast setindex! based on unsafe copy
+    basis.gens[nnr[1:basis.nlead]]   = basis.gens[nnr[inds]]
+    basis.coeffs[nnr[1:basis.nlead]] = basis.coeffs[nnr[inds]]
+end
+
 #------------------------------------------------------------------------------
 
 # Sorts pairs from pairset in range [from, from+size]

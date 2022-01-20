@@ -1,4 +1,14 @@
 
+@testset "ff f4 reduce sort invariant" begin
+    R, (x, y, z) = PolynomialRing(GF(2^31 - 1), ["x","y","z"], ordering=:lex)
+
+    @test Groebner.groebner([x, y]) == Groebner.groebner([y, x]) == [y, x]
+
+    fs = [x^2 + y, x*y]
+    @test Groebner.groebner(fs) == [y^2, x*y, x^2 + y]
+
+end
+
 @testset "ff f4 yesreduce" begin
 
     root = Groebner.change_ordering(Groebner.rootn(3, ground=GF(2^31 - 1)), :degrevlex)

@@ -17,9 +17,9 @@ function test_params(rng, nvariables, exps, nterms,
                                 )
                                 isempty(set) && continue
                                 gb = Groebner.groebner(set)
-                                @test Groebner.isgroebner(gb, initial_gens=set)
+                                @test Groebner._isgroebner_reference(gb, initial_gens=set)
 
-                                if !Groebner.isgroebner(gb, initial_gens=set)
+                                if !Groebner._isgroebner_reference(gb, initial_gens=set)
                                     @error "Beda!" n e nt np gr ord
                                     println("Rng ", rng)
                                     println("Set ", set)

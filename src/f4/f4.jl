@@ -734,14 +734,9 @@ function reducegb_f4!(
         i += 1
     end
     basis.nlead = k
-end
 
-function isgroebner_f4(
-            ring::PolyRing,
-            exps::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{UInt64}})
-
-
+    # TODO
+    sort_gens_by_lead_increasing_in_reduce!(basis, ht)
 end
 
 #------------------------------------------------------------------------------
@@ -807,6 +802,14 @@ function f4(ring::PolyRing,
         select_normal!(pairset, basis, matrix, ht, symbol_ht)
         @debug "Selected $(divexact(matrix.nrows, 2)) pairs"
 
+        #=
+        @warn "noxd $d"
+        dump(basis, maxdepth = 5)
+        dump(matrix, maxdepth = 5)
+        println(ht.exponents[1:10])
+        println(symbol_ht.exponents[1:10])
+        =#
+
         symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
         @debug "Matrix of size $((matrix.nrows, matrix.ncols)), density TODO"
 
@@ -814,16 +817,19 @@ function f4(ring::PolyRing,
         @warn "xd $d"
         dump(basis, maxdepth = 5)
         dump(matrix, maxdepth = 5)
+        println(ht.exponents[1:10])
+        println(symbol_ht.exponents[1:10])
         =#
 
         # reduces polys and obtains new potential basis elements
         reduction!(basis, matrix, ht, symbol_ht)
         @debug "Matrix reduced, density TODO"
 
-        #=
-        @warn "after reduction"
-        dump(matrix, maxdepth = 5)
 
+        #@warn "after reduction"
+        #dump(matrix, maxdepth = 5)
+
+        #=
         printstyled("nice basis\n", color=:red)
         for (_, cfs, poly) in zip(1:basis.ntotal, basis.coeffs, basis.gens)
             for i in 1:length(poly)
@@ -911,3 +917,158 @@ function f4(ring::PolyRing,
 end
 
 #------------------------------------------------------------------------------
+
+function select_isgroebner!(
+        pairset::Pairset, basis::Basis, matrix::MacaulayMatrix,
+        ht::MonomialHashtable, symbol_ht::MonomialHashtable)
+
+    ps = pairset.pairs
+    npairs = pairset.load
+
+    sort_pairset_by_lcm!(pairset, npairs, ht)
+
+    reinitialize_matrix!(matrix, npairs)
+
+    uprows  = matrix.uprows
+    lowrows = matrix.lowrows
+
+    # polynomials from pairs in order (p11, p12)(p21, p21)
+    # (future rows of the matrix)
+    gens   = Vector{Int}(undef, 2*npairs)
+
+    # buffer !
+    etmp = ht.exponents[1]
+    i = 1
+    while i <= npairs
+        matrix.ncols += 1
+        load = 1
+        lcm = ps[i].lcm
+        j = i
+
+        # we collect all generators with same lcm into gens
+        while j <= npairs && ps[j].lcm == lcm
+            gens[load] = ps[j].poly1
+            load += 1
+            gens[load] = ps[j].poly2
+            load += 1
+            j += 1
+        end
+        load -= 1
+
+        # sort by number in the basis (by=identity)
+        sort_generators_by_position!(gens, load)
+
+        # now we collect reducers, and reduced
+
+        # first generator index in groebner basis
+        prev = gens[1]
+        # first generator in hash table
+        poly = basis.gens[prev]
+        # first generator lead monomial index in hash data
+        vidx = poly[1]
+
+        # first generator exponent
+        eidx = ht.exponents[vidx]
+        # exponent of lcm corresponding to first generator
+        elcm = ht.exponents[lcm]
+        for u in 1:ht.explen
+            etmp[u] = elcm[u] - eidx[u]
+        end
+        # now etmp contents complement to eidx in elcm
+
+        # hash of complement
+        htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
+
+        # add row as a reducer
+        matrix.nup += 1
+        uprows[matrix.nup] = multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly)
+        # map upper row to index in basis
+        matrix.up2coef[matrix.nup] = prev
+
+        # mark lcm column as reducer in symbolic hashtable
+        symbol_ht.hashdata[uprows[matrix.nup][1]].idx = 2
+        # increase number of rows set
+        matrix.nrows += 1
+
+        # over all polys with same lcm,
+        # add them to the lower part of matrix
+        for k in 1:load
+            # duplicate generator,
+            # we can do so as long as generators are sorted
+            if gens[k] == prev
+                continue
+            end
+
+            # if the table was reallocated
+            elcm = ht.exponents[lcm]
+
+            # index in gb
+            prev = gens[k]
+            # poly of indices of monoms in hash table
+            poly = basis.gens[prev]
+            vidx = poly[1]
+            # leading monom idx
+            eidx = ht.exponents[vidx]
+            for u in 1:ht.explen
+                etmp[u] = elcm[u] - eidx[u]
+            end
+
+            htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
+
+            # add row to be reduced
+            matrix.nlow += 1
+            lowrows[matrix.nlow] = multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly)
+            # map lower row to index in basis
+            matrix.low2coef[matrix.nlow] = prev
+
+            symbol_ht.hashdata[lowrows[matrix.nlow][1]].idx = 2
+
+            matrix.nrows += 1
+        end
+
+        i = j
+    end
+
+    resize!(matrix.lowrows, matrix.nrows - matrix.ncols)
+end
+
+function isgroebner_f4!(ring::PolyRing,
+                        basis::Basis,
+                        ht::MonomialHashtable,
+                        rng)
+
+    matrix = initialize_matrix(ring)
+    symbol_ht = initialize_secondary_hash_table(ht)
+    update_ht  = initialize_secondary_hash_table(ht)
+
+    pairset = initialize_pairset()
+
+    update!(pairset, basis, ht, update_ht)
+
+    if pairset.load == 0
+        return true
+    end
+
+    select_isgroebner!(pairset, basis, matrix, ht, symbol_ht)
+
+    symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
+
+    convert_hashes_to_columns!(matrix, symbol_ht)
+
+    sort_matrix_rows_increasing!(matrix)
+    sort_matrix_rows_decreasing!(matrix) # for pivots,  AB part
+
+    return exact_sparse_linear_algebra_isgroebner!(matrix, basis)
+end
+
+function isgroebner_f4(
+            ring::PolyRing,
+            exps::Vector{Vector{Vector{UInt16}}},
+            coeffs::Vector{Vector{UInt64}},
+            rng)
+
+    basis, ht = initialize_structures(ring, exps,
+                                        coeffs, rng, 2^16)
+
+    isgroebner_f4!(ring, basis, ht, rng)
+end

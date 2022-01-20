@@ -1,4 +1,6 @@
 
+#######################################
+
 """
 function groebner(
             polys::Vector{Poly};
@@ -15,6 +17,12 @@ function groebner(
     Uses the ordering on `polys` for computation by default.
     If `ordering` is specialized, it takes precedence.
 
+    By default, randomized computations and correctness checks are used,
+    meaning the result is correct with the probability not less than 99.9%.
+    If guaranteed correctness is needed, use `randomized=false`.
+
+    Random generator `rng` is responsible for hashing monomials during computation.
+
     By default, the function executes silently.
     This can be changed adjusting the `loglevel`.
 
@@ -23,13 +31,12 @@ function groebner(
     - `deglex`
     - `lex`
 
-    Random generator `rng` is responsible for hashing monomials during computation.
-
 """
 function groebner(
             polys::Vector{Poly};
             reduced::Bool=true,
             ordering::Symbol=:input,
+            randomized::Bool=true,
             rng::Rng=Random.MersenneTwister(42),
             loglevel::LogLevel=Logging.Warn
             ) where {Poly, Rng<:Random.AbstractRNG}
@@ -50,7 +57,7 @@ function groebner(
     else
         # if rational coefficients
         # Always returns rational coefficients #
-        bexps, bcoeffs = groebner_qq(ring, exps, coeffs, reduced, rng)
+        bexps, bcoeffs = groebner_qq(ring, exps, coeffs, reduced, randomized, rng)
     end
 
     #=
@@ -79,31 +86,6 @@ function groebner_ff(
     f4(ring, exps, coeffs, rng, reduced)
 end
 
-# TODO
-function groebner_ff(
-            ring::PolyRing,
-            exps::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{UInt64}},
-            reduced::Bool,
-            rng::Rng,
-            ::Val{:degrevlex}
-            ) where {Rng<:Random.AbstractRNG}
-    f4(ring, exps, coeffs, rng, reduced)
-end
-
-# TODO
-function groebner_ff(
-            ring::PolyRing,
-            exps::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{UInt64}},
-            reduced::Bool,
-            rng::Rng,
-            ::Val{:lex}
-            ) where {Rng<:Random.AbstractRNG}
-    gbexps, gbcoeffs = f4(ring, exps, coeffs, rng, reduced)
-    fglm(ring, gbexps, gbcoeffs, rng)
-end
-
 #######################################
 # Rational field groebner
 
@@ -112,38 +94,9 @@ function modular_f4_step(
             exps::Vector{Vector{Vector{UInt16}}},
             coeffs::Vector{Vector{UInt64}},
             rng::Rng,
-            reduced::Bool,
-            ::Val{:degrevlex}
+            reduced::Bool
             ) where {Rng<:Random.AbstractRNG}
 
-    f4(ring, exps, coeffs, rng, reduced)
-end
-
-function modular_f4_step(
-            ring::PolyRing,
-            exps::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{UInt64}},
-            rng::Rng,
-            reduced::Bool,
-            ::Val{:deglex}
-            ) where {Rng<:Random.AbstractRNG}
-
-    f4(ring, exps, coeffs, rng, reduced)
-end
-
-function modular_f4_step(
-            ring::PolyRing,
-            exps::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{UInt64}},
-            rng::Rng,
-            reduced::Bool,
-            ::Val{:lex}
-            ) where {Rng<:Random.AbstractRNG}
-
-    # TODO
-    # f4
-    # gbexps, gbcoeffs = f4(ring, exps, coeffs, rng, reduced)
-    # fglm(ring, gbexps, gbcoeffs, rng)
     f4(ring, exps, coeffs, rng, reduced)
 end
 
@@ -152,6 +105,7 @@ function groebner_qq(
             exps::Vector{Vector{Vector{UInt16}}},
             coeffs::Vector{Vector{Rational{BigInt}}},
             reduced::Bool,
+            randomized::Bool,
             rng::Rng,
             ) where {Rng<:Random.AbstractRNG}
 
@@ -164,11 +118,13 @@ function groebner_qq(
 
     prime::Int64 = 1
     modulo = BigInt(1)
+    moduli = Int[]
 
     i = 1
     while true
         # lucky reduction prime
         prime  = nextluckyprime(coeffs_zz, prime)
+        push!(moduli, prime)
         @info "$i: selected lucky prime $prime"
 
         # compute the image of coeffs_zz in GF(prime),
@@ -180,7 +136,7 @@ function groebner_qq(
         @info "Computing Groebner basis"
         gbexps, gbcoeffs_ff = modular_f4_step(
                                     ring_ff, exps, coeffs_ff,
-                                    rng, reduced, Val(ring.ord))
+                                    rng, reduced)
 
         # TODO: add majority rule based choice
 
@@ -199,15 +155,15 @@ function groebner_qq(
         gbcoeffs_qq = reconstruct_modulo(gbcoeffs_zz, modulo)
 
         # run correctness checks to assure the reconstrction is correct
-        # TODO: correctness_checks
-        if reconstruction_check(gbcoeffs_qq, modulo)
-            @info "Reconstructed successfully!"
+        if correctness_check(ring, exps, coeffs_zz, gbexps,
+                                gbcoeffs_qq, moduli, randomized, rng)
             break
         end
 
+
         # not correct, goto next prime
         i += 1
-        if i > 1000
+        if i > 10000
             @error "Something probably went wrong in groebner.."
             return
         end
@@ -216,27 +172,77 @@ function groebner_qq(
     gbexps, gbcoeffs_qq
 end
 
-#------------------------------------------------------------------------------
+#######################################
+# Generic isgroebner
 
 """
 function isgroebner(polys::Vector{Poly}) where {Poly}
 
     Checkes if the input set of polynomials is a Groebner basis.
 
-    At the moment only finite field coefficients are supported.
 """
-function isgroebner(polys::Vector{Poly}) where {Poly}
-    ring, exps, coeffs = convert_to_internal(polys)
-    isgroebner_ff(ring, exps, coeffs)
+function isgroebner(
+            polys::Vector{Poly};
+            ordering=:input,
+            randomized::Bool=true,
+            rng::Rng=Random.MersenneTwister(42),
+            loglevel::LogLevel=Logging.Warn
+    ) where {Poly, Rng}
+    #= set the logger =#
+    prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
+
+    #= extract ring information, exponents and coefficients
+       from input polynomials =#
+    # Copies input, so that polys would not be changed itself.
+    ring, exps, coeffs = convert_to_internal(polys, ordering)
+
+    #= compute the groebner basis =#
+    if ring.ch != 0
+        # if finite field
+        # Always returns UInt coefficients #
+        flag = isgroebner_ff(ring, exps, coeffs, rng)
+    else
+        # if rational coefficients
+        # Always returns rational coefficients #
+        flag = isgroebner_qq(ring, exps, coeffs, randomized, rng)
+    end
+
+    #=
+    Assuming ordering of `bexps` here matches `ring.ord`
+    =#
+
+    #= revert logger =#
+    Logging.global_logger(prev_logger)
+
+    flag
 end
 
-
+# UWU!
 function isgroebner_ff(
             ring::PolyRing,
             exps::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{UInt64}};)
+            coeffs::Vector{Vector{UInt64}},
+            rng)
 
-    isgroebner_f4(ring, exps, coeffs)
+    isgroebner_f4(ring, exps, coeffs, rng)
+end
+
+# TODO
+function isgroebner_qq(
+            ring::PolyRing,
+            exps::Vector{Vector{Vector{UInt16}}},
+            coeffs::Vector{Vector{Rational{BigInt}}},
+            randomized::Bool,
+            rng)
+
+    if randomized
+        coeffs_zz = scale_denominators!(coeffs)
+        goodprime = nextgoodprime(coeffs_zz, Int[], 2^30 + 3)
+        ring_ff, coeffs_ff = reduce_modulo(coeffs_zz, ring, goodprime)
+        isgroebner_f4(ring_ff, exps, coeffs_ff, rng)
+    else
+        error("Sorry, not randomized version is not implemented yet.")
+    end
 end
 
 #------------------------------------------------------------------------------

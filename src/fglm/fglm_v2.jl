@@ -36,7 +36,7 @@ function insertnexts!(
 end
 
 function extractnext!(m::NextMonomials)
-    # assume m.monoms is sorted
+    # assuming m.monoms is sorted (reversed)
     monom = m.monoms[m.load]
     m.load -= 1
     monom

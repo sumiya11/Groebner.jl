@@ -112,8 +112,8 @@ function katsura12(;ground=QQ)
     ]
 end
 
-function eco5()
-    R, (x1, x2, x3, x4, x5) = PolynomialRing(GF(1073741827), ["x$i" for i in 1:5])
+function eco5(;ground=GF(2^31-1))
+    R, (x1, x2, x3, x4, x5) = PolynomialRing(ground, ["x$i" for i in 1:5])
 
     fs = [
     (x1 + x1*x2 + x2*x3 + x3*x4)*x5 - 1,
@@ -124,8 +124,8 @@ function eco5()
     ]
 end
 
-function eco7()
-    R, (x1, x2, x3, x4, x5, x6, x7) = PolynomialRing(GF(1073741827), ["x$i" for i in 1:7])
+function eco7(;ground=GF(2^31-1))
+    R, (x1, x2, x3, x4, x5, x6, x7) = PolynomialRing(ground, ["x$i" for i in 1:7])
 
     fs = [
         (x1 + x1*x2 + x2*x3 + x3*x4 + x4*x5 + x5*x6)*x7 - 1,
@@ -139,8 +139,8 @@ function eco7()
     fs
 end
 
-function eco10()
-    R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9) = PolynomialRing(GF(1073741827), ["x$i" for i in 1:11])
+function eco10(;ground=GF(2^31-1))
+    R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9) = PolynomialRing(ground, ["x$i" for i in 1:11])
 
     fs = [
         x0*x1*x9+x1*x2*x9+x2*x3*x9+x3*x4*x9+x4*x5*x9+x5*x6*x9+x6*x7*x9+x7*x8*x9+x0*x9-1,
@@ -157,8 +157,8 @@ function eco10()
     fs
 end
 
-function eco11()
-    R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = PolynomialRing(GF(1073741827), ["x$i" for i in 1:11])
+function eco11(;ground=GF(2^31-1))
+    R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = PolynomialRing(ground, ["x$i" for i in 1:11])
 
     fs = [
         x0*x1*x10+x1*x2*x10+x2*x3*x10+x3*x4*x10+x4*x5*x10+x5*x6*x10+x6*x7*x10+x7*x8*x10+x8*x9*x10+x0*x10-1,
@@ -176,8 +176,8 @@ function eco11()
     fs
 end
 
-function eco12()
-    R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11) = PolynomialRing(GF(1073741827), ["x$i" for i in 1:11])
+function eco12(;ground=GF(2^31-1))
+    R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11) = PolynomialRing(ground, ["x$i" for i in 1:11])
 
     fs = [
         x0*x1*x11+x1*x2*x11+x2*x3*x11+x3*x4*x11+x4*x5*x11+x5*x6*x11+x6*x7*x11+x7*x8*x11+x8*x9*x11+x9*x10*x11+x0*x11-1,

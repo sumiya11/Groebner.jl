@@ -41,15 +41,19 @@ end
 #------------------------------------------------------------------------------
 
 # coerce each coeff in `coeffs` into residuals modulo `prime`
-function coerce_coeffs(coeffs::Vector{BigInt}, prime::Int)
+function reduce_modulo(coeffs::Vector{BigInt}, prime::Int)
     ffcoeffs = Vector{UInt64}(undef, length(coeffs))
     for i in 1:length(coeffs)
         # TODO: faster
         # convert is guaranteed to be exact
-        while coeffs[i] < 0
-            coeffs[i] += prime
+        c = coeffs[i]
+
+        if c < 0
+            #println(c, " ", prime*(div(c, prime) + 1) )
+            c = c - prime*(div(c, prime) - 1)
         end
-        ffcoeffs[i] = UInt64((coeffs[i] + prime) % prime)
+        #println(c)
+        ffcoeffs[i] = UInt64(c % prime)
     end
     ffcoeffs
 end
@@ -61,7 +65,7 @@ function reduce_modulo(
 
     ffcoeffs = Vector{Vector{UInt64}}(undef, length(coeffs))
     for i in 1:length(coeffs)
-        ffcoeffs[i] = coerce_coeffs(coeffs[i], prime)
+        ffcoeffs[i] = reduce_modulo(coeffs[i], prime)
     end
     ring_ff = PolyRing(ring.nvars, ring.explen, ring.ord, prime, :abstract)
     ring_ff, ffcoeffs
@@ -69,6 +73,7 @@ end
 
 #------------------------------------------------------------------------------
 
+# Not used
 # checks if coefficients in coeffs are not large compared to modulo
 # Having relatively large coeffs would mean that reconstruction probably failed
 function reconstruction_check(
@@ -81,7 +86,7 @@ function reconstruction_check(
             c = coeffs[i][j]
             # heuristic
             # TODO: a better one
-            pval = ( 2*numerator(c) * denominator(c) ) ^ 2
+            pval = ( numerator(c) + denominator(c) ) ^ 2
             if pval >= modulo
                 return false
             end
@@ -122,4 +127,18 @@ function nextluckyprime(
     end
 
     candidate
+end
+
+#------------------------------------------------------------------------------
+
+function nextgoodprime(
+        coeffs::Vector{Vector{BigInt}},
+        moduli::Vector{Int},
+        prevprime::Int)
+
+    p = nextluckyprime(coeffs, prevprime)
+    if p in moduli
+        return nextgoodprime(coeffs, moduli, p)
+    end
+    return p
 end

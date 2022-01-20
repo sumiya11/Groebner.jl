@@ -451,6 +451,76 @@ function convert_hashes_to_columns!(
     matrix.col2hash = col2hash
 end
 
+function exact_sparse_linear_algebra_isgroebner!(matrix, basis)
+    ncols  = matrix.ncols
+    nlow   = matrix.nlow
+    nright = matrix.nright
+    nleft  = matrix.nleft
+
+    # known pivots
+    # no_copy
+    pivs = Vector{Vector{Int}}(undef, ncols)
+    @inbounds for i in 1:matrix.nup
+        pivs[i] = matrix.uprows[i]
+    end
+
+    # CHANGED in order to prevent bug
+    # when several rows in the matrix are equal
+    l2c_tmp = Vector{Int}(undef, max(ncols, matrix.nlow))
+    @inbounds for i in 1:nlow
+        l2c_tmp[matrix.lowrows[i][1]] = matrix.low2coef[i]
+    end
+    # CHANGED
+    # no_copy
+    rowidx2coef = matrix.low2coef
+    matrix.low2coef = l2c_tmp
+
+    # unknown pivots
+    # (not discovered yet)
+    # we will modify them inplace when reducing by pivs
+    upivs = matrix.lowrows
+
+    densecoeffs = zeros(UInt64, ncols)
+
+    #=
+    @warn "before reducing low"
+    dump(matrix, maxdepth=5)
+    @warn "lowrow2coef" rowidx2coef
+    =#
+
+    for i in 1:nlow
+        # select next row to be reduced
+        # npiv ~ exponents
+        rowexps = upivs[i]
+
+        # corresponding coefficients from basis
+        # (no need to copy here)
+        cfsref  = basis.coeffs[rowidx2coef[i]]
+
+        k = 0
+
+        # we load coefficients into dense array
+        # into rowexps indices
+        # TODO: move this
+        densecoeffs .= UInt64(0)
+        @inbounds for j in 1:length(rowexps)
+            densecoeffs[rowexps[j]] = cfsref[j]
+        end
+
+        # reduce it with known pivots from matrix.uprows
+        # first nonzero in densecoeffs is at startcol position
+        startcol = rowexps[1]
+        # zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(densecoeffs, matrix, basis, pivs, startcol, -1)
+        zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(densecoeffs, matrix, basis, pivs, startcol, -1)
+        # @warn "reduced " zeroed newrow newcfs
+        # if fully reduced
+        zeroed && continue
+
+        return false
+    end
+    return true
+end
+
 #------------------------------------------------------------------------------
 
 function exact_sparse_rref_nf!(

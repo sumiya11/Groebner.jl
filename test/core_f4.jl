@@ -12,7 +12,7 @@ fs = [
 ]
 gb = Groebner.groebner(fs, reduced=false)
 # println(gb)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 #=
     ans is
     y^2 + x,
@@ -26,7 +26,7 @@ fs = [
 ]
 gb = Groebner.groebner(fs, reduced=false)
 # println(gb)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 
 fs = [
     x + y,
@@ -34,7 +34,7 @@ fs = [
 ]
 gb = Groebner.groebner(fs, reduced=false)
 # println(gb)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 
 fs = [
     x^2 + 5,
@@ -42,7 +42,7 @@ fs = [
 ]
 gb = Groebner.groebner(fs, reduced=false)
 # println(gb)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 
 fs = [
     y,
@@ -50,7 +50,7 @@ fs = [
 ]
 gb = Groebner.groebner(fs, reduced=false)
 # println(gb)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 
 fs = [
     5y,
@@ -58,7 +58,7 @@ fs = [
 ]
 gb = Groebner.groebner(fs, reduced=false)
 # println(gb)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 
 fs = [
     y^2 + x,
@@ -67,7 +67,7 @@ fs = [
 ]
 gb = Groebner.groebner(fs, reduced=false)
 # println(gb)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 @test gb == [R(1)]
 
 fs = [
@@ -76,45 +76,45 @@ fs = [
 ]
 gb = Groebner.groebner(fs, reduced=false)
 # println(gb)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 
 root = Groebner.change_ordering(Groebner.rootn(3, ground=GF(2^31 - 1)), :degrevlex)
 gb = Groebner.groebner(root, reduced=false)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 
 root = Groebner.change_ordering(Groebner.rootn(4, ground=GF(2^31 - 1)), :degrevlex)
 gb = Groebner.groebner(root, reduced=false)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 
 for proot in Groebner.Combinatorics.permutations(root)
     gb = Groebner.groebner(proot, reduced=false)
-    @test Groebner.isgroebner(Groebner.reducegb(gb))
+    @test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 end
 
 root = Groebner.change_ordering(Groebner.rootn(8, ground=GF(2^31 - 1)), :degrevlex)
 gb = Groebner.groebner(root, reduced=false)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 
 noon = Groebner.change_ordering(Groebner.noon3(ground=GF(2^31 - 1)), :degrevlex)
 gb = Groebner.groebner(noon, reduced=false)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 
 for pnoon in Groebner.Combinatorics.permutations(noon)
     gb = Groebner.groebner(pnoon, reduced=false)
-    @test Groebner.isgroebner(Groebner.reducegb(gb))
+    @test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 end
 
 noon = Groebner.change_ordering(Groebner.noon4(ground=GF(2^31 - 1)), :degrevlex)
 gb = Groebner.groebner(noon, reduced=false)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 
 eco = Groebner.change_ordering(Groebner.eco5(), :degrevlex)
 gb = Groebner.groebner(eco, reduced=false)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 
 ku = Groebner.change_ordering(Groebner.ku10(ground=GF(2^31 - 1)), :degrevlex)
 gb = Groebner.groebner(ku, reduced=false)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 
 end
 
@@ -157,7 +157,7 @@ fs = [
     y + 1
 ]
 gb = Groebner.groebner(fs, reduced=false)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 @test gb == [R(1)]
 
 fs = [
@@ -165,22 +165,22 @@ fs = [
     2*x*y^2 + 3*x*y
 ]
 gb = Groebner.groebner(fs, reduced=false)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 @test gb ≂ [ x*y^2 + 1073741825*x*y, x^2*y]
 
 
 root = Groebner.rootn(3, ground=GF(2^31 - 1))
 gb = Groebner.groebner(root, reduced=false)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 
 root = Groebner.rootn(4, ground=GF(2^31 - 1))
 gb = Groebner.groebner(root, reduced=false)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 
 #=
 noon = Groebner.noon3(ground=GF(2^31 - 1))
 gb = Groebner.groebner(noon, reduced=false)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 =#
 
 end
@@ -194,28 +194,28 @@ fs = [
     x*y - y^2
 ]
 gb = Groebner.groebner(fs, reduced=true)
-@test Groebner.isgroebner(gb, initial_gens=fs)
+@test Groebner._isgroebner_reference(gb, initial_gens=fs)
 
 fs = [
     x + y,
     x^2 + y
 ]
 gb = Groebner.groebner(fs, reduced=true)
-@test Groebner.isgroebner(gb, initial_gens=fs)
+@test Groebner._isgroebner_reference(gb, initial_gens=fs)
 
 fs = [
     y,
     x*y + x
 ]
 gb = Groebner.groebner(fs, reduced=false)
-@test Groebner.isgroebner(gb, initial_gens=fs)
+@test Groebner._isgroebner_reference(gb, initial_gens=fs)
 
 fs = [
     x^2 + 5,
     2y^2 + 3
 ]
 gb = Groebner.groebner(fs, reduced=false)
-@test Groebner.isgroebner(gb, initial_gens=fs)
+@test Groebner._isgroebner_reference(gb, initial_gens=fs)
 
 fs = [
     y^2 + x,
@@ -223,34 +223,34 @@ fs = [
     y + 1
 ]
 gb = Groebner.groebner(fs, reduced=false)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
-@test Groebner.isgroebner(gb, initial_gens=fs)
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
+@test Groebner._isgroebner_reference(gb, initial_gens=fs)
 
 fs = [
     x^2*y^2,
     2*x*y^2 + 3*x*y
 ]
 gb = Groebner.groebner(fs, reduced=false)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
-@test Groebner.isgroebner(gb, initial_gens=fs)
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
+@test Groebner._isgroebner_reference(gb, initial_gens=fs)
 
 
 root = Groebner.change_ordering(Groebner.rootn(3, ground=GF(2^31 - 1)), :deglex)
 gb = Groebner.groebner(root, reduced=true)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 
 
 root = Groebner.change_ordering(Groebner.rootn(4, ground=GF(2^31 - 1)), :deglex)
 gb = Groebner.groebner(root, reduced=true)
-@test Groebner.isgroebner(gb, initial_gens=root)
+@test Groebner._isgroebner_reference(gb, initial_gens=root)
 
 noon = Groebner.change_ordering(Groebner.noonn(3, ground=GF(2^31 - 1)), :deglex)
 gb = Groebner.groebner(noon, reduced=false)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 
 noon = Groebner.change_ordering(Groebner.noonn(4, ground=GF(2^31 - 1)), :deglex)
 gb = Groebner.groebner(noon, reduced=false)
-@test Groebner.isgroebner(Groebner.reducegb(gb))
+@test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 
 end
 
