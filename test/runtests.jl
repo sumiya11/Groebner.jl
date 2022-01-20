@@ -39,6 +39,6 @@ end
     @includetests ["hard_problems_f4", "large_problems_f4"]
 
     if try_import(:DynamicPolynomials)
-        @includetests ["dynamic_io", "dynamic_core"]
+        @includetests ["io_dynamic", "core_dynamic"]
     end
 end

@@ -143,11 +143,11 @@ end
 
 # TODO: check type stability
 function extract_ring(
-        orig_polys::Vector{<:AbstractPolynomial{T}}) where {T}
+        orig_polys::Vector{<:AbstractPolynomialLike{T}}) where {T}
 
     f = first(orig_polys)
 
-    nv = maximum(map(Groebner.MultivariatePolynomials.nvariables, orig_polys))
+    nv = Groebner.MultivariatePolynomials.nvariables(orig_polys)
     explen = nv + 1
     ord    = :deglex
     ch     = T <: Union{Integer, Rational} ? 0 : characteristic(parent(first(coefficients(f))))
@@ -161,7 +161,7 @@ end
 
 function extract_coeffs_qq(
             ring::PolyRing,
-            orig_polys::Vector{T}) where {T<:AbstractPolynomial{U}} where {U}
+            orig_polys::Vector{T}) where {T<:AbstractPolynomialLike{U}} where {U}
     npolys = length(orig_polys)
     coeffs = Vector{Vector{Rational{BigInt}}}(undef, npolys)
     for i in 1:npolys
@@ -179,9 +179,13 @@ function exponents_wrt_vars(t, var2idx)
     exp
 end
 
+multivariate_length(p::MultivariatePolynomials.AbstractMonomialLike) = 1
+multivariate_length(p::MultivariatePolynomials.AbstractTermLike) = 1
+multivariate_length(p::AbstractPolynomialLike) = length(p)
+
 function extract_exponents(
             ring::PolyRing,
-            orig_polys::Vector{T}) where {T<:AbstractPolynomial{U}} where {U}
+            orig_polys::Vector{T}) where {T<:AbstractPolynomialLike{U}} where {U}
 
     npolys = length(orig_polys)
     exps = Vector{Vector{Vector{UInt16}}}(undef, npolys)
@@ -191,8 +195,8 @@ function extract_exponents(
     var2idx = Dict(vars[i] => i for i in 1:length(vars))
     for i in 1:npolys
         poly = orig_polys[i]
-        exps[i] = Vector{Vector{UInt16}}(undef, length(poly))
-        for (j, t) in enumerate(Groebner.MultivariatePolynomials.monomials(poly))
+        exps[i] = Vector{Vector{UInt16}}(undef, multivariate_length(poly))
+        for (j, t) in enumerate(MultivariatePolynomials.monomials(poly))
             exps[i][j] = Vector{UInt16}(undef, ring.explen)
             exps[i][j][end] = zero(exps[i][j][end])
             et = exponents_wrt_vars(t, var2idx)
@@ -210,7 +214,7 @@ end
 """
 function convert_to_internal(
         orig_polys::Vector{T},
-        ordering::Symbol) where {T<:AbstractPolynomial{U}} where {U}
+        ordering::Symbol) where {T<:AbstractPolynomialLike{U}} where {U}
 
     isempty(orig_polys) && error("Empty input")
     ordering in (:input, :lex, :degrevlex, :deglex) || error("Not supported ordering $ordering")
@@ -360,15 +364,17 @@ function convert_to_output(
             ring::PolyRing,
             origpolys::Vector{P},
             gbexps::Vector{Vector{Vector{UInt16}}},
-            gbcoeffs::Vector{Vector{I}}) where {P<:AbstractPolynomial{J}, I<:Rational} where {J}
+            gbcoeffs::Vector{Vector{I}}) where {P<:AbstractPolynomialLike{J}, I<:Rational} where {J}
 
-    origvars = MultivariatePolynomials.variables(first(origpolys))
-    exported = Vector{P}(undef, length(gbexps))
+    origvars = MultivariatePolynomials.variables(origpolys)
+    # xd
+    T = typeof(origpolys[1] + origpolys[1])
+    exported = Vector{T}(undef, length(gbexps))
     for i in 1:length(gbexps)
         cfs::Vector{J} = convert_coeffs_to_output(gbcoeffs[i], J)
-        expvectors = [gbexps[i][j][1:end-1] for j in 1:length(gbexps[i])]
-        expvars = map(ev -> prod(origvars .^ Int.(ev)), expvectors)
-        exported[i] = P(cfs, expvars)
+        expvectors = [map(Int, gbexps[i][j][1:end-1]) for j in 1:length(gbexps[i])]
+        expvars = map(t -> t[1]*prod(map(^, origvars, t[2])), zip(cfs, expvectors))
+        exported[i] = sum(expvars)
     end
     exported
 end

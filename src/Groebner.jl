@@ -36,7 +36,7 @@ import Logging
 import Logging: ConsoleLogger, LogLevel
 
 import MultivariatePolynomials
-import MultivariatePolynomials: AbstractPolynomial
+import MultivariatePolynomials: AbstractPolynomial, AbstractPolynomialLike
 
 # so, what is that exactly?
 include("utils.jl")

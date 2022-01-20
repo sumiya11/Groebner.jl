@@ -37,7 +37,3 @@ using AbstractAlgebra
     gb = Groebner.groebner(fs)
     @test parent(gb[1]) == R
 end
-
-@testset "MultivariatePolynomials io consistency" begin
-
-end

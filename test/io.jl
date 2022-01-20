@@ -1,5 +1,4 @@
 
-
 using AbstractAlgebra
 
 @testset "Input-output AbstractAlgebra" begin
@@ -106,34 +105,4 @@ end
     ring.origring = :hasparent
     fsfs = Groebner.convert_to_output(ring, fs, exps, cfs)
     @test fsfs == fs
-end
-
-# using DynamicPolynomials
-
-@testset "Input-output DynamicPolynomials" begin
-
-    #=
-    ff = GF(2^31 - 1)
-    @polyvar x y
-
-    fs = [x^2*y + 3//4, (2^31 - 5)*x - (2^31 - 4)*y]
-    ring, exps, cfs = Groebner.convert_to_internal(fs, :input)
-    fsfs = Groebner.convert_to_output(ring, fs, exps, cfs)
-    @test fsfs == fs
-    =#
-    
-    #=
-    fs = [x^2 + 1, (2^31 - 5)*x - (2^31 - 4)*y]
-    ring, exps, cfs = Groebner.convert_to_internal(fs, :input)
-    fsfs = Groebner.convert_to_output(ring, fs, exps, cfs)
-    @test fsfs == fs
-    =#
-
-    #= DynamicPolynomials does not work with AbstractAlgebra
-    fs = [x^2*y + ff(1), ff(2)*x - (2^31 - 4)*y]
-    ring, exps, cfs = Groebner.convert_to_internal(fs, :input)
-    fsfs = Groebner.convert_to_output(ring, fs, exps, cfs)
-    @test fsfs == fs
-    =#
-
 end
