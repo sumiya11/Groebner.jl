@@ -44,6 +44,7 @@ polys = [x^3 + y^2, x*y + x^2];
 
 ..compute a *nonreduced* Groebner basis for it..
 ```julia:aagb
+using Groebner
 basis = groebner(polys, reduced=false)
 ```
 
