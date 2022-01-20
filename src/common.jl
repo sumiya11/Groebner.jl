@@ -58,13 +58,8 @@ function normal_form_eder(h, G)
 end
 
 # Normal form of `h` with respect to generators `G`
-<<<<<<< HEAD
 #=
     Returns the normal form of polynomial h w.r.t Groebner basis G
-=======
-"""
-Returns the normal form of polynomial h w.r.t Groebner basis G
->>>>>>> 87a0412823792bb991fe9dcbe63b086e82896a9c
 
 =#
 function _normal_form_reference(h, G)
@@ -120,21 +115,12 @@ end
 #------------------------------------------------------------------------------
 
 
-<<<<<<< HEAD
-#=
-    Checks if the given set of polynomials `fs` is a Groebner basis,
-         i.e all spoly's are reduced to zero.
-    If `initial_gens` parameter is provided, also assess `initial_gens ⊆ fs` as ideals
-=#
-function _isgroebner_reference(fs::Vector{MPoly{T}}; initial_gens=[]) where {T}
-=======
 """
 Checks if the given set of polynomials `fs` is a Groebner basis,
      i.e all spoly's are reduced to zero.
 If `initial_gens` parameter is provided, also assess `initial_gens ⊆ fs` as ideals
 """
-function isgroebner(fs::Vector{MPoly{T}}; initial_gens=[]) where {T}
->>>>>>> 87a0412823792bb991fe9dcbe63b086e82896a9c
+function _isgroebner_reference(fs::Vector{MPoly{T}}; initial_gens=[]) where {T}
     sort!(fs, by=leading_monomial)
     for f in fs
         for g in fs

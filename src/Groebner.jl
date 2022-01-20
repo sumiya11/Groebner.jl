@@ -73,8 +73,8 @@ include("fglm/fglm.jl")
 include("algorithm.jl")
 include("normalform.jl")
 
+# functions to check for correctness of algorithms
 include("correctness.jl")
-
 
 # example systems definitions
 include("testgens.jl")
