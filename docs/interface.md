@@ -8,11 +8,11 @@ where appropriate -->
 
 # Interface
 
+We export the following functions
+
 ```julia:load_groebner
 using Groebner # hide
 ```
-
-## Groebner bases
 
 {{doc groebner groebner fn}}
 
