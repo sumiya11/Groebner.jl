@@ -1,5 +1,4 @@
 
-using .Groebner: groebner
 using AbstractAlgebra
 
 @testset "Groebner modular" begin
