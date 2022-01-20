@@ -6,7 +6,7 @@ the config file by setting hasmath = false for instance and just setting it to t
 where appropriate -->
 
 
-# Groebner
+# Groebner.jl
 
 
 `Groebner.jl` is a package for fast and generic Gröbner bases computations
@@ -16,9 +16,9 @@ based on Faugère's F4 algorithm [[1]](https://www-polsys.lip6.fr/~jcf/Papers/F9
 
 To install Groebner.jl, use the Julia package manager:
 
-```julia
+```julia:install
 using Pkg
-Pkg.add("https://github.com/sumiya11/Groebner.jl")
+Pkg.add(url="https://github.com/sumiya11/Groebner.jl")
 ```
 
 For a detailed description of exported functions and their input parameters please see **Interface**. Meanwhile, below are simple usage examples.
@@ -50,7 +50,11 @@ isgroebner(basis)
 
 ### with `DynamicPolynomials`
 
-We will compute the basis for the `noon-2` system, arising from  cellular network dynamics analysis [[2]](https://www.jstor.org/stable/2101937):
+We will compute the basis for the `noon-2` system, arising from cellular network dynamics analysis [[2]](https://www.jstor.org/stable/2101937):
+
+```julia:install_dynamic
+Pkg.add("DynamicPolynomials") # hide
+```
 
 ```julia:aaimport
 using DynamicPolynomials
