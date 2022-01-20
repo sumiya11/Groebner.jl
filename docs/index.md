@@ -32,6 +32,10 @@ are supported as input.
 
 Let's import `AbstractAlgebra`, create a system over a finite field..
 
+```julia:install_aa
+Pkg.add("AbstractAlgebra") # hide
+```
+
 ```julia:aaimport
 using AbstractAlgebra
 R, (x, y) = PolynomialRing(GF(2^31 - 1), ["x", "y"])
