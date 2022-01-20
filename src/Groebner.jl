@@ -32,8 +32,6 @@ import Random
 # we want RadixSort to sort exponents (?)
 import SortingAlgorithms
 
-using PrettyPrinting
-
 import Logging
 import Logging: ConsoleLogger, LogLevel
 
