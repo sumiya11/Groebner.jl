@@ -21,7 +21,7 @@ using Pkg
 Pkg.add(url="https://github.com/sumiya11/Groebner.jl")
 ```
 
-For a detailed description of exported functions and their input parameters please see **Interface**. Meanwhile, below are simple usage examples.
+For a detailed description of exported functions and their input parameters please see page **Interface**. Meanwhile, below are simple usage examples.
 
 ## Examples
 
@@ -30,7 +30,7 @@ are supported as input.
 
 ### with `AbstractAlgebra`
 
-Let's import `AbstractAlgebra`, create a system over a finite field..
+Let's import `AbstractAlgebra`, create a system over a finite field
 
 ```julia:install_aa
 Pkg.add("AbstractAlgebra") # hide
@@ -42,15 +42,20 @@ R, (x, y) = PolynomialRing(GF(2^31 - 1), ["x", "y"])
 polys = [x^3 + y^2, x*y + x^2];
 ```
 
-..compute a *nonreduced* Groebner basis for it..
+compute a *nonreduced* Groebner basis for it
 ```julia:aagb
 using Groebner
 basis = groebner(polys, reduced=false)
 ```
 
-..and check correctness of result
+and check correctness of result
 ```julia:aaisgb
 isgroebner(basis)
+```
+
+Now, having a `basis` of the ideal `<polys> = <x^3 + y^2, x*y + x^2>` computed, we can tackle the *ideal membership problem* for `polys`. Recall that a polynomial lies in the ideal iff it's normal form w.r.t a `basis` is zero. Let's check if `x^2y^2 + 2x^3y - xy^2` is a member of `<polys>`!
+```julia:aagb
+normalform(basis, x^2y^2 + 2x^3y - xy^2)
 ```
 
 ### with `DynamicPolynomials`
@@ -69,3 +74,13 @@ system = [10*x1*x2^2 - 11*x1 + 10,
 
 groebner(system)
 ```
+
+## Constraints
+
+There are some limitations of the package we'd like to mention here.
+
+**[TODO]** Currently, it is not recommended to compute the basis for large (>3 variables) ideals with `:lex` ordering. The reason is that the implementation is optimized for degree orderings (`:deglex` or `:degrevlex`), but is quite bad for lexicographical ones. Please consider using degree orderings.
+
+**[TODO]** We also note that `groebner` implementation *is randomized*.
+This means the result is correct with a high probability
+(some reasons make it safe to assume the probability of correctness >99.9%, but no rigorous proofs were carried out yet).

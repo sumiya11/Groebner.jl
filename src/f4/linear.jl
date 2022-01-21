@@ -136,13 +136,14 @@ function reduce_dense_row_by_known_pivots_sparse!(
 
     # new row nonzero elements count
     k = 0
+    uzero = UInt64(0)
 
     # new pivot index
     np = -1
 
     for i in startcol:ncols
         # if row element zero - no reduction
-        @inbounds if densecoeffs[i] == 0
+        @inbounds if densecoeffs[i] == uzero
             continue
         end
         # if pivot not defined
@@ -186,7 +187,7 @@ function reduce_dense_row_by_known_pivots_sparse!(
     # where k - number of structural nonzeros in new reduced row, k > 0
     j = 1
     @inbounds for i in np:ncols # from new pivot
-        if densecoeffs[i] != 0
+        @inbounds if densecoeffs[i] != uzero
             newrow[j] = i
             newcfs[j] = densecoeffs[i]
             j += 1

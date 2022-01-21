@@ -457,10 +457,13 @@ function insert_multiplied_poly_in_hash_table!(
         # println("monom of index $(poly[l]) : $e")
 
         lastidx = symbol_ht.load + 1
+        #=
         if !isassigned(sexps, lastidx)
             sexps[lastidx] = Vector{UInt16}(undef, explen)
         end
         enew = sexps[lastidx]
+        =#
+        @inbounds enew = sexps[1]
         @inbounds for j in 1:explen
             # multiplied monom exponent
             enew[j] = etmp[j] + e[j]
@@ -498,6 +501,14 @@ function insert_multiplied_poly_in_hash_table!(
         end
 
         # add multiplied exponent to hash table
+        if !isassigned(sexps, lastidx)
+            sexps[lastidx] = Vector{UInt16}(undef, explen)
+        end
+        sexpsnew = sexps[lastidx]
+        for j in 1:explen
+            # multiplied monom exponent
+            @inbounds sexpsnew[j] = enew[j]
+        end
         symbol_ht.hashtable[k] = lastidx
 
         divmask = generate_monomial_divmask(enew, symbol_ht)
