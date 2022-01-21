@@ -80,7 +80,3 @@ groebner(system)
 There are some limitations of the package we'd like to mention here.
 
 **[TODO]** Currently, it is not recommended to compute the basis for large (>3 variables) ideals with `:lex` ordering. The reason is that the implementation is optimized for degree orderings (`:deglex` or `:degrevlex`), but is quite bad for lexicographical ones. Please consider using degree orderings.
-
-**[TODO]** We also note that `groebner` implementation *is randomized*.
-This means the result is correct with a high probability
-(some reasons make it safe to assume the probability of correctness >99.9%, but no rigorous proofs were carried out yet).

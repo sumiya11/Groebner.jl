@@ -49,10 +49,8 @@ function reduce_modulo(coeffs::Vector{BigInt}, prime::Int)
         c = coeffs[i]
 
         if c < 0
-            #println(c, " ", prime*(div(c, prime) + 1) )
             c = c - prime*(div(c, prime) - 1)
         end
-        #println(c)
         ffcoeffs[i] = UInt64(c % prime)
     end
     ffcoeffs
