@@ -42,13 +42,13 @@ R, (x, y) = PolynomialRing(GF(2^31 - 1), ["x", "y"])
 polys = [x^3 + y^2, x*y + x^2];
 ```
 
-compute a *nonreduced* Groebner basis for it
+and compute a *nonreduced* Groebner basis for it
 ```julia:aagb
 using Groebner
 basis = groebner(polys, reduced=false)
 ```
 
-and check correctness of result
+We can also check that a set of polynomials forms a basis
 ```julia:aaisgb
 isgroebner(basis)
 ```
