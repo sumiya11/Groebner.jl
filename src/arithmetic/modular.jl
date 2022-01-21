@@ -34,6 +34,7 @@ function rational_reconstruction(a::I, m::I) where {I<:Union{Int, BigInt}}
     V = (I(0), I(1), a)
     while abs(V[3]) >= bnd
         q = div(U[3], V[3])
+        # TODO: use MutableArithmetics
         T = U .- q .* V
         U = V
         V = T

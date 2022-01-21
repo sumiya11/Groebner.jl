@@ -77,6 +77,7 @@ function initialize_basis_hash_table(
         rng::Random.AbstractRNG;
         initial_size::Int=2^16)
 
+    # TODO: adapive choice of `initial_size`
     exponents = Vector{Vector{UInt16}}(undef, initial_size)
     hashdata  = Vector{Hashvalue}(undef, initial_size)
     hashtable = zeros(Int, initial_size)

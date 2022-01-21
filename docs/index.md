@@ -60,7 +60,7 @@ normalform(basis, x^2*y^2 + 2x^3*y - x*y^2)
 
 ### with `DynamicPolynomials`
 
-We will compute the basis for the `noon-2` system, arising from cellular network dynamics analysis [[2]](https://www.jstor.org/stable/2101937):
+We will compute the unique basis for the `noon-2` system, arising from cellular network dynamics analysis [[2]](https://www.jstor.org/stable/2101937):
 
 ```julia:install_dynamic
 Pkg.add("DynamicPolynomials") # hide
