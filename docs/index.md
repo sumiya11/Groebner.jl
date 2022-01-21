@@ -10,7 +10,7 @@ where appropriate -->
 
 
 `Groebner.jl` is a package for fast and generic Gröbner bases computations
-based on Faugère's F4 algorithm [[1]](https://www-polsys.lip6.fr/~jcf/Papers/F99a.pdf).
+based on Faugère's F4 algorithm [[1]](https://www-polsys.lip6.fr/~jcf/Papers/F99a.pdf) written in pure Julia.
 
 ## Installation
 
@@ -55,7 +55,7 @@ isgroebner(basis)
 
 Now, having a `basis` of the ideal `<polys> = <x^3 + y^2, x*y + x^2>` computed, we can tackle the *ideal membership problem* for `polys`. Recall that a polynomial lies in the ideal iff it's normal form w.r.t a `basis` is zero. Let's check if `x^2y^2 + 2x^3y - xy^2` is a member of `<polys>`!
 ```julia:aagb
-normalform(basis, x^2y^2 + 2x^3y - xy^2)
+normalform(basis, x^2*y^2 + 2x^3*y - x*y^2)
 ```
 
 ### with `DynamicPolynomials`
