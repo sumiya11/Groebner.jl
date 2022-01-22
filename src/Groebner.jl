@@ -18,11 +18,13 @@ import AbstractAlgebra: leading_term, QQ, PolynomialRing, terms,
                         nvars, data, characteristic, isdivisible_by,
                         divexact
 
-# for testing
+# for example systems
 import Combinatorics
 
 # controversial
 using LoopVectorization
+
+using MutableArithmetics
 
 import Primes
 import Primes: nextprime
@@ -30,6 +32,7 @@ import Primes: nextprime
 import Random
 
 # we want RadixSort to sort exponents (?)
+# upd: okay, maybe not
 import SortingAlgorithms
 
 import Logging
@@ -53,23 +56,26 @@ include("arithmetic/unsigned.jl")
 # modular arithmetic for CRT and rational reconstruction
 include("arithmetic/modular.jl")
 # basis coefficients manipulations
-include("arithmetic/coeffs.jl")
 
 #= f4 implementation over finite fields =#
+# the heart of this library
+include("f4/structs.jl")
 include("f4/symbolic.jl")
 include("f4/hash.jl")
 include("f4/linear.jl")
 include("f4/sorting.jl")
+include("f4/coeffs.jl")
 include("f4/f4.jl")
+include("f4/groebner.jl")
+include("f4/isgroebner.jl")
 include("f4/normalform.jl")
 # include("f4/statistics.jl")
 
 #= fglm implementation over finite fields =#
 include("fglm/fglm.jl")
 
-# the heart of this library
-include("algorithm.jl")
-include("normalform.jl")
+# the api
+include("interface.jl")
 
 # functions to check for correctness of algorithms
 include("correctness.jl")

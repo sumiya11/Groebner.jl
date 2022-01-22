@@ -28,8 +28,6 @@ function rational_reconstruction(a::I, m::I) where {I<:Union{Int, BigInt}}
     end
     bnd = sqrt(float(m) / 2)
 
-    # an issue: we can not make good use of staticarrays here
-    # as long as BigInts are heap allocated anyways
     U = (I(1), I(0), m)
     V = (I(0), I(1), a)
     while abs(V[3]) >= bnd
@@ -56,76 +54,90 @@ function rational_reconstruction(a::I, m::I) where {I<:Union{Int, BigInt}}
     return QQ(0, 1)
 end
 
-function reconstruct_modulo(
-        coeffs_zz::Vector{Vector{BigInt}},
-        modulo::BigInt)
+function rational_reconstruction!(
+            num::BigInt, den::BigInt, bnd::BigInt, buf::BigInt,
+            buf1::BigInt, buf2::BigInt, buf3::BigInt,
+            u1::BigInt, u2::BigInt, u3::BigInt,
+            v1::BigInt, v2::BigInt, v3::BigInt,
+            a::BigInt, m::BigInt)
 
-    coeffs_qq = Vector{Vector{Rational{BigInt}}}(undef, length(coeffs_zz))
-    for i in 1:length(coeffs_zz)
-        poly_zz = coeffs_zz[i]
-        coeffs_qq[i] = Vector{Rational{BigInt}}(undef, length(poly_zz))
-        for j in 1:length(poly_zz)
-            coeffs_qq[i][j] = rational_reconstruction(poly_zz[j], modulo)
-        end
+    if a == 0
+        Base.GMP.MPZ.set_ui!(num, 0)
+        Base.GMP.MPZ.set_ui!(den, 1)
+        return nothing
+    end
+    # TODO
+    # assumes input is nonnegative
+    @assert a > 0
+
+    if a == 1
+        Base.GMP.MPZ.set_ui!(num, 1)
+        Base.GMP.MPZ.set_ui!(den, 1)
+        return nothing
     end
 
-    coeffs_qq
+    Base.GMP.MPZ.set_ui!(u1, 1)
+    Base.GMP.MPZ.set_ui!(u2, 0)
+    Base.GMP.MPZ.set!(u3, m)
+    Base.GMP.MPZ.set_ui!(v1, 0)
+    Base.GMP.MPZ.set_ui!(v2, 1)
+    Base.GMP.MPZ.set!(v3, a)
+
+    while true
+        Base.GMP.MPZ.set!(buf, v3)
+        if Base.GMP.MPZ.cmp_ui(buf, 0) < 0
+            Base.GMP.MPZ.neg!(buf)
+        end
+
+        if Base.GMP.MPZ.cmp(buf, bnd) < 0
+            break
+        end
+
+        Base.GMP.MPZ.tdiv_q!(buf, u3, v3)
+
+        Base.GMP.MPZ.mul!(buf1, buf, v1)
+        Base.GMP.MPZ.mul!(buf2, buf, v2)
+        Base.GMP.MPZ.mul!(buf3, buf, v3)
+
+        Base.GMP.MPZ.sub!(buf1, u1, buf1)
+        Base.GMP.MPZ.sub!(buf2, u2, buf2)
+        Base.GMP.MPZ.sub!(buf3, u3, buf3)
+
+        Base.GMP.MPZ.set!(u1, v1)
+        Base.GMP.MPZ.set!(u2, v2)
+        Base.GMP.MPZ.set!(u3, v3)
+
+        Base.GMP.MPZ.set!(v1, buf1)
+        Base.GMP.MPZ.set!(v2, buf2)
+        Base.GMP.MPZ.set!(v3, buf3)
+    end
+
+    Base.GMP.MPZ.set!(den, v2)
+    Base.GMP.MPZ.set!(num, v3)
+    if Base.GMP.MPZ.cmp_ui(v2, 0) < 0
+        Base.GMP.MPZ.neg!(den)
+        Base.GMP.MPZ.neg!(num)
+    end
+
+    nothing
 end
 
 #------------------------------------------------------------------------------
 
-function CRT(
-            a1::BigInt, m1::BigInt,
-            a2::U, m2::BigInt) where {U<:Integer}
+function CRT!(
+            M::BigInt, buf::BigInt, n1::BigInt, n2::BigInt,
+            a1::BigInt, m1::BigInt, a2::UInt, m2::BigInt)
 
-    CRT(a1, m1, BigInt(a2), m2)
-end
+    Base.GMP.MPZ.gcdext!(buf, n1, n2, m1, m2)
 
-function CRT(a1::BigInt, m1::BigInt, a2::BigInt, m2::BigInt)
-    M = m1 * m2
-    Ms1, Ms2 = m2, m1
-    t1 = invmod(Ms1, m1)
-    t2 = invmod(Ms2, m2)
-    mod(a1*t1*Ms1 + a2*t2*Ms2, M)::BigInt
-end
+    Base.GMP.MPZ.mul!(buf, m1, n1)
+    Base.GMP.MPZ.mul_ui!(n1, buf, a2)
 
-# TODO: move to coeffs.jl
-function reconstruct_crt!(
-            gbcoeffs_ff::Vector{Vector{UInt64}}, ch::UInt64)
+    Base.GMP.MPZ.mul!(buf, m2, n2)
+    Base.GMP.MPZ.mul!(n2, buf, a1)
 
-    gbcoeffs_zz = Vector{Vector{BigInt}}(undef, length(gbcoeffs_ff))
-    bigch = BigInt(ch)
-    for i in 1:length(gbcoeffs_ff)
-        poly_ff = gbcoeffs_ff[i]
-        gbcoeffs_zz[i] = Vector{BigInt}(undef, length(poly_ff))
-        for j in 1:length(poly_ff)
-            gbcoeffs_zz[i][j] = BigInt(poly_ff[j])
-        end
-    end
-    gbcoeffs_zz, bigch
-end
-
-function reconstruct_crt!(
-            gbcoeffs_accum::Vector{Vector{BigInt}}, modulo::BigInt,
-            gbcoeffs_ff::Vector{Vector{UInt64}}, ch::UInt64)
-
-    if isempty(gbcoeffs_accum)
-        return reconstruct_crt!(gbcoeffs_ff, ch)
-    end
-
-    gbcoeffs_zz = Vector{Vector{BigInt}}(undef, length(gbcoeffs_ff))
-    bigch = BigInt(ch)
-
-    for i in 1:length(gbcoeffs_ff)
-        poly_zz = gbcoeffs_accum[i]
-        poly_ff = gbcoeffs_ff[i]
-        gbcoeffs_zz[i] = Vector{BigInt}(undef, length(poly_ff))
-        for j in 1:length(poly_ff)
-            gbcoeffs_zz[i][j] = CRT(poly_zz[j], modulo, poly_ff[j], bigch)
-        end
-    end
-    # TODO: MutableArithmetics
-    gbcoeffs_zz, modulo * bigch
+    Base.GMP.MPZ.add!(buf, n1, n2)
+    Base.GMP.MPZ.fdiv_r!(buf, M)
 end
 
 #------------------------------------------------------------------------------

@@ -65,106 +65,6 @@ function groebner(
 end
 
 #######################################
-# Finite field groebner
-
-function groebner_ff(
-            ring::PolyRing,
-            exps::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{UInt64}},
-            reduced::Bool,
-            rng::Rng) where {Rng<:Random.AbstractRNG}
-    # specialize on ordering (not yet)
-    # groebner_ff(ring, exps, coeffs, reduced, rng, Val(ring.ord))
-    f4(ring, exps, coeffs, rng, reduced)
-end
-
-#######################################
-# Rational field groebner
-
-function modular_f4_step(
-            ring::PolyRing,
-            exps::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{UInt64}},
-            rng::Rng,
-            reduced::Bool
-            ) where {Rng<:Random.AbstractRNG}
-
-    f4(ring, exps, coeffs, rng, reduced)
-end
-
-function groebner_qq(
-            ring::PolyRing,
-            exps::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{Rational{BigInt}}},
-            reduced::Bool,
-            randomized::Bool,
-            rng::Rng,
-            ) where {Rng<:Random.AbstractRNG}
-
-    # scale coefficients to integer ring inplace
-    coeffs_zz = scale_denominators!(coeffs)
-
-    gbcoeffs_accum = Vector{Vector{BigInt}}(undef, 0)
-    gbexps = Vector{Vector{Vector{UInt16}}}(undef, 0)
-    gbcoeffs_qq = Vector{Vector{Rational{BigInt}}}(undef, 0)
-
-    prime::Int64 = 1
-    modulo = BigInt(1)
-    moduli = Int[]
-
-    i = 1
-    while true
-        # lucky reduction prime
-        prime  = nextluckyprime(coeffs_zz, prime)
-        push!(moduli, prime)
-        @info "$i: selected lucky prime $prime"
-
-        # compute the image of coeffs_zz in GF(prime),
-        # by coercing each coefficient into the finite field
-        ring_ff, coeffs_ff = reduce_modulo(coeffs_zz, ring, prime)
-
-        # groebner basis over finite field ideal
-        # TODO: gbexps can be only computed once
-        @info "Computing Groebner basis"
-        gbexps, gbcoeffs_ff = modular_f4_step(
-                                    ring_ff, exps, coeffs_ff,
-                                    rng, reduced)
-
-        # TODO: add majority rule based choice
-
-        # reconstruct basis coeffs into integers
-        # from the previously accumulated basis and the new one,
-        @info "CRT modulo ($modulo, $(ring_ff.ch))"
-        gbcoeffs_zz, modulo = reconstruct_crt!(
-                            gbcoeffs_accum, modulo,
-                            gbcoeffs_ff, ring_ff.ch)
-
-        gbcoeffs_accum = gbcoeffs_zz
-
-        # try to reconstruct basis coeffs from integers
-        # into rationals
-        @info "Reconstructing modulo $modulo"
-        gbcoeffs_qq = reconstruct_modulo(gbcoeffs_zz, modulo)
-
-        # run correctness checks to assure the reconstrction is correct
-        if correctness_check(ring, exps, coeffs_zz, gbexps,
-                                gbcoeffs_qq, moduli, randomized, rng)
-            break
-        end
-
-
-        # not correct, goto next prime
-        i += 1
-        if i > 10000
-            @error "Something probably went wrong in groebner.."
-            return
-        end
-    end
-
-    gbexps, gbcoeffs_qq
-end
-
-#######################################
 # Generic isgroebner
 
 
@@ -225,32 +125,79 @@ function isgroebner(
     flag
 end
 
-# UWU!
-function isgroebner_ff(
-            ring::PolyRing,
-            exps::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{UInt64}},
-            rng)
+#######################################
+# Generic normalform
 
-    isgroebner_f4(ring, exps, coeffs, rng)
+"""
+    function normalform(
+                basispolys::Vector{Poly},
+                tobereduced::Poly;
+                ordering::Symbol=:input,
+                randomized::Bool=true,
+                rng::Rng=Random.MersenneTwister(42),
+                loglevel::Logging.LogLevel=Logging.Warn
+    ) where {Poly, Rng<:Random.AbstractRNG}
+
+Computes the normal form of `tobereduced` w.r.t `basispolys`.
+The latter is assumed to be a Groebner basis.
+
+Uses the ordering on `basispolys` by default.
+If `ordering` is explicitly specialized, it takes precedence.
+*(On the fly ordering change not implemented yet :D)*
+
+The algorithm is randomized by default, but
+this can be changed with the `randomized` param.
+*(Derandomized version not implemented yet :D)*
+
+"""
+function normalform(
+            basispolys::Vector{Poly},
+            tobereduced::Poly;
+            ordering::Symbol=:input,
+            rng::Rng=Random.MersenneTwister(42),
+            loglevel::LogLevel=Logging.Warn
+            ) where {Poly, Rng<:Random.AbstractRNG}
+
+    first(normalform(
+            basispolys, [tobereduced],
+            ordering=ordering, rng=rng, loglevel=loglevel)
+    )
 end
 
-# TODO
-function isgroebner_qq(
-            ring::PolyRing,
-            exps::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{Rational{BigInt}}},
-            randomized::Bool,
-            rng)
+function normalform(
+            basispolys::Vector{Poly},
+            tobereduced::Vector{Poly};
+            ordering::Symbol=:input,
+            rng::Rng=Random.MersenneTwister(42),
+            loglevel::LogLevel=Logging.Warn
+            ) where {Poly, Rng<:Random.AbstractRNG}
 
-    if randomized
-        coeffs_zz = scale_denominators!(coeffs)
-        goodprime = nextgoodprime(coeffs_zz, Int[], 2^30 + 3)
-        ring_ff, coeffs_ff = reduce_modulo(coeffs_zz, ring, goodprime)
-        isgroebner_f4(ring_ff, exps, coeffs_ff, rng)
-    else
-        error("Sorry, not randomized version is not implemented yet.")
-    end
+    #= set the logger =#
+    prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
+
+    #= extract ring information, exponents and coefficients
+       from input basis polynomials =#
+    # Copies input, so that polys would not be changed itself.
+    ring1, basisexps, basiscoeffs = convert_to_internal(basispolys, ordering)
+    ring2, tbrexps, tbrcoeffs = convert_to_internal(tobereduced, ordering)
+
+    @assert ring1.nvars == ring2.nvars && ring1.ch == ring2.ch && ring1.ord == ring2.ord
+    ring = ring1
+    # We assume basispolys is already a Groebner basis! #
+
+    #= compute the groebner basis =#
+    bexps, bcoeffs = normal_form_f4(
+                        ring, basisexps, basiscoeffs,
+                        tbrexps, tbrcoeffs, rng)
+
+    #=
+    Assuming ordering of `bexps` here matches `ring.ord`
+    =#
+
+    #= revert logger =#
+    Logging.global_logger(prev_logger)
+
+    # ring contains ordering of computation, it is the requested ordering
+    #= convert result back to representation of input =#
+    convert_to_output(ring, tobereduced, bexps, bcoeffs)
 end
-
-#------------------------------------------------------------------------------

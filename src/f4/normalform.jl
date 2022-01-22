@@ -1,34 +1,4 @@
 
-function select_tobereduced!(
-                basis::Basis, tobereduced::Basis,
-                matrix::MacaulayMatrix,
-                symbol_ht::MonomialHashtable, ht::MonomialHashtable)
-
-    # prepare to load all elems from tobereduced
-    # into low rows
-    reinitialize_matrix!(matrix, 2^6)
-    resize!(matrix.lowrows, tobereduced.ntotal)
-
-    # TODO
-    etmp = zeros(UInt16, ht.explen)
-
-    for i in 1:tobereduced.ntotal
-        matrix.nrows += 1
-        gen = tobereduced.gens[i]
-        h = UInt32(0)
-        matrix.lowrows[matrix.nrows] = multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, gen)
-        matrix.low2coef[matrix.nrows] = i
-    end
-
-    basis.ntotal
-    basis.nlead = basis.ndone = basis.ntotal
-    basis.isred .= 0
-    for i in 1:basis.nlead
-        basis.nonred[i] = i
-        basis.lead[i] = ht.hashdata[basis.gens[i][1]].divmask
-    end
-end
-
 function normal_form_f4!(
             ring::PolyRing,
             basis::Basis,
