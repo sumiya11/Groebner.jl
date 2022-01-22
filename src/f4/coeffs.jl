@@ -227,16 +227,27 @@ end
 function reconstruct_modulo!(gbcoeffs_qq, gbcoeffs_accum, modulo)
     if isempty(gbcoeffs_qq)
         resize!(gbcoeffs_qq, length(gbcoeffs_accum))
-    end
-
-    for i in 1:length(gbcoeffs_qq)
-        gbcoeffs_qq[i] = Vector{Rational{BigInt}}(undef, length(gbcoeffs_qq[i]))
-        for j in 1:length(gbcoeffs_qq[i])
-            cz = gbcoeffs_accum[i][j]
-            rational_reconstruction!()
-            Base.GMP.MPZ.set!(gbcoeffs_qq[i][j], buf)
+        for i in 1:length(gbcoeffs_accum)
+            gbcoeffs_qq[i] = [Rational{BigInt}(0)
+                                for _ in 1:length(gbcoeffs_accum[i])]
         end
     end
 
-    coeffs_qq
+    bnd = ceil(BigInt, sqrt(float(modulo) / 2))
+    buf, buf1, buf2, buf3  = (BigInt(0) for _ in 1:4)
+    u1, u2, u3, v1, v2, v3 = (BigInt(0) for _ in 1:6)
+
+    for i in 1:length(gbcoeffs_qq)
+        for j in 1:length(gbcoeffs_qq[i])
+            cz = gbcoeffs_accum[i][j]
+            cq = gbcoeffs_qq[i][j]
+            num, den = numerator(cq), denominator(cq)
+            rational_reconstruction!(num, den, bnd, buf,
+                                        buf1, buf2, buf3,
+                                        u1, u2, u3, v1, v2, v3,
+                                        cz, modulo)
+        end
+    end
+
+    nothing
 end

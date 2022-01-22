@@ -54,6 +54,7 @@ function rational_reconstruction(a::I, m::I) where {I<:Union{Int, BigInt}}
     return QQ(0, 1)
 end
 
+# 0 allocations!
 function rational_reconstruction!(
             num::BigInt, den::BigInt, bnd::BigInt, buf::BigInt,
             buf1::BigInt, buf2::BigInt, buf3::BigInt,
@@ -61,16 +62,16 @@ function rational_reconstruction!(
             v1::BigInt, v2::BigInt, v3::BigInt,
             a::BigInt, m::BigInt)
 
-    if a == 0
+    if Base.GMP.MPZ.cmp_ui(a, 0) == 0
         Base.GMP.MPZ.set_ui!(num, 0)
         Base.GMP.MPZ.set_ui!(den, 1)
         return nothing
     end
     # TODO
     # assumes input is nonnegative
-    @assert a > 0
+    @assert Base.GMP.MPZ.cmp_ui(a, 0) > 0
 
-    if a == 1
+    if Base.GMP.MPZ.cmp_ui(a, 1) == 0
         Base.GMP.MPZ.set_ui!(num, 1)
         Base.GMP.MPZ.set_ui!(den, 1)
         return nothing
@@ -124,6 +125,7 @@ end
 
 #------------------------------------------------------------------------------
 
+# 0 allocations!
 function CRT!(
             M::BigInt, buf::BigInt, n1::BigInt, n2::BigInt,
             a1::BigInt, m1::BigInt, a2::UInt, m2::BigInt)
