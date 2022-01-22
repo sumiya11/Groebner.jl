@@ -18,6 +18,8 @@ import AbstractAlgebra: leading_term, QQ, PolynomialRing, terms,
                         nvars, data, characteristic, isdivisible_by,
                         divexact
 
+import SIMDPolynomials
+
 # for testing
 import Combinatorics
 

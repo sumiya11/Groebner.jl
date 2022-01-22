@@ -140,6 +140,84 @@ function convert_to_internal(
 end
 
 #------------------------------------------------------------------------------
+function convert_to_internal(
+        orig_polys::Vector{T},
+        ordering::Symbol) where {T<:SIMDPolynomials.AbstractPolynomial}
+
+    isempty(orig_polys) && error("Empty input")
+    ordering in (:input, :lex, :degrevlex, :deglex) || error("Not supported ordering $ordering")
+
+    ring = extract_ring(orig_polys)
+    exps, cfs = extract_polys(ring, orig_polys)
+    assure_ordering!(ring, ordering, exps, cfs)
+    ring, exps, cfs
+end
+
+function extract_ring(orig_polys::Vector{<:SIMDPolynomials.AbstractPolynomial})
+    f = first(orig_polys)
+
+    nv = maximum(SIMDPolynomials.nvariables, orig_polys)
+    explen = nv + 1
+    ord    = :deglex
+    ch     = SIMDPolynomials.coefftype(f) <: Union{Integer, Rational} ? 0 : error("")
+
+    PolyRing(nv, explen, ord, UInt64(ch), :multivariate)
+end
+
+function extract_coeffs_qq(
+            ring::PolyRing,
+            orig_polys::Vector{T}) where {T<:SIMDPolynomials.AbstractPolynomial}
+    npolys = length(orig_polys)
+    coeffs = Vector{Vector{Rational{BigInt}}}(undef, npolys)
+    for i in 1:npolys
+        poly = orig_polys[i]
+        coeffs[i] = map(Rational, SIMDPolynomials.coeffs(poly))
+    end
+    coeffs
+end
+
+function extract_exponents(
+            ring::PolyRing,
+            orig_polys::Vector{T}) where {T<:SIMDPolynomials.AbstractPolynomial}
+
+    npolys = length(orig_polys)
+    exps = Vector{Vector{Vector{UInt16}}}(undef, npolys)
+
+    for i in 1:npolys
+        poly = orig_polys[i]
+        exps[i] = Vector{Vector{UInt16}}(undef, length(SIMDPolynomials.terms(poly)))
+        for (j, m) in enumerate(SIMDPolynomials.monomials(poly))
+            exps[i][j] = Vector{UInt16}(undef, ring.explen)
+            exps[i][j][end] = zero(exps[i][j][end])
+            et = SIMDPolynomials.exps(m)
+            for ei in 1:ring.nvars
+                exps[i][j][ei] = et[ei]
+                exps[i][j][end] += exps[i][j][ei]
+            end
+        end
+    end
+    exps
+end
+
+function convert_to_output(
+            ring::PolyRing,
+            origpolys::Vector{P},
+            gbexps::Vector{Vector{Vector{UInt16}}},
+            gbcoeffs::Vector{Vector{I}}) where {P<:SIMDPolynomials.AbstractPolynomial, I<:Rational}
+
+    exported = Vector{P}(undef, length(gbexps))
+    p = first(origpolys)
+    J = SIMDPolynomials.coefftype(p)
+    M = SIMDPolynomials.monomialtype(p)
+    origvars = M.(0:SIMDPolynomials.nvariables(p)-1)
+    for i in 1:length(gbexps)
+        cfs = convert_coeffs_to_output(gbcoeffs[i], J)
+        expvectors = [map(Int, gbexps[i][j][1:end-1]) for j in 1:length(gbexps[i])]
+        expvars = map(t -> t[1]*prod(map(^, origvars, t[2])), zip(cfs, expvectors))
+        exported[i] = sum(expvars)
+    end
+    exported
+end
 
 # TODO: check type stability
 function extract_ring(
