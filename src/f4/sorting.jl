@@ -95,6 +95,37 @@ function sort_gens_by_lead_increasing_in_reduce!(basis::Basis, ht::MonomialHasht
     basis.coeffs[nnr[1:basis.nlead]] = basis.coeffs[nnr[inds]]
 end
 
+function sort_gens_by_lead_increasing_in_standardize!(basis::Basis, ht::MonomialHashtable)
+    gens = basis.gens
+    exps = ht.exponents
+    nnr  = basis.nonred
+
+    inds = collect(1:basis.nlead)
+
+    @assert inds == nnr
+
+    if ht.ord == :degrevlex
+        cmp  = (x, y) -> exponent_isless_drl(
+                                @inbounds(exps[gens[x][1]]),
+                                @inbounds(exps[gens[y][1]]))
+    elseif ht.ord == :lex
+        cmp  = (x, y) -> exponent_isless_lex(
+                                @inbounds(exps[gens[x][1]]),
+                                @inbounds(exps[gens[y][1]]))
+    else
+        cmp  = (x, y) -> exponent_isless_dl(
+                                @inbounds(exps[gens[x][1]]),
+                                @inbounds(exps[gens[y][1]]))
+    end
+    sort!(inds, lt=cmp)
+
+    # use array assignment insted of elemewise assignment
+    # Reason: slice array assignment uses fast setindex! based on unsafe copy
+    basis.gens[1:basis.nlead]   = basis.gens[inds]
+    basis.coeffs[1:basis.nlead] = basis.coeffs[inds]
+    basis.lead[1:basis.nlead]   = basis.lead[inds]
+end
+
 #------------------------------------------------------------------------------
 
 # Sorts pairs from pairset in range [from, from+size]

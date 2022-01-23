@@ -16,8 +16,8 @@ function test_params(rng, nvariables, exps, nterms,
                                     n, e, nt, np, csz, rng, gr, ord
                                 )
                                 isempty(set) && continue
-                                println(ord, " ", gr)
-                                println(set)
+                                # println(ord, " ", gr)
+                                # println(set)
                                 gb = Groebner.groebner(set)
                                 @test Groebner._isgroebner_reference(gb, initial_gens=set)
 
@@ -26,7 +26,7 @@ function test_params(rng, nvariables, exps, nterms,
                                     println("Rng ", rng)
                                     println("Set ", set)
                                     println("Gb ", gb)
-                                    error("exit tests")
+                                    # error("exit tests")
                                 end
                             end
                         end
@@ -100,6 +100,6 @@ end
     orderings  = [:deglex]
     p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize)))
     @info "producing $p $(orderings[1]) rational tests for f4"
-    test_params(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings)
+    # test_params(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings)
 
 end

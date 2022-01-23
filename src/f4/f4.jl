@@ -46,10 +46,10 @@ function filter_redundant!(basis::Basis)
     basis
 end
 
-function standardize_basis!(basis::Basis)
+function standardize_basis!(basis::Basis, ht)
     for i in 1:basis.nlead
         idx = basis.nonred[i]
-        basis.lead[i] = basis.lead[idx]
+        # basis.lead[i] = basis.lead[idx]
         basis.nonred[i] = i
         basis.isred[i] = 0
         basis.coeffs[i] = basis.coeffs[idx]
@@ -61,6 +61,8 @@ function standardize_basis!(basis::Basis)
     resize!(basis.lead, basis.ndone)
     resize!(basis.nonred, basis.ndone)
     resize!(basis.isred, basis.ndone)
+
+    sort_gens_by_lead_increasing_in_standardize!(basis, ht)
     normalize_basis!(basis)
 end
 
@@ -342,90 +344,128 @@ function reducegb_f4!(
         k += 1
         basis.nonred[k] = basis.ntotal - i + 1
         # xd
-        basis.lead[k] = ht.hashdata[basis.gens[basis.ntotal - i + 1][1]].divmask
+        basis.lead[k] = ht.hashdata[basis.gens[basis.nonred[k]][1]].divmask
         i += 1
     end
     basis.nlead = k
 
     # TODO
-    sort_gens_by_lead_increasing_in_reduce!(basis, ht)
+    # sort_gens_by_lead_increasing_in_reduce!(basis, ht)
 end
 
 #------------------------------------------------------------------------------
 
+#=
+    Input ivariants:
+        - ring is set, and ring.ch == basis.ch, and ring ~ ht
+        - divmasks in ht are set
+        - basis is filled so that
+            basis.ntotal = actual number of elements
+            basis.ndone  = 0
+            basis.nlead  = 0
+
+    Output invariants:
+        - basis.ndone == basis.ntotal == basis.nlead
+        - basis.gens and basis.coeffs of size basis.ndone
+        - basis elements are sorted increasingly wrt ordering on lead elements
+        - divmasks in basis are filled and coincide to divmasks in hashtable
+
+=#
 function f4!(ring::PolyRing,
              basis,
              ht,
              reduced)
 
-     # matrix storing coefficients in rows
-     # wrt columns representing the current monomial basis
-     matrix = initialize_matrix(ring)
+    @assert ring.ch == basis.ch
+    @assert ring.ord == ht.ord && ring.nvars == ht.nvars && ring.explen == ht.explen
+    # @error "hashtable divmasks"
+    # println(ht.exponents[2:ht.load])
+    # println("###########")
+    # println(map(x->bitstring(x.divmask), ht.hashdata[2:ht.load]))
+    # println("###########")
+    @assert basis.ndone == 0
 
-     # initialize hash tables for update and symbolic preprocessing steps
-     update_ht  = initialize_secondary_hash_table(ht)
-     symbol_ht  = initialize_secondary_hash_table(ht)
+    # matrix storing coefficients in rows
+    # wrt columns representing the current monomial basis
+    matrix = initialize_matrix(ring)
 
-     # a set to store critical pairs of polynomials to be reduced
-     pairset = initialize_pairset()
+    # initialize hash tables for update and symbolic preprocessing steps
+    update_ht  = initialize_secondary_hash_table(ht)
+    symbol_ht  = initialize_secondary_hash_table(ht)
 
-     # makes basis fields valid,
-     # does not copy,
-     # checks for redundancy of new elems
-     update!(pairset, basis, ht, update_ht)
+    # a set to store critical pairs of polynomials to be reduced
+    pairset = initialize_pairset()
 
-     d = 0
-     # while there are pairs to be reduced
-     while !isempty(pairset)
-         d += 1
-         @debug "F4 ITER $d"
-         @debug "Available $(pairset.load) pairs"
+    # makes basis fields valid,
+    # does not copy,
+    # checks for redundancy of new elems
+    update!(pairset, basis, ht, update_ht)
 
-         # selects pairs for reduction from pairset following normal strategy
-         # (minimal lcm degrees are selected),
-         # and puts these into the matrix rows
-         select_normal!(pairset, basis, matrix, ht, symbol_ht)
-         @debug "Selected $(divexact(matrix.nrows, 2)) pairs"
+    d = 0
+    # while there are pairs to be reduced
+    while !isempty(pairset)
+        d += 1
+        @debug "F4 ITER $d"
+        @debug "Available $(pairset.load) pairs"
 
-         symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
-         @debug "Matrix of size $((matrix.nrows, matrix.ncols)), density TODO"
+        # selects pairs for reduction from pairset following normal strategy
+        # (minimal lcm degrees are selected),
+        # and puts these into the matrix rows
+        select_normal!(pairset, basis, matrix, ht, symbol_ht)
+        @debug "Selected $(divexact(matrix.nrows, 2)) pairs"
 
-         # reduces polys and obtains new potential basis elements
-         reduction!(basis, matrix, ht, symbol_ht)
-         @debug "Matrix reduced, density TODO"
+        symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
+        @debug "Matrix of size $((matrix.nrows, matrix.ncols)), density TODO"
 
-         # update the current basis with polynomials produced from reduction,
-         # does not copy,
-         # checks for redundancy
-         update!(pairset, basis, ht, update_ht)
+        # reduces polys and obtains new potential basis elements
+        reduction!(basis, matrix, ht, symbol_ht)
+        @debug "Matrix reduced, density TODO"
 
-         # TODO: is this okay hm ?
-         # to be changed
-         matrix    = initialize_matrix(ring)
-         symbol_ht = initialize_secondary_hash_table(ht)
-         # clear symbolic hashtable
-         # clear matrix
+        # update the current basis with polynomials produced from reduction,
+        # does not copy,
+        # checks for redundancy
+        update!(pairset, basis, ht, update_ht)
 
-         if d > 1000
-             @error "Something is probably wrong in f4.."
-             break
-         end
-     end
+        # TODO: is this okay hm ?
+        # to be changed
+        matrix    = initialize_matrix(ring)
+        symbol_ht = initialize_secondary_hash_table(ht)
+        # clear symbolic hashtable
+        # clear matrix
 
-     # remove redundant elements
-     filter_redundant!(basis)
+        if d > 1000
+            @error "Something is probably wrong in f4.."
+            break
+        end
+    end
 
-     if reduced
-         reducegb_f4!(basis, matrix, ht, symbol_ht)
-         # ht = symbol_ht
-     end
+    # remove redundant elements
+    filter_redundant!(basis)
 
-     # So re returned basis holds some invariants:
-     #  1.
-     #  2.
-     standardize_basis!(basis)
+    if reduced
+        reducegb_f4!(basis, matrix, ht, symbol_ht)
+    end
 
-     nothing
+    standardize_basis!(basis, ht)
+
+    # assertion
+    #=
+    println("#####")
+    println(basis.lead)
+    println(map(x->bitstring(x.divmask), ht.hashdata[2:ht.load]))
+    println("#####")
+    =#
+    for i in 1:basis.nlead
+        #=
+        println(basis.lead[i])
+        println(basis.gens[i][1])
+        println(ht.exponents[basis.gens[i][1]])
+        println(UInt32(ht.hashdata[basis.gens[i][1]].divmask))
+        =#
+        @assert basis.lead[i] == ht.hashdata[basis.gens[i][1]].divmask
+    end
+
+    nothing
 end
 
 #=

@@ -34,16 +34,18 @@ function groebner_qq(
 
     init_coeffs_zz = scale_denominators(coeffs)
 
-    @warn "scaled" coeffs init_coeffs_zz
+    # @warn "scaled" coeffs init_coeffs_zz
 
     modulo = BigInt(1)
     prime = nextluckyprime(init_coeffs_zz)
     moduli = Int[prime]
     goodprime = nextgoodprime(init_coeffs_zz, moduli)
 
+    # @error "initial primes" prime goodprime
+
     ring_ff, init_coeffs_ff = reduce_modulo(init_coeffs_zz, ring, prime)
 
-    @warn "reduced" ring_ff init_coeffs_ff init_coeffs_zz
+    # @warn "reduced" ring_ff init_coeffs_ff init_coeffs_zz
 
     # TODO: 2^16
     init_gens_temp_ff, ht = initialize_structures(ring_ff, exps,
@@ -51,40 +53,58 @@ function groebner_qq(
                                                     rng, 2^16)
     gens_ff = copy_basis(init_gens_temp_ff)
 
-    @warn "after init" gens_ff
+    @assert gens_ff.ch == prime == ring_ff.ch
+    # @warn "after init" gens_ff
 
     i = 1
     while true
         @info "$i: selected lucky prime $prime"
 
+        @assert ring_ff.ch == prime
+        @assert gens_ff.ch == prime
+        @assert prime < 2^32
+        # @error "Asserts ok!"
+
+        # @info "initial gens" gens_ff.coeffs
+        #@error "passing gens to f4"
+        #println(gens_ff.lead)
+        #println("OK!")
+
         f4!(ring_ff, gens_ff, ht, reduced)
-        @info "basis computed" gens_ff.coeffs
+
+        #@info "basis computed" gens_ff.coeffs
 
         @info "CRT modulo ($modulo, $(ring_ff.ch))"
         reconstruct_crt!(gbcoeffs_accum, modulo, gens_ff.coeffs, ring_ff)
 
-        @info "reconstructed #1" gbcoeffs_accum
+        #@info "reconstructed #1" gbcoeffs_accum
 
         @info "Reconstructing modulo $modulo"
         reconstruct_modulo!(gbcoeffs_qq, gbcoeffs_accum, modulo)
 
-        @info "reconstructed #2" gbcoeffs_qq
-        println(ht.exponents[1:10])
+        #@info "reconstructed #2" gbcoeffs_qq
+        #println(ht.exponents[1:10])
+
+        #@error "passing gens to correctness check"
+        #println(map(bitstring, gens_ff.lead))
+        #println([ht.exponents[i[1]] for i in gens_ff.gens])
+        #println("OK!")
 
         buf_ff = copy_basis(init_gens_temp_ff)
         if correctness_check!(init_coeffs_zz, ring_ff, gens_ff,
-                                        buf_ff, ht, gbcoeffs_qq,
+                                        buf_ff, ht, gbcoeffs_qq, gbcoeffs_accum,
                                         modulo, randomized, goodprime)
             @info "Success!"
             break
         end
 
         prime = nextluckyprime(init_coeffs_zz, prime)
-        goodprime = nextgoodprime(init_coeffs_zz, moduli, goodprime)
         push!(moduli, prime)
+        goodprime = nextgoodprime(init_coeffs_zz, moduli, goodprime)
 
         reduce_modulo!(init_coeffs_zz, prime, ring_ff, init_gens_temp_ff)
         gens_ff = copy_basis(init_gens_temp_ff)
+        normalize_basis!(gens_ff)
 
         i += 1
     end
@@ -119,7 +139,7 @@ function isgroebner_qq(
             rng)
 
     if randomized
-        coeffs_zz = scale_denominators!(coeffs)
+        coeffs_zz = scale_denominators(coeffs)
         goodprime = nextgoodprime(coeffs_zz, Int[], 2^30 + 3)
         ring_ff, coeffs_ff = reduce_modulo(coeffs_zz, ring, goodprime)
         isgroebner_f4(ring_ff, exps, coeffs_ff, rng)

@@ -52,6 +52,8 @@ function reduce_modulo(
 end
 
 function reduce_modulo!(coeffs, prime, coeffs_ff)
+    @assert length(coeffs) == length(coeffs_ff)
+
     p   = BigInt(prime)
     buf = BigInt(0)
     c   = BigInt(0)
@@ -133,6 +135,11 @@ function nextgoodprime(
         prevprime::Int)
 
     p = nextluckyprime(coeffs, prevprime)
+
+    if p >= FIRST_COMPUTE_PRIME
+        error("Too large coefficient encountered in the basis. This error will be fixed soon!")
+    end
+    
     if p in moduli
         return nextgoodprime(coeffs, moduli, p)
     end

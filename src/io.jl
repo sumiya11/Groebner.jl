@@ -1,8 +1,17 @@
 
 #=
-    A note on how we represent exponents internally.
+    A note on how we represent polynomials.
+    First, coefficients, exponents and polynomial ring metainfo
+    are extracted from input polynomials with `convert_to_internal`.
 
+    Inside the algorithm all monomials are hashed without collisions,
+    so that an integer represents a single monomial. That drastically decreases memory consumption.
 
+    For each monomial we also assign a divmask -- a compressed representation
+    of exponent vector used to speed up divisibility checks.
+
+    Finally, the resulting basis in internal representation is dehashed,
+    and passed to `convert_to_output`
 =#
 
 #------------------------------------------------------------------------------

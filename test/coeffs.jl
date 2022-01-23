@@ -39,6 +39,10 @@ end
 end
 
 @testset "Scaling coefficients" begin
+    v = [BigInt(1) // 3, BigInt(2) // 6, BigInt(-5) // 12, BigInt(-3)//12]
+    vv = Groebner.scale_denominators(v)
+    @test vv == BigInt[4, 4, -5, -3]
+
     v = [
             [BigInt(1)//5, BigInt(2)//3, BigInt(7)//11],
             [BigInt(11), 1],
@@ -105,4 +109,42 @@ end
     @test coeffs_ff_c == coeffs_ff
     @test gbcoeffs_accum == [[BigInt(6), 22], [BigInt(19), 3]]
     @test modulo == 35
+end
+
+@testset "Reducing coefficients" begin
+    coeffs = [
+        BigInt(0), BigInt(100), BigInt(99), BigInt(6),
+        BigInt(3), BigInt(4), BigInt(5), BigInt(-1),
+        BigInt(-2), BigInt(-3), BigInt(-4), BigInt(-5),
+        BigInt(-6), BigInt(-7), BigInt(-8), BigInt(-9),
+        BigInt(-10), BigInt(-11), BigInt(-12), BigInt(-13),
+        BigInt(-14), BigInt(-15), BigInt(-16), BigInt(-17)
+    ]
+    coeffs_v = deepcopy(coeffs)
+    coeffs_ff = Vector{UInt64}(undef, length(coeffs))
+    prime = 5
+
+    Groebner.reduce_modulo!(coeffs, prime, coeffs_ff)
+    @test coeffs == coeffs_v
+    @test coeffs_ff == UInt64[
+        0, 0, 4, 1,
+        3, 4, 0, 4,
+        3, 2, 1, 0,
+        4, 3, 2, 1,
+        0, 4, 3, 2,
+        1, 0, 4, 3
+    ]
+
+    ring, coeffs_ff = Groebner.reduce_modulo([coeffs], Groebner.PolyRing(2, 3, :a, 4, :b), prime)
+    @test coeffs == coeffs_v
+    @test ring.ch == 5
+    @test coeffs_ff == [UInt64[
+        0, 0, 4, 1,
+        3, 4, 0, 4,
+        3, 2, 1, 0,
+        4, 3, 2, 1,
+        0, 4, 3, 2,
+        1, 0, 4, 3
+    ]]
+
 end

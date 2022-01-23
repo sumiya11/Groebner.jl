@@ -24,7 +24,7 @@ end
 
 # returns -x modulo ch
 @inline function ucompmod(x::T, ch::T) where {T<:Unsigned}
-    ch - x
+    (ch - x) % ch
 end
 
 # returns x*y modulo ch

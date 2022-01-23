@@ -1,7 +1,8 @@
 
 
 function correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff, ht,
-                            gbcoeffs_qq, modulo, randomized, goodprime)
+                            gbcoeffs_qq, gbcoeffs_accum,
+                            modulo, randomized, goodprime)
     # first we check coefficients only
     if !heuristic_correctness_check(gbcoeffs_qq, modulo)
         @info "Heuristic check failed."
@@ -33,19 +34,20 @@ function correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff, ht,
 end
 
 # ln(num) + ln(den) < 2 ln p
-function heuristic_correctness_check(coeffs_qq, modulo)
+function heuristic_correctness_check(gbcoeffs_qq, modulo)
     #=
         We take advantage of the fact that Base.GMP.MPZ.sizeinbase(x, 2)
         marks the position of the leading bit in x.
         So we do not need to compute logarithms explicitly
     =#
 
-    lnm = 2*Base.GMP.MPZ.sizeinbase(modulo, 2)
-    for i in 1:length(coeffs_qq)
-        for j in 1:length(coeffs_qq[i])
-            c = coeffs_qq[i][j]
-            num, den = numerator(c), denominator(c)
-            if Base.GMP.MPZ.sizeinbase(num, 2) + Base.GMP.MPZ.sizeinbase(den, 2) > lnm
+    lnm = Base.GMP.MPZ.sizeinbase(modulo, 2)
+    for i in 1:length(gbcoeffs_qq)
+        for j in 1:length(gbcoeffs_qq[i])
+            n = numerator(gbcoeffs_qq[i][j])
+            d = denominator(gbcoeffs_qq[i][j])
+            # println(Base.GMP.MPZ.sizeinbase(c, 2), " ", lnm)
+            if 2*(Base.GMP.MPZ.sizeinbase(n, 2) + Base.GMP.MPZ.sizeinbase(d, 2)) >= lnm
                 return false
             end
         end
@@ -56,7 +58,7 @@ end
 function randomized_correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff,
                                             ht, gbcoeffs_qq, goodprime)
 
-    @warn "reducing in correctness" goodprime
+    # @warn "reducing in correctness" goodprime
     reduce_modulo!(coeffs_zz, goodprime, ring_ff, initial_ff)
 
     @assert ring_ff.ch == goodprime == initial_ff.ch
@@ -72,12 +74,12 @@ function randomized_correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff,
 
     gbcoeffs_zz = scale_denominators(gbcoeffs_qq)
 
-    @warn "inside correctness qq" gbcoeffs_qq
-    @warn "inside correctness zz" gbcoeffs_zz
+    # @warn "inside correctness qq" gbcoeffs_qq
+    # @warn "inside correctness zz" gbcoeffs_zz
 
     reduce_modulo!(gbcoeffs_zz, goodprime, ring_ff, gb_ff)
 
-    @warn "inside correctness ff" gb_ff.coeffs gb_ff.ch
+    # @warn "inside correctness ff" gb_ff.coeffs gb_ff.ch
 
     @assert ring_ff.ch == goodprime == gb_ff.ch
 
@@ -88,6 +90,7 @@ function randomized_correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff,
     =#
 
     normalize_basis!(gb_ff)
+    normalize_basis!(initial_ff)
 
     #=
     println(gb_ff)
@@ -112,8 +115,28 @@ function randomized_correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff,
     println("#########################")
     =#
 
+    buf_ff = copy_basis(gb_ff)
+    #=
+    println(map(bitstring, gb_ff.lead))
+    println(map(bitstring, buf_ff.lead))
+
+    @error "hashtable condition"
+    println(ht.exponents[2:ht.load])
+    println(map(x->bitstring(x.divmask), ht.hashdata[2:ht.load]))
+    =#
+
     # check that initial ideal contains in the computed groebner basis modulo goodprime
     normal_form_f4!(ring_ff, gb_ff, ht, initial_ff)
+
+    #=
+    println(gb_ff)
+    println("###")
+    println(buf_ff)
+
+    println(map(bitstring, gb_ff.lead))
+    println(map(bitstring, buf_ff.lead))
+    =#
+
     # @error "normal form"
     # println(initial_ff)
     for i in 1:initial_ff.ndone
@@ -123,10 +146,14 @@ function randomized_correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff,
         end
     end
 
+    @assert ring_ff.ch == gb_ff.ch
+
     # check that the basis is groebner basis modulo goodprime
-    if !isgroebner_f4!(ring_ff, gb_ff, ht)
+    if !isgroebner_f4!(ring_ff, buf_ff, ht)
         return false
     end
+
+    @assert ring_ff.ch == gb_ff.ch == goodprime
 
     return true
 end

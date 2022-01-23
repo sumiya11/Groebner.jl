@@ -379,6 +379,10 @@ function normalize_basis!(basis::Basis)
     cfs = basis.coeffs
     for i in 1:basis.ntotal
         # mul = inv(cfs[i][1])
+        # hack for now, TODODO
+        if !isassigned(cfs, i)
+            continue
+        end
         mul = uinvmod(cfs[i][1], basis.ch)
         for j in 2:length(cfs[i])
             # cfs[i][j] *= mul

@@ -4,7 +4,7 @@ function normal_form_f4!(
             basis::Basis,
             ht::MonomialHashtable,
             tobereduced::Basis)
-
+    
     matrix = initialize_matrix(ring)
     symbol_ht = initialize_secondary_hash_table(ht)
 
