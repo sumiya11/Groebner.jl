@@ -45,14 +45,10 @@ function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
         ("cyclic 12", Groebner.rootn(12, ground=ground)),
         ("cyclic 13", Groebner.rootn(13, ground=ground)),
-        ("cyclic 14", Groebner.rootn(14, ground=ground)),
         ("katsura 10",Groebner.katsura10(ground=ground)),
         ("katsura 11",Groebner.katsura11(ground=ground)),
-        ("katsura 12",Groebner.katsura12(ground=ground)),
         ("eco 10",Groebner.eco10()),
         ("eco 11",Groebner.eco11()),
-        ("eco 12",Groebner.eco12()),
-        ("noon 6"    ,Groebner.noonn(6, ground=ground)),
         ("noon 7"    ,Groebner.noonn(7, ground=ground)),
         ("noon 8"    ,Groebner.noonn(8, ground=ground))
     ]

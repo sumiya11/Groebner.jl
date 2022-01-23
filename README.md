@@ -45,16 +45,23 @@ julia> G = groebner(polys)
 
 We compare the runtime of our implementation against the one of Singular Groebner bases routine. The table below lists measured runtimes for several standard benchmark systems in seconds
 
-|   System    | Size  | Ours    | Singular |
-| :---:       | :---: |  :----: |  :---:   |
-| cyclic-12   |  23   |  0.13s  | **0.03s**    |
-| cyclic-13   |  25   |  0.43s  | **0.10s**    |
-| katsura-9   |  145   |  **0.70s**  | 2.76s    |
-| katsura-10  |  274   |  **5.53s**  | 25.15s    |
-| noon-7      |  495   |  **0.56s**  | 0.88s    |
-| noon-8      |  1338  |  **5.42s**  | 8.04s    |
+|   System    | Size  | Degree | Ours    | Singular |
+| :---:       | :---: | :--: | :----: |  :---:   |
+| cyclic-12   |  12   | 12 | 0.13s  | **0.03s**    |
+| cyclic-13   |  13   | 13 | 0.43s  | **0.10s**    |
+| cyclic-14   |  14   | 14 | 1.32s  | **0.31s**    |
+| katsura-9   |  145  | 9  | **0.70s**  | 2.76s    |
+| katsura-10  |  274  | 10 | **5.22s**  | 25.15s   |
+| eco-10  |  203  | 6 | **0.98s**  | 7.63s   |
+| eco-11  |  389  | 7 | **7.46s**  | 82.84s   |
+| noon-7      |  495  |  13  | **0.56s**  | 0.88s    |
+| noon-8      |  1338 |  15  | **5.42s**  | 8.04s    |
 
 The bases are computed in `degrevlex` monomial ordering over finite fields having all operations single-threaded. Benchmarks sources are located in the `benchmark` folder.
+
+If you discover a system where our package shows bad performance, you are very welcome to submit an issue!  
+
+TODO: add links to used systems
 
 ## Acknowledgement
 
