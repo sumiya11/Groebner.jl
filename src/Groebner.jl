@@ -55,7 +55,6 @@ include("io.jl")
 include("arithmetic/unsigned.jl")
 # modular arithmetic for CRT and rational reconstruction
 include("arithmetic/modular.jl")
-# basis coefficients manipulations
 
 #= f4 implementation over finite fields =#
 # the heart of this library
@@ -69,16 +68,14 @@ include("f4/f4.jl")
 include("f4/groebner.jl")
 include("f4/isgroebner.jl")
 include("f4/normalform.jl")
+include("f4/correctness.jl")
 # include("f4/statistics.jl")
 
 #= fglm implementation over finite fields =#
 include("fglm/fglm.jl")
 
-# the api
+# api
 include("interface.jl")
-
-# functions to check for correctness of algorithms
-include("correctness.jl")
 
 # example systems definitions
 include("testgens.jl")

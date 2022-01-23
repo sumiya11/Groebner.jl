@@ -54,6 +54,14 @@ end
     G = Groebner.groebner(fs)
     @test G == [y + 2131232232097//222222221111123*z, x]
 
+    #=
+    fs = [
+        (12345//12345678)x + y,
+        x^2 + 1]
+    ans = [x + 4115226//4115*y, y^2 + 16933225//16935085031076]
+    =#
+
+    #= TODO
     fs = [
         (12345//12345678)x + y,
         x^2 + z^2,
@@ -67,6 +75,7 @@ end
                 z^2 - 16935085031076//16933225*w^2,
                 y - 12345//4106996*z - 4115//1026749*w,
                 x + 6172839//2053498*z + 4115226//1026749*w]
+    =#
     #@test Groebner.isgroebner(G)
 
     # what if we are unlucky to start from initial prime in coefficients

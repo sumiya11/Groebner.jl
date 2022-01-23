@@ -47,6 +47,8 @@ function reduce_dense_row_by_known_pivots_sparse!(
         # if pivot not defined
         #= WARNING =#
 
+        # @error "inside col" i
+
         # @warn "inner iter $i" startcol tmp_pos pivs
         if !isassigned(pivs, i) || (tmp_pos != -1 && tmp_pos == i)
             # println("skipped")
@@ -58,6 +60,7 @@ function reduce_dense_row_by_known_pivots_sparse!(
         end
 
         # mul = -densecoeffs[i]
+        # actually.. not bad!
         mul = ucompmod(densecoeffs[i], ch)
 
         # exponents of reducer row at column i
@@ -70,7 +73,12 @@ function reduce_dense_row_by_known_pivots_sparse!(
             @inbounds cfs = matrix.coeffs[matrix.low2coef[i]]
         end
 
+        # @error "pivot found" pivs[i] cfs
+        # @warn "reducing" densecoeffs mul ch reducerexps
+
         reduce_by_pivot!(densecoeffs, reducerexps, mul, cfs, ch)
+
+        # @error "after reduction" densecoeffs
     end
 
     newrow = Vector{Int}(undef, k)
@@ -463,6 +471,8 @@ function exact_sparse_rref_nf!(
     @warn "lowrow2coef" rowidx2coef
     =#
 
+    # @error "pivs" pivs
+
     for i in 1:nlow
         # select next row to be reduced
         # npiv ~ exponents
@@ -482,12 +492,14 @@ function exact_sparse_rref_nf!(
             densecoeffs[rowexps[j]] = cfsref[j]
         end
 
+        # @error "row " i densecoeffs cfsref
+
         # reduce it with known pivots from matrix.uprows
         # first nonzero in densecoeffs is at startcol position
         startcol = rowexps[1]
         # zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(densecoeffs, matrix, basis, pivs, startcol, -1)
         zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(densecoeffs, matrix, basis, pivs, startcol, -1)
-        # @warn "reduced " zeroed newrow newcfs
+        # @warn "reduced " zeroed
         # if fully reduced
         zeroed && continue
 
@@ -580,6 +592,7 @@ function convert_nf_rows_to_basis_elements!(
             basis.coeffs[basis.ndone] = matrix.coeffs[i]
             basis.gens[basis.ndone] = row
         else
+            # TODO
             empty!(basis.coeffs[basis.ndone])
             empty!(basis.gens[basis.ndone])
         end

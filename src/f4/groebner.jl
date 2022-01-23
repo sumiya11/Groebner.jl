@@ -32,38 +32,65 @@ function groebner_qq(
     gbcoeffs_accum = Vector{Vector{BigInt}}(undef, 0)
     gbcoeffs_qq = Vector{Vector{Rational{BigInt}}}(undef, 0)
 
-    # scale coefficients to integer ring inplace
-    coeffs_zz = scale_denominators!(coeffs)
+    init_coeffs_zz = scale_denominators(coeffs)
+
+    @warn "scaled" coeffs init_coeffs_zz
 
     modulo = BigInt(1)
-    prime = nextluckyprime(coeffs_zz)
+    prime = nextluckyprime(init_coeffs_zz)
+    moduli = Int[prime]
+    goodprime = nextgoodprime(init_coeffs_zz, moduli)
 
-    ring_ff, coeffs_ff = reduce_modulo(coeffs_zz, ring, prime)
+    ring_ff, init_coeffs_ff = reduce_modulo(init_coeffs_zz, ring, prime)
+
+    @warn "reduced" ring_ff init_coeffs_ff init_coeffs_zz
 
     # TODO: 2^16
-    gens_ff, ht = initialize_structures(ring_ff, exps, coeffs_ff, rng, 2^16)
+    init_gens_temp_ff, ht = initialize_structures(ring_ff, exps,
+                                                    init_coeffs_zz, init_coeffs_ff,
+                                                    rng, 2^16)
+    gens_ff = copy_basis(init_gens_temp_ff)
+
+    @warn "after init" gens_ff
 
     i = 1
     while true
         @info "$i: selected lucky prime $prime"
 
-        gb_ff, ht = f4!(ring_ff, gens_ff, ht, reduced)
+        f4!(ring_ff, gens_ff, ht, reduced)
+        @info "basis computed" gens_ff.coeffs
 
         @info "CRT modulo ($modulo, $(ring_ff.ch))"
-        reconstruct_crt!(gbcoeffs_accum, modulo, gb_ff.coeffs, ring_ff)
+        reconstruct_crt!(gbcoeffs_accum, modulo, gens_ff.coeffs, ring_ff)
+
+        @info "reconstructed #1" gbcoeffs_accum
 
         @info "Reconstructing modulo $modulo"
         reconstruct_modulo!(gbcoeffs_qq, gbcoeffs_accum, modulo)
 
-        if true # correctness_check()
+        @info "reconstructed #2" gbcoeffs_qq
+        println(ht.exponents[1:10])
+
+        buf_ff = copy_basis(init_gens_temp_ff)
+        if correctness_check!(init_coeffs_zz, ring_ff, gens_ff,
+                                        buf_ff, ht, gbcoeffs_qq,
+                                        modulo, randomized, goodprime)
+            @info "Success!"
             break
         end
 
-        prime = nextluckyprime(coeffs_zz, prime)
-        reduce_modulo!(coeffs_zz, ring, prime, ring_ff, coeffs_ff)
-        reinitialize_structures!(gens_ff, ht, coeffs_ff)
+        prime = nextluckyprime(init_coeffs_zz, prime)
+        goodprime = nextgoodprime(init_coeffs_zz, moduli, goodprime)
+        push!(moduli, prime)
+
+        reduce_modulo!(init_coeffs_zz, prime, ring_ff, init_gens_temp_ff)
+        gens_ff = copy_basis(init_gens_temp_ff)
+
+        i += 1
     end
 
+    # normalize_coeffs!(gbcoeffs_qq)
+    gbexps = hash_to_exponents(gens_ff, ht)
     gbexps, gbcoeffs_qq
 end
 

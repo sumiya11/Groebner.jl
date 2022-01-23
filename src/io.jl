@@ -440,7 +440,7 @@ function convert_to_output(
 
     ord = ordering(origring)
     if elem_type(base_ring(origring)) <: Integer
-        coeffs_zz = scale_denominators!(gbcoeffs)
+        coeffs_zz = scale_denominators(gbcoeffs)
         convert_to_output(origring, gbexps, coeffs_zz, Val(ord))
     else
         convert_to_output(origring, gbexps, gbcoeffs, Val(ord))

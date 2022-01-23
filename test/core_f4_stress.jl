@@ -16,6 +16,8 @@ function test_params(rng, nvariables, exps, nterms,
                                     n, e, nt, np, csz, rng, gr, ord
                                 )
                                 isempty(set) && continue
+                                println(ord, " ", gr)
+                                println(set)
                                 gb = Groebner.groebner(set)
                                 @test Groebner._isgroebner_reference(gb, initial_gens=set)
 

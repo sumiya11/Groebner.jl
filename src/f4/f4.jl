@@ -46,6 +46,24 @@ function filter_redundant!(basis::Basis)
     basis
 end
 
+function standardize_basis!(basis::Basis)
+    for i in 1:basis.nlead
+        idx = basis.nonred[i]
+        basis.lead[i] = basis.lead[idx]
+        basis.nonred[i] = i
+        basis.isred[i] = 0
+        basis.coeffs[i] = basis.coeffs[idx]
+        basis.gens[i] = basis.gens[idx]
+    end
+    basis.size = basis.ndone = basis.ntotal = basis.nlead
+    resize!(basis.coeffs, basis.ndone)
+    resize!(basis.gens, basis.ndone)
+    resize!(basis.lead, basis.ndone)
+    resize!(basis.nonred, basis.ndone)
+    resize!(basis.isred, basis.ndone)
+    normalize_basis!(basis)
+end
+
 function export_basis_data(basis::Basis, ht::MonomialHashtable)
     exps   = Vector{Vector{Vector{UInt16}}}(undef, basis.nlead)
     coeffs = Vector{Vector{UInt64}}(undef, basis.nlead)
@@ -61,6 +79,19 @@ function export_basis_data(basis::Basis, ht::MonomialHashtable)
     end
 
     exps, coeffs
+end
+
+function hash_to_exponents(basis::Basis, ht::MonomialHashtable)
+    exps   = Vector{Vector{Vector{UInt16}}}(undef, basis.nlead)
+    for i in 1:basis.nlead
+        idx = basis.nonred[i]
+        poly = basis.gens[idx]
+        exps[i] = Vector{Vector{UInt16}}(undef, length(poly))
+        for j in 1:length(poly)
+            exps[i][j] = ht.exponents[poly[j]]
+        end
+    end
+    exps
 end
 
 #------------------------------------------------------------------------------
@@ -130,6 +161,38 @@ function initialize_structures(
     basis, basis_ht
 end
 
+# Initializes Basis and MonomialHashtable structures,
+# fills input data from exponents and coeffs
+function initialize_structures(
+            ring::PolyRing,
+            exponents::Vector{Vector{Vector{UInt16}}},
+            coeffs_zz::Vector{Vector{BigInt}},
+            coeffs::Vector{Vector{UInt64}},
+            rng::Random.AbstractRNG,
+            tablesize::Int)
+
+    # basis for storing basis elements,
+    # pairset for storing critical pairs of basis elements to assess,
+    # hashtable for hashing monomials occuring in the basis
+    basis    = initialize_basis(ring, length(exponents))
+    basis_ht = initialize_basis_hash_table(ring, rng, initial_size=tablesize)
+
+    # filling the basis and hashtable with the given inputs
+    fill_data!(basis, basis_ht, exponents, coeffs)
+
+    # every monomial in hashtable is associated with its divmask
+    # to perform divisions faster. Filling those
+    fill_divmask!(basis_ht)
+
+    # sort input, smaller leading terms first
+    sort_gens_by_lead_increasing!(basis, basis_ht, coeffs_zz)
+
+    # divide each polynomial by leading coefficient
+    normalize_basis!(basis)
+
+    basis, basis_ht
+end
+
 
 # Initializes Basis with the given hashtable,
 # fills input data from exponents and coeffs
@@ -157,6 +220,10 @@ function initialize_structures(
     # normalize_basis!(basis)
 
     basis, present_ht
+end
+
+function reinitialize_structures!(gens_ff::Basis, ht, coeffs_ff)
+
 end
 
 #------------------------------------------------------------------------------
@@ -241,11 +308,12 @@ function reducegb_f4!(
     @warn "after interreduce"
     dump(matrix, maxdepth=5)
     =#
-
-    convert_matrix_rows_to_basis_elements_use_symbol!(matrix, basis)
-
+    # TODO
+    # convert_matrix_rows_to_basis_elements_use_symbol!(matrix, basis)
+    convert_matrix_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
     # no longer need in two hashtables
-    ht = symbol_ht
+    # TODO
+    # ht = symbol_ht
 
     basis.ntotal = matrix.npivots + basis.ndone
     basis.ndone = matrix.npivots
@@ -306,11 +374,6 @@ function f4!(ring::PolyRing,
      # checks for redundancy of new elems
      update!(pairset, basis, ht, update_ht)
 
-     #=
-     @warn "initial update"
-     dump(basis, maxdepth = 5)
-     =#
-
      d = 0
      # while there are pairs to be reduced
      while !isempty(pairset)
@@ -318,77 +381,23 @@ function f4!(ring::PolyRing,
          @debug "F4 ITER $d"
          @debug "Available $(pairset.load) pairs"
 
-         #=
-         @warn "start of $d"
-         dump(basis, maxdepth = 5)
-         println(ht.exponents[1:10])
-         =#
-
          # selects pairs for reduction from pairset following normal strategy
          # (minimal lcm degrees are selected),
          # and puts these into the matrix rows
          select_normal!(pairset, basis, matrix, ht, symbol_ht)
          @debug "Selected $(divexact(matrix.nrows, 2)) pairs"
 
-         #=
-         @warn "noxd $d"
-         dump(basis, maxdepth = 5)
-         dump(matrix, maxdepth = 5)
-         println(ht.exponents[1:10])
-         println(symbol_ht.exponents[1:10])
-         =#
-
          symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
          @debug "Matrix of size $((matrix.nrows, matrix.ncols)), density TODO"
-
-         #=
-         @warn "xd $d"
-         dump(basis, maxdepth = 5)
-         dump(matrix, maxdepth = 5)
-         println(ht.exponents[1:10])
-         println(symbol_ht.exponents[1:10])
-         =#
 
          # reduces polys and obtains new potential basis elements
          reduction!(basis, matrix, ht, symbol_ht)
          @debug "Matrix reduced, density TODO"
 
-
-         #@warn "after reduction"
-         #dump(matrix, maxdepth = 5)
-
-         #=
-         printstyled("nice basis\n", color=:red)
-         for (_, cfs, poly) in zip(1:basis.ntotal, basis.coeffs, basis.gens)
-             for i in 1:length(poly)
-                 c = cfs[i]
-                 e = ht.exponents[poly[i]]
-                 print("$c*$e + ")
-             end
-             println("")
-         end
-         println(basis.nonred)
-         =#
-
-
          # update the current basis with polynomials produced from reduction,
          # does not copy,
          # checks for redundancy
          update!(pairset, basis, ht, update_ht)
-
-         #=
-         @warn "after update"
-         printstyled("nice basis\n", color=:red)
-         for (_, cfs, poly) in zip(1:basis.ntotal, basis.coeffs, basis.gens)
-             for i in 1:length(poly)
-                 c = cfs[i]
-                 e = ht.exponents[poly[i]]
-                 print("$c*$e + ")
-             end
-             println("")
-         end
-         println(basis.nonred)
-         =#
 
          # TODO: is this okay hm ?
          # to be changed
@@ -406,42 +415,17 @@ function f4!(ring::PolyRing,
      # remove redundant elements
      filter_redundant!(basis)
 
-     #=
-     @warn "after filter red"
-     printstyled("nice basis\n", color=:red)
-     for (_, cfs, poly) in zip(1:basis.ntotal, basis.coeffs, basis.gens)
-         for i in 1:length(poly)
-             c = cfs[i]
-             e = ht.exponents[poly[i]]
-             print("$c*$e + ")
-         end
-         println("")
-     end
-     println("NONRED ", basis.nonred)
-     println(basis.isred)
-     println(basis.nlead)
-     =#
-
      if reduced
          reducegb_f4!(basis, matrix, ht, symbol_ht)
-         ht = symbol_ht
+         # ht = symbol_ht
      end
 
-     #=
-     @warn "after reduce"
-     printstyled("nice basis\n", color=:red)
-     for (_, cfs, poly) in zip(1:basis.ntotal, basis.coeffs, basis.gens)
-         for i in 1:length(poly)
-             c = cfs[i]
-             e = ht.exponents[poly[i]]
-             print("$c*$e + ")
-         end
-         println("")
-     end
-     println(basis.nonred)
-     =#
+     # So re returned basis holds some invariants:
+     #  1.
+     #  2.
+     standardize_basis!(basis)
 
-     basis, ht
+     nothing
 end
 
 #=
@@ -465,8 +449,7 @@ function f4(ring::PolyRing,
     basis, ht = initialize_structures(
                         ring, exponents, coeffs, rng, tablesize)
 
-    # TODO
-    basis, ht = f4!(ring, basis, ht, reduced)
+    f4!(ring, basis, ht, reduced)
 
     export_basis_data(basis, ht)
 end

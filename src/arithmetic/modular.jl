@@ -5,6 +5,11 @@
 
 #------------------------------------------------------------------------------
 
+const FIRST_COMPUTE_PRIME = 2^31 - 1
+const FIRST_CHECK_PRIME   = 2^30 + 3
+
+#------------------------------------------------------------------------------
+
 # Rational number reconstruction implementation borrowed from CLUE
 # and modified a bit to suit the 'Modern Computer Algebra' definitions
 # Returns a rational r // h of QQ field in a canonical form such that
@@ -54,7 +59,20 @@ function rational_reconstruction(a::I, m::I) where {I<:Union{Int, BigInt}}
     return QQ(0, 1)
 end
 
+rational_bound(x::BigInt) = ceil(BigInt, sqrt(float(x) / 2))
+
 # 0 allocations!
+#=
+    Computes the rational reconstruction of `a` mod `m`.
+    Namely, a pair of numbers num, den , such that
+        num//den ≡ a (mod m)
+
+    Additional params:
+        bnd  = stores stopping criterion threshold
+        buf, buf1, buf2, buf3  = buffers
+        u1, u2, u3 = buffers
+        v1, v2, v3 = buffers
+=#
 function rational_reconstruction!(
             num::BigInt, den::BigInt, bnd::BigInt, buf::BigInt,
             buf1::BigInt, buf2::BigInt, buf3::BigInt,
@@ -115,7 +133,14 @@ function rational_reconstruction!(
 
     Base.GMP.MPZ.set!(den, v2)
     Base.GMP.MPZ.set!(num, v3)
-    if Base.GMP.MPZ.cmp_ui(v2, 0) < 0
+
+    # TODO
+
+    Base.GMP.MPZ.gcd!(buf, den, num)
+    Base.GMP.MPZ.tdiv_q!(den, buf)
+    Base.GMP.MPZ.tdiv_q!(num, buf)
+
+    if Base.GMP.MPZ.cmp_ui(den, 0) < 0
         Base.GMP.MPZ.neg!(den)
         Base.GMP.MPZ.neg!(num)
     end
@@ -126,6 +151,17 @@ end
 #------------------------------------------------------------------------------
 
 # 0 allocations!
+#=
+    Computes the unique x s.t
+        x ≡ a1 mod m1
+        x ≡ a2 mod m2
+
+    Additional params:
+        M   = m1*m2
+        buf = a buffer
+        n1  = a buffer
+        n2  = a buffer
+=#
 function CRT!(
             M::BigInt, buf::BigInt, n1::BigInt, n2::BigInt,
             a1::BigInt, m1::BigInt, a2::UInt, m2::BigInt)

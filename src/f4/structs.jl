@@ -23,6 +23,11 @@ mutable struct Hashvalue
     deg::Int
 end
 
+function copy_hashvalue(x::Hashvalue)
+    Hashvalue(x.hash, x.divmask, x.idx, x.deg)
+end
+
+
 #=
     Hashtable implementing linear probing
     and designed to store and operate with monomials
@@ -131,6 +136,26 @@ function initialize_basis_hash_table(
         divmap, divvars, ndivvars, ndivbits,
         size, load, offset)
 end
+
+function copy_hashtable(ht::MonomialHashtable)
+    exps = Vector{Vector{UInt16}}(undef, ht.size)
+    table = Vector{Int}(undef, ht.size)
+    data = Vector{Hashvalue}(undef, ht.size)
+    exps[1] = zeros(UInt16, ht.explen)
+    for i in 2:ht.load
+        exps[i] = copy(ht.exponents[i])
+        table[i] = ht.hashtable[i]
+        data[i] = copy_hashvalue(ht.hashdata[i])
+    end
+
+    MonomialHashtable(
+        ht.exponents, ht.hashtable, ht.hashdata, ht.hasher,
+        ht.nvars, ht.explen, ht.ord,
+        ht.divmap, ht.divvars, ht.ndivvars, ht.ndivbits,
+        ht.size, ht.load, ht.offset)
+end
+
+#------------------------------------------------------------------------------
 
 # initialize hashtable either for `symbolic_preprocessing` or for `update` functions
 # These are of the same purpose and structure as basis hashtable,
@@ -311,6 +336,27 @@ function initialize_basis(ring::PolyRing, ngens::Int)
     ch = ring.ch
 
     Basis(gens, coeffs, sz, ndone, ntotal, isred, nonred, lead, nlead, ch)
+end
+
+function copy_basis(basis::Basis)
+    #  That cost a day of debugging ////
+    gens   = Vector{Vector{Int}}(undef, basis.size)
+    coeffs = Vector{Vector{UInt64}}(undef, basis.size)
+    for i in 1:basis.ntotal
+        gens[i] = Vector{Int}(undef, length(basis.gens[i]))
+        coeffs[i] = Vector{UInt}(undef, length(basis.coeffs[i]))
+        @assert length(gens[i]) == length(coeffs[i])
+        for j in 1:length(basis.gens[i])
+            gens[i][j] = basis.gens[i][j]
+            coeffs[i][j] = basis.coeffs[i][j]
+        end
+    end
+    isred  = copy(basis.isred)
+    nonred = copy(basis.nonred)
+    lead = copy(basis.lead)
+    Basis(gens, coeffs, basis.size, basis.ndone,
+            basis.ntotal, isred, nonred, lead,
+            basis.nlead, basis.ch)
 end
 
 function check_enlarge_basis!(basis::Basis, added::Int)

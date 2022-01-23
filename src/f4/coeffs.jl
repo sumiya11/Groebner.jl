@@ -1,20 +1,20 @@
 
 #------------------------------------------------------------------------------
 
-function common_denominator!(coeffs::Vector{Rational{BigInt}})
+function common_denominator(coeffs::Vector{Rational{BigInt}})
     den = BigInt(1)
     for c in coeffs
         # use buffer?
-        Base.GMP.MPZ.mul!(den, denominator(c))
+        Base.GMP.MPZ.lcm!(den, denominator(c))
     end
-    buf
+    den
 end
 
-function scale_denominators!(coeffs::Vector{Rational{BigInt}})
-    intcoeffs = zeros(BigInt, length(coeffs))
+function scale_denominators(coeffs::Vector{Rational{BigInt}})
+    intcoeffs = [BigInt(0) for _ in 1:length(coeffs)]
     # lcm of map(denominator, coeffs[i])
     # so that den × coeffs[i] is integer
-    den = common_denominator!(coeffs)
+    den = common_denominator(coeffs)
     buf = BigInt(1)
     for i in 1:length(coeffs)
         t = numerator(coeffs[i])
@@ -25,41 +25,6 @@ function scale_denominators!(coeffs::Vector{Rational{BigInt}})
 end
 
 # scales denominators inplace, returning new vector of integer coefficients
-function scale_denominators!(coeffs::Vector{Vector{Rational{BigInt}}})
-    intcoeffs = Vector{Vector{BigInt}}(undef, length(coeffs))
-    for i in 1:length(coeffs)
-        intcoeffs[i] = scale_denominators!(coeffs[i])
-    end
-    intcoeffs
-end
-
-#------------------------------------------------------------------------------
-
-function common_denominator(coeffs::Vector{Rational{BigInt}})
-    den = BigInt(1)
-    for c in coeffs
-        # TODO: Modular arithmetic
-        den = lcm(den, denominator(c))
-    end
-    den
-end
-
-# given an array of rational coeffs
-# scales them by the minimal number such that the coeffs are all integer
-function scale_denominators(coeffs::Vector{Rational{BigInt}})
-    intcoeffs = Vector{BigInt}(undef, length(coeffs))
-    # lcm of map(denominator, coeffs[i])
-    # so that den × coeffs[i] is integer
-    den = common_denominator(coeffs)
-    for i in 1:length(coeffs)
-        # TODO: MutableArithmetics
-        delta = divexact(den, denominator(coeffs[i]))
-        intcoeffs[i] = numerator(coeffs[i]) * delta
-    end
-    intcoeffs
-end
-
-# scales denominators, returning new vector of integer coefficients
 function scale_denominators(coeffs::Vector{Vector{Rational{BigInt}}})
     intcoeffs = Vector{Vector{BigInt}}(undef, length(coeffs))
     for i in 1:length(coeffs)
@@ -71,34 +36,14 @@ end
 #------------------------------------------------------------------------------
 
 # coerce each coeff in `coeffs` into residuals modulo `prime`
-function reduce_modulo(coeffs::Vector{BigInt}, prime::Int)
-    ffcoeffs = Vector{UInt64}(undef, length(coeffs))
-    p = BigInt(prime)
-    buf = BigInt(0)
-    for i in 1:length(coeffs)
-        # TODO: faster
-        # convert is guaranteed to be exact
-        c = coeffs[i]
-        if c < 0
-            Base.GMP.MPZ.fdiv_q!(buf, c, p)
-            Base.GMP.MPZ.neg!(buf)
-            Base.GMP.MPZ.mul_ui!(buf, prime)
-            Base.GMP.MPZ.add!(c, buf)
-        end
-        Base.GMP.MPZ.tdiv_r!(buf, c, p)
-        ffcoeffs[i] = UInt64(buf)
-    end
-    ffcoeffs
-end
-
-# coerce each coeff in `coeffs` into residuals modulo `prime`
 function reduce_modulo(
         coeffs::Vector{Vector{BigInt}},
         ring::PolyRing, prime::Int)
 
     ffcoeffs = Vector{Vector{UInt64}}(undef, length(coeffs))
     for i in 1:length(coeffs)
-        ffcoeffs[i] = reduce_modulo(coeffs[i], prime)
+        ffcoeffs[i] = Vector{UInt64}(undef, length(coeffs[i]))
+        reduce_modulo!(coeffs[i], prime, ffcoeffs[i])
     end
     # why abstract?
     # TODO
@@ -106,29 +51,34 @@ function reduce_modulo(
     ring_ff, ffcoeffs
 end
 
-#------------------------------------------------------------------------------
-
-# Not used
-# checks if coefficients in coeffs are not large compared to modulo
-# Having relatively large coeffs would mean that reconstruction probably failed
-function reconstruction_check(
-        coeffs::Vector{Vector{Rational{BigInt}}},
-        modulo::BigInt
-    )
-
-    @inbounds for i in 1:length(coeffs)
-        for j in 1:length(coeffs[i])
-            c = coeffs[i][j]
-            # heuristic
-            # TODO: a better one
-            pval = ( numerator(c) + denominator(c) ) ^ 2
-            if pval >= modulo
-                return false
-            end
+function reduce_modulo!(coeffs, prime, coeffs_ff)
+    p   = BigInt(prime)
+    buf = BigInt(0)
+    c   = BigInt(0)
+    for i in 1:length(coeffs)
+        Base.GMP.MPZ.set!(c, coeffs[i])
+        if Base.GMP.MPZ.cmp_ui(c, 0) < 0
+            Base.GMP.MPZ.fdiv_q!(buf, c, p)
+            Base.GMP.MPZ.neg!(buf)
+            Base.GMP.MPZ.mul_ui!(buf, prime)
+            Base.GMP.MPZ.add!(c, buf)
         end
+        @assert c >= 0
+        Base.GMP.MPZ.tdiv_r!(buf, c, p)
+        coeffs_ff[i] = UInt64(buf)
+    end
+end
+
+function reduce_modulo!(
+            coeffs_zz, prime,
+            ring_ff, basis::Basis)
+
+    for i in 1:length(coeffs_zz)
+        reduce_modulo!(coeffs_zz[i], prime, basis.coeffs[i])
     end
 
-    return true
+    basis.ch   = prime
+    ring_ff.ch = prime
 end
 
 #------------------------------------------------------------------------------
@@ -155,7 +105,7 @@ function nextluckyprime(
         prevprime::Int)
 
     if prevprime == 1
-        candidate = 2^31 - 1
+        candidate = FIRST_COMPUTE_PRIME
     else
         candidate = nextprime(prevprime + 1)
     end
@@ -172,6 +122,13 @@ end
 
 function nextgoodprime(
         coeffs::Vector{Vector{BigInt}},
+        moduli::Vector{Int})
+
+    nextgoodprime(coeffs, moduli, FIRST_CHECK_PRIME-1)
+end
+
+function nextgoodprime(
+        coeffs::Vector{Vector{BigInt}},
         moduli::Vector{Int},
         prevprime::Int)
 
@@ -185,8 +142,9 @@ end
 #------------------------------------------------------------------------------
 
 function reconstruct_crt!(gbcoeffs_accum, coeffs_ff, ring_ff)
+    resize!(gbcoeffs_accum, length(coeffs_ff))
     for i in 1:length(coeffs_ff)
-        gbcoeffs_accum[i] = zeros(BigInt, length(coeffs_ff[i]))
+        gbcoeffs_accum[i] = [BigInt(0) for _ in 1:length(coeffs_ff[i])]
         for j in 1:length(coeffs_ff[i])
             cf = coeffs_ff[i][j]
             Base.GMP.MPZ.set_ui!(gbcoeffs_accum[i][j], cf)
@@ -196,7 +154,7 @@ end
 
 function reconstruct_crt!(gbcoeffs_accum, modulo, coeffs_ff, ring_ff)
     if modulo == 1
-        reconstruct_crt!(gbcoeffs_accum, gb_ff, ring_ff)
+        reconstruct_crt!(gbcoeffs_accum, coeffs_ff, ring_ff)
         Base.GMP.MPZ.mul_ui!(modulo, ring_ff.ch)
         return nothing
     end
@@ -215,6 +173,7 @@ function reconstruct_crt!(gbcoeffs_accum, modulo, coeffs_ff, ring_ff)
             cf = coeffs_ff[i][j]
             CRT!(M, buf, n1, n2, ca, modulo, cf, bigch)
             Base.GMP.MPZ.set!(gbcoeffs_accum[i][j], buf)
+            @assert gbcoeffs_accum[i][j] >= 0
         end
     end
     Base.GMP.MPZ.mul_ui!(modulo, ring_ff.ch)
@@ -233,7 +192,7 @@ function reconstruct_modulo!(gbcoeffs_qq, gbcoeffs_accum, modulo)
         end
     end
 
-    bnd = ceil(BigInt, sqrt(float(modulo) / 2))
+    bnd = rational_bound(modulo)
     buf, buf1, buf2, buf3  = (BigInt(0) for _ in 1:4)
     u1, u2, u3, v1, v2, v3 = (BigInt(0) for _ in 1:6)
 
@@ -246,6 +205,8 @@ function reconstruct_modulo!(gbcoeffs_qq, gbcoeffs_accum, modulo)
                                         buf1, buf2, buf3,
                                         u1, u2, u3, v1, v2, v3,
                                         cz, modulo)
+            # TODO
+            @assert gcd(numerator(cq), denominator(cq)) == 1
         end
     end
 

@@ -33,6 +33,39 @@ end
 # sorts generators and corresponding coefficients from basis
 # by their leading monomial in increasing ordering
 #
+# Used only once to sort input generators
+function sort_gens_by_lead_increasing!(
+            basis::Basis, ht::MonomialHashtable, coeffs_zz)
+    gens = basis.gens
+    exps = ht.exponents
+
+    inds = collect(1:basis.ntotal)
+
+    if ht.ord == :degrevlex
+        cmp  = (x, y) -> exponent_isless_drl(
+                                @inbounds(exps[gens[x][1]]),
+                                @inbounds(exps[gens[y][1]]))
+    elseif ht.ord == :lex
+        cmp  = (x, y) -> exponent_isless_lex(
+                                @inbounds(exps[gens[x][1]]),
+                                @inbounds(exps[gens[y][1]]))
+    else
+        cmp  = (x, y) -> exponent_isless_dl(
+                                @inbounds(exps[gens[x][1]]),
+                                @inbounds(exps[gens[y][1]]))
+    end
+    sort!(inds, lt=cmp)
+
+    # use array assignment insted of elemewise assignment
+    # Reason: slice array assignment uses fast setindex! based on unsafe copy
+    basis.gens[1:basis.ntotal]   = basis.gens[inds]
+    basis.coeffs[1:basis.ntotal] = basis.coeffs[inds]
+    coeffs_zz[1:basis.ntotal]    = coeffs_zz[inds]
+end
+
+# sorts generators and corresponding coefficients from basis
+# by their leading monomial in increasing ordering
+#
 # Used only once to sort output generators
 function sort_gens_by_lead_increasing_in_reduce!(basis::Basis, ht::MonomialHashtable)
     gens = basis.gens
