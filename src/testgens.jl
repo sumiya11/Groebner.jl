@@ -303,6 +303,46 @@ function sparse5(; ground=QQ)
     ]
 end
 
+function s9_1(; ground=QQ)
+    R, (a, b, c, d, e, f, g, h) = PolynomialRing(ground, ["x$i" for i in 1:8])
+
+    fs = [-e*g - 2*d*h,
+        9*e + 4*b,
+        -4*c*h - 2*e*f - 3*d*g,
+        -7*c + 9*a - 8*f,
+        -4*d*f - 5*c*g - 6*h - 3*e,
+        -5*d - 6*c*f - 7*g + 9*b,
+        9*d + 6*a - 5*b,
+        9*c - 7*a + 8]
+end
+
+function ojika4(;ground=QQ)
+    R, (x1, x2, x3) = PolynomialRing(ground, ["x$i" for i in 1:3])
+
+    fs = [x1+x3*x1^3+x1*x3*x2^2-x1*x3,
+    10*x2-2*x2*x3*x1^2-x3*x2^3-x2*x3,
+    -6*x3^2*x1^4-3*x1^2*x2^2*x3^2-x3^2*x1^2+28*x3*x1^2 - 3*x3^2*x2^4+2*x3^2*x2^2+7*x3*x2^2+x3^2-11*x3+10
+    ]
+end
+
+function ojika3_d1R2(;ground=QQ)
+    R, (x1, x2, x3) = PolynomialRing(ground, ["x$i" for i in 1:3])
+
+    fs = [x1^3*x3+x1*x3*x2^2-x1*x3+x1,
+-2*x1^2*x3*x2-x3*x2^3-x3*x2+ 10*x2,
+-6*x1^4*x3^2-3*x1^2*x3^2*x2^2-3*x3^2*x2^4-x1^2*x3^2+ 2*x3^2*x2^2+ 28*x1^2*x3+ 7*x3*x2^2+x3^2-11*x3+ 10]
+end
+
+function ojika4_d1R2_d2R5(;ground=QQ)
+    R, (x1, x2, x3) = PolynomialRing(ground, ["x$i" for i in 1:3])
+
+    fs = [
+    x1^3*x3+x1*x3*x2^2-x1*x3+x1,
+-2*x1^2*x3*x2-x3*x2^3-x3*x2+ 10*x2,
+-6*x1^4*x3^2-3*x1^2*x3^2*x2^2-3*x3^2*x2^4-x1^2*x3^2+ 2*x3^2*x2^2+ 28*x1^2*x3+ 7*x3*x2^2+x3^2-11*x3+ 10
+    ]
+end
+
 function generate_set(nvariables, exps, nterms, npolys, csz, rng,
                             ground, ordering)
     R, _ = PolynomialRing(

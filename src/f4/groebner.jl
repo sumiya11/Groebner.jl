@@ -10,9 +10,26 @@ function groebner_ff(
             coeffs::Vector{Vector{UInt64}},
             reduced::Bool,
             rng::Rng) where {Rng<:Random.AbstractRNG}
+
+    # TODO
+    tablesize = 2^8
+    if ring.nvars > 3
+        tablesize = 2^10
+    end
+    if ring.nvars > 5
+        tablesize = 2^14
+    end
+    tablesize = 2^16
+
     # specialize on ordering (not yet)
     # groebner_ff(ring, exps, coeffs, reduced, rng, Val(ring.ord))
-    f4(ring, exps, coeffs, rng, reduced)
+    basis, ht = initialize_structures(
+                        ring, exps, coeffs, rng, tablesize)
+
+    f4!(ring, basis, ht, reduced)
+
+    gbexps = hash_to_exponents(basis, ht)
+    gbexps, basis.coeffs
 end
 
 #######################################
@@ -24,10 +41,21 @@ function groebner_qq(
             coeffs::Vector{Vector{Rational{BigInt}}},
             reduced::Bool,
             randomized::Bool,
-            rng::Rng,
-            ) where {Rng<:Random.AbstractRNG}
+            rng::Rng) where {Rng<:Random.AbstractRNG}
 
     # we can mutate coeffs and exps here
+    #=
+        TODO
+    =#
+    tablesize = 2^8
+    if ring.nvars > 3
+        tablesize = 2^10
+    end
+    if ring.nvars > 5
+        tablesize = 2^14
+    end
+    tablesize = 2^16
+
 
     gbcoeffs_accum = Vector{Vector{BigInt}}(undef, 0)
     gbcoeffs_qq = Vector{Vector{Rational{BigInt}}}(undef, 0)
@@ -48,9 +76,10 @@ function groebner_qq(
     # @warn "reduced" ring_ff init_coeffs_ff init_coeffs_zz
 
     # TODO: 2^16
+
     init_gens_temp_ff, ht = initialize_structures(ring_ff, exps,
                                                     init_coeffs_zz, init_coeffs_ff,
-                                                    rng, 2^16)
+                                                    rng, tablesize)
     gens_ff = copy_basis(init_gens_temp_ff)
 
     @assert gens_ff.ch == prime == ring_ff.ch

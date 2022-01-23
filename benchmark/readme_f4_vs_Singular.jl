@@ -12,8 +12,12 @@ global_logger(ConsoleLogger(stderr, Logging.Error))
 function benchmark_system_my(system)
     system = Groebner.change_ordering(system, :degrevlex)
     Groebner.groebner([system[1]])
+
+    gb = Groebner.groebner(system)
+    println("length = $(length(gb))")
+    println("degree = $(maximum(total_degree, gb))")
+
     @btime gb = Groebner.groebner($system, reduced=false)
-    println("length = $(length(Groebner.groebner(system)))")
 end
 
 function benchmark_system_singular(system)
@@ -41,8 +45,14 @@ function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
         ("cyclic 12", Groebner.rootn(12, ground=ground)),
         ("cyclic 13", Groebner.rootn(13, ground=ground)),
-        ("katsura 9", Groebner.katsura9(ground=ground)),
+        ("cyclic 14", Groebner.rootn(14, ground=ground)),
         ("katsura 10",Groebner.katsura10(ground=ground)),
+        ("katsura 11",Groebner.katsura11(ground=ground)),
+        ("katsura 12",Groebner.katsura12(ground=ground)),
+        ("eco 10",Groebner.eco10()),
+        ("eco 11",Groebner.eco11()),
+        ("eco 12",Groebner.eco12()),
+        ("noon 6"    ,Groebner.noonn(6, ground=ground)),
         ("noon 7"    ,Groebner.noonn(7, ground=ground)),
         ("noon 8"    ,Groebner.noonn(8, ground=ground))
     ]

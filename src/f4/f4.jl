@@ -376,6 +376,8 @@ function f4!(ring::PolyRing,
              ht,
              reduced)
 
+    # print("input: $(basis.ntotal) gens, $(ring.nvars) vars. ")
+
     @assert ring.ch == basis.ch
     @assert ring.ord == ht.ord && ring.nvars == ht.nvars && ring.explen == ht.explen
     # @error "hashtable divmasks"
@@ -465,31 +467,7 @@ function f4!(ring::PolyRing,
         @assert basis.lead[i] == ht.hashdata[basis.gens[i][1]].divmask
     end
 
+    # println("HT: $(ht.load)/$(ht.size)")
+
     nothing
-end
-
-#=
-Main function to calculate the Groebner basis of the given polynomial ideal
-in degrevlex ordering and finite fields coefficients.
-
-Parameters
-.
-
-=#
-function f4(ring::PolyRing,
-            exponents::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{UInt64}},
-            rng::Rng,
-            reduced::Bool;
-            tablesize::Int=2^16
-            ) where {Rng<:Random.AbstractRNG}
-
-    # initialize basis and hashtable with input polynomials,
-    # fields are not meaningful yet and will be set during update! step
-    basis, ht = initialize_structures(
-                        ring, exponents, coeffs, rng, tablesize)
-
-    f4!(ring, basis, ht, reduced)
-
-    export_basis_data(basis, ht)
 end
