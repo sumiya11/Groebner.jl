@@ -177,7 +177,7 @@ function eco11(;ground=GF(2^31-1))
 end
 
 function eco12(;ground=GF(2^31-1))
-    R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11) = PolynomialRing(ground, ["x$i" for i in 1:11])
+    R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11) = PolynomialRing(ground, ["x$i" for i in 1:12])
 
     fs = [
         x0*x1*x11+x1*x2*x11+x2*x3*x11+x3*x4*x11+x4*x5*x11+x5*x6*x11+x6*x7*x11+x7*x8*x11+x8*x9*x11+x9*x10*x11+x0*x11-1,
