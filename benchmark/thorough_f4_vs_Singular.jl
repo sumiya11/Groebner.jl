@@ -11,8 +11,12 @@ global_logger(ConsoleLogger(stderr, Logging.Error))
 function benchmark_system_my(system)
     system = Groebner.change_ordering(system, :degrevlex)
     Groebner.groebner([system[1]])
+
+    gb = Groebner.groebner(system)
+    println("length = $(length(gb))")
+    println("degree = $(maximum(AbstractAlgebra.total_degree, gb))")
+
     @btime gb = Groebner.groebner($system, reduced=false)
-    println("length = $(length(Groebner.groebner(system)))")
 end
 
 function benchmark_system_singular(system)

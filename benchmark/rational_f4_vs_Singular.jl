@@ -2,9 +2,8 @@
 import Singular
 import AbstractAlgebra
 
-using Groebner
-
 using BenchmarkTools
+using Groebner
 
 using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error))
@@ -46,30 +45,27 @@ function run_f4_ff_degrevlex_benchmarks(ground)
         ("cyclic 12", Groebner.rootn(12, ground=ground)),
         ("cyclic 13", Groebner.rootn(13, ground=ground)),
         ("cyclic 14", Groebner.rootn(14, ground=ground)),
-        ("katsura 10",Groebner.katsura10(ground=ground)),
-        ("katsura 11",Groebner.katsura11(ground=ground)),
-        ("katsura 12",Groebner.katsura12(ground=ground)),
-        ("eco 10",Groebner.eco10()),
-        ("eco 11",Groebner.eco11()),
-        ("eco 12",Groebner.eco12()),
+        ("katsura 6",Groebner.katsura6(ground=ground)),
+        ("eco 7",Groebner.eco7(ground=ground)),
+        ("noon 5"    ,Groebner.noonn(5, ground=ground)),
         ("noon 6"    ,Groebner.noonn(6, ground=ground)),
         ("noon 7"    ,Groebner.noonn(7, ground=ground)),
-        ("noon 8"    ,Groebner.noonn(8, ground=ground))
+        ("kinema"    ,Groebner.kinema(ground=ground)),
+        ("sparse5"    ,Groebner.sparse5(ground=ground)),
+        ("s9_1"    ,Groebner.s9_1(ground=ground)),
+        ("ojika4"    ,Groebner.ojika4(ground=ground)),
+        ("henrion5"    ,Groebner.henrion5(ground=ground))
     ]
 
     for (name, system) in systems
-        println("$name")
+        println("-----------\n$name")
         println("my")
         benchmark_system_my(system)
         println("singular")
         benchmark_system_singular(system)
+        println("-----------")
     end
 end
 
-ground = AbstractAlgebra.GF(2^31 - 1)
+ground = QQ
 run_f4_ff_degrevlex_benchmarks(ground)
-
-#=
-
-
-=#

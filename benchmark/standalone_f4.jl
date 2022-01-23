@@ -14,7 +14,7 @@ function benchmark_system_my(system)
 
     gb = Groebner.groebner(system)
     println("length = $(length(gb))")
-    println("degree = $(maximum(total_degree, gb))")
+    println("degree = $(maximum(AbstractAlgebra.total_degree, gb))")
 
     @btime gb = Groebner.groebner($system, reduced=false)
 end
