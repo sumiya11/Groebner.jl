@@ -49,7 +49,6 @@ We compare the runtime of our implementation against the one of Singular Groebne
 | :---:       | :---: | :--: | :----: |  :---:   |
 | cyclic-12   |  12   | 12 | 0.13s  | **0.03s**    |
 | cyclic-13   |  13   | 13 | 0.43s  | **0.10s**    |
-| cyclic-14   |  14   | 14 | 1.32s  | **0.31s**    |
 | katsura-9   |  145  | 9  | **0.70s**  | 2.76s    |
 | katsura-10  |  274  | 10 | **5.22s**  | 25.15s   |
 | eco-10  |  203  | 6 | **0.98s**  | 7.63s   |
@@ -62,6 +61,8 @@ The bases are computed in `degrevlex` monomial ordering over finite fields havin
 If you discover a system where our package shows bad performance, you are very welcome to submit an issue!  
 
 TODO: add links to used systems
+
+TODO: speed up rational computations
 
 ## Acknowledgement
 

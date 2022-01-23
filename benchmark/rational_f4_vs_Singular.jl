@@ -21,15 +21,14 @@ end
 
 function benchmark_system_singular(system)
     R = AbstractAlgebra.parent(system[1])
-    modulo = AbstractAlgebra.characteristic(R)
     n = AbstractAlgebra.nvars(R)
-    ground_s = Singular.N_ZpField(modulo)
+    ground_s = Singular.QQ
     R_s, _ = Singular.PolynomialRing(ground_s, ["x$i" for i in 1:n], ordering=:degrevlex)
 
     system_s = map(
         f -> AbstractAlgebra.change_base_ring(
                     ground_s,
-                    AbstractAlgebra.map_coefficients(c -> ground_s(c.d), f),
+                    AbstractAlgebra.map_coefficients(c -> ground_s(numerator(c), denominator(c)), f),
                     parent=R_s),
         system)
 
@@ -66,5 +65,5 @@ function run_f4_ff_degrevlex_benchmarks(ground)
     end
 end
 
-ground = QQ
+ground = AbstractAlgebra.QQ
 run_f4_ff_degrevlex_benchmarks(ground)
