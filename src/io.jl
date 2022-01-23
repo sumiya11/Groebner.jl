@@ -466,11 +466,19 @@ function convert_to_output(
             gbcoeffs::Vector{Vector{T}},
             ::Val{:degrevlex}) where  {T<:Union{Rational{BigInt},BigInt,UInt64}, U}
 
+    nv = nvars(origring)
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     for i in 1:length(gbexps)
         cfs    = map(ground, gbcoeffs[i])
-        exps   = UInt64.(hcat(gbexps[i]...))
+        exps   = Matrix{UInt64}(undef, nv + 1, length(gbcoeffs[i]))
+        for jt in 1:length(gbcoeffs[i])
+            for je in 1:nv
+                exps[je, jt] = gbexps[i][jt][je]
+            end
+            exps[nv + 1, jt] = gbexps[i][jt][end]
+        end
+        # exps   = UInt64.(hcat(gbexps[i]...))
         exported[i] = create_polynomial(origring, cfs, exps)
     end
     exported
@@ -486,11 +494,18 @@ function convert_to_output(
             gbcoeffs::Vector{Vector{T}},
             ::Val{:lex}) where {T<:Union{Rational{BigInt},BigInt,UInt64}, U}
 
+    nv = nvars(origring)
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     for i in 1:length(gbexps)
         cfs    = map(ground, gbcoeffs[i])
-        exps   = UInt64.(hcat(map(x -> x[end-1:-1:1], gbexps[i])...))
+        exps   = Matrix{UInt64}(undef, nv, length(gbcoeffs[i]))
+        for jt in 1:length(gbcoeffs[i])
+            for je in 1:nv
+                exps[je, jt] = gbexps[i][jt][nv - je + 1]
+            end
+        end
+        # exps   = UInt64.(hcat(map(x -> x[end-1:-1:1], gbexps[i])...))
         exported[i] = create_polynomial(origring, cfs, exps)
     end
     exported
@@ -506,11 +521,19 @@ function convert_to_output(
             gbcoeffs::Vector{Vector{T}},
             ::Val{:deglex}) where {T<:Union{Rational{BigInt},BigInt,UInt64}, U}
 
+    nv = nvars(origring)
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     for i in 1:length(gbexps)
         cfs    = map(ground, gbcoeffs[i])
-        exps   = UInt64.(hcat(map(x -> [x[end-1:-1:1]..., x[end]], gbexps[i])...))
+        exps   = Matrix{UInt64}(undef, nv + 1, length(gbcoeffs[i]))
+        for jt in 1:length(gbcoeffs[i])
+            for je in 1:nv
+                exps[je, jt] = gbexps[i][jt][nv - je + 1]
+            end
+            exps[nv + 1, jt] = gbexps[i][jt][end]
+        end
+        # exps   = UInt64.(hcat(map(x -> [x[end-1:-1:1]..., x[end]], gbexps[i])...))
         exported[i] = create_polynomial(origring, cfs, exps)
     end
     exported

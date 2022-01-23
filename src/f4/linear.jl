@@ -11,7 +11,7 @@ function normalize_sparse_row!(row::Vector{UInt64}, ch::UInt64)
     row
 end
 
-# reduces row by mul*cfs at indices positions
+# reduces row by mul*cfs modulo ch at indices positions
 function reduce_by_pivot!(row::Vector{UInt64}, indices::Vector{Int},
             mul::UInt64, cfs::Vector{UInt64}, ch::UInt64)
 
@@ -20,6 +20,7 @@ function reduce_by_pivot!(row::Vector{UInt64}, indices::Vector{Int},
         idx = indices[j]
         row[idx] = (row[idx] + mul*cfs[j]) % ch
     end
+
     nothing
 end
 
@@ -50,6 +51,7 @@ function reduce_dense_row_by_known_pivots_sparse!(
         # @error "inside col" i
 
         # @warn "inner iter $i" startcol tmp_pos pivs
+        # TODO: check this first?
         if !isassigned(pivs, i) || (tmp_pos != -1 && tmp_pos == i)
             # println("skipped")
             if np == -1
