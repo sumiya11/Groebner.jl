@@ -457,6 +457,7 @@ function f4!(ring::PolyRing,
     println(map(x->bitstring(x.divmask), ht.hashdata[2:ht.load]))
     println("#####")
     =#
+    #=
     for i in 1:basis.nlead
         #=
         println(basis.lead[i])
@@ -466,7 +467,7 @@ function f4!(ring::PolyRing,
         =#
         @assert basis.lead[i] == ht.hashdata[basis.gens[i][1]].divmask
     end
-
+    =#
     # println("HT: $(ht.load)/$(ht.size)")
 
     nothing

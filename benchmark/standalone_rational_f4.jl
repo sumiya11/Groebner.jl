@@ -21,11 +21,10 @@ end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
+        ("cyclic 11", Groebner.rootn(11, ground=ground)),
         ("cyclic 12", Groebner.rootn(12, ground=ground)),
-        ("cyclic 13", Groebner.rootn(13, ground=ground)),
-        ("katsura 9", Groebner.katsura9(ground=ground)),
+        ("noon 5"    ,Groebner.noonn(5, ground=ground)),
         ("noon 6"    ,Groebner.noonn(6, ground=ground)),
-        ("noon 7"    ,Groebner.noonn(7, ground=ground))
     ]
 
     for (name, system) in systems
@@ -34,18 +33,16 @@ function run_f4_ff_degrevlex_benchmarks(ground)
     end
 end
 
-ground = AbstractAlgebra.GF(2^31 - 1)
+ground = AbstractAlgebra.QQ
 run_f4_ff_degrevlex_benchmarks(ground)
 
 #=
+cyclic 11
+51.978 ms (218960 allocations: 21.78 MiB)
 cyclic 12
-76.131 ms (180064 allocations: 28.05 MiB)
-cyclic 13
-224.358 ms (451559 allocations: 69.72 MiB)
-katsura 9
-332.042 ms (56380 allocations: 19.09 MiB)
+168.396 ms (506977 allocations: 53.18 MiB)
+noon 5
+23.182 ms (129254 allocations: 13.04 MiB)
 noon 6
-36.532 ms (88294 allocations: 21.21 MiB)
-noon 7
-279.662 ms (422861 allocations: 94.73 MiB)
+227.689 ms (830899 allocations: 88.88 MiB)
 =#

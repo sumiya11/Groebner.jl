@@ -81,6 +81,7 @@ function reduce_dense_row_by_known_pivots_sparse!(
         # @error "after reduction" densecoeffs
     end
 
+    # TODO
     newrow = Vector{Int}(undef, k)
     newcfs = Vector{UInt64}(undef, k)
 

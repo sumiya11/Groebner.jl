@@ -115,7 +115,7 @@ function randomized_correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff,
     println("#########################")
     =#
 
-    buf_ff = copy_basis(gb_ff)
+    # buf_ff = copy_basis(gb_ff)
     #=
     println(map(bitstring, gb_ff.lead))
     println(map(bitstring, buf_ff.lead))
@@ -149,7 +149,7 @@ function randomized_correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff,
     @assert ring_ff.ch == gb_ff.ch
 
     # check that the basis is groebner basis modulo goodprime
-    if !isgroebner_f4!(ring_ff, buf_ff, ht)
+    if !isgroebner_f4!(ring_ff, gb_ff, ht)
         return false
     end
 

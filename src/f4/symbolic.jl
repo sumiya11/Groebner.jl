@@ -353,6 +353,8 @@ function symbolic_preprocessing!(
 
     # shrink matrix sizes, set constants
     resize!(matrix.uprows, matrix.nup)
+    # resize!(matrix.up2coef, matrix.nup)
+
     matrix.nrows += matrix.nup - onrr
     matrix.nlow  = matrix.nrows - matrix.nup
     matrix.size  = matrix.nrows
@@ -550,6 +552,7 @@ function update!(
     for i in 1:npivs
         npairs += i
     end
+
 
     # make sure pairset and update hashtable have enough
     # space to store new pairs

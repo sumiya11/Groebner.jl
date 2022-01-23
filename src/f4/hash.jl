@@ -315,7 +315,7 @@ function multiplied_poly_to_matrix_row!(
         symbolic_ht::MonomialHashtable, basis_ht::MonomialHashtable,
         htmp::UInt32, etmp::Vector{UInt16}, poly::Vector{Int})
 
-    row = copy(poly)
+    row = similar(poly)
     while symbolic_ht.load + length(poly) >= symbolic_ht.size
         enlarge_hash_table!(symbolic_ht)
     end
@@ -353,7 +353,7 @@ function insert_in_basis_hash_table_pivots(
 
         lastidx = ht.load + 1
         # TODO: speed this up
-        bexps[lastidx] = copy(sexps[hidx])
+        bexps[lastidx] = sexps[hidx]
         e = bexps[lastidx]
 
         k = h
