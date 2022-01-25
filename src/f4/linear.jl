@@ -19,6 +19,20 @@ function reduce_by_pivot!(row::Vector{UInt64}, indices::Vector{Int},
     @inbounds for j in 1:length(indices)
         idx = indices[j]
         row[idx] = (row[idx] + mul*cfs[j]) % ch
+
+        #=
+        idx1 = indices[j]
+        idx2 = indices[j + 1]
+        idx3 = indices[j + 2]
+        idx4 = indices[j + 3]
+
+        cf1 = cfs[j]
+        cf2 = cfs[j + 1]
+        cf3 = cfs[j + 2]
+        cf4 = cfs[j + 3]
+
+        row[idx1] = (row[idx1] + mul*cfs[j]) % ch
+        =#
     end
 
     nothing
@@ -262,12 +276,14 @@ function interreduce_matrix_rows!(matrix::MacaulayMatrix, basis::Basis)
     end
 
     densecfs = Vector{UInt64}(undef, matrix.ncols)
+    densecfs .= UInt64(0)
+
     k = matrix.nrows
 
     for i in 1:matrix.ncols
         l = matrix.ncols - i + 1
         if isassigned(pivs, l)
-            densecfs .= UInt64(0)
+            # densecfs .= UInt64(0)
             cfs = matrix.coeffs[matrix.low2coef[l]]
             reducexps = pivs[l]
             startcol = reducexps[1]
@@ -277,10 +293,15 @@ function interreduce_matrix_rows!(matrix::MacaulayMatrix, basis::Basis)
 
             zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(densecfs, matrix, basis, pivs, startcol, startcol)
 
+            # TODO: in `densecfs` zeroe only indices from `newrow`
             matrix.lowrows[k] = newrow
             matrix.coeffs[matrix.low2coef[l]] = newcfs
             pivs[l] = matrix.lowrows[k]
             k -= 1
+
+            for idx in newrow
+                densecfs[idx] = 0
+            end
         end
     end
 

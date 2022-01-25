@@ -14,6 +14,8 @@
     and passed to `convert_to_output`
 =#
 
+# TODO: filter zeroes from input
+
 #------------------------------------------------------------------------------
 
 """
@@ -362,7 +364,7 @@ end
 function convert_coeffs_to_output(
         polycoeffs::Vector{Rational{BigInt}},
         ::Type{T}) where {T<:Integer}
-    coeffs_zz = scale_denominators!(polycoeffs)
+    coeffs_zz = scale_denominators(polycoeffs)
     check_and_convert_coeffs(coeffs_zz, T)
 end
 
