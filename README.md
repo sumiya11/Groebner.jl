@@ -11,8 +11,7 @@ For documentation and more please check out https://sumiya11.github.io/Groebner.
 
 ## How to use Groebner.jl?
 
-We will demonstrate the usage on a simple example. Lets first import `AbstractAlgebra`
-and create a ring of polynomials in 3 variables over rationals
+Our package works with polynomials from `AbstractAlgebra.jl`, `DynamicPolynomials.jl`, and `Nemo.jl`. We will demonstrate the usage on a simple example. Lets first create a ring of polynomials in 3 variables over rationals
 
 ```julia
 julia> using AbstractAlgebra
