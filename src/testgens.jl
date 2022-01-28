@@ -124,7 +124,7 @@ function eco5(;ground=GF(2^31-1))
     ]
 end
 
-function eco7(;ground=GF(2^31-1))
+function eco7(;ground=QQ)
     R, (x1, x2, x3, x4, x5, x6, x7) = PolynomialRing(ground, ["x$i" for i in 1:7])
 
     fs = [
@@ -139,7 +139,7 @@ function eco7(;ground=GF(2^31-1))
     fs
 end
 
-function eco10(;ground=GF(2^31-1))
+function eco10(;ground=QQ)
     R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9) = PolynomialRing(ground, ["x$i" for i in 1:11])
 
     fs = [
@@ -157,7 +157,7 @@ function eco10(;ground=GF(2^31-1))
     fs
 end
 
-function eco11(;ground=GF(2^31-1))
+function eco11(;ground=QQ)
     R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = PolynomialRing(ground, ["x$i" for i in 1:11])
 
     fs = [
@@ -176,7 +176,7 @@ function eco11(;ground=GF(2^31-1))
     fs
 end
 
-function eco12(;ground=GF(2^31-1))
+function eco12(;ground=QQ)
     R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11) = PolynomialRing(ground, ["x$i" for i in 1:12])
 
     fs = [

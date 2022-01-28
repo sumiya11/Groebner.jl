@@ -42,24 +42,22 @@ julia> G = groebner(polys)
 
 ## Performance
 
-We compare the runtime of our implementation against the one of Singular Groebner bases routine. The table below lists measured runtimes for several standard benchmark systems in seconds
+We compare the runtime of our implementation against the ones from `Singular` and `Maple` computer algebra systems. The table below lists measured runtimes of Groebner basis routine for several standard benchmark systems in seconds
 
-|   System    | Size  | Degree | Ours    | Singular |
-| :---:       | :---: | :--: | :----: |  :---:   |
-| cyclic-12   |  12   | 12 | 0.13s  | **0.03s**    |
-| cyclic-13   |  13   | 13 | 0.43s  | **0.10s**    |
-| katsura-9   |  145  | 9  | **0.70s**  | 2.76s    |
-| katsura-10  |  274  | 10 | **5.22s**  | 25.15s   |
-| eco-10  |  203  | 6 | **0.98s**  | 7.63s   |
-| eco-11  |  389  | 7 | **7.46s**  | 82.84s   |
-| noon-7      |  495  |  13  | **0.56s**  | 0.88s    |
-| noon-8      |  1338 |  15  | **5.42s**  | 8.04s    |
+|   System    |  Groebner.jl    | Singular | Maple |
+| :---:       | :---: | :----: |  :---:   |
+| [cyclic-12](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/cyclic12.txt)   | 0.13s  | **0.03s**    |
+| [cyclic-13](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/cyclic13.txt)   |  0.43s  | **0.10s**    |
+| [katsura-9](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/katsura9.txt)    | **0.70s**  | 2.76s    |
+| [katsura-10](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/katsura10.txt)  |  **5.22s**  | 25.15s   |
+| [eco-10](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/eco10.txt)   |  **0.98s**  | 7.63s   |
+| [eco-11](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/eco11.txt)   | **7.46s**  | 82.84s   |
+| [noon-7](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/noon7.txt)      |  **0.56s**  | 0.88s    |
+| [noon-8](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/noon8.txt)      |  **5.42s**  | 8.04s    |
 
-The bases are computed in `degrevlex` monomial ordering over finite fields having all operations single-threaded. Benchmarks sources are located in the `benchmark` folder.
+The bases are computed in `degrevlex` monomial ordering over finite fields with all operations single-threaded. Benchmarks sources are located in the `benchmark` folder.
 
 If you discover a system where our package shows bad performance, you are very welcome to submit an issue!  
-
-TODO: add links to used systems
 
 TODO: speed up rational computations
 

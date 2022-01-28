@@ -13,8 +13,6 @@ function benchmark_system_my(system)
     Groebner.groebner([system[1]])
 
     gb = Groebner.groebner(system)
-    println("length = $(length(gb))")
-    println("degree = $(maximum(AbstractAlgebra.total_degree, gb))")
 
     @btime gb = Groebner.groebner($system, reduced=false)
 end
@@ -48,9 +46,9 @@ function run_f4_ff_degrevlex_benchmarks(ground)
         ("katsura 10",Groebner.katsura10(ground=ground)),
         ("katsura 11",Groebner.katsura11(ground=ground)),
         ("katsura 12",Groebner.katsura12(ground=ground)),
-        ("eco 10",Groebner.eco10()),
-        ("eco 11",Groebner.eco11()),
-        ("eco 12",Groebner.eco12()),
+        ("eco 10",Groebner.eco10(ground=ground)),
+        ("eco 11",Groebner.eco11(ground=ground)),
+        ("eco 12",Groebner.eco12(ground=ground)),
         ("noon 6"    ,Groebner.noonn(6, ground=ground)),
         ("noon 7"    ,Groebner.noonn(7, ground=ground)),
         ("noon 8"    ,Groebner.noonn(8, ground=ground))
