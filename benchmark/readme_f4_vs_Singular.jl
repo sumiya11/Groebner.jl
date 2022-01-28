@@ -15,7 +15,7 @@ function benchmark_system_my(system)
 
     gb = Groebner.groebner(system)
 
-    @btime gb = Groebner.groebner($system, reduced=false)
+    @btime gb = Groebner.groebner($system, reduced=true)
 end
 
 function benchmark_system_singular(system)
@@ -36,7 +36,7 @@ function benchmark_system_singular(system)
 
     Singular.std(Singular.Ideal(R_s, [system_s[1]]))
 
-    @btime gb = Singular.std($ideal_s, complete_reduction=false)
+    @btime gb = Singular.std($ideal_s, complete_reduction=true)
 end
 
 function run_f4_ff_degrevlex_benchmarks(ground)

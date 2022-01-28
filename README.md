@@ -46,16 +46,17 @@ We compare the runtime of our implementation against the ones from `Singular` an
 
 |   System    |  Groebner.jl    | Singular | Maple |
 | :---:       | :---: | :----: |  :---:   |
-| [cyclic-12](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/cyclic12.txt)   | 0.13s  | **0.03s**    |
-| [cyclic-13](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/cyclic13.txt)   |  0.43s  | **0.10s**    |
-| [katsura-9](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/katsura9.txt)    | **0.70s**  | 2.76s    |
-| [katsura-10](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/katsura10.txt)  |  **5.22s**  | 25.15s   |
-| [eco-10](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/eco10.txt)   |  **0.98s**  | 7.63s   |
-| [eco-11](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/eco11.txt)   | **7.46s**  | 82.84s   |
-| [noon-7](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/noon7.txt)      |  **0.56s**  | 0.88s    |
-| [noon-8](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/noon8.txt)      |  **5.42s**  | 8.04s    |
+| [cyclic-12](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/cyclic12.txt)   | 0.05s  | **0.01s**    | 1 |
+| [cyclic-13](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/cyclic13.txt)   |  0.19s  | **0.03s**    |
+| [katsura-9](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/katsura9.txt)    | **0.34s**  | 1.13s    |
+| [katsura-10](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/katsura10.txt)  |  **2.75s**  | 9.92s   |
+| [eco-10](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/eco10.txt)   |  **0.43s**  | 3.22s   |
+| [eco-11](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/eco11.txt)   | **3.34s**  | 33.33s   |
+| [noon-7](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/noon7.txt)      |  **0.22s**  | 0.38s    |
+| [noon-8](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/noon8.txt)      |  **2.15s**  | 3.40s    |
 
-The bases are computed in `degrevlex` monomial ordering over finite fields with all operations single-threaded. Benchmarks sources are located in the `benchmark` folder.
+The bases are computed in `degrevlex` monomial ordering over finite fields with all operations single-threaded. Benchmarks sources are located in the `benchmark` folder. However, we emphasize that `Groebner.jl` is a specialized library while `Singular`
+and `Maple` are extensive general purpose computer algebra systems.
 
 If you discover a system where our package shows bad performance, you are very welcome to submit an issue!  
 
@@ -63,4 +64,6 @@ TODO: speed up rational computations
 
 ## Acknowledgement
 
-I would like to acknowledge Jérémy Berthomieu, Christian Eder and Mohab Safey El Din as this Library was adapted from their work ["msolve: A Library for Solving Polynomial Systems"](https://arxiv.org/abs/2104.03572). I also thank Vladimir Kuznetsov for providing the sources of his F4 implementation.
+I would like to acknowledge Jérémy Berthomieu, Christian Eder and Mohab Safey El Din as this Library was adapted from their work ["msolve: A Library for Solving Polynomial Systems"](https://arxiv.org/abs/2104.03572). I also thank Max-Planck-Institut für Informatik for assistance in producing benchmarks.
+
+Special thanks goes to Vladimir Kuznetsov for providing the sources of his F4 implementation.
