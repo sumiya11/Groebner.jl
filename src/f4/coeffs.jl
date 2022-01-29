@@ -139,7 +139,7 @@ function nextgoodprime(
     if p >= FIRST_COMPUTE_PRIME
         error("Too large coefficient encountered in the basis. This error will be fixed soon!")
     end
-    
+
     if p in moduli
         return nextgoodprime(coeffs, moduli, p)
     end
@@ -213,7 +213,7 @@ function reconstruct_modulo!(gbcoeffs_qq, gbcoeffs_accum, modulo)
                                         u1, u2, u3, v1, v2, v3,
                                         cz, modulo)
             # TODO
-            @assert gcd(numerator(cq), denominator(cq)) == 1
+            # @assert gcd(numerator(cq), denominator(cq)) == 1
         end
     end
 

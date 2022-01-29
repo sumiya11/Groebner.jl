@@ -4,8 +4,7 @@
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://sumiya11.github.io/Groebner.jl)
 
 
-The package provides Groebner bases computation interface with the performance
-comparable to Singular.
+The package provides Groebner bases computation interface in pure Julia with the performance comparable to Singular.
 
 For documentation and more please check out https://sumiya11.github.io/Groebner.jl
 
