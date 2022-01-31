@@ -18,7 +18,7 @@ To install Groebner.jl, use the Julia package manager:
 
 ```julia:install
 using Pkg
-Pkg.add(url="https://github.com/sumiya11/Groebner.jl")
+Pkg.add("Groebner")
 ```
 
 For a detailed description of exported functions and their input parameters please see page **Interface**. Meanwhile, below are simple usage examples.

@@ -10,7 +10,7 @@ where appropriate -->
 
 ```julia:installs
 Pkg.add("AbstractAlgebra") # hide
-Pkg.add("Groebner") # hide
+Pkg.add(url="https://github.com/sumiya11/Groebner.jl") # hide
 Pkg.add("DynamicPolynomials") # hide
 using Groebner # hide
 using AbstractAlgebra # hide
@@ -38,6 +38,7 @@ Our package implements **F4 algorithm**, which is a modification of the Buchberg
 It's important to mention that a lot of implementation insights we use in this package were introduced by Jérémy Berthomieu, Christian Eder and Mohab Safey El Din in [[1]](https://arxiv.org/abs/2104.03572).
 
 TODO: split the following into separate pages.
+TODO: check out `math mode`
 
 # So, what is a Groebner basis?
 
