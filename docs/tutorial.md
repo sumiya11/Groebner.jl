@@ -9,6 +9,7 @@ where appropriate -->
 # Tutorials
 
 ```julia:installs
+import Pkg
 Pkg.add("AbstractAlgebra") # hide
 Pkg.add(url="https://github.com/sumiya11/Groebner.jl") # hide
 Pkg.add("DynamicPolynomials") # hide
