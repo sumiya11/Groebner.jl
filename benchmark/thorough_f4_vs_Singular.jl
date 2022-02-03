@@ -8,13 +8,18 @@ using Groebner
 using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error))
 
+BenchmarkTools.DEFAULT_PARAMETERS.seconds = 100000
+
 function benchmark_system_my(system)
     system = Groebner.change_ordering(system, :degrevlex)
     Groebner.groebner([system[1]])
 
     gb = Groebner.groebner(system)
 
-    @btime gb = Groebner.groebner($system, reduced=false)
+    # @btime gb = Groebner.groebner($system, reduced=false)
+
+    bench = @benchmarkable Groebner.groebner($system, reduced=false) samples=5
+    println(median(run(bench)))
 end
 
 function benchmark_system_singular(system)
@@ -35,7 +40,9 @@ function benchmark_system_singular(system)
 
     Singular.std(Singular.Ideal(R_s, [system_s[1]]))
 
-    @btime gb = Singular.std($ideal_s, complete_reduction=false)
+    # @btime gb = Singular.std($ideal_s, complete_reduction=false)
+    bench = @benchmarkable  Singular.std($ideal_s, complete_reduction=false) samples=5
+    println(median(run(bench)))
 end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
@@ -49,9 +56,9 @@ function run_f4_ff_degrevlex_benchmarks(ground)
         ("eco 10",Groebner.eco10(ground=ground)),
         ("eco 11",Groebner.eco11(ground=ground)),
         ("eco 12",Groebner.eco12(ground=ground)),
-        ("noon 6"    ,Groebner.noonn(6, ground=ground)),
         ("noon 7"    ,Groebner.noonn(7, ground=ground)),
-        ("noon 8"    ,Groebner.noonn(8, ground=ground))
+        ("noon 8"    ,Groebner.noonn(8, ground=ground)),
+        ("noon 9"    ,Groebner.noonn(9, ground=ground))
     ]
 
     for (name, system) in systems
