@@ -15,6 +15,8 @@ function test_params(rng, nvariables, exps, nterms,
                                 set = Groebner.generate_set(
                                     n, e, nt, np, csz, rng, gr, ord
                                 )
+                                filter!(!iszero, set)
+
                                 isempty(set) && continue
                                 # println(ord, " ", gr)
                                 # println(set)
