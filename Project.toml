@@ -15,7 +15,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 AbstractAlgebra = "0.23.0, 0.24"
 Combinatorics = "1.0.2"
 MultivariatePolynomials = "0.4.2"
-Primes = "0.5.0"
+Primes = "0.5"
 julia = "1.6"
 
 [extras]
