@@ -2,9 +2,9 @@
 
 [[AbstractAlgebra]]
 deps = ["GroupsCore", "InteractiveUtils", "LinearAlgebra", "MacroTools", "Markdown", "Random", "RandomExtensions", "SparseArrays", "Test"]
-git-tree-sha1 = "d95d3132e8bd28510c4e223207b16e48cd2235f1"
+git-tree-sha1 = "c0750f99036c12a14c93a7b10609cb892ffbd092"
 uuid = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
-version = "0.24.0"
+version = "0.24.1"
 
 [[ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -137,9 +137,9 @@ deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markd
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 
 [[Primes]]
-git-tree-sha1 = "afccf037da52fa596223e5a0e331ff752e0e845c"
+git-tree-sha1 = "984a3ee07d47d401e0b823b7d30546792439070a"
 uuid = "27ebfcd6-29c5-5fa9-bf4b-fb8fc14df3ae"
-version = "0.5.0"
+version = "0.5.1"
 
 [[Printf]]
 deps = ["Unicode"]
