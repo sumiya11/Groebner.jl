@@ -8,24 +8,30 @@ using BenchmarkTools
 using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error))
 
+BenchmarkTools.DEFAULT_PARAMETERS.seconds = 100000
+
+
 function benchmark_system_my(system)
     system = Groebner.change_ordering(system, :degrevlex)
-    Groebner.groebner([system[1]])
+    # Groebner.groebner([system[1]])
 
-    gb = Groebner.groebner(system)
+    # gb = Groebner.groebner(system)
     # println("length = $(length(gb))")
     # println("degree = $(maximum(AbstractAlgebra.total_degree, gb))")
 
-    @btime gb = Groebner.groebner($system, reduced=false)
+    # bench = @benchmarkable Groebner.groebner($system, reduced=false) samples=5
+    # println(median(run(bench)))
+
+    gb = Groebner.groebner(system, reduced=false)
+
 end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
-        ("cyclic 12", Groebner.rootn(12, ground=ground)),
-        ("cyclic 13", Groebner.rootn(13, ground=ground)),
         ("katsura 9", Groebner.katsura9(ground=ground)),
-        ("noon 6"    ,Groebner.noonn(6, ground=ground)),
-        ("noon 7"    ,Groebner.noonn(7, ground=ground))
+        ("eco 10"    ,Groebner.eco10(ground=ground)),
+        ("noon 7"    ,Groebner.noonn(7, ground=ground)),
+        ("cyclic 12", Groebner.rootn(12, ground=ground)),
     ]
 
     for (name, system) in systems

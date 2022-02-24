@@ -1,4 +1,53 @@
 
+#######################################
+
+# Stores parameters for groebner algorithm
+struct Metainfo
+    # if set, then use fglm algorithm for order conversion
+    usefglm::Bool
+    # output polynomials order
+    targetord::Symbol
+    # order for computation
+    computeord::Symbol
+end
+
+function set_metaparameters(ring, ordering, certify, forsolve)
+    usefglm = false
+    targetord = :lex
+    computeord = :lex
+
+    if forsolve
+        targetord = :lex
+        usefglm = true
+        if ordering in (:deglex, :degrevlex)
+            computeord = ordering
+        else
+            computeord = :degrevlex
+        end
+        # TODO:
+        computeord = :lex
+    else
+        if ordering == :input
+            ordering = ring.ord
+        end
+        targetord = ordering
+        usefglm = false
+        computeord = targetord
+    end
+
+    @info "Computing in $computeord order, result is in $targetord order"
+    @info "Using fglm: $usefglm"
+
+    Metainfo(usefglm, targetord, computeord)
+end
+
+function assure_ordering!(ring, exps, coeffs, metainfo)
+    if ring.ord != metainfo.computeord
+        sort_input_to_change_ordering(exps, coeffs, metainfo.computeord)
+    end
+    ring.ord = metainfo.computeord
+end
+
 # Mutate everything!
 
 #######################################

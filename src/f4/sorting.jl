@@ -367,3 +367,30 @@ function sort_columns_by_hash!(col2hash, symbol_ht)
 
     sort!(col2hash, lt = ordcmp)
 end
+
+#------------------------------------------------------------------------------
+
+function sort_input_to_change_ordering(exps, coeffs, ord::Symbol)
+    for polyidx in 1:length(exps)
+        if ord == :degrevlex
+            cmp  = (x, y) -> exponent_isless_drl(
+                                    @inbounds(exps[polyidx][y]),
+                                    @inbounds(exps[polyidx][x]))
+        elseif ord == :lex
+            cmp  = (x, y) -> exponent_isless_lex(
+                                    @inbounds(exps[polyidx][y]),
+                                    @inbounds(exps[polyidx][x]))
+        else
+            cmp  = (x, y) -> exponent_isless_dl(
+                                    @inbounds(exps[polyidx][y]),
+                                    @inbounds(exps[polyidx][x]))
+        end
+
+        inds = collect(1:length(exps[polyidx]))
+
+        sort!(inds, lt=cmp)
+
+        exps[polyidx][1:end] = exps[polyidx][inds]
+        coeffs[polyidx][1:end] = coeffs[polyidx][inds]
+    end
+end

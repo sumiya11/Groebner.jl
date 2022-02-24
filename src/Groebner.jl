@@ -21,11 +21,6 @@ import AbstractAlgebra: leading_term, QQ, PolynomialRing, terms,
 # for example systems
 import Combinatorics
 
-# controversial
-using LoopVectorization
-
-using MutableArithmetics
-
 import Primes
 import Primes: nextprime
 

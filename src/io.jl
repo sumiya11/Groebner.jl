@@ -10,11 +10,14 @@
     For each monomial we also assign a divmask -- a compressed representation
     of exponent vector used to speed up divisibility checks.
 
+    ...
+
     Finally, the resulting basis in internal representation is dehashed,
     and passed to `convert_to_output`
 =#
 
 # TODO: filter zeroes from input
+#  upd: actually, do we need this ?
 
 #------------------------------------------------------------------------------
 
@@ -25,6 +28,7 @@ mutable struct PolyRing
     # number of variables
     nvars::Int
     # raw length of exponent vector
+    # (should be always equal to nvars+1)
     explen::Int
     # ring monomial ordering,
     # possible are :lex and :degrevlex
@@ -129,15 +133,6 @@ function extract_polys(ring::PolyRing, orig_polys::Vector{T}) where {T}
     exps, cfs
 end
 
-function assure_ordering!(ring, ordering, exps, cfs)
-    if ordering != :input
-        if ordering != ring.ord
-            ring.ord = ordering
-            sort_input_to_change_ordering!(ordering, exps, cfs)
-        end
-    end
-end
-
 function convert_to_internal(
             orig_polys::Vector{T},
             ordering::Symbol,
@@ -146,7 +141,6 @@ function convert_to_internal(
     R = parent(first(orig_polys))
     ring = extract_ring(R)
     exps, cfs = extract_polys(ring, orig_polys)
-    assure_ordering!(ring, ordering, exps, cfs)
     ring, exps, cfs
 end
 
@@ -232,7 +226,6 @@ function convert_to_internal(
 
     ring = extract_ring(orig_polys)
     exps, cfs = extract_polys(ring, orig_polys)
-    assure_ordering!(ring, ordering, exps, cfs)
     ring, exps, cfs
 end
 
@@ -297,7 +290,6 @@ function convert_to_internal(
     R = parent(first(orig_polys))
     ring = extract_ring(R)
     exps, cfs = extract_polys(ring, orig_polys, ring.ord)
-    assure_ordering!(ring, ordering, exps, cfs)
     ring, exps, cfs
 end
 
