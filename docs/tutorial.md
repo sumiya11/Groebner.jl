@@ -12,7 +12,7 @@ where appropriate -->
 import Pkg # hide
 import Pkg; Pkg.add("BenchmarkTools") # hide
 Pkg.add("AbstractAlgebra") # hide
-Pkg.add(url="https://github.com/sumiya11/Groebner.jl") # hide
+Pkg.add("Groebner") # hide
 Pkg.add("DynamicPolynomials") # hide
 using Groebner # hide
 using AbstractAlgebra # hide
@@ -30,7 +30,7 @@ Introduced by Buchberger in 1965 for handling quotient space of Ideals algorithm
 
 The following tutorials will give a short introduction to Groebner basis ground theory, and cover some random interesting showcases.
 
-## Note on Implementation
+## Note on the Implementation
 
 Computing Groebner bases largely depends on a single iterative algorithm, known as **Buchbergers algorithm**. Modified and optimized versions of this algorithm are crucial for many Computer Algebra Systems (*e.g., Singular, Maple, Mathematica, Sage*).
 
