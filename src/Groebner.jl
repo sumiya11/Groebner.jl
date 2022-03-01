@@ -26,10 +26,6 @@ import Primes: nextprime
 
 import Random
 
-# we want RadixSort to sort exponents (?)
-# upd: okay, maybe not
-import SortingAlgorithms
-
 import Logging
 import Logging: ConsoleLogger, LogLevel
 

@@ -71,6 +71,7 @@ function _normal_form_reference(h, G)
         hprev = R(h)
         for t in terms(h)
             for g in G
+                iszero(g) && continue # hmm
                 # does, mul = term_divides_3(t, g)
                 is_divisible, _ = divides(t, leading_monomial(g))
                 if is_divisible
