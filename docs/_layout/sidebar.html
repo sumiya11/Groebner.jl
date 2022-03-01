@@ -28,7 +28,12 @@
     </style>
     <nav class="sidebar-nav" style="opacity: 0.9">
       <a class="sidebar-nav-item {{ispage index.html}}active{{end}}" href="/">Home</a>
-      <a class="sidebar-nav-item {{ispage tutorial.html}}active{{end}}" href="/tutorial/">Tutorials</a>
+      <!-- <a class="sidebar-nav-item {{ispage tutorial.html}}active{{end}}" href="/tutorial/">Tutorials</a> -->
+      <li class="sidebar-nav-item {{ispage tutorial.html}}active{{end}}"><a href="/tutorial/">• Tutorials</a>
+			  <ul class="menu-list-child-list ">
+				<li class="menu-list-item {{ispage tutorial.html}}active{{end}}"><a href="/tutorial/" class="menu-list-link">Create and edit</a>
+				<li class="menu-list-item {{ispage index.html}}active{{end}}"><a href="/tutorial/" class="menu-list-link">Page structure</a>
+			  </ul>
       <a class="sidebar-nav-item {{ispage interface.html}}active{{end}}" href="/interface/">Interface</a>
     </nav>
 
