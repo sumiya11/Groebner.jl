@@ -8,30 +8,28 @@ using BenchmarkTools
 using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error))
 
-BenchmarkTools.DEFAULT_PARAMETERS.seconds = 100000
+BenchmarkTools.DEFAULT_PARAMETERS.seconds = 10
 
 
 function benchmark_system_my(system)
     system = Groebner.change_ordering(system, :degrevlex)
-    # Groebner.groebner([system[1]])
+    Groebner.groebner([system[1]])
 
     # gb = Groebner.groebner(system)
     # println("length = $(length(gb))")
     # println("degree = $(maximum(AbstractAlgebra.total_degree, gb))")
 
-    # bench = @benchmarkable Groebner.groebner($system, reduced=false) samples=5
-    # println(median(run(bench)))
-
-    gb = Groebner.groebner(system, reduced=false)
-
+    @btime Groebner.groebner($system, reduced=false)
 end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
+    ("cyclic 12", Groebner.rootn(12, ground=ground)),
+    ("cyclic 13", Groebner.rootn(13, ground=ground)),
         ("katsura 9", Groebner.katsura9(ground=ground)),
-        ("eco 10"    ,Groebner.eco10(ground=ground)),
+        ("noon 6"    ,Groebner.noonn(6, ground=ground)),
         ("noon 7"    ,Groebner.noonn(7, ground=ground)),
-        ("cyclic 12", Groebner.rootn(12, ground=ground)),
+        ("eco 10"    ,Groebner.eco10(ground=ground))
     ]
 
     for (name, system) in systems
@@ -40,18 +38,21 @@ function run_f4_ff_degrevlex_benchmarks(ground)
     end
 end
 
+println()
 ground = AbstractAlgebra.GF(2^31 - 1)
 run_f4_ff_degrevlex_benchmarks(ground)
 
 #=
 cyclic 12
-76.131 ms (180064 allocations: 28.05 MiB)
+66.675 ms (179922 allocations: 27.62 MiB)
 cyclic 13
-224.358 ms (451559 allocations: 69.72 MiB)
+221.970 ms (451391 allocations: 68.78 MiB)
 katsura 9
-332.042 ms (56380 allocations: 19.09 MiB)
+319.554 ms (55390 allocations: 17.93 MiB)
 noon 6
-36.532 ms (88294 allocations: 21.21 MiB)
+34.842 ms (87010 allocations: 20.69 MiB)
 noon 7
-279.662 ms (422861 allocations: 94.73 MiB)
+265.669 ms (419413 allocations: 91.78 MiB)
+eco 10
+470.273 ms (137548 allocations: 41.31 MiB)
 =#

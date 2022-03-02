@@ -369,6 +369,181 @@ end
 
 #------------------------------------------------------------------------------
 
+function nblocks_in_randomized(nlow::Int)
+    floor(Int, sqrt(nlow / 3)) + 1
+end
+
+function randomized_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
+    ncols  = matrix.ncols
+    nlow   = matrix.nlow
+    nright = matrix.nright
+    nleft  = matrix.nleft
+
+    ch = basis.ch
+
+    # known pivots
+    # no_copy
+    pivs = Vector{Vector{Int}}(undef, ncols)
+    @inbounds for i in 1:matrix.nup
+        pivs[i] = matrix.uprows[i]
+    end
+
+    # CHANGED in order to prevent bug
+    # when several rows in the matrix are equal
+    l2c_tmp = Vector{Int}(undef, max(ncols, matrix.nlow))
+    @inbounds for i in 1:nlow
+        l2c_tmp[matrix.lowrows[i][1]] = matrix.low2coef[i]
+    end
+    # CHANGED
+    # no_copy
+    rowidx2coef = matrix.low2coef
+    matrix.low2coef = l2c_tmp
+
+    # unknown pivots
+    # (not discovered yet)
+    # we will modify them inplace when reducing by pivs
+    upivs = matrix.lowrows
+
+    nblocks = nblocks_in_randomized(nlow)
+    rem = nlow % nblocks == 0 ? 0 : 1
+    rowsperblock = div(nlow, nblocks) + rem
+
+    # @warn "" nlow nblocks rem rowsperblock
+
+    densecoeffs = zeros(UInt64, ncols)
+    mulcoeffs = zeros(UInt64, rowsperblock)
+
+    #=
+    @warn "before reducing low"
+    dump(matrix, maxdepth=5)
+    @warn "lowrow2coef" rowidx2coef
+    =#
+
+    for i in 1:nblocks
+        nrowsupper = nlow > i * rowsperblock ? i * rowsperblock : nlow
+        nrowstotal = nrowsupper - (i-1)*rowsperblock
+
+        # @warn "cycle" nrowsupper nrowstotal
+
+        nrowstotal == 0 && continue # end right here
+
+        ctr = 0
+        while ctr < nrowstotal
+
+            for j in 1:nrowstotal
+                # TODO: fixed generator
+                mulcoeffs[j] = rand(UInt64) % ch
+            end
+
+            densecoeffs .= UInt64(0)
+            startcol = ncols
+
+            for k in 1:nrowstotal
+                rowidx = (i-1)*rowsperblock + k
+
+                rowexps = upivs[rowidx]
+                cfsref  = basis.coeffs[rowidx2coef[rowidx]]
+
+                startcol = min(startcol, rowexps[1])
+
+                for l in 1:length(rowexps)
+                    densecoeffs[rowexps[l]] += mulcoeffs[k]*cfsref[l]
+                    densecoeffs[rowexps[l]] %= ch
+                end
+            end
+
+            # reduce it with known pivots from matrix.uprows
+            # first nonzero in densecoeffs is at startcol position
+            zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(densecoeffs, matrix, basis, pivs, startcol, -1)
+            # @warn "reduced " zeroed newrow newcfs
+            # if fully reduced
+
+            # this is pure insight
+
+            if zeroed
+                ctr = nrowstotal
+                break
+            end
+
+            absolute_i = (i-1)*rowsperblock + ctr + 1
+
+            # matrix coeffs sparsely stores coefficients of new row
+            matrix.coeffs[absolute_i] = newcfs
+            # add new pivot at column index newrow[1]
+            #  (which is the first nnz column of newrow)
+            pivs[newrow[1]]  = newrow
+            # set ref to coefficient to matrix
+            # guaranteed to be from lower part
+            matrix.low2coef[newrow[1]] = absolute_i
+
+            # normalize if needed
+            if matrix.coeffs[absolute_i][1] != 1
+                normalize_sparse_row!(matrix.coeffs[absolute_i], basis.ch)
+            end
+
+            ctr += 1
+
+        end
+    end
+
+    #=
+    @warn "after reducing low"
+    dump(matrix, maxdepth=5)
+    println("PIVS: ", pivs)
+    =#
+
+    # number of new pivots
+    newpivs = 0
+
+    # a row to be reduced for each column
+    resize!(matrix.lowrows, matrix.nright)
+
+    # interreduce new pivots..
+    # .. for each right (non-pivotal) column
+    densecfs = zeros(UInt64, ncols)
+
+    for i in 1:nright
+        k = ncols - i + 1
+        if isassigned(pivs, k)
+            densecfs .= UInt64(0)
+
+            if k <= nleft
+                cfsref = basis.coeffs[matrix.up2coef[k]]
+            else # of lower part of matrix
+                cfsref = matrix.coeffs[matrix.low2coef[k]]
+            end
+
+            startcol = pivs[k][1]
+
+            @assert length(cfsref) == length(pivs[k])
+
+            @inbounds for j in 1:length(pivs[k])
+                densecfs[pivs[k][j]] = cfsref[j]
+            end
+            newpivs += 1
+
+            zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(densecfs, matrix, basis, pivs, startcol, startcol)
+
+            # update row and coeffs
+            matrix.lowrows[newpivs] = newrow
+            matrix.coeffs[matrix.low2coef[k]] = newcfs
+            matrix.low2coef[k] = matrix.low2coef[k]
+            pivs[k] = matrix.lowrows[newpivs]
+        end
+    end
+
+    # shrink matrix
+    matrix.npivots = matrix.nrows = matrix.size = newpivs
+    resize!(matrix.lowrows, newpivs)
+end
+
+function randomized_sparse_linear_algebra!(matrix::MacaulayMatrix, basis::Basis)
+    resize!(matrix.coeffs, matrix.nlow)
+    randomized_sparse_rref!(matrix, basis)
+end
+
+#------------------------------------------------------------------------------
+
 function interreduce_matrix_rows!(matrix::MacaulayMatrix, basis::Basis)
     resize!(matrix.lowrows, matrix.ncols)
     resize!(matrix.up2coef, matrix.ncols)

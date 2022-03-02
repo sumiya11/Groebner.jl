@@ -20,6 +20,7 @@ function reduction!(
      sort_matrix_rows_decreasing!(matrix) # for pivots,  AB part
      sort_matrix_rows_increasing!(matrix) # for reduced, CD part
 
+     # exact_sparse_linear_algebra!(matrix, basis)
      exact_sparse_linear_algebra!(matrix, basis)
 
      convert_matrix_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)

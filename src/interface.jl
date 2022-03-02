@@ -43,6 +43,7 @@ function groebner(
             ordering::Symbol=:input,
             certify::Bool=false,
             forsolve::Bool=false,
+            linearalgebra::Symbol=:exact,
             rng::Rng=Random.MersenneTwister(42),
             loglevel::Logging.LogLevel=Logging.Warn
             ) where {Poly, Rng<:Random.AbstractRNG}
