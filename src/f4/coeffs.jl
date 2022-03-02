@@ -180,7 +180,7 @@ function reconstruct_crt!(gbcoeffs_accum, modulo, coeffs_ff, ring_ff)
             cf = coeffs_ff[i][j]
             CRT!(M, buf, n1, n2, ca, modulo, cf, bigch)
             Base.GMP.MPZ.set!(gbcoeffs_accum[i][j], buf)
-            @assert gbcoeffs_accum[i][j] >= 0
+            # @assert gbcoeffs_accum[i][j] >= 0
         end
     end
     Base.GMP.MPZ.mul_ui!(modulo, ring_ff.ch)

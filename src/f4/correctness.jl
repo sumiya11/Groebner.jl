@@ -3,8 +3,21 @@
 function correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff, ht,
                             gbcoeffs_qq, gbcoeffs_accum,
                             modulo, randomized, goodprime)
+
+    # @warn "" heuristic_correctness_check(gbcoeffs_qq, modulo)
+    # @warn "" randomized_correctness_check!(deepcopy(coeffs_zz), ring_ff, deepcopy(gb_ff), deepcopy(initial_ff),ht, deepcopy(gbcoeffs_qq), goodprime)
+
+
+    # global HEURISTIC
+    # global RANDOMIZED
+
+    # HEURISTIC += heuristic_correctness_check(gbcoeffs_qq, modulo)
+    # RANDOMIZED += randomized_correctness_check!(deepcopy(coeffs_zz), ring_ff, deepcopy(gb_ff), deepcopy(initial_ff), ht, deepcopy(gbcoeffs_qq), goodprime)
+
+
     # first we check coefficients only
     if !heuristic_correctness_check(gbcoeffs_qq, modulo)
+    # if !heuristic_correctness_check(gbcoeffs_qq, modulo)
         @info "Heuristic check failed."
         return false
     end
@@ -12,13 +25,32 @@ function correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff, ht,
 
     # @warn "correctnes for " coeffs_zz gb_ff.coeffs initial_ff.coeffs
 
+
     #
-    if !randomized_correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff,
-                                        ht, gbcoeffs_qq, goodprime)
+    # if !flag1 || !flag2 || !flag3
+    if !randomized_correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff, ht, gbcoeffs_qq, goodprime)
         @info "Randomized check failed."
         return false
     end
     @info "Randomized check passed!"
+
+
+    #=
+    # if !flag1 || !flag2 || !flag3
+    if !randomized_correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff, ht, gbcoeffs_qq, goodprime)
+        @info "Randomized check failed."
+        return false
+    end
+    @info "Randomized check passed!"
+
+    if !heuristic_correctness_check(gbcoeffs_qq, modulo)
+    # if !heuristic_correctness_check(gbcoeffs_qq, modulo)
+        @info "Heuristic check failed."
+        return false
+    end
+    @info "Heuristic check passed!"
+    =#
+
 
     if !randomized
         # TODO
@@ -31,6 +63,10 @@ function correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff, ht,
         return false
     end
     return true
+end
+
+@inline function threshold_in_heuristic(sznum, szden, szmod)
+    1.10*(sznum + sznum) >= szmod
 end
 
 # ln(num) + ln(den) < 2 ln p
@@ -47,7 +83,7 @@ function heuristic_correctness_check(gbcoeffs_qq, modulo)
             n = numerator(gbcoeffs_qq[i][j])
             d = denominator(gbcoeffs_qq[i][j])
             # println(Base.GMP.MPZ.sizeinbase(c, 2), " ", lnm)
-            if 2*(Base.GMP.MPZ.sizeinbase(n, 2) + Base.GMP.MPZ.sizeinbase(d, 2)) >= lnm
+            if threshold_in_heuristic(Base.GMP.MPZ.sizeinbase(n, 2), Base.GMP.MPZ.sizeinbase(d, 2), lnm)
                 return false
             end
         end

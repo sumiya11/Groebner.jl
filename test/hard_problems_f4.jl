@@ -7,6 +7,27 @@ using Primes
 
     ###########################################################################
 
+    N = prod(map(BigInt, nextprimes(2^30 + 3, 5)))
+    #=
+    N is
+    1427247763155044947592358980815426846827008617
+    =#
+    system = [x1 + x2 + x3 + x4,
+                x1*x2 + x1*x3 + x1*x4 + x2*x3 + x2*x4 + x3*x4,
+                x1*x2*x3 + x1*x2*x4 + x1*x3*x4 + x2*x3*x4,
+                x1*x2*x3*x4 + N]
+
+    # this should take about 10 primes
+    gb = Groebner.groebner(system)
+    @test gb == [
+        x1 + x2 + x3 + x4,
+        x2^2 + x2*x3 + x3^2 + x2*x4 + x3*x4 + x4^2,
+        x3^3 + x3^2*x4 + x3*x4^2 + x4^3,
+        x4^4 - N
+    ]
+
+    ###########################################################################
+
     N = prod(map(BigInt, nextprimes(2^31 - 1, 5)))
     #=
     N is

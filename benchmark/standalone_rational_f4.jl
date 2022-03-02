@@ -8,15 +8,18 @@ using BenchmarkTools
 using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error))
 
+BenchmarkTools.DEFAULT_PARAMETERS.seconds = 10
+
 function benchmark_system_my(system)
     system = Groebner.change_ordering(system, :degrevlex)
     Groebner.groebner([system[1]])
 
-    gb = Groebner.groebner(system)
+    # gb = Groebner.groebner(system)
     # println("length = $(length(gb))")
     # println("degree = $(maximum(AbstractAlgebra.total_degree, gb))")
 
     @btime gb = Groebner.groebner($system, reduced=false)
+    # gb = Groebner.groebner(system, reduced=false)
 end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
@@ -41,15 +44,15 @@ run_f4_ff_degrevlex_benchmarks(ground)
 
 #=
 cyclic 11
-  60.985 ms (216734 allocations: 21.36 MiB)
+  50.663 ms (200419 allocations: 21.05 MiB)
 noon 6
-  265.249 ms (778398 allocations: 85.04 MiB)
+  198.116 ms (574503 allocations: 81.15 MiB)
 noon 7
-  2.596 s (4994466 allocations: 494.50 MiB)
+  1.847 s (3571431 allocations: 467.36 MiB)
 eco 5
-  1.014 ms (6202 allocations: 2.01 MiB)
+  878.300 μs (5467 allocations: 2.00 MiB)
 eco 7
-  11.011 ms (47811 allocations: 6.94 MiB)
+  9.300 ms (38332 allocations: 6.76 MiB)
 katsura 6
-  252.392 ms (325027 allocations: 26.47 MiB)
+  194.193 ms (211652 allocations: 24.31 MiB)
 =#
