@@ -46,12 +46,16 @@ function correctness_check!(exps, coeffs, coeffs_zz, ring_ff, gb_ff, initial_ff,
     @info "Heuristic check passed!"
     =#
 
+    t = time()
     if meta.guaranteedcheck
         if guaranteed_correctness_check(gb_ff.gens, gbcoeffs_qq, exps, coeffs,
                                             ht, ring_ff, tablesize, rng)
+
             @info "Guaranteed check passed!"
             return true
         end
+
+
         @info "Guaranteed check failed."
         return false
     end

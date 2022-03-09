@@ -6,7 +6,7 @@
             polynomials;
             reduced=true,
             ordering=:input,
-            certify=false,
+            certify=true,
             forsolve=false,
             linalg=:exact,
             rng=MersenneTwister(42),
@@ -28,8 +28,10 @@ Possible orderings to specify are
 
 Graded orderings tend to be the fastest.
 
-The algorithm is randomized by default, so the result can be incorrect.
-If guaranteed correctness is needed, set parameter `certify`to `true`.
+The algorithm is randomized. Still, by default, the result is **guaranteed to be correct**.
+
+One may set `certify` to `false` to speed up the computation a bit.
+The obtained result will be correct with probability > 0.9999
 
 Set `forsolve` to `true` to tell the algorithm to automatically select parameters
 for producing a basis that further can used for **solving the input system**. In this case,
@@ -51,7 +53,7 @@ function groebner(
             polynomials::Vector{Poly};
             reduced::Bool=true,
             ordering::Symbol=:input,
-            certify::Bool=false,
+            certify::Bool=true,
             forsolve::Bool=false,
             linalg::Symbol=:exact,
             rng::Rng=Random.MersenneTwister(42),
@@ -113,14 +115,16 @@ Checks if `polynomials` forms a Groebner basis.
 Uses the ordering on `polynomials` by default.
 If `ordering` is explicitly specialized, it takes precedence.
 
-The algorithm is randomized by default, so the result can be incorrect.
-If guaranteed correctness is needed, set parameter `certify`to `true`.
+The algorithm is randomized. Still, by default, the result is **guaranteed to be correct**.
+
+One may set `certify` to `false` to speed up the computation a bit.
+The obtained result will be correct with probability > 0.9999
 
 """
 function isgroebner(
             polynomials::Vector{Poly};
             ordering=:input,
-            certify::Bool=false,
+            certify::Bool=true,
             rng::Rng=Random.MersenneTwister(42),
             loglevel::LogLevel=Logging.Warn
     ) where {Poly, Rng<:Random.AbstractRNG}

@@ -91,8 +91,8 @@ using Primes
                 x1*x2 + x1*x3 + x1*x4 + x2*x3 + x2*x4 + x3*x4,
                 x1*x2*x3 + x1*x2*x4 + x1*x3*x4 + x2*x3*x4,
                 x1*x2*x3*x4 + N]
-    # impossible to compute for now TODO
-    # UPD1: almost done
+    # impossible to compute for now
+    # UPD: now computes in 7 seconds
     gb = Groebner.groebner(system)
     @test gb == [
         x1 + x2 + x3 + x4,

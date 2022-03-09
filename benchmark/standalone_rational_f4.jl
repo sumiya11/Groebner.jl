@@ -22,6 +22,18 @@ function benchmark_system_my(system)
     # gb = Groebner.groebner(system, reduced=false)
 end
 
+function benchmark_system_my_certify(system)
+    system = Groebner.change_ordering(system, :degrevlex)
+    Groebner.groebner([system[1]])
+
+    # gb = Groebner.groebner(system)
+    # println("length = $(length(gb))")
+    # println("degree = $(maximum(AbstractAlgebra.total_degree, gb))")
+
+    @btime gb = Groebner.groebner($system, certify=true, reduced=false)
+    # gb = Groebner.groebner(system, reduced=false)
+end
+
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
         ("cyclic 11", Groebner.rootn(11, ground=ground)),
@@ -35,7 +47,8 @@ function run_f4_ff_degrevlex_benchmarks(ground)
     println()
     for (name, system) in systems
         println("$name")
-        benchmark_system_my(system)
+        # benchmark_system_my(system)
+        benchmark_system_my_certify(system)
     end
 end
 
@@ -44,15 +57,15 @@ run_f4_ff_degrevlex_benchmarks(ground)
 
 #=
 cyclic 11
-  50.663 ms (200419 allocations: 21.05 MiB)
+  51.766 ms (200404 allocations: 20.83 MiB)
 noon 6
-  198.116 ms (574503 allocations: 81.15 MiB)
+  159.142 ms (413056 allocations: 61.13 MiB)
 noon 7
-  1.847 s (3571431 allocations: 467.36 MiB)
+  1.189 s (2106605 allocations: 285.85 MiB)
 eco 5
-  878.300 μs (5467 allocations: 2.00 MiB)
+  563.600 μs (3556 allocations: 1.80 MiB)
 eco 7
-  9.300 ms (38332 allocations: 6.76 MiB)
+  6.228 ms (26509 allocations: 5.09 MiB)
 katsura 6
-  194.193 ms (211652 allocations: 24.31 MiB)
+  99.311 ms (94019 allocations: 13.37 MiB)
 =#
