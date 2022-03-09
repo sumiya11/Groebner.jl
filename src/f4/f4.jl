@@ -137,15 +137,15 @@ end
 # Hashtable initial size is set to tablesize
 function initialize_structures(
             ring::PolyRing,
-            exponents::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{UInt64}},
+            exponents::Vector{Vector{ExponentVector}},
+            coeffs::Vector{Vector{C}},
             rng::Random.AbstractRNG,
-            tablesize::Int)
+            tablesize::Int) where {C<:Coeff}
 
     # basis for storing basis elements,
     # pairset for storing critical pairs of basis elements to assess,
     # hashtable for hashing monomials occuring in the basis
-    basis    = initialize_basis(ring, length(exponents))
+    basis    = initialize_basis(ring, length(exponents), C)
     basis_ht = initialize_basis_hash_table(ring, rng, initial_size=tablesize)
 
     # filling the basis and hashtable with the given inputs
@@ -168,16 +168,16 @@ end
 # fills input data from exponents and coeffs
 function initialize_structures(
             ring::PolyRing,
-            exponents::Vector{Vector{Vector{UInt16}}},
-            coeffs_zz::Vector{Vector{BigInt}},
-            coeffs::Vector{Vector{UInt64}},
+            exponents::Vector{Vector{ExponentVector}},
+            coeffs_zz::Vector{Vector{CoeffZZ}},
+            coeffs::Vector{Vector{C}},
             rng::Random.AbstractRNG,
-            tablesize::Int)
+            tablesize::Int) where {C<:Coeff}
 
     # basis for storing basis elements,
     # pairset for storing critical pairs of basis elements to assess,
     # hashtable for hashing monomials occuring in the basis
-    basis    = initialize_basis(ring, length(exponents))
+    basis    = initialize_basis(ring, length(exponents), C)
     basis_ht = initialize_basis_hash_table(ring, rng, initial_size=tablesize)
 
     # filling the basis and hashtable with the given inputs
@@ -201,16 +201,16 @@ end
 # fills input data from exponents and coeffs
 function initialize_structures(
             ring::PolyRing,
-            exponents::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{UInt64}},
+            exponents::Vector{Vector{ExponentVector}},
+            coeffs::Vector{Vector{C}},
             rng::Random.AbstractRNG,
             tablesize::Int,
-            present_ht::MonomialHashtable)
+            present_ht::MonomialHashtable) where {C<:Coeff}
 
     # basis for storing basis elements,
     # pairset for storing critical pairs of basis elements to assess,
     # hashtable for hashing monomials occuring in the basis
-    basis    = initialize_basis(ring, length(exponents))
+    basis    = initialize_basis(ring, length(exponents), C)
 
     # filling the basis and hashtable with the given inputs
     fill_data!(basis, present_ht, exponents, coeffs)
@@ -221,6 +221,24 @@ function initialize_structures(
     # divide each polynomial by leading coefficient
     # We do not need normalization for normal forms
     # normalize_basis!(basis)
+
+    basis, present_ht
+end
+
+# Initializes Basis with the given hashed exponents and coefficients
+function initialize_structures(
+            ring::PolyRing,
+            hashedexps::Vector{Vector{Int}},
+            coeffs::Vector{Vector{C}},
+            present_ht::MonomialHashtable) where {C<:Coeff}
+
+    # basis for storing basis elements,
+    # pairset for storing critical pairs of basis elements to assess,
+    # hashtable for hashing monomials occuring in the basis
+    basis    = initialize_basis(ring, hashedexps, coeffs)
+
+    # sort input, smaller leading terms first
+    sort_gens_by_lead_increasing!(basis, present_ht)
 
     basis, present_ht
 end
@@ -373,9 +391,9 @@ end
 
 =#
 function f4!(ring::PolyRing,
-             basis,
+             basis::Basis{Coefftype},
              ht,
-             reduced)
+             reduced) where {Coefftype<:Coeff}
 
     # print("input: $(basis.ntotal) gens, $(ring.nvars) vars. ")
 
@@ -390,7 +408,7 @@ function f4!(ring::PolyRing,
 
     # matrix storing coefficients in rows
     # wrt columns representing the current monomial basis
-    matrix = initialize_matrix(ring)
+    matrix = initialize_matrix(ring, Coefftype)
 
     # initialize hash tables for update and symbolic preprocessing steps
     update_ht  = initialize_secondary_hash_table(ht)
@@ -431,7 +449,7 @@ function f4!(ring::PolyRing,
 
         # TODO: is this okay hm ?
         # to be changed
-        matrix    = initialize_matrix(ring)
+        matrix    = initialize_matrix(ring, Coefftype)
         symbol_ht = initialize_secondary_hash_table(ht)
         # clear symbolic hashtable
         # clear matrix

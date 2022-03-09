@@ -2,13 +2,18 @@
 #######################################
 
 # Stores parameters for groebner algorithm
-struct Metainfo
+struct GroebnerMetainfo
     # if set, then use fglm algorithm for order conversion
     usefglm::Bool
     # output polynomials order
     targetord::Symbol
     # order for computation
     computeord::Symbol
+
+    # correctness checks levels
+    heuristiccheck::Bool
+    randomizedcheck::Bool
+    guaranteedcheck::Bool
 end
 
 function set_metaparameters(ring, ordering, certify, forsolve)
@@ -35,10 +40,19 @@ function set_metaparameters(ring, ordering, certify, forsolve)
         computeord = targetord
     end
 
+    heuristiccheck = true
+    randomizedcheck = true
+    if certify
+        guaranteedcheck = true
+    else
+        guaranteedcheck = false
+    end
+
     @info "Computing in $computeord order, result is in $targetord order"
     @info "Using fglm: $usefglm"
 
-    Metainfo(usefglm, targetord, computeord)
+    GroebnerMetainfo(usefglm, targetord, computeord,
+                        heuristiccheck, randomizedcheck, guaranteedcheck)
 end
 
 function assure_ordering!(ring, exps, coeffs, metainfo)
@@ -58,7 +72,8 @@ function groebner_ff(
             exps::Vector{Vector{Vector{UInt16}}},
             coeffs::Vector{Vector{UInt64}},
             reduced::Bool,
-            rng::Rng) where {Rng<:Random.AbstractRNG}
+            rng::Rng,
+            meta::GroebnerMetainfo) where {Rng<:Random.AbstractRNG}
 
     # TODO
     tablesize = 2^8
@@ -86,11 +101,11 @@ end
 
 function groebner_qq(
             ring::PolyRing,
-            exps::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{Rational{BigInt}}},
+            exps::Vector{Vector{ExponentVector}},
+            coeffs::Vector{Vector{CoeffQQ}},
             reduced::Bool,
-            randomized::Bool,
-            rng::Rng) where {Rng<:Random.AbstractRNG}
+            rng::Rng,
+            meta::GroebnerMetainfo) where {Rng<:Random.AbstractRNG}
 
     # we can mutate coeffs and exps here
     #=
@@ -105,34 +120,31 @@ function groebner_qq(
     end
     tablesize = 2^16
 
+    # to store integer and rational coefficients of groebner basis
+    gb_coeffs_accum = Vector{Vector{CoeffZZ}}(undef, 0)
+    gb_coeffs_qq = Vector{Vector{CoeffQQ}}(undef, 0)
 
-    gbcoeffs_accum = Vector{Vector{BigInt}}(undef, 0)
-    gbcoeffs_qq = Vector{Vector{Rational{BigInt}}}(undef, 0)
-
+    # to store integer coefficients of input
     init_coeffs_zz = scale_denominators(coeffs)
 
-    # @warn "scaled" coeffs init_coeffs_zz
-
+    # selecting first lucky prime and first good prime
     modulo = BigInt(1)
     prime = nextluckyprime(init_coeffs_zz)
     moduli = Int[prime]
     goodprime = nextgoodprime(init_coeffs_zz, moduli)
 
-    # @error "initial primes" prime goodprime
-
+    # first reduction
     ring_ff, init_coeffs_ff = reduce_modulo(init_coeffs_zz, ring, prime)
-
-    # @warn "reduced" ring_ff init_coeffs_ff init_coeffs_zz
 
     # TODO: 2^16
 
+    # temporary basis for initial generators in finite field
     init_gens_temp_ff, ht = initialize_structures(ring_ff, exps,
-                                                    init_coeffs_zz, init_coeffs_ff,
-                                                    rng, tablesize)
+                                            init_coeffs_zz, init_coeffs_ff,
+                                            rng, tablesize)
     gens_ff = copy_basis(init_gens_temp_ff)
 
     @assert gens_ff.ch == prime == ring_ff.ch
-    # @warn "after init" gens_ff
 
     i = 1
     while true
@@ -141,37 +153,23 @@ function groebner_qq(
         @assert ring_ff.ch == prime
         @assert gens_ff.ch == prime
         @assert prime < 2^32
-        # @error "Asserts ok!"
 
-        # @info "initial gens" gens_ff.coeffs
-        #@error "passing gens to f4"
-        #println(gens_ff.lead)
-        #println("OK!")
-
+        # compute groebner basis in finite field
         f4!(ring_ff, gens_ff, ht, reduced)
 
-        #@info "basis computed" gens_ff.coeffs
-
+        # reconstruct into integers
         @info "CRT modulo ($modulo, $(ring_ff.ch))"
-        reconstruct_crt!(gbcoeffs_accum, modulo, gens_ff.coeffs, ring_ff)
+        reconstruct_crt!(gb_coeffs_accum, modulo, gens_ff.coeffs, ring_ff)
 
-        #@info "reconstructed #1" gbcoeffs_accum
-
+        # reconstruct into rationals
         @info "Reconstructing modulo $modulo"
-        reconstruct_modulo!(gbcoeffs_qq, gbcoeffs_accum, modulo)
-
-        #@info "reconstructed #2" gbcoeffs_qq
-        #println(ht.exponents[1:10])
-
-        #@error "passing gens to correctness check"
-        #println(map(bitstring, gens_ff.lead))
-        #println([ht.exponents[i[1]] for i in gens_ff.gens])
-        #println("OK!")
+        reconstruct_modulo!(gb_coeffs_qq, gb_coeffs_accum, modulo)
 
         buf_ff = copy_basis(init_gens_temp_ff)
-        if correctness_check!(init_coeffs_zz, ring_ff, gens_ff,
-                                        buf_ff, ht, gbcoeffs_qq, gbcoeffs_accum,
-                                        modulo, randomized, goodprime)
+        if correctness_check!(init_gens_temp_ff.gens, coeffs, init_coeffs_zz,
+                                ring_ff, gens_ff, buf_ff, ht, gb_coeffs_qq,
+                                gb_coeffs_accum, modulo, goodprime, meta,
+                                tablesize, rng)
             @info "Success!"
             break
         end
@@ -188,8 +186,8 @@ function groebner_qq(
     end
 
     # normalize_coeffs!(gbcoeffs_qq)
-    gbexps = hash_to_exponents(gens_ff, ht)
-    gbexps, gbcoeffs_qq
+    gb_exps = hash_to_exponents(gens_ff, ht)
+    gb_exps, gb_coeffs_qq
 end
 
 #######################################
@@ -198,9 +196,10 @@ end
 # UWU!
 function isgroebner_ff(
             ring::PolyRing,
-            exps::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{UInt64}},
-            rng)
+            exps::Vector{Vector{ExponentVector}},
+            coeffs::Vector{Vector{CoeffFF}},
+            rng,
+            meta)
 
     isgroebner_f4(ring, exps, coeffs, rng)
 end
@@ -211,17 +210,18 @@ end
 # TODO
 function isgroebner_qq(
             ring::PolyRing,
-            exps::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{Rational{BigInt}}},
-            randomized::Bool,
-            rng)
+            exps::Vector{Vector{ExponentVector}},
+            coeffs::Vector{Vector{CoeffQQ}},
+            rng,
+            meta)
 
-    if randomized
+    # if randomized result is ok
+    if !meta.guaranteedcheck
         coeffs_zz = scale_denominators(coeffs)
         goodprime = nextgoodprime(coeffs_zz, Int[], 2^30 + 3)
         ring_ff, coeffs_ff = reduce_modulo(coeffs_zz, ring, goodprime)
         isgroebner_f4(ring_ff, exps, coeffs_ff, rng)
-    else
-        error("Sorry, not randomized version is not implemented yet.")
+    else # if proved result is needed, compute in rationals
+        isgroebner_f4(ring, exps, coeffs, rng)
     end
 end

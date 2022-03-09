@@ -1,16 +1,19 @@
 
 #=
-    A note on how we represent polynomials.
+    A note on how we represent polynomials
+
     First, coefficients, exponents and polynomial ring metainfo
     are extracted from input polynomials with `convert_to_internal`.
 
-    Inside the algorithm all monomials are hashed without collisions,
-    so that an integer represents a single monomial. That drastically decreases memory consumption.
+    Inside the algorithm all exponents are hashed without collisions,
+    so that an integer represents a single monomial.
+    That drastically decreases memory consumption.
 
     For each monomial we also assign a divmask -- a compressed representation
     of exponent vector used to speed up divisibility checks.
 
-    ...
+    Hence, a polynomial is represented with coefficients vector
+    together with vector of hashtable indices.
 
     Finally, the resulting basis in internal representation is dehashed,
     and passed to `convert_to_output`
@@ -96,16 +99,16 @@ end
 
 function extract_coeffs_ff(ring::PolyRing, orig_polys::Vector{T}) where {T}
     npolys = length(orig_polys)
-    coeffs = Vector{Vector{UInt64}}(undef, npolys)
+    coeffs = Vector{Vector{CoeffFF}}(undef, npolys)
     for i in 1:npolys
-        coeffs[i] = map(UInt64 ∘ data, coefficients(orig_polys[i]))
+        coeffs[i] = map(CoeffFF ∘ data, coefficients(orig_polys[i]))
     end
     coeffs
 end
 
 function extract_coeffs_qq(ring::PolyRing, orig_polys::Vector{T}) where {T}
     npolys = length(orig_polys)
-    coeffs = Vector{Vector{Rational{BigInt}}}(undef, npolys)
+    coeffs = Vector{Vector{CoeffQQ}}(undef, npolys)
     for i in 1:npolys
         coeffs[i] = map(Rational, coefficients(orig_polys[i]))
     end
@@ -114,12 +117,12 @@ end
 
 function extract_exponents(ring::PolyRing, orig_polys::Vector{T}) where {T}
     npolys = length(orig_polys)
-    exps = Vector{Vector{Vector{UInt16}}}(undef, npolys)
+    exps = Vector{Vector{ExponentVector}}(undef, npolys)
     for i in 1:npolys
         poly = orig_polys[i]
-        exps[i] = Vector{Vector{UInt16}}(undef, length(poly))
+        exps[i] = Vector{ExponentVector}(undef, length(poly))
         for j in 1:length(poly)
-            exps[i][j] = Vector{UInt16}(undef, ring.explen)
+            exps[i][j] = ExponentVector(undef, ring.explen)
             exps[i][j][1:ring.nvars] .= exponent_vector(poly, j)
             exps[i][j][end] = sum(exps[i][j][k] for k in 1:ring.nvars)
         end
@@ -168,7 +171,7 @@ function extract_coeffs_qq(
             ring::PolyRing,
             orig_polys::Vector{T}) where {T<:AbstractPolynomialLike{U}} where {U}
     npolys = length(orig_polys)
-    coeffs = Vector{Vector{Rational{BigInt}}}(undef, npolys)
+    coeffs = Vector{Vector{CoeffQQ}}(undef, npolys)
     for i in 1:npolys
         poly = orig_polys[i]
         coeffs[i] = map(Rational, MultivariatePolynomials.coefficients(poly))
@@ -193,16 +196,16 @@ function extract_exponents(
             orig_polys::Vector{T}) where {T<:AbstractPolynomialLike{U}} where {U}
 
     npolys = length(orig_polys)
-    exps = Vector{Vector{Vector{UInt16}}}(undef, npolys)
+    exps = Vector{Vector{ExponentVector}}(undef, npolys)
     vars = MultivariatePolynomials.variables(orig_polys)
     @assert issorted(vars, rev=true)
 
     var2idx = Dict(vars[i] => i for i in 1:length(vars))
     for i in 1:npolys
         poly = orig_polys[i]
-        exps[i] = Vector{Vector{UInt16}}(undef, multivariate_length(poly))
+        exps[i] = Vector{ExponentVector}(undef, multivariate_length(poly))
         for (j, t) in enumerate(MultivariatePolynomials.monomials(poly))
-            exps[i][j] = Vector{UInt16}(undef, ring.explen)
+            exps[i][j] = ExponentVector(undef, ring.explen)
             exps[i][j][end] = zero(exps[i][j][end])
             et = exponents_wrt_vars(t, var2idx)
             for ei in 1:ring.nvars
@@ -237,12 +240,12 @@ function extract_exponents(
         ::Ord) where {Ord<:Union{Val{:lex}, Val{:deglex}}} where {T}
 
     npolys = length(orig_polys)
-    exps   = Vector{Vector{Vector{UInt16}}}(undef, npolys)
+    exps   = Vector{Vector{ExponentVector}}(undef, npolys)
     for i in 1:npolys
         poly = orig_polys[i]
-        exps[i] = Vector{Vector{UInt16}}(undef, length(poly))
+        exps[i] = Vector{ExponentVector}(undef, length(poly))
         for j in 1:length(poly)
-            exps[i][j] = Vector{UInt16}(undef, ring.explen)
+            exps[i][j] = ExponentVector(undef, ring.explen)
             exps[i][j][end] = zero(exps[i][j][end])
             for ei in 1:ring.nvars
                 exps[i][j][ei] = poly.exps[ring.nvars - ei + 1, j]
@@ -259,10 +262,10 @@ function extract_exponents(
         ::Val{:degrevlex}) where {T}
 
     npolys = length(orig_polys)
-    exps   = Vector{Vector{Vector{UInt16}}}(undef, npolys)
+    exps   = Vector{Vector{ExponentVector}}(undef, npolys)
     for i in 1:npolys
         poly = orig_polys[i]
-        exps[i] = Vector{Vector{UInt16}}(undef, length(poly))
+        exps[i] = Vector{ExponentVector}(undef, length(poly))
         for j in 1:length(poly)
             exps[i][j] = poly.exps[:, j]
         end
@@ -309,8 +312,8 @@ end
 function convert_to_output(
             ring::PolyRing,
             origpolys::Vector{P},
-            gbexps::Vector{Vector{Vector{UInt16}}},
-            gbcoeffs::Vector{Vector{I}}) where {P, I}
+            gbexps::Vector{Vector{ExponentVector}},
+            gbcoeffs::Vector{Vector{I}}) where {P, I<:Coeff}
 
     if ring.origring == :abstract
         convert_to_output(ring, parent(first(origpolys)), gbexps, gbcoeffs)
@@ -348,13 +351,13 @@ function check_and_convert_coeffs(coeffs_zz, T)
 end
 
 function convert_coeffs_to_output(
-        polycoeffs::Vector{Rational{BigInt}},
+        polycoeffs::Vector{CoeffQQ},
         ::Type{T}) where {T<:Rational}
     check_and_convert_coeffs(polycoeffs, T)
 end
 
 function convert_coeffs_to_output(
-        polycoeffs::Vector{Rational{BigInt}},
+        polycoeffs::Vector{CoeffQQ},
         ::Type{T}) where {T<:Integer}
     coeffs_zz = scale_denominators(polycoeffs)
     check_and_convert_coeffs(coeffs_zz, T)
@@ -366,7 +369,7 @@ end
 function convert_to_output(
             ring::PolyRing,
             origpolys::Vector{P},
-            gbexps::Vector{Vector{Vector{UInt16}}},
+            gbexps::Vector{Vector{ExponentVector}},
             gbcoeffs::Vector{Vector{I}}) where {P<:AbstractPolynomialLike{J}, I<:Rational} where {J}
 
     origvars = MultivariatePolynomials.variables(origpolys)
@@ -390,7 +393,7 @@ end
 function convert_to_output(
             ring::PolyRing,
             origring::M,
-            gbexps::Vector{Vector{Vector{UInt16}}},
+            gbexps::Vector{Vector{ExponentVector}},
             gbcoeffs::Vector{Vector{I}}) where {M, T, I}
 
     @assert hasmethod(base_ring, Tuple{typeof(origring)})
@@ -407,7 +410,7 @@ end
 
 function convert_to_output(
             origring::M,
-            gbexps::Vector{Vector{Vector{UInt16}}},
+            gbexps::Vector{Vector{ExponentVector}},
             gbcoeffs::Vector{Vector{I}}) where{M, I}
 
     ground   = base_ring(origring)
@@ -438,7 +441,7 @@ end
 function convert_to_output(
             ring::PolyRing,
             origring::MPolyRing{T},
-            gbexps::Vector{Vector{Vector{UInt16}}},
+            gbexps::Vector{Vector{ExponentVector}},
             gbcoeffs::Vector{Vector{I}}) where {T, I}
 
     ord = ordering(origring)
@@ -456,7 +459,7 @@ end
 """
 function convert_to_output(
             origring::MPolyRing{U},
-            gbexps::Vector{Vector{Vector{UInt16}}},
+            gbexps::Vector{Vector{ExponentVector}},
             gbcoeffs::Vector{Vector{T}},
             ::Val{:degrevlex}) where  {T<:Union{Rational{BigInt},BigInt,UInt64}, U}
 
@@ -472,7 +475,6 @@ function convert_to_output(
             end
             exps[nv + 1, jt] = gbexps[i][jt][end]
         end
-        # exps   = UInt64.(hcat(gbexps[i]...))
         exported[i] = create_polynomial(origring, cfs, exps)
     end
     exported
@@ -484,7 +486,7 @@ end
 """
 function convert_to_output(
             origring::MPolyRing{U},
-            gbexps::Vector{Vector{Vector{UInt16}}},
+            gbexps::Vector{Vector{ExponentVector}},
             gbcoeffs::Vector{Vector{T}},
             ::Val{:lex}) where {T<:Union{Rational{BigInt},BigInt,UInt64}, U}
 
@@ -511,7 +513,7 @@ end
 """
 function convert_to_output(
             origring::MPolyRing{U},
-            gbexps::Vector{Vector{Vector{UInt16}}},
+            gbexps::Vector{Vector{ExponentVector}},
             gbcoeffs::Vector{Vector{T}},
             ::Val{:deglex}) where {T<:Union{Rational{BigInt},BigInt,UInt64}, U}
 
@@ -527,7 +529,6 @@ function convert_to_output(
             end
             exps[nv + 1, jt] = gbexps[i][jt][end]
         end
-        # exps   = UInt64.(hcat(map(x -> [x[end-1:-1:1]..., x[end]], gbexps[i])...))
         exported[i] = create_polynomial(origring, cfs, exps)
     end
     exported

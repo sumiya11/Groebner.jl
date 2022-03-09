@@ -2,10 +2,10 @@
 #------------------------------------------------------------------------------
 
 function isgroebner_f4!(ring::PolyRing,
-                        basis::Basis,
-                        ht::MonomialHashtable)
+                        basis::Basis{C},
+                        ht::MonomialHashtable) where {C<:Coeff}
 
-    matrix = initialize_matrix(ring)
+    matrix = initialize_matrix(ring, C)
     symbol_ht = initialize_secondary_hash_table(ht)
     update_ht  = initialize_secondary_hash_table(ht)
 
@@ -31,9 +31,9 @@ end
 
 function isgroebner_f4(
             ring::PolyRing,
-            exps::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{UInt64}},
-            rng)
+            exps::Vector{Vector{ExponentVector}},
+            coeffs::Vector{Vector{C}},
+            rng) where {C<:Coeff}
 
     basis, ht = initialize_structures(ring, exps,
                                         coeffs, rng, 2^16)

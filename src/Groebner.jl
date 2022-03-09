@@ -35,6 +35,9 @@ import Logging: ConsoleLogger, LogLevel
 import MultivariatePolynomials
 import MultivariatePolynomials: AbstractPolynomial, AbstractPolynomialLike
 
+# type aliases for internal objects
+include("internaltypes.jl")
+
 # so, what is that exactly?
 include("utils.jl")
 

@@ -1,12 +1,11 @@
 
 
-function correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff, ht,
-                            gbcoeffs_qq, gbcoeffs_accum,
-                            modulo, randomized, goodprime)
+function correctness_check!(exps, coeffs, coeffs_zz, ring_ff, gb_ff, initial_ff,
+                                ht, gbcoeffs_qq, gbcoeffs_accum,
+                                modulo, goodprime, meta, tablesize, rng)
 
     # @warn "" heuristic_correctness_check(gbcoeffs_qq, modulo)
     # @warn "" randomized_correctness_check!(deepcopy(coeffs_zz), ring_ff, deepcopy(gb_ff), deepcopy(initial_ff),ht, deepcopy(gbcoeffs_qq), goodprime)
-
 
     # global HEURISTIC
     # global RANDOMIZED
@@ -14,26 +13,22 @@ function correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff, ht,
     # HEURISTIC += heuristic_correctness_check(gbcoeffs_qq, modulo)
     # RANDOMIZED += randomized_correctness_check!(deepcopy(coeffs_zz), ring_ff, deepcopy(gb_ff), deepcopy(initial_ff), ht, deepcopy(gbcoeffs_qq), goodprime)
 
-
     # first we check coefficients only
-    if !heuristic_correctness_check(gbcoeffs_qq, modulo)
-    # if !heuristic_correctness_check(gbcoeffs_qq, modulo)
-        @info "Heuristic check failed."
-        return false
+    if meta.heuristiccheck
+        if !heuristic_correctness_check(gbcoeffs_qq, modulo)
+            @info "Heuristic check failed."
+            return false
+        end
+        @info "Heuristic check passed!"
     end
-    @info "Heuristic check passed!"
 
-    # @warn "correctnes for " coeffs_zz gb_ff.coeffs initial_ff.coeffs
-
-
-    #
-    # if !flag1 || !flag2 || !flag3
-    if !randomized_correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff, ht, gbcoeffs_qq, goodprime)
-        @info "Randomized check failed."
-        return false
+    if meta.randomizedcheck
+        if !randomized_correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff, ht, gbcoeffs_qq, goodprime)
+            @info "Randomized check failed."
+            return false
+        end
+        @info "Randomized check passed!"
     end
-    @info "Randomized check passed!"
-
 
     #=
     # if !flag1 || !flag2 || !flag3
@@ -51,17 +46,16 @@ function correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff, ht,
     @info "Heuristic check passed!"
     =#
 
-
-    if !randomized
-        # TODO
-        return true
-        if guaranteed_correctness_check(ring, exps, coeffs_zz, gbexps, gbcoeffs_qq, rng)
-            @info "Proved check passed!"
+    if meta.guaranteedcheck
+        if guaranteed_correctness_check(gb_ff.gens, gbcoeffs_qq, exps, coeffs,
+                                            ht, ring_ff, tablesize, rng)
+            @info "Guaranteed check passed!"
             return true
         end
-        @info "Proved check failed."
+        @info "Guaranteed check failed."
         return false
     end
+
     return true
 end
 
@@ -196,59 +190,31 @@ end
 
 #------------------------------------------------------------------------------
 
-function correctness_check(
-            ring, exps, coeffs_zz, gbexps, gbcoeffs_qq,
-            moduli, randomized, rng)
-    if randomized_correctness_check(ring, exps, coeffs_zz, gbexps, gbcoeffs_qq, moduli, rng)
-        @info "Randomized check passed!"
-        # if guaranteed checks are required
-        if !randomized
-            if guaranteed_correctness_check(ring, exps, coeffs_zz, gbexps, gbcoeffs_qq, moduli, rng)
-                @info "Guaranteed checks pass!"
-                return true
-            end
-            @info "Guaranteed checks didn't pass."
-            return false
-        else
-            return true
-        end
-    end
-    @info "Randomized check failed."
-    return false
-end
+function guaranteed_correctness_check(gbexps, gbcoeffs_qq,
+                                exps, coeffs, ht, ring_qq, tablesize, rng)
 
-function randomized_correctness_check(
-            ring, exps, coeffs_zz, gbexps,
-            gbcoeffs_qq, prevgoodprime, rng)
+    gens_qq, _ = initialize_structures(ring_qq, exps, coeffs, ht)
+    gb_qq, _   = initialize_structures(ring_qq, gbexps, gbcoeffs_qq, ht)
 
-    goodprime = nextgoodprime(coeffs_zz, moduli, prevgoodprime)
-    # @warn "goodprime" coeffs_zz moduli goodprime gbcoeffs_qq
-    ring_ff, coeffs_ff = reduce_modulo(coeffs_zz, ring, goodprime)
-
-    gbcoeffs_zz = scale_denominators(gbcoeffs_qq)
-
-    # @warn "gbzz" gbcoeffs_zz
-
-    ring_ff, gbcoeffs_ff = reduce_modulo(gbcoeffs_zz, ring, goodprime)
+    normalize_basis!(gb_qq)
+    normalize_basis!(gens_qq)
 
     # check that initial ideal contains in the computed groebner basis modulo goodprime
-    expsreduced, _ = normal_form_f4(ring_ff, gbexps, gbcoeffs_ff, exps, coeffs_ff, rng)
-    for es in expsreduced
-        if !isempty(es)
+    normal_form_f4!(ring_qq, gb_qq, ht, gens_qq)
+
+    # @error "normal form"
+    # println(initial_ff)
+    for i in 1:gens_qq.ndone
+        # meaning that it is not reduced
+        if !isempty(gens_qq.coeffs[i])
             return false
         end
     end
 
     # check that the basis is groebner basis modulo goodprime
-    if !isgroebner_f4(ring_ff, gbexps, gbcoeffs_ff, rng)
+    if !isgroebner_f4!(ring_qq, gb_qq, ht)
         return false
     end
 
     return true
-end
-
-function guaranteed_correctness_check(
-            ring, exps, coeffs_zz, gbexps,
-            gbcoeffs_qq, moduli, rng)
-
 end

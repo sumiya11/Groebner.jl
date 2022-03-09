@@ -1,3 +1,8 @@
+
+#------------------------------------------------------------------------------
+
+
+
 #------------------------------------------------------------------------------
 ####### Hashtable #######
 
@@ -278,12 +283,12 @@ end
 
 #------------------------------------------------------------------------------
 
-mutable struct Basis
+mutable struct Basis{T}
     # vector of polynomials, each polynomial is a vector of monomials,
     # each monomial is represented with it's position in hashtable
     gens::Vector{Vector{Int}}
     # polynomial coefficients
-    coeffs::Vector{Vector{UInt64}}
+    coeffs::Vector{Vector{T}}
 
     #= Keeping track of sizes   =#
     #=  ndone <= ntotal <= size =#
@@ -316,7 +321,7 @@ mutable struct Basis
     ch::UInt64
 end
 
-function initialize_basis(ring::PolyRing, ngens::Int)
+function initialize_basis(ring::PolyRing, ngens::Int, ::Type{T}) where {T<:Coeff}
     #=
         always true
         length(gens) == length(coeffs) == length(isred) == size
@@ -328,7 +333,7 @@ function initialize_basis(ring::PolyRing, ngens::Int)
     nlead  = 0
 
     gens   = Vector{Vector{Int}}(undef, sz)
-    coeffs = Vector{Vector{UInt64}}(undef, sz)
+    coeffs = Vector{Vector{T}}(undef, sz)
     isred  = zeros(Int8, sz)
     nonred = Vector{Int}(undef, sz)
     lead   = Vector{UInt32}(undef, sz)
@@ -338,13 +343,28 @@ function initialize_basis(ring::PolyRing, ngens::Int)
     Basis(gens, coeffs, sz, ndone, ntotal, isred, nonred, lead, nlead, ch)
 end
 
-function copy_basis(basis::Basis)
+function initialize_basis(ring::PolyRing, hashedexps, coeffs::Vector{Vector{T}}) where {T<:Coeff}
+    sz     = length(hashedexps) * 2 # hmmm
+    ndone  = 0
+    ntotal = 0
+    nlead  = 0
+
+    isred  = zeros(Int8, sz)
+    nonred = Vector{Int}(undef, sz)
+    lead   = Vector{UInt32}(undef, sz)
+
+    ch = ring.ch
+
+    Basis(hashedexps, coeffs, sz, ndone, ntotal, isred, nonred, lead, nlead, ch)
+end
+
+function copy_basis(basis::Basis{T}) where {T}
     #  That cost a day of debugging ////
     gens   = Vector{Vector{Int}}(undef, basis.size)
-    coeffs = Vector{Vector{UInt64}}(undef, basis.size)
+    coeffs = Vector{Vector{T}}(undef, basis.size)
     for i in 1:basis.ntotal
         gens[i] = Vector{Int}(undef, length(basis.gens[i]))
-        coeffs[i] = Vector{UInt}(undef, length(basis.coeffs[i]))
+        coeffs[i] = Vector{T}(undef, length(basis.coeffs[i]))
         @assert length(gens[i]) == length(coeffs[i])
         for j in 1:length(basis.gens[i])
             gens[i][j] = basis.gens[i][j]
@@ -359,7 +379,7 @@ function copy_basis(basis::Basis)
             basis.nlead, basis.ch)
 end
 
-function check_enlarge_basis!(basis::Basis, added::Int)
+function check_enlarge_basis!(basis::Basis{T}, added::Int) where {T}
     if basis.ndone + added >= basis.size
         basis.size = max(basis.size * 2, basis.ndone + added)
         resize!(basis.gens, basis.size)
@@ -375,7 +395,7 @@ end
 
 # Normalize each element of the input basis
 # by dividing it by leading coefficient
-function normalize_basis!(basis::Basis)
+function normalize_basis!(basis::Basis{CoeffFF})
     cfs = basis.coeffs
     for i in 1:basis.ntotal
         # mul = inv(cfs[i][1])
@@ -393,10 +413,29 @@ function normalize_basis!(basis::Basis)
     basis
 end
 
+# Normalize each element of the input basis
+# by dividing it by leading coefficient
+function normalize_basis!(basis::Basis{CoeffQQ})
+    cfs = basis.coeffs
+    for i in 1:basis.ntotal
+        # mul = inv(cfs[i][1])
+        # hack for now, TODODO
+        if !isassigned(cfs, i)
+            continue
+        end
+        mul = inv(cfs[i][1])
+        for j in 2:length(cfs[i])
+            cfs[i][j] *= mul
+        end
+        cfs[i][1] = one(cfs[i][1])
+    end
+    basis
+end
+
 #------------------------------------------------------------------------------
 ####### Matrix #######
 
-mutable struct MacaulayMatrix
+mutable struct MacaulayMatrix{T<:Coeff}
     #=
         Matrix of the following structure
 
@@ -422,7 +461,7 @@ mutable struct MacaulayMatrix
     # row coefficients
     # (some of the rows are stored in the basis,
     #  and some are stored here)
-    coeffs::Vector{Vector{UInt64}}
+    coeffs::Vector{Vector{T}}
 
     #= sizes info =#
     # total number of allocated rows
@@ -456,11 +495,11 @@ mutable struct MacaulayMatrix
     low2coef::Vector{Int}
 end
 
-function initialize_matrix(ring::PolyRing)
+function initialize_matrix(ring::PolyRing, ::Type{T}) where {T<:Coeff}
     uprows   = Vector{Vector{Int}}(undef, 0)
     lowrows  = Vector{Vector{Int}}(undef, 0)
     col2hash = Vector{Int}(undef, 0)
-    coeffs   = Vector{Vector{UInt64}}(undef, 0)
+    coeffs   = Vector{Vector{T}}(undef, 0)
 
     size    = 0
     npivots = 0
@@ -482,7 +521,7 @@ function initialize_matrix(ring::PolyRing)
 end
 
 # TODO: change semantic
-function reinitialize_matrix!(matrix::MacaulayMatrix, npairs::Int)
+function reinitialize_matrix!(matrix::MacaulayMatrix{T}, npairs::Int) where {T}
     resize!(matrix.uprows, npairs*2)
     resize!(matrix.lowrows, npairs*2)
     resize!(matrix.up2coef, npairs*2)

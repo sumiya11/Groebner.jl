@@ -1,7 +1,10 @@
 
 #------------------------------------------------------------------------------
 
-function normalize_sparse_row!(row::Vector{UInt64}, ch::UInt64)
+# Normalize `row` by first coefficient
+#
+# Finite field specialization
+function normalize_sparse_row!(row::Vector{CoeffFF}, ch::UInt64)
     pinv = uinvmod(row[1], ch)
     @inbounds for i in 2:length(row)
         # row[i] *= pinv
@@ -11,9 +14,30 @@ function normalize_sparse_row!(row::Vector{UInt64}, ch::UInt64)
     row
 end
 
+# Normalize `row` by first coefficient
+#
+# Rational field specialization
+function normalize_sparse_row!(row::Vector{CoeffQQ}, ch::UInt64)
+    pinv = inv(row[1])
+    @inbounds for i in 2:length(row)
+        # row[i] *= pinv
+        row[i] = row[i] * pinv
+    end
+    row[1] = one(row[1])
+    row
+end
+
+#------------------------------------------------------------------------------
+
 # reduces row by mul*cfs modulo ch at indices positions
-function reduce_by_pivot!(row::Vector{UInt64}, indices::Vector{Int},
-            mul::UInt64, cfs::Vector{UInt64}, ch::UInt64)
+#
+# Finite field specialization
+function reduce_by_pivot!(row::Vector{CoeffFF}, indices::Vector{Int},
+                            cfs::Vector{CoeffFF}, ch::UInt64)
+
+    # mul = -densecoeffs[i]
+    # actually.. not bad!
+    mul = ucompmod(row[indices[1]], ch)
 
     # length(row) / length(indices) varies from 10 to 100
     @inbounds for j in 1:length(indices)
@@ -24,12 +48,59 @@ function reduce_by_pivot!(row::Vector{UInt64}, indices::Vector{Int},
     nothing
 end
 
+# reduces row by mul*cfs modulo ch at indices positions
+#
+# Rational field specialization
+function reduce_by_pivot!(row::Vector{CoeffQQ}, indices::Vector{Int},
+                            cfs::Vector{CoeffQQ}, ch::UInt64)
+
+    # mul = -densecoeffs[i]
+    # actually.. not bad!
+    mul = -row[indices[1]]
+
+    # length(row) / length(indices) varies from 10 to 100
+    @inbounds for j in 1:length(indices)
+        idx = indices[j]
+        row[idx] = row[idx] + mul*cfs[j]
+    end
+
+    nothing
+end
+
+#------------------------------------------------------------------------------
+
+# zero entries of densecoeffs and load coefficients cfsref to indices rowexps
+#
+# Finite field specialization
+function load_indexed_coefficients!(densecoeffs::Vector{CoeffFF}, rowexps, cfsref)
+    densecoeffs .= CoeffFF(0)
+    @inbounds for j in 1:length(rowexps)
+        densecoeffs[rowexps[j]] = cfsref[j]
+    end
+end
+
+
+# zero entries of densecoeffs and load coefficients cfsref to indices rowexps
+#
+# Finite field specialization
+function load_indexed_coefficients!(densecoeffs::Vector{CoeffQQ}, rowexps, cfsref)
+    densecoeffs .= CoeffQQ(0)
+    @inbounds for j in 1:length(rowexps)
+        densecoeffs[rowexps[j]] = cfsref[j]
+    end
+end
+
+#------------------------------------------------------------------------------
+
+# reduce vector densecoeffs by vectors with known pivots from
+# matrix, basis, and pivs
+#
 # modifies densecoeffs
 # does not modify matrix, basis, pivs
 function reduce_dense_row_by_known_pivots_sparse!(
-            densecoeffs::Vector{UInt64}, matrix::MacaulayMatrix, basis::Basis,
+            densecoeffs::Vector{C}, matrix::MacaulayMatrix{C}, basis::Basis{C},
             pivs::Vector{Vector{Int}}, startcol::Int, tmp_pos::Int;
-            exact_colmap::Bool=false)
+            exact_colmap::Bool=false) where {C<:Coeff}
 
     ncols = matrix.ncols
     nleft = matrix.nleft
@@ -38,7 +109,7 @@ function reduce_dense_row_by_known_pivots_sparse!(
 
     # new row nonzero elements count
     k = 0
-    uzero = UInt64(0)
+    uzero = C(0)
 
     # new pivot index
     np = -1
@@ -61,10 +132,6 @@ function reduce_dense_row_by_known_pivots_sparse!(
         # exponents of reducer row at column i
         reducerexps = pivs[i]
 
-        # mul = -densecoeffs[i]
-        # actually.. not bad!
-        mul = ucompmod(densecoeffs[i], ch)
-
         if exact_colmap # if exact mapping in matrix.low2coef
             @inbounds cfs = matrix.coeffs[tmp_pos] # controversial
         elseif i <= nleft # if reducer is from upper
@@ -73,12 +140,12 @@ function reduce_dense_row_by_known_pivots_sparse!(
             @inbounds cfs = matrix.coeffs[matrix.low2coef[i]]
         end
 
-        reduce_by_pivot!(densecoeffs, reducerexps, mul, cfs, ch)
+        reduce_by_pivot!(densecoeffs, reducerexps, cfs, ch)
     end
 
     # TODO
     newrow = Vector{Int}(undef, k)
-    newcfs = Vector{UInt64}(undef, k)
+    newcfs = Vector{C}(undef, k)
 
     # all reduced !
     if k == 0
@@ -99,7 +166,7 @@ function reduce_dense_row_by_known_pivots_sparse!(
     return false, newrow, newcfs
 end
 
-function exact_sparse_rref_par!(matrix::MacaulayMatrix, basis::Basis)
+function exact_sparse_rref_par!(matrix::MacaulayMatrix{C}, basis::Basis{C}) where {C<:Coeff}
     ncols  = matrix.ncols
     nlow   = matrix.nlow
     nright = matrix.nright
@@ -128,7 +195,7 @@ function exact_sparse_rref_par!(matrix::MacaulayMatrix, basis::Basis)
     # we will modify them inplace when reducing by pivs
     upivs = matrix.lowrows
 
-    densecoeffs = zeros(UInt64, ncols)
+    densecoeffs = zeros(C, ncols)
 
     lowpivs = Vector{Vector{Int64}}(undef, nlow)
 
@@ -147,11 +214,7 @@ function exact_sparse_rref_par!(matrix::MacaulayMatrix, basis::Basis)
         # into rowexps indices
         # TODO: move this
         # TODO
-        densecoeffs = zeros(UInt64, ncols)
-
-        @inbounds for j in 1:length(rowexps)
-            densecoeffs[rowexps[j]] = cfsref[j]
-        end
+        load_indexed_coefficients!(densecoeffs, rowexps, cfsref)
 
         # reduce it with known pivots from matrix.uprows
         # first nonzero in densecoeffs is at startcol position
@@ -167,7 +230,7 @@ function exact_sparse_rref_par!(matrix::MacaulayMatrix, basis::Basis)
         matrix.coeffs[i] = newcfs
 
         # normalize if needed
-        if matrix.coeffs[i][1] != 1
+        if !isone( matrix.coeffs[i][1] )
             normalize_sparse_row!(matrix.coeffs[i], basis.ch)
         end
     end
@@ -193,11 +256,7 @@ function exact_sparse_rref_par!(matrix::MacaulayMatrix, basis::Basis)
         # into rowexps indices
         # TODO: move this
         # TODO
-        densecoeffs = zeros(UInt64, ncols)
-
-        @inbounds for j in 1:length(rowexps)
-            densecoeffs[rowexps[j]] = cfsref[j]
-        end
+        load_indexed_coefficients!(densecoeffs, rowexps, cfsref)
 
         startcol = rowexps[1]
         zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(densecoeffs, matrix, basis, pivs, startcol, i, exact_colmap=true)
@@ -216,7 +275,7 @@ function exact_sparse_rref_par!(matrix::MacaulayMatrix, basis::Basis)
         lowcol2coef[newrow[1]] = i
 
         # normalize if needed
-        if matrix.coeffs[i][1] != 1
+        if !isone( matrix.coeffs[i][1] )
             normalize_sparse_row!(matrix.coeffs[i], basis.ch)
         end
     end
@@ -232,7 +291,7 @@ function exact_sparse_rref_par!(matrix::MacaulayMatrix, basis::Basis)
 end
 
 
-function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
+function exact_sparse_rref!(matrix::MacaulayMatrix{C}, basis::Basis{C}) where {C<:Coeff}
     ncols  = matrix.ncols
     nlow   = matrix.nlow
     nright = matrix.nright
@@ -261,7 +320,7 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
     # we will modify them inplace when reducing by pivs
     upivs = matrix.lowrows
 
-    densecoeffs = zeros(UInt64, ncols)
+    densecoeffs = zeros(C, ncols)
 
     #=
     @warn "before reducing low"
@@ -281,10 +340,7 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
         # we load coefficients into dense array
         # into rowexps indices
         # TODO: move this
-        densecoeffs .= UInt64(0)
-        @inbounds for j in 1:length(rowexps)
-            densecoeffs[rowexps[j]] = cfsref[j]
-        end
+        load_indexed_coefficients!(densecoeffs, rowexps, cfsref)
 
         # reduce it with known pivots from matrix.uprows
         # first nonzero in densecoeffs is at startcol position
@@ -305,7 +361,7 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
         matrix.low2coef[newrow[1]] = i
 
         # normalize if needed
-        if matrix.coeffs[i][1] != 1
+        if !isone( matrix.coeffs[i][1] )
             normalize_sparse_row!(matrix.coeffs[i], basis.ch)
         end
     end
@@ -324,12 +380,9 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
 
     # interreduce new pivots..
     # .. for each right (non-pivotal) column
-    densecfs = zeros(UInt64, ncols)
-
     for i in 1:nright
         k = ncols - i + 1
         if isassigned(pivs, k)
-            densecfs .= UInt64(0)
 
             if k <= nleft
                 cfsref = basis.coeffs[matrix.up2coef[k]]
@@ -341,12 +394,11 @@ function exact_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
 
             @assert length(cfsref) == length(pivs[k])
 
-            @inbounds for j in 1:length(pivs[k])
-                densecfs[pivs[k][j]] = cfsref[j]
-            end
+            load_indexed_coefficients!(densecoeffs, pivs[k], cfsref)
+
             newpivs += 1
 
-            zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(densecfs, matrix, basis, pivs, startcol, startcol)
+            zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(densecoeffs, matrix, basis, pivs, startcol, startcol)
 
             # update row and coeffs
             matrix.lowrows[newpivs] = newrow
@@ -373,7 +425,7 @@ function nblocks_in_randomized(nlow::Int)
     floor(Int, sqrt(nlow / 3)) + 1
 end
 
-function randomized_sparse_rref!(matrix::MacaulayMatrix, basis::Basis)
+function randomized_sparse_rref!(matrix::MacaulayMatrix{C}, basis::Basis{C}) where {C<:Coeff}
     ncols  = matrix.ncols
     nlow   = matrix.nlow
     nright = matrix.nright
@@ -544,7 +596,7 @@ end
 
 #------------------------------------------------------------------------------
 
-function interreduce_matrix_rows!(matrix::MacaulayMatrix, basis::Basis)
+function interreduce_matrix_rows!(matrix::MacaulayMatrix{C}, basis::Basis{C}) where {C<:Coeff}
     resize!(matrix.lowrows, matrix.ncols)
     resize!(matrix.up2coef, matrix.ncols)
     resize!(matrix.low2coef, matrix.ncols)
@@ -559,8 +611,7 @@ function interreduce_matrix_rows!(matrix::MacaulayMatrix, basis::Basis)
         matrix.coeffs[i] = copy(basis.coeffs[matrix.up2coef[i]])
     end
 
-    densecfs = Vector{UInt64}(undef, matrix.ncols)
-    densecfs .= UInt64(0)
+    densecfs = zeros(C, matrix.ncols)
 
     k = matrix.nrows
 
@@ -570,7 +621,9 @@ function interreduce_matrix_rows!(matrix::MacaulayMatrix, basis::Basis)
             # densecfs .= UInt64(0)
             cfs = matrix.coeffs[matrix.low2coef[l]]
             reducexps = pivs[l]
+
             startcol = reducexps[1]
+
             @inbounds for j in 1:length(reducexps)
                 densecfs[reducexps[j]] = cfs[j]
             end
@@ -584,7 +637,7 @@ function interreduce_matrix_rows!(matrix::MacaulayMatrix, basis::Basis)
             k -= 1
 
             for idx in newrow
-                densecfs[idx] = 0
+                densecfs[idx] = zero(densecfs[idx])
             end
         end
     end
@@ -666,7 +719,7 @@ function convert_hashes_to_columns!(
     matrix.col2hash = col2hash
 end
 
-function exact_sparse_linear_algebra_isgroebner!(matrix, basis)
+function exact_sparse_linear_algebra_isgroebner!(matrix::MacaulayMatrix{C}, basis::Basis{C}) where {C<:Coeff}
     ncols  = matrix.ncols
     nlow   = matrix.nlow
     nright = matrix.nright
@@ -695,7 +748,7 @@ function exact_sparse_linear_algebra_isgroebner!(matrix, basis)
     # we will modify them inplace when reducing by pivs
     upivs = matrix.lowrows
 
-    densecoeffs = zeros(UInt64, ncols)
+    densecoeffs = zeros(C, ncols)
 
     #=
     @warn "before reducing low"
@@ -717,10 +770,8 @@ function exact_sparse_linear_algebra_isgroebner!(matrix, basis)
         # we load coefficients into dense array
         # into rowexps indices
         # TODO: move this
-        densecoeffs .= UInt64(0)
-        @inbounds for j in 1:length(rowexps)
-            densecoeffs[rowexps[j]] = cfsref[j]
-        end
+
+        load_indexed_coefficients!(densecoeffs, rowexps, cfsref)
 
         # reduce it with known pivots from matrix.uprows
         # first nonzero in densecoeffs is at startcol position
@@ -739,9 +790,9 @@ end
 #------------------------------------------------------------------------------
 
 function exact_sparse_rref_nf!(
-        matrix::MacaulayMatrix,
-        tobereduced::Basis,
-        basis::Basis)
+        matrix::MacaulayMatrix{C},
+        tobereduced::Basis{C},
+        basis::Basis{C}) where {C<:Coeff}
 
     ncols  = matrix.ncols
     nlow   = matrix.nlow
@@ -771,7 +822,7 @@ function exact_sparse_rref_nf!(
     # we will modify them inplace when reducing by pivs
     upivs = matrix.lowrows
 
-    densecoeffs = zeros(UInt64, ncols)
+    densecoeffs = zeros(C, ncols)
 
     #=
     @warn "before reducing low"
@@ -795,10 +846,8 @@ function exact_sparse_rref_nf!(
         # we load coefficients into dense array
         # into rowexps indices
         # TODO: move this
-        densecoeffs .= UInt64(0)
-        @inbounds for j in 1:length(rowexps)
-            densecoeffs[rowexps[j]] = cfsref[j]
-        end
+
+        load_indexed_coefficients!(densecoeffs, rowexps, cfsref)
 
         # @error "row " i densecoeffs cfsref
 

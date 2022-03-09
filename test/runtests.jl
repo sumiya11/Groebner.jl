@@ -30,16 +30,17 @@ end
                     "mod_reconstruction", "crt_reconstruction"]
 
     @includetests ["core_f4_reduce", "core_f4_stress",
-                    "core_f4", "rational_f4"]
+                    "core_f4", "rational_f4", "groebner_certify"]
 
-    @includetests ["core_isgroebner", "core_isgroebner_stress"]
+    @includetests ["core_isgroebner", "core_isgroebner_stress",
+                    "isgroebner_certify"]
 
     @includetests ["core_normalform", "core_normalform_stress"]
 
     @includetests ["hard_problems_f4", "large_problems_f4"]
 
     if try_import(:DynamicPolynomials)
-        @includetests ["io_dynamic", "core_dynamic"]
+        # @includetests ["io_dynamic", "core_dynamic"]
     end
 
     @includetests ["onthefly_order_change"]
