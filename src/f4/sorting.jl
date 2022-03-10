@@ -35,7 +35,7 @@ end
 #
 # Used only once to sort input generators
 function sort_gens_by_lead_increasing!(
-            basis::Basis, ht::MonomialHashtable, coeffs_zz)
+            basis::Basis, ht::MonomialHashtable, coeffs_zz, coeffs_qq)
     gens = basis.gens
     exps = ht.exponents
 
@@ -61,6 +61,7 @@ function sort_gens_by_lead_increasing!(
     basis.gens[1:basis.ntotal]   = basis.gens[inds]
     basis.coeffs[1:basis.ntotal] = basis.coeffs[inds]
     coeffs_zz[1:basis.ntotal]    = coeffs_zz[inds]
+    coeffs_qq[1:basis.ntotal]    = coeffs_qq[inds]
 end
 
 # sorts generators and corresponding coefficients from basis

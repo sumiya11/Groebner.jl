@@ -56,6 +56,7 @@ function reduce_by_pivot!(row::Vector{CoeffQQ}, indices::Vector{Int},
 
     # mul = -densecoeffs[i]
     # actually.. not bad!
+
     mul = -row[indices[1]]
 
     # length(row) / length(indices) varies from 10 to 100

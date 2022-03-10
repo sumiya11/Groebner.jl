@@ -140,8 +140,8 @@ function groebner_qq(
 
     # temporary basis for initial generators in finite field
     init_gens_temp_ff, ht = initialize_structures(ring_ff, exps,
-                                            init_coeffs_zz, init_coeffs_ff,
-                                            rng, tablesize)
+                                            coeffs, init_coeffs_zz,
+                                            init_coeffs_ff, rng, tablesize)
     gens_ff = copy_basis(init_gens_temp_ff)
 
     @assert gens_ff.ch == prime == ring_ff.ch
@@ -166,7 +166,7 @@ function groebner_qq(
         reconstruct_modulo!(gb_coeffs_qq, gb_coeffs_accum, modulo)
 
         buf_ff = copy_basis(init_gens_temp_ff)
-        if correctness_check!(init_gens_temp_ff.gens, coeffs, init_coeffs_zz,
+        if correctness_check!(init_gens_temp_ff, coeffs, init_coeffs_zz,
                                 ring_ff, gens_ff, buf_ff, ht, gb_coeffs_qq,
                                 gb_coeffs_accum, modulo, goodprime, meta,
                                 tablesize, rng)

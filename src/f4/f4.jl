@@ -67,14 +67,14 @@ function standardize_basis!(basis::Basis, ht)
     normalize_basis!(basis)
 end
 
-function export_basis_data(basis::Basis, ht::MonomialHashtable)
-    exps   = Vector{Vector{Vector{UInt16}}}(undef, basis.nlead)
-    coeffs = Vector{Vector{UInt64}}(undef, basis.nlead)
+function export_basis_data(basis::Basis{C}, ht::MonomialHashtable) where {C<:Coeff}
+    exps   = Vector{Vector{ExponentVector}}(undef, basis.nlead)
+    coeffs = Vector{Vector{C}}(undef, basis.nlead)
 
     for i in 1:basis.nlead
         idx = basis.nonred[i]
         poly = basis.gens[idx]
-        exps[i] = Vector{Vector{UInt16}}(undef, length(poly))
+        exps[i] = Vector{ExponentVector}(undef, length(poly))
         for j in 1:length(poly)
             exps[i][j] = ht.exponents[poly[j]]
         end
@@ -85,11 +85,11 @@ function export_basis_data(basis::Basis, ht::MonomialHashtable)
 end
 
 function hash_to_exponents(basis::Basis, ht::MonomialHashtable)
-    exps   = Vector{Vector{Vector{UInt16}}}(undef, basis.nlead)
+    exps   = Vector{Vector{ExponentVector}}(undef, basis.nlead)
     for i in 1:basis.nlead
         idx = basis.nonred[i]
         poly = basis.gens[idx]
-        exps[i] = Vector{Vector{UInt16}}(undef, length(poly))
+        exps[i] = Vector{ExponentVector}(undef, length(poly))
         for j in 1:length(poly)
             exps[i][j] = ht.exponents[poly[j]]
         end
@@ -169,6 +169,7 @@ end
 function initialize_structures(
             ring::PolyRing,
             exponents::Vector{Vector{ExponentVector}},
+            coeffs_qq::Vector{Vector{CoeffQQ}},
             coeffs_zz::Vector{Vector{CoeffZZ}},
             coeffs::Vector{Vector{C}},
             rng::Random.AbstractRNG,
@@ -188,7 +189,7 @@ function initialize_structures(
     fill_divmask!(basis_ht)
 
     # sort input, smaller leading terms first
-    sort_gens_by_lead_increasing!(basis, basis_ht, coeffs_zz)
+    sort_gens_by_lead_increasing!(basis, basis_ht, coeffs_zz, coeffs_qq)
 
     # divide each polynomial by leading coefficient
     normalize_basis!(basis)
@@ -236,6 +237,7 @@ function initialize_structures(
     # pairset for storing critical pairs of basis elements to assess,
     # hashtable for hashing monomials occuring in the basis
     basis    = initialize_basis(ring, hashedexps, coeffs)
+    basis.ntotal = length(hashedexps)
 
     # sort input, smaller leading terms first
     sort_gens_by_lead_increasing!(basis, present_ht)

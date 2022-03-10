@@ -1,6 +1,6 @@
 
 
-function correctness_check!(exps, coeffs, coeffs_zz, ring_ff, gb_ff, initial_ff,
+function correctness_check!(init_gens, coeffs, coeffs_zz, ring_ff, gb_ff, initial_ff,
                                 ht, gbcoeffs_qq, gbcoeffs_accum,
                                 modulo, goodprime, meta, tablesize, rng)
 
@@ -46,9 +46,8 @@ function correctness_check!(exps, coeffs, coeffs_zz, ring_ff, gb_ff, initial_ff,
     @info "Heuristic check passed!"
     =#
 
-    t = time()
     if meta.guaranteedcheck
-        if guaranteed_correctness_check(gb_ff.gens, gbcoeffs_qq, exps, coeffs,
+        if guaranteed_correctness_check(gb_ff.gens, gbcoeffs_qq, init_gens, coeffs,
                                             ht, ring_ff, tablesize, rng)
 
             @info "Guaranteed check passed!"
@@ -195,9 +194,12 @@ end
 #------------------------------------------------------------------------------
 
 function guaranteed_correctness_check(gbexps, gbcoeffs_qq,
-                                exps, coeffs, ht, ring_qq, tablesize, rng)
+                                init_gens, coeffs, ht, ring_qq, tablesize, rng)
 
-    gens_qq, _ = initialize_structures(ring_qq, exps, coeffs, ht)
+    tmp_exps = [copy(init_gens.gens[i]) for i in 1:init_gens.ntotal]
+    tmp_coeffs = [copy(coeffs[i]) for i in 1:init_gens.ntotal]
+
+    gens_qq, _ = initialize_structures(ring_qq, tmp_exps, tmp_coeffs, ht)
     gb_qq, _   = initialize_structures(ring_qq, gbexps, gbcoeffs_qq, ht)
 
     normalize_basis!(gb_qq)
@@ -214,6 +216,8 @@ function guaranteed_correctness_check(gbexps, gbcoeffs_qq,
             return false
         end
     end
+
+    gb_qq, _   = initialize_structures(ring_qq, gbexps, gbcoeffs_qq, ht)
 
     # check that the basis is groebner basis modulo goodprime
     if !isgroebner_f4!(ring_qq, gb_qq, ht)

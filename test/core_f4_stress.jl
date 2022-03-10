@@ -42,7 +42,7 @@ end
 
 @testset "f4 random stress tests" begin
 
-    rng = Random.MersenneTwister(5)
+    rng = Random.MersenneTwister(42)
 
     # :degrevlex finite case tests
     nvariables = [2, 3, 4]

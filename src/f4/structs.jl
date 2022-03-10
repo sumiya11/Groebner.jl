@@ -344,7 +344,7 @@ function initialize_basis(ring::PolyRing, ngens::Int, ::Type{T}) where {T<:Coeff
 end
 
 function initialize_basis(ring::PolyRing, hashedexps, coeffs::Vector{Vector{T}}) where {T<:Coeff}
-    sz     = length(hashedexps) * 2 # hmmm
+    sz     = length(hashedexps) # hmmm
     ndone  = 0
     ntotal = 0
     nlead  = 0
