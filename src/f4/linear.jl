@@ -20,7 +20,6 @@ end
 function normalize_sparse_row!(row::Vector{CoeffQQ}, ch::UInt64)
     pinv = inv(row[1])
     @inbounds for i in 2:length(row)
-        # row[i] *= pinv
         row[i] = row[i] * pinv
     end
     row[1] = one(row[1])
@@ -42,6 +41,28 @@ function reduce_by_pivot!(row::Vector{CoeffFF}, indices::Vector{Int},
     # length(row) / length(indices) varies from 10 to 100
     @inbounds for j in 1:length(indices)
         idx = indices[j]
+        # row[idx] = (row[idx] + mul*cfs[j]) % ch
+        row[idx] = (row[idx] + mul*cfs[j]) % ch
+    end
+
+    nothing
+end
+
+# reduces row by mul*cfs modulo ch at indices positions
+#
+# Finite field specialization
+function reduce_by_pivot!(row::Vector{CoeffFF}, indices::Vector{Int},
+                            cfs::Vector{CoeffFF},
+                            ch::Base.MultiplicativeInverses.UnsignedMultiplicativeInverse{UInt64})
+
+    # mul = -densecoeffs[i]
+    # actually.. not bad!
+    mul = (ch.divisor - row[indices[1]]) % ch
+
+    # length(row) / length(indices) varies from 10 to 100
+    @inbounds for j in 1:length(indices)
+        idx = indices[j]
+        # row[idx] = (row[idx] + mul*cfs[j]) % ch
         row[idx] = (row[idx] + mul*cfs[j]) % ch
     end
 
@@ -115,6 +136,8 @@ function reduce_dense_row_by_known_pivots_sparse!(
     # new pivot index
     np = -1
 
+    # trick_ch = Base.MultiplicativeInverses.UnsignedMultiplicativeInverse(ch)
+
     for i in startcol:ncols
         # if row element zero - no reduction
         @inbounds if densecoeffs[i] == uzero
@@ -141,6 +164,7 @@ function reduce_dense_row_by_known_pivots_sparse!(
             @inbounds cfs = matrix.coeffs[matrix.low2coef[i]]
         end
 
+        # reduce_by_pivot!(densecoeffs, reducerexps, cfs, trick_ch)
         reduce_by_pivot!(densecoeffs, reducerexps, cfs, ch)
     end
 

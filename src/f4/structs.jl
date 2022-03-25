@@ -167,7 +167,7 @@ end
 # but are more local oriented
 function initialize_secondary_hash_table(basis_ht::MonomialHashtable)
 
-    # hmm TODO
+    # 2^6 seems to be the best out of 2^5, 2^6, 2^7
     initial_size = 2^6
 
     exponents = Vector{Vector{UInt16}}(undef, initial_size)
@@ -358,14 +358,16 @@ function initialize_basis(ring::PolyRing, hashedexps, coeffs::Vector{Vector{T}})
     Basis(hashedexps, coeffs, sz, ndone, ntotal, isred, nonred, lead, nlead, ch)
 end
 
-function copy_basis(basis::Basis{T}) where {T}
+#------------------------------------------------------------------------------
+
+function copy_basis_thorough(basis::Basis{T}) where {T}
     #  That cost a day of debugging ////
     gens   = Vector{Vector{Int}}(undef, basis.size)
     coeffs = Vector{Vector{T}}(undef, basis.size)
     for i in 1:basis.ntotal
         gens[i] = Vector{Int}(undef, length(basis.gens[i]))
         coeffs[i] = Vector{T}(undef, length(basis.coeffs[i]))
-        @assert length(gens[i]) == length(coeffs[i])
+
         for j in 1:length(basis.gens[i])
             gens[i][j] = basis.gens[i][j]
             coeffs[i][j] = basis.coeffs[i][j]
@@ -378,6 +380,8 @@ function copy_basis(basis::Basis{T}) where {T}
             basis.ntotal, isred, nonred, lead,
             basis.nlead, basis.ch)
 end
+
+#------------------------------------------------------------------------------
 
 function check_enlarge_basis!(basis::Basis{T}, added::Int) where {T}
     if basis.ndone + added >= basis.size

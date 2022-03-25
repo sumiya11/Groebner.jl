@@ -78,6 +78,7 @@ function groebner(
 
     #= compute the groebner basis =#
     if ring.ch != 0
+        # bexps, bcoeffs = groebner_ff(ring, exps, coeffs, reduced, rng, metainfo)
         # if finite field
         # Always returns UInt coefficients #
         bexps, bcoeffs = groebner_ff(ring, exps, coeffs, reduced, rng, metainfo)

@@ -166,6 +166,52 @@ end
 
 # Initializes Basis and MonomialHashtable structures,
 # fills input data from exponents and coeffs
+#
+# Hashtable initial size is set to tablesize
+function initialize_structures_no_normalize(
+            ring::PolyRing,
+            exponents::Vector{Vector{ExponentVector}},
+            coeffs_qq,
+            coeffs_ff::Vector{Vector{C}},
+            rng::Random.AbstractRNG,
+            tablesize::Int) where {C<:Coeff}
+
+    # basis for storing basis elements,
+    # pairset for storing critical pairs of basis elements to assess,
+    # hashtable for hashing monomials occuring in the basis
+    basis    = initialize_basis(ring, length(exponents), C)
+    basis_ht = initialize_basis_hash_table(ring, rng, initial_size=tablesize)
+
+    # filling the basis and hashtable with the given inputs
+    fill_data!(basis, basis_ht, exponents, coeffs_ff)
+
+    # every monomial in hashtable is associated with its divmask
+    # to perform divisions faster. Filling those
+    fill_divmask!(basis_ht)
+
+    # sort input, smaller leading terms first
+    sort_gens_by_lead_increasing!(basis, basis_ht, coeffs_qq)
+
+    basis, basis_ht
+end
+
+# Initializes Basis and MonomialHashtable structures,
+# fills input data from exponents and coeffs
+#
+# Hashtable initial size is set to tablesize
+function initialize_structures_ff(
+            ring::PolyRing,
+            exponents::Vector{Vector{ExponentVector}},
+            coeffs::Vector{Vector{C}},
+            rng::Random.AbstractRNG,
+            tablesize::Int) where {C<:Coeff}
+
+    coeffs_ff = [Vector{CoeffFF}(undef, length(c)) for c in coeffs]
+    initialize_structures_no_normalize(ring, exponents, coeffs, coeffs_ff, rng, tablesize)
+end
+
+# Initializes Basis and MonomialHashtable structures,
+# fills input data from exponents and coeffs
 function initialize_structures(
             ring::PolyRing,
             exponents::Vector{Vector{ExponentVector}},
@@ -451,6 +497,7 @@ function f4!(ring::PolyRing,
 
         # TODO: is this okay hm ?
         # to be changed
+        # TODO: clean hashtable
         matrix    = initialize_matrix(ring, Coefftype)
         symbol_ht = initialize_secondary_hash_table(ht)
         # clear symbolic hashtable

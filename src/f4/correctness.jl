@@ -1,82 +1,44 @@
 
 
-function correctness_check!(init_gens, coeffs, coeffs_zz, ring_ff, gb_ff, initial_ff,
-                                ht, gbcoeffs_qq, gbcoeffs_accum,
-                                modulo, goodprime, meta, tablesize, rng)
-
-    # @warn "" heuristic_correctness_check(gbcoeffs_qq, modulo)
-    # @warn "" randomized_correctness_check!(deepcopy(coeffs_zz), ring_ff, deepcopy(gb_ff), deepcopy(initial_ff),ht, deepcopy(gbcoeffs_qq), goodprime)
-
-    # global HEURISTIC
-    # global RANDOMIZED
-
-    # HEURISTIC += heuristic_correctness_check(gbcoeffs_qq, modulo)
-    # RANDOMIZED += randomized_correctness_check!(deepcopy(coeffs_zz), ring_ff, deepcopy(gb_ff), deepcopy(initial_ff), ht, deepcopy(gbcoeffs_qq), goodprime)
+function correctness_check!(coeffaccum, coeffbuffer, primetracker, meta,
+                                ring, coeffs, coeffs_zz, gens_temp_ff, gb_ff, ht)
 
     # first we check coefficients only
     if meta.heuristiccheck
-        if !heuristic_correctness_check(gbcoeffs_qq, modulo)
+        if !heuristic_correctness_check(coeffaccum.gb_coeffs_qq, primetracker.modulo)
             @info "Heuristic check failed."
             return false
         end
         @info "Heuristic check passed!"
     end
 
+    goodprime = nextgoodprime!(primetracker)
     if meta.randomizedcheck
-        if !randomized_correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff, ht, gbcoeffs_qq, goodprime)
+        if !randomized_correctness_check!(coeffbuffer, coeffaccum, ring,
+                                            coeffs_zz, gens_temp_ff, gb_ff, goodprime, ht)
             @info "Randomized check failed."
             return false
         end
         @info "Randomized check passed!"
     end
 
-    #=
-    # if !flag1 || !flag2 || !flag3
-    if !randomized_correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff, ht, gbcoeffs_qq, goodprime)
-        @info "Randomized check failed."
-        return false
-    end
-    @info "Randomized check passed!"
-
-    if !heuristic_correctness_check(gbcoeffs_qq, modulo)
-    # if !heuristic_correctness_check(gbcoeffs_qq, modulo)
-        @info "Heuristic check failed."
-        return false
-    end
-    @info "Heuristic check passed!"
-    =#
-
-    if meta.guaranteedcheck
-        if guaranteed_correctness_check(gb_ff.gens, gbcoeffs_qq, init_gens, coeffs,
-                                            ht, ring_ff, tablesize, rng)
-
-            @info "Guaranteed check passed!"
-            return true
-        end
-
-
-        @info "Guaranteed check failed."
-        return false
-    end
-
     return true
 end
 
 @inline function threshold_in_heuristic(sznum, szden, szmod)
+    # coefficient 1.10
     1.10*(sznum + sznum) >= szmod
 end
 
-# ln(num) + ln(den) < 2 ln p
+# ln(num) + ln(den) < c ln p
 function heuristic_correctness_check(gbcoeffs_qq, modulo)
     #=
-        We take advantage of the fact that Base.GMP.MPZ.sizeinbase(x, 2)
-        marks the position of the leading bit in x.
-        So we do not need to compute logarithms explicitly
+
     =#
 
     lnm = Base.GMP.MPZ.sizeinbase(modulo, 2)
     for i in 1:length(gbcoeffs_qq)
-        for j in 1:length(gbcoeffs_qq[i])
+        @inbounds for j in 1:length(gbcoeffs_qq[i])
             n = numerator(gbcoeffs_qq[i][j])
             d = denominator(gbcoeffs_qq[i][j])
             # println(Base.GMP.MPZ.sizeinbase(c, 2), " ", lnm)
@@ -88,105 +50,36 @@ function heuristic_correctness_check(gbcoeffs_qq, modulo)
     return true
 end
 
-function randomized_correctness_check!(coeffs_zz, ring_ff, gb_ff, initial_ff,
-                                            ht, gbcoeffs_qq, goodprime)
+# TODO: cleanup
+function randomized_correctness_check!(
+            coeffbuffer, coeffaccum,
+            ring, coeffs_zz, gens_temp_ff, gb_ff, goodprime, ht)
 
-    # @warn "reducing in correctness" goodprime
-    reduce_modulo!(coeffs_zz, goodprime, ring_ff, initial_ff)
+    reduce_modulo!(coeffbuffer, coeffs_zz, gens_temp_ff.coeffs, goodprime)
+    gens_ff_copy = copy_basis_thorough(gens_temp_ff)
+    cleanup_gens!(ring, gens_ff_copy, goodprime)
 
-    @assert ring_ff.ch == goodprime == initial_ff.ch
+    gb_coeffs_zz = scale_denominators(coeffbuffer, coeffaccum.gb_coeffs_qq)
+    gb_ff_copy = copy_basis_thorough(gb_ff)
+    reduce_modulo!(coeffbuffer, gb_coeffs_zz, gb_ff_copy.coeffs, goodprime)
+    cleanup_gens!(ring, gb_ff_copy, goodprime)
 
-    # TODO
-
-    #=
-    @error "!"
-    println(initial_ff)
-    println(ht.exponents[1:10])
-    # initial_ff.coeffs[1][1] = UInt(88)
-    =#
-
-    gbcoeffs_zz = scale_denominators(gbcoeffs_qq)
-
-    # @warn "inside correctness qq" gbcoeffs_qq
-    # @warn "inside correctness zz" gbcoeffs_zz
-
-    reduce_modulo!(gbcoeffs_zz, goodprime, ring_ff, gb_ff)
-
-    # @warn "inside correctness ff" gb_ff.coeffs gb_ff.ch
-
-    @assert ring_ff.ch == goodprime == gb_ff.ch
-
-    #=
-    @error "!!!"
-    println(gb_ff)
-    println(ht.exponents[1:10])
-    =#
-
-    normalize_basis!(gb_ff)
-    normalize_basis!(initial_ff)
-
-    #=
-    println(gb_ff)
-    println(ht.exponents[1:10])
-
-    println("#########################")
-    println("zz basis coeffs")
-    for v in gbcoeffs_zz
-        println(v)
-    end
-    println("####")
-    println("ff basis coeffs")
-    for v in gb_ff.coeffs
-        println(v)
-    end
-    println("####")
-    println("ff initial coeffs")
-    for v in initial_ff.coeffs[1:initial_ff.ntotal]
-        println(v)
-    end
-    println("####")
-    println("#########################")
-    =#
-
-    # buf_ff = copy_basis(gb_ff)
-    #=
-    println(map(bitstring, gb_ff.lead))
-    println(map(bitstring, buf_ff.lead))
-
-    @error "hashtable condition"
-    println(ht.exponents[2:ht.load])
-    println(map(x->bitstring(x.divmask), ht.hashdata[2:ht.load]))
-    =#
+    @assert ring.ch == gb_ff_copy.ch == gens_ff_copy.ch
 
     # check that initial ideal contains in the computed groebner basis modulo goodprime
-    normal_form_f4!(ring_ff, gb_ff, ht, initial_ff)
+    normal_form_f4!(ring, gb_ff_copy, ht, gens_ff_copy)
 
-    #=
-    println(gb_ff)
-    println("###")
-    println(buf_ff)
-
-    println(map(bitstring, gb_ff.lead))
-    println(map(bitstring, buf_ff.lead))
-    =#
-
-    # @error "normal form"
-    # println(initial_ff)
-    for i in 1:initial_ff.ndone
+    for i in 1:gens_ff_copy.ndone
         # meaning that it is not reduced
-        if !isempty(initial_ff.coeffs[i])
+        if !isempty(gens_ff_copy.coeffs[i])
             return false
         end
     end
 
-    @assert ring_ff.ch == gb_ff.ch
-
     # check that the basis is groebner basis modulo goodprime
-    if !isgroebner_f4!(ring_ff, gb_ff, ht)
+    if !isgroebner_f4!(ring, gb_ff_copy, ht)
         return false
     end
-
-    @assert ring_ff.ch == gb_ff.ch == goodprime
 
     return true
 end

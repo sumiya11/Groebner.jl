@@ -5,11 +5,6 @@
 
 #------------------------------------------------------------------------------
 
-const FIRST_COMPUTE_PRIME = 2^31 - 1
-const FIRST_CHECK_PRIME   = 2^30 + 3
-
-#------------------------------------------------------------------------------
-
 # Rational number reconstruction implementation borrowed from CLUE
 # and modified a bit to suit the 'Modern Computer Algebra' definitions
 # Returns a rational r // h of QQ field in a canonical form such that
@@ -59,6 +54,7 @@ function rational_reconstruction(a::I, m::I) where {I<:Union{Int, BigInt}}
     return QQ(0, 1)
 end
 
+# the bound for rational reconstrction
 rational_bound(x::BigInt) = ceil(BigInt, sqrt(float(x) / 2))
 
 # 0 allocations!

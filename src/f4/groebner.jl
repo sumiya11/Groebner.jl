@@ -1,5 +1,5 @@
 
-#######################################
+#------------------------------------------------------------------------------
 
 # Stores parameters for groebner algorithm
 struct GroebnerMetainfo
@@ -55,6 +55,8 @@ function set_metaparameters(ring, ordering, certify, forsolve)
                         heuristiccheck, randomizedcheck, guaranteedcheck)
 end
 
+#------------------------------------------------------------------------------
+
 function assure_ordering!(ring, exps, coeffs, metainfo)
     if ring.ord != metainfo.computeord
         sort_input_to_change_ordering(exps, coeffs, metainfo.computeord)
@@ -62,9 +64,45 @@ function assure_ordering!(ring, exps, coeffs, metainfo)
     ring.ord = metainfo.computeord
 end
 
+# TODO: change project structure
+
+function input_statistics(exps)
+    sz = length(exps)
+    deg = maximum(sum(e[1]) for e in exps)
+    sz, deg
+end
+
+function select_tablesize(ring, exps)
+    nvars = ring.nvars
+    sz = length(exps)
+
+    tablesize = 2^10
+    if nvars > 4
+        tablesize = 2^14
+    end
+    if nvars > 7
+        tablesize = 2^16
+    end
+
+    if sz < 3
+        tablesize = div(tablesize, 2)
+    end
+    if sz < 2
+        tablesize = div(tablesize, 2)
+    end
+
+    tablesize
+end
+
+function cleanup_gens!(ring, gens_ff, prime)
+    gens_ff.ch = prime
+    ring.ch = prime
+    normalize_basis!(gens_ff)
+end
+
 # Mutate everything!
 
-#######################################
+#------------------------------------------------------------------------------
 # Finite field groebner
 
 function groebner_ff(
@@ -75,18 +113,9 @@ function groebner_ff(
             rng::Rng,
             meta::GroebnerMetainfo) where {Rng<:Random.AbstractRNG}
 
-    # TODO
-    tablesize = 2^8
-    if ring.nvars > 3
-        tablesize = 2^10
-    end
-    if ring.nvars > 5
-        tablesize = 2^14
-    end
-    tablesize = 2^16
+    # select hashtable size
+    tablesize = select_tablesize(ring, exps)
 
-    # specialize on ordering (not yet)
-    # groebner_ff(ring, exps, coeffs, reduced, rng, Val(ring.ord))
     basis, ht = initialize_structures(
                         ring, exps, coeffs, rng, tablesize)
 
@@ -96,7 +125,7 @@ function groebner_ff(
     gbexps, basis.coeffs
 end
 
-#######################################
+#------------------------------------------------------------------------------
 # Rational field groebner
 
 function groebner_qq(
@@ -108,86 +137,77 @@ function groebner_qq(
             meta::GroebnerMetainfo) where {Rng<:Random.AbstractRNG}
 
     # we can mutate coeffs and exps here
-    #=
-        TODO
-    =#
-    tablesize = 2^8
-    if ring.nvars > 3
-        tablesize = 2^10
-    end
-    if ring.nvars > 5
-        tablesize = 2^14
-    end
-    tablesize = 2^16
+    # TODO: and we should do it
+
+    # select hashtable size
+    tablesize = select_tablesize(ring, exps)
+    @info "Selected tablesize $tablesize"
+
+    # initialize hashtable and finite field generators structs
+    gens_temp_ff, ht = initialize_structures_ff(ring, exps,
+                                        coeffs, rng, tablesize)
+    gens_ff = copy_basis_thorough(gens_temp_ff)
+
+    # now hashtable is filled correctly,
+    # and gens_temp_ff exponents are correct and in correct order.
+    # gens_temp_ff coefficients are filled with random stuff and
+    # gens_temp_ff.ch is 0
 
     # to store integer and rational coefficients of groebner basis
-    gb_coeffs_accum = Vector{Vector{CoeffZZ}}(undef, 0)
-    gb_coeffs_qq = Vector{Vector{CoeffQQ}}(undef, 0)
+    coeffaccum  = CoeffAccum()
+    # to store BigInt buffers and reduce overall memory usage
+    coeffbuffer = CoeffBuffer()
 
-    # to store integer coefficients of input
-    init_coeffs_zz = scale_denominators(coeffs)
+    # scale coefficients of input to integers
+    coeffs_zz = scale_denominators(coeffbuffer, coeffs)
 
-    # selecting first lucky prime and first good prime
-    modulo = BigInt(1)
-    prime = nextluckyprime(init_coeffs_zz)
-    moduli = Int[prime]
-    goodprime = nextgoodprime(init_coeffs_zz, moduli)
+    # keeps track of used prime numbers
+    primetracker = PrimeTracker(coeffs_zz)
 
-    # first reduction
-    ring_ff, init_coeffs_ff = reduce_modulo(init_coeffs_zz, ring, prime)
-
-    # TODO: 2^16
-
-    # temporary basis for initial generators in finite field
-    init_gens_temp_ff, ht = initialize_structures(ring_ff, exps,
-                                            coeffs, init_coeffs_zz,
-                                            init_coeffs_ff, rng, tablesize)
-    gens_ff = copy_basis(init_gens_temp_ff)
-
-    @assert gens_ff.ch == prime == ring_ff.ch
+    #=
+        coeffs and coeffs_zz should be *unchanged* during whole computation
+    =#
 
     i = 1
     while true
+        prime = nextluckyprime!(primetracker)
         @info "$i: selected lucky prime $prime"
 
-        @assert ring_ff.ch == prime
-        @assert gens_ff.ch == prime
-        @assert prime < 2^32
+        # perform reduction and store result in gens_ff
+        reduce_modulo!(coeffbuffer, coeffs_zz, gens_ff.coeffs, prime)
+
+        # do some things to ensure generators are correct
+        cleanup_gens!(ring, gens_ff, prime)
 
         # compute groebner basis in finite field
-        f4!(ring_ff, gens_ff, ht, reduced)
+        #=
+        Need to make sure input invariants in f4! are satisfied, f4.jl for details
+        =#
+        f4!(ring, gens_ff, ht, reduced)
 
         # reconstruct into integers
-        @info "CRT modulo ($modulo, $(ring_ff.ch))"
-        reconstruct_crt!(gb_coeffs_accum, modulo, gens_ff.coeffs, ring_ff)
+        @info "CRT modulo ($(primetracker.modulo), $(prime))"
+        reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
 
         # reconstruct into rationals
-        @info "Reconstructing modulo $modulo"
-        reconstruct_modulo!(gb_coeffs_qq, gb_coeffs_accum, modulo)
+        @info "Reconstructing modulo $(primetracker.modulo)"
+        reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
 
-        buf_ff = copy_basis(init_gens_temp_ff)
-        if correctness_check!(init_gens_temp_ff, coeffs, init_coeffs_zz,
-                                ring_ff, gens_ff, buf_ff, ht, gb_coeffs_qq,
-                                gb_coeffs_accum, modulo, goodprime, meta,
-                                tablesize, rng)
+        if correctness_check!(coeffaccum, coeffbuffer, primetracker, meta,
+                                ring, coeffs, coeffs_zz, gens_temp_ff, gens_ff, ht)
             @info "Success!"
             break
         end
 
-        prime = nextluckyprime(init_coeffs_zz, prime)
-        push!(moduli, prime)
-        goodprime = nextgoodprime(init_coeffs_zz, moduli, goodprime)
-
-        reduce_modulo!(init_coeffs_zz, prime, ring_ff, init_gens_temp_ff)
-        gens_ff = copy_basis(init_gens_temp_ff)
-        normalize_basis!(gens_ff)
+        # copy basis so that we initial exponents dont get lost
+        gens_ff = copy_basis_thorough(gens_temp_ff)
 
         i += 1
     end
 
     # normalize_coeffs!(gbcoeffs_qq)
     gb_exps = hash_to_exponents(gens_ff, ht)
-    gb_exps, gb_coeffs_qq
+    gb_exps, coeffaccum.gb_coeffs_qq
 end
 
 #######################################

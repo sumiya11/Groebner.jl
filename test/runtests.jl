@@ -26,7 +26,7 @@ end
 
     @includetests ["commons", "io", "io_consistency"]
 
-    @includetests ["coeffs", "sorting",
+    @includetests ["sorting",
                     "mod_reconstruction", "crt_reconstruction"]
 
     @includetests ["core_f4_reduce", "core_f4_stress",

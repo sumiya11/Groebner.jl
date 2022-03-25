@@ -247,7 +247,6 @@ function select_isgroebner!(
     resize!(matrix.lowrows, matrix.nrows - matrix.ncols)
 end
 
-
 function find_multiplied_reducer!(
             basis::Basis, matrix::MacaulayMatrix,
             ht::MonomialHashtable, symbol_ht::MonomialHashtable,
@@ -267,6 +266,10 @@ function find_multiplied_reducer!(
     @inbounds while i <= basis.nlead && (leaddiv[i] & ~divmask) != 0
         i += 1
     end
+
+    #@inbounds while i <= basis.nlead && !divv(e, ht.exponents[basis.gens[basis.nonred[i]][1]])
+    #    i += 1
+    #end
 
     # here found polynomial from basis with leading monom
     # dividing symbol_ht.exponents[vidx]

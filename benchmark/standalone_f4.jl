@@ -29,7 +29,9 @@ function run_f4_ff_degrevlex_benchmarks(ground)
         ("katsura 9", Groebner.katsura9(ground=ground)),
         ("noon 6"    ,Groebner.noonn(6, ground=ground)),
         ("noon 7"    ,Groebner.noonn(7, ground=ground)),
-        ("eco 10"    ,Groebner.eco10(ground=ground))
+        ("eco 10"    ,Groebner.eco10(ground=ground)),
+        ("ku 10"    ,Groebner.ku10(ground=ground)),
+        ("kinema"    ,Groebner.kinema(ground=ground))
     ]
 
     for (name, system) in systems
