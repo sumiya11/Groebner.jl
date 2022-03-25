@@ -142,7 +142,7 @@ function reduce_modulo!(
                 Base.GMP.MPZ.mul_ui!(buf, prime)
                 Base.GMP.MPZ.add!(c, buf)
             end
-            @assert c >= 0 # TODO
+            # @assert c >= 0 # TODO
             Base.GMP.MPZ.tdiv_r!(buf, c, p)
             coeffs_ff[i][j] = UInt64(buf)
         end
@@ -183,7 +183,7 @@ function assure_structure(coeffaccum, gb_coeffs_ff)
     if length(coeffaccum.gb_coeffs_zz) != gb_coeffs_ff
         return false
     end
-    for i in 1:length(gb_coeffs_ff)
+    @inbounds for i in 1:length(gb_coeffs_ff)
         if length(coeffaccum.gb_coeffs_zz[i]) != gb_coeffs_ff[i]
             return false
         end

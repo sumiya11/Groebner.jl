@@ -242,6 +242,8 @@ function insert_multiplied_poly_in_hash_table!(
         # We also assume that the hashing vector is shared same
         # between all created hashtables
         h = htmp + bdata[poly[l]].hash
+        # TODO! -- check mult hash in the table
+
         e = bexps[poly[l]]
         # println("monom of index $(poly[l]) : $e")
 
@@ -364,13 +366,13 @@ function insert_in_basis_hash_table_pivots(
             hm = bhash[k]
 
             hm == 0 && break
-            if bdata[hm].hash != h
+            @inbounds if bdata[hm].hash != h
                 i += UInt32(1)
                 continue
             end
 
             ehm = bexps[hm]
-            for j in 1:explen
+            @inbounds for j in 1:explen
                 if e[j] != ehm[j]
                     i += UInt32(1)
                     @goto Restart

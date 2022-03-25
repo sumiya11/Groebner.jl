@@ -401,16 +401,17 @@ end
 # by dividing it by leading coefficient
 function normalize_basis!(basis::Basis{CoeffFF})
     cfs = basis.coeffs
-    for i in 1:basis.ntotal
+    @inbounds for i in 1:basis.ntotal
         # mul = inv(cfs[i][1])
         # hack for now, TODODO
         if !isassigned(cfs, i)
             continue
         end
-        mul = uinvmod(cfs[i][1], basis.ch)
-        for j in 2:length(cfs[i])
+        ch = basis.ch
+        mul = invmod(cfs[i][1], ch) % ch
+        @inbounds for j in 2:length(cfs[i])
             # cfs[i][j] *= mul
-            cfs[i][j] = umultmod(cfs[i][j], mul, basis.ch)
+            cfs[i][j] = cfs[i][j]*mul % ch
         end
         cfs[i][1] = one(cfs[i][1])
     end

@@ -291,10 +291,6 @@ function initialize_structures(
     basis, present_ht
 end
 
-function reinitialize_structures!(gens_ff::Basis, ht, coeffs_ff)
-
-end
-
 #------------------------------------------------------------------------------
 
 function reducegb_f4!(
@@ -302,7 +298,7 @@ function reducegb_f4!(
             ht::MonomialHashtable, symbol_ht::MonomialHashtable)
 
     etmp  = ht.exponents[1]
-    etmp .= UInt16(0)
+    etmp  = zero(etmp)
     # etmp is now set to zero, and has a zero hash
 
     reinitialize_matrix!(matrix, basis.nlead)
@@ -320,7 +316,7 @@ function reducegb_f4!(
 
     # add all non redundant elements from basis
     # as matrix upper rows
-    for i in 1:basis.nlead
+    @inbounds for i in 1:basis.nlead
         matrix.nrows += 1
         uprows[matrix.nrows] = multiplied_poly_to_matrix_row!(
                                     symbol_ht, ht, UInt32(0), etmp,
@@ -398,7 +394,7 @@ function reducegb_f4!(
     i = 1
     @label Letsgo
     while i <= basis.ndone
-        for j in 1:k
+        @inbounds for j in 1:k
             if is_monom_divisible(
                     basis.gens[basis.ntotal - i + 1][1],
                     basis.gens[basis.nonred[j]][1],

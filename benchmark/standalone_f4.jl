@@ -19,7 +19,7 @@ function benchmark_system_my(system)
     # println("length = $(length(gb))")
     # println("degree = $(maximum(AbstractAlgebra.total_degree, gb))")
 
-    @btime Groebner.groebner($system, reduced=false)
+    @btime Groebner.groebner($system, reduced=true)
 end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
@@ -46,15 +46,37 @@ run_f4_ff_degrevlex_benchmarks(ground)
 
 #=
 cyclic 12
-66.675 ms (179922 allocations: 27.62 MiB)
+67.366 ms (179903 allocations: 27.04 MiB)
 cyclic 13
-221.970 ms (451391 allocations: 68.78 MiB)
+216.331 ms (451370 allocations: 67.29 MiB)
 katsura 9
-319.554 ms (55390 allocations: 17.93 MiB)
+104.752 ms (55381 allocations: 17.84 MiB)
 noon 6
-34.842 ms (87010 allocations: 20.69 MiB)
+31.177 ms (86994 allocations: 19.41 MiB)
 noon 7
-265.669 ms (419413 allocations: 91.78 MiB)
+235.416 ms (419391 allocations: 89.92 MiB)
 eco 10
-470.273 ms (137548 allocations: 41.31 MiB)
+182.549 ms (137522 allocations: 41.11 MiB)
+ku 10
+989.900 μs (5794 allocations: 2.52 MiB)
+kinema
+2.943 ms (6727 allocations: 3.27 MiB)
+
+reduced
+cyclic 12
+397.781 ms (401132 allocations: 70.27 MiB)
+cyclic 13
+ 1.465 s (1032878 allocations: 186.29 MiB)
+katsura 9
+ 120.634 ms (56825 allocations: 18.90 MiB)
+noon 6
+ 33.456 ms (89538 allocations: 20.19 MiB)
+noon 7
+ 248.611 ms (426594 allocations: 93.01 MiB)
+eco 10
+ 189.309 ms (139554 allocations: 42.71 MiB)
+ku 10
+ 996.400 μs (5885 allocations: 2.53 MiB)
+kinema
+ 2.715 ms (7193 allocations: 3.36 MiB)
 =#
