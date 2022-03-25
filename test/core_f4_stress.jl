@@ -54,7 +54,7 @@ end
     grounds    = [GF(1031), GF(2^31 - 1)]
     coeffssize = [3, 1000, 2^31 - 1]
     orderings  = [:degrevlex]
-    linalgs    = [:exact, :prob]
+    linalgs    = [:exact]
     p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize, linalgs)))
     @info "producing $p $(orderings[1]) tests for f4"
     test_params(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings, linalgs)
@@ -67,7 +67,7 @@ end
     grounds    = [GF(1031), GF(2^31 - 1)]
     coeffssize = [3, 1000, 2^31 - 1]
     orderings  = [:lex]
-    linalgs    = [:exact, :prob]
+    linalgs    = [:exact]
     p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize, linalgs)))
     @info "producing $p $(orderings[1]) tests for f4"
     test_params(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings, linalgs)
@@ -80,7 +80,7 @@ end
     grounds    = [GF(1031), GF(2^31 - 1)]
     coeffssize = [3, 1000, 2^31 - 1]
     orderings  = [:deglex]
-    linalgs    = [:exact, :prob]
+    linalgs    = [:exact]
     p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize, linalgs)))
     @info "producing $p $(orderings[1]) tests for f4"
     test_params(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings, linalgs)
@@ -93,7 +93,7 @@ end
     grounds    = [QQ]
     coeffssize = [3, 1000, 2^31 - 1, 9223372036854775837]
     orderings  = [:degrevlex]
-    linalgs    = [:exact, :prob]
+    linalgs    = [:exact]
     p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize, linalgs)))
     @info "producing $p $(orderings[1]) rational tests for f4"
     test_params(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings, linalgs)
