@@ -14,9 +14,12 @@ struct GroebnerMetainfo
     heuristiccheck::Bool
     randomizedcheck::Bool
     guaranteedcheck::Bool
+
+    # linear algebra backend to be used
+    linalg::Symbol
 end
 
-function set_metaparameters(ring, ordering, certify, forsolve)
+function set_metaparameters(ring, ordering, certify, forsolve, linalg)
     usefglm = false
     targetord = :lex
     computeord = :lex
@@ -52,7 +55,8 @@ function set_metaparameters(ring, ordering, certify, forsolve)
     @info "Using fglm: $usefglm"
 
     GroebnerMetainfo(usefglm, targetord, computeord,
-                        heuristiccheck, randomizedcheck, guaranteedcheck)
+                        heuristiccheck, randomizedcheck, guaranteedcheck,
+                        linalg)
 end
 
 #------------------------------------------------------------------------------
@@ -119,7 +123,7 @@ function groebner_ff(
     basis, ht = initialize_structures(
                         ring, exps, coeffs, rng, tablesize)
 
-    f4!(ring, basis, ht, reduced)
+    f4!(ring, basis, ht, reduced, meta.linalg)
 
     gbexps = hash_to_exponents(basis, ht)
     gbexps, basis.coeffs
@@ -183,7 +187,7 @@ function groebner_qq(
         #=
         Need to make sure input invariants in f4! are satisfied, f4.jl for details
         =#
-        f4!(ring, gens_ff, ht, reduced)
+        f4!(ring, gens_ff, ht, reduced, meta.linalg)
 
         # reconstruct into integers
         @info "CRT modulo ($(primetracker.modulo), $(prime))"

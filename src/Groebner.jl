@@ -1,9 +1,6 @@
 
 module Groebner
 
-# HEURISTIC = 0
-# RANDOMIZED = 0
-
 # most of these are not needed
 # TODO
 import AbstractAlgebra

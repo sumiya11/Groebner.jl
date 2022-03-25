@@ -39,6 +39,8 @@ end
 
     @includetests ["hard_problems_f4", "large_problems_f4"]
 
+    @includetests ["probabilistic_linalg"]
+
     if try_import(:DynamicPolynomials)
         # @includetests ["io_dynamic", "core_dynamic"]
     end

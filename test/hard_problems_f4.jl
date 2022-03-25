@@ -2,6 +2,8 @@
 using AbstractAlgebra
 using Primes
 
+# TODO: add some
+
 @testset "Hard testsets for f4" begin
     R, (x1, x2, x3, x4) = PolynomialRing(QQ, ["x1","x2","x3","x4"], ordering=:degrevlex)
 

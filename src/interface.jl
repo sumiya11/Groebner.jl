@@ -42,7 +42,7 @@ The `linalg` parameter is responsible for linear algebra backend to be used.
 Currently, available options are
 
 - `:exact` for exact sparse linear algebra (default)
-- `:randomized` for randomized sparse linear algebra. Tends to be several times faster
+- `:prob` for probabilistic sparse linear algebra. Tends to be faster
 
 The algorithm randomized hashing and linear algebra backend depend on random generator `rng`.
 
@@ -69,7 +69,7 @@ function groebner(
     ring, exps, coeffs = convert_to_internal(polynomials, ordering)
 
     #= check and set algorithm parameters =#
-    metainfo = set_metaparameters(ring, ordering, certify, forsolve)
+    metainfo = set_metaparameters(ring, ordering, certify, forsolve, linalg)
     # now ring stores computation ordering
     # metainfo is now a struct to store target ordering
 
@@ -139,7 +139,7 @@ function isgroebner(
     ring, exps, coeffs = convert_to_internal(polynomials, ordering)
 
     #= check and set algorithm parameters =#
-    metainfo = set_metaparameters(ring, ordering, certify, false)
+    metainfo = set_metaparameters(ring, ordering, certify, false, :exact)
     # now ring stores computation ordering
     # metainfo is now a struct to store target ordering
 
@@ -223,7 +223,7 @@ function normalform(
     ring = ring1
 
     #= check and set algorithm parameters =#
-    metainfo = set_metaparameters(ring, ordering, false, false)
+    metainfo = set_metaparameters(ring, ordering, false, false, :exact)
 
     #= change input ordering if needed =#
     assure_ordering!(ring, basisexps, basiscoeffs, metainfo)

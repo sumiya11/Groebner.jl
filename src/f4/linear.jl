@@ -429,9 +429,14 @@ function exact_sparse_rref!(matrix::MacaulayMatrix{C}, basis::Basis{C}) where {C
 end
 
 
-function exact_sparse_linear_algebra!(matrix::MacaulayMatrix, basis::Basis)
+function linear_algebra!(matrix::MacaulayMatrix, basis::Basis, linalg::Val{:exact})
     resize!(matrix.coeffs, matrix.nlow)
     exact_sparse_rref!(matrix, basis)
+end
+
+function linear_algebra!(matrix::MacaulayMatrix, basis::Basis, linalg::Val{:prob})
+    resize!(matrix.coeffs, matrix.nlow)
+    randomized_sparse_rref!(matrix, basis)
 end
 
 #------------------------------------------------------------------------------
@@ -497,15 +502,15 @@ function randomized_sparse_rref!(matrix::MacaulayMatrix{C}, basis::Basis{C}) whe
         ctr = 0
         while ctr < nrowstotal
 
-            for j in 1:nrowstotal
+            @inbounds for j in 1:nrowstotal
                 # TODO: fixed generator
-                mulcoeffs[j] = rand(UInt64) % ch
+                mulcoeffs[j] = rand(UInt64) % magic
             end
 
             densecoeffs .= UInt64(0)
             startcol = ncols
 
-            for k in 1:nrowstotal
+            @inbounds for k in 1:nrowstotal
                 rowidx = (i-1)*rowsperblock + k
 
                 rowexps = upivs[rowidx]
@@ -513,9 +518,9 @@ function randomized_sparse_rref!(matrix::MacaulayMatrix{C}, basis::Basis{C}) whe
 
                 startcol = min(startcol, rowexps[1])
 
-                for l in 1:length(rowexps)
+                @inbounds for l in 1:length(rowexps)
                     densecoeffs[rowexps[l]] += mulcoeffs[k]*cfsref[l]
-                    densecoeffs[rowexps[l]] %= ch
+                    densecoeffs[rowexps[l]] %= magic
                 end
             end
 
@@ -580,7 +585,7 @@ function randomized_sparse_rref!(matrix::MacaulayMatrix{C}, basis::Basis{C}) whe
                 cfsref = matrix.coeffs[matrix.low2coef[k]]
             end
 
-            @inbounds tartcol = pivs[k][1]
+            @inbounds startcol = pivs[k][1]
 
             @assert length(cfsref) == length(pivs[k])
 
@@ -602,11 +607,6 @@ function randomized_sparse_rref!(matrix::MacaulayMatrix{C}, basis::Basis{C}) whe
     # shrink matrix
     matrix.npivots = matrix.nrows = matrix.size = newpivs
     resize!(matrix.lowrows, newpivs)
-end
-
-function randomized_sparse_linear_algebra!(matrix::MacaulayMatrix, basis::Basis)
-    resize!(matrix.coeffs, matrix.nlow)
-    randomized_sparse_rref!(matrix, basis)
 end
 
 #------------------------------------------------------------------------------

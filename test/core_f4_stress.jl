@@ -3,7 +3,7 @@ import Random
 using AbstractAlgebra
 
 function test_params(rng, nvariables, exps, nterms,
-                        npolys, grounds, coeffssize, orderings)
+                        npolys, grounds, coeffssize, orderings, linalgs)
 
     for n in nvariables
         for e in exps
@@ -12,23 +12,25 @@ function test_params(rng, nvariables, exps, nterms,
                     for gr in grounds
                         for ord in orderings
                             for csz in coeffssize
-                                set = Groebner.generate_set(
-                                    n, e, nt, np, csz, rng, gr, ord
-                                )
-                                filter!(!iszero, set)
+                                for linalg in linalgs
+                                    set = Groebner.generate_set(
+                                        n, e, nt, np, csz, rng, gr, ord
+                                    )
+                                    filter!(!iszero, set)
 
-                                isempty(set) && continue
-                                # println(ord, " ", gr)
-                                # println(set)
-                                gb = Groebner.groebner(set)
-                                @test Groebner._isgroebner_reference(gb, initial_gens=set)
+                                    isempty(set) && continue
+                                    # println(ord, " ", gr)
+                                    # println(set)
+                                    gb = Groebner.groebner(set, linalg=linalg)
+                                    @test Groebner._isgroebner_reference(gb, initial_gens=set)
 
-                                if !Groebner._isgroebner_reference(gb, initial_gens=set)
-                                    @error "Beda!" n e nt np gr ord
-                                    println("Rng ", rng)
-                                    println("Set ", set)
-                                    println("Gb ", gb)
-                                    # error("exit tests")
+                                    if !Groebner._isgroebner_reference(gb, initial_gens=set)
+                                        @error "Beda!" n e nt np gr ord
+                                        println("Rng ", rng)
+                                        println("Set ", set)
+                                        println("Gb ", gb)
+                                        # error("exit tests")
+                                    end
                                 end
                             end
                         end
@@ -52,9 +54,10 @@ end
     grounds    = [GF(1031), GF(2^31 - 1)]
     coeffssize = [3, 1000, 2^31 - 1]
     orderings  = [:degrevlex]
-    p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize)))
+    linalgs    = [:exact, :prob]
+    p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize, linalgs)))
     @info "producing $p $(orderings[1]) tests for f4"
-    test_params(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings)
+    test_params(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings, linalgs)
 
     # :lex finite case tests
     nvariables = [2, 3, 4]
@@ -64,9 +67,10 @@ end
     grounds    = [GF(1031), GF(2^31 - 1)]
     coeffssize = [3, 1000, 2^31 - 1]
     orderings  = [:lex]
-    p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize)))
+    linalgs    = [:exact, :prob]
+    p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize, linalgs)))
     @info "producing $p $(orderings[1]) tests for f4"
-    test_params(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings)
+    test_params(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings, linalgs)
 
     # :deglex finite case tests
     nvariables = [2, 3, 4]
@@ -76,9 +80,10 @@ end
     grounds    = [GF(1031), GF(2^31 - 1)]
     coeffssize = [3, 1000, 2^31 - 1]
     orderings  = [:deglex]
-    p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize)))
+    linalgs    = [:exact, :prob]
+    p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize, linalgs)))
     @info "producing $p $(orderings[1]) tests for f4"
-    test_params(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings)
+    test_params(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings, linalgs)
 
     # :degrevlex rational case tests
     nvariables = [2, 3, 4]
@@ -88,9 +93,10 @@ end
     grounds    = [QQ]
     coeffssize = [3, 1000, 2^31 - 1, 9223372036854775837]
     orderings  = [:degrevlex]
-    p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize)))
+    linalgs    = [:exact, :prob]
+    p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize, linalgs)))
     @info "producing $p $(orderings[1]) rational tests for f4"
-    test_params(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings)
+    test_params(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings, linalgs)
 
     # :deglex rational case tests
     nvariables = [2, 3, 4]
