@@ -90,7 +90,7 @@ function hash_to_exponents(basis::Basis, ht::MonomialHashtable)
         idx = basis.nonred[i]
         poly = basis.gens[idx]
         exps[i] = Vector{ExponentVector}(undef, length(poly))
-        for j in 1:length(poly)
+        @inbounds for j in 1:length(poly)
             exps[i][j] = ht.exponents[poly[j]]
         end
     end

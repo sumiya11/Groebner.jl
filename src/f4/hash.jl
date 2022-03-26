@@ -1,7 +1,7 @@
 
 #------------------------------------------------------------------------------
 
-function insert_in_hash_table!(ht::MonomialHashtable, e::Vector{UInt16})
+function insert_in_hash_table!(ht::MonomialHashtable, e::ExponentVector)
     # generate hash
     he = UInt32(0)
     for i in 1:ht.explen
@@ -136,14 +136,14 @@ end
 # h1 divisible by h2
 function is_monom_divisible(h1::Int, h2::Int, ht::MonomialHashtable)
 
-    if (ht.hashdata[h2].divmask & ~ht.hashdata[h1].divmask) != 0
+    @inbounds if (ht.hashdata[h2].divmask & ~ht.hashdata[h1].divmask) != 0
         return false
     end
 
     e1 = ht.exponents[h1]
     e2 = ht.exponents[h2]
     # TODO: one less iteration is possible
-    for i in 1:ht.explen
+    @inbounds for i in 1:ht.explen
         if e1[i] < e2[i]
             return false
         end
@@ -271,12 +271,12 @@ function insert_multiplied_poly_in_hash_table!(
             # if index is free
             vidx == 0 && break
             # if different exponent is stored here
-            if sdata[vidx].hash != h
+            @inbounds if sdata[vidx].hash != h
                 i += UInt32(1)
                 continue
             end
 
-            estored = sexps[vidx]
+            @inbounds estored = sexps[vidx]
             @inbounds for j in 1:explen
                 # hash collision, restarting search
                 if estored[j] != enew[j]
@@ -285,7 +285,7 @@ function insert_multiplied_poly_in_hash_table!(
                 end
             end
 
-            row[l] = vidx
+            @inbounds row[l] = vidx
             l += 1
 
             @goto Letsgo
@@ -293,7 +293,7 @@ function insert_multiplied_poly_in_hash_table!(
 
         # add multiplied exponent to hash table
         if !isassigned(sexps, lastidx)
-            sexps[lastidx] = Vector{UInt16}(undef, explen)
+            sexps[lastidx] = ExponentVector(undef, explen)
         end
         sexpsnew = sexps[lastidx]
         for j in 1:explen

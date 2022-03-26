@@ -59,6 +59,7 @@ function randomized_correctness_check!(
     gens_ff_copy = copy_basis_thorough(gens_temp_ff)
     cleanup_gens!(ring, gens_ff_copy, goodprime)
 
+    # TODO: can encapsulate BigInt coefficients into coeffaccum
     gb_coeffs_zz = scale_denominators(coeffbuffer, coeffaccum.gb_coeffs_qq)
     gb_ff_copy = copy_basis_thorough(gb_ff)
     reduce_modulo!(coeffbuffer, gb_coeffs_zz, gb_ff_copy.coeffs, goodprime)

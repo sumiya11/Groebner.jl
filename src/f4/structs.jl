@@ -233,7 +233,7 @@ function enlarge_hash_table!(ht::MonomialHashtable)
         # hash for this elem is already computed
         he = ht.hashdata[i].hash
         hidx = he
-        for j in UInt32(1):UInt32(ht.size)
+        @inbounds for j in UInt32(1):UInt32(ht.size)
             hidx = (he + j) & mod + UInt32(1)
             ht.hashtable[hidx] != 0 && continue
             ht.hashtable[hidx] = i
@@ -275,6 +275,7 @@ end
 
 function check_enlarge_pairset!(ps::Pairset, added::Int)
     sz = length(ps.pairs)
+    # TODO: shrink pairset ?
     if ps.load + added >= sz
         newsz = max(2 * sz, ps.load + added)
         resize!(ps.pairs, newsz)

@@ -39,7 +39,7 @@ function select_normal!(
         j = i
 
         # we collect all generators with same lcm into gens
-        while j <= npairs && ps[j].lcm == lcm
+        @inbounds while j <= npairs && ps[j].lcm == lcm
             gens[load] = ps[j].poly1
             load += 1
             gens[load] = ps[j].poly2
@@ -85,7 +85,7 @@ function select_normal!(
 
         # over all polys with same lcm,
         # add them to the lower part of matrix
-        for k in 1:load
+        @inbounds for k in 1:load
             # duplicate generator,
             # we can do so as long as generators are sorted
             if gens[k] == prev
@@ -161,7 +161,7 @@ function select_isgroebner!(
         j = i
 
         # we collect all generators with same lcm into gens
-        while j <= npairs && ps[j].lcm == lcm
+        @inbounds while j <= npairs && ps[j].lcm == lcm
             gens[load] = ps[j].poly1
             load += 1
             gens[load] = ps[j].poly2
@@ -207,7 +207,7 @@ function select_isgroebner!(
 
         # over all polys with same lcm,
         # add them to the lower part of matrix
-        for k in 1:load
+        @inbounds for k in 1:load
             # duplicate generator,
             # we can do so as long as generators are sorted
             if gens[k] == prev
@@ -329,7 +329,7 @@ function symbolic_preprocessing!(
     i = symbol_ht.offset
     #= First round, we add multiplied polynomials which divide  =#
     #= a monomial exponent from selected spairs                 =#
-    while i <= symbol_load
+    @inbounds while i <= symbol_load
         # not a reducer already
         if symbol_ht.hashdata[i].idx == 0
             symbol_ht.hashdata[i].idx = 1
@@ -383,7 +383,7 @@ function update_pairset!(
 
     # for each combination (new_Lead, basis.gens[i][1])
     # generate a pair
-    for i in 1:bl-1
+    @inbounds for i in 1:bl-1
         plcm[i] = get_lcm(basis.gens[i][1], new_lead, ht, update_ht)
         deg = update_ht.hashdata[plcm[i]].deg
         newidx = pl + i
@@ -396,7 +396,7 @@ function update_pairset!(
     end
 
     # traverse existing pairs
-    for i in 1:pl
+    @inbounds for i in 1:pl
         j = ps[i].poly1
         l = ps[i].poly2
         m = max(ps[pl + l].deg, ps[pl + j].deg)
@@ -422,7 +422,7 @@ function update_pairset!(
 
     sort_pairset_by_degree!(pairset, pl + 1, j - 2)
 
-    for i in 1:j - 1
+    @inbounds for i in 1:j - 1
         plcm[i] = ps[pl + i].lcm
     end
     plcm[j] = 0
@@ -430,7 +430,7 @@ function update_pairset!(
     pc -= 1
 
     # mark redundancy of some pairs from plcm
-    for j in 1:pc
+    @inbounds for j in 1:pc
         # if is not redundant
         if plcm[j] > 0
             check_monomial_division_in_update(plcm, j + 1, pc, plcm[j], update_ht)
@@ -440,7 +440,7 @@ function update_pairset!(
     # remove useless pairs from pairset
     # by moving them to the end
     j = 1
-    for i in 1:pairset.load
+    @inbounds for i in 1:pairset.load
         ps[i].lcm == 0 && continue
         ps[j] = ps[i]
         j += 1
@@ -458,7 +458,7 @@ function update_pairset!(
     # mark redundant elements in masis
     nonred = basis.nonred
     lml = basis.nlead
-    for i in 1:lml
+    @inbounds for i in 1:lml
         if basis.isred[nonred[i]] == 0
             if is_monom_divisible(basis.gens[nonred[i]][1], new_lead, ht)
                 basis.isred[nonred[i]] = 1
