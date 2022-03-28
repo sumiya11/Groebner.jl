@@ -9,6 +9,7 @@ using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error))
 
 BenchmarkTools.DEFAULT_PARAMETERS.seconds = 6
+# BenchmarkTools.DEFAULT_PARAMETERS.samples = 1
 
 
 function benchmark_system_my(system)

@@ -8,7 +8,8 @@ using Groebner
 using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error))
 
-BenchmarkTools.DEFAULT_PARAMETERS.seconds = 100000
+# BenchmarkTools.DEFAULT_PARAMETERS.seconds = 100000
+BenchmarkTools.DEFAULT_PARAMETERS.samples = 2
 
 function benchmark_system_my(system)
     system = Groebner.change_ordering(system, :degrevlex)
@@ -50,12 +51,12 @@ function run_f4_ff_degrevlex_benchmarks(ground)
         ("cyclic 12", Groebner.rootn(12, ground=ground)),
         ("cyclic 13", Groebner.rootn(13, ground=ground)),
         ("cyclic 14", Groebner.rootn(14, ground=ground)),
-        ("katsura 10",Groebner.katsura10(ground=ground)),
         ("katsura 11",Groebner.katsura11(ground=ground)),
         ("katsura 12",Groebner.katsura12(ground=ground)),
-        ("eco 10",Groebner.eco10(ground=ground)),
+        ("katsura 13",Groebner.katsura13(ground=ground)),
         ("eco 11",Groebner.eco11(ground=ground)),
         ("eco 12",Groebner.eco12(ground=ground)),
+        ("eco 13",Groebner.eco12(ground=ground)),
         ("noon 7"    ,Groebner.noonn(7, ground=ground)),
         ("noon 8"    ,Groebner.noonn(8, ground=ground)),
         ("noon 9"    ,Groebner.noonn(9, ground=ground))

@@ -55,6 +55,7 @@ function reduce_by_pivot!(row::Vector{CoeffFF}, indices::Vector{Int},
         idx = indices[j]
         # row[idx] = (row[idx] + mul*cfs[j]) % ch
         row[idx] = (row[idx] + mul*cfs[j]) % magic
+        # row[idx] = (row[idx] + mul*cfs[j]) & magic.divisor
     end
 end
 
@@ -120,6 +121,12 @@ function reduce_dense_row_by_known_pivots_sparse!(
 
     for i in startcol:ncols
 
+        #=
+        @inbounds if densecoeffs[i] != uzero
+            densecoeffs[i] = densecoeffs[i] % magic
+        end
+        =#
+
         # if row element zero - no reduction
         @inbounds if densecoeffs[i] == uzero
             continue
@@ -162,11 +169,22 @@ function reduce_dense_row_by_known_pivots_sparse!(
     # where k - number of structural nonzeros in new reduced row, k > 0
     j = 1
     @inbounds for i in np:ncols # from new pivot
+
         @inbounds if densecoeffs[i] != uzero
             newrow[j] = i
             newcfs[j] = densecoeffs[i]
             j += 1
         end
+        #=
+        if densecoeffs[i] != uzero
+            densecoeffs[i] = densecoeffs[i] % magic
+        end
+        if densecoeffs[i] != uzero
+           newrow[j] = i
+           newcfs[j] = densecoeffs[i]
+           j += 1
+       end
+       =#
     end
 
     return false, newrow, newcfs
