@@ -42,7 +42,7 @@ end
     @includetests ["probabilistic_linalg"]
 
     if try_import(:DynamicPolynomials)
-        # @includetests ["io_dynamic", "core_dynamic"]
+        @includetests ["io_dynamic", "core_dynamic"]
     end
 
     @includetests ["onthefly_order_change"]

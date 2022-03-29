@@ -9,7 +9,7 @@ using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error))
 
 # BenchmarkTools.DEFAULT_PARAMETERS.seconds = 100000
-BenchmarkTools.DEFAULT_PARAMETERS.samples = 2
+# BenchmarkTools.DEFAULT_PARAMETERS.samples = 2
 
 function benchmark_system_my(system)
     system = Groebner.change_ordering(system, :degrevlex)
@@ -19,7 +19,7 @@ function benchmark_system_my(system)
 
     # @btime gb = Groebner.groebner($system, reduced=false)
 
-    bench = @benchmarkable Groebner.groebner($system, reduced=false) samples=5
+    bench = @benchmarkable Groebner.groebner($system, reduced=false, linalg=:prob) samples=5
     println(median(run(bench)))
 end
 
@@ -48,18 +48,18 @@ end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
-        ("cyclic 12", Groebner.rootn(12, ground=ground)),
-        ("cyclic 13", Groebner.rootn(13, ground=ground)),
-        ("cyclic 14", Groebner.rootn(14, ground=ground)),
-        ("katsura 11",Groebner.katsura11(ground=ground)),
-        ("katsura 12",Groebner.katsura12(ground=ground)),
-        ("katsura 13",Groebner.katsura13(ground=ground)),
-        ("eco 11",Groebner.eco11(ground=ground)),
-        ("eco 12",Groebner.eco12(ground=ground)),
-        ("eco 13",Groebner.eco12(ground=ground)),
-        ("noon 7"    ,Groebner.noonn(7, ground=ground)),
-        ("noon 8"    ,Groebner.noonn(8, ground=ground)),
-        ("noon 9"    ,Groebner.noonn(9, ground=ground))
+        ("cyclic 12", Groebner.rootn(12, ground=ground)), # 0.06 vs 0.01
+        ("cyclic 13", Groebner.rootn(13, ground=ground)), # 0.19 vs 0.03
+        ("cyclic 14", Groebner.rootn(14, ground=ground)), # 0.60 vs 0.9
+        ("katsura 11",Groebner.katsura11(ground=ground)), # 1.35 vs 71.121
+        ("katsura 12",Groebner.katsura12(ground=ground)), # 9.68 vs 775
+        ("katsura 13",Groebner.katsura13(ground=ground)), # 65.22 vs 6802
+        ("eco 11",Groebner.eco11(ground=ground)),         # 0.41  vs 31.7
+        ("eco 12",Groebner.eco12(ground=ground)),         # 2.5   vs 341
+        ("eco 13",Groebner.eco13(ground=ground)),         # 17    vs 4102
+        ("noon 7"    ,Groebner.noonn(7, ground=ground)),  # 0.19  vs 0.36
+        ("noon 8"    ,Groebner.noonn(8, ground=ground)),  # 1.8   vs 3.2
+        ("noon 9"    ,Groebner.noonn(9, ground=ground))   # 18.1  vs 33.3
     ]
 
     for (name, system) in systems
@@ -74,3 +74,7 @@ end
 
 ground = AbstractAlgebra.GF(2^31 - 1)
 run_f4_ff_degrevlex_benchmarks(ground)
+
+#=
+
+=#

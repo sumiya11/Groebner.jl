@@ -118,6 +118,18 @@ function scale_denominators(coeffs_qq::Vector{Vector{CoeffQQ}})
     coeffs_zz
 end
 
+function scale_denominators(coeffs_qq::Vector{CoeffQQ})
+    coeffs_zz = [CoeffZZ(0) for _ in 1:length(coeffs_qq)]
+    buf = BigInt()
+    den = common_denominator(coeffs_qq)
+    for i in 1:length(coeffs_qq)
+        num = numerator(coeffs_qq[i])
+        Base.GMP.MPZ.tdiv_q!(buf, den, denominator(coeffs_qq[i]))
+        Base.GMP.MPZ.mul!(coeffs_zz[i], num, buf)
+    end
+    coeffs_zz
+end
+
 #------------------------------------------------------------------------------
 
 function reduce_modulo!(

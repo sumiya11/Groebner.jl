@@ -40,8 +40,8 @@ mutable struct PolyRing
     ch::UInt64
     # information about the original ring of input. Options are:
     #    :abstract for AbstractAlgebra,
-    #    :multivariate for MultivariatePolynomials,
-    #    :hasparent for polynomials constructed with parent ring
+    #    :multivariate for MultivariatePolynomials, e.g, DynamicPolynomials,
+    #    :hasparent for polynomials constructed with parent ring, e.g., Nemo
     origring::Symbol
 end
 
@@ -370,7 +370,7 @@ function convert_to_output(
             ring::PolyRing,
             origpolys::Vector{P},
             gbexps::Vector{Vector{ExponentVector}},
-            gbcoeffs::Vector{Vector{I}}) where {P<:AbstractPolynomialLike{J}, I<:Rational} where {J}
+            gbcoeffs::Vector{Vector{I}}) where {P<:AbstractPolynomialLike{J}, I<:Coeff} where {J}
 
     origvars = MultivariatePolynomials.variables(origpolys)
     # xd
