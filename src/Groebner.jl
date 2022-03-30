@@ -1,6 +1,8 @@
 
 module Groebner
 
+debug() = false
+
 # most of these are not needed
 # TODO
 import AbstractAlgebra
@@ -16,7 +18,7 @@ import AbstractAlgebra: leading_term, QQ, PolynomialRing, terms,
                         content, change_base_ring, exponent_vector,
                         lcm, monomial, RingElem, set_exponent_vector!,
                         nvars, data, characteristic, isdivisible_by,
-                        divexact
+                        divexact, symbols
 
 # for example systems
 import Combinatorics
@@ -41,6 +43,9 @@ include("utils.jl")
 # some simple reference implementations
 include("common.jl")
 
+# computation parameters control
+include("metainfo.jl")
+
 # input-output conversions for polynomials
 include("io.jl")
 
@@ -50,7 +55,7 @@ include("arithmetic/unsigned.jl")
 # modular arithmetic for CRT and rational reconstruction
 include("arithmetic/modular.jl")
 
-#= f4 implementation over finite fields =#
+#= generic f4 implementation =#
 # the heart of this library
 include("f4/structs.jl")
 include("f4/symbolic.jl")
@@ -66,7 +71,8 @@ include("f4/normalform.jl")
 include("f4/correctness.jl")
 # include("f4/statistics.jl")
 
-#= fglm implementation over finite fields =#
+#= generic fglm implementation =#
+include("fglm/linear.jl")
 include("fglm/fglm.jl")
 
 # api

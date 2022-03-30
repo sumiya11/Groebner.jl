@@ -125,7 +125,7 @@ function sort_gens_by_lead_increasing_in_reduce!(basis::Basis, ht::MonomialHasht
     basis.coeffs[nnr[1:basis.nlead]] = basis.coeffs[nnr[inds]]
 end
 
-function sort_gens_by_lead_increasing_in_standardize!(basis::Basis, ht::MonomialHashtable)
+function sort_gens_by_lead_increasing_in_standardize!(basis::Basis, ht::MonomialHashtable, ord)
     gens = basis.gens
     exps = ht.exponents
     nnr  = basis.nonred
@@ -134,11 +134,11 @@ function sort_gens_by_lead_increasing_in_standardize!(basis::Basis, ht::Monomial
 
     @assert inds == nnr
 
-    if ht.ord == :degrevlex
+    if ord == :degrevlex
         cmp  = (x, y) -> exponent_isless_drl(
                                 @inbounds(exps[gens[x][1]]),
                                 @inbounds(exps[gens[y][1]]))
-    elseif ht.ord == :lex
+    elseif ord == :lex
         cmp  = (x, y) -> exponent_isless_lex(
                                 @inbounds(exps[gens[x][1]]),
                                 @inbounds(exps[gens[y][1]]))
@@ -423,4 +423,78 @@ function sort_input_to_change_ordering(exps, coeffs, ord::Symbol)
         exps[polyidx][1:end] = exps[polyidx][inds]
         coeffs[polyidx][1:end] = coeffs[polyidx][inds]
     end
+end
+
+#------------------------------------------------------------------------------
+
+function sort_monoms_increasing!(monoms::Vector{Int}, cnt, ht, ord::Symbol)
+    exps = ht.exponents
+    if ord == :degrevlex
+        cmp  = (x, y) -> exponent_isless_drl(
+                                @inbounds(exps[monoms[x]]),
+                                @inbounds(exps[monoms[y]]))
+    elseif ord == :lex
+        cmp  = (x, y) -> exponent_isless_lex(
+                                @inbounds(exps[monoms[x]]),
+                                @inbounds(exps[monoms[y]]))
+    else
+        cmp  = (x, y) -> exponent_isless_dl(
+                                @inbounds(exps[monoms[x]]),
+                                @inbounds(exps[monoms[y]]))
+    end
+
+    inds = collect(1:cnt)
+
+    sort!(inds, lt=cmp)
+
+    monoms[1:cnt] = monoms[inds]
+end
+
+function sort_monoms_decreasing!(monoms::Vector{Int}, cnt, ht, ord::Symbol)
+    exps = ht.exponents
+    if ord == :degrevlex
+        cmp  = (x, y) -> exponent_isless_drl(
+                                @inbounds(exps[monoms[y]]),
+                                @inbounds(exps[monoms[x]]))
+    elseif ord == :lex
+        cmp  = (x, y) -> exponent_isless_lex(
+                                @inbounds(exps[monoms[y]]),
+                                @inbounds(exps[monoms[x]]))
+    else
+        cmp  = (x, y) -> exponent_isless_dl(
+                                @inbounds(exps[monoms[y]]),
+                                @inbounds(exps[monoms[x]]))
+    end
+
+    inds = collect(1:cnt)
+
+    sort!(inds, lt=cmp)
+
+    monoms[1:cnt] = monoms[inds]
+end
+
+#------------------------------------------------------------------------------
+
+function sort_terms_decreasing!(monoms::Vector{Int}, coeffs, ht, ord::Symbol)
+    exps = ht.exponents
+    if ord == :degrevlex
+        cmp  = (x, y) -> exponent_isless_drl(
+                                @inbounds(exps[monoms[y]]),
+                                @inbounds(exps[monoms[x]]))
+    elseif ord == :lex
+        cmp  = (x, y) -> exponent_isless_lex(
+                                @inbounds(exps[monoms[y]]),
+                                @inbounds(exps[monoms[x]]))
+    else
+        cmp  = (x, y) -> exponent_isless_dl(
+                                @inbounds(exps[monoms[y]]),
+                                @inbounds(exps[monoms[x]]))
+    end
+
+    inds = collect(1:length(monoms))
+
+    sort!(inds, lt=cmp)
+
+    monoms[1:end] = monoms[inds]
+    coeffs[1:end] = coeffs[inds]
 end

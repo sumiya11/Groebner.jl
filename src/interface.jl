@@ -95,7 +95,7 @@ function groebner(
 
     # ring contains ordering of computation, it is the requested ordering
     #= convert result back to representation of input =#
-    convert_to_output(ring, polynomials, bexps, bcoeffs)
+    convert_to_output(ring, polynomials, bexps, bcoeffs, metainfo)
 end
 
 #######################################
@@ -246,5 +246,49 @@ function normalform(
 
     # ring contains ordering of computation, it is the requested ordering
     #= convert result back to representation of input =#
-    convert_to_output(ring, tobereduced, bexps, bcoeffs)
+    convert_to_output(ring, tobereduced, bexps, bcoeffs, metainfo)
+end
+
+#######################################
+# Generic fglm
+
+"""
+    function fglm(
+            basis::Vector{Poly};
+            rng=Random.MersenneTwister(42),
+            loglevel=Logging.Warn
+    )
+
+Applies fglm to `basis` assuming it is *already* a Groebner basis
+and returns Groebner basis in `lex` ordering.
+
+"""
+function fglm(
+            basis::Vector{Poly};
+            rng::Rng=Random.MersenneTwister(42),
+            loglevel::Logging.LogLevel=Logging.Warn
+            ) where {Poly, Rng<:Random.AbstractRNG}
+
+    #= set the logger =#
+    prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
+
+    #= extract ring information, exponents and coefficients
+       from input polynomials =#
+    # Copies input, so that polynomials would not be changed itself.
+    ring, exps, coeffs = convert_to_internal(basis, :input)
+
+    metainfo = set_metaparameters(ring, :lex, false, false, :exact)
+
+    bexps, bcoeffs = fglm_f4(ring, exps, coeffs, rng)
+
+    ring.ord = :lex
+
+    # ordering in bexps here matches target ordering in metainfo
+
+    #= revert logger =#
+    Logging.global_logger(prev_logger)
+
+    # ring contains ordering of computation, it is the requested ordering
+    #= convert result back to representation of input =#
+    convert_to_output(ring, basis, bexps, bcoeffs, metainfo)
 end

@@ -19,3 +19,5 @@ using Groebner # hide
 {{doc isgroebner isgroebner fn}}
 
 {{doc normalform normalform fn}}
+
+{{doc fglm fglm fn}}

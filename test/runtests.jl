@@ -46,4 +46,7 @@ end
     end
 
     @includetests ["onthefly_order_change"]
+
+    @includetests ["core_fglm"]
+
 end

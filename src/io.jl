@@ -313,14 +313,15 @@ function convert_to_output(
             ring::PolyRing,
             origpolys::Vector{P},
             gbexps::Vector{Vector{ExponentVector}},
-            gbcoeffs::Vector{Vector{I}}) where {P, I<:Coeff}
+            gbcoeffs::Vector{Vector{I}},
+            metainfo::GroebnerMetainfo) where {P, I<:Coeff}
 
     if ring.origring == :abstract
-        convert_to_output(ring, parent(first(origpolys)), gbexps, gbcoeffs)
+        convert_to_output(ring, parent(first(origpolys)), gbexps, gbcoeffs, metainfo)
     elseif ring.origring == :multivariate
-        convert_to_output(ring, origpolys, gbexps, gbcoeffs)
+        convert_to_output(ring, origpolys, gbexps, gbcoeffs, metainfo)
     elseif ring.origring == :hasparent
-        convert_to_output(ring, parent(first(origpolys)), gbexps, gbcoeffs)
+        convert_to_output(ring, parent(first(origpolys)), gbexps, gbcoeffs, metainfo)
     else
         # this actually never happens
         error("Sorry, unknown polynomial ring.")
@@ -370,7 +371,11 @@ function convert_to_output(
             ring::PolyRing,
             origpolys::Vector{P},
             gbexps::Vector{Vector{ExponentVector}},
-            gbcoeffs::Vector{Vector{I}}) where {P<:AbstractPolynomialLike{J}, I<:Coeff} where {J}
+            gbcoeffs::Vector{Vector{I}},
+            metainfo::GroebnerMetainfo) where {P<:AbstractPolynomialLike{J}, I<:Coeff} where {J}
+
+    # TODO: hardcoded
+    (metainfo.targetord != :deglex) && @warn "Input polynomial type does not support ordering $(metainfo.targetord). Computed basis is in $(metainfo.targetord), but terms are ordered in $(:deglex) in output"
 
     origvars = MultivariatePolynomials.variables(origpolys)
     # xd
@@ -394,24 +399,29 @@ function convert_to_output(
             ring::PolyRing,
             origring::M,
             gbexps::Vector{Vector{ExponentVector}},
-            gbcoeffs::Vector{Vector{I}}) where {M, T, I}
+            gbcoeffs::Vector{Vector{I}},
+            metainfo::GroebnerMetainfo) where {M, T, I}
 
     @assert hasmethod(base_ring, Tuple{typeof(origring)})
+
+    # TODO: hardcoded
+    (metainfo.targetord != ordering(origring)) && @warn "Unknown polynomial type. Computed basis is in $(metainfo.targetord), but terms are ordered in $(ordering(origring)) in output"
 
     etype = elem_type(base_ring(origring))
     # rather weak but okay for now
     if etype <: Integer
         coeffs_zz = scale_denominators!(gbcoeffs)
-        convert_to_output(origring, gbexps, coeffs_zz)
+        convert_to_output(origring, gbexps, coeffs_zz, metainfo)
     else
-        convert_to_output(origring, gbexps, gbcoeffs)
+        convert_to_output(origring, gbexps, gbcoeffs, metainfo)
     end
 end
 
 function convert_to_output(
             origring::M,
             gbexps::Vector{Vector{ExponentVector}},
-            gbcoeffs::Vector{Vector{I}}) where{M, I}
+            gbcoeffs::Vector{Vector{I}},
+            metainfo::GroebnerMetainfo) where {M, I}
 
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
@@ -442,14 +452,19 @@ function convert_to_output(
             ring::PolyRing,
             origring::MPolyRing{T},
             gbexps::Vector{Vector{ExponentVector}},
-            gbcoeffs::Vector{Vector{I}}) where {T, I}
+            gbcoeffs::Vector{Vector{I}},
+            metainfo::GroebnerMetainfo) where {T, I}
 
     ord = ordering(origring)
+    if metainfo.targetord != ord
+        origring, _ = PolynomialRing(base_ring(origring), symbols(origring), ordering=metainfo.targetord)
+    end
+
     if elem_type(base_ring(origring)) <: Integer
         coeffs_zz = scale_denominators(gbcoeffs)
-        convert_to_output(origring, gbexps, coeffs_zz, Val(ord))
+        convert_to_output(origring, gbexps, coeffs_zz, Val(ordering(origring)))
     else
-        convert_to_output(origring, gbexps, gbcoeffs, Val(ord))
+        convert_to_output(origring, gbexps, gbcoeffs, Val(ordering(origring)))
     end
 end
 
@@ -461,7 +476,7 @@ function convert_to_output(
             origring::MPolyRing{U},
             gbexps::Vector{Vector{ExponentVector}},
             gbcoeffs::Vector{Vector{T}},
-            ::Val{:degrevlex}) where  {T<:Union{Rational{BigInt},BigInt,UInt64}, U}
+            ::Val{:degrevlex}) where  {T<:Coeff, U}
 
     nv = nvars(origring)
     ground   = base_ring(origring)
@@ -488,7 +503,7 @@ function convert_to_output(
             origring::MPolyRing{U},
             gbexps::Vector{Vector{ExponentVector}},
             gbcoeffs::Vector{Vector{T}},
-            ::Val{:lex}) where {T<:Union{Rational{BigInt},BigInt,UInt64}, U}
+            ::Val{:lex}) where {T<:Coeff, U}
 
     nv = nvars(origring)
     ground   = base_ring(origring)
@@ -515,7 +530,7 @@ function convert_to_output(
             origring::MPolyRing{U},
             gbexps::Vector{Vector{ExponentVector}},
             gbcoeffs::Vector{Vector{T}},
-            ::Val{:deglex}) where {T<:Union{Rational{BigInt},BigInt,UInt64}, U}
+            ::Val{:deglex}) where {T<:Coeff, U}
 
     nv = nvars(origring)
     ground   = base_ring(origring)

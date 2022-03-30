@@ -47,7 +47,7 @@ function filter_redundant!(basis::Basis)
     basis
 end
 
-function standardize_basis!(basis::Basis, ht)
+function standardize_basis!(basis::Basis, ht, ord)
     for i in 1:basis.nlead
         idx = basis.nonred[i]
         # basis.lead[i] = basis.lead[idx]
@@ -63,7 +63,7 @@ function standardize_basis!(basis::Basis, ht)
     resize!(basis.nonred, basis.ndone)
     resize!(basis.isred, basis.ndone)
 
-    sort_gens_by_lead_increasing_in_standardize!(basis, ht)
+    sort_gens_by_lead_increasing_in_standardize!(basis, ht, ord)
     normalize_basis!(basis)
 end
 
@@ -513,7 +513,7 @@ function f4!(ring::PolyRing,
         reducegb_f4!(basis, matrix, ht, symbol_ht)
     end
 
-    standardize_basis!(basis, ht)
+    standardize_basis!(basis, ht, ht.ord)
 
     # assertion
     #=
