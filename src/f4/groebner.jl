@@ -128,9 +128,6 @@ function groebner_qq(
         Need to make sure input invariants in f4! are satisfied, f4.jl for details
         =#
         f4!(ring, gens_ff, ht, reduced, meta.linalg)
-        if meta.usefglm
-            # fglm_f4!(ring, gens_ff, ht)
-        end
 
         # reconstruct into integers
         @info "CRT modulo ($(primetracker.modulo), $(prime))"
@@ -152,6 +149,12 @@ function groebner_qq(
         i += 1
     end
 
+    #=
+    if meta.usefglm
+        fglm_f4!(ring, gens_ff, ht)
+    end
+    =#
+    
     # normalize_coeffs!(gbcoeffs_qq)
     gb_exps = hash_to_exponents(gens_ff, ht)
     gb_exps, coeffaccum.gb_coeffs_qq
