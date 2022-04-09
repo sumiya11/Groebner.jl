@@ -293,6 +293,135 @@ end
 
 #------------------------------------------------------------------------------
 
+function reducegb_relaxed_f4!(
+            basis::Basis, matrix::MacaulayMatrix,
+            ht::MonomialHashtable, symbol_ht::MonomialHashtable)
+
+    for i in 1:basis.nlead
+        etmp  = ht.exponents[1]
+        etmp  = zero(etmp)
+        # etmp is now set to zero, and has a zero hash
+
+        reinitialize_matrix!(matrix, basis.nlead)
+        uprows = matrix.uprows
+
+        #=
+        @warn "entering reduce"
+        dump(basis, maxdepth=5)
+        @warn "ht"
+        println(ht.exponents[1:10])
+        @warn "symbol"
+        println(symbol_ht.exponents[1:10])
+        println("NONRED ", basis.nonred)
+        =#
+
+        # add all non redundant elements from basis
+        # as matrix upper rows
+
+        matrix.nrows += 1
+        uprows[matrix.nrows] = multiplied_poly_to_matrix_row!(
+                                    symbol_ht, ht, UInt32(0), etmp,
+                                    basis.gens[basis.nonred[i]])
+
+        matrix.up2coef[matrix.nrows] = basis.nonred[i]
+        # set lead index as 1
+        symbol_ht.hashdata[uprows[matrix.nrows][1]].idx = 1
+
+        # needed for correct counting in symbol
+        matrix.ncols = matrix.nrows
+        matrix.nup = matrix.nrows
+
+        #=
+        @warn "after multiplied_poly_to_matrix_row"
+        dump(basis, maxdepth=5)
+        @warn "matrix"
+        dump(matrix, maxdepth=5)
+        @warn "ht"
+        println(ht.exponents[1:10])
+        =#
+
+        symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
+        # all pivots are unknown
+        for j in symbol_ht.offset:symbol_ht.load
+            symbol_ht.hashdata[j].idx = 1
+        end
+
+        #=
+        @warn "after symbolic"
+        dump(basis, maxdepth=5)
+        @warn "matrix"
+        dump(matrix, maxdepth=5)
+        @warn "ht"
+        println(ht.exponents[1:10])
+        =#
+
+        # x1*x2^6 + 413612941*x1*x2^3
+        #  x1^2*x2^3 + 174101409*x1*x2^5
+        convert_hashes_to_columns!(matrix, symbol_ht)
+        matrix.ncols = matrix.nleft + matrix.nright
+
+        #=
+        @warn "after convert"
+        dump(matrix, maxdepth=5)
+        =#
+
+        sort_matrix_rows_decreasing!(matrix)
+
+        println(matrix.ncols)
+
+        println(basis.ndone)
+
+        interreduce_matrix_rows!(matrix, basis)
+
+        #=
+        @warn "after interreduce"
+        dump(matrix, maxdepth=5)
+        =#
+        # TODO
+        # convert_matrix_rows_to_basis_elements_use_symbol!(matrix, basis)
+        convert_matrix_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
+        # no longer need in two hashtables
+        # TODO
+        # ht = symbol_ht
+
+        basis.ntotal = matrix.npivots + basis.ndone
+        basis.ndone = matrix.npivots
+
+        #=
+        @warn "basis"
+        dump(basis, maxdepth=5)
+        =#
+
+        #= we may have added some multiples of reduced basis polynomials
+        * from the matrix, so we get rid of them. =#
+        k = 0
+        i = 1
+        @label Letsgo
+        while i <= basis.ndone
+            @inbounds for j in 1:k
+                if is_monom_divisible(
+                        basis.gens[basis.ntotal - i + 1][1],
+                        basis.gens[basis.nonred[j]][1],
+                        ht)
+
+                    i += 1
+                    @goto Letsgo
+                end
+            end
+            k += 1
+            basis.nonred[k] = basis.ntotal - i + 1
+            # xd
+            basis.lead[k] = ht.hashdata[basis.gens[basis.nonred[k]][1]].divmask
+            i += 1
+        end
+        basis.nlead = k
+
+    end
+
+    # TODO
+    # sort_gens_by_lead_increasing_in_reduce!(basis, ht)
+end
+
 function reducegb_f4!(
             basis::Basis, matrix::MacaulayMatrix,
             ht::MonomialHashtable, symbol_ht::MonomialHashtable)
@@ -316,7 +445,7 @@ function reducegb_f4!(
 
     # add all non redundant elements from basis
     # as matrix upper rows
-    @inbounds for i in 1:basis.nlead
+    @inbounds for i in 1:basis.nlead #
         matrix.nrows += 1
         uprows[matrix.nrows] = multiplied_poly_to_matrix_row!(
                                     symbol_ht, ht, UInt32(0), etmp,
@@ -481,6 +610,7 @@ function f4!(ring::PolyRing,
         @debug "Selected $(divexact(matrix.nrows, 2)) pairs"
 
         symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
+        # symbolic_preprocessing_relaxed!(basis, matrix, ht, symbol_ht)
         @debug "Matrix of size $((matrix.nrows, matrix.ncols)), density TODO"
 
         # reduces polys and obtains new potential basis elements

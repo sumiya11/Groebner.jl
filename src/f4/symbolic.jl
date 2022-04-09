@@ -306,8 +306,7 @@ end
 # and returns it
 function symbolic_preprocessing!(
                 basis::Basis, matrix::MacaulayMatrix,
-                ht::MonomialHashtable, symbol_ht::MonomialHashtable;
-                linalg::Symbol=:sparse)
+                ht::MonomialHashtable, symbol_ht::MonomialHashtable)
 
     # check matrix sizes (we want to omit this I guess)
 
@@ -353,6 +352,70 @@ function symbolic_preprocessing!(
         find_multiplied_reducer!(basis, matrix, ht, symbol_ht, i)
         i += 1
     end
+
+    # shrink matrix sizes, set constants
+    resize!(matrix.uprows, matrix.nup)
+    # resize!(matrix.up2coef, matrix.nup)
+
+    matrix.nrows += matrix.nup - onrr
+    matrix.nlow  = matrix.nrows - matrix.nup
+    matrix.size  = matrix.nrows
+
+end
+
+# Given the set of polynomials L and the basis G,
+# extends L to contain possible polys for reduction by G,
+# and returns it
+function symbolic_preprocessing_relaxed!(
+                basis::Basis, matrix::MacaulayMatrix,
+                ht::MonomialHashtable, symbol_ht::MonomialHashtable)
+
+    # check matrix sizes (we want to omit this I guess)
+
+    symbol_load = symbol_ht.load
+
+    nrr    = matrix.ncols
+    onrr   = matrix.ncols
+
+    #=
+        TODO: matrix_enlarge!
+    =#
+    while matrix.size <= nrr + symbol_load
+        matrix.size *= 2
+        resize!(matrix.uprows, matrix.size)
+        resize!(matrix.up2coef, matrix.size)
+    end
+
+    # for each lcm present in symbolic_ht set on select stage
+    i = symbol_ht.offset
+    #= First round, we add multiplied polynomials which divide  =#
+    #= a monomial exponent from selected spairs                 =#
+    @inbounds while i <= symbol_load
+        # not a reducer already
+        if symbol_ht.hashdata[i].idx == 0
+            symbol_ht.hashdata[i].idx = 1
+            matrix.ncols += 1
+            find_multiplied_reducer!(basis, matrix, ht, symbol_ht, i)
+        end
+        i += 1
+    end
+
+    #= Second round, we add multiplied polynomials which divide  =#
+    #= lcm added on previous for loop                             =#
+    #=
+    while i <= symbol_ht.load
+        if matrix.size == matrix.nup
+            matrix.size *= 2
+            resize!(matrix.uprows, matrix.size)
+            resize!(matrix.up2coef, matrix.size)
+        end
+
+        symbol_ht.hashdata[i].idx = 1
+        matrix.ncols += 1
+        find_multiplied_reducer!(basis, matrix, ht, symbol_ht, i)
+        i += 1
+    end
+    =#
 
     # shrink matrix sizes, set constants
     resize!(matrix.uprows, matrix.nup)

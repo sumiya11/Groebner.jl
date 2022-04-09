@@ -27,7 +27,7 @@ end
 
 @inline function threshold_in_heuristic(sznum, szden, szmod)
     # coefficient 1.10
-    1.10*(sznum + sznum) >= szmod
+    1.30*(sznum + sznum) >= szmod
 end
 
 # ln(num) + ln(den) < c ln p
