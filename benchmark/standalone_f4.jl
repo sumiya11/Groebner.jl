@@ -20,7 +20,7 @@ function benchmark_system_my(system)
     # println("length = $(length(gb))")
     # println("degree = $(maximum(AbstractAlgebra.total_degree, gb))")
 
-    @btime Groebner.groebner($system, reduced=true)
+    @btime Groebner.groebner($system, reduced=false)
 end
 
 function run_f4_ff_degrevlex_benchmarks(ground)

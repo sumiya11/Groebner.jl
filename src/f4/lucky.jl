@@ -15,6 +15,9 @@
 const FIRST_LUCKY_PRIME = 2^31 - 1
 const FIRST_GOOD_PRIME  = 2^30 + 3
 
+# const FIRST_LUCKY_PRIME = 32771
+# const FIRST_GOOD_PRIME  = 16411
+
 mutable struct PrimeTracker
     # integer generator coefficients from the input
     coeffs::Vector{Vector{CoeffZZ}}

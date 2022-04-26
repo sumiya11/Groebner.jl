@@ -48,11 +48,15 @@ function reduce_by_pivot!(row::Vector{CoeffFF}, indices::Vector{Int},
 
     # mul = -densecoeffs[i]
     # actually.. not bad!
-    mul = (magic.divisor - row[indices[1]]) % magic
+    @inbounds mul = magic.divisor - row[indices[1]]
+    m2  = magic.divisor^2
 
     # length(row) / length(indices) varies from 10 to 100
     @inbounds for j in 1:length(indices)
         idx = indices[j]
+        # x = row[idx] + mul*cfs[j]
+        # row[idx] = x - Base.ashr_int(x, 63) & m2
+        # row[idx] = x % magic
         # row[idx] = (row[idx] + mul*cfs[j]) % ch
         row[idx] = (row[idx] + mul*cfs[j]) % magic
         # row[idx] = (row[idx] + mul*cfs[j]) & magic.divisor
@@ -121,11 +125,9 @@ function reduce_dense_row_by_known_pivots_sparse!(
 
     for i in startcol:ncols
 
-        #=
-        @inbounds if densecoeffs[i] != uzero
-            densecoeffs[i] = densecoeffs[i] % magic
-        end
-        =#
+        # @inbounds if densecoeffs[i] != uzero
+        #    densecoeffs[i] = densecoeffs[i] % magic
+        # end
 
         # if row element zero - no reduction
         @inbounds if densecoeffs[i] == uzero
@@ -169,7 +171,7 @@ function reduce_dense_row_by_known_pivots_sparse!(
     # where k - number of structural nonzeros in new reduced row, k > 0
     j = 1
     @inbounds for i in np:ncols # from new pivot
-
+        # densecoeffs[i] = densecoeffs[i] % magic
         @inbounds if densecoeffs[i] != uzero
             newrow[j] = i
             newcfs[j] = densecoeffs[i]

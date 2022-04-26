@@ -14,6 +14,16 @@ function rootn(n; ground=QQ)
     ans
 end
 
+function katsuran(n; ground=QQ)
+    R, x = PolynomialRing(ground, ["x$i" for i in 0:n])
+
+    return [
+        (sum(x[abs(l)+1]*x[abs(m-l)+1] for l=-n:n if abs(m-l)<=n) -
+        x[m+1] for m=0:n-1)...,
+        x[1] + 2sum(x[i+1] for i=1:n) - 1
+    ]
+end
+
 function henrion5(;ground=QQ)
 
     R, (f1,f2,f3,f4,f5,t) = PolynomialRing(ground, ["f1","f2","f3","f4","f5","t"])

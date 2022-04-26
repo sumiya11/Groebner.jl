@@ -8,7 +8,7 @@ using BenchmarkTools
 using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error))
 
-BenchmarkTools.DEFAULT_PARAMETERS.seconds = 10
+BenchmarkTools.DEFAULT_PARAMETERS.seconds = 6
 
 function benchmark_system_my(system)
     system = Groebner.change_ordering(system, :degrevlex)
@@ -18,7 +18,7 @@ function benchmark_system_my(system)
     # println("length = $(length(gb))")
     # println("degree = $(maximum(AbstractAlgebra.total_degree, gb))")
 
-    @btime gb = Groebner.groebner($system, linalg=:prob, reduced=false)
+    @btime gb = Groebner.groebner($system, reduced=false)
     # gb = Groebner.groebner(system, reduced=false)
 end
 
@@ -30,7 +30,7 @@ function benchmark_system_my_certify(system)
     # println("length = $(length(gb))")
     # println("degree = $(maximum(AbstractAlgebra.total_degree, gb))")
 
-    @btime gb = Groebner.groebner($system, certify=true, reduced=false)
+    @btime gb = Groebner.groebner($system, reduced=false)
     # gb = Groebner.groebner(system, reduced=false)
 end
 
