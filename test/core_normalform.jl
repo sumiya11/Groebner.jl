@@ -34,7 +34,6 @@
     ]
     @test Groebner.normalform(G, x^2 + y^2) == -x - y
 
-    @test_warn "not look like" Groebner.normalform([x, x*y + 1], x)
     @test_nowarn Groebner.normalform([x, x*y], x)
 end
 
@@ -59,5 +58,5 @@ end
     @test GB == reverse(xs)
     @test Groebner.normalform(GB, xs[1]) == R(0)
     =#
-    
+
 end
