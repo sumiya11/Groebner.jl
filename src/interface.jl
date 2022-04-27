@@ -194,6 +194,12 @@ function normalform(
             loglevel::LogLevel=Logging.Warn
             ) where {Poly, Rng<:Random.AbstractRNG}
 
+    iszero(tobereduced) && return tobereduced
+
+    if !isgroebner(basispolys)
+        @warn "Input basis does not look like a groebner basis"
+    end
+
     first(normalform(
             basispolys, [tobereduced],
             ordering=ordering, rng=rng, loglevel=loglevel)

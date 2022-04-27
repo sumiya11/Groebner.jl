@@ -645,7 +645,7 @@ function select_tobereduced!(
 
     # prepare to load all elems from tobereduced
     # into low rows
-    reinitialize_matrix!(matrix, 2^6)
+    reinitialize_matrix!(matrix, max(basis.ntotal, tobereduced.ntotal))
     resize!(matrix.lowrows, tobereduced.ntotal)
 
     # TODO

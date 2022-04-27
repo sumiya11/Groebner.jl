@@ -3,6 +3,10 @@
 
     R, (x, y, z) = PolynomialRing(GF(2^31 - 1), ["x", "y", "z"])
 
+    # Regression test, Structural Identifiability
+    @test Groebner.normalform([x], R(0)) == R(0)
+    @test Groebner.normalform([x], R(1)) == R(1)
+
     Gs = [
         [x], [x, y], [x, y, z]
     ]
@@ -30,4 +34,30 @@
     ]
     @test Groebner.normalform(G, x^2 + y^2) == -x - y
 
+    @test_warn "not look like" Groebner.normalform([x, x*y + 1], x)
+    @test_nowarn Groebner.normalform([x, x*y], x)
+end
+
+@testset "Normal form -- a lot of variables" begin
+    R, xs = PolynomialRing(QQ, ["x$i" for i in 1:63])
+
+    GB = Groebner.groebner(xs)
+    @test GB == reverse(xs)
+    @test Groebner.normalform(GB, xs[1]) == R(0)
+
+
+    R, xs = PolynomialRing(QQ, ["x$i" for i in 1:220])
+
+    GB = Groebner.groebner(xs)
+    @test GB == reverse(xs)
+    @test Groebner.normalform(GB, xs[1]) == R(0)
+
+    #=
+    R, xs = PolynomialRing(QQ, ["x$i" for i in 1:1049])
+
+    GB = Groebner.groebner(xs)
+    @test GB == reverse(xs)
+    @test Groebner.normalform(GB, xs[1]) == R(0)
+    =#
+    
 end
