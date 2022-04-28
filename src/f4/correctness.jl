@@ -1,7 +1,7 @@
 
 
 function correctness_check!(coeffaccum, coeffbuffer, primetracker, meta,
-                                ring, coeffs, coeffs_zz, gens_temp_ff, gb_ff, ht)
+                                ring, exps, coeffs, coeffs_zz, gens_temp_ff, gb_ff, ht)
 
     # first we check coefficients only
     if meta.heuristiccheck
@@ -21,6 +21,9 @@ function correctness_check!(coeffaccum, coeffbuffer, primetracker, meta,
         end
         @info "Randomized check passed!"
     end
+
+    # return guaranteed_correctness_check(gbexps, coeffaccum.gb_coeffs_qq,
+    #                                exps, coeffs, ht)
 
     return true
 end
@@ -87,20 +90,25 @@ end
 
 #------------------------------------------------------------------------------
 
-function guaranteed_correctness_check(gbexps, gbcoeffs_qq,
-                                init_gens, coeffs, ht, ring_qq, tablesize, rng)
+function guaranteed_correctness_check(gbexps, gb_coeffs_qq,
+                                        exps, coeffs, ht)
+
 
     tmp_exps = [copy(init_gens.gens[i]) for i in 1:init_gens.ntotal]
-    tmp_coeffs = [copy(coeffs[i]) for i in 1:init_gens.ntotal]
+    # tmp_coeffs = [
+    #                copy(coeffs[i])
+    #                for i in 1:init_gens.ntotal]
 
     gens_qq, _ = initialize_structures(ring_qq, tmp_exps, tmp_coeffs, ht)
-    gb_qq, _   = initialize_structures(ring_qq, gbexps, gbcoeffs_qq, ht)
+    gb_qq, _   = initialize_structures(ring_qq, gbexps, gb_coeffs_qq, ht)
 
     normalize_basis!(gb_qq)
     normalize_basis!(gens_qq)
 
     # check that initial ideal contains in the computed groebner basis modulo goodprime
     normal_form_f4!(ring_qq, gb_qq, ht, gens_qq)
+
+    # TODO
 
     # @error "normal form"
     # println(initial_ff)

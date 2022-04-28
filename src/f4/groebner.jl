@@ -138,7 +138,7 @@ function groebner_qq(
         reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
 
         if correctness_check!(coeffaccum, coeffbuffer, primetracker, meta,
-                                ring, coeffs, coeffs_zz, gens_temp_ff, gens_ff, ht)
+                                ring, exps, coeffs, coeffs_zz, gens_temp_ff, gens_ff, ht)
             @info "Success!"
             break
         end
@@ -154,7 +154,7 @@ function groebner_qq(
         fglm_f4!(ring, gens_ff, ht)
     end
     =#
-    
+
     # normalize_coeffs!(gbcoeffs_qq)
     gb_exps = hash_to_exponents(gens_ff, ht)
     gb_exps, coeffaccum.gb_coeffs_qq

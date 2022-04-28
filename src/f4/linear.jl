@@ -89,7 +89,9 @@ end
 #
 # Finite field specialization
 function load_indexed_coefficients!(densecoeffs::Vector{CoeffFF}, rowexps, cfsref)
-    densecoeffs .= CoeffFF(0)
+    @inbounds for i in 1:length(densecoeffs)
+        densecoeffs[i] = CoeffFF(0)
+    end
     @inbounds for j in 1:length(rowexps)
         densecoeffs[rowexps[j]] = cfsref[j]
     end
