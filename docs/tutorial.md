@@ -17,11 +17,13 @@ Pkg.add("AbstractAlgebra") # hide
 Pkg.add("Groebner") # hide
 Pkg.add("DynamicPolynomials") # hide
 Pkg.add("AbstractAlgebra") # hide
+Pkg.add("Compose") # hide
 using Groebner # hide
 using AbstractAlgebra # hide
 using BenchmarkTools # hide
 using Graphs # hide
 using GraphPlot # hide
+using Compose # hide
 ```
 
 ## Intro
