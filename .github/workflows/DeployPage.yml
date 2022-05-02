@@ -1,3 +1,4 @@
+env: GKSwstype: "100"
 name: Build and Deploy
 on:
   push:
