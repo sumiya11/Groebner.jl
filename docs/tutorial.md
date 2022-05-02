@@ -103,7 +103,7 @@ The normal form with respect to a Groebner basis is unique, and has in turn nice
 Groebner bases can be seen as *a nonlinear generalization* of **Gaussian elimination** for systems of algebraic equations. Applied to a linear system, Groebner basis algorithms produce exactly row echelon matrix form!
 
 ```julia:gauss
-using DynamicPolynomials
+using DynamicPolynomials # hide
 
 @polyvar x y z
 system = [
@@ -117,20 +117,20 @@ groebner(system)  # rref
 
 ### Groebner basis is Euclidean Algorithm
 
-Another important property is that a Groebner basis of a *univariate Ideal* is nothing else but GCD of its generators.
+Another important property is that a Groebner basis of a *univariate Ideal* is the GCD of its generators.
 
 ```julia:gcd1
-using DynamicPolynomials
+using DynamicPolynomials # hide
 
 @polyvar x
 f = (x^2 - 1)^7*(x + 3)*(x - 7)^4
 g = (x + 3)*(x + 7)
 
-groebner([f, g])   # gcd by groebner
+@show groebner([f, g])   # gcd by groebner
 ```
 
 ```julia:gcd2
-gcd(f, g)          # usual gcd
+@show gcd(f, g)          # usual gcd
 ```
 
 So, you can compute the GCD of several polynomials at once using `Groebner.jl`! But probably you shouldn't..
@@ -265,7 +265,7 @@ add_edge!(g, 3, 4); # hide
 ```julia:graph1
 # hideall
 gplot(g)
-savefig(joinpath(@OUTPUT, "graph.svg"));
+draw(SVG(joinpath(@OUTPUT, "graph.svg"), 16cm, 16cm), gplot(g));
 ```
 
 \fig{graph}
@@ -298,7 +298,7 @@ for each $i \rightarrow j$ in edges to ensure two neighboring vertices do not sh
 Finally, solutions of a system constructed this way correspond to proper k-colorings in a 1 to 1 relation.
 
 ```julia:graph2
-gplot(g)
+draw(SVG(joinpath(@OUTPUT, "graph.svg"), 16cm, 16cm), gplot(g));
 ```
 
 The coloring system for k=3 in the graph above must contain vertex polynomials
@@ -323,3 +323,7 @@ coloring_system = [
 
 groebner(coloring_system)
 ```
+
+Wow cool !
+
+draw(SVG(joinpath(@OUTPUT, "graph.svg"), 16cm, 16cm), gplot(g));
