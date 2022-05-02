@@ -11,12 +11,16 @@ where appropriate -->
 ```julia:installs
 import Pkg # hide
 import Pkg; Pkg.add("BenchmarkTools") # hide
+Pkg.add("Graph") # hide
+Pkg.add("GraphPlot") # hide
 Pkg.add("AbstractAlgebra") # hide
 Pkg.add("Groebner") # hide
 Pkg.add("DynamicPolynomials") # hide
 using Groebner # hide
 using AbstractAlgebra # hide
 using BenchmarkTools # hide
+using Graph # hide
+using GraphPlot # hide
 ```
 
 ## Intro
@@ -41,7 +45,6 @@ Our package implements **F4 algorithm**, which is a modification of the Buchberg
 It's important to mention that a lot of implementation insights we use in this package were introduced by Jérémy Berthomieu, Christian Eder and Mohab Safey El Din in [[1]](https://arxiv.org/abs/2104.03572).
 
 TODO: split the following into separate pages.
-TODO: check out `math mode`
 
 # So, what is a Groebner basis?
 
@@ -71,7 +74,7 @@ Every set of polynomials (except for zero) has a Groebner basis.
 
 Given a set of polynomials F, computing a Groebner basis of F is hard. However, it possess a plenty of nice properties.
 
-First of all, the reduced Groebner basis **is unique**! That is, if two sets $F_1$ and $F_2$ generate same sets $I_1, I_2$ then Groebner bases of $F_1$ and $F_2$ are the same
+First of all, the reduced Groebner basis *is unique*! That is, if two sets $F_1$ and $F_2$ generate same sets $I_1, I_2$ then Groebner bases of $F_1$ and $F_2$ are the same
 
 ```julia:unique
 # Here, F₁ and F₂ generate the same infinite polynomial sets
@@ -80,9 +83,9 @@ F₂ = [x^3 - y^2, x*y + x^2]
 groebner(F₁) == groebner(F₂)
 ```
 
-Secondly, Groebner bases enable a proper definition of a *multivariate polynomial division by a set*. With polynomials f and g, we can divide f by g. Groebner bases make it possible to *divide f by a whole set* $G$.
+Secondly, Groebner bases enable an algorithmic way to do *multivariate polynomial division by a set*. With a polynomial $f$ and a set of polynomials $G$, we can divide $f$ by $G$ by computing *the* normal form of $f$ w.r.t. $G$.
 
-TODO: does not work due to a known normalform issue
+`Groebner.jl` provides normal form functionality with the `normalform` function.
 
 ```julia:nf
 F = [x^3 + y^2, x*y + x^2]
@@ -92,15 +95,13 @@ G = groebner(F)     # compute the basis
 normalform(G, f)    # divide f by G
 ```
 
-TODO: add more
+The normal form with respect to a Groebner basis is unique, and has in turn nice properties. We will discuss these in the following.
 
 # Useful Analogies
 
-Groebner bases can be considered as *a nonlinear generalization* of Gaussian elimination for systems of linear equations, and a *multivariate generalization* for systems of univariate polynomials.
-
 ## Groebner basis is Gaussian Elimination
 
-Applied to a *linear system*, Groebner basis algorithms produce exactly row echelon form!
+Groebner bases can be seen as *a nonlinear generalization* of **Gaussian elimination** for systems of algebraic equations. Applied to a linear system, Groebner basis algorithms produce exactly row echelon matrix form!
 
 ```julia:gauss
 using DynamicPolynomials
@@ -112,12 +113,12 @@ system = [
        x + y + 5z + 3
 ]
 
-groebner(system)
+groebner(system)  # rref
 ```
 
-## Groebner basis is Euclidean algorithm
+## Groebner basis is Euclidean Algorithm
 
-It's an intriguing property, that a Groebner basis of a *univariate Ideal* is nothing else but GCD of its generators.
+Another important property is that a Groebner basis of a *univariate Ideal* is nothing else but GCD of its generators.
 
 ```julia:gcd1
 using DynamicPolynomials
@@ -126,67 +127,196 @@ using DynamicPolynomials
 f = (x^2 - 1)^7*(x + 3)*(x - 7)^4
 g = (x + 3)*(x + 7)
 
-gcd(f, g)   # usual gcd
+groebner([f, g])   # gcd by groebner
 ```
 
 ```julia:gcd2
-groebner([f, g])
+gcd(f, g)          # usual gcd
 ```
 
-So, you can compute the GCD of several polynomials using `Groebner.jl`! But probably you shouldn't.. `Groebner.jl` converts all input into internal polynomial representation, instantiates huge hashtables and matrices; this all is unnesesarry for computing GCD.
+So, you can compute the GCD of several polynomials at once using `Groebner.jl`! But probably you shouldn't..
 
 We emphasize, however, that `Groebner.jl` is designed to have as little runtime overhead as possible
 
 ```julia:gcd3
-@btime gcd($f, $g)
+h = (x + 3)^5
+
+@btime gcd(gcd($f, $g), $h)
 ```
 
 ```julia:gcd4
-F = [f, g]
+F = [f, g, h]
 @btime groebner($F)
 ```
 
-
-# Eliminating parameters
-
-TODO!
+# Variable Elimination
 
 With appropriate term orders, one can use Grobner
-bases to *eliminate indeterminates* from equations.
+bases to *eliminate indeterminates* from equations. The main observation here is
 
-TODO: add a theoretical note and a pic
+If $G$ is a Groebner basis for some Ideal $I$ w.r.t. `lex` order with $x > y > z$ then
 
-Eliminate variable t from:
+\[
+G \cap R[y, z]
+\]
 
-x = 2t - 4t^3, y = t^2 - 3t^4
+is a Groebner basis for $I_{y, z}~ =~ I \cap R[y, z]$. Here, one can see $I_{y, z}$ as a geometric projection of solutions of $I$ onto the last two variables.
 
-```julia:eliminate
-R, (t, x, y) = PolynomialRing(QQ, ["t", "x", "y"])
-@assert y < x < t
+For example, consider polynomials in three variables $x > y > z$
 
-F = [x - 2t + 4t^3, y - t^2 + 3t^4]   # initial system
+```julia:elim1
+_, (x, y, z) = QQ["x", "y", "z"]
 
+F = [x^2 + y + z - 1,
+     x + y^2 + z - 1,
+     x + y + z^2 - 1]
+```
+
+Groebner basis is
+
+```julia:elim2
 G = groebner(F)
 ```
 
-Notice that the first generator in G does not contain t! Thus, equation
+Notice that first three polynomials `G[1:3]` do not contain `x`. That means the `G[1:3]` is a Groebner basis for $I_{y, z}$
 
-x^4 - 16//3*x^2*y - 4//27*x^2 + 256//27*y^3 + 128//27*y^2 + 16//27*y = 0
+# Curve Implicitization
 
-is precisely equivalent to the original system!
+Say we have a parametrization of the circle as
 
+\[
+x = \frac{1 - t^2}{1 + t^2} ~~~ y = \frac{2t}{1 + t^2}
+\]
+
+Let's clear denominators
+
+\[
+t^2y - 2t + y = 0 ~~~ t^2x + t^2 + x - 1 = 0
+\]
+
+Groebner basis in `lex` order $t > x > y$ is
+
+```julia:impl1
+_, (t, x, y) = QQ["t", "x", "y"]
+
+groebner([t^2*y - 2t + y, t^2*x + t^2 + x - 1])
+```
+
+We see that $I_{x, y}$ = \{ x^2 + y^2 - 1 \}, so for any $t$ every $(x, y)$ lies on the circle as expected.
 
 # Solving Systems
 
-For system solving please check out `Symbolics.jl` ! TODO soon
+In this section we will assume `lex` term ordering and consider the case with three variables. Same generalizes naturally for $n$ indeterminates.
+
+```julia:sys0
+_, (x, y, z) = QQ["x", "y", "z"];
+```
+
+Say we have a polynomial system to solve *exactly (symbolically)*
+
+\[
+\begin{aligned}
+x + y + z &= 0 \\
+xy + xz + yz &= 0 \\
+xyz - 1 &= 0 \\
+\end{aligned}
+\]
+
+```julia:sys1
+sys = [x + y + z,
+       x*y + x*z + y*z,
+       x*y*z - 1]
+```
+
+Computing Groebner basis results in
+
+```julia:sys2
+groebner(sys)
+```
+
+Notice that `x^3 - 1` in the basis is a *univariate equation*! Solving it over reals we obtain some roots `z = ...`.
+
+Then substitute these known `z` into the second equation `y^2 + y*z + z^2`, which in turn becomes univariate in `y`.
+
+Obtaining zeros in `y`, we move to the next equation in the basis.  
+
+Solving polynomial systems in general using Groebner bases relies on the same technique:
+
+1. There is a univariate equation in Groebner basis
+2. Solve it, and substitute found roots into other equations
+3. goto 1.
+
+For the implementation of symbolic system solving check out `roots` in `Symbolics.jl` !
 
 # Graph Coloring
 
-TODO
+In graph theory, Graph coloring is a problem of assigning a color to each vertex of a graph in a way that no two neighboring vertices the same color.
 
-# Integer Programming
+```julia:graph0
+using Graph # hide
+using GraphPlot # hide
+g = Graph(4) # hide
+add_edge!(g, 1, 2) # hide
+add_edge!(g, 1, 3) # hide
+add_edge!(g, 1, 4) # hide
+add_edge!(g, 2, 3) # hide
+add_edge!(g, 3, 4) # hide
+```
 
-TODO
+```julia:graph1
+gplot(g)
+```
 
-f = (7x - 1)*(4x + 3)^2*(x^2 + 5x + 13)^5
-g = (4x + 3)*(x^3 - x - 1)^3*(x - 2)^2
+The common hard question is *the existence of a proper coloring with $k$ colors* for $k > 2$. In this section, we will show how the question can be tackled using the Groebner bases approach.
+
+The approach is to
+
+- Establish relation between *k-coloring* and *system of polynomial equations*
+- Solve the system or prove unsolvable
+
+There are two types of polynomials forming a typical graph coloring system.
+
+First, for each vertex $j$ in a graph we assign variable $x_j$. To fix that each particular vertex $j$ has a color we construct `vertex polynomials` of form
+
+\[
+x_j^k - 1 = 0
+\]
+
+for each vertex $j$. Then one color out of $k$ is represented as one of the $k$th-roots of unity.
+
+Secondly, we must add $edge polynomials$ polynomials
+
+\[
+\frac{x_i^k - x_j^k}{x_i - x_j}
+\]
+
+for each $i \rightarrow j$ in edges to ensure two neighboring vertices do not share the same color. Such polynomial disallows that colors  $x_i$ and $x_j$ for two neighbors $i$ and $j$ coincide.
+
+Finally, solutions of a system constructed this way correspond to proper k-colorings in a 1 to 1 relation.
+
+```julia:graph2
+gplot(g)
+```
+
+The coloring system for k=3 in the graph above must contain vertex polynomials
+
+\[
+x_1^3 - 1, x_2^3 - 1, x_3^3 - 1, x_4^3 - 1
+\]
+
+and a bunch of edge polynomials. Note that adding $\frac{x_i^3 - x_j^3}{x_i - x_j}$ to a system is equivalent to adding $xi^2 + x_ix_j + x_j$.
+
+```julia:graph3
+_, (x1, x2, x3, x4) = QQ["x1","x2","x3","x4"]
+
+coloring_system = [
+  x1^3 - 1, x2^3 - 1, x3^3 - 1, x4^3 - 1,
+  x1^2 + x1*x2 + x2^2,
+  x1^2 + x1*x3 + x3^2,
+  x1^2 + x1*x4 + x4^2,
+  x2^2 + x2*x3 + x3^2,
+  x3^2 + x3*x4 + x4^2
+]
+
+groebner(coloring_system)
+```

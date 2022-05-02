@@ -74,9 +74,3 @@ system = [10*x1*x2^2 - 11*x1 + 10,
 
 groebner(system)
 ```
-
-## Constraints
-
-There are some limitations of the package we'd like to mention here.
-
-**[TODO]** Currently, it is not recommended to compute the basis for large (>3 variables) ideals with `:lex` ordering. The reason is that the implementation is optimized for degree orderings (`:deglex` or `:degrevlex`), but is quite bad for lexicographical ones. Please consider using degree orderings.
