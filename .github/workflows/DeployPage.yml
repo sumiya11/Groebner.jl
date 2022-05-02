@@ -1,4 +1,3 @@
-env: GKSwstype: "100"
 name: Build and Deploy
 on:
   push:
@@ -40,6 +39,8 @@ jobs:
             run(`$(npm_cmd()) install highlight.js purgecss`);
             import PkgPage;
             PkgPage.optimize(input="docs", output="")'
+      env: 
+            GKSwstype: "100"
     - name: Build and Deploy
       uses: JamesIves/github-pages-deploy-action@releases/v3
       with:
