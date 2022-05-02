@@ -255,16 +255,20 @@ In graph theory, Graph coloring is a problem of assigning a color to each vertex
 using Graphs # hide
 using GraphPlot # hide
 g = Graph(4) # hide
-add_edge!(g, 1, 2) # hide
-add_edge!(g, 1, 3) # hide
-add_edge!(g, 1, 4) # hide
-add_edge!(g, 2, 3) # hide
-add_edge!(g, 3, 4) # hide
+add_edge!(g, 1, 2); # hide
+add_edge!(g, 1, 3); # hide
+add_edge!(g, 1, 4); # hide
+add_edge!(g, 2, 3); # hide
+add_edge!(g, 3, 4); # hide
 ```
 
 ```julia:graph1
+# hideall
 gplot(g)
+savefig(joinpath(@OUTPUT, "graph.svg"));
 ```
+
+\fig{graph}
 
 The common hard question is *the existence of a proper coloring with $k$ colors* for $k > 2$. In this section, we will show how the question can be tackled using the Groebner bases approach.
 
@@ -275,15 +279,15 @@ The approach is to
 
 There are two types of polynomials forming a typical graph coloring system.
 
-First, for each vertex $j$ in a graph we assign variable $x_j$. To fix that each particular vertex $j$ has a color we construct `vertex polynomials` of form
+First, for each vertex $j$ in a graph we assign variable $x_j$. To fix that each particular vertex $j$ has a color we construct *vertex polynomials* of form
 
 \[
 x_j^k - 1 = 0
 \]
 
-for each vertex $j$. Then one color out of $k$ is represented as one of the $k$th-roots of unity.
+for each vertex $j$. Then one color out of $k$ is represented as one of the $k$-th roots of unity.
 
-Secondly, we must add $edge polynomials$ polynomials
+Secondly, we must add *edge polynomials* polynomials
 
 \[
 \frac{x_i^k - x_j^k}{x_i - x_j}
@@ -300,10 +304,10 @@ gplot(g)
 The coloring system for k=3 in the graph above must contain vertex polynomials
 
 \[
-x_1^3 - 1, x_2^3 - 1, x_3^3 - 1, x_4^3 - 1
+\{ x_1^3 - 1,~ x_2^3 - 1,~ x_3^3 - 1,~ x_4^3 - 1 \}
 \]
 
-and a bunch of edge polynomials. Note that adding $\frac{x_i^3 - x_j^3}{x_i - x_j}$ to a system is equivalent to adding $xi^2 + x_ix_j + x_j$.
+and a bunch of edge polynomials. Note that adding $\frac{x_i^3 - x_j^3}{x_i - x_j}$ to a system is equivalent to adding $x_i^2 + x_ix_j + x_j$.
 
 ```julia:graph3
 _, (x1, x2, x3, x4) = QQ["x1","x2","x3","x4"]
