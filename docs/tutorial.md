@@ -266,8 +266,11 @@ add_edge!(g, 3, 4); # hide
 
 ```julia:graph1
 # hideall
-gplot(g)
-draw(SVG(joinpath(@OUTPUT, "graph.svg"), 16cm, 16cm), gplot(g));
+xs = [0.5, 1.0, 0.5, 0.0]
+ys = [-sqrt(3) / 6, 0.0, -1.0, 0.0]
+nodelabeldist = 1.5
+nodelabel = collect(1:4)
+draw(SVG(joinpath(@OUTPUT, "graph.svg"), 16cm, 16cm), gplot(g, xs, ys, nodelabel=nodelabel, nodelabeldist=nodelabeldist));
 ```
 
 \fig{graph}
@@ -299,10 +302,6 @@ for each $i \rightarrow j$ in edges to ensure two neighboring vertices do not sh
 
 Finally, solutions of a system constructed this way correspond to proper k-colorings in a 1 to 1 relation.
 
-```julia:graph2
-draw(SVG(joinpath(@OUTPUT, "graph.svg"), 16cm, 16cm), gplot(g));
-```
-
 The coloring system for k=3 in the graph above must contain vertex polynomials
 
 \[
@@ -326,6 +325,17 @@ coloring_system = [
 groebner(coloring_system)
 ```
 
-Wow cool !
+From the `x2 - x4` equation we understand 2nd and 4th vertices should be of the same color. It only remains to assign colors to the remaining vertices
 
-draw(SVG(joinpath(@OUTPUT, "graph.svg"), 16cm, 16cm), gplot(g));
+```julia:graph4
+# hideall
+nodefillc = ["red", "blue", "green", "blue"]
+
+xs = [0.5, 1.0, 0.5, 0.0]
+ys = [-sqrt(3) / 6, 0.0, -1.0, 0.0]
+nodelabeldist = 1.5
+nodelabel = collect(1:4)
+draw(SVG(joinpath(@OUTPUT, "graphcolored.svg"), 16cm, 16cm), gplot(g, xs, ys, nodelabel=nodelabel, nodelabeldist=nodelabeldist, nodefillc=nodefillc));
+```
+
+\fig{graphcolored}
