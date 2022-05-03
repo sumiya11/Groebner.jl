@@ -28,6 +28,8 @@ using Compose # hide
 
 ## Intro
 
+The following contains a small tutorial on basics and interesting usecases of Groebner bases provided with the code from `Groebner.jl`.
+
 Introduced by Buchberger in 1965 for handling quotient space of Ideals algorithmically, Groebner bases are excellent for **variable elimination, system solving**, and many more. Among others, Groebner bases find applications in
 
 - Robotics
@@ -37,19 +39,7 @@ Introduced by Buchberger in 1965 for handling quotient space of Ideals algorithm
 
 The following tutorials will give a short introduction to Groebner basis ground theory, and cover some random interesting showcases.
 
-## Note on the Implementation
-
-Computing Groebner bases largely depends on a single iterative algorithm, known as **Buchbergers algorithm**. Modified and optimized versions of this algorithm are crucial for many Computer Algebra Systems (*e.g., Singular, Maple, Mathematica, Sage*).
-
-The Buchbergers algorithm is exponential by its nature, so a variety of insights, heuristics, and good software engineering practices is required to produce a usable implementation.   
-
-Our package implements **F4 algorithm**, which is a modification of the Buchbergers. The performance of the implementation comes from thoughtful polynomial representation, monomial hashing, lightning-fast linear algebra, and technical modular algorithms.
-
-It's important to mention that a lot of implementation insights we use in this package were introduced by Jérémy Berthomieu, Christian Eder and Mohab Safey El Din in [[1]](https://arxiv.org/abs/2104.03572).
-
-TODO: split the following into separate pages.
-
-## So, what is a Groebner basis?
+### So, what is a Groebner basis?
 
 A set of polynomials $F = \{f_1, \ldots, f_m \}$ generates an **infinite** set $I$:
 
@@ -98,7 +88,7 @@ normalform(G, f)    # divide f by G
 
 The normal form with respect to a Groebner basis is unique, and has in turn nice properties. We will discuss these in the following.
 
-## Useful Analogies
+## Back to the Classics
 
 ### Groebner basis is Gaussian Elimination
 
