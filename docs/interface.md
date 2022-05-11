@@ -8,8 +8,6 @@ where appropriate -->
 
 # Interface
 
-We export the following functions
-
 ```julia:load_groebner
 using Groebner # hide
 ```
@@ -21,3 +19,5 @@ using Groebner # hide
 {{doc normalform normalform fn}}
 
 {{doc fglm fglm fn}}
+
+{{doc kbase kbase fn}}

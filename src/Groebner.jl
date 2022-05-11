@@ -86,4 +86,8 @@ export groebner
 export isgroebner
 export normalform
 
+export fglm
+
+# export kbase
+
 end

@@ -47,6 +47,6 @@ end
 
     @includetests ["onthefly_order_change"]
 
-    @includetests ["core_fglm"]
+    @includetests ["core_fglm", "core_kbase"]
 
 end
