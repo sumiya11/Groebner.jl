@@ -29,13 +29,42 @@ function henrion5(;ground=QQ)
     R, (f1,f2,f3,f4,f5,t) = PolynomialRing(ground, ["f1","f2","f3","f4","f5","t"])
     fs = [
         2*f1*f2*f3*f4*f5-9823275,
-        21//5*f1*f2*f4*f5+16//5*f1*f3*f4*f5+9//5*f2*f3*f4*f5+24//5*f1*f2*f3*f5+5*f4*f3*f1*f2-4465125,
-        14//5*f4*f5*f1+14//5*f4*f5*f2+8//5*f3*f4*f5+18//5*f1*f2*f5+24//5*f1*f3*f5+18//5*f2*f3*f5+4*f3*f1*f2+6*f1*f2*f4+6*f3*f4*f1+4*f2*f3*f4-441486,
-        7//5*f4*f5+12//5*f5*f1+12//5*f5*f2+12//5*f5*f3+3*f1*f2+4*f3*f1+4*f4*f1+3*f2*f3+4*f4*f2+3*f3*f4-15498,
-        6//5*f5+2*f4+2*f3+2*f2+2*f1-215,
+        ground(21)//5*f1*f2*f4*f5+ground(16)//5*f1*f3*f4*f5+ground(9)//5*f2*f3*f4*f5+ground(24)//5*f1*f2*f3*f5+5*f4*f3*f1*f2-4465125,
+        ground(14)//5*f4*f5*f1+ground(14)//5*f4*f5*f2+ground(8)//5*f3*f4*f5+ground(18)//5*f1*f2*f5+ground(24)//5*f1*f3*f5+ground(18)//5*f2*f3*f5+4*f3*f1*f2+6*f1*f2*f4+6*f3*f4*f1+4*f2*f3*f4-441486,
+        ground(7)//5*f4*f5+ground(12)//5*f5*f1+ground(12)//5*f5*f2+ground(12)//5*f5*f3+3*f1*f2+4*f3*f1+4*f4*f1+3*f2*f3+4*f4*f2+3*f3*f4-15498,
+        ground(6)//5*f5+2*f4+2*f3+2*f2+2*f1-215,
         f1+2*f2+3*f3+4*f4+5*f5+6*t
     ]
 end
+
+function henrion6(;ground=QQ)
+    R, (f1,f2,f3,f4,f5,f6) = PolynomialRing(ground, ["f1","f2","f3","f4","f5","f6"])
+
+    fs = [
+        2*f1*f2*f3*f4*f5*f6-1404728325,
+        6*f5*f4*f3*f1*f2+ground(11)//6*f2*f3*f4*f5*f6+ground(16)//3*f1*f2*f3*f5*f6+ground(9)//2*f1*f2*f4*f5*f6+ground(10)//3*f1*f3*f4*f5*f6+ground(35)//6*f1*f2*f3*f4*f6-648336150,
+        5*f4*f3*f1*f2+5*f2*f3*f4*f5+ground(5)//3*f3*f4*f5*f6+8*f1*f2*f3*f5+9*f1*f2*f4*f5+8*f1*f3*f4*f5+4*f1*f2*f5*f6+ground(16)//3*f1*f3*f5*f6+3*f1*f4*f5*f6+4*f2*f3*f5*f6+3*f2*f4*f5*f6+ground(14)//3*f1*f2*f3*f6+7*f1*f2*f4*f6+7*f1*f3*f4*f6+ground(14)//3*f2*f3*f4*f6-67597623,
+        6*f1*f2*f5+8*f1*f3*f5+6*f2*f3*f5+ground(8)//3*f5*f6*f3+ground(8)//3*f5*f6*f2+ground(8)//3*f5*f6*f1+ground(7)//2*f1*f2*f6+ground(14)//3*f1*f3*f6+ground(14)//3*f1*f4*f6+ground(7)//2*f2*f3*f6+ground(14)//3*f2*f4*f6+ground(7)//2*f3*f4*f6+6*f4*f5*f1+ground(3)//2*f4*f5*f6+4*f3*f1*f2+4*f2*f3*f4+6*f3*f4*f1+4*f3*f4*f5+6*f1*f2*f4+6*f4*f5*f2-2657700,
+        ground(4)//3*f5*f6+ground(7)//3*f6*f1+ground(7)//3*f6*f2+ground(7)//3*f6*f3+ground(7)//3*f6*f4+3*f1*f2+4*f3*f1+4*f4*f1+4*f5*f1+3*f2*f3+4*f4*f2+4*f5*f2+3*f3*f4+4*f5*f3+3*f4*f5-46243,
+        ground(7)//6*f6+2*f5+2*f4+2*f3+2*f2+2*f1-358
+    ]
+end
+
+function henrion7(;ground=QQ)
+    R, (f1,f2,f3,f4,f5,f6,f7) = PolynomialRing(ground, ["f1","f2","f3","f4","f5","f6","f7"])
+
+    fs = [
+        2*f1*f2*f3*f4*f5*f6*f7-273922023375,
+        ground(45)//7*f1*f2*f3*f4*f6*f7+ground(40)//7*f1*f2*f3*f5*f6*f7+ground(33)//7*f1*f2*f4*f5*f6*f7+ground(24)//7*f1*f3*f4*f5*f6*f7+ground(48)//7*f1*f2*f3*f4*f5*f7+7*f6*f5*f4*f3*f1*f2+ground(13)//7*f2*f3*f4*f5*f6*f7-127830277575,
+        6*f5*f4*f3*f1*f2+6*f2*f3*f4*f5*f6+ground(12)//7*f3*f4*f5*f6*f7+10*f1*f2*f3*f4*f6+12*f1*f2*f3*f5*f6+12*f1*f2*f4*f5*f6+10*f1*f3*f4*f5*f6+ground(36)//7*f1*f2*f3*f6*f7+ground(54)//7*f1*f2*f4*f6*f7+ground(30)//7*f1*f2*f5*f6*f7+ground(54)//7*f1*f3*f4*f6*f7+ground(40)//7*f1*f3*f5*f6*f7+ground(22)//7*f1*f4*f5*f6*f7+ground(36)//7*f2*f3*f4*f6*f7+ground(30)//7*f2*f3*f5*f6*f7+ground(22)//7*f2*f4*f5*f6*f7+ground(40)//7*f1*f2*f3*f4*f7+ground(64)//7*f1*f2*f3*f5*f7+ground(72)//7*f1*f2*f4*f5*f7+ground(64)//7*f1*f3*f4*f5*f7+ground(40)//7*f2*f3*f4*f5*f7-13829872635,
+        -585849123+5*f4*f3*f1*f2+5*f2*f3*f4*f5+5*f3*f4*f5*f6+8*f1*f2*f3*f5+9*f1*f2*f4*f5+8*f1*f3*f4*f5+ground(11)//7*f4*f5*f6*f7+8*f1*f2*f3*f6+12*f1*f2*f4*f6+9*f1*f2*f5*f6+12*f1*f3*f4*f6+12*f1*f3*f5*f6+8*f1*f4*f5*f6+8*f2*f3*f4*f6+9*f2*f3*f5*f6+8*f2*f4*f5*f6+ground(27)//7*f1*f2*f6*f7+ground(36)//7*f1*f3*f6*f7+ground(36)//7*f1*f4*f6*f7+ground(20)//7*f1*f5*f6*f7+ground(27)//7*f2*f3*f6*f7+ground(36)//7*f2*f4*f6*f7+ground(20)//7*f2*f5*f6*f7+ground(27)//7*f3*f4*f6*f7+ground(20)//7*f3*f5*f6*f7+ground(32)//7*f1*f2*f3*f7+ground(48)//7*f1*f2*f4*f7+ground(48)//7*f1*f2*f5*f7+ground(48)//7*f1*f3*f4*f7+ground(64)//7*f1*f3*f5*f7+ground(48)//7*f1*f4*f5*f7+ground(32)//7*f2*f3*f4*f7+ground(48)//7*f2*f3*f5*f7+ground(48)//7*f2*f4*f5*f7+ground(32)//7*f3*f4*f5*f7,
+        -11675085+6*f1*f2*f6+8*f1*f3*f6+8*f1*f4*f6+6*f2*f3*f6+8*f2*f4*f6+6*f3*f4*f6+ground(18)//7*f6*f7*f4+ground(18)//7*f6*f7*f3+ground(18)//7*f6*f7*f2+ground(18)//7*f6*f7*f1+ground(24)//7*f1*f2*f7+ground(32)//7*f1*f3*f7+ground(32)//7*f1*f4*f7+ground(32)//7*f1*f5*f7+ground(24)//7*f2*f3*f7+ground(32)//7*f2*f4*f7+ground(32)//7*f2*f5*f7+ground(24)//7*f3*f4*f7+ground(32)//7*f3*f5*f7+ground(24)//7*f4*f5*f7+
+        ground(10)//7*f5*f6*f7+6*f1*f2*f5+8*f1*f3*f5+6*f2*f3*f5+6*f5*f6*f3+6*f5*f6*f2+6*f5*f6*f1+6*f1*f2*f4+6*f4*f5*f2+6*f4*f5*f1+4*f4*f5*f6+6*f3*f4*f1+4*f3*f4*f5+4*f3*f1*f2+4*f2*f3*f4,
+        ground(9)//7*f6*f7+ground(16)//7*f7*f1+ground(16)//7*f7*f2+ground(16)//7*f7*f3+ground(16)//7*f7*f4+ground(16)//7*f7*f5+3*f1*f2+4*f3*f1+4*f4*f1+4*f5*f1+4*f6*f1+3*f2*f3+4*f4*f2+4*f5*f2+4*f6*f2+3*f3*f4+4*f5*f3+4*f6*f3+3*f4*f5+4*f6*f4+3*f5*f6-116053,
+        ground(8)//7*f7+2*f6+2*f5+2*f4+2*f3+2*f2+2*f1-553
+    ]
+end
+
 
 function katsura6(;ground=QQ)
     R, (x1, x2, x3, x4, x5, x6, x7) = PolynomialRing(ground, ["x$i" for i in 1:7])

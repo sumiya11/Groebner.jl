@@ -3,7 +3,7 @@ import Singular
 import AbstractAlgebra
 
 using BenchmarkTools
-using Groebner
+include("../src/Groebner.jl")
 
 using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error))
@@ -19,7 +19,7 @@ function benchmark_system_my(system)
 
     # @btime gb = Groebner.groebner($system, reduced=false)
 
-    bench = @benchmarkable Groebner.groebner($system, reduced=false, linalg=:prob) samples=5
+    bench = @benchmarkable Groebner.groebner($system, linalg=:prob) samples=5
     println(median(run(bench)))
 end
 
@@ -42,7 +42,7 @@ function benchmark_system_singular(system)
     Singular.std(Singular.Ideal(R_s, [system_s[1]]))
 
     # @btime gb = Singular.std($ideal_s, complete_reduction=false)
-    bench = @benchmarkable  Singular.std($ideal_s, complete_reduction=false) samples=5
+    bench = @benchmarkable  Singular.std($ideal_s) samples=5
     println(median(run(bench)))
 end
 
@@ -59,7 +59,10 @@ function run_f4_ff_degrevlex_benchmarks(ground)
         ("eco 13",Groebner.eco13(ground=ground)),         # 17    vs 4102
         ("noon 7"    ,Groebner.noonn(7, ground=ground)),  # 0.19  vs 0.36
         ("noon 8"    ,Groebner.noonn(8, ground=ground)),  # 1.8   vs 3.2
-        ("noon 9"    ,Groebner.noonn(9, ground=ground))   # 18.1  vs 33.3
+        ("noon 9"    ,Groebner.noonn(9, ground=ground)),   # 18.1  vs 33.3
+        ("henrion 5"    ,Groebner.henrion5(ground=ground)),  # 0.19  vs 0.36
+        ("henrion 6"    ,Groebner.henrion6(8, ground=ground)),  # 1.8   vs 3.2
+        ("henrion 7"    ,Groebner.henrion7(9, ground=ground))   # 18.1  vs 33.3
     ]
 
     for (name, system) in systems
