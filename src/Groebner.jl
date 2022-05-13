@@ -3,6 +3,28 @@ module Groebner
 
 debug() = false
 
+PRIMES = 0
+F4TIME = 0.0
+RECTIME = 0.0
+CORRTIME = 0.0
+
+function printall()
+    global PRIMES
+    global F4TIME
+    global RECTIME
+    global CORRTIME
+    s = sum((F4TIME, RECTIME, CORRTIME))
+    println("run success,")
+    println("PRIMES = $PRIMES")
+    println("F4TIME = $(F4TIME/s)")
+    println("RECTIME = $(RECTIME/s)")
+    println("CORRTIME = $(CORRTIME/s)")
+    PRIMES = 0
+    F4TIME = 0.0
+    RECTIME = 0.0
+    CORRTIME = 0.0
+end
+
 # most of these are not needed
 # TODO
 import AbstractAlgebra

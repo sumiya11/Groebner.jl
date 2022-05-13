@@ -2,6 +2,8 @@
 import Singular
 import AbstractAlgebra
 
+using Base.Threads
+
 using BenchmarkTools
 include("../src/Groebner.jl")
 
@@ -46,6 +48,20 @@ function benchmark_system_singular(system)
     println(median(run(bench)))
 end
 
+function handle_system_my(name, system)
+    println("---------------\n$name")
+    println("my")
+    benchmark_system_my(system)
+    println("---------------")
+end
+
+function handle_system_singular(name, system)
+    println("---------------\n$name")
+    println("singular")
+    benchmark_system_singular(system)
+    println("---------------")
+end
+
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
         ("cyclic 12", Groebner.rootn(12, ground=ground)), # 0.06 vs 0.01
@@ -61,17 +77,15 @@ function run_f4_ff_degrevlex_benchmarks(ground)
         ("noon 8"    ,Groebner.noonn(8, ground=ground)),  # 1.8   vs 3.2
         ("noon 9"    ,Groebner.noonn(9, ground=ground)),   # 18.1  vs 33.3
         ("henrion 5"    ,Groebner.henrion5(ground=ground)),  # 0.19  vs 0.36
-        ("henrion 6"    ,Groebner.henrion6(8, ground=ground)),  # 1.8   vs 3.2
-        ("henrion 7"    ,Groebner.henrion7(9, ground=ground))   # 18.1  vs 33.3
+        ("henrion 6"    ,Groebner.henrion6(ground=ground)),  # 1.8   vs 3.2
+        ("henrion 7"    ,Groebner.henrion7(ground=ground))   # 18.1  vs 33.3
     ]
 
     for (name, system) in systems
-        println("-----------\n$name")
-        println("my")
-        benchmark_system_my(system)
-        println("singular")
-        benchmark_system_singular(system)
-        println("-----------")
+        task1 = @spawn handle_system_my(name, system)
+        task2 = @spawn handle_system_singular(name, system)
+        wait(task1)
+        wait(task2)
     end
 end
 

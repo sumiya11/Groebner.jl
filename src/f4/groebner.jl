@@ -127,21 +127,45 @@ function groebner_qq(
         #=
         Need to make sure input invariants in f4! are satisfied, f4.jl for details
         =#
-        f4!(ring, gens_ff, ht, reduced, meta.linalg)
+
+        # ADDED
+        global F4TIME
+        # ADDED
+        F4TIME += @elapsed f4!(ring, gens_ff, ht, reduced, meta.linalg)
+        # f4!(ring, gens_ff, ht, reduced, meta.linalg)
 
         # reconstruct into integers
         @info "CRT modulo ($(primetracker.modulo), $(prime))"
-        reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
+
+        # ADDED
+        global RECTIME
+        # ADDED
+        RECTIME += @elapsed reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
+        # reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
 
         # reconstruct into rationals
         @info "Reconstructing modulo $(primetracker.modulo)"
-        reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
+        # ADDED
+        RECTIME += @elapsed reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
+        # reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
 
+        # ADDED
+        global CORRTIME
+        t = time()
+        if correctness_check!(coeffaccum, coeffbuffer, primetracker, meta,
+                                ring, exps, coeffs, coeffs_zz, gens_temp_ff, gens_ff, ht)
+            @info "Success!"
+            CORRTIME += time() - t
+            break
+        end
+        CORRTIME += time() - t
+        #=
         if correctness_check!(coeffaccum, coeffbuffer, primetracker, meta,
                                 ring, exps, coeffs, coeffs_zz, gens_temp_ff, gens_ff, ht)
             @info "Success!"
             break
         end
+        =#
 
         # copy basis so that we initial exponents dont get lost
         gens_ff = copy_basis_thorough(gens_temp_ff)
@@ -154,6 +178,10 @@ function groebner_qq(
         fglm_f4!(ring, gens_ff, ht)
     end
     =#
+
+    # ADDED
+    global PRIMES
+    PRIMES = i
 
     # normalize_coeffs!(gbcoeffs_qq)
     gb_exps = hash_to_exponents(gens_ff, ht)
