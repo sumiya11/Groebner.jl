@@ -109,7 +109,6 @@ export isgroebner
 export normalform
 
 export fglm
-
-# export kbase
+export kbase
 
 end

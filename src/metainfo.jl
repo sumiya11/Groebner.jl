@@ -44,6 +44,7 @@ function set_metaparameters(ring, ordering, certify, forsolve, linalg)
     end
 
     heuristiccheck = true
+    # heuristiccheck = false
     randomizedcheck = true
     if certify
         guaranteedcheck = true

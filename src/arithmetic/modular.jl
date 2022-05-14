@@ -130,11 +130,14 @@ function rational_reconstruction!(
     Base.GMP.MPZ.set!(den, v2)
     Base.GMP.MPZ.set!(num, v3)
 
-    # TODO
+    #=
+    num and den are obviously coprime,
+    gcd is not nessesary
 
     Base.GMP.MPZ.gcd!(buf, den, num)
     Base.GMP.MPZ.tdiv_q!(den, buf)
     Base.GMP.MPZ.tdiv_q!(num, buf)
+    =#
 
     if Base.GMP.MPZ.cmp_ui(den, 0) < 0
         Base.GMP.MPZ.neg!(den)

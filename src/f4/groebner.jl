@@ -81,7 +81,6 @@ function groebner_qq(
             meta::GroebnerMetainfo) where {Rng<:Random.AbstractRNG}
 
     # we can mutate coeffs and exps here
-    # TODO: and we should do it
 
     # select hashtable size
     tablesize = select_tablesize(ring, exps)
@@ -109,46 +108,100 @@ function groebner_qq(
     primetracker = PrimeTracker(coeffs_zz)
 
     #=
-        coeffs and coeffs_zz should be *unchanged* during whole computation
+        exps, coeffs and coeffs_zz must be *not changed* during whole computation
     =#
 
     i = 1
-    while true
-        prime = nextluckyprime!(primetracker)
-        @info "$i: selected lucky prime $prime"
 
-        # perform reduction and store result in gens_ff
-        reduce_modulo!(coeffbuffer, coeffs_zz, gens_ff.coeffs, prime)
+    # copy basis so that we initial exponents dont get lost
+    gens_ff = copy_basis_thorough(gens_temp_ff)
 
-        # do some things to ensure generators are correct
-        cleanup_gens!(ring, gens_ff, prime)
+    prime = nextluckyprime!(primetracker)
+    @info "$i: selected lucky prime $prime"
 
-        # compute groebner basis in finite field
-        #=
-        Need to make sure input invariants in f4! are satisfied, f4.jl for details
-        =#
+    # perform reduction and store result in gens_ff
+    reduce_modulo!(coeffbuffer, coeffs_zz, gens_ff.coeffs, prime)
 
-        # ADDED
-        global F4TIME
-        # ADDED
-        F4TIME += @elapsed f4!(ring, gens_ff, ht, reduced, meta.linalg)
-        # f4!(ring, gens_ff, ht, reduced, meta.linalg)
+    # do some things to ensure generators are correct
+    cleanup_gens!(ring, gens_ff, prime)
 
-        # reconstruct into integers
-        @info "CRT modulo ($(primetracker.modulo), $(prime))"
+    # compute groebner basis in finite field
+    #=
+    Need to make sure input invariants in f4! are satisfied, f4.jl for details
+    =#
 
-        # ADDED
-        global RECTIME
-        # ADDED
-        RECTIME += @elapsed reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
-        # reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
+    # ADDED
+    global F4TIME
+    # ADDED
+    F4TIME += @elapsed f4!(ring, gens_ff, ht, reduced, meta.linalg)
+    # f4!(ring, gens_ff, ht, reduced, meta.linalg)
+
+    # reconstruct into integers
+    @info "CRT modulo ($(primetracker.modulo), $(prime))"
+
+    # ADDED
+    global RECTIME
+    # ADDED
+    RECTIME += @elapsed reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
+    # reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
+
+    # reconstruct into rationals
+    @info "Reconstructing modulo $(primetracker.modulo)"
+    # ADDED
+    RECTIME += @elapsed reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
+    # reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
+
+    correct = false
+    # ADDED
+    global CORRTIME
+    t = time()
+    if correctness_check!(coeffaccum, coeffbuffer, primetracker, meta,
+                            ring, exps, coeffs, coeffs_zz, gens_temp_ff, gens_ff, ht)
+        @info "Success!"
+        CORRTIME += time() - t
+        correct = true
+    end
+    CORRTIME += time() - t
+
+    gap = 2
+    # if first prime was not successfull
+    while !correct
+        for j in 1:gap
+            i += 1
+
+            # copy basis so that we initial exponents dont get lost
+            gens_ff = copy_basis_thorough(gens_temp_ff)
+            prime = nextluckyprime!(primetracker)
+            @info "$i: selected lucky prime $prime"
+            # perform reduction and store result in gens_ff
+            reduce_modulo!(coeffbuffer, coeffs_zz, gens_ff.coeffs, prime)
+            # do some things to ensure generators are correct
+            cleanup_gens!(ring, gens_ff, prime)
+            # compute groebner basis in finite field
+            #=
+            Need to make sure input invariants in f4! are satisfied, f4.jl for details
+            =#
+            # ADDED
+            global F4TIME
+            # ADDED
+            F4TIME += @elapsed f4!(ring, gens_ff, ht, reduced, meta.linalg)
+            # f4!(ring, gens_ff, ht, reduced, meta.linalg)
+            # reconstruct into integers
+            @info "CRT modulo ($(primetracker.modulo), $(prime))"
+            # ADDED
+            global RECTIME
+            # ADDED
+            RECTIME += @elapsed reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
+
+            println(coeffaccum)
+            # reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
+        end
 
         # reconstruct into rationals
         @info "Reconstructing modulo $(primetracker.modulo)"
         # ADDED
         RECTIME += @elapsed reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
         # reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
-
         # ADDED
         global CORRTIME
         t = time()
@@ -156,7 +209,7 @@ function groebner_qq(
                                 ring, exps, coeffs, coeffs_zz, gens_temp_ff, gens_ff, ht)
             @info "Success!"
             CORRTIME += time() - t
-            break
+            correct = true
         end
         CORRTIME += time() - t
         #=
@@ -166,11 +219,7 @@ function groebner_qq(
             break
         end
         =#
-
-        # copy basis so that we initial exponents dont get lost
-        gens_ff = copy_basis_thorough(gens_temp_ff)
-
-        i += 1
+        gap *= 2
     end
 
     #=

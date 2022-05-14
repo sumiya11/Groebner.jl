@@ -12,10 +12,9 @@ function correctness_check!(coeffaccum, coeffbuffer, primetracker, meta,
         @info "Heuristic check passed!"
     end
 
-    goodprime = nextgoodprime!(primetracker)
     if meta.randomizedcheck
         if !randomized_correctness_check!(coeffbuffer, coeffaccum, ring,
-                                            coeffs_zz, gens_temp_ff, gb_ff, goodprime, ht)
+                                            coeffs_zz, gens_temp_ff, gb_ff, primetracker, ht)
             @info "Randomized check failed."
             return false
         end
@@ -56,7 +55,10 @@ end
 # TODO: cleanup
 function randomized_correctness_check!(
             coeffbuffer, coeffaccum,
-            ring, coeffs_zz, gens_temp_ff, gb_ff, goodprime, ht)
+            ring, coeffs_zz, gens_temp_ff, gb_ff, primetracker, ht)
+
+
+    goodprime = nextgoodprime!(primetracker)
 
     reduce_modulo!(coeffbuffer, coeffs_zz, gens_temp_ff.coeffs, goodprime)
     gens_ff_copy = copy_basis_thorough(gens_temp_ff)
@@ -87,6 +89,10 @@ function randomized_correctness_check!(
 
     return true
 end
+
+#------------------------------------------------------------------------------
+
+
 
 #------------------------------------------------------------------------------
 
