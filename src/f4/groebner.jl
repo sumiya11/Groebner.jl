@@ -192,8 +192,6 @@ function groebner_qq(
             global RECTIME
             # ADDED
             RECTIME += @elapsed reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
-
-            println(coeffaccum)
             # reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
         end
 
