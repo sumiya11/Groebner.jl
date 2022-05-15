@@ -38,10 +38,13 @@ end
 =#
 mutable struct CoeffAccum
     gb_coeffs_zz::Vector{Vector{CoeffZZ}}
+    prev_gb_coeffs_zz::Vector{Vector{CoeffZZ}}
     gb_coeffs_qq::Vector{Vector{CoeffQQ}}
 
     function CoeffAccum()
-        new(Vector{Vector{CoeffZZ}}(undef, 0), Vector{Vector{CoeffZZ}}(undef, 0))
+        new(Vector{Vector{CoeffZZ}}(undef, 0),
+            Vector{Vector{CoeffZZ}}(undef, 0),
+            Vector{Vector{CoeffZZ}}(undef, 0))
     end
 end
 
@@ -173,9 +176,11 @@ end
 
 function resize_accum!(coeffaccum::CoeffAccum, gb_coeffs)
     resize!(coeffaccum.gb_coeffs_zz, length(gb_coeffs))
+    resize!(coeffaccum.prev_gb_coeffs_zz, length(gb_coeffs))
     resize!(coeffaccum.gb_coeffs_qq, length(gb_coeffs))
     @inbounds for i in 1:length(gb_coeffs)
         coeffaccum.gb_coeffs_zz[i] = [CoeffZZ(0) for _ in 1:length(gb_coeffs[i])]
+        coeffaccum.prev_gb_coeffs_zz[i] = [CoeffZZ(0) for _ in 1:length(gb_coeffs[i])]
         coeffaccum.gb_coeffs_qq[i] = [CoeffQQ(0) for _ in 1:length(gb_coeffs[i])]
     end
 end
@@ -216,6 +221,14 @@ function reconstruct_crt!(
         reconstruct_trivial_crt!(coeffbuff, coeffaccum, gb_coeffs_ff)
     else
         gb_coeffs_zz = coeffaccum.gb_coeffs_zz
+        prev_gb_coeffs_zz = coeffaccum.prev_gb_coeffs_zz
+
+        # copy to previous gb coeffs
+        for i in 1:length(gb_coeffs_zz)
+            for j in 1:length(gb_coeffs_zz[i])
+                Base.GMP.MPZ.set!(prev_gb_coeffs_zz[i][j], gb_coeffs_zz[i][j])
+            end
+        end
 
         buf = coeffbuff.reconstructbuf1
         n1, n2 = coeffbuff.reconstructbuf2, coeffbuff.reconstructbuf3

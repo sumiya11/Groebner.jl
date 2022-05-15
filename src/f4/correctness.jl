@@ -92,7 +92,29 @@ end
 
 #------------------------------------------------------------------------------
 
-
+function crt_issame_check!(coeffbuffer, coeffaccum, gbcoeffs_ff,
+                                        modulo, prime)
+    prevcoeffs = coeffaccum.prev_gb_coeffs_zz
+    currcoeffs = coeffaccum.gb_coeffs_zz
+    prevmodulo = div(modulo, prime)
+    println("In same check")
+    println(prevcoeffs)
+    println(prevmodulo)
+    println(currcoeffs)
+    println(modulo)
+    for i in 1:length(prevcoeffs)
+        @inbounds for j in 1:length(prevcoeffs[i])
+            if currcoeffs[i][j] != prevcoeffs[i][j]
+                if (modulo - currcoeffs[i][j]) != (prevmodulo - prevcoeffs[i][j])
+                    # if (currcoeffs[i][j] % prevmodulo) != prevcoeffs[i][j]
+                        return false
+                    # end
+                end
+            end
+        end
+    end
+    return true
+end
 
 #------------------------------------------------------------------------------
 

@@ -12,6 +12,7 @@
         FIRST_LUCKY_PRIME and FIRST_GOOD_PRIME
 =#
 
+# const FIRST_LUCKY_PRIME = 2^31 - 1
 const FIRST_LUCKY_PRIME = 2^31 - 1
 const FIRST_GOOD_PRIME  = 2^30 + 3
 
@@ -85,7 +86,7 @@ function nextgoodprime!(tracker::PrimeTracker)
     end
 
     if prime >= FIRST_LUCKY_PRIME
-        error("Too large coefficient encountered in the basis. This should not happen normally")
+        # @warn "Too large coefficient encountered in the basis. This should not happen normally, please sumbit an issue"
     end
 
     tracker.goodprime = nextprime(prime + 1)

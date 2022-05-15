@@ -157,9 +157,9 @@ end
 
     Additional params:
         M   = m1*m2
-        buf = a buffer
-        n1  = a buffer
-        n2  = a buffer
+        buf = buffer
+        n1  = buffer
+        n2  = buffer
 =#
 function CRT!(
             M::BigInt, buf::BigInt, n1::BigInt, n2::BigInt,

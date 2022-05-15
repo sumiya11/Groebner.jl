@@ -163,9 +163,18 @@ function groebner_qq(
     end
     CORRTIME += time() - t
 
-    gap = 2
+    gap = 1
+    primegaps = (1, 1, 1, 1)
+    primemult = 2
     # if first prime was not successfull
     while !correct
+
+        if i <= length(primegaps)
+            gap = primegaps[i]
+        else
+            gap = gap*primemult
+        end
+
         for j in 1:gap
             i += 1
 
@@ -191,8 +200,52 @@ function groebner_qq(
             # ADDED
             global RECTIME
             # ADDED
-            RECTIME += @elapsed reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
+
+            # ADDED
+            # prevcoeffs = deepcopy(coeffaccum.gb_coeffs_zz)
+
+            RECTIME += @elapsed reconstruct_crt!(coeffbuffer, coeffaccum,
+                                        primetracker, gens_ff.coeffs, prime)
             # reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
+
+            #=
+            -----------------------------------
+            Given r1, r2, and m1, m2, so that
+                r1 ≡ 1/b1 (mod m1)
+                r2 ≡ 1/b2 (mod m2)
+            Determine if b1 = b2
+            -----------------------------------
+
+            Easy:
+            b1 is inverse of r1 mod m1;
+            b2 is inverse of r2 mod m2;
+
+            then check equality
+            =#
+
+            #=
+            -----------------------------------
+            We go further.
+            Given r1, r2, and m1, m2, so that
+                r1 ≡ a1/b1 (mod m1)
+                r2 ≡ a2/b2 (mod m2)
+            Determine if a1 = a2 and b1 = b2
+            -----------------------------------
+            r1*b1 ≡ a1 (mod m1),
+            r2*b2 ≡ a2 (mod m2),
+
+            r1*b1 * r2*b2 = a1*a2 (mod m1*m2)
+            =#
+
+            #=
+            if j != gap
+                if crt_issame_check!(coeffbuffer, coeffaccum,
+                                gens_ff.coeffs, primetracker.modulo, prime)
+                    @info "CRT same check passed!"
+                    break
+                end
+            end
+            =#
         end
 
         # reconstruct into rationals
@@ -217,7 +270,6 @@ function groebner_qq(
             break
         end
         =#
-        gap *= 2
     end
 
     #=
