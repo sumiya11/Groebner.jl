@@ -1,4 +1,7 @@
 
+include("../src/Groebner.jl")
+
+
 if !isdefined(Main, :Groebner)
     import Groebner
 end

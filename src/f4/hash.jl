@@ -15,7 +15,7 @@ function insert_in_hash_table!(ht::MonomialHashtable, e::ExponentVector)
 
     @label Restart
     while i < ht.size
-        hidx = hashnextindex(he, i, mod)
+        hidx = hashnextindex(UInt32(hidx), i, mod)
         @inbounds vidx  = ht.hashtable[hidx]
 
         # if free
@@ -269,7 +269,7 @@ function insert_multiplied_poly_in_hash_table!(
 
         @label Restart
         while i <= symbol_ht.size  # TODO: < or <= ?
-            k = hashnextindex(h, i, mod)
+            k = hashnextindex(k, i, mod)
 
             @inbounds vidx = symbol_ht.hashtable[k]
             # if index is free
@@ -398,7 +398,7 @@ function insert_in_basis_hash_table_pivots(
         i = UInt32(1)
         @label Restart
         while i <= ht.size
-            k = hashnextindex(h, i, mod)
+            k = hashnextindex(k, i, mod)
             hm = bhash[k]
 
             hm == 0 && break
@@ -472,7 +472,7 @@ function insert_plcms_in_basis_hash_table!(
         i = UInt32(1)
         @label Restart
         while i <= ht.size
-            k = hashnextindex(h, i, mod)
+            k = hashnextindex(k, i, mod)
             hm = ht.hashtable[k]
 
             hm == 0 && break
