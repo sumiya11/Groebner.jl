@@ -105,7 +105,7 @@ using Primes
     ]
 
 
-    system = [x1 - (2^31-1)x2 - (x^30 + 3)x3]
+    system = [x1 - (2^31-1)*x2 - (2^30 + 3)*x3]
     @test Groebner.groebner(system) == system
 
 end

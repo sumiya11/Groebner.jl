@@ -232,7 +232,7 @@ function enlarge_hash_table!(ht::MonomialHashtable)
         he = ht.hashdata[i].hash
         hidx = he
         @inbounds for j in UInt32(1):UInt32(ht.size)
-            hidx = hashnextindex(hidx, j, mod)
+            hidx = hashnextindex(he, j, mod)
             ht.hashtable[hidx] != 0 && continue
             ht.hashtable[hidx] = i
             break
