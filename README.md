@@ -45,8 +45,8 @@ We compare the runtime of our implementation against the ones from `Singular` an
 
 |   System    |  Groebner.jl    | Singular | Maple |
 | :---:       | :---: | :----: |  :---:   |
-| [cyclic-12](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/cyclic12.txt)   | 0.29s  | **0.01s**    | 0.56s |
-| [cyclic-13](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/cyclic13.txt)   |  1.18s  | **0.03s**    | 2.43s |
+| [cyclic-7](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/cyclic12.txt)   | **0.1s**  | **2.4s**    | 0.56s |
+| [cyclic-8](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/cyclic13.txt)   |  **2.4s**  | 40s    | 2.43s |
 | [katsura-9](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/katsura9.txt)    | **0.10s**  | 1.13s    | 1.43s |
 | [katsura-10](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/katsura10.txt)  |  **0.69s**  | 9.92s   | 5.73s |
 | [eco-10](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/eco10.txt)   |  **0.17s**  | 3.22s   | 0.75s |
@@ -54,7 +54,7 @@ We compare the runtime of our implementation against the ones from `Singular` an
 | [noon-7](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/noon7.txt)      |  **0.20s**  | 0.40s    | 1.19s|
 | [noon-8](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/noon8.txt)      |  **1.88s**  | 3.58s    | 8.05s |
 
-The bases are computed in `degrevlex` monomial ordering over finite fields with all operations single-threaded. Systems `cyclic-n` are special in a sense that majority of S-polynomials are redundant, and `Singular` succesfully detects it.
+The bases are computed in `degrevlex` monomial ordering over finite field of characteristic 2³¹-1 with all operations single-threaded.
 
 We emphasize that `Groebner.jl` is a specialized library while `Singular`
 and `Maple` are extensive general purpose computer algebra systems.

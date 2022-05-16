@@ -65,7 +65,7 @@ end
 # as soon as the numerator in rational reconstruction
 # exceeds this bound, the gcd iteration is stopped
 function rational_reconstruction_bound(modulo::BigInt)
-    setprecision(1000) do
+    setprecision(2*Base.GMP.MPZ.sizeinbase(modulo, 2)) do
         ceil(BigInt, sqrt(BigFloat(modulo) / 2))
     end
 end
@@ -183,7 +183,7 @@ function CRT!(
             M::BigInt, buf::BigInt, n1::BigInt, n2::BigInt,
             a1::BigInt, minv1::BigInt, a2::UInt, minv2::BigInt,
             m1::BigInt, m2::BigInt)
-            
+
     Base.GMP.MPZ.mul!(buf, m1, minv1)
     Base.GMP.MPZ.mul_ui!(n1, buf, a2)
 

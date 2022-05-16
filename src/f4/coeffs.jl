@@ -280,7 +280,7 @@ function reconstruct_modulo!(
     gb_coeffs_qq = coeffaccum.gb_coeffs_qq
 
     for i in 1:length(gb_coeffs_zz)
-        @inbounds for j in 1:length(gb_coeffs_zz[i])
+        @inbounds for j in 2:length(gb_coeffs_zz[i])
             cz = gb_coeffs_zz[i][j]
             cq = gb_coeffs_qq[i][j]
             num, den = numerator(cq), denominator(cq)

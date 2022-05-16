@@ -44,7 +44,7 @@ function maximal_quotient_rational_reconstruction(a::I, m::I) where {I<:Union{In
 
     steps = 0
 
-    T = 2^10 * log2(m)
+    T = 2^20 * log2(m)
 
     n, d = 0, 0
 
