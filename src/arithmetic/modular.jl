@@ -182,14 +182,16 @@ end
 =#
 function CRT!(
             M::BigInt, buf::BigInt, n1::BigInt, n2::BigInt,
-            a1::BigInt, m1::BigInt, a2::UInt, m2::BigInt)
+            a1::BigInt, minv1::BigInt, a2::UInt, minv2::BigInt,
+            m1::BigInt, m2::BigInt)
 
-    Base.GMP.MPZ.gcdext!(buf, n1, n2, m1, m2)
+    # TODO ADDED
+    # Base.GMP.MPZ.gcdext!(buf, n1, n2, m1, m2)
 
-    Base.GMP.MPZ.mul!(buf, m1, n1)
+    Base.GMP.MPZ.mul!(buf, m1, minv1)
     Base.GMP.MPZ.mul_ui!(n1, buf, a2)
 
-    Base.GMP.MPZ.mul!(buf, m2, n2)
+    Base.GMP.MPZ.mul!(buf, m2, minv2)
     Base.GMP.MPZ.mul!(n2, buf, a1)
 
     Base.GMP.MPZ.add!(buf, n1, n2)

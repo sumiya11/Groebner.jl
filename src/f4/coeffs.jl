@@ -234,15 +234,17 @@ function reconstruct_crt!(
         n1, n2 = coeffbuff.reconstructbuf2, coeffbuff.reconstructbuf3
         M = coeffbuff.reconstructbuf4
         bigch = coeffbuff.reconstructbuf5
+        invm1, invm2 = coeffbuff.reconstructbuf6, coeffbuff.reconstructbuf7
 
         Base.GMP.MPZ.set_ui!(bigch, ch)
         Base.GMP.MPZ.mul_ui!(M, primetracker.modulo, ch)
+        Base.GMP.MPZ.gcdext!(buf, invm1, invm2, primetracker.modulo, bigch)
 
         for i in 1:length(gb_coeffs_ff)
             @inbounds for j in 1:length(gb_coeffs_ff[i])
                 ca = gb_coeffs_zz[i][j]
                 cf = gb_coeffs_ff[i][j]
-                CRT!(M, buf, n1, n2, ca, primetracker.modulo, cf, bigch)
+                CRT!(M, buf, n1, n2, ca, invm1, cf, invm2, primetracker.modulo, bigch)
                 # TODO: faster set!??
                 Base.GMP.MPZ.set!(gb_coeffs_zz[i][j], buf)
             end
