@@ -4,7 +4,7 @@
 function insert_in_hash_table!(ht::MonomialHashtable, e::ExponentVector)
     # generate hash
     he = UInt32(0)
-    for i in 1:ht.explen
+    @inbounds for i in 1:ht.explen
         he += ht.hasher[i] * e[i]
     end
     # find new elem position in the table
@@ -29,7 +29,7 @@ function insert_in_hash_table!(ht::MonomialHashtable, e::ExponentVector)
         end
 
         present = ht.exponents[vidx]
-        for j in 1:ht.explen
+        @inbounds for j in 1:ht.explen
             # if hash collision
             if present[j] != e[j]
                 i += UInt32(1)
@@ -124,7 +124,7 @@ function generate_monomial_divmask(
             @inbounds if e[divvars[i]] >= divmap[ctr]
                 res |= UInt32(1) << (ctr - 1)
             end
-            ctr += UInt32(1)  # for typ stability
+            ctr += UInt32(1)  # for type stability
         end
     end
 
@@ -191,7 +191,7 @@ function check_monomial_division_in_update(
             continue
         end
         ea = ht.exponents[a[j]]
-        for i in 1:ht.explen
+        @inbounds for i in 1:ht.explen
             if ea[i] < lcmexp[i]
                 j += 1
                 @goto Restart
@@ -241,10 +241,10 @@ function insert_multiplied_poly_in_hash_table!(
         # hash(e1 + e2) = hash(e1) + hash(e2)
         # We also assume that the hashing vector is shared same
         # between all created hashtables
-        h = htmp + bdata[poly[l]].hash
+        @inbounds h = htmp + bdata[poly[l]].hash
         # TODO! -- check mult hash in the table
 
-        e = bexps[poly[l]]
+        @inbounds e = bexps[poly[l]]
         # println("monom of index $(poly[l]) : $e")
 
         lastidx = symbol_ht.load + 1
@@ -313,15 +313,29 @@ function insert_multiplied_poly_in_hash_table!(
     row
 end
 
+# TODO: exponent vectors and coeffs everywhere
+
 function multiplied_poly_to_matrix_row!(
         symbolic_ht::MonomialHashtable, basis_ht::MonomialHashtable,
         htmp::UInt32, etmp::Vector{UInt16}, poly::Vector{Int})
 
     row = similar(poly)
-    while symbolic_ht.load + length(poly) >= symbolic_ht.size
+    while 1.4*(symbolic_ht.load + length(poly)) >= symbolic_ht.size
         enlarge_hash_table!(symbolic_ht)
     end
+
+    #=
+    load = symbolic_ht.load
+    size = symbolic_ht.size
+    if load % 100 == 0 && load/size > 0.7
+        @warn "inserting in a very dense table" load size load/size
+    end
+    =#
+
     insert_multiplied_poly_in_hash_table!(row, htmp, etmp, poly, basis_ht, symbolic_ht)
+    #if load % 100 == 0
+    #    println("time: ", time() - t1)
+    #end
 end
 
 #------------------------------------------------------------------------------

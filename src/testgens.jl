@@ -1,9 +1,10 @@
 
 # The file contains test examples definitions
 
-# nearest TODO: generate answers for these
-# and also consider doing this in another way
-
+#=
+    The root-n system
+    (not to be confused with cyclic system)!!
+=#
 function rootn(n; ground=QQ)
     R, xs = PolynomialRing(ground, ["x$i" for i in 1:n])
     ans = [
@@ -14,6 +15,18 @@ function rootn(n; ground=QQ)
     ans
 end
 
+#=
+    The cyclic-n system
+    (not to be confused with cyclic system)!!
+=#
+function cyclicn(n; ground=QQ)
+    R, z = PolynomialRing(ground, ["z$i" for i in 1:n])
+    [(sum(prod(z[(k-1) % n + 1] for k in j:j+m) for j in 1:n) for m=0:(n-2))...,prod(z)-1]
+end
+
+#=
+    The katsura-n system
+=#
 function katsuran(n; ground=QQ)
     R, x = PolynomialRing(ground, ["x$i" for i in 0:n])
 
@@ -62,112 +75,6 @@ function henrion7(;ground=QQ)
         ground(10)//7*f5*f6*f7+6*f1*f2*f5+8*f1*f3*f5+6*f2*f3*f5+6*f5*f6*f3+6*f5*f6*f2+6*f5*f6*f1+6*f1*f2*f4+6*f4*f5*f2+6*f4*f5*f1+4*f4*f5*f6+6*f3*f4*f1+4*f3*f4*f5+4*f3*f1*f2+4*f2*f3*f4,
         ground(9)//7*f6*f7+ground(16)//7*f7*f1+ground(16)//7*f7*f2+ground(16)//7*f7*f3+ground(16)//7*f7*f4+ground(16)//7*f7*f5+3*f1*f2+4*f3*f1+4*f4*f1+4*f5*f1+4*f6*f1+3*f2*f3+4*f4*f2+4*f5*f2+4*f6*f2+3*f3*f4+4*f5*f3+4*f6*f3+3*f4*f5+4*f6*f4+3*f5*f6-116053,
         ground(8)//7*f7+2*f6+2*f5+2*f4+2*f3+2*f2+2*f1-553
-    ]
-end
-
-
-function katsura6(;ground=QQ)
-    R, (x1, x2, x3, x4, x5, x6, x7) = PolynomialRing(ground, ["x$i" for i in 1:7])
-
-    fs = [
-        1*x1+2*x2+2*x3+2*x4+2*x5+2*x6+2*x7-1,
-        2*x4*x3+2*x5*x2+2*x6*x1+2*x7*x2-1*x6,
-        1*x3^2+2*x4*x2+2*x5*x1+2*x6*x2+2*x7*x3-1*x5,
-        2*x3*x2+2*x4*x1+2*x5*x2+2*x6*x3+2*x7*x4-1*x4,
-        1*x2^2+2*x3*x1+2*x4*x2+2*x5*x3+2*x6*x4+2*x7*x5-1*x3,
-        2*x2*x1+2*x3*x2+2*x4*x3+2*x5*x4+2*x6*x5+2*x7*x6-1*x2,
-        1*x1^2+2*x2^2+2*x3^2+2*x4^2+2*x5^2+2*x6^2+2*x7^2-1*x1
-    ]
-    fs
-end
-
-function katsura9(;ground=QQ)
-    R, (x1, x2, x3, x4, x5, x6, x7, x8, x9) = PolynomialRing(ground, ["x$i" for i in 1:9])
-
-    fs = [
-        x1+2*x2+2*x3+2*x4+2*x5+2*x6+2*x7+2*x8+2*x9-1,
-        x1^2+2*x2^2+2*x3^2+2*x4^2+2*x5^2+2*x6^2+2*x7^2+2*x8^2+2*x9^2-x1,
-        2*x1*x2+2*x2*x3+2*x3*x4+2*x4*x5+2*x5*x6+2*x6*x7+2*x7*x8+2*x8*x9-x2,
-        x2^2+2*x1*x3+2*x2*x4+2*x3*x5+2*x4*x6+2*x5*x7+2*x6*x8+2*x7*x9-x3,
-        2*x2*x3+2*x1*x4+2*x2*x5+2*x3*x6+2*x4*x7+2*x5*x8+2*x6*x9-x4,
-        x3^2+2*x2*x4+2*x1*x5+2*x2*x6+2*x3*x7+2*x4*x8+2*x5*x9-x5,
-        2*x3*x4+2*x2*x5+2*x1*x6+2*x2*x7+2*x3*x8+2*x4*x9-x6,
-        x4^2+2*x3*x5+2*x2*x6+2*x1*x7+2*x2*x8+2*x3*x9-x7,
-        2*x4*x5+2*x3*x6+2*x2*x7+2*x1*x8+2*x2*x9-x8
-    ]
-end
-
-function katsura10(;ground=QQ)
-    R, (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = PolynomialRing(ground, ["x$i" for i in 1:10])
-
-    fs = [
-        x1+2*x2+2*x3+2*x4+2*x5+2*x6+2*x7+2*x8+2*x9+2*x10-1,
-        x1^2+2*x2^2+2*x3^2+2*x4^2+2*x5^2+2*x6^2+2*x7^2+2*x8^2+2*x9^2+2*x10^2-x1,
-        2*x1*x2+2*x2*x3+2*x3*x4+2*x4*x5+2*x5*x6+2*x6*x7+2*x7*x8+2*x8*x9+2*x9*x10-x2,
-        x2^2+2*x1*x3+2*x2*x4+2*x3*x5+2*x4*x6+2*x5*x7+2*x6*x8+2*x7*x9+2*x8*x10-x3,
-        2*x2*x3+2*x1*x4+2*x2*x5+2*x3*x6+2*x4*x7+2*x5*x8+2*x6*x9+2*x7*x10-x4,
-        x3^2+2*x2*x4+2*x1*x5+2*x2*x6+2*x3*x7+2*x4*x8+2*x5*x9+2*x6*x10-x5,
-        2*x3*x4+2*x2*x5+2*x1*x6+2*x2*x7+2*x3*x8+2*x4*x9+2*x5*x10-x6,
-        x4^2+2*x3*x5+2*x2*x6+2*x1*x7+2*x2*x8+2*x3*x9+2*x4*x10-x7,
-        2*x4*x5+2*x3*x6+2*x2*x7+2*x1*x8+2*x2*x9+2*x3*x10-x8,
-        x5^2+2*x4*x6+2*x3*x7+2*x2*x8+2*x1*x9+2*x2*x10-x9
-    ]
-end
-
-function katsura11(;ground=QQ)
-    R, (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11) = PolynomialRing(ground, ["x$i" for i in 1:11])
-
-    fs = [
-        x1+2*x2+2*x3+2*x4+2*x5+2*x6+2*x7+2*x8+2*x9+2*x10+2*x11-1,
-        x1^2+2*x2^2+2*x3^2+2*x4^2+2*x5^2+2*x6^2+2*x7^2+2*x8^2+2*x9^2+2*x10^2+2*x11^2-x1,
-        2*x1*x2+2*x2*x3+2*x3*x4+2*x4*x5+2*x5*x6+2*x6*x7+2*x7*x8+2*x8*x9+2*x9*x10+2*x10*x11-x2,
-        x2^2+2*x1*x3+2*x2*x4+2*x3*x5+2*x4*x6+2*x5*x7+2*x6*x8+2*x7*x9+2*x8*x10+2*x9*x11-x3,
-        2*x2*x3+2*x1*x4+2*x2*x5+2*x3*x6+2*x4*x7+2*x5*x8+2*x6*x9+2*x7*x10+2*x8*x11-x4,
-        x3^2+2*x2*x4+2*x1*x5+2*x2*x6+2*x3*x7+2*x4*x8+2*x5*x9+2*x6*x10+2*x7*x11-x5,
-        2*x3*x4+2*x2*x5+2*x1*x6+2*x2*x7+2*x3*x8+2*x4*x9+2*x5*x10+2*x6*x11-x6,
-        x4^2+2*x3*x5+2*x2*x6+2*x1*x7+2*x2*x8+2*x3*x9+2*x4*x10+2*x5*x11-x7,
-        2*x4*x5+2*x3*x6+2*x2*x7+2*x1*x8+2*x2*x9+2*x3*x10+2*x4*x11-x8,
-        x5^2+2*x4*x6+2*x3*x7+2*x2*x8+2*x1*x9+2*x2*x10+2*x3*x11-x9,
-        2*x5*x6+2*x4*x7+2*x3*x8+2*x2*x9+2*x1*x10+2*x2*x11-x10
-    ]
-end
-
-function katsura12(;ground=QQ)
-    R, (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12) = PolynomialRing(ground, ["x$i" for i in 1:12])
-
-    fs = [
-        x1+2*x2+2*x3+2*x4+2*x5+2*x6+2*x7+2*x8+2*x9+2*x10+2*x11+2*x12-1,
-        x1^2+2*x2^2+2*x3^2+2*x4^2+2*x5^2+2*x6^2+2*x7^2+2*x8^2+2*x9^2+2*x10^2+2*x11^2+2*x12^2-x1,
-        2*x1*x2+2*x2*x3+2*x3*x4+2*x4*x5+2*x5*x6+2*x6*x7+2*x7*x8+2*x8*x9+2*x9*x10+2*x10*x11+2*x11*x12-x2,
-        x2^2+2*x1*x3+2*x2*x4+2*x3*x5+2*x4*x6+2*x5*x7+2*x6*x8+2*x7*x9+2*x8*x10+2*x9*x11+2*x10*x12-x3,
-        2*x2*x3+2*x1*x4+2*x2*x5+2*x3*x6+2*x4*x7+2*x5*x8+2*x6*x9+2*x7*x10+2*x8*x11+2*x9*x12-x4,
-        x3^2+2*x2*x4+2*x1*x5+2*x2*x6+2*x3*x7+2*x4*x8+2*x5*x9+2*x6*x10+2*x7*x11+2*x8*x12-x5,
-        2*x3*x4+2*x2*x5+2*x1*x6+2*x2*x7+2*x3*x8+2*x4*x9+2*x5*x10+2*x6*x11+2*x7*x12-x6,
-        x4^2+2*x3*x5+2*x2*x6+2*x1*x7+2*x2*x8+2*x3*x9+2*x4*x10+2*x5*x11+2*x6*x12-x7,
-        2*x4*x5+2*x3*x6+2*x2*x7+2*x1*x8+2*x2*x9+2*x3*x10+2*x4*x11+2*x5*x12-x8,
-        x5^2+2*x4*x6+2*x3*x7+2*x2*x8+2*x1*x9+2*x2*x10+2*x3*x11+2*x4*x12-x9,
-        2*x5*x6+2*x4*x7+2*x3*x8+2*x2*x9+2*x1*x10+2*x2*x11+2*x3*x12-x10,
-        x6^2+2*x5*x7+2*x4*x8+2*x3*x9+2*x2*x10+2*x1*x11+2*x2*x12-x11
-    ]
-end
-
-function katsura13(;ground=QQ)
-    R, (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13) = PolynomialRing(ground, ["x$i" for i in 1:13])
-
-    fs = [
-        x1+2*x2+2*x3+2*x4+2*x5+2*x6+2*x7+2*x8+2*x9+2*x10+2*x11+2*x12+2*x13-1,
-        x1^2+2*x2^2+2*x3^2+2*x4^2+2*x5^2+2*x6^2+2*x7^2+2*x8^2+2*x9^2+2*x10^2+2*x11^2+2*x12^2+2*x13^2-x1,
-        2*x1*x2+2*x2*x3+2*x3*x4+2*x4*x5+2*x5*x6+2*x6*x7+2*x7*x8+2*x8*x9+2*x9*x10+2*x10*x11+2*x11*x12+2*x12*x13-x2,
-        x2^2+2*x1*x3+2*x2*x4+2*x3*x5+2*x4*x6+2*x5*x7+2*x6*x8+2*x7*x9+2*x8*x10+2*x9*x11+2*x10*x12+2*x11*x13-x3,
-        2*x2*x3+2*x1*x4+2*x2*x5+2*x3*x6+2*x4*x7+2*x5*x8+2*x6*x9+2*x7*x10+2*x8*x11+2*x9*x12+2*x10*x13-x4,
-        x3^2+2*x2*x4+2*x1*x5+2*x2*x6+2*x3*x7+2*x4*x8+2*x5*x9+2*x6*x10+2*x7*x11+2*x8*x12+2*x9*x13-x5,
-        2*x3*x4+2*x2*x5+2*x1*x6+2*x2*x7+2*x3*x8+2*x4*x9+2*x5*x10+2*x6*x11+2*x7*x12+2*x8*x13-x6,
-        x4^2+2*x3*x5+2*x2*x6+2*x1*x7+2*x2*x8+2*x3*x9+2*x4*x10+2*x5*x11+2*x6*x12+2*x7*x13-x7,
-        2*x4*x5+2*x3*x6+2*x2*x7+2*x1*x8+2*x2*x9+2*x3*x10+2*x4*x11+2*x5*x12+2*x6*x13-x8,
-        x5^2+2*x4*x6+2*x3*x7+2*x2*x8+2*x1*x9+2*x2*x10+2*x3*x11+2*x4*x12+2*x5*x13-x9,
-        2*x5*x6+2*x4*x7+2*x3*x8+2*x2*x9+2*x1*x10+2*x2*x11+2*x3*x12+2*x4*x13-x10,
-        x6^2+2*x5*x7+2*x4*x8+2*x3*x9+2*x2*x10+2*x1*x11+2*x2*x12+2*x3*x13-x11,
-        2*x6*x7+2*x5*x8+2*x4*x9+2*x3*x10+2*x2*x11+2*x1*x12+2*x2*x13-x12
     ]
 end
 
@@ -276,55 +183,9 @@ function eco13(;ground=QQ)
     fs
 end
 
-function noon3(;ground=QQ)
-    R, (x1, x2, x3) = PolynomialRing(ground, ["x$i" for i in 1:3])
-    fs = [
-    10x1*x2^2 + 10x1*x3^2 - 11x1 + 10,
-    10x2*x1^2 + 10x2*x3^2 - 11x2 + 10,
-    10x3*x1^2 + 10x3*x2^2 - 11x3 + 10,
-    ]
-    fs
-end
-
-function noon4(; ground=QQ)
-    R, (x1, x2, x3, x4) = PolynomialRing(ground, ["x$i" for i in 1:4])
-
-    fs = [
-    10*x1^2*x4+10*x2^2*x4+10*x3^2*x4-11*x4+10,
-    10*x1^2*x3+10*x2^2*x3+10*x3*x4^2-11*x3+10,
-    10*x1*x2^2+10*x1*x3^2+10*x1*x4^2-11*x1+10,
-    10*x1^2*x2+10*x2*x3^2+10*x2*x4^2-11*x2+10
-    ]
-    fs
-end
-
-function noon5(;ground=QQ)
-    R, (x1, x2, x3, x4, x5) = PolynomialRing(ground, ["x$i" for i in 1:5])
-
-    fs = [
-    10*x1^2*x5+10*x2^2*x5+10*x3^2*x5+10*x4^2*x5-11*x5+10,
-    10*x1^2*x4+10*x2^2*x4+10*x3^2*x4+10*x4*x5^2-11*x4+10,
-    10*x1^2*x3+10*x2^2*x3+10*x3*x4^2+10*x3*x5^2-11*x3+10,
-    10*x1*x2^2+10*x1*x3^2+10*x1*x4^2+10*x1*x5^2-11*x1+10,
-    10*x1^2*x2+10*x2*x3^2+10*x2*x4^2+10*x2*x5^2-11*x2+10
-    ]
-    fs
-end
-
-function noon6(;ground=QQ)
-    R, (x1, x2, x3, x4, x5, x6) = PolynomialRing(ground, ["x$i" for i in 1:6])
-
-    fs = [
-    10*x1^2*x6+10*x2^2*x6+10*x3^2*x6+10*x4^2*x6+10*x5^2*x6-11*x6+10,
-    10*x1^2*x5+10*x2^2*x5+10*x3^2*x5+10*x4^2*x5+10*x5*x6^2-11*x5+10,
-    10*x1^2*x4+10*x2^2*x4+10*x3^2*x4+10*x4*x5^2+10*x4*x6^2-11*x4+10,
-    10*x1^2*x3+10*x2^2*x3+10*x3*x4^2+10*x3*x5^2+10*x3*x6^2-11*x3+10,
-    10*x1*x2^2+10*x1*x3^2+10*x1*x4^2+10*x1*x5^2+10*x1*x6^2-11*x1+10,
-    10*x1^2*x2+10*x2*x3^2+10*x2*x4^2+10*x2*x5^2+10*x2*x6^2-11*x2+10
-    ]
-    fs
-end
-
+#=
+    The noon-4 system
+=#
 function noonn(n; ground=QQ)
     without(x, k) = x[1:end .!= k]
 

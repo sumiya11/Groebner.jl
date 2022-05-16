@@ -28,6 +28,7 @@ function rational_reconstruction(a::I, m::I) where {I<:Union{Int, BigInt}}
     end
     bnd = sqrt(float(m) / 2)
 
+    @warn "" bnd
     U = (I(1), I(0), m)
     V = (I(0), I(1), a)
     while abs(V[3]) >= bnd
@@ -40,9 +41,12 @@ function rational_reconstruction(a::I, m::I) where {I<:Union{Int, BigInt}}
 
     t = abs(V[2])
     r = V[3] * sign(V[2])
+
+    @warn "" r t
+
     # changed from `<= bnd` to `<= m / bnd`
     # we can speed up this !
-    if t <= m / bnd && gcd(r, t) == 1
+    if t <= bnd && gcd(r, t) == 1
         return QQ(r, t)
     end
 

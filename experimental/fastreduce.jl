@@ -5,7 +5,10 @@
 
 
 
+using AbstractAlgebra
+using Logging
 
+global_logger(Logging.ConsoleLogger(Logging.Info))
 
 
 struct RewriteSystem
@@ -48,7 +51,7 @@ function rewrite(mult, f, RS)
         mult1, rewriter = findrewriter(mm, RS)
         @info m mm mult1 rewriter
         if !iszero(rewriter)
-            append!(newmonoms, .- rewrite(mult*mult1, rewriter, RS))
+            append!(newmonoms, .- rewrite(mult1, rewriter, RS))
         else
             push!(newmonoms, mm)
         end

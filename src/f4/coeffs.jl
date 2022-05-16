@@ -243,6 +243,7 @@ function reconstruct_crt!(
                 ca = gb_coeffs_zz[i][j]
                 cf = gb_coeffs_ff[i][j]
                 CRT!(M, buf, n1, n2, ca, primetracker.modulo, cf, bigch)
+                # TODO: faster set!??
                 Base.GMP.MPZ.set!(gb_coeffs_zz[i][j], buf)
             end
         end
