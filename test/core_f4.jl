@@ -95,7 +95,7 @@ root = Groebner.change_ordering(Groebner.rootn(8, ground=GF(2^31 - 1)), :degrevl
 gb = Groebner.groebner(root, reduced=false)
 @test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 
-noon = Groebner.change_ordering(Groebner.noon3(ground=GF(2^31 - 1)), :degrevlex)
+noon = Groebner.change_ordering(Groebner.noonn(3, ground=GF(2^31 - 1)), :degrevlex)
 gb = Groebner.groebner(noon, reduced=false)
 @test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 
@@ -104,7 +104,7 @@ for pnoon in Groebner.Combinatorics.permutations(noon)
     @test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 end
 
-noon = Groebner.change_ordering(Groebner.noon4(ground=GF(2^31 - 1)), :degrevlex)
+noon = Groebner.change_ordering(Groebner.noonn(4, ground=GF(2^31 - 1)), :degrevlex)
 gb = Groebner.groebner(noon, reduced=false)
 @test Groebner._isgroebner_reference(Groebner._reducegb_reference(gb))
 

@@ -44,7 +44,7 @@ mutable struct CoeffAccum
     function CoeffAccum()
         new(Vector{Vector{CoeffZZ}}(undef, 0),
             Vector{Vector{CoeffZZ}}(undef, 0),
-            Vector{Vector{CoeffZZ}}(undef, 0))
+            Vector{Vector{CoeffQQ}}(undef, 0))
     end
 end
 
@@ -181,7 +181,7 @@ function resize_accum!(coeffaccum::CoeffAccum, gb_coeffs)
     @inbounds for i in 1:length(gb_coeffs)
         coeffaccum.gb_coeffs_zz[i] = [CoeffZZ(0) for _ in 1:length(gb_coeffs[i])]
         coeffaccum.prev_gb_coeffs_zz[i] = [CoeffZZ(0) for _ in 1:length(gb_coeffs[i])]
-        coeffaccum.gb_coeffs_qq[i] = [CoeffQQ(0) for _ in 1:length(gb_coeffs[i])]
+        coeffaccum.gb_coeffs_qq[i] = [CoeffQQ(1) for _ in 1:length(gb_coeffs[i])]
     end
 end
 
@@ -260,7 +260,7 @@ function reconstruct_modulo!(
 
     modulo = primetracker.modulo
 
-    bnd = rational_bound(modulo)
+    bnd = rational_reconstruction_bound(modulo)
     buf, buf1  = coeffbuff.reconstructbuf1, coeffbuff.reconstructbuf2
     buf2, buf3 = coeffbuff.reconstructbuf3, coeffbuff.reconstructbuf4
     u1, u2     = coeffbuff.reconstructbuf5, coeffbuff.reconstructbuf6
@@ -275,12 +275,18 @@ function reconstruct_modulo!(
             cz = gb_coeffs_zz[i][j]
             cq = gb_coeffs_qq[i][j]
             num, den = numerator(cq), denominator(cq)
-            rational_reconstruction!(num, den, bnd, buf,
+            success = rational_reconstruction!(num, den, bnd, buf,
                                         buf1, buf2, buf3,
                                         u1, u2, u3, v1, v2, v3,
                                         cz, modulo)
+            if !success
+                # @error "not success"
+                return false
+            end
             # TODO
             # @assert gcd(numerator(cq), denominator(cq)) == 1
         end
     end
+
+    return true
 end

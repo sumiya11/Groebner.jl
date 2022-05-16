@@ -251,7 +251,14 @@ function groebner_qq(
         # reconstruct into rationals
         @info "Reconstructing modulo $(primetracker.modulo)"
         # ADDED
-        RECTIME += @elapsed reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
+        stats = @timed reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
+        RECTIME += stats.time
+
+        # ADDED TODO
+        if !stats.value
+            continue
+        end
+
         # reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
         # ADDED
         global CORRTIME

@@ -22,7 +22,7 @@ using AbstractAlgebra
     @test gb == sing_ans
 
 
-    kat = Groebner.change_ordering(Groebner.katsura6(ground=ZZ), :degrevlex)
+    kat = Groebner.change_ordering(Groebner.katsuran(6, ground=ZZ), :degrevlex)
     (x1, x2, x3, x4, x5, x6, x7) = gens(parent(first(kat)))
 
     gb = Groebner.groebner(kat)

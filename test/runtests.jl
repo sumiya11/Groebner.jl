@@ -26,8 +26,8 @@ end
 
     @includetests ["commons", "io", "io_consistency"]
 
-    @includetests ["sorting",
-                    "mod_reconstruction", "crt_reconstruction"]
+    # @includetests ["sorting",
+    #                "mod_reconstruction", "crt_reconstruction"]
 
     @includetests ["core_f4_reduce", "core_f4_stress",
                     "core_f4", "rational_f4", "groebner_certify"]
@@ -48,5 +48,7 @@ end
     @includetests ["onthefly_order_change"]
 
     @includetests ["core_fglm", "core_kbase"]
+
+    @includetests ["benchmark_systems"]
 
 end

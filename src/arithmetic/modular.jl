@@ -1,6 +1,6 @@
 
 #=
-    The file contains functions to operate modular reconstrction and CRT
+    The file contains rational reconstrction and CRT functions
 =#
 
 #------------------------------------------------------------------------------
@@ -28,12 +28,11 @@ function rational_reconstruction(a::I, m::I) where {I<:Union{Int, BigInt}}
     end
     bnd = sqrt(float(m) / 2)
 
-    @warn "" bnd
+    @debug "" bnd
     U = (I(1), I(0), m)
     V = (I(0), I(1), a)
     while abs(V[3]) >= bnd
         q = div(U[3], V[3])
-        # TODO: use MutableArithmetics
         T = U .- q .* V
         U = V
         V = T
@@ -42,24 +41,34 @@ function rational_reconstruction(a::I, m::I) where {I<:Union{Int, BigInt}}
     t = abs(V[2])
     r = V[3] * sign(V[2])
 
-    @warn "" r t
+    @debug "" r t
 
     # changed from `<= bnd` to `<= m / bnd`
     # we can speed up this !
-    if t <= bnd && gcd(r, t) == 1
-        return QQ(r, t)
-    end
+    # if t <= bnd && gcd(r, t) == 1
+    #    return QQ(r, t)
+    # end
 
-    # TODO: not needed
-    throw(DomainError(
-        :($a//$m), "rational reconstruction of $a (mod $m) does not exist"
-    ))
+    return QQ(r, t)
 
-    return QQ(0, 1)
+    # throw(DomainError(
+    #    :($a//$m), "rational reconstruction of $a (mod $m) does not exist"
+    # ))
+
+    # return QQ(0, 1)
 end
 
-# the bound for rational reconstrction
-rational_bound(x::BigInt) = ceil(BigInt, sqrt(float(x) / 2))
+# returns the bound for rational reconstruction
+# based on the current modulo
+#
+# The bound for rational reconstrction:
+# as soon as the numerator in rational reconstruction
+# exceeds this bound, the gcd iteration is stopped
+function rational_reconstruction_bound(modulo::BigInt)
+    setprecision(1000) do
+        ceil(BigInt, sqrt(BigFloat(modulo) / 2))
+    end
+end
 
 # 0 allocations!
 #=
@@ -83,7 +92,7 @@ function rational_reconstruction!(
     if Base.GMP.MPZ.cmp_ui(a, 0) == 0
         Base.GMP.MPZ.set_ui!(num, 0)
         Base.GMP.MPZ.set_ui!(den, 1)
-        return nothing
+        return true
     end
     # TODO
     # assumes input is nonnegative
@@ -92,7 +101,7 @@ function rational_reconstruction!(
     if Base.GMP.MPZ.cmp_ui(a, 1) == 0
         Base.GMP.MPZ.set_ui!(num, 1)
         Base.GMP.MPZ.set_ui!(den, 1)
-        return nothing
+        return true
     end
 
     Base.GMP.MPZ.set_ui!(u1, 1)
@@ -103,6 +112,12 @@ function rational_reconstruction!(
     Base.GMP.MPZ.set!(v3, a)
 
     while true
+        # TODO ADDED
+        if Base.GMP.MPZ.cmp(v2, bnd) > 0
+            # @error "" v2 bnd
+            return false
+        end
+
         Base.GMP.MPZ.set!(buf, v3)
         if Base.GMP.MPZ.cmp_ui(buf, 0) < 0
             Base.GMP.MPZ.neg!(buf)
@@ -148,7 +163,7 @@ function rational_reconstruction!(
         Base.GMP.MPZ.neg!(num)
     end
 
-    nothing
+    true
 end
 
 #------------------------------------------------------------------------------
