@@ -25,9 +25,8 @@ end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
-    ("cyclic 12", Groebner.cyclicn(7, ground=ground)),
-    ("cyclic 13", Groebner.cyclicn(8, ground=ground)),
-    ("cyclic 14", Groebner.cyclicn(9, ground=ground)),
+    ("cyclic 7", Groebner.cyclicn(7, ground=ground)),
+    ("cyclic 8", Groebner.cyclicn(8, ground=ground)),
     ("root 12", Groebner.rootn(12, ground=ground)),
     ("root 13", Groebner.rootn(13, ground=ground)),
     ("root 14", Groebner.rootn(14, ground=ground)),
@@ -48,38 +47,22 @@ ground = AbstractAlgebra.GF(2^31 - 1)
 run_f4_ff_degrevlex_benchmarks(ground)
 
 #=
-cyclic 12
-67.366 ms (179903 allocations: 27.04 MiB)
-cyclic 13
-216.331 ms (451370 allocations: 67.29 MiB)
+cyclic 7
+212.187 ms (229506 allocations: 79.33 MiB)
+cyclic 8
+4.631 s (1362066 allocations: 455.37 MiB)
+root 12
+73.354 ms (179930 allocations: 32.39 MiB)
+root 13
+248.371 ms (451378 allocations: 67.86 MiB)
+root 14
+726.063 ms (1144701 allocations: 176.53 MiB)
 katsura 9
-104.752 ms (55381 allocations: 17.84 MiB)
-noon 6
-31.177 ms (86994 allocations: 19.41 MiB)
+882.256 ms (149540 allocations: 59.57 MiB)
 noon 7
-235.416 ms (419391 allocations: 89.92 MiB)
+249.928 ms (419411 allocations: 91.51 MiB)
+noon 8
+1.681 s (2074539 allocations: 492.01 MiB)
 eco 10
-182.549 ms (137522 allocations: 41.11 MiB)
-ku 10
-989.900 μs (5794 allocations: 2.52 MiB)
-kinema
-2.943 ms (6727 allocations: 3.27 MiB)
-
-reduced
-cyclic 12
-397.781 ms (401132 allocations: 70.27 MiB)
-cyclic 13
- 1.465 s (1032878 allocations: 186.29 MiB)
-katsura 9
- 120.634 ms (56825 allocations: 18.90 MiB)
-noon 6
- 33.456 ms (89538 allocations: 20.19 MiB)
-noon 7
- 248.611 ms (426594 allocations: 93.01 MiB)
-eco 10
- 189.309 ms (139554 allocations: 42.71 MiB)
-ku 10
- 996.400 μs (5885 allocations: 2.53 MiB)
-kinema
- 2.715 ms (7193 allocations: 3.36 MiB)
+179.106 ms (137529 allocations: 41.41 MiB)
 =#

@@ -8,6 +8,26 @@ F4TIME = 0.0
 RECTIME = 0.0
 CORRTIME = 0.0
 
+ADD_ROW_HIT  = 0
+ADD_ROW_MISS = 0
+ADD_ROW_COLLISION = 0
+
+function printhash()
+    global ADD_ROW_HIT
+    global ADD_ROW_MISS
+    global ADD_ROW_COLLISION
+
+    println("ADD_ROW_HIT = $(ADD_ROW_HIT)")
+    println("ADD_ROW_MISS = $(ADD_ROW_MISS)")
+    println("ADD_ROW_COLLISION = $(ADD_ROW_COLLISION)")
+
+    ADD_ROW_HIT  = 0
+    ADD_ROW_MISS = 0
+    ADD_ROW_COLLISION = 0
+end
+ADD_ROW_HIT  = 0
+ADD_ROW_MISS = 0
+
 function printall()
     global PRIMES
     global F4TIME

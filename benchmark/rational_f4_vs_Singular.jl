@@ -58,8 +58,8 @@ end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
-    # ("cyclic 13", Groebner.rootn(13, ground=ground)), # 0.19 vs 0.03
-    # ("cyclic 14", Groebner.rootn(14, ground=ground)), # 0.60 vs 0.9
+    ("cyclic 7", Groebner.cyclicn(7, ground=ground)), # 0.19 vs 0.03
+    ("cyclic 8", Groebner.cyclicn(8, ground=ground)), # 0.60 vs 0.9
     ("katsura 8",Groebner.katsuran(8, ground=ground)), # 1.35 vs 71.121
     ("katsura 9",Groebner.katsuran(9, ground=ground)), # 9.68 vs 775
     ("eco 10",Groebner.eco10(ground=ground)),         # 0.41  vs 31.7

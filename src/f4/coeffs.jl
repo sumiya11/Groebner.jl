@@ -1,17 +1,24 @@
 
 #=
-    The structure contains BigInt buffers used to minimize memory allocations
-    in the algorithm
+    `CoeffBuffer` contains BigInt buffers used to minimize memory allocations
+    during coefficient scaling, rational reconstruction and CRT reconstruction
 =#
 mutable struct CoeffBuffer
     # wow, 40 bytes per one BigInt
+
+    # buffers that should be used
+    # only for coefficient scaling
     scalebuf1::BigInt
     scalebuf2::BigInt
 
+    # buffers that should be used
+    # only for coefficient reduction
     reducebuf1::BigInt
     reducebuf2::BigInt
     reducebuf3::BigInt
 
+    # buffers that should be used
+    # only for coefficient reconstrction
     reconstructbuf1::BigInt
     reconstructbuf2::BigInt
     reconstructbuf3::BigInt

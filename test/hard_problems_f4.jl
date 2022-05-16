@@ -4,7 +4,7 @@ using Primes
 
 # TODO: add some
 
-@testset "Hard testsets for f4" begin
+@testset "Hard test systems for f4" begin
     R, (x1, x2, x3, x4) = PolynomialRing(QQ, ["x1","x2","x3","x4"], ordering=:degrevlex)
 
     ###########################################################################
@@ -103,4 +103,9 @@ using Primes
         x3^3 + x3^2*x4 + x3*x4^2 + x4^3,
         x4^4 - N
     ]
+
+
+    system = [x1 - (2^31-1)x2 - (x^30 + 3)x3]
+    @test Groebner.groebner(system) == system
+
 end

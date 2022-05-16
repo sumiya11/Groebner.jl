@@ -1,6 +1,7 @@
 
 #------------------------------------------------------------------------------
 
+# GroebnerMetainfo
 # Stores parameters for groebner algorithm
 struct GroebnerMetainfo
     # if set, then use fglm algorithm for order conversion
@@ -32,7 +33,7 @@ function set_metaparameters(ring, ordering, certify, forsolve, linalg)
         else
             computeord = :degrevlex
         end
-        # TODO:
+        # TODO: lex fglm
         computeord = :lex
     else
         if ordering == :input

@@ -13,6 +13,6 @@ const CoeffQQ = Rational{BigInt}
 const Coeff = Union{CoeffFF, CoeffZZ, CoeffQQ}
 
 # Polynomial term exponent vector type
-# TODO: works for total degrees up to 65536,
+#       works for total degrees up to 65536,
 #       that can be a limitation for very large problems
 const ExponentVector = Vector{UInt16}

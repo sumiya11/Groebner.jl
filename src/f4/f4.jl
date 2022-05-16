@@ -591,10 +591,14 @@ function f4!(ring::PolyRing,
     # a set to store critical pairs of polynomials to be reduced
     pairset = initialize_pairset()
 
+    # @warn "ht initialily" ht.load ht.size
+
     # makes basis fields valid,
     # does not copy,
     # checks for redundancy of new elems
     update!(pairset, basis, ht, update_ht)
+
+    # @warn "ht update" ht.load ht.size
 
     d = 0
     # while there are pairs to be reduced
@@ -609,9 +613,13 @@ function f4!(ring::PolyRing,
         select_normal!(pairset, basis, matrix, ht, symbol_ht)
         @debug "Selected $(divexact(matrix.nrows, 2)) pairs"
 
+        # @warn "ht select" ht.load ht.size
+
         symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
         # symbolic_preprocessing_relaxed!(basis, matrix, ht, symbol_ht)
         @debug "Matrix of size $((matrix.nrows, matrix.ncols)), density TODO"
+
+        # @warn "ht symbolic" ht.load ht.size
 
         # reduces polys and obtains new potential basis elements
         reduction!(basis, matrix, ht, symbol_ht, linalg)
@@ -622,6 +630,8 @@ function f4!(ring::PolyRing,
         # checks for redundancy
         update!(pairset, basis, ht, update_ht)
 
+        # @warn "ht update" ht.load ht.size
+
         # TODO: is this okay hm ?
         # to be changed
         # TODO: clean hashtable
@@ -630,8 +640,8 @@ function f4!(ring::PolyRing,
         # clear symbolic hashtable
         # clear matrix
 
-        if d > 1000
-            @error "Something is probably wrong in f4.."
+        if d > 10000
+            @error "Something is probably wrong in f4. Please submit an issue."
             break
         end
     end

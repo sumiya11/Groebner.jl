@@ -567,6 +567,7 @@ end
 function is_redundant!(
             pairset, basis, ht, update_ht, idx)
 
+
     reinitialize_hash_table!(update_ht, 2*idx)
 
     ps = pairset.pairs

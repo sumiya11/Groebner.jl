@@ -23,7 +23,7 @@ function _reducegb_reference!(G)
     end
     filter!(!iszero, G)
     scale = f -> map_coefficients(c -> c // leading_coefficient(f), f)
-    # TODO: questionable over QQ
+    # questionable over QQ
     map!(scale, G, G)
     sort!(G, by=leading_monomial)
 end

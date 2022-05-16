@@ -94,7 +94,7 @@ function rational_reconstruction!(
         Base.GMP.MPZ.set_ui!(den, 1)
         return true
     end
-    # TODO
+
     # assumes input is nonnegative
     @assert Base.GMP.MPZ.cmp_ui(a, 0) > 0
 
@@ -112,7 +112,6 @@ function rational_reconstruction!(
     Base.GMP.MPZ.set!(v3, a)
 
     while true
-        # TODO ADDED
         if Base.GMP.MPZ.cmp(v2, bnd) > 0
             # @error "" v2 bnd
             return false
@@ -184,10 +183,7 @@ function CRT!(
             M::BigInt, buf::BigInt, n1::BigInt, n2::BigInt,
             a1::BigInt, minv1::BigInt, a2::UInt, minv2::BigInt,
             m1::BigInt, m2::BigInt)
-
-    # TODO ADDED
-    # Base.GMP.MPZ.gcdext!(buf, n1, n2, m1, m2)
-
+            
     Base.GMP.MPZ.mul!(buf, m1, minv1)
     Base.GMP.MPZ.mul_ui!(n1, buf, a2)
 

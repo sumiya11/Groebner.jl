@@ -15,8 +15,7 @@ function insert_in_hash_table!(ht::MonomialHashtable, e::ExponentVector)
 
     @label Restart
     while i < ht.size
-        # TODO: & instead of %
-        hidx = (he + i) & mod + UInt32(1)
+        hidx = hashnextindex(he, i, mod)
         @inbounds vidx  = ht.hashtable[hidx]
 
         # if free
@@ -211,7 +210,7 @@ end
 function insert_multiplied_poly_in_hash_table!(
         row::Vector{Int},
         htmp::UInt32,
-        etmp::Vector{UInt16},
+        etmp::ExponentVector,
         poly::Vector{Int},
         ht::MonomialHashtable,
         symbol_ht::MonomialHashtable)
@@ -229,6 +228,8 @@ function insert_multiplied_poly_in_hash_table!(
 
     sexps = symbol_ht.exponents
     sdata = symbol_ht.hashdata
+
+    # @error "" symbol_ht.load symbol_ht.size symbol_ht.load / symbol_ht.size
 
     l = 1 # hardcoding 1 does not seem nice =(
     @label Letsgo
@@ -255,6 +256,7 @@ function insert_multiplied_poly_in_hash_table!(
         enew = sexps[lastidx]
         =#
         @inbounds enew = sexps[1]
+
         @inbounds for j in 1:explen
             # multiplied monom exponent
             enew[j] = etmp[j] + e[j]
@@ -262,16 +264,22 @@ function insert_multiplied_poly_in_hash_table!(
 
         # now insert into hashtable
         k = h
+
         i = UInt32(1)
+
         @label Restart
         while i <= symbol_ht.size  # TODO: < or <= ?
-            # @assert ispow2(mod + 1)
-            k = (h + i) & mod + UInt32(1)
+            k = hashnextindex(h, i, mod)
+
             @inbounds vidx = symbol_ht.hashtable[k]
             # if index is free
             vidx == 0 && break
             # if different exponent is stored here
             @inbounds if sdata[vidx].hash != h
+
+                # global ADD_ROW_COLLISION
+                # ADD_ROW_COLLISION += 1
+
                 i += UInt32(1)
                 continue
             end
@@ -281,15 +289,29 @@ function insert_multiplied_poly_in_hash_table!(
                 # hash collision, restarting search
                 if estored[j] != enew[j]
                     i += UInt32(1)
+
+                    # global ADD_ROW_COLLISION
+                    # ADD_ROW_COLLISION += 1
+
                     @goto Restart
                 end
             end
+
+            # @error "hit"
+
+            # global ADD_ROW_HIT
+            # ADD_ROW_HIT += 1
 
             @inbounds row[l] = vidx
             l += 1
 
             @goto Letsgo
         end
+
+        # global ADD_ROW_MISS
+        # ADD_ROW_MISS += 1
+
+        # @warn "miss"
 
         # add multiplied exponent to hash table
         if !isassigned(sexps, lastidx)
@@ -376,7 +398,7 @@ function insert_in_basis_hash_table_pivots(
         i = UInt32(1)
         @label Restart
         while i <= ht.size
-            k = (h + i) & mod + UInt32(1)
+            k = hashnextindex(h, i, mod)
             hm = bhash[k]
 
             hm == 0 && break
@@ -450,7 +472,7 @@ function insert_plcms_in_basis_hash_table!(
         i = UInt32(1)
         @label Restart
         while i <= ht.size
-            k = (h + i) & mod + UInt32(1)
+            k = hashnextindex(h, i, mod)
             hm = ht.hashtable[k]
 
             hm == 0 && break

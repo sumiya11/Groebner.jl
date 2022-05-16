@@ -4,10 +4,7 @@
 
 
 #------------------------------------------------------------------------------
-####### Hashtable #######
-
-# TODO: make all insertions to be carried via one method (?)
-#       Is that possible? Yes
+####### Hashtable ######
 
 # TODO: make immutable
 #=
@@ -38,9 +35,7 @@ end
     and designed to store and operate with monomials
 =#
 mutable struct MonomialHashtable
-    # stores monomial exponent vectors,
-    # assumes degrees are < 2^16
-    exponents::Vector{Vector{UInt16}}
+    exponents::Vector{ExponentVector}
 
     # maps exponent hash to its position in exponents array
     hashtable::Vector{Int}
@@ -81,14 +76,18 @@ end
 
 #------------------------------------------------------------------------------
 
+function hashnextindex(h::UInt32, j::UInt32, mod::UInt32)
+     (h + j) & mod + UInt32(1)
+end
+
+#------------------------------------------------------------------------------
+
 # initialize and set fields for basis hashtable
-# TODO: Initial size is a nice parameter to play with
 function initialize_basis_hash_table(
         ring::PolyRing,
         rng::Random.AbstractRNG;
         initial_size::Int=2^16)
 
-    # TODO: adapive choice of `initial_size`
     exponents = Vector{Vector{UInt16}}(undef, initial_size)
     hashdata  = Vector{Hashvalue}(undef, initial_size)
     hashtable = zeros(Int, initial_size)
@@ -102,7 +101,6 @@ function initialize_basis_hash_table(
     for i in 1:explen
         # we don't want hash vector components to be zero
         while hasher[i] == 0
-            # TODO: pass random generator
             hasher[i] = rand(rng, UInt32)
         end
     end
@@ -147,7 +145,8 @@ function copy_hashtable(ht::MonomialHashtable)
     table = Vector{Int}(undef, ht.size)
     data = Vector{Hashvalue}(undef, ht.size)
     exps[1] = zeros(UInt16, ht.explen)
-    for i in 2:ht.load
+
+    @inbounds for i in 2:ht.load
         exps[i] = copy(ht.exponents[i])
         table[i] = ht.hashtable[i]
         data[i] = copy_hashvalue(ht.hashdata[i])
@@ -185,8 +184,7 @@ function initialize_secondary_hash_table(basis_ht::MonomialHashtable)
     ndivvars = basis_ht.ndivvars
     ndivbits = basis_ht.ndivbits
 
-    # TODO: preserve hasher?
-    # yes
+    # preserve hasher
     hasher = basis_ht.hasher
 
     load = 1
@@ -229,12 +227,12 @@ function enlarge_hash_table!(ht::MonomialHashtable)
     ht.hashtable = zeros(Int, ht.size)
 
     mod = UInt32(ht.size - 1)
-    for i in ht.offset:ht.load  # TODO: hardcoding 2 is bad
+    for i in ht.offset:ht.load
         # hash for this elem is already computed
         he = ht.hashdata[i].hash
         hidx = he
         @inbounds for j in UInt32(1):UInt32(ht.size)
-            hidx = (he + j) & mod + UInt32(1)
+            hidx = hashnextindex(he, j, mod)
             ht.hashtable[hidx] != 0 && continue
             ht.hashtable[hidx] = i
             break
@@ -365,11 +363,11 @@ function copy_basis_thorough(basis::Basis{T}) where {T}
     #  That cost a day of debugging ////
     gens   = Vector{Vector{Int}}(undef, basis.size)
     coeffs = Vector{Vector{T}}(undef, basis.size)
-    for i in 1:basis.ntotal
+    @inbounds for i in 1:basis.ntotal
         gens[i] = Vector{Int}(undef, length(basis.gens[i]))
         coeffs[i] = Vector{T}(undef, length(basis.coeffs[i]))
 
-        for j in 1:length(basis.gens[i])
+        @inbounds for j in 1:length(basis.gens[i])
             gens[i][j] = basis.gens[i][j]
             coeffs[i][j] = basis.coeffs[i][j]
         end
@@ -423,14 +421,14 @@ end
 # by dividing it by leading coefficient
 function normalize_basis!(basis::Basis{CoeffQQ})
     cfs = basis.coeffs
-    for i in 1:basis.ntotal
+    @inbounds for i in 1:basis.ntotal
         # mul = inv(cfs[i][1])
         # hack for now, TODODO
         if !isassigned(cfs, i)
             continue
         end
         mul = inv(cfs[i][1])
-        for j in 2:length(cfs[i])
+        @inbounds for j in 2:length(cfs[i])
             cfs[i][j] *= mul
         end
         cfs[i][1] = one(cfs[i][1])

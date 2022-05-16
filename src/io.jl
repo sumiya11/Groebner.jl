@@ -19,9 +19,6 @@
     and passed to `convert_to_output`
 =#
 
-# TODO: filter zeroes from input
-#  upd: actually, do we need this ?
-
 #------------------------------------------------------------------------------
 
 """
@@ -149,7 +146,6 @@ end
 
 #------------------------------------------------------------------------------
 
-# TODO: check type stability
 function extract_ring(
         orig_polys::Vector{<:AbstractPolynomialLike{T}}) where {T}
 
@@ -336,7 +332,6 @@ function checkexact(c, T)
     if typemin(T) <= c <= typemax(T)
         return true
     else
-        # TODO
         throw(DomainError(c, "Coefficient $c in the final basis cannot be converted exactly to $T. Using big arithmetic in input should fix this."))
         return false
     end
