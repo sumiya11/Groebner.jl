@@ -1,6 +1,19 @@
 
 # The file contains definitions of some commonly used functions
 
+#------------------------------------------------------------------------------
+
+function _interreduce_reference(G::Vector{P}) where {P}
+    sort!(G, by=leading_monomial)
+    ans = Vector{P}(undef, 0)
+    for i in 1:length(G)
+        _, reduced = divrem(G[i], G[1:end .!= i])
+        push!(ans, reduced)
+    end
+    filter!(!iszero, ans)
+end
+
+#------------------------------------------------------------------------------
 
 #=
 Constructs the reduced Groebner basis given that G is itself a Groebner basis,

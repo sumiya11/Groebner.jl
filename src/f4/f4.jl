@@ -611,10 +611,10 @@ function f4!(ring::PolyRing,
         # (minimal lcm degrees are selected),
         # and puts these into the matrix rows
         select_normal!(pairset, basis, matrix, ht, symbol_ht)
-        @debug "Selected $(divexact(matrix.nrows, 2)) pairs"
+        # TODO: learn, and select\discard S-polynomials
 
         # @warn "ht select" ht.load ht.size
-
+        
         symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
         # symbolic_preprocessing_relaxed!(basis, matrix, ht, symbol_ht)
         @debug "Matrix of size $((matrix.nrows, matrix.ncols)), density TODO"

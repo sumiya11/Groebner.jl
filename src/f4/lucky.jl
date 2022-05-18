@@ -49,7 +49,7 @@ function isluckyprime(tracker::PrimeTracker, prime::UInt64)
     p   = BigInt(prime)
     for poly in tracker.coeffs
         for c in poly
-            if Base.GMP.MPZ.tdiv_r!(buf, c, p) == 0
+            if Base.GMP.MPZ.cmp_ui(Base.GMP.MPZ.tdiv_r!(buf, c, p), 0) == 0
                  return false
             end
         end

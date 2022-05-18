@@ -399,6 +399,7 @@ function sort_columns_by_hash!(col2hash, symbol_ht)
 end
 
 #------------------------------------------------------------------------------
+# TODO: ordering??
 
 function sort_input_to_change_ordering(exps, coeffs, ord::Symbol)
     for polyidx in 1:length(exps)

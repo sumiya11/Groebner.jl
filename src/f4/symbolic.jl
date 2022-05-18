@@ -18,6 +18,8 @@ function select_normal!(
     # number of selected pairs
     npairs = min_idx
 
+    @debug "Selected $(npairs) pairs"
+
     sort_pairset_by_lcm!(pairset, npairs, ht)
 
     reinitialize_matrix!(matrix, npairs)
@@ -339,10 +341,11 @@ function symbolic_preprocessing!(
     end
 
     #= Second round, we add multiplied polynomials which divide  =#
-    #= lcm added on previous for loop                             =#
+    #= lcm added on previous for loop                            =#
     while i <= symbol_ht.load
         if matrix.size == matrix.nup
             matrix.size *= 2
+            # TODO:
             resize!(matrix.uprows, matrix.size)
             resize!(matrix.up2coef, matrix.size)
         end
