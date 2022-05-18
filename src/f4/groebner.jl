@@ -166,7 +166,7 @@ function groebner_qq(
     CORRTIME += time() - t
 
     gap = 1
-    primegaps = (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+    primegaps = (1, 1, 1, 1, 1)
     primemult = 2
     # if first prime was not successfull
     while !correct

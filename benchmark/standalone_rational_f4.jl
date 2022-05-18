@@ -36,7 +36,7 @@ end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
-        ("cyclic 11", Groebner.rootn(11, ground=ground)),
+        ("root 11", Groebner.rootn(11, ground=ground)),
         ("noon 7"    ,Groebner.noonn(7, ground=ground)),
         ("eco 10"    ,Groebner.eco10(ground=ground)),
         ("katsura 8"    ,Groebner.katsuran(8, ground=ground))
@@ -54,12 +54,12 @@ ground = AbstractAlgebra.QQ
 run_f4_ff_degrevlex_benchmarks(ground)
 
 #=
-cyclic 11
-  50.711 ms (191971 allocations: 23.54 MiB)
+root 11
+  55.078 ms (183751 allocations: 23.39 MiB)
 noon 7
-  910.447 ms (2087052 allocations: 298.79 MiB)
+  805.825 ms (1773797 allocations: 276.06 MiB)
 eco 10
-  1.484 s (1994909 allocations: 417.28 MiB)
+  911.046 ms (1324278 allocations: 294.65 MiB)
 katsura 8
-  4.509 s (2982135 allocations: 499.90 MiB)
+  3.124 s (1794620 allocations: 312.78 MiB)
 =#
