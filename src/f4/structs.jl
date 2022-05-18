@@ -410,6 +410,7 @@ function normalize_basis!(basis::Basis{CoeffFF})
         mul = invmod(cfs[i][1], ch) % ch
         @inbounds for j in 2:length(cfs[i])
             # cfs[i][j] *= mul
+            # TODO: faster division
             cfs[i][j] = cfs[i][j]*mul % ch
         end
         cfs[i][1] = one(cfs[i][1])

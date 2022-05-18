@@ -934,7 +934,7 @@ function convert_matrix_rows_to_basis_elements!(
     rows = matrix.lowrows
     crs = basis.ndone
 
-    @debug "New pivots" matrix.npivots
+    # @warn "New pivots" matrix.npivots
 
     @inbounds for i in 1:matrix.npivots
         @inbounds colidx = rows[i][1]

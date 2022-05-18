@@ -1,4 +1,30 @@
 
+function select_normal_and_discard!(pairset::Pairset, basis::Basis,
+                                matrix::MacaulayMatrix, ht::MonomialHashtable,
+                                symbol_ht::MonomialHashtable; maxpairs::Int=0)
+
+    sort_pairset_by_degree!(pairset, 1, pairset.load - 1)
+    # sort by degree
+
+    ps = pairset.pairs
+    min_deg = ps[1].deg
+    min_idx = 0
+
+    while min_idx < pairset.load && ps[min_idx + 1].deg == min_deg
+        min_idx += 1
+    end
+
+    # number of discarded pairs
+    npairs = min_idx
+
+    @debug "Discarder $(npairs) pairs"
+
+    for i in 1:pairset.load - npairs
+        ps[i] = ps[i + npairs]
+    end
+    pairset.load -= npairs
+end
+
 function select_normal!(
             pairset::Pairset, basis::Basis, matrix::MacaulayMatrix,
             ht::MonomialHashtable, symbol_ht::MonomialHashtable;
@@ -249,6 +275,8 @@ function select_isgroebner!(
     resize!(matrix.lowrows, matrix.nrows - matrix.ncols)
 end
 
+#------------------------------------------------------------------------------
+
 function find_multiplied_reducer!(
             basis::Basis, matrix::MacaulayMatrix,
             ht::MonomialHashtable, symbol_ht::MonomialHashtable,
@@ -302,6 +330,8 @@ function find_multiplied_reducer!(
     end
 
 end
+
+#------------------------------------------------------------------------------
 
 # Given the set of polynomials L and the basis G,
 # extends L to contain possible polys for reduction by G,
@@ -365,6 +395,8 @@ function symbolic_preprocessing!(
     matrix.size  = matrix.nrows
 
 end
+
+#------------------------------------------------------------------------------
 
 # Given the set of polynomials L and the basis G,
 # extends L to contain possible polys for reduction by G,
@@ -430,12 +462,15 @@ function symbolic_preprocessing_relaxed!(
 
 end
 
+#------------------------------------------------------------------------------
+
 function update_pairset!(
             pairset,
             basis,
             ht,
             update_ht,
-            idx)
+            idx,
+            plcm)
 
     pl = pairset.load
     bl = idx
@@ -444,8 +479,9 @@ function update_pairset!(
 
     new_lead  = basis.gens[idx][1]
 
+    # @error "" bl
     # initialize new critical lcms
-    plcm = Vector{Int}(undef, bl + 1)
+    # plcm = Vector{Int}(undef, bl + 1)
 
     # for each combination (new_Lead, basis.gens[i][1])
     # generate a pair
@@ -534,6 +570,8 @@ function update_pairset!(
 
 end
 
+#------------------------------------------------------------------------------
+
 function update_basis!(
             basis,
             ht::MonomialHashtable,
@@ -570,8 +608,11 @@ end
 function is_redundant!(
             pairset, basis, ht, update_ht, idx)
 
-
-    reinitialize_hash_table!(update_ht, 2*idx)
+    # TODO
+    if 2*update_ht.load > update_ht.size
+        enlarge_hash_table!(update_ht)
+    end
+    # reinitialize_hash_table!(update_ht, 2*idx)
 
     ps = pairset.pairs
 
@@ -604,11 +645,14 @@ function is_redundant!(
     return false
 end
 
-function update!(
+#------------------------------------------------------------------------------
+
+function update_trace!(
         pairset::Pairset,
         basis::Basis,
         ht::MonomialHashtable,
-        update_ht::MonomialHashtable)
+        update_ht::MonomialHashtable,
+        plcm)
 
     #=
         Always check redundancy, for now
@@ -623,20 +667,90 @@ function update!(
         npairs += i
     end
 
+    # make sure pairset and update hashtable have enough
+    # space to store new pairs
+    # TODO: we create too big array, can be fixed
+    # @error "before" pairset.load npairs pairset.load+npairs length(pairset.pairs)
+    check_enlarge_pairset!(pairset, npairs)
+    # @error "after enlarge" length(pairset.pairs)
+
+    # @error "" basis.ndone+1 basis.ntotal
+
+    if basis.ndone + 1 <= basis.ntotal
+        # @error "" basis.ndone basis.ntotal
+        # red = 0
+        # for each new element in basis
+        for i in basis.ndone+1:basis.ntotal
+            # check redundancy of new poly
+            if is_redundant!(pairset, basis, ht, update_ht, i)
+                continue
+            end
+            if length(plcm) < basis.ntotal + 1
+                resize!(plcm, basis.ntotal + 1)
+            end
+            update_pairset!(pairset, basis, ht, update_ht, i, plcm)
+        end
+    end
+
+    # @error "" red basis.ntotal-basis.ndone
+    # println("--------------------------")
+    # @error "after update" pairset.load length(pairset.pairs)
+
+    update_basis!(basis, ht, update_ht)
+end
+
+#------------------------------------------------------------------------------
+
+function update!(
+        pairset::Pairset,
+        basis::Basis,
+        ht::MonomialHashtable,
+        update_ht::MonomialHashtable,
+        plcm)
+
+    #=
+        Always check redundancy, for now
+    =#
+
+    # number of added elements
+    npivs = basis.ntotal
+
+    # number of potential critical pairs to add
+    npairs = basis.ndone * npivs
+    for i in 1:npivs
+        npairs += i
+    end
 
     # make sure pairset and update hashtable have enough
     # space to store new pairs
     # TODO: we create too big array, can be fixed
+    # @error "before" pairset.load npairs pairset.load+npairs length(pairset.pairs)
     check_enlarge_pairset!(pairset, npairs)
+    # @error "after enlarge" length(pairset.pairs)
 
-    # for each new element in basis
-    for i in basis.ndone+1:basis.ntotal
-        # check redundancy of new poly
-        if is_redundant!(pairset, basis, ht, update_ht, i)
-            continue
+    # @error "" basis.ndone+1 basis.ntotal
+
+    if basis.ndone + 1 <= basis.ntotal
+        # @error "" basis.ndone basis.ntotal
+        # red = 0
+        # for each new element in basis
+        # @error pairset.load basis.ndone+1 basis.ntotal
+        for i in basis.ndone+1:basis.ntotal
+            # check redundancy of new poly
+            if is_redundant!(pairset, basis, ht, update_ht, i)
+                continue
+            end
+            if length(plcm) < 2*(basis.ntotal + 1)
+                resize!(plcm, 2*(basis.ntotal + 1))
+            end
+            update_pairset!(pairset, basis, ht, update_ht, i, plcm)
         end
-        update_pairset!(pairset, basis, ht, update_ht, i)
+        # @error pairset.load
     end
+
+    # @error "" red basis.ntotal-basis.ndone
+    # println("--------------------------")
+    # @error "after update" pairset.load length(pairset.pairs)
 
     update_basis!(basis, ht, update_ht)
 end

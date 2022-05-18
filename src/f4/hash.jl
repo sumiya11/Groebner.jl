@@ -4,9 +4,12 @@
 function insert_in_hash_table!(ht::MonomialHashtable, e::ExponentVector)
     # generate hash
     he = UInt32(0)
+
+    # here, e[i] is of type UInt16, while hasher[i] is UInt32 =(
     @inbounds for i in 1:ht.explen
         he += ht.hasher[i] * e[i]
     end
+
     # find new elem position in the table
     hidx = Int(he)  # Int for type stability
     # power of twoooo
@@ -185,11 +188,11 @@ function check_monomial_division_in_update(
             continue
         end
         # fast division check
-        if (~ht.hashdata[a[j]].divmask & divmask) != 0
+        @inbounds if (~ht.hashdata[a[j]].divmask & divmask) != 0
             j += 1
             continue
         end
-        ea = ht.exponents[a[j]]
+        @inbounds ea = ht.exponents[a[j]]
         @inbounds for i in 1:ht.explen
             if ea[i] < lcmexp[i]
                 j += 1
@@ -520,13 +523,13 @@ end
 function get_lcm(he1::Int, he2::Int,
                     ht1::MonomialHashtable, ht2::MonomialHashtable)
 
-    e1   = ht1.exponents[he1]
-    e2   = ht1.exponents[he2]
-    etmp = ht1.exponents[1]
+    @inbounds e1   = ht1.exponents[he1]
+    @inbounds e2   = ht1.exponents[he2]
+    @inbounds etmp = ht1.exponents[1]
 
     # TODO: degrevlex only
-    etmp[end] = 0
-    for i in 1:ht1.explen-1
+    @inbounds etmp[end] = 0
+    @inbounds for i in 1:ht1.explen-1
         etmp[i]    = max(e1[i], e2[i])
         etmp[end] += etmp[i]
     end

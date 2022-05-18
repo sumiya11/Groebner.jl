@@ -596,7 +596,8 @@ function f4!(ring::PolyRing,
     # makes basis fields valid,
     # does not copy,
     # checks for redundancy of new elems
-    update!(pairset, basis, ht, update_ht)
+    plcm = Vector{Int}(undef, 0)
+    update!(pairset, basis, ht, update_ht, plcm)
 
     # @warn "ht update" ht.load ht.size
 
@@ -614,7 +615,7 @@ function f4!(ring::PolyRing,
         # TODO: learn, and select\discard S-polynomials
 
         # @warn "ht select" ht.load ht.size
-        
+
         symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
         # symbolic_preprocessing_relaxed!(basis, matrix, ht, symbol_ht)
         @debug "Matrix of size $((matrix.nrows, matrix.ncols)), density TODO"
@@ -628,7 +629,7 @@ function f4!(ring::PolyRing,
         # update the current basis with polynomials produced from reduction,
         # does not copy,
         # checks for redundancy
-        update!(pairset, basis, ht, update_ht)
+        update!(pairset, basis, ht, update_ht, plcm)
 
         # @warn "ht update" ht.load ht.size
 

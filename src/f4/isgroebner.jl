@@ -11,7 +11,8 @@ function isgroebner_f4!(ring::PolyRing,
 
     pairset = initialize_pairset()
 
-    update!(pairset, basis, ht, update_ht)
+    plcm = Vector{Int}(undef, 0)
+    update!(pairset, basis, ht, update_ht, plcm)
 
     if pairset.load == 0
         return true

@@ -107,6 +107,10 @@ include("f4/sorting.jl")
 include("f4/lucky.jl")
 include("f4/coeffs.jl")
 include("f4/f4.jl")
+
+# f4 with tracing
+include("f4/f4trace.jl")
+
 include("f4/groebner.jl")
 include("f4/isgroebner.jl")
 include("f4/normalform.jl")

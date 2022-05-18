@@ -6,6 +6,7 @@ using Base.Threads
 
 using BenchmarkTools
 include("../src/Groebner.jl")
+include("/data/parser.jl")
 
 using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error))
@@ -58,6 +59,8 @@ end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
+    ("siwr", read_SIWR()), # 0.19 vs 0.03
+    ("seaijrc", read_SEAIJRC()), # 0.19 vs 0.03
     ("cyclic 7", Groebner.cyclicn(7, ground=ground)), # 0.19 vs 0.03
     ("cyclic 8", Groebner.cyclicn(8, ground=ground)), # 0.60 vs 0.9
     ("katsura 8",Groebner.katsuran(8, ground=ground)), # 1.35 vs 71.121
