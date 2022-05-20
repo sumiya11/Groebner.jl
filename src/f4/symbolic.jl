@@ -489,6 +489,7 @@ function update_pairset!(
         plcm[i] = get_lcm(basis.gens[i][1], new_lead, ht, update_ht)
         deg = update_ht.hashdata[plcm[i]].deg
         newidx = pl + i
+        # TRACE: move isred above
         if basis.isred[i] == 0
             ps[newidx] = SPair(i, idx, plcm[i], deg)
         else
@@ -496,6 +497,8 @@ function update_pairset!(
             ps[newidx] = SPair(i, idx, 0, deg)
         end
     end
+
+    # @error "" one two
 
     # traverse existing pairs
     @inbounds for i in 1:pl
@@ -510,7 +513,7 @@ function update_pairset!(
             ps[i] = SPair(ps[i].poly1, ps[i].poly2, 0, ps[i].deg)
         end
     end
-    # TODO: this can be done faster is we
+    # TODO: this can be done faster if we
     # create only non-redundant pairs at first
 
     # traverse new pairs to check for redundancy
@@ -647,60 +650,6 @@ end
 
 #------------------------------------------------------------------------------
 
-function update_trace!(
-        pairset::Pairset,
-        basis::Basis,
-        ht::MonomialHashtable,
-        update_ht::MonomialHashtable,
-        plcm)
-
-    #=
-        Always check redundancy, for now
-    =#
-
-    # number of added elements
-    npivs = basis.ntotal
-
-    # number of potential critical pairs to add
-    npairs = basis.ndone * npivs
-    for i in 1:npivs
-        npairs += i
-    end
-
-    # make sure pairset and update hashtable have enough
-    # space to store new pairs
-    # TODO: we create too big array, can be fixed
-    # @error "before" pairset.load npairs pairset.load+npairs length(pairset.pairs)
-    check_enlarge_pairset!(pairset, npairs)
-    # @error "after enlarge" length(pairset.pairs)
-
-    # @error "" basis.ndone+1 basis.ntotal
-
-    if basis.ndone + 1 <= basis.ntotal
-        # @error "" basis.ndone basis.ntotal
-        # red = 0
-        # for each new element in basis
-        for i in basis.ndone+1:basis.ntotal
-            # check redundancy of new poly
-            if is_redundant!(pairset, basis, ht, update_ht, i)
-                continue
-            end
-            if length(plcm) < basis.ntotal + 1
-                resize!(plcm, basis.ntotal + 1)
-            end
-            update_pairset!(pairset, basis, ht, update_ht, i, plcm)
-        end
-    end
-
-    # @error "" red basis.ntotal-basis.ndone
-    # println("--------------------------")
-    # @error "after update" pairset.load length(pairset.pairs)
-
-    update_basis!(basis, ht, update_ht)
-end
-
-#------------------------------------------------------------------------------
-
 function update!(
         pairset::Pairset,
         basis::Basis,
@@ -726,12 +675,12 @@ function update!(
     # TODO: we create too big array, can be fixed
     # @error "before" pairset.load npairs pairset.load+npairs length(pairset.pairs)
     check_enlarge_pairset!(pairset, npairs)
+    pairset_size = length(pairset.pairs)
     # @error "after enlarge" length(pairset.pairs)
 
     # @error "" basis.ndone+1 basis.ntotal
 
     if basis.ndone + 1 <= basis.ntotal
-        # @error "" basis.ndone basis.ntotal
         # red = 0
         # for each new element in basis
         # @error pairset.load basis.ndone+1 basis.ntotal
@@ -740,8 +689,8 @@ function update!(
             if is_redundant!(pairset, basis, ht, update_ht, i)
                 continue
             end
-            if length(plcm) < 2*(basis.ntotal + 1)
-                resize!(plcm, 2*(basis.ntotal + 1))
+            if length(plcm) < basis.ntotal + 1
+                resize!(plcm, floor(Int, basis.ntotal*1.1)+ 1)
             end
             update_pairset!(pairset, basis, ht, update_ht, i, plcm)
         end
@@ -753,6 +702,8 @@ function update!(
     # @error "after update" pairset.load length(pairset.pairs)
 
     update_basis!(basis, ht, update_ht)
+
+    pairset_size
 end
 
 

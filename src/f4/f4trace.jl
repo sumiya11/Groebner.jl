@@ -4,12 +4,13 @@
 =#
 
 mutable struct Tracer
-
-    iteration_info::Vector{Int}
+    isredundant_iter::Vector{Int}
+    pairset_size::Int
+    basis_ntotal::Int
     ready::Bool
 
     function Tracer()
-        new(Vector{Int}(undef, 0), false)
+        new(Vector{Int}(undef, 0), 0, 0, false)
     end
 end
 
@@ -34,6 +35,7 @@ end
 function f4trace!(ring::PolyRing,
              basis::Basis{Coefftype},
              tracer::Tracer,
+             pairset,
              ht,
              reduced,
              linalg) where {Coefftype<:Coeff}
@@ -58,7 +60,12 @@ function f4trace!(ring::PolyRing,
     symbol_ht  = initialize_secondary_hash_table(ht)
 
     # a set to store critical pairs of polynomials to be reduced
-    pairset = initialize_pairset()
+    # if tracer.ready
+    #     pairset_initial_size = tracer.pairset_size
+    # else
+    #     pairset_initial_size = 64
+    # end
+    # pairset = initialize_pairset(initial_size=pairset_initial_size)
 
     # @warn "ht initialily" ht.load ht.size
 
@@ -66,7 +73,18 @@ function f4trace!(ring::PolyRing,
     # does not copy,
     # checks for redundancy of new elems
     plcm = Vector{Int}(undef, 0)
-    update!(pairset, basis, ht, update_ht, plcm)
+    if tracer.ready
+        resize!(plcm, tracer.basis_ntotal + 1)
+    end
+
+    # @error "" length(pairset.pairs) length(plcm)
+
+    pairset_size = update!(pairset, basis, ht, update_ht, plcm)
+    if !tracer.ready
+        tracer.pairset_size = pairset_size
+    end
+
+    # @warn "tracer info" tracer.ready tracer.pairset_size
 
     # @warn "ht update" ht.load ht.size
 
@@ -78,7 +96,7 @@ function f4trace!(ring::PolyRing,
         @debug "Available $(pairset.load) pairs"
 
         # TODO: learn, and select\discard S-polynomials
-        if tracer.ready && tracer.iteration_info[d] == 0
+        if tracer.ready && tracer.isredundant_iter[d] == 0
             select_normal_and_discard!(pairset, basis, matrix, ht, symbol_ht)
             matrix    = initialize_matrix(ring, Coefftype)
             symbol_ht = initialize_secondary_hash_table(ht)
@@ -103,15 +121,15 @@ function f4trace!(ring::PolyRing,
         @debug "Matrix reduced, density TODO"
 
         if !tracer.ready
-            push!(tracer.iteration_info, 0)
+            push!(tracer.isredundant_iter, 0)
             if matrix.npivots != 0
-                tracer.iteration_info[end] = 1
+                tracer.isredundant_iter[end] = 1
             end
         end
 
         #=
-        if tracer.ready && length(tracer.iteration_info) > d
-            if tracer.iteration_info[d + 1] == 0
+        if tracer.ready && length(tracer.isredundant_iter) > d
+            if tracer.isredundant_iter[d + 1] == 0
                 matrix    = initialize_matrix(ring, Coefftype)
                 symbol_ht = initialize_secondary_hash_table(ht)
                 continue
@@ -122,8 +140,10 @@ function f4trace!(ring::PolyRing,
         # update the current basis with polynomials produced from reduction,
         # does not copy,
         # checks for redundancy
-        update!(pairset, basis, ht, update_ht, plcm)
-
+        pairset_size = update!(pairset, basis, ht, update_ht, plcm)
+        if !tracer.ready
+            tracer.pairset_size = max(pairset_size, tracer.pairset_size)
+        end
         # @warn "ht update" ht.load ht.size
 
         # TODO: is this okay hm ?
@@ -140,6 +160,9 @@ function f4trace!(ring::PolyRing,
         end
     end
 
+    tracer.ready = true
+    tracer.basis_ntotal = basis.ntotal
+
     # remove redundant elements
     filter_redundant!(basis)
 
@@ -148,8 +171,6 @@ function f4trace!(ring::PolyRing,
     end
 
     standardize_basis!(basis, ht, ht.ord)
-
-    tracer.ready = true
 
     # assertion
     #=

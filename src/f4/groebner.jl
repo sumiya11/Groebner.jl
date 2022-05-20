@@ -132,10 +132,12 @@ function groebner_qq(
 
     tracer = Tracer()
 
+    pairset = initialize_pairset()
+
     # ADDED
     global F4TIME
     # ADDED
-    F4TIME += @elapsed f4trace!(ring, gens_ff, tracer, ht, reduced, meta.linalg)
+    F4TIME += @elapsed f4trace!(ring, gens_ff, tracer, pairset, ht, reduced, meta.linalg)
     # f4!(ring, gens_ff, ht, reduced, meta.linalg)
 
     # reconstruct into integers
@@ -198,7 +200,7 @@ function groebner_qq(
 
             # @error "tracer" tracer
 
-            F4TIME += @elapsed f4trace!(ring, gens_ff, tracer, ht, reduced, meta.linalg)
+            F4TIME += @elapsed f4trace!(ring, gens_ff, tracer, pairset, ht, reduced, meta.linalg)
             # f4!(ring, gens_ff, ht, reduced, meta.linalg)
             # reconstruct into integers
             @info "CRT modulo ($(primetracker.modulo), $(prime))"

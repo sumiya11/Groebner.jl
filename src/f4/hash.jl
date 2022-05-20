@@ -46,7 +46,14 @@ function insert_in_hash_table!(ht::MonomialHashtable, e::ExponentVector)
     # add its position to hashtable, and insert exponent to that position
     vidx = ht.load + 1
     ht.hashtable[hidx] = vidx
-    ht.exponents[vidx] = copy(e)
+
+    # TODO: check efficiency
+    ht.exponents[vidx] = similar(e)
+    ve = ht.exponents[vidx]
+    @inbounds for i in 1:length(e)
+        ve[i] = e[i]
+    end
+    # ht.exponents[vidx] = copy(e)
 
     divmask = generate_monomial_divmask(e, ht)
     ht.hashdata[vidx] = Hashvalue(he, divmask, 0, e[end])

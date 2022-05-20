@@ -4,7 +4,7 @@ import Nemo
 function read_SEAIJRC()
     @info "Reading SEAIJRC"
     polys = []
-    apath = abspath("benchmark\\data\\gbSEAIJRC")
+    apath = "C:\\data\\projects\\gbdata\\gbSEAIJRC"
     open(apath, "r") do f
         head = "b, alpha, g2, Ninv, k, g1, q, r, sat_aux1, sat_aux2"
         body = readline(f)
@@ -27,7 +27,7 @@ end
 function read_SIWR()
     @info "Reading SIWR"
     polys = []
-    apath = abspath("benchmark\\data\\gbSIWR")
+    apath = "C:\\data\\projects\\gbdata\\gbSIWR"
     open(apath, "r") do f
         head = readline(f)
         body = readline(f)

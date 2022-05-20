@@ -94,9 +94,11 @@ function scale_denominators!(
         @assert length(coeffs_zz[i]) == length(coeffs_qq[i])
 
         den = common_denominator(coeffbuff, coeffs_qq[i])
+        sz  = Base.GMP.MPZ.sizeinbase(den, 2)
         @inbounds for j in 1:length(coeffs_qq[i])
             num = numerator(coeffs_qq[i][j])
             Base.GMP.MPZ.tdiv_q!(buf, den, denominator(coeffs_qq[i][j]))
+            Base.GMP.MPZ.realloc2!(coeffs_zz[i][j], sz)
             Base.GMP.MPZ.mul!(coeffs_zz[i][j], num, buf)
         end
     end

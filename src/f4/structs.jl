@@ -147,6 +147,7 @@ function copy_hashtable(ht::MonomialHashtable)
     exps[1] = zeros(UInt16, ht.explen)
 
     @inbounds for i in 2:ht.load
+        # TODO: ELIDE COPY
         exps[i] = copy(ht.exponents[i])
         table[i] = ht.hashtable[i]
         data[i] = copy_hashvalue(ht.hashdata[i])
@@ -274,7 +275,9 @@ end
 function check_enlarge_pairset!(ps::Pairset, added::Int)
     sz = length(ps.pairs)
     # TODO: shrink pairset ?
+    # @warn ps.load + added sz
     if ps.load + added >= sz
+        # @error "resuze"  ps.load + added sz ps.load + added >= sz
         newsz = max(2 * sz, ps.load + added)
         resize!(ps.pairs, newsz)
     end
@@ -498,6 +501,16 @@ mutable struct MacaulayMatrix{T<:Coeff}
     # should be row to coef
     up2coef::Vector{Int}
     low2coef::Vector{Int}
+end
+
+function refresh_matrix!(matrix)
+    matrix.npivots = 0
+    matrix.nrows   = 0
+    matrix.ncols   = 0
+    matrix.nup     = 0
+    matrix.nlow    = 0
+    matrix.nleft   = 0
+    matrix.nright  = 0
 end
 
 function initialize_matrix(ring::PolyRing, ::Type{T}) where {T<:Coeff}
