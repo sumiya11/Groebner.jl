@@ -54,7 +54,7 @@ We compare the runtime of our implementation against the ones from `Singular` an
 | [noon-7](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/noon7.txt)      |  **0.20s**  | 0.40s    | 1.19s|
 | [noon-8](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/noon8.txt)      |  **1.88s**  | 3.58s    | 8.05s |
 
-The bases are computed in `degrevlex` monomial ordering over finite field of characteristic 2³¹-1 with all operations single-threaded.
+The bases are computed in `degrevlex` monomial ordering over finite field of characteristic $2^{31}-1$ with all operations single-threaded.
 
 We emphasize that `Groebner.jl` is a specialized library while `Singular`
 and `Maple` are extensive general purpose computer algebra systems.
