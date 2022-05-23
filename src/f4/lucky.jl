@@ -12,11 +12,10 @@
         FIRST_LUCKY_PRIME and FIRST_GOOD_PRIME
 =#
 
-# const FIRST_LUCKY_PRIME = 2^31 - 1
 const FIRST_LUCKY_PRIME = 2^31 - 1
 const FIRST_GOOD_PRIME  = 2^30 + 3
 
-# const FIRST_LUCKY_PRIME = 32771
+# const FIRST_LUCKY_PRIME =  5
 # const FIRST_GOOD_PRIME  = 16411
 
 mutable struct PrimeTracker

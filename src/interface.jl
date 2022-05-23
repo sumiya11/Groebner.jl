@@ -67,7 +67,7 @@ function groebner(
     ring, exps, coeffs = convert_to_internal(polynomials, ordering)
 
     #= check and set algorithm parameters =#
-    metainfo = set_metaparameters(ring, ordering, certify, forsolve, linalg)
+    metainfo = set_metaparameters(ring, ordering, certify, forsolve, linalg, rng)
     # now ring stores computation ordering
     # metainfo is now a struct to store target ordering
 
@@ -79,11 +79,11 @@ function groebner(
         # bexps, bcoeffs = groebner_ff(ring, exps, coeffs, reduced, rng, metainfo)
         # if finite field
         # Always returns UInt coefficients #
-        bexps, bcoeffs = groebner_ff(ring, exps, coeffs, reduced, rng, metainfo)
+        bexps, bcoeffs = groebner_ff(ring, exps, coeffs, reduced, metainfo)
     else
         # if rational coefficients
         # Always returns rational coefficients #
-        bexps, bcoeffs = groebner_qq(ring, exps, coeffs, reduced, rng, metainfo)
+        bexps, bcoeffs = groebner_qq(ring, exps, coeffs, reduced, metainfo)
     end
 
     # ordering in bexps here matches target ordering in metainfo
@@ -135,7 +135,7 @@ function isgroebner(
     ring, exps, coeffs = convert_to_internal(polynomials, ordering)
 
     #= check and set algorithm parameters =#
-    metainfo = set_metaparameters(ring, ordering, certify, false, :exact)
+    metainfo = set_metaparameters(ring, ordering, certify, false, :exact, rng)
     # now ring stores computation ordering
     # metainfo is now a struct to store target ordering
 
@@ -146,11 +146,11 @@ function isgroebner(
     if ring.ch != 0
         # if finite field
         # Always returns UInt coefficients #
-        flag = isgroebner_ff(ring, exps, coeffs, rng, metainfo)
+        flag = isgroebner_ff(ring, exps, coeffs, metainfo)
     else
         # if rational coefficients
         # Always returns rational coefficients #
-        flag = isgroebner_qq(ring, exps, coeffs, rng, metainfo)
+        flag = isgroebner_qq(ring, exps, coeffs, metainfo)
     end
 
     #=
@@ -225,7 +225,7 @@ function normalform(
     ring = ring1
 
     #= check and set algorithm parameters =#
-    metainfo = set_metaparameters(ring, ordering, false, false, :exact)
+    metainfo = set_metaparameters(ring, ordering, false, false, :exact, rng)
 
     #= change input ordering if needed =#
     assure_ordering!(ring, basisexps, basiscoeffs, metainfo)
@@ -280,9 +280,9 @@ function fglm(
     # Copies input, so that polynomials would not be changed itself.
     ring, exps, coeffs = convert_to_internal(basis, :input)
 
-    metainfo = set_metaparameters(ring, :lex, false, false, :exact)
+    metainfo = set_metaparameters(ring, :lex, false, false, :exact, rng)
 
-    bexps, bcoeffs = fglm_f4(ring, exps, coeffs, rng, metainfo)
+    bexps, bcoeffs = fglm_f4(ring, exps, coeffs, metainfo)
 
     # lol
     ring.ord = :lex
@@ -327,9 +327,9 @@ function kbase(
     # Copies input, so that polynomials would not be changed itself.
     ring, exps, coeffs = convert_to_internal(basis, :input)
 
-    metainfo = set_metaparameters(ring, :input, false, false, :exact)
+    metainfo = set_metaparameters(ring, :input, false, false, :exact, rng)
 
-    bexps, bcoeffs = kbase_f4(ring, exps, coeffs, rng, metainfo)
+    bexps, bcoeffs = kbase_f4(ring, exps, coeffs, metainfo)
 
     # ordering in bexps here matches target ordering in metainfo
 

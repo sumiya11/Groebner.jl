@@ -122,7 +122,8 @@ end
 function guaranteed_correctness_check!(ring, gbexps, gb_coeffs_qq,
                                         exps, coeffs, gens_tmp_ff, ht)
 
-    @warn "verify"
+    @warn "Parameter certify=true in groebner is not recommended."
+
     #=
     println("GB\n", gbexps, "\n", gb_coeffs_qq)
     println("GENS\n", gens_tmp_ff, "\n", coeffs)
@@ -130,7 +131,7 @@ function guaranteed_correctness_check!(ring, gbexps, gb_coeffs_qq,
     println("HT $(gens_tmp_ff.ntotal)")
     println(ht.exponents[1:3])
     =#
-    
+
     # tmp_exps = [copy(init_gens.gens[i]) for i in 1:init_gens.ntotal]
     # tmp_coeffs = [
     #                copy(coeffs[i])
@@ -164,4 +165,46 @@ function guaranteed_correctness_check!(ring, gbexps, gb_coeffs_qq,
     end
 
     return true
+end
+
+#------------------------------------------------------------------------------
+
+function linear_algebra_error(reason)
+    throw(AssertionError("Probabilistic part of the algorithm failed, sorry. Please, submit a github issue. You can try to rerun with another random seed.\nReason estimated: $reason"))
+end
+
+function shape_control(gb_coeffs1, gb_coeffs2)
+    if length(gb_coeffs1) != length(gb_coeffs2)
+        linear_algebra_error("Unlucky reduction to zero in probabilistic linear algebra.")
+    end
+
+    for p in 1:length(gb_coeffs1)
+        if length(gb_coeffs1[p]) != length(gb_coeffs2[p])
+            linear_algebra_error("Unlucky cancellation of basis coefficients.")
+        end
+    end
+
+    nothing
+end
+
+function rational_correctness_bound(modulo::BigInt)
+    setprecision(2*Base.GMP.MPZ.sizeinbase(modulo, 2)) do
+        ceil(BigInt, BigFloat(modulo)^(1/10))
+    end
+end
+
+function coeff_control(primetracker, coeffaccum)
+    modulo = primetracker.modulo
+    bound = rational_correctness_bound(modulo)
+    for c in coeffaccum.gb_coeffs_qq
+        for cc in c
+            if cc > bound
+                return true
+            end
+        end
+    end
+
+    linear_algebra_error("Unlucky reduction to zero in probabilistic linear algebra.")
+
+    return false
 end

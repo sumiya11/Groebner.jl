@@ -54,16 +54,15 @@ function groebner_ff(
             exps::Vector{Vector{Vector{UInt16}}},
             coeffs::Vector{Vector{UInt64}},
             reduced::Bool,
-            rng::Rng,
             meta::GroebnerMetainfo) where {Rng<:Random.AbstractRNG}
 
     # select hashtable size
     tablesize = select_tablesize(ring, exps)
 
     basis, ht = initialize_structures(
-                        ring, exps, coeffs, rng, tablesize)
+                        ring, exps, coeffs, meta.rng, tablesize)
 
-    f4!(ring, basis, ht, reduced, meta.linalg)
+    f4!(ring, basis, ht, reduced, meta.linalg, meta.rng)
 
     gbexps = hash_to_exponents(basis, ht)
     gbexps, basis.coeffs
@@ -77,7 +76,6 @@ function groebner_qq(
             exps::Vector{Vector{ExponentVector}},
             coeffs::Vector{Vector{CoeffQQ}},
             reduced::Bool,
-            rng::Rng,
             meta::GroebnerMetainfo) where {Rng<:Random.AbstractRNG}
 
     # we can mutate coeffs and exps here
@@ -88,7 +86,7 @@ function groebner_qq(
 
     # initialize hashtable and finite field generators structs
     gens_temp_ff, ht = initialize_structures_ff(ring, exps,
-                                        coeffs, rng, tablesize)
+                                        coeffs, meta.rng, tablesize)
     gens_ff = copy_basis_thorough(gens_temp_ff)
 
     # now hashtable is filled correctly,
@@ -137,7 +135,7 @@ function groebner_qq(
     # ADDED
     global F4TIME
     # ADDED
-    F4TIME += @elapsed f4trace!(ring, gens_ff, tracer, pairset, ht, reduced, meta.linalg)
+    F4TIME += @elapsed f4trace!(ring, gens_ff, tracer, pairset, ht, reduced, meta.linalg, meta.rng)
     # f4!(ring, gens_ff, ht, reduced, meta.linalg)
 
     # reconstruct into integers
@@ -200,13 +198,18 @@ function groebner_qq(
 
             # @error "tracer" tracer
 
-            F4TIME += @elapsed f4trace!(ring, gens_ff, tracer, pairset, ht, reduced, meta.linalg)
+            F4TIME += @elapsed f4trace!(ring, gens_ff, tracer, pairset, ht, reduced, meta.linalg, meta.rng)
             # f4!(ring, gens_ff, ht, reduced, meta.linalg)
             # reconstruct into integers
             @info "CRT modulo ($(primetracker.modulo), $(prime))"
             # ADDED
             global RECTIME
             # ADDED
+
+            if meta.linalg === :prob
+                # check if probabilistic linear algebra failed
+                shape_control(coeffaccum.gb_coeffs_qq, gens_ff.coeffs)
+            end
 
             # ADDED
             # prevcoeffs = deepcopy(coeffaccum.gb_coeffs_zz)
@@ -284,6 +287,12 @@ function groebner_qq(
             break
         end
         =#
+
+        if meta.linalg === :prob
+            if i > 1024
+                coeff_control(primetracker, coeffaccum)
+            end
+        end
     end
 
     #=
@@ -309,10 +318,9 @@ function isgroebner_ff(
             ring::PolyRing,
             exps::Vector{Vector{ExponentVector}},
             coeffs::Vector{Vector{CoeffFF}},
-            rng,
             meta)
 
-    isgroebner_f4(ring, exps, coeffs, rng)
+    isgroebner_f4(ring, exps, coeffs, meta.rng)
 end
 
 #######################################
@@ -323,7 +331,6 @@ function isgroebner_qq(
             ring::PolyRing,
             exps::Vector{Vector{ExponentVector}},
             coeffs::Vector{Vector{CoeffQQ}},
-            rng,
             meta)
 
     # if randomized result is ok
@@ -331,8 +338,8 @@ function isgroebner_qq(
         coeffs_zz = scale_denominators(coeffs)
         goodprime = nextgoodprime(coeffs_zz, Int[], 2^30 + 3)
         ring_ff, coeffs_ff = reduce_modulo(coeffs_zz, ring, goodprime)
-        isgroebner_f4(ring_ff, exps, coeffs_ff, rng)
+        isgroebner_f4(ring_ff, exps, coeffs_ff, meta.rng)
     else # if proved result is needed, compute in rationals
-        isgroebner_f4(ring, exps, coeffs, rng)
+        isgroebner_f4(ring, exps, coeffs, meta.rng)
     end
 end

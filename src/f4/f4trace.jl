@@ -38,7 +38,8 @@ function f4trace!(ring::PolyRing,
              pairset,
              ht,
              reduced,
-             linalg) where {Coefftype<:Coeff}
+             linalg,
+             rng) where {Coefftype<:Coeff}
 
     # print("input: $(basis.ntotal) gens, $(ring.nvars) vars. ")
 
@@ -117,7 +118,7 @@ function f4trace!(ring::PolyRing,
         # @warn "ht symbolic" ht.load ht.size
 
         # reduces polys and obtains new potential basis elements
-        reduction!(basis, matrix, ht, symbol_ht, linalg)
+        reduction!(basis, matrix, ht, symbol_ht, linalg, rng)
         @debug "Matrix reduced, density TODO"
 
         if !tracer.ready

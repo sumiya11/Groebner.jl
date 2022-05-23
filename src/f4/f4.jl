@@ -13,7 +13,8 @@
 function reduction!(
             basis::Basis, matrix::MacaulayMatrix,
             ht::MonomialHashtable, symbol_ht::MonomialHashtable,
-            linalg::Symbol)
+            linalg::Symbol,
+            rng)
 
      convert_hashes_to_columns!(matrix, symbol_ht)
 
@@ -21,7 +22,7 @@ function reduction!(
      sort_matrix_rows_increasing!(matrix) # for reduced, CD part
 
      # exact_sparse_linear_algebra!(matrix, basis)
-     linear_algebra!(matrix, basis, Val(linalg))
+     linear_algebra!(matrix, basis, Val(linalg), rng)
 
      convert_matrix_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 end
@@ -567,7 +568,8 @@ function f4!(ring::PolyRing,
              basis::Basis{Coefftype},
              ht,
              reduced,
-             linalg) where {Coefftype<:Coeff}
+             linalg,
+             rng) where {Coefftype<:Coeff}
 
     # print("input: $(basis.ntotal) gens, $(ring.nvars) vars. ")
 
@@ -623,7 +625,7 @@ function f4!(ring::PolyRing,
         # @warn "ht symbolic" ht.load ht.size
 
         # reduces polys and obtains new potential basis elements
-        reduction!(basis, matrix, ht, symbol_ht, linalg)
+        reduction!(basis, matrix, ht, symbol_ht, linalg, rng)
         @debug "Matrix reduced, density TODO"
 
         # update the current basis with polynomials produced from reduction,

@@ -449,14 +449,14 @@ function exact_sparse_rref!(matrix::MacaulayMatrix{C}, basis::Basis{C}) where {C
 end
 
 
-function linear_algebra!(matrix::MacaulayMatrix, basis::Basis, linalg::Val{:exact})
+function linear_algebra!(matrix::MacaulayMatrix, basis::Basis, linalg::Val{:exact}, rng)
     resize!(matrix.coeffs, matrix.nlow)
     exact_sparse_rref!(matrix, basis)
 end
 
-function linear_algebra!(matrix::MacaulayMatrix, basis::Basis, linalg::Val{:prob})
+function linear_algebra!(matrix::MacaulayMatrix, basis::Basis, linalg::Val{:prob}, rng)
     resize!(matrix.coeffs, matrix.nlow)
-    randomized_sparse_rref!(matrix, basis)
+    randomized_sparse_rref!(matrix, basis, rng)
 end
 
 #------------------------------------------------------------------------------
@@ -465,7 +465,7 @@ function nblocks_in_randomized(nlow::Int)
     floor(Int, sqrt(nlow / 3)) + 1
 end
 
-function randomized_sparse_rref!(matrix::MacaulayMatrix{C}, basis::Basis{C}) where {C<:Coeff}
+function randomized_sparse_rref!(matrix::MacaulayMatrix{C}, basis::Basis{C}, rng) where {C<:Coeff}
     ncols  = matrix.ncols
     nlow   = matrix.nlow
     nright = matrix.nright
@@ -524,7 +524,7 @@ function randomized_sparse_rref!(matrix::MacaulayMatrix{C}, basis::Basis{C}) whe
 
             @inbounds for j in 1:nrowstotal
                 # TODO: fixed generator
-                mulcoeffs[j] = rand(UInt64) % magic
+                mulcoeffs[j] = rand(rng, UInt64) % magic
             end
 
             densecoeffs .= UInt64(0)

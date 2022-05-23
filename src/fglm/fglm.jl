@@ -173,13 +173,12 @@ function fglm_f4(
             ring::PolyRing,
             basisexps::Vector{Vector{ExponentVector}},
             basiscoeffs::Vector{Vector{C}},
-            rng::Rng,
             metainfo) where {Rng, C<:Coeff}
 
     tablesize = select_tablesize(ring, basisexps)
 
     basis, ht = initialize_structures(ring, basisexps,
-                                        basiscoeffs, rng, tablesize)
+                                        basiscoeffs, metainfo.rng, tablesize)
 
     basis, linbasis, ht = fglm_f4!(ring, basis, ht, metainfo.computeord)
 
@@ -216,13 +215,12 @@ function kbase_f4(
             ring::PolyRing,
             basisexps::Vector{Vector{ExponentVector}},
             basiscoeffs::Vector{Vector{C}},
-            rng::Rng,
             metainfo) where {Rng, C<:Coeff}
 
     tablesize = select_tablesize(ring, basisexps)
 
     basis, ht = initialize_structures(ring, basisexps,
-                                        basiscoeffs, rng, tablesize)
+                                        basiscoeffs, metainfo.rng, tablesize)
 
     basis, linbasis, ht = fglm_f4!(ring, basis, ht, metainfo.computeord)
 

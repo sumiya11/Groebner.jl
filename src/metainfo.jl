@@ -3,7 +3,7 @@
 
 # GroebnerMetainfo
 # Stores parameters for groebner algorithm
-struct GroebnerMetainfo
+struct GroebnerMetainfo{Rng}
     # if set, then use fglm algorithm for order conversion
     usefglm::Bool
     # output polynomials order
@@ -18,9 +18,11 @@ struct GroebnerMetainfo
 
     # linear algebra backend to be used
     linalg::Symbol
+
+    rng::Rng
 end
 
-function set_metaparameters(ring, ordering, certify, forsolve, linalg)
+function set_metaparameters(ring, ordering, certify, forsolve, linalg, rng)
     usefglm = false
     targetord = :lex
     computeord = :lex
@@ -58,5 +60,5 @@ function set_metaparameters(ring, ordering, certify, forsolve, linalg)
 
     GroebnerMetainfo(usefglm, targetord, computeord,
                         heuristiccheck, randomizedcheck, guaranteedcheck,
-                        linalg)
+                        linalg, rng)
 end

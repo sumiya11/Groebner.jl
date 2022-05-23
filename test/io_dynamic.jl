@@ -1,36 +1,39 @@
 
 using DynamicPolynomials
+using Random
 
 @testset "Input-output DynamicPolynomials" begin
+
+    rng = Random.MersenneTwister(42)
 
     @polyvar x y
     fs = [x, y]
     ring, exps, cfs = Groebner.convert_to_internal(fs, :input)
-    meta = Groebner.set_metaparameters(ring, :input, false, false, :exact)
+    meta = Groebner.set_metaparameters(ring, :input, false, false, :exact, rng)
     fsfs = Groebner.convert_to_output(ring, fs, exps, cfs, meta)
     @test fsfs == [Polynomial(x), Polynomial(y)]
 
     fs = [x^2, 2y]
     ring, exps, cfs = Groebner.convert_to_internal(fs, :input)
-    meta = Groebner.set_metaparameters(ring, :input, false, false, :exact)
+    meta = Groebner.set_metaparameters(ring, :input, false, false, :exact, rng)
     fsfs = Groebner.convert_to_output(ring, fs, exps, cfs, meta)
     @test fsfs == [Polynomial(x^2), Polynomial(2y)]
 
     fs = [(3//4)x, (2//9)y, -y]
     ring, exps, cfs = Groebner.convert_to_internal(fs, :input)
-    meta = Groebner.set_metaparameters(ring, :input, false, false, :exact)
+    meta = Groebner.set_metaparameters(ring, :input, false, false, :exact, rng)
     fsfs = Groebner.convert_to_output(ring, fs, exps, cfs, meta)
     @test fsfs == [Polynomial((3//4)x), Polynomial((2//9)y), Polynomial(-y)]
 
     fs = [x^2*y + 3//4, (2^31 - 5)*x - (2^31 - 4)*y]
     ring, exps, cfs = Groebner.convert_to_internal(fs, :input)
-    meta = Groebner.set_metaparameters(ring, :input, false, false, :exact)
+    meta = Groebner.set_metaparameters(ring, :input, false, false, :exact, rng)
     fsfs = Groebner.convert_to_output(ring, fs, exps, cfs, meta)
     @test fsfs == fs
 
     fs = [x^2 + 1, (2^31 - 5)*x - (2^31 - 4)*y]
     ring, exps, cfs = Groebner.convert_to_internal(fs, :input)
-    meta = Groebner.set_metaparameters(ring, :input, false, false, :exact)
+    meta = Groebner.set_metaparameters(ring, :input, false, false, :exact, rng)
     fsfs = Groebner.convert_to_output(ring, fs, exps, cfs, meta)
     @test fsfs == fs
 
