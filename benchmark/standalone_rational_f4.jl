@@ -8,7 +8,7 @@ using BenchmarkTools
 using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error))
 
-BenchmarkTools.DEFAULT_PARAMETERS.samples = 3
+BenchmarkTools.DEFAULT_PARAMETERS.samples = 5
 
 function benchmark_system_my(system)
     system = Groebner.change_ordering(system, :degrevlex)
@@ -36,11 +36,13 @@ end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
+        ("siwr", read_SIWR()),
+        ("sear", read_SEAIJRC()),
         ("root 11", Groebner.rootn(11, ground=ground)),
         ("noon 7"    ,Groebner.noonn(7, ground=ground)),
         ("eco 10"    ,Groebner.eco10(ground=ground)),
         ("katsura 8"    ,Groebner.katsuran(8, ground=ground))
-        ]
+    ]
 
     println()
     for (name, system) in systems

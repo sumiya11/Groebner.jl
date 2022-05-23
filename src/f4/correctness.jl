@@ -21,8 +21,10 @@ function correctness_check!(coeffaccum, coeffbuffer, primetracker, meta,
         @info "Randomized check passed!"
     end
 
-    # return guaranteed_correctness_check(gbexps, coeffaccum.gb_coeffs_qq,
-    #                                exps, coeffs, ht)
+    if meta.guaranteedcheck
+        return guaranteed_correctness_check!(ring, gb_ff.gens, coeffaccum.gb_coeffs_qq,
+                                            exps, coeffs, gens_temp_ff, ht)
+    end
 
     return true
 end
@@ -56,7 +58,6 @@ end
 function randomized_correctness_check!(
             coeffbuffer, coeffaccum,
             ring, coeffs_zz, gens_temp_ff, gb_ff, primetracker, ht)
-
 
     goodprime = nextgoodprime!(primetracker)
 
@@ -118,39 +119,47 @@ end
 
 #------------------------------------------------------------------------------
 
-function guaranteed_correctness_check(gbexps, gb_coeffs_qq,
-                                        exps, coeffs, ht)
+function guaranteed_correctness_check!(ring, gbexps, gb_coeffs_qq,
+                                        exps, coeffs, gens_tmp_ff, ht)
 
+    @warn "verify"
+    #=
+    println("GB\n", gbexps, "\n", gb_coeffs_qq)
+    println("GENS\n", gens_tmp_ff, "\n", coeffs)
 
-    tmp_exps = [copy(init_gens.gens[i]) for i in 1:init_gens.ntotal]
+    println("HT $(gens_tmp_ff.ntotal)")
+    println(ht.exponents[1:3])
+    =#
+    
+    # tmp_exps = [copy(init_gens.gens[i]) for i in 1:init_gens.ntotal]
     # tmp_coeffs = [
     #                copy(coeffs[i])
     #                for i in 1:init_gens.ntotal]
 
-    gens_qq, _ = initialize_structures(ring_qq, tmp_exps, tmp_coeffs, ht)
-    gb_qq, _   = initialize_structures(ring_qq, gbexps, gb_coeffs_qq, ht)
+    gens_qq, _ = initialize_structures(ring, gens_tmp_ff.gens[1:gens_tmp_ff.ntotal], coeffs, ht)
+    gb_qq, _   = initialize_structures(ring, gbexps, gb_coeffs_qq, ht)
 
     normalize_basis!(gb_qq)
     normalize_basis!(gens_qq)
 
+    gens_qq_copy = copy_basis_thorough(gens_qq)
+
     # check that initial ideal contains in the computed groebner basis modulo goodprime
-    normal_form_f4!(ring_qq, gb_qq, ht, gens_qq)
+    normal_form_f4!(ring, gb_qq, ht, gens_qq_copy)
 
     # TODO
 
     # @error "normal form"
     # println(initial_ff)
-    for i in 1:gens_qq.ndone
+    for i in 1:gens_qq_copy.ndone
         # meaning that it is not reduced
-        if !isempty(gens_qq.coeffs[i])
+        if !isempty(gens_qq_copy.coeffs[i])
             return false
         end
     end
 
-    gb_qq, _   = initialize_structures(ring_qq, gbexps, gbcoeffs_qq, ht)
-
     # check that the basis is groebner basis modulo goodprime
-    if !isgroebner_f4!(ring_qq, gb_qq, ht)
+    if !isgroebner_f4!(ring, gb_qq, ht)
         return false
     end
 

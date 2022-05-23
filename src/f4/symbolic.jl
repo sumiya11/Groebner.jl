@@ -496,6 +496,7 @@ function update_pairset!(
             # lcm == 0 will mark redundancy of spair
             ps[newidx] = SPair(i, idx, 0, deg)
         end
+
     end
 
     # @error "" one two

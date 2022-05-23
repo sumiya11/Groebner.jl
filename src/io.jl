@@ -118,7 +118,7 @@ function extract_exponents(ring::PolyRing, orig_polys::Vector{T}) where {T}
     for i in 1:npolys
         poly = orig_polys[i]
         exps[i] = Vector{ExponentVector}(undef, length(poly))
-        for j in 1:length(poly)
+        @inbounds for j in 1:length(poly)
             exps[i][j] = ExponentVector(undef, ring.explen)
             exps[i][j][1:ring.nvars] .= exponent_vector(poly, j)
             exps[i][j][end] = sum(exps[i][j][k] for k in 1:ring.nvars)
@@ -177,7 +177,7 @@ end
 
 function exponents_wrt_vars(t, var2idx)
     exp = zeros(UInt16, length(var2idx))
-    for (v, p) in Groebner.MultivariatePolynomials.powers(t)
+    @inbounds for (v, p) in Groebner.MultivariatePolynomials.powers(t)
         exp[var2idx[v]] = p
     end
     exp
@@ -200,11 +200,11 @@ function extract_exponents(
     for i in 1:npolys
         poly = orig_polys[i]
         exps[i] = Vector{ExponentVector}(undef, multivariate_length(poly))
-        for (j, t) in enumerate(MultivariatePolynomials.monomials(poly))
+        @inbounds for (j, t) in enumerate(MultivariatePolynomials.monomials(poly))
             exps[i][j] = ExponentVector(undef, ring.explen)
             exps[i][j][end] = zero(exps[i][j][end])
             et = exponents_wrt_vars(t, var2idx)
-            for ei in 1:ring.nvars
+            @inbounds for ei in 1:ring.nvars
                 exps[i][j][ei] = et[ei]
                 exps[i][j][end] += exps[i][j][ei]
             end
@@ -240,10 +240,10 @@ function extract_exponents(
     for i in 1:npolys
         poly = orig_polys[i]
         exps[i] = Vector{ExponentVector}(undef, length(poly))
-        for j in 1:length(poly)
+        @inbounds for j in 1:length(poly)
             exps[i][j] = ExponentVector(undef, ring.explen)
             exps[i][j][end] = zero(exps[i][j][end])
-            for ei in 1:ring.nvars
+            @inbounds for ei in 1:ring.nvars
                 exps[i][j][ei] = poly.exps[ring.nvars - ei + 1, j]
                 exps[i][j][end] += exps[i][j][ei]
             end
@@ -262,7 +262,7 @@ function extract_exponents(
     for i in 1:npolys
         poly = orig_polys[i]
         exps[i] = Vector{ExponentVector}(undef, length(poly))
-        for j in 1:length(poly)
+        @inbounds for j in 1:length(poly)
             exps[i][j] = poly.exps[:, j]
         end
     end
@@ -420,7 +420,7 @@ function convert_to_output(
 
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
-    for i in 1:length(gbexps)
+    @inbounds for i in 1:length(gbexps)
         cfs    = map(ground, gbcoeffs[i])
         exps   = [Int.(gbexps[i][j][1:end-1]) for j in 1:length(gbexps[i])]
         exported[i] = origring(cfs, exps)
@@ -479,7 +479,7 @@ function convert_to_output(
     for i in 1:length(gbexps)
         cfs    = map(ground, gbcoeffs[i])
         exps   = Matrix{UInt64}(undef, nv + 1, length(gbcoeffs[i]))
-        for jt in 1:length(gbcoeffs[i])
+        @inbounds for jt in 1:length(gbcoeffs[i])
             for je in 1:nv
                 exps[je, jt] = gbexps[i][jt][je]
             end
@@ -506,7 +506,7 @@ function convert_to_output(
     for i in 1:length(gbexps)
         cfs    = map(ground, gbcoeffs[i])
         exps   = Matrix{UInt64}(undef, nv, length(gbcoeffs[i]))
-        for jt in 1:length(gbcoeffs[i])
+        @inbounds for jt in 1:length(gbcoeffs[i])
             for je in 1:nv
                 exps[je, jt] = gbexps[i][jt][nv - je + 1]
             end
@@ -533,7 +533,7 @@ function convert_to_output(
     for i in 1:length(gbexps)
         cfs    = map(ground, gbcoeffs[i])
         exps   = Matrix{UInt64}(undef, nv + 1, length(gbcoeffs[i]))
-        for jt in 1:length(gbcoeffs[i])
+        @inbounds for jt in 1:length(gbcoeffs[i])
             for je in 1:nv
                 exps[je, jt] = gbexps[i][jt][nv - je + 1]
             end
