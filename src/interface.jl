@@ -28,10 +28,8 @@ Possible orderings to specify are
 
 Graded orderings tend to be the fastest.
 
-The algorithm is randomized. Still, by default, the result is **guaranteed to be correct**.
-
-One may set `certify` to `false` to speed up the computation a bit.
-The obtained result will be correct with probability > 0.9999
+The algorithm is randomized. The obtained result will be correct with probability > 0.9999.
+Set `certify` to `true` to obtain correct result guaranteedly.
 
 Set `forsolve` to `true` to tell the algorithm to automatically select parameters
 for producing a basis that further can used for **solving the input system**. In this case,
@@ -115,8 +113,6 @@ Checks if `polynomials` forms a Groebner basis.
 
 Uses the ordering on `polynomials` by default.
 If `ordering` is explicitly specialized, it takes precedence.
-
-The algorithm is randomized. Still, by default, the result is **guaranteed to be correct**.
 
 One may set `certify` to `false` to speed up the computation a bit.
 The obtained result will be correct with probability > 0.9999

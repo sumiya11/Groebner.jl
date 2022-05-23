@@ -63,6 +63,6 @@ If you discover a system where our package shows bad performance, you are very w
 
 ## Acknowledgement
 
-I would like to acknowledge Jérémy Berthomieu, Christian Eder and Mohab Safey El Din as this Library was adapted from their work ["msolve: A Library for Solving Polynomial Systems"](https://arxiv.org/abs/2104.03572). I also thank Max-Planck-Institut für Informatik for assistance in producing benchmarks.
+We would like to acknowledge Jérémy Berthomieu, Christian Eder and Mohab Safey El Din as this Library is inspired by their work ["msolve: A Library for Solving Polynomial Systems"](https://arxiv.org/abs/2104.03572). We are also grateful to Max-Planck-Institut für Informatik for assistance in producing benchmarks.
 
 Special thanks goes to Vladimir Kuznetsov for providing the sources of his F4 implementation.

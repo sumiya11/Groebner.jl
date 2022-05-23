@@ -85,12 +85,12 @@ groebner(system)
 
 Computing Groebner bases largely depends on a single iterative algorithm, known as **Buchbergers algorithm**. Modified and optimized versions of this algorithm are crucial for many Computer Algebra Systems (*e.g., Singular, Maple, Mathematica, Sage*).
 
-The Buchbergers algorithm is exponential by its nature, so a variety of insights, heuristics, and good software engineering practices is required to produce a usable implementation.   
+The Buchbergers algorithm is exponential by its nature, so any implementation is tricky.
 
 Our package implements **F4 algorithm** introduced by Jean-Charles Faugère, which can be seen as a modification of the Buchbergers. The performance of the implementation comes from thoughtful polynomial representation, monomial hashing, lightning-fast linear algebra, and technical modular algorithms.
 
 ## Acknowledgement
 
-We would like to acknowledge Jérémy Berthomieu, Christian Eder and Mohab Safey El Din as this Library was adapted from their work "msolve: A Library for Solving Polynomial Systems". I also thank Max-Planck-Institut für Informatik for assistance in producing benchmarks.
+We would like to acknowledge Jérémy Berthomieu, Christian Eder and Mohab Safey El Din as this Library benefits is inspired by their work "msolve: A Library for Solving Polynomial Systems". We are also grateful to Max-Planck-Institut für Informatik for assistance in producing benchmarks.
 
 Special thanks goes to Vladimir Kuznetsov for providing the sources of his F4 implementation.
