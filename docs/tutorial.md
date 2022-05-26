@@ -186,7 +186,7 @@ Say we have a parametrization of the circle as
 x = \frac{1 - t^2}{1 + t^2} ~~~~ y = \frac{2t}{1 + t^2}
 \]
 
-and we want to produce an implicit curve equation in $x, y$ *without t*. Let's clear denominators
+and we want to produce an implicit curve equation in $x, y$ and *without t*. Let's clear denominators
 
 \[
 t^2y - 2t + y = 0 ~~~~ t^2x + t^2 + x - 1 = 0
