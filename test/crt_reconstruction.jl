@@ -18,12 +18,14 @@ using Primes
         M = prod(ms)
         nums = [rand(0:M-1) for _ in 1:1000]
 
+        msinv = [invmod(ms[1], ms[2]), invmod(ms[2], ms[1])]
         for a in nums
             rs = modular_images(a, ms)
 
             r1, r2 = BigInt.(rs)
             m1, m2 = BigInt.(ms)
-            Groebner.CRT!(M, buf, n1, n2, r1, m1, UInt64(r2), m2)
+            minv1, minv2 = BigInt.(msinv)
+            Groebner.CRT!(M, buf, n1, n2, r1, minv1, UInt64(r2), minv2, m1, m2)
             @test buf == a
         end
 

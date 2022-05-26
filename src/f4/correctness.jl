@@ -122,7 +122,7 @@ end
 function guaranteed_correctness_check!(ring, gbexps, gb_coeffs_qq,
                                         exps, coeffs, gens_tmp_ff, ht)
 
-    @warn "Parameter certify=true in groebner is not recommended."
+    @warn "Setting parameter certify=true in groebner is not recommended."
 
     #=
     println("GB\n", gbexps, "\n", gb_coeffs_qq)
