@@ -45,14 +45,14 @@ We compare the runtime of our implementation against the ones from `Singular` an
 
 |   System    |  Groebner.jl    | Singular | Maple |
 | :---:       | :---: | :----: |  :---:   |
-| [cyclic-7](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/cyclic12.txt)   | **0.1s**  | 1.4s    | 0.56s |
-| [cyclic-8](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/cyclic13.txt)   |  **2.4s**  | 40s    | 2.43s |
-| [katsura-9](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/katsura9.txt)    | **0.10s**  | 1.13s    | 1.43s |
-| [katsura-10](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/katsura10.txt)  |  **0.69s**  | 9.92s   | 5.73s |
-| [eco-10](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/eco10.txt)   |  **0.17s**  | 3.22s   | 0.75s |
-| [eco-11](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/eco11.txt)   | **1.13s**  | 33.33s   | 3.54s |
-| [noon-7](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/noon7.txt)      |  **0.20s**  | 0.40s    | 1.19s|
-| [noon-8](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/data/noon8.txt)      |  **1.88s**  | 3.58s    | 8.05s |
+| [cyclic-7](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/standard/cyclic12.txt)   | **0.1s**  | 1.4s    | 0.56s |
+| [cyclic-8](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/standard/cyclic13.txt)   |  **2.4s**  | 40s    | 2.43s |
+| [katsura-9](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/standard/katsura9.txt)    | **0.10s**  | 1.13s    | 1.43s |
+| [katsura-10](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/standard/katsura10.txt)  |  **0.69s**  | 9.92s   | 5.73s |
+| [eco-10](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/standard/eco10.txt)   |  **0.17s**  | 3.22s   | 0.75s |
+| [eco-11](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/standard/eco11.txt)   | **1.13s**  | 33.33s   | 3.54s |
+| [noon-7](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/standard/noon7.txt)      |  **0.20s**  | 0.40s    | 1.19s|
+| [noon-8](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/standard/noon8.txt)      |  **1.88s**  | 3.58s    | 8.05s |
 
 The bases are computed in `degrevlex` monomial ordering over finite field of characteristic $2^{31}-1$ with all operations single-threaded.
 
