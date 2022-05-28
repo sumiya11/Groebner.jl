@@ -70,13 +70,13 @@ function convert_to_internal(
 end
 
 function extract_ring(R::T) where {T}
-    @assert hasmethod(nvars, Tuple{typeof(R)})
-    @assert hasmethod(ordering, Tuple{typeof(R)})
-    @assert hasmethod(characteristic, Tuple{typeof(R)})
+    @assert hasmethod(nvars, Tuple{T})
+    # @assert hasmethod(ordering, Tuple{typeof(R)})
+    @assert hasmethod(characteristic, Tuple{T})
 
     nv     = nvars(R)
     explen = nv + 1
-    ord    = ordering(R)
+    ord = hasmethod(ordering, Tuple{T}) ? ordering(R) : :lex
     ch     = characteristic(R)
 
     @assert nv + 1 == explen
@@ -94,11 +94,27 @@ function extract_coeffs(ring::PolyRing, orig_polys::Vector{T}) where {T}
     end
 end
 
+function extract_coeffs_ff(ring::PolyRing, poly::Poly)
+    reverse(map(CoeffFF ∘ data, filter(!iszero, collect(coefficients(poly)))))
+end
+
+function extract_coeffs_qq(ring::PolyRing, poly::Poly)
+    reverse(map(Rational, filter(!iszero, collect(coefficients(poly)))))
+end
+
+function extract_coeffs_ff(ring::PolyRing, poly::MPoly)
+    map(CoeffFF ∘ data, coefficients(poly))
+end
+
+function extract_coeffs_qq(ring::PolyRing, poly::MPoly)
+    map(Rational, coefficients(poly))
+end
+
 function extract_coeffs_ff(ring::PolyRing, orig_polys::Vector{T}) where {T}
     npolys = length(orig_polys)
     coeffs = Vector{Vector{CoeffFF}}(undef, npolys)
     for i in 1:npolys
-        coeffs[i] = map(CoeffFF ∘ data, coefficients(orig_polys[i]))
+        coeffs[i] = extract_coeffs_ff(ring, orig_polys[i])
     end
     coeffs
 end
@@ -107,9 +123,31 @@ function extract_coeffs_qq(ring::PolyRing, orig_polys::Vector{T}) where {T}
     npolys = length(orig_polys)
     coeffs = Vector{Vector{CoeffQQ}}(undef, npolys)
     for i in 1:npolys
-        coeffs[i] = map(Rational, coefficients(orig_polys[i]))
+        coeffs[i] = extract_coeffs_qq(ring, orig_polys[i])
     end
     coeffs
+end
+
+function extract_exponents(ring, poly::MPoly)
+    exps = Vector{ExponentVector}(undef, length(poly))
+    @inbounds for j in 1:length(poly)
+        exps[j] = ExponentVector(undef, ring.explen)
+        exps[j][1:ring.nvars] .= exponent_vector(poly, j)
+        exps[j][end] = sum(exps[i][j][k] for k in 1:ring.nvars)
+    end
+    exps
+end
+
+function extract_exponents(ring, poly::Poly)
+    # Why define length of univeriate polynomial to be the dense length??
+    exps = Vector{ExponentVector}(undef, 0)
+    @inbounds while !iszero(poly)
+        push!(exps, ExponentVector(undef, ring.explen))
+        exps[end][1] = degree(poly)
+        exps[end][end] = degree(poly)
+        poly = AbstractAlgebra.tail(poly)
+    end
+    exps
 end
 
 function extract_exponents(ring::PolyRing, orig_polys::Vector{T}) where {T}
@@ -117,12 +155,7 @@ function extract_exponents(ring::PolyRing, orig_polys::Vector{T}) where {T}
     exps = Vector{Vector{ExponentVector}}(undef, npolys)
     for i in 1:npolys
         poly = orig_polys[i]
-        exps[i] = Vector{ExponentVector}(undef, length(poly))
-        @inbounds for j in 1:length(poly)
-            exps[i][j] = ExponentVector(undef, ring.explen)
-            exps[i][j][1:ring.nvars] .= exponent_vector(poly, j)
-            exps[i][j][end] = sum(exps[i][j][k] for k in 1:ring.nvars)
-        end
+        exps[i] = extract_exponents(ring, poly)
     end
     exps
 end
@@ -400,12 +433,14 @@ function convert_to_output(
     @assert hasmethod(base_ring, Tuple{typeof(origring)})
 
     # TODO: hardcoded
-    (metainfo.targetord != ordering(origring)) && @warn "Unknown polynomial type. Computed basis is in $(metainfo.targetord), but terms are ordered in $(ordering(origring)) in output"
+    if hasmethod(ordering, Tuple{M})
+        (metainfo.targetord != ordering(origring)) && @warn "Unknown polynomial type. Computed basis is in $(metainfo.targetord), but terms are ordered in $(ordering(origring)) in output"
+    end
 
     etype = elem_type(base_ring(origring))
     # rather weak but okay for now
     if etype <: Integer
-        coeffs_zz = scale_denominators!(gbcoeffs)
+        coeffs_zz = scale_denominators(gbcoeffs)
         convert_to_output(origring, gbexps, coeffs_zz, metainfo)
     else
         convert_to_output(origring, gbexps, gbcoeffs, metainfo)
@@ -416,7 +451,26 @@ function convert_to_output(
             origring::M,
             gbexps::Vector{Vector{ExponentVector}},
             gbcoeffs::Vector{Vector{I}},
-            metainfo::GroebnerMetainfo) where {M, I}
+            metainfo::GroebnerMetainfo) where {M<:AbstractAlgebra.Generic.PolyRing, I}
+
+    ground   = base_ring(origring)
+    exported = Vector{elem_type(origring)}(undef, length(gbexps))
+    @inbounds for i in 1:length(gbexps)
+        cfs = Vector{}
+        cfs    = zeros(ground, gbexps[i][1][1] + 1)
+        for (idx, j) in enumerate(gbexps[i])
+            cfs[j[1] + 1] = ground(gbcoeffs[i][idx])
+        end
+        exported[i] = origring(cfs)
+    end
+    exported
+end
+
+function convert_to_output(
+            origring::M,
+            gbexps::Vector{Vector{ExponentVector}},
+            gbcoeffs::Vector{Vector{I}},
+            metainfo::GroebnerMetainfo) where {M<:AbstractAlgebra.Generic.MPolyRing, I}
 
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))

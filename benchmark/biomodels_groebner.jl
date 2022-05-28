@@ -24,27 +24,7 @@ function benchmark_system_my(system)
     # gb = Groebner.groebner(system, reduced=false)
 end
 
-function benchmark_system_singular(system)
-    R = AbstractAlgebra.parent(system[1])
-    n = AbstractAlgebra.nvars(R)
-    ground_s = Singular.QQ
-    R_s, _ = Singular.PolynomialRing(ground_s, ["x$i" for i in 1:n], ordering=:degrevlex)
-
-    system_s = map(
-        f -> AbstractAlgebra.change_base_ring(
-                    ground_s,
-                    AbstractAlgebra.map_coefficients(c -> ground_s(numerator(c), denominator(c)), f),
-                    parent=R_s),
-        system)
-
-    ideal_s = Singular.Ideal(R_s, system_s)
-
-    Singular.std(Singular.Ideal(R_s, [system_s[1]]))
-
-    @btime Singular.std($ideal_s)
-end
-
-function run_f4_MQ_benchmarks()
+function run_f4_biomodels_benchmarks()
     systems = read_BIOMDs(5:20)
 
     println()
@@ -55,7 +35,7 @@ function run_f4_MQ_benchmarks()
     end
 end
 
-run_f4_MQ_benchmarks()
+run_f4_biomodels_benchmarks()
 
 #=
 

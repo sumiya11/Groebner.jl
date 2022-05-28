@@ -48,7 +48,7 @@ end
 # most of these are not needed
 # TODO
 import AbstractAlgebra
-import AbstractAlgebra.Generic: MPoly, GFElem, MPolyRing
+import AbstractAlgebra.Generic: MPoly, GFElem, MPolyRing, Poly
 import AbstractAlgebra: leading_term, QQ, PolynomialRing, terms,
                         coeff, divides, base_ring, elem_type,
                         rref, isconstant, leading_coefficient,
