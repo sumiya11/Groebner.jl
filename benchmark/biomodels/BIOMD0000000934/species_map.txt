@@ -1,0 +1,16 @@
+x1 = Sic1
+x2 = Cdk1_Clb5or6
+x3 = Cdk1_Clb5or6_Sic1
+x4 = Clb5or6_degraded
+x5 = Cdk1_Clb3or4
+x6 = Cdk1_Clb3or4_Sic1
+x7 = Clb3or4_degraded
+x8 = Cdk1_Clb1or2
+x9 = Cdk1_Clb1or2_Sic1
+x10 = Clb1or2_degraded
+x11 = Sic1_degraded_re14
+x12 = Sic1_degraded_re18
+x13 = Sic1_degraded_re5
+x14 = Clb34_total
+x15 = Clb12_total
+x16 = Clb56_total

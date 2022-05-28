@@ -1,0 +1,9 @@
+x1 = species_0000001
+x2 = species_0000002
+x3 = species_0000006
+x4 = species_0000007
+x5 = species_0000008
+x6 = species_0000009
+x7 = species_0000011
+x8 = species_0000016
+x9 = species_0000017

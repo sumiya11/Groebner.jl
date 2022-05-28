@@ -1,0 +1,11 @@
+x1 = Raf1
+x2 = RKIP
+x3 = Raf1_RKIP
+x4 = Raf1_RKIP_ERKPP
+x5 = ERK
+x6 = RKIPP
+x7 = MEKPP
+x8 = MEKPP_ERK
+x9 = ERKPP
+x10 = RP
+x11 = RKIPP_RP

@@ -1,0 +1,16 @@
+x1 = Smad2c
+x2 = Smad2n
+x3 = Smad4c
+x4 = Smad4n
+x5 = T1R_Surf
+x6 = T1R_Cave
+x7 = T1R_EE
+x8 = T2R_Surf
+x9 = T2R_Cave
+x10 = T2R_EE
+x11 = LRC_Surf
+x12 = LRC_Cave
+x13 = LRC_EE
+x14 = Smads_Complex_c
+x15 = Smads_Complex_n
+x16 = TGF_beta

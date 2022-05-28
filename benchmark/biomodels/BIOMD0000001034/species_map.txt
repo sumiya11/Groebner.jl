@@ -1,0 +1,4 @@
+x1 = BCG
+x2 = Effector_cells
+x3 = Tumor_infected_cells
+x4 = Tumor_uninfected_cells

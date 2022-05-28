@@ -1,0 +1,5 @@
+x1 = Sulphate__PAPS
+x2 = GSH
+x3 = NAPQI
+x4 = Paracetamol_APAP
+x5 = Protein_adducts

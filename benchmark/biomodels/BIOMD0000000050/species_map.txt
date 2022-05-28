@@ -1,0 +1,14 @@
+x1 = DFG
+x2 = E1
+x3 = E2
+x4 = Cn
+x5 = Gly
+x6 = _3DG
+x7 = FA
+x8 = _1DG
+x9 = AA
+x10 = Man
+x11 = Glu
+x12 = MG
+x13 = Mel
+x14 = Fru

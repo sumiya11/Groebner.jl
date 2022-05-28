@@ -1,0 +1,9 @@
+x1 = FITC_Dextran_three_compartment_model_compartment_1
+x2 = FITC_Dextran_three_compartment_model_compartment_2
+x3 = FITC_Dextran_three_compartment_model_compartment_3
+x4 = FITC_Dextran_nine_compartment_model_compartment_4
+x5 = FITC_Dextran_nine_compartment_model_compartment_5
+x6 = FITC_Dextran_nine_compartment_model_compartment_6
+x7 = FITC_Dextran_nine_compartment_model_compartment_7
+x8 = FITC_Dextran_nine_compartment_model_compartment_8
+x9 = FITC_Dextran_nine_compartment_model_compartment_9

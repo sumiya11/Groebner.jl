@@ -1,0 +1,4 @@
+{ diff(x1, t) = (-1)*k7*x1*k2/k2,
+  diff(x2, t) = ((-1)*k5*x2*k2 + 1*k7*x1*k2)/k2,
+  diff(x3, t) = (1*k5*x2*k2 + (-1)*k6*x3*k3)/k3,
+  diff(x4, t) = 1*k6*x3*k3/k4 }

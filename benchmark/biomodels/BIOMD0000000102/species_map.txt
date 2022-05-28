@@ -1,0 +1,13 @@
+x1 = A
+x2 = C9
+x3 = C9X
+x4 = X
+x5 = AC9X
+x6 = AC9
+x7 = C3
+x8 = C3_star
+x9 = C3_starX
+x10 = C9_starX
+x11 = C9_star
+x12 = AC9_star
+x13 = AC9_starX

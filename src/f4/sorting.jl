@@ -22,6 +22,7 @@ function sort_gens_by_lead_increasing!(basis::Basis, ht::MonomialHashtable)
                                 @inbounds(exps[gens[x][1]]),
                                 @inbounds(exps[gens[y][1]]))
     end
+
     sort!(inds, lt=cmp)
 
     # use array assignment insted of elemewise assignment

@@ -1,0 +1,5 @@
+x1 = The_FOD_in_the_circulation__X1
+x2 = The_FOD_in_the_metabolizing_tissues__X4
+x3 = The_cumulative_FOD_excreted_in_the_non_urinary_pool__X3
+x4 = The_FOD_in_the_gallbladder___intestinal_lumen__X5
+x5 = The_cumulative_FOD_excreted_in_the_urine__X2

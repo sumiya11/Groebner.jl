@@ -1,0 +1,5 @@
+x1 = Normal_Th_cells
+x2 = Pathogen_Virus
+x3 = Single_Infected_Th_Cells
+x4 = Recombinant_Virus
+x5 = Double_Infected_Th_Cells

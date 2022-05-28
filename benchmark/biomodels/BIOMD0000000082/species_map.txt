@@ -1,0 +1,10 @@
+x1 = agonist
+x2 = DR
+x3 = DRG_GDP
+x4 = DRG
+x5 = GDP
+x6 = DRG_GTP
+x7 = GTP
+x8 = Recptor
+x9 = G_GDP
+x10 = G_GTP
