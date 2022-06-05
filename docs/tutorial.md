@@ -88,7 +88,7 @@ normalform(G, f)    # "divide" f by G
 
 The normal form is used in study of algebraic questions regarding Ideals: Ideal membership problem, Ideal quotient space basis finding, and a lot more.
 
-## Extending the Classics
+## Gcd & Rref
 
 Computing a Groebner basis for a general system of nonlinear equations is nontrivial, both from theoretic and computational perspectives. Still, the two widely known algorithms can give us some intuition behind this process.
 
@@ -129,9 +129,9 @@ gcd(f, g)          # usual gcd
 
 Same holds for several input polynomials:
 
-$$
+\[
 groebner(f_1, \ldots, f_m) = gcd(gcd(gcd(f_1, f_2), \ldots), f_m)
-$$
+\]
 
 So, you can compute the GCD of several polynomials at once using `Groebner.jl`!
 
@@ -164,7 +164,7 @@ is a Groebner basis for $I_{y, z}~ =~ I \cap R[y, z]$.
 
 ***
 
-Here, one can see $I_{x, y}$ as a fair geometric projection of $I$ onto the first two variables $x, y$.
+Here, one can see $I_{y, z}$ as a fair geometric projection of $I$ onto the first two variables $y, z$.
 
 For example, consider polynomials that encode some complicated algebraic variety in 3D:
 
@@ -199,18 +199,6 @@ Groebner bases can convert a parametric curve representation to an implicit one.
 x = \frac{1 - t^2}{1 + t^2} ~~~~ y = \frac{2t}{1 + t^2}
 \]
 
-
-```julia:circ
-# hIdeall
-t = -1000.:0.001:1000.0
-x = t -> (1 - t^2) / (1 + t^2)
-y = t -> 2*t / (1 + t^2)
-plot(x.(t), y.(t))
-savefig(joinpath(@OUTPUT, "circ.svg"));
-```
-
-\fig{circ}
-
 and we want to produce an implicit curve equation in $x, y$ and *without t*.
 
 First, let's clear denominators
@@ -230,9 +218,9 @@ groebner([t^2*y - 2t + y, t^2*x + t^2 + x - 1])
 
 We see the only equation in $x, y$, which is
 
-$$
-x^2 + y^2 - 1
-$$
+\[
+x^2 + y^2 - 1 = 0
+\]
 
 Hence, $x^2 + y^2 - 1 = 0$ is an implicit formula we are looking for. Indeed, for any $t$ every $(x, y)$ lies on the circle as expected.
 
@@ -243,7 +231,7 @@ Groebner based can be used to solve systems *exactly*, given he number of soluti
 In this section we assume the usual lexicographic ordering of variables and consider the case with three variables (i.e, $x > y > z$). Same method generalizes naturally for $n$ indeterminates.
 
 ```julia:sys0
-_, (x, y, z) = PolynomialRing(QQ, [x", "y", "z"], ordering=:lex)
+_, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"], ordering=:lex)
 ```
 
 To illustrate the method, we consider the following polynomial system to solve *exactly (symbolically)*.
