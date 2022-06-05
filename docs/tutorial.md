@@ -206,7 +206,7 @@ t = -1000.:0.001:1000.0
 x = t -> (1 - t^2) / (1 + t^2)
 y = t -> 2*t / (1 + t^2)
 plot(x.(t), y.(t))
-savefig(@OUTPUT, "circ.svg");
+savefig(joinpath(@OUTPUT, "circ.svg"));
 ```
 
 \fig{circ}
