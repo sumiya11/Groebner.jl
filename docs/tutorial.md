@@ -321,6 +321,9 @@ normalform(G, p^17*n^10*d^5)
 
 to obtain the minimial solution $(P, N, D, Q) = (2, 1, 1, 4)$.
 
+\note{This cool application is copied from [Christopher Hillar
+(MSRI) presentation](https://people.math.carleton.ca/~cingalls/studentProjects/alithesis.pdf) on Groebner Bases.}
+
 ## Graph Coloring
 
 In graph theory, Graph coloring is a problem of assigning a color to each vertex of a graph in a way that no two neighboring vertices the same color.
