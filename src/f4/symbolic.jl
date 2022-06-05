@@ -42,6 +42,7 @@ function select_normal!(
     end
 
     # number of selected pairs
+    # npairs = min(min_idx, 20)
     npairs = min_idx
 
     @debug "Selected $(npairs) pairs"

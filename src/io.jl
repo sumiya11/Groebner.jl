@@ -102,11 +102,11 @@ function extract_coeffs_qq(ring::PolyRing, poly::Poly)
     reverse(map(Rational, filter(!iszero, collect(coefficients(poly)))))
 end
 
-function extract_coeffs_ff(ring::PolyRing, poly::MPoly)
+function extract_coeffs_ff(ring::PolyRing, poly)
     map(CoeffFF ∘ data, coefficients(poly))
 end
 
-function extract_coeffs_qq(ring::PolyRing, poly::MPoly)
+function extract_coeffs_qq(ring::PolyRing, poly)
     map(Rational, coefficients(poly))
 end
 
@@ -128,12 +128,12 @@ function extract_coeffs_qq(ring::PolyRing, orig_polys::Vector{T}) where {T}
     coeffs
 end
 
-function extract_exponents(ring, poly::MPoly)
+function extract_exponents(ring, poly)
     exps = Vector{ExponentVector}(undef, length(poly))
     @inbounds for j in 1:length(poly)
         exps[j] = ExponentVector(undef, ring.explen)
         exps[j][1:ring.nvars] .= exponent_vector(poly, j)
-        exps[j][end] = sum(exps[i][j][k] for k in 1:ring.nvars)
+        exps[j][end] = sum(exps[j][k] for k in 1:ring.nvars)
     end
     exps
 end
@@ -470,7 +470,7 @@ function convert_to_output(
             origring::M,
             gbexps::Vector{Vector{ExponentVector}},
             gbcoeffs::Vector{Vector{I}},
-            metainfo::GroebnerMetainfo) where {M<:AbstractAlgebra.Generic.MPolyRing, I}
+            metainfo::GroebnerMetainfo) where {M, I}
 
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))

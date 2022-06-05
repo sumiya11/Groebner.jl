@@ -91,6 +91,6 @@ Our package implements **F4 algorithm** introduced by Jean-Charles Faugère, whi
 
 ## Acknowledgement
 
-We would like to acknowledge Jérémy Berthomieu, Christian Eder and Mohab Safey El Din as this Library benefits is inspired by their work "msolve: A Library for Solving Polynomial Systems". We are also grateful to Max-Planck-Institut für Informatik for assistance in producing benchmarks.
+We would like to acknowledge Jérémy Berthomieu, Christian Eder and Mohab Safey El Din as this Library is inspired by their work "msolve: A Library for Solving Polynomial Systems". We are also grateful to Max-Planck-Institut für Informatik for assistance in producing benchmarks.
 
 Special thanks goes to Vladimir Kuznetsov for providing the sources of his F4 implementation.
