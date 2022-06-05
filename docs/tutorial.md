@@ -205,6 +205,8 @@ With this technique, one can split a complicated variety in parts, and treat eac
 
 ## Curve Implicitization
 
+\note{For some reason Tex in this subsection is not compiled properly.}
+
 Moreover, `Groebner.jl` can help converting a parametric curve representation to an implicit one. Say, we have a parametrization of *the circle on a plane*
 
 \[
