@@ -96,7 +96,7 @@ Computing a Groebner basis for a general system of nonlinear equations is nontri
 
 For a **linear** system, a Groebner basis mirrors the row echelon form. That is, computing a Groebner basis is *a nonlinear generalization of Gaussian elimination* process for systems of algebraic equations.
 
-Indeed, applied to a linear system, Groebner basis algorithms produce row echelon matrix form:
+Indeed, applied to a linear system, Groebner basis algorithms produce row echelon matrix form
 
 ```julia:gauss
 using DynamicPolynomials # hide
@@ -109,6 +109,8 @@ system = [
 
 groebner(system)  # rref
 ```
+
+and imply $z = 0, ~y = -1, ~x = -2$.
 
 ### Groebner basis is Euclidean Algorithm
 
@@ -135,13 +137,17 @@ groebner(f_1, \ldots, f_m) = gcd(gcd(gcd(f_1, f_2), \ldots), f_m)
 
 So, you can compute the GCD of several polynomials at once using `Groebner.jl`!
 
-We emphasize that `Groebner.jl` is designed to have as little runtime overhead as possible over the usual GCD implementation even for simple input
+We emphasize that `Groebner.jl` is designed to have as little runtime overhead as possible over the usual GCD implementation even for simple input.
+
+With `DynamicPolynomials.jl`:
 
 ```julia:gcd3
 h = (x + 3)^5
 
 @btime gcd(gcd($f, $g), $h)
 ```
+
+With `Groebner.jl`:
 
 ```julia:gcd4
 F = [f, g, h]
@@ -150,7 +156,7 @@ F = [f, g, h]
 
 ## Variable Elimination
 
-One can use Groebner bases to *eliminate indeterminates* from equations. A layer of theory lies behind this topic, however, the main simple observation here is that
+One can also use Groebner bases to *eliminate indeterminates* from equations. A layer of theory lies behind this topic, however, the main simple observation here is that
 
 ***
 
@@ -164,9 +170,9 @@ is a Groebner basis for $I_{y, z}~ =~ I \cap R[y, z]$.
 
 ***
 
-Here, one can see $I_{y, z}$ as a fair geometric projection of $I$ onto the first two variables $y, z$.
+Here, one can see $I_{y, z}$ as a fair geometric projection of $I$ onto the last two variables $y, z$.
 
-For example, consider polynomials that encode some complicated algebraic variety in 3D:
+For example, consider polynomial set $F$ that encodes some complicated algebraic variety in 3D:
 
 ```julia:elim1
 _, (x, y, z) = QQ["x", "y", "z"]
@@ -185,15 +191,21 @@ Let's try to simplify it a bit. Now, the Groebner basis of $F$ is
 G = groebner(F)
 ```
 
-Notice that the first polynomial in  `G` does not contain `x`! The observation implies that `G[1]` is a Groebner basis of $I_{y, z}$, meaning the solutions of `G[1]` are exactly the projection of solutions of $F$ to variables $y$ and $z$.
+Notice that the first polynomial in  `G` does not contain `x`! The observation implies that `G[1]` is a Groebner basis of $I_{y, z}$, meaning the solutions of
+
+\[
+y^2 - y - z^2 + z = 0
+\]
+
+are exactly the projection of solutions of $F$ to variables $y$ and $z$.
 
 <!-- Let us plot the solutions of `G[1]` -->
 
-With this technique, we can split a complicated variety in parts, and treat each part separately.
+With this technique, one can split a complicated variety in parts, and treat each part separately.
 
 ## Curve Implicitization
 
-Groebner bases can convert a parametric curve representation to an implicit one. Say, we have a parametrization of the circle on a plane
+Moreover, `Groebner.jl` can help converting a parametric curve representation to an implicit one. Say, we have a parametrization of *the circle on a plane*
 
 \[
 x = \frac{1 - t^2}{1 + t^2} ~~~~ y = \frac{2t}{1 + t^2}
@@ -207,7 +219,7 @@ First, let's clear denominators
 t^2y - 2t + y = 0 ~~~~ t^2x + t^2 + x - 1 = 0
 \]
 
-The Groebner basis with $t > x > y$ in lexicographic order is
+The Groebner basis of the above with $t > x > y$ in lexicographic order is
 
 ```julia:impl1
 using AbstractAlgebra
@@ -216,33 +228,33 @@ _, (t, x, y) = PolynomialRing(QQ, ["t", "x", "y"], ordering=:lex)
 groebner([t^2*y - 2t + y, t^2*x + t^2 + x - 1])
 ```
 
-We see the only equation in $x, y$, which is
+There, the only two-variable equation in $x, y$ is
 
 \[
 x^2 + y^2 - 1 = 0
 \]
 
-Hence, $x^2 + y^2 - 1 = 0$ is an implicit formula we are looking for. Indeed, for any $t$ every $(x, y)$ lies on the circle as expected.
+Hence, $x^2 + y^2 - 1 = 0$ is an implicit formula we were looking for. Indeed, for any $t$ every $(x, y)$ lies on the circle as expected.
 
 ## Solving Systems
 
-Groebner based can be used to solve systems *exactly*, given he number of solutions is finite.
+Groebner bases can be used to solve systems *exactly*, given the number of solutions is finite.
 
 In this section we assume the usual lexicographic ordering of variables and consider the case with three variables (i.e, $x > y > z$). Same method generalizes naturally for $n$ indeterminates.
 
 ```julia:sys0
-_, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"], ordering=:lex)
+_, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"], ordering=:lex);
 ```
 
-To illustrate the method, we consider the following polynomial system to solve *exactly (symbolically)*.
+To illustrate the method, we consider the following polynomial system to solve
 
 ```julia:sys1
 system = [x + y + z,
           x*y + x*z + y*z,
-          x*y*z - 1]
+          x*y*z - 1];
 ```
 
-We recall that the solutions of a system coincide with zeros of a Groebner basis of this system. Let's calculate a Groebner basis!
+Recall that the solutions of a system coincide with zeros of a Groebner basis of this system (since the original system and its basis are *equivalent*). Let's calculate a Groebner basis then!
 
 ```julia:sys2
 groebner(system)
@@ -250,13 +262,15 @@ groebner(system)
 
 Notice that `z^3 - 1` in the basis is a *univariate equation*. Solving it over the desired domain one obtains some roots `z = ...`.
 
-Then, substitute `z` into the second equation `y^2 + y*z + z^2`, which in turn becomes univariate in variable `y`. Obtaining zeros in `y`, one moves to the next equation in the basis. Substituting each `y` and `z` to `x + y + z`, one easily produces a single solution in `x` for each solution in `y, z`.  
+Then, substitute `z` into the second equation `y^2 + y*z + z^2`, which in turn becomes univariate in variable `y`. Solving it and obtaining zeros in `y`, one moves to the next equation in the basis.
+
+Substituting each `y` and `z` to `x + y + z`, one easily produces a single solution in `x` for each solution in `y, z`.  
 
 Solving general polynomial systems (assuming the set of solutions is finite) using Groebner bases relies on the same technique:
 
-1. In the Groebner basis there is a univariate equation
-2. Solve it, and substitute found roots into other equations
-3. goto 1.
+1. In the Groebner basis there is a univariate equation;
+2. Solve it, and substitute found roots into other equations;
+3. Go to 1.
 
 WIP. For the implementation of symbolic system solving check out `roots` in `Symbolics.jl` !
 
@@ -265,10 +279,9 @@ WIP. For the implementation of symbolic system solving check out `roots` in `Sym
 
 Integer programming is the problem of solving linear equations where the solution must be in non-negative integers and should minimize a given "cost function".
 
-Our strategy here is to convert the integer programming problem into a problem about polynomials, and then solve this polynomial problem using Groebner bases, and use
-this to obtain the solution to our original integer programming problem.
+Our strategy here is to convert the integer programming problem into a problem about polynomials, and then solve this polynomial problem using Groebner bases.
 
-The classic example problem is the following. Say we have coins of 4 nominal values: pennies $P$, nickels $N$, dimes $D$, and quarters $Q$. We want to pick a collection that amounts to 117 using the least number of coins possible.
+*The classic example problem is the following.* Say we have coins of 4 nominal values: pennies $P$, nickels $N$, dimes $D$, and quarters $Q$. We want to pick a collection that amounts to 117 using the least number of coins possible.
 
 In other words, minimize $P + N + D + Q$ subject to $P, N, D, Q \ge 0$ and
 
@@ -276,35 +289,37 @@ $$
 P + 5N + 10D + 25Q = 117
 $$
 
-The integer solution is $(P, N, D, Q) = (2, 1, 1, 4)$, and let's try to find it with Groebner bases.
+The minimal integer solution is $(P, N, D, Q) = (2, 1, 1, 4)$, let's try to find it with Groebner bases.
 
-First, we will represent each collection of coins by a polynomial $p^an^bd^cq^d$ in $p, n, d, q$ (e.g., 2 pennies, 5 dimes is $p^2d^5$).
+First, we will represent each collection of coins by a polynomial $p^an^bd^cq^d$ in variables $p, n, d, q$ (e.g., 2 pennies with 5 dimes is $p^2d^5$).
 
-We also know that $p^5$ is the same as $n$, $p^10$ equals $d$, and so on. The full set of constraints is
+We also know that $p^5$ is the same as $n$, $p^{10}$ is the same as $d$, and so on. The full set of constraints is
 
-$$
+\[
 F = \{p^5 - n, p^10 - d, p^25 - q\}
-$$
+\]
 
 The idea is to construct a more useful set of constraints using a Groebner basis
 
 ```julia:coins1
 _, (p, n, d, q) = PolynomialRing(QQ, ["p","n","d","q"], ordering=:deglex)
 
-F = [p^5 - n, p^10 - d, p^25 - q]
+F = [p^5 - n, p^10 - d, p^25 - q]   # initial constraints
 
-G = groebner(F)
+G = groebner(F)   # more nice and useful constraints
 ```
 
-These new constraints express a useful set of replacement (rewrite) rules. E.g., the expression `d^3 - nq` translates to: replace 3 dimes with a nickel and a quarter.
+\note{Notice we construct polynomials in `deglex` ordering, instead of the default `lex`.}
 
-Now, we take an arbitrary solution (not necessarily minimal), as $p^17n^10d^5$, and compute the normal form w.r.t. $G$
+These new constraints express a useful set of replacement (rewrite) rules. E.g., the expression `d^3 - n*q` in the basis translates to: replace 3 dimes with a nickel and a quarter.
+
+Now, we take an arbitrary solution (not necessarily minimal), say $p^{17}n^{10}d^5$, and compute the normal form w.r.t. $G$
 
 ```julia:coins2
 normalform(G, p^17*n^10*d^5)
 ```
 
-to obtain the minimial solution $(2, 1, 1, 4)$.
+to obtain the minimial solution $(P, N, D, Q) = (2, 1, 1, 4)$.
 
 ## Graph Coloring
 
