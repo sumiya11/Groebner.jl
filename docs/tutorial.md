@@ -25,6 +25,7 @@ using Graphs # hide
 using GraphPlot # hide
 using Compose # hide
 ```
+## Introduction
 
 The following contains a series of tutorials on basics and interesting usecases of Groebner bases provided with the code from `Groebner.jl`.
 
