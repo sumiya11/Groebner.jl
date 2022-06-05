@@ -142,3 +142,5 @@ commands that are defined and used in PkgPage.jl
 \newcommand{\out}[1]{@@code-output \show{#1} @@}
 
 \newcommand{\blurb}[1]{~~~<p style="font-size: 1.15em; color: #333; line-height:1.5em">~~~#1~~~</p>~~~}
+
+\newcommand{\note}[1]{@@note @@title ⚠ Note@@ @@content #1 @@ @@}
