@@ -13,10 +13,12 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
 AbstractAlgebra = "0.23, 0.24, 0.25, 0.26"
+BenchmarkTools = "1"
 Combinatorics = "1"
 MultivariatePolynomials = "0.4.3"
 Primes = "0.5"
-julia = "1.7"
+TestSetExtensions = "2"
+julia = "1.6"
 
 [extras]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
