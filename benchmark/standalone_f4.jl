@@ -52,21 +52,19 @@ run_f4_ff_degrevlex_benchmarks(ground)
 
 #=
 cyclic 7
-  209.316 ms (229506 allocations: 79.33 MiB)
+  216.897 ms (96622 allocations: 70.60 MiB)
 cyclic 8
-  4.351 s (1362066 allocations: 455.37 MiB)
+  4.521 s (435192 allocations: 380.99 MiB)
 root 12
-  61.705 ms (179930 allocations: 32.39 MiB)
+  74.583 ms (179896 allocations: 32.40 MiB)
 root 13
-  211.091 ms (451378 allocations: 67.86 MiB)
-root 14
-  809.867 ms (1144701 allocations: 176.53 MiB)
+  242.372 ms (451340 allocations: 67.87 MiB)
 katsura 9
-  801.246 ms (149540 allocations: 59.57 MiB)
+  761.210 ms (123510 allocations: 59.33 MiB)
 noon 7
-  214.115 ms (419411 allocations: 91.51 MiB)
+  248.028 ms (335407 allocations: 86.89 MiB)
 noon 8
-  1.842 s (2074539 allocations: 492.01 MiB)
+  1.960 s (1501606 allocations: 444.08 MiB)
 eco 10
-  179.854 ms (137529 allocations: 41.41 MiB)
+  191.307 ms (119125 allocations: 41.66 MiB)
 =#

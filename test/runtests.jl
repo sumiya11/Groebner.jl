@@ -29,25 +29,25 @@ end
 
     @includetests ["crt_reconstruction"] # "mod_reconstruction"]#,
 
-    @includetests ["core_f4_reduce", "core_f4_stress",
-                    "core_f4", "rational_f4", "groebner_certify"]
+    @includetests ["f4_reduce", "f4_stress",
+                    "f4", "rational_f4", "groebner_certify"]
 
-    @includetests ["core_isgroebner", "core_isgroebner_stress",
+    @includetests ["isgroebner", "isgroebner_stress",
                     "isgroebner_certify"]
 
-    @includetests ["core_normalform", "core_normalform_stress"]
+    @includetests ["normalform", "normalform_stress"]
 
     @includetests ["hard_problems_f4", "large_problems_f4"]
 
     @includetests ["probabilistic_linalg"]
 
     if try_import(:DynamicPolynomials)
-        @includetests ["io_dynamic", "core_dynamic"]
+        @includetests ["io_dynamic", "dynamic"]
     end
 
     @includetests ["onthefly_order_change"]
 
-    @includetests ["core_fglm", "core_kbase"]
+    @includetests ["fglm", "kbase"]
 
     @includetests ["benchmark_systems"]
 

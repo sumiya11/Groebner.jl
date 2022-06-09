@@ -500,3 +500,17 @@ function sort_terms_decreasing!(monoms::Vector{Int}, coeffs, ht, ord::Symbol)
     monoms[1:end] = monoms[inds]
     coeffs[1:end] = coeffs[inds]
 end
+
+
+#------------------------------------------------------------------------------
+
+#=
+    
+=#
+function assure_ordering!(ring::PolyRing, exps::Vector{Vector{ExponentVector}}, 
+        coeffs::Vector{Vector{T}}, metainfo) where {T<:Coeff}
+    if ring.ord != metainfo.computeord
+        sort_input_to_change_ordering(exps, coeffs, metainfo.computeord)
+    end
+    ring.ord = metainfo.computeord
+end
