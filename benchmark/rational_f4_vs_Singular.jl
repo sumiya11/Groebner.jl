@@ -59,9 +59,9 @@ end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
-        ("reimer 6", Groebner.reimer(6, ground=ground)),
-        ("reimer 7", Groebner.reimer(7, ground=ground)),
-        ("reimer 8", Groebner.reimer(8, ground=ground)),
+        ("reimer 6", Groebner.reimern(6, ground=ground)),
+        ("reimer 7", Groebner.reimern(7, ground=ground)),
+        ("reimer 8", Groebner.reimern(8, ground=ground)),
     # ("siwr", read_SIWR()), # 0.19 vs 0.03
     # ("seaijrc", read_SEAIJRC()), # 0.19 vs 0.03
     # ("cyclic 7", Groebner.cyclicn(7, ground=ground)), # 0.19 vs 0.03
@@ -77,10 +77,8 @@ function run_f4_ff_degrevlex_benchmarks(ground)
     ]
 
     for (name, system) in systems
-        task1 = @spawn handle_system_my(name, system)
-        # task2 = @spawn handle_system_singular(name, system)
-        wait(task1)
-        # wait(task2)
+        handle_system_my(name, system)
+        handle_system_singular(name, system)
     end
 end
 

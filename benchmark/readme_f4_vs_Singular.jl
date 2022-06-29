@@ -41,9 +41,9 @@ end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
-        ("reimer 6", Groebner.reimer(6, ground=ground)),
-        ("reimer 7", Groebner.reimer(7, ground=ground)),
-        ("reimer 8", Groebner.reimer(8, ground=ground)),
+        ("reimer 6", Groebner.reimern(6, ground=ground)),
+        ("reimer 7", Groebner.reimern(7, ground=ground)),
+        ("reimer 8", Groebner.reimern(8, ground=ground)),
         # ("cyclic 12", Groebner.rootn(12, ground=ground)),
         # ("cyclic 13", Groebner.rootn(13, ground=ground)),
         # ("katsura 9",Groebner.katsura9(ground=ground)),
