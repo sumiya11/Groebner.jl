@@ -3,7 +3,7 @@
 
 #=
     The root-n system
-    (not to be confused with cyclic system)!!
+    (not to be confused with cyclic-n system)!!
 =#
 function rootn(n; ground=QQ)
     R, xs = PolynomialRing(ground, ["x$i" for i in 1:n])
@@ -15,9 +15,18 @@ function rootn(n; ground=QQ)
     ans
 end
 
+function reimern(n; ground=QQ)
+    R, xs = PolynomialRing(ground, ["x$i" for i in 1:n])
+    ans = [
+        sum((-1)^(i+1)*2*xs[i]^j for i in 1:n) - 1
+        for j in 2:(n+1)
+    ]
+    ans
+end
+
 #=
     The cyclic-n system
-    (not to be confused with cyclic system)!!
+    (not to be confused with root-n system)!!
 =#
 function cyclicn(n; ground=QQ)
     R, z = PolynomialRing(ground, ["z$i" for i in 1:n])
