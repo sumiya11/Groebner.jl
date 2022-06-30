@@ -45,8 +45,6 @@ function printall()
     CORRTIME = 0.0
 end
 
-# most of these are not needed
-# TODO
 import AbstractAlgebra
 import AbstractAlgebra.Generic: MPoly, GFElem, MPolyRing, Poly
 import AbstractAlgebra: leading_term, QQ, PolynomialRing, terms,
@@ -79,11 +77,8 @@ import MultivariatePolynomials: AbstractPolynomial, AbstractPolynomialLike
 # type aliases for internal objects
 include("internaltypes.jl")
 
-# so, what is that exactly?
-include("utils.jl")
-
 # some simple reference implementations
-include("common.jl")
+include("reference.jl")
 
 # computation parameters control
 include("metainfo.jl")
@@ -97,9 +92,13 @@ include("arithmetic/unsigned.jl")
 # modular arithmetic for CRT and rational reconstruction
 include("arithmetic/modular.jl")
 
+
 #= generic f4 implementation =#
-# the heart of this library
-include("f4/structs.jl")
+#= the heart of this library =#
+include("f4/hashtable.jl")
+include("f4/basis.jl")
+include("f4/matrix.jl")
+
 include("f4/symbolic.jl")
 include("f4/hash.jl")
 include("f4/linear.jl")
@@ -126,7 +125,6 @@ include("interface.jl")
 
 # example systems definitions
 include("testgens.jl")
-
 
 export groebner
 export isgroebner
