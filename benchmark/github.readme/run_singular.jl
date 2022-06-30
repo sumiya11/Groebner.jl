@@ -1,22 +1,16 @@
 
-import Singular
-import AbstractAlgebra
+import Pkg
+Pkg.add("Groebner")
+Pkg.add("AbstractAlgebra")
+Pkg.add("BenchmarkTools")
+Pkg.add("Singular")
 
 using Groebner
-
+import Singular
+import AbstractAlgebra
 using BenchmarkTools
-
 using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error))
-
-function benchmark_system_my(system)
-    system = Groebner.change_ordering(system, :degrevlex)
-    Groebner.groebner([system[1]])
-
-    gb = Groebner.groebner(system)
-
-    @btime gb = Groebner.groebner($system, reduced=true)
-end
 
 function benchmark_system_singular(system)
     R = AbstractAlgebra.parent(system[1])
@@ -42,8 +36,8 @@ end
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
         ("reimer 6", Groebner.reimern(6, ground=ground)),
-        ("reimer 7", Groebner.reimern(7, ground=ground)),
-        ("reimer 8", Groebner.reimern(8, ground=ground)),
+        # ("reimer 7", Groebner.reimern(7, ground=ground)),
+        # ("reimer 8", Groebner.reimern(8, ground=ground)),
         # ("cyclic 12", Groebner.rootn(12, ground=ground)),
         # ("cyclic 13", Groebner.rootn(13, ground=ground)),
         # ("katsura 9",Groebner.katsura9(ground=ground)),
@@ -55,9 +49,7 @@ function run_f4_ff_degrevlex_benchmarks(ground)
     ]
 
     for (name, system) in systems
-        println("$name")
-        println("my")
-        benchmark_system_my(system)
+        println("$name")        
         println("singular")
         benchmark_system_singular(system)
     end
@@ -65,8 +57,3 @@ end
 
 ground = AbstractAlgebra.GF(2^31 - 1)
 run_f4_ff_degrevlex_benchmarks(ground)
-
-#=
-
-
-=#

@@ -52,6 +52,7 @@ function reduce_by_pivot!(row::Vector{CoeffFF}, indices::Vector{Int},
     m2  = magic.divisor^2
 
     # length(row) / length(indices) varies from 10 to 100
+
     @inbounds for j in 1:length(indices)
         idx = indices[j]
         # x = row[idx] + mul*cfs[j]
@@ -61,6 +62,8 @@ function reduce_by_pivot!(row::Vector{CoeffFF}, indices::Vector{Int},
         row[idx] = (row[idx] + mul*cfs[j]) % magic
         # row[idx] = (row[idx] + mul*cfs[j]) & magic.divisor
     end
+
+    nothing
 end
 
 # reduces row by mul*cfs modulo ch at indices positions
