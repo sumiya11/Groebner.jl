@@ -19,7 +19,7 @@ function insert_in_hash_table!(ht::MonomialHashtable, e::ExponentVector)
     @label Restart
     while i < ht.size
         hidx = hashnextindex(he, i, mod)
-        @inbounds vidx  = ht.hashtable[hidx]
+        @inbounds vidx = ht.hashtable[hidx]
 
         # if free
         vidx == 0 && break
@@ -71,10 +71,10 @@ end
 =#
 function fill_divmask!(ht::MonomialHashtable)
     ndivvars = ht.ndivvars
-    divvars  = ht.divvars
+    divvars = ht.divvars
 
-    min_exp  = Vector{UInt16}(undef, ndivvars)
-    max_exp  = Vector{UInt16}(undef, ndivvars)
+    min_exp = Vector{UInt16}(undef, ndivvars)
+    max_exp = Vector{UInt16}(undef, ndivvars)
 
     e = ht.exponents[ht.offset]
     for i in 1:ndivvars
@@ -95,7 +95,7 @@ function fill_divmask!(ht::MonomialHashtable)
         end
     end
 
-    ctr   = 1
+    ctr = 1
     steps = UInt32(0)
     for i in 1:ndivvars
         steps = div(max_exp[i] - min_exp[i], ht.ndivbits)
@@ -110,7 +110,7 @@ function fill_divmask!(ht::MonomialHashtable)
     for vidx in ht.offset:ht.load
         unmasked = ht.hashdata[vidx]
         e = ht.exponents[vidx]
-        divmask  = generate_monomial_divmask(e, ht)
+        divmask = generate_monomial_divmask(e, ht)
         ht.hashdata[vidx] = Hashvalue(unmasked.hash, divmask, 0, e[end])
     end
 end
@@ -120,11 +120,11 @@ end
 
 =#
 function generate_monomial_divmask(
-            e::Vector{UInt16},
-            ht::MonomialHashtable)
+    e::Vector{UInt16},
+    ht::MonomialHashtable)
 
     divvars = ht.divvars
-    divmap  = ht.divmap
+    divmap = ht.divmap
 
     ctr = UInt32(1)
     res = UInt32(0)
@@ -165,7 +165,7 @@ function is_gcd_const(h1::Int, h2::Int, ht::MonomialHashtable)
     e1 = ht.exponents[h1]
     e2 = ht.exponents[h2]
 
-    for i in 1:ht.explen - 1
+    for i in 1:ht.explen-1
         if e1[i] != 0 && e2[i] != 0
             return false
         end
@@ -178,13 +178,13 @@ end
 
 # compare pairwise divisibility of lcms from a[first:last] with lcm
 function check_monomial_division_in_update(
-            a::Vector{Int}, first::Int, last::Int,
-            lcm::Int, ht::MonomialHashtable)
+    a::Vector{Int}, first::Int, last::Int,
+    lcm::Int, ht::MonomialHashtable)
 
     # pairs are sorted, we only need to check entries above starting point
 
     divmask = ht.hashdata[lcm].divmask
-    lcmexp  = ht.exponents[lcm]
+    lcmexp = ht.exponents[lcm]
 
     j = first
     @label Restart
@@ -218,17 +218,17 @@ end
 # with hash `htmp` to hashtable `symbol_ht`,
 # and substitute hashes in row
 function insert_multiplied_poly_in_hash_table!(
-        row::Vector{Int},
-        htmp::UInt32,
-        etmp::ExponentVector,
-        poly::Vector{Int},
-        ht::MonomialHashtable,
-        symbol_ht::MonomialHashtable)
+    row::Vector{Int},
+    htmp::UInt32,
+    etmp::ExponentVector,
+    poly::Vector{Int},
+    ht::MonomialHashtable,
+    symbol_ht::MonomialHashtable)
 
     # oof
 
     # length of poly to add
-    len    = length(poly)
+    len = length(poly)
     explen = ht.explen
 
     mod = UInt32(symbol_ht.size - 1)
@@ -348,11 +348,11 @@ end
 # TODO: exponent vectors and coeffs everywhere
 
 function multiplied_poly_to_matrix_row!(
-        symbolic_ht::MonomialHashtable, basis_ht::MonomialHashtable,
-        htmp::UInt32, etmp::Vector{UInt16}, poly::Vector{Int})
+    symbolic_ht::MonomialHashtable, basis_ht::MonomialHashtable,
+    htmp::UInt32, etmp::Vector{UInt16}, poly::Vector{Int})
 
     row = similar(poly)
-    while 1.4*(symbolic_ht.load + length(poly)) >= symbolic_ht.size
+    while 1.4 * (symbolic_ht.load + length(poly)) >= symbolic_ht.size
         enlarge_hash_table!(symbolic_ht)
     end
 
@@ -373,10 +373,10 @@ end
 #------------------------------------------------------------------------------
 
 function insert_in_basis_hash_table_pivots(
-        row::Vector{Int},
-        ht::MonomialHashtable,
-        symbol_ht::MonomialHashtable,
-        col2hash::Vector{Int})
+    row::Vector{Int},
+    ht::MonomialHashtable,
+    symbol_ht::MonomialHashtable,
+    col2hash::Vector{Int})
 
     while ht.size - ht.load <= length(row)
         enlarge_hash_table!(ht)
@@ -385,11 +385,11 @@ function insert_in_basis_hash_table_pivots(
     sdata = symbol_ht.hashdata
     sexps = symbol_ht.exponents
 
-    mod    = UInt32(ht.size - 1)
+    mod = UInt32(ht.size - 1)
     explen = ht.explen
-    bdata  = ht.hashdata
-    bexps  = ht.exponents
-    bhash  = ht.hashtable
+    bdata = ht.hashdata
+    bexps = ht.exponents
+    bhash = ht.hashtable
 
     l = 1
     @label Letsgo
@@ -435,26 +435,26 @@ function insert_in_basis_hash_table_pivots(
         l += 1
 
         bdata[pos] = Hashvalue(h, sdata[hidx].divmask,
-                             sdata[hidx].idx, sdata[hidx].deg)
+            sdata[hidx].idx, sdata[hidx].deg)
 
         ht.load += 1
     end
 end
 
 function insert_plcms_in_basis_hash_table!(
-        pairset::Pairset,
-        off::Int,
-        ht::MonomialHashtable,
-        update_ht::MonomialHashtable,
-        basis::Basis,
-        plcm::Vector{Int},
-        ifirst::Int, ilast::Int)
+    pairset::Pairset,
+    off::Int,
+    ht::MonomialHashtable,
+    update_ht::MonomialHashtable,
+    basis::Basis,
+    plcm::Vector{Int},
+    ifirst::Int, ilast::Int)
 
     # including ifirst and not including ilast
 
-    gens  = basis.gens
-    mod   = UInt32(ht.size - 1)
-    ps    = pairset.pairs
+    gens = basis.gens
+    mod = UInt32(ht.size - 1)
+    ps = pairset.pairs
 
     m = ifirst
     l = 1
@@ -465,12 +465,12 @@ function insert_plcms_in_basis_hash_table!(
             continue
         end
 
-        if is_gcd_const(gens[ps[off + l].poly1][1], gens[ps[off + 1].poly2][1], ht)
+        if is_gcd_const(gens[ps[off+l].poly1][1], gens[ps[off+1].poly2][1], ht)
             l += 1
             continue
         end
 
-        ps[m] = ps[off + l]
+        ps[m] = ps[off+l]
 
         # TODO: IT IS NOT CORRECT
         # upd: it is, but it can be done better
@@ -496,7 +496,7 @@ function insert_plcms_in_basis_hash_table!(
             # @info "SO, we have " n ehm m
             for j in 1:ht.explen
                 if ehm[j] != n[j]
-                    i += 1
+                    i += UInt32(1)
                     @goto Restart
                 end
             end
@@ -512,7 +512,7 @@ function insert_plcms_in_basis_hash_table!(
         uhd = update_ht.hashdata
 
         ll = plcm[l]
-        ht.hashdata[ht.load + 1] = Hashvalue(h, uhd[ll].divmask, 0, uhd[ll].deg)
+        ht.hashdata[ht.load+1] = Hashvalue(h, uhd[ll].divmask, 0, uhd[ll].deg)
 
         ht.load += 1
         ps[m] = SPair(ps[m].poly1, ps[m].poly2, pos, ps[m].deg)
@@ -528,16 +528,16 @@ end
 # computes lcm of he1 and he2 as exponent vectors from ht1
 # and inserts it in ht2
 function get_lcm(he1::Int, he2::Int,
-                    ht1::MonomialHashtable, ht2::MonomialHashtable)
+    ht1::MonomialHashtable, ht2::MonomialHashtable)
 
-    @inbounds e1   = ht1.exponents[he1]
-    @inbounds e2   = ht1.exponents[he2]
+    @inbounds e1 = ht1.exponents[he1]
+    @inbounds e2 = ht1.exponents[he2]
     @inbounds etmp = ht1.exponents[1]
 
     # TODO: degrevlex only
     @inbounds etmp[end] = 0
     @inbounds for i in 1:ht1.explen-1
-        etmp[i]    = max(e1[i], e2[i])
+        etmp[i] = max(e1[i], e2[i])
         etmp[end] += etmp[i]
     end
 
