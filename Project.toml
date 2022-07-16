@@ -13,7 +13,7 @@ ProfileView = "c46f51b8-102a-5cf2-8d2c-8597cb0e0da7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
-AbstractAlgebra = "0.23, 0.24, 0.25, 0.26"
+AbstractAlgebra = "0.23, 0.24, 0.25, 0.26, 0.27"
 BenchmarkTools = "1"
 Combinatorics = "1"
 MultivariatePolynomials = "0.4.3"
