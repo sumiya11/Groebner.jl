@@ -18,6 +18,7 @@ jobs:
         os: [ubuntu-latest]
         package:
           - {user: JuliaSymbolics, repo: Symbolics.jl, group: All}
+          - {user: SciML, repo: StructuralIdentifiability.jl, group: All}
 
     steps:
       - uses: actions/checkout@v2
