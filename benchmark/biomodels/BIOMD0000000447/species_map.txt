@@ -1,0 +1,13 @@
+x1 = species_1
+x2 = species_2
+x3 = species_3
+x4 = species_4
+x5 = species_5
+x6 = species_6
+x7 = species_7
+x8 = species_8
+x9 = species_9
+x10 = species_10
+x11 = species_11
+x12 = species_12
+x13 = species_13

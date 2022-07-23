@@ -1,0 +1,15 @@
+x1 = Arg
+x2 = Fe3__enos
+x3 = Fe3__Arg
+x4 = Fe2
+x5 = Fe2__Arg
+x6 = Fe3__NO
+x7 = NO
+x8 = Fe2__NO
+x9 = Fe3__NOHA
+x10 = NOHA
+x11 = Fe2__NOHA
+x12 = O2
+x13 = Fe3__O2__Arg
+x14 = Fe3__O2__NOHA
+x15 = Citrulline

@@ -1,0 +1,14 @@
+x1 = E
+x2 = E_P_1
+x3 = P
+x4 = M
+x5 = M1
+x6 = E_M1
+x7 = E_M
+x8 = T
+x9 = E_P_2
+x10 = P2
+x11 = P21
+x12 = E_P21
+x13 = E_P2
+x14 = E_P1

@@ -24,30 +24,34 @@ end
 
 @testset "All tests" begin
 
+    @includetests ["internal_term_orders"]
+
     @includetests ["commons", "io", "io_consistency",
                     "univariate_aa"]
 
     @includetests ["crt_reconstruction"] # "mod_reconstruction"]#,
 
-    @includetests ["f4_reduce", "f4_stress",
-                    "f4", "rational_f4", "groebner_certify"]
+    @includetests ["core_f4_reduce", "core_f4_stress",
+                    "core_f4", "rational_f4", "groebner_certify"]
 
-    @includetests ["isgroebner", "isgroebner_stress",
+    @includetests ["core_isgroebner", "core_isgroebner_stress",
                     "isgroebner_certify"]
 
-    @includetests ["normalform", "normalform_stress"]
+    @includetests ["core_normalform", "core_normalform_stress"]
 
     @includetests ["hard_problems_f4", "large_problems_f4"]
 
     @includetests ["probabilistic_linalg"]
 
     if try_import(:DynamicPolynomials)
-        @includetests ["io_dynamic", "dynamic"]
+        @includetests ["io_dynamic", "core_dynamic"]
     end
 
     @includetests ["onthefly_order_change"]
 
-    @includetests ["fglm", "kbase"]
+    @includetests ["core_fglm", "core_kbase"]
+
+    @includetests ["regressions"]
 
     @includetests ["benchmark_systems"]
 

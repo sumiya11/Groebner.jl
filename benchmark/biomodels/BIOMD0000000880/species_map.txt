@@ -1,0 +1,4 @@
+x1 = T_Tumor_Cells
+x2 = L_CD8_T_Cells
+x3 = D_Dendritic_Cells
+x4 = H_CD4_T_Cells

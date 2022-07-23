@@ -62,25 +62,3 @@ function set_metaparameters(ring, ordering, certify, forsolve, linalg, rng)
                         heuristiccheck, randomizedcheck, guaranteedcheck,
                         linalg, rng)
 end
-
-function select_tablesize(ring, exps)
-    nvars = ring.nvars
-    sz = length(exps)
-
-    tablesize = 2^10
-    if nvars > 4
-        tablesize = 2^14
-    end
-    if nvars > 7
-        tablesize = 2^16
-    end
-
-    if sz < 3
-        tablesize = div(tablesize, 2)
-    end
-    if sz < 2
-        tablesize = div(tablesize, 2)
-    end
-
-    tablesize
-end
