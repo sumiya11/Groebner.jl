@@ -1,27 +1,60 @@
 
-# Make the given `ring` and `gens` objects use
-# the `prime` as the field chararacteristic
-function cleanup_gens!(ring::PolyRing, gens::Basis{C},
-                        prime::UInt64) where {C<:Coeff}
-    gens.ch = prime
-    ring.ch = prime
-    normalize_basis!(gens)
+#------------------------------------------------------------------------------
+
+function assure_ordering!(ring, exps, coeffs, metainfo)
+    if ring.ord != metainfo.computeord
+        sort_input_to_change_ordering(exps, coeffs, metainfo.computeord)
+    end
+    ring.ord = metainfo.computeord
 end
+
+# TODO: change project structure
+
+function input_statistics(exps)
+    sz = length(exps)
+    deg = maximum(sum(e[1]) for e in exps)
+    sz, deg
+end
+
+function select_tablesize(ring, exps)
+    nvars = ring.nvars
+    sz = length(exps)
+
+    tablesize = 2^10
+    if nvars > 4
+        tablesize = 2^14
+    end
+    if nvars > 7
+        tablesize = 2^16
+    end
+
+    if sz < 3
+        tablesize = div(tablesize, 2)
+    end
+    if sz < 2
+        tablesize = div(tablesize, 2)
+    end
+
+    tablesize
+end
+
+function cleanup_gens!(ring, gens_ff, prime)
+    gens_ff.ch = prime
+    ring.ch = prime
+    normalize_basis!(gens_ff)
+end
+
+# Mutate everything!
 
 #------------------------------------------------------------------------------
 # Finite field groebner
 
-#=
-    Accepts arguments
-    . ring - a polynomial ring where computation happens 
-            (here, the characteristic should be nonzero)
-=#
 function groebner_ff(
             ring::PolyRing,
-            exps::Vector{Vector{ExponentVector}},
-            coeffs::Vector{Vector{CoeffFF}},
+            exps::Vector{Vector{Vector{UInt16}}},
+            coeffs::Vector{Vector{UInt64}},
             reduced::Bool,
-            meta::GroebnerMetainfo{Rng}) where {Rng<:Random.AbstractRNG}
+            meta::GroebnerMetainfo) where {Rng<:Random.AbstractRNG}
 
     # select hashtable size
     tablesize = select_tablesize(ring, exps)
@@ -280,6 +313,7 @@ end
 #######################################
 # Finite field isgroebner
 
+# UWU!
 function isgroebner_ff(
             ring::PolyRing,
             exps::Vector{Vector{ExponentVector}},
@@ -290,22 +324,21 @@ function isgroebner_ff(
 end
 
 #######################################
-# Rational field isgroebner
+# Rational field groebner
 
+# TODO
 function isgroebner_qq(
             ring::PolyRing,
             exps::Vector{Vector{ExponentVector}},
             coeffs::Vector{Vector{CoeffQQ}},
             meta)
+
     # if randomized result is ok
     if !meta.guaranteedcheck
         coeffs_zz = scale_denominators(coeffs)
-        primetracker = PrimeTracker(coeffs_zz)
-        goodprime = nextgoodprime!(primetracker)
-        coeffbuffer = CoeffBuffer()
-        coeffs_ff = reduce_modulo(coeffbuffer, coeffs_zz, goodprime)
-        ring.ch = goodprime 
-        isgroebner_f4(ring, exps, coeffs_ff, meta.rng)
+        goodprime = nextgoodprime(coeffs_zz, Int[], 2^30 + 3)
+        ring_ff, coeffs_ff = reduce_modulo(coeffs_zz, ring, goodprime)
+        isgroebner_f4(ring_ff, exps, coeffs_ff, meta.rng)
     else # if proved result is needed, compute in rationals
         isgroebner_f4(ring, exps, coeffs, meta.rng)
     end

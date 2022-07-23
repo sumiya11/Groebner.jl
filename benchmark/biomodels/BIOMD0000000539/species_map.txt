@@ -1,0 +1,6 @@
+x1 = A
+x2 = AgB
+x3 = gB
+x4 = rB
+x5 = B
+x6 = AB

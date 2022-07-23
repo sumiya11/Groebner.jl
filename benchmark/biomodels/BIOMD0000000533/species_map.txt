@@ -1,0 +1,11 @@
+x1 = RCT0
+x2 = alpha
+x3 = BN1
+x4 = BN2
+x5 = BN3
+x6 = BN4
+x7 = BTX
+x8 = BM
+x9 = RCT1
+x10 = RC
+x11 = beta

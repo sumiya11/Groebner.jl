@@ -1,0 +1,4 @@
+x1 = Ac
+x2 = Pc
+x3 = Ap
+x4 = Pp

@@ -1,0 +1,4 @@
+x1 = IPTG
+x2 = sigb
+x3 = lacz
+x4 = x
