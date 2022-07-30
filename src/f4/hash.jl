@@ -496,7 +496,7 @@ function insert_plcms_in_basis_hash_table!(
             # @info "SO, we have " n ehm m
             for j in 1:ht.explen
                 if ehm[j] != n[j]
-                    i += 1
+                    i += UInt32(1)
                     @goto Restart
                 end
             end
