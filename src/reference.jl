@@ -1,5 +1,5 @@
 
-# The file contains definitions of some commonly used functions
+# The file contains simple reference implementations
 
 #------------------------------------------------------------------------------
 

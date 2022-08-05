@@ -438,7 +438,7 @@ end
 
 #------------------------------------------------------------------------------
 
-function sort_monoms_increasing!(monoms::Vector{Int}, cnt, ht, ord::Symbol)
+function sort_monoms_increasing!(monoms::Vector{ExponentIdx}, cnt, ht, ord::Symbol)
     exps = ht.exponents
     if ord == :degrevlex
         cmp  = (x, y) -> exponent_isless_drl(
@@ -461,7 +461,7 @@ function sort_monoms_increasing!(monoms::Vector{Int}, cnt, ht, ord::Symbol)
     monoms[1:cnt] = monoms[inds]
 end
 
-function sort_monoms_decreasing!(monoms::Vector{Int}, cnt, ht, ord::Symbol)
+function sort_monoms_decreasing!(monoms::Vector{ExponentIdx}, cnt, ht, ord::Symbol)
     exps = ht.exponents
     if ord == :degrevlex
         cmp  = (x, y) -> exponent_isless_drl(
@@ -486,7 +486,7 @@ end
 
 #------------------------------------------------------------------------------
 
-function sort_terms_decreasing!(monoms::Vector{Int}, coeffs, ht, ord::Symbol)
+function sort_terms_decreasing!(monoms::Vector{ExponentIdx}, coeffs, ht, ord::Symbol)
     exps = ht.exponents
     if ord == :degrevlex
         cmp  = (x, y) -> exponent_isless_drl(

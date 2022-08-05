@@ -11,7 +11,7 @@ function isgroebner_f4!(ring::PolyRing,
 
     pairset = initialize_pairset()
 
-    plcm = Vector{Int}(undef, 0)
+    plcm = Vector{ExponentIdx}(undef, 0)
     update!(pairset, basis, ht, update_ht, plcm)
 
     if pairset.load == 0
@@ -27,7 +27,7 @@ function isgroebner_f4!(ring::PolyRing,
     sort_matrix_rows_increasing!(matrix)
     sort_matrix_rows_decreasing!(matrix) # for pivots,  AB part
 
-    return exact_sparse_linear_algebra_isgroebner!(matrix, basis)
+    exact_sparse_linear_algebra_isgroebner!(matrix, basis)
 end
 
 function isgroebner_f4(

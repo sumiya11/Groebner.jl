@@ -49,12 +49,17 @@ end
 #------------------------------------------------------------------------------
 # Finite field groebner
 
-function groebner_ff(
+#=
+    Accepts arguments
+    . ring - a polynomial ring where computation happens 
+            (here, the characteristic should be nonzero)
+=#
+function groebner(
             ring::PolyRing,
-            exps::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{UInt64}},
+            exps::Vector{Vector{ExponentVector}},
+            coeffs::Vector{CoeffsVector{T}},
             reduced::Bool,
-            meta::GroebnerMetainfo) where {Rng<:Random.AbstractRNG}
+            meta::GroebnerMetainfo{Rng}) where {T<:CoeffFF, Rng<:Random.AbstractRNG}
 
     # select hashtable size
     tablesize = select_tablesize(ring, exps)
@@ -71,12 +76,12 @@ end
 #------------------------------------------------------------------------------
 # Rational field groebner
 
-function groebner_qq(
+function groebner(
             ring::PolyRing,
             exps::Vector{Vector{ExponentVector}},
-            coeffs::Vector{Vector{CoeffQQ}},
+            coeffs::Vector{CoeffsVector{T}},
             reduced::Bool,
-            meta::GroebnerMetainfo) where {Rng<:Random.AbstractRNG}
+            meta::GroebnerMetainfo) where {T<:CoeffQQ, Rng<:Random.AbstractRNG}
 
     # we can mutate coeffs and exps here
 
@@ -95,7 +100,7 @@ function groebner_qq(
     # gens_temp_ff.ch is 0
 
     # to store integer and rational coefficients of groebner basis
-    coeffaccum  = CoeffAccum()
+    coeffaccum  = CoeffAccum{BigInt, Rational{BigInt}}()
     # to store BigInt buffers and reduce overall memory usage
     coeffbuffer = CoeffBuffer()
 
@@ -135,7 +140,7 @@ function groebner_qq(
     # ADDED
     global F4TIME
     # ADDED
-    F4TIME += @elapsed f4trace!(ring, gens_ff, tracer, pairset, ht, reduced, meta.linalg, meta.rng)
+    F4TIME += @elapsed f4!(ring, gens_ff, tracer, pairset, ht, reduced, meta.linalg, meta.rng)
     # f4!(ring, gens_ff, ht, reduced, meta.linalg)
 
     # reconstruct into integers
@@ -198,7 +203,7 @@ function groebner_qq(
 
             # @error "tracer" tracer
 
-            F4TIME += @elapsed f4trace!(ring, gens_ff, tracer, pairset, ht, reduced, meta.linalg, meta.rng)
+            F4TIME += @elapsed f4!(ring, gens_ff, tracer, pairset, ht, reduced, meta.linalg, meta.rng)
             # f4!(ring, gens_ff, ht, reduced, meta.linalg)
             # reconstruct into integers
             @info "CRT modulo ($(primetracker.modulo), $(prime))"
@@ -313,12 +318,11 @@ end
 #######################################
 # Finite field isgroebner
 
-# UWU!
-function isgroebner_ff(
+function isgroebner(
             ring::PolyRing,
             exps::Vector{Vector{ExponentVector}},
-            coeffs::Vector{Vector{CoeffFF}},
-            meta)
+            coeffs::Vector{Vector{T}},
+            meta) where {T<:CoeffFF}
 
     isgroebner_f4(ring, exps, coeffs, meta.rng)
 end
@@ -326,13 +330,11 @@ end
 #######################################
 # Rational field groebner
 
-# TODO
-function isgroebner_qq(
+function isgroebner(
             ring::PolyRing,
             exps::Vector{Vector{ExponentVector}},
-            coeffs::Vector{Vector{CoeffQQ}},
-            meta)
-
+            coeffs::Vector{Vector{T}},
+            meta) where {T<:CoeffQQ}
     # if randomized result is ok
     if !meta.guaranteedcheck
         coeffs_zz = scale_denominators(coeffs)

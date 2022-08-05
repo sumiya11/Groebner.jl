@@ -10,14 +10,14 @@ For documentation and more please check out https://sumiya11.github.io/Groebner.
 
 ## How to use Groebner.jl?
 
-Our package works with polynomials from `AbstractAlgebra.jl`, `DynamicPolynomials.jl`, and `Nemo.jl`. We will demonstrate the usage on a simple example. Lets first create a ring of polynomials in 3 variables over rationals
+Our package works with polynomials from `AbstractAlgebra.jl`, `DynamicPolynomials.jl`, and `Nemo.jl`. We will demonstrate the usage on a simple example. Lets first create a ring of polynomials in 3 variables
 
 ```julia
 julia> using AbstractAlgebra
-julia> R, (x1, x2, x3) = PolynomialRing(QQ, ["x1", "x2", "x3"], ordering=:degrevlex);
+julia> R, (x1, x2, x3) = PolynomialRing(QQ, ["x1", "x2", "x3"]);
 ```
 
-Then we can define a simple cyclic polynomial system
+Then we can define a simple polynomial system
 
 ```julia
 julia> polys = [

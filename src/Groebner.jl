@@ -79,11 +79,8 @@ import MultivariatePolynomials: AbstractPolynomial, AbstractPolynomialLike
 # type aliases for internal objects
 include("internaltypes.jl")
 
-# so, what is that exactly?
-include("utils.jl")
-
 # some simple reference implementations
-include("common.jl")
+include("reference.jl")
 
 # computation parameters control
 include("metainfo.jl")
@@ -91,30 +88,32 @@ include("metainfo.jl")
 # input-output conversions for polynomials
 include("io.jl")
 
-#= operations with numbers =#
-# unsigned arithmetic for finite field computations
-include("arithmetic/unsigned.jl")
 # modular arithmetic for CRT and rational reconstruction
 include("arithmetic/modular.jl")
 
 #= generic f4 implementation =#
-# the heart of this library
-include("f4/structs.jl")
-include("f4/symbolic.jl")
-include("f4/hash.jl")
-include("f4/linear.jl")
+#= the heart of this library =#
+# `MonomialHashtable` implementation
+include("f4/hashtable.jl")
+# `Pairset` and `Basis` implementations
+include("f4/basis.jl")
+# `MacaulayMatrix` implementation
+include("f4/matrix.jl")
 include("f4/sorting.jl")
+# Lucky prime numbers implementation
 include("f4/lucky.jl")
+# Buffers for manipulations with polynomial coefficients
 include("f4/coeffs.jl")
+# Enable tracing
+include("f4/tracer.jl")
+# All together combined in generic f4 implementation 
 include("f4/f4.jl")
 
-# f4 with tracing
-include("f4/f4trace.jl")
-
-include("f4/groebner.jl")
-include("f4/isgroebner.jl")
-include("f4/normalform.jl")
-include("f4/correctness.jl")
+#= high level functions =#
+include("gb/groebner.jl")
+include("gb/isgroebner.jl")
+include("gb/normalform.jl")
+include("gb/correctness.jl")
 # include("f4/statistics.jl")
 
 #= generic fglm implementation =#
