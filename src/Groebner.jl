@@ -95,7 +95,6 @@ include("io.jl")
 include("arithmetic/modular.jl")
 
 #= generic f4 implementation =#
-<<<<<<< HEAD
 #= the heart of this library =#
 # `MonomialHashtable` implementation
 include("f4/hashtable.jl")
@@ -103,13 +102,6 @@ include("f4/hashtable.jl")
 include("f4/basis.jl")
 # `MacaulayMatrix` implementation
 include("f4/matrix.jl")
-=======
-# the heart of this library
-include("f4/structs.jl")
-include("f4/symbolic.jl")
-include("f4/hash.jl")
-include("f4/linear.jl")
->>>>>>> 302a8bf98a41584a49993c95d3ec3b7b8f68c9b1
 include("f4/sorting.jl")
 # Lucky prime numbers implementation
 include("f4/lucky.jl")

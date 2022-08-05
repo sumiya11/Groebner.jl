@@ -49,7 +49,6 @@ end
 #------------------------------------------------------------------------------
 # Finite field groebner
 
-<<<<<<< HEAD:src/gb/groebner.jl
 #=
     Accepts arguments
     . ring - a polynomial ring where computation happens 
@@ -61,14 +60,6 @@ function groebner(
             coeffs::Vector{CoeffsVector{T}},
             reduced::Bool,
             meta::GroebnerMetainfo{Rng}) where {T<:CoeffFF, Rng<:Random.AbstractRNG}
-=======
-function groebner_ff(
-            ring::PolyRing,
-            exps::Vector{Vector{Vector{UInt16}}},
-            coeffs::Vector{Vector{UInt64}},
-            reduced::Bool,
-            meta::GroebnerMetainfo) where {Rng<:Random.AbstractRNG}
->>>>>>> 302a8bf98a41584a49993c95d3ec3b7b8f68c9b1:src/f4/groebner.jl
 
     # select hashtable size
     tablesize = select_tablesize(ring, exps)

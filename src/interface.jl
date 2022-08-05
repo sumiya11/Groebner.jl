@@ -75,24 +75,12 @@ function groebner(
     assure_ordering!(ring, exps, coeffs, metainfo)
 
     #= compute the groebner basis =#
-<<<<<<< HEAD
     if metainfo.ground === :ff
         # if finite field #
         bexps, bcoeffs = groebner(ring, exps, coeffs, reduced, metainfo)
     else
         # if rational coefficients #
         bexps, bcoeffs = groebner(ring, exps, coeffs, reduced, metainfo)
-=======
-    if ring.ch != 0
-        # bexps, bcoeffs = groebner_ff(ring, exps, coeffs, reduced, rng, metainfo)
-        # if finite field
-        # Always returns UInt coefficients #
-        bexps, bcoeffs = groebner_ff(ring, exps, coeffs, reduced, metainfo)
-    else
-        # if rational coefficients
-        # Always returns rational coefficients #
-        bexps, bcoeffs = groebner_qq(ring, exps, coeffs, reduced, metainfo)
->>>>>>> 302a8bf98a41584a49993c95d3ec3b7b8f68c9b1
     end
 
     # ordering in bexps here matches target ordering in metainfo

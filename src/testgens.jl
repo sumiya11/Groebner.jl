@@ -17,11 +17,8 @@ function rootn(n; ground=QQ)
     ans
 end
 
-<<<<<<< HEAD
 #------------------------------------------------------------------------------
 
-=======
->>>>>>> 302a8bf98a41584a49993c95d3ec3b7b8f68c9b1
 #=
     The cyclic-n system
     (not to be confused with cyclic system)!!
