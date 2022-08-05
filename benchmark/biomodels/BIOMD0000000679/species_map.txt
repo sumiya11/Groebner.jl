@@ -1,0 +1,4 @@
+x1 = K_T
+x2 = phi_I
+x3 = phi_R
+x4 = T

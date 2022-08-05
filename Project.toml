@@ -1,10 +1,24 @@
 authors = ["sumiya11"]
 name = "Groebner"
 uuid = "0b43b601-686d-58a3-8a1c-6623616c7cd4"
+<<<<<<< HEAD
 version = "0.2.7"
 
+=======
+authors = ["sumiya11"]
+version = "0.2.9"
+
+[deps]
+AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
+Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+MultivariatePolynomials = "102ac46a-7ee4-5c85-9060-abc95bfdeaa3"
+Primes = "27ebfcd6-29c5-5fa9-bf4b-fb8fc14df3ae"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+
+>>>>>>> 302a8bf98a41584a49993c95d3ec3b7b8f68c9b1
 [compat]
-AbstractAlgebra = "0.23, 0.24, 0.25, 0.26"
+AbstractAlgebra = "0.23, 0.24, 0.25, 0.26, 0.27"
 BenchmarkTools = "1"
 Combinatorics = "1"
 MultivariatePolynomials = "0.4.3"

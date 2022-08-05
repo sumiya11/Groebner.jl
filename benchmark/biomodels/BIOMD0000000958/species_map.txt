@@ -1,0 +1,8 @@
+x1 = Susceptible
+x2 = Exposed
+x3 = Infectious
+x4 = Super_spreaders
+x5 = Asymptomatic
+x6 = Hospitalised
+x7 = Recovered
+x8 = Fatalities

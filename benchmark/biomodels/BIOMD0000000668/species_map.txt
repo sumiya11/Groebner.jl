@@ -1,0 +1,14 @@
+x1 = Ra
+x2 = Rd
+x3 = Inh_g
+x4 = Inh_b
+x5 = Sti_g
+x6 = Sti_b
+x7 = Sti_g1
+x8 = Sti_g2
+x9 = Sti_g3
+x10 = Sti_g4
+x11 = Sti_b1
+x12 = Sti_b2
+x13 = Sti_b3
+x14 = Sti_b4

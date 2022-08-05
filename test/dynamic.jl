@@ -3,6 +3,8 @@ using DynamicPolynomials
 @testset "DynamicPolynomials basic groebner" begin
     @polyvar x y
 
+    @test Groebner.groebner([(x - 2)*(x - 3), (x - 3)*(x - 4)]) == [x - 3]
+
     @test Groebner.groebner([x, y]) == Groebner.groebner([y, x]) == [y, x]
     @test Groebner.groebner([5x, y]) == Groebner.groebner([y, 5x]) == [y, x]
     @test Groebner.groebner([x, y, y]) == Groebner.groebner([y, y, x]) == [y, x]

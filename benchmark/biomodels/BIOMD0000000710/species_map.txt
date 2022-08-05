@@ -1,0 +1,7 @@
+x1 = U_H
+x2 = U_E
+x3 = U_I
+x4 = U_R
+x5 = V
+x6 = IFN
+x7 = K

@@ -179,7 +179,6 @@ function reduce_modulo(
         prime::UInt64) where {T1<:CoeffZZ}
     coeffs_ff =  [Vector{UInt64}(undef, length(c)) for c in coeffs_zz]
     reduce_modulo!(coeffbuff, coeffs_zz, coeffs_ff, prime)
-    coeffs_ff
 end
 
 #------------------------------------------------------------------------------

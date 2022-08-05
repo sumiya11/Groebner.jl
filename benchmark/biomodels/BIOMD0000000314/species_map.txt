@@ -1,0 +1,12 @@
+x1 = Rec
+x2 = Rec_i
+x3 = IL13_Rec
+x4 = p_IL13_Rec
+x5 = p_IL13_Rec_i
+x6 = JAK2
+x7 = pJAK2
+x8 = SHP1
+x9 = STAT5
+x10 = pSTAT5
+x11 = CD274mRNA
+x12 = IL13

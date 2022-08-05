@@ -5,7 +5,7 @@
 
 #=
     The root-n system
-    (not to be confused with cyclic-n system)!!
+    (not to be confused with cyclic system)!!
 =#
 function rootn(n; ground=QQ)
     R, xs = PolynomialRing(ground, ["x$i" for i in 1:n])
@@ -17,11 +17,14 @@ function rootn(n; ground=QQ)
     ans
 end
 
+<<<<<<< HEAD
 #------------------------------------------------------------------------------
 
+=======
+>>>>>>> 302a8bf98a41584a49993c95d3ec3b7b8f68c9b1
 #=
     The cyclic-n system
-    (not to be confused with root-n system)!!
+    (not to be confused with cyclic system)!!
 =#
 function cyclicn(n; ground=QQ)
     R, z = PolynomialRing(ground, ["z$i" for i in 1:n])

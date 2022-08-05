@@ -1,0 +1,5 @@
+x1 = L
+x2 = LR
+x3 = R
+x4 = CA
+x5 = LRCA

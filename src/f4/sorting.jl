@@ -4,8 +4,8 @@
 #
 # Used only once to sort input generators
 function sort_gens_by_lead_increasing!(basis::Basis, ht::MonomialHashtable)
-    gens = basis.gens
-    exps = ht.exponents
+    gens = basis.gens  # Vector{Vector{Int}} gens = [gen1, .. genn], geni = [3, 1, 4]
+    exps = ht.exponents # [exp1, exp2, exp3,... expm, undef...undef]
 
     inds = collect(1:basis.ntotal)
 
@@ -24,7 +24,7 @@ function sort_gens_by_lead_increasing!(basis::Basis, ht::MonomialHashtable)
     end
 
     sort!(inds, lt=cmp)
-
+    
     # use array assignment insted of elemewise assignment
     # Reason: slice array assignment uses fast setindex! based on unsafe copy
     basis.gens[1:basis.ntotal]   = basis.gens[inds]
@@ -39,6 +39,10 @@ function sort_gens_by_lead_increasing!(
             basis::Basis, ht::MonomialHashtable, coeffs_zz, coeffs_qq)
     gens = basis.gens
     exps = ht.exponents
+
+    if length(gens) != basis.ntotal 
+        throw(DomainError("beda"))
+    end
 
     inds = collect(1:basis.ntotal)
 
@@ -219,27 +223,32 @@ end
 #=
     :degrevlex exponent vector comparison
 =#
-function exponent_isless_drl(ea::Vector{UInt16}, eb::Vector{UInt16})
-
+function exponent_isless_drl(ea::ExponentVector, eb::ExponentVector)
     if @inbounds ea[end] < eb[end]
         return true
     elseif @inbounds ea[end] != eb[end]
         return false
     end
 
+    # assuming length(ea) > 1
+    # @assert length(ea) > 1
+
     i = length(ea) - 1
     @inbounds while i > 1 && ea[i] == eb[i]
         i -= 1
     end
 
-    return ea[i] < eb[i] ? false : true
+    if ea[i] <= eb[i]
+        return false
+    else
+        return true
+    end
 end
 
 #=
     :deglex exponent vector comparison
 =#
-function exponent_isless_dl(ea::Vector{UInt16}, eb::Vector{UInt16})
-
+function exponent_isless_dl(ea::ExponentVector, eb::ExponentVector)
     if @inbounds ea[end] < eb[end]
         return true
     elseif @inbounds ea[end] != eb[end]
@@ -247,7 +256,7 @@ function exponent_isless_dl(ea::Vector{UInt16}, eb::Vector{UInt16})
     end
 
     i = 1
-    @inbounds while i < length(ea) && ea[i] == eb[i]
+    @inbounds while (i < length(ea) - 1) && ea[i] == eb[i]
         i += 1
     end
     return ea[i] < eb[i] ? true : false
@@ -256,9 +265,9 @@ end
 #=
     :lex exponent vector comparison
 =#
-function exponent_isless_lex(ea::Vector{UInt16}, eb::Vector{UInt16})
+function exponent_isless_lex(ea::ExponentVector, eb::ExponentVector)
     i = 1
-    @inbounds while i < length(ea) - 1 && ea[i] == eb[i]
+    @inbounds while (i < length(ea) - 1) && ea[i] == eb[i]
         i += 1
     end
     return ea[i] < eb[i] ? true : false
@@ -499,18 +508,4 @@ function sort_terms_decreasing!(monoms::Vector{ExponentIdx}, coeffs, ht, ord::Sy
 
     monoms[1:end] = monoms[inds]
     coeffs[1:end] = coeffs[inds]
-end
-
-
-#------------------------------------------------------------------------------
-
-#=
-    
-=#
-function assure_ordering!(ring::PolyRing, exps::Vector{Vector{ExponentVector}}, 
-        coeffs::Vector{Vector{T}}, metainfo) where {T<:Coeff}
-    if ring.ord != metainfo.computeord
-        sort_input_to_change_ordering(exps, coeffs, metainfo.computeord)
-    end
-    ring.ord = metainfo.computeord
 end

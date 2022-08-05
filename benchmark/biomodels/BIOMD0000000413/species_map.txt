@@ -1,0 +1,5 @@
+x1 = auxin
+x2 = TIR1
+x3 = auxinTIR1
+x4 = auxinTIR1VENUS
+x5 = VENUS

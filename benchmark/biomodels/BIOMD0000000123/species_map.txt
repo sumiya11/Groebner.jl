@@ -1,0 +1,14 @@
+x1 = Ca_Nuc
+x2 = Ca_Cyt
+x3 = NFAT_Nuc
+x4 = Act_C_Nuc
+x5 = NFAT_Pi_Nuc
+x6 = NFAT_Act_C_Nuc
+x7 = NFAT_Pi_Act_C_Nuc
+x8 = Inact_C_Nuc
+x9 = NFAT_Cyt
+x10 = Act_C_Cyt
+x11 = NFAT_Pi_Cyt
+x12 = NFAT_Act_C_Cyt
+x13 = NFAT_Pi_Act_C_Cyt
+x14 = Inact_C_Cyt

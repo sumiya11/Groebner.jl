@@ -45,6 +45,8 @@ function printall()
     CORRTIME = 0.0
 end
 
+# most of these are not needed
+# TODO
 import AbstractAlgebra
 import AbstractAlgebra.Generic: MPoly, GFElem, MPolyRing, Poly
 import AbstractAlgebra: leading_term, QQ, PolynomialRing, terms,
@@ -77,8 +79,11 @@ import MultivariatePolynomials: AbstractPolynomial, AbstractPolynomialLike
 # type aliases for internal objects
 include("internaltypes.jl")
 
+# so, what is that exactly?
+include("utils.jl")
+
 # some simple reference implementations
-include("reference.jl")
+include("common.jl")
 
 # computation parameters control
 include("metainfo.jl")
@@ -90,6 +95,7 @@ include("io.jl")
 include("arithmetic/modular.jl")
 
 #= generic f4 implementation =#
+<<<<<<< HEAD
 #= the heart of this library =#
 # `MonomialHashtable` implementation
 include("f4/hashtable.jl")
@@ -97,6 +103,13 @@ include("f4/hashtable.jl")
 include("f4/basis.jl")
 # `MacaulayMatrix` implementation
 include("f4/matrix.jl")
+=======
+# the heart of this library
+include("f4/structs.jl")
+include("f4/symbolic.jl")
+include("f4/hash.jl")
+include("f4/linear.jl")
+>>>>>>> 302a8bf98a41584a49993c95d3ec3b7b8f68c9b1
 include("f4/sorting.jl")
 # Lucky prime numbers implementation
 include("f4/lucky.jl")
@@ -123,6 +136,7 @@ include("interface.jl")
 
 # example systems definitions
 include("testgens.jl")
+
 
 export groebner
 export isgroebner

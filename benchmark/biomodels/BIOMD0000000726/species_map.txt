@@ -1,0 +1,8 @@
+x1 = S_d
+x2 = E_d
+x3 = I_d
+x4 = R_d
+x5 = S_h
+x6 = E_h
+x7 = I_h
+x8 = R_h
