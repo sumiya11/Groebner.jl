@@ -318,12 +318,7 @@ end
 #######################################
 # Finite field isgroebner
 
-<<<<<<< HEAD:src/gb/groebner.jl
 function isgroebner(
-=======
-# UWU!
-function isgroebner_ff(
->>>>>>> 302a8bf98a41584a49993c95d3ec3b7b8f68c9b1:src/f4/groebner.jl
             ring::PolyRing,
             exps::Vector{Vector{ExponentVector}},
             coeffs::Vector{Vector{T}},
@@ -335,21 +330,11 @@ end
 #######################################
 # Rational field groebner
 
-<<<<<<< HEAD:src/gb/groebner.jl
 function isgroebner(
             ring::PolyRing,
             exps::Vector{Vector{ExponentVector}},
             coeffs::Vector{Vector{T}},
             meta) where {T<:CoeffQQ}
-=======
-# TODO
-function isgroebner_qq(
-            ring::PolyRing,
-            exps::Vector{Vector{ExponentVector}},
-            coeffs::Vector{Vector{CoeffQQ}},
-            meta)
-
->>>>>>> 302a8bf98a41584a49993c95d3ec3b7b8f68c9b1:src/f4/groebner.jl
     # if randomized result is ok
     if !meta.guaranteedcheck
         coeffs_zz = scale_denominators(coeffs)

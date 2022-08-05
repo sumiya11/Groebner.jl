@@ -79,11 +79,8 @@ import MultivariatePolynomials: AbstractPolynomial, AbstractPolynomialLike
 # type aliases for internal objects
 include("internaltypes.jl")
 
-# so, what is that exactly?
-include("utils.jl")
-
 # some simple reference implementations
-include("common.jl")
+include("reference.jl")
 
 # computation parameters control
 include("metainfo.jl")
