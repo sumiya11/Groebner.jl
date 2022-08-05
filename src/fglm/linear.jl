@@ -95,8 +95,8 @@ end
 # reduces row by mul*cfs modulo ch at indices positions
 #
 # Finite field magic specialization
-function reduce_by_pivot_simultaneous!(leftrow, leftexps, leftcfs::Vector{CoeffFF},
-                rightrow, rightexps, rightcfs, magic)
+function reduce_by_pivot_simultaneous!(leftrow, leftexps, leftcfs::Vector{T},
+                rightrow, rightexps, rightcfs, magic) where {T<:CoeffFF}
 
     # mul = -densecoeffs[i]
     # actually.. not bad!
@@ -117,7 +117,7 @@ end
 
 #
 # Finite field magic specialization
-function normalize_double_row_sparse!(leftcfs::Vector{CoeffFF}, rightcfs, magic)
+function normalize_double_row_sparse!(leftcfs::Vector{T}, rightcfs, magic) where {T<:CoeffFF}
     pinv = invmod(leftcfs[1], magic.divisor) % magic
     @inbounds for i in 2:length(leftcfs)
         # row[i] *= pinv
@@ -133,7 +133,7 @@ end
 
 #
 # Finite field magic specialization
-function normalize_double_row_sparse!(leftcfs::Vector{CoeffQQ}, rightcfs, magic)
+function normalize_double_row_sparse!(leftcfs::Vector{T}, rightcfs, magic) where {T<:CoeffQQ}
     pinv = inv(leftcfs[1])
     @inbounds for i in 2:length(leftcfs)
         # row[i] *= pinv
@@ -150,8 +150,8 @@ end
 # reduces row by mul*cfs modulo ch at indices positions
 #
 # Rational field specialization
-function reduce_by_pivot_simultaneous!(leftrow, leftexps, leftcfs::Vector{CoeffQQ},
-                rightrow, rightexps, rightcfs, magic)
+function reduce_by_pivot_simultaneous!(leftrow, leftexps, leftcfs::Vector{T},
+                rightrow, rightexps, rightcfs, magic) where {T<:CoeffQQ}
 
     # mul = -densecoeffs[i]
     # actually.. not bad!
@@ -233,7 +233,7 @@ function extract_sparse_row(row)
 end
 
 function extract_sparse_row(row::Vector{C}, np, k) where {C}
-    newrow = Vector{Int}(undef, k)
+    newrow = Vector{ExponentIdx}(undef, k)
     newcfs = Vector{C}(undef, k)
 
     # store new row in sparse format
@@ -252,7 +252,7 @@ end
 
 function linear_relation!(
             matrix::DoubleMacaulayMatrix,
-            monom::Int, vector::Basis{C},
+            monom::ExponentIdx, vector::Basis{C},
             ht) where {C<:Coeff}
 
     magic = select_divisor(vector.coeffs, vector.ch)

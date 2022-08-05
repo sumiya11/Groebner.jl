@@ -1,5 +1,7 @@
 
-# The file contains test examples definitions
+# The file contains some test systems definitions
+
+#------------------------------------------------------------------------------
 
 #=
     The root-n system
@@ -15,14 +17,7 @@ function rootn(n; ground=QQ)
     ans
 end
 
-function reimern(n; ground=QQ)
-    R, xs = PolynomialRing(ground, ["x$i" for i in 1:n])
-    ans = [
-        sum((-1)^(i+1)*2*xs[i]^j for i in 1:n) - 1
-        for j in 2:(n+1)
-    ]
-    ans
-end
+#------------------------------------------------------------------------------
 
 #=
     The cyclic-n system
@@ -32,6 +27,22 @@ function cyclicn(n; ground=QQ)
     R, z = PolynomialRing(ground, ["z$i" for i in 1:n])
     [(sum(prod(z[(k-1) % n + 1] for k in j:j+m) for j in 1:n) for m=0:(n-2))...,prod(z)-1]
 end
+
+#------------------------------------------------------------------------------
+
+#=
+    The reimer-n system
+=#
+function reimern(n; ground=QQ)
+    R, xs = PolynomialRing(ground, ["x$i" for i in 1:n])
+    ans = [
+        sum((-1)^(i+1)*2*xs[i]^j for i in 1:n) - 1
+        for j in 2:(n+1)
+    ]
+    ans
+end
+
+#------------------------------------------------------------------------------
 
 #=
     The katsura-n system
@@ -45,6 +56,25 @@ function katsuran(n; ground=QQ)
         x[1] + 2sum(x[i+1] for i=1:n) - 1
     ]
 end
+
+#------------------------------------------------------------------------------
+
+#=
+    The noon-n system
+=#
+function noonn(n; ground=QQ)
+    without(x, k) = x[1:end .!= k]
+
+    R, xs = PolynomialRing(ground, ["x$i" for i in 1:n])
+    fs = zeros(R, n)
+    for i in 1:n
+        other = without(xs, i)
+        fs[i] = xs[i] * (10*sum(other .^ 2) - 11) + 10
+    end
+    fs
+end
+
+#------------------------------------------------------------------------------
 
 function henrion5(;ground=QQ)
 
@@ -72,6 +102,7 @@ function henrion6(;ground=QQ)
     ]
 end
 
+# is this even possible to compute?..
 function henrion7(;ground=QQ)
     R, (f1,f2,f3,f4,f5,f6,f7) = PolynomialRing(ground, ["f1","f2","f3","f4","f5","f6","f7"])
 
@@ -86,6 +117,8 @@ function henrion7(;ground=QQ)
         ground(8)//7*f7+2*f6+2*f5+2*f4+2*f3+2*f2+2*f1-553
     ]
 end
+
+#------------------------------------------------------------------------------
 
 function eco5(;ground=GF(2^31-1))
     R, (x1, x2, x3, x4, x5) = PolynomialRing(ground, ["x$i" for i in 1:5])
@@ -192,20 +225,7 @@ function eco13(;ground=QQ)
     fs
 end
 
-#=
-    The noon-4 system
-=#
-function noonn(n; ground=QQ)
-    without(x, k) = x[1:end .!= k]
-
-    R, xs = PolynomialRing(ground, ["x$i" for i in 1:n])
-    fs = zeros(R, n)
-    for i in 1:n
-        other = without(xs, i)
-        fs[i] = xs[i] * (10*sum(other .^ 2) - 11) + 10
-    end
-    fs
-end
+#------------------------------------------------------------------------------
 
 function ku10(;ground=QQ)
     R, (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = PolynomialRing(ground, ["x$i" for i in 1:10])
@@ -310,6 +330,9 @@ function generate_set(nvariables, exps, nterms, npolys, csz, rng,
     ])
 end
 
+#------------------------------------------------------------------------------
+
+# random system generator
 function generate_set(nvariables, exps, nterms, npolys, csz, rng,
                         ground::AbstractAlgebra.Rationals, ordering)
 

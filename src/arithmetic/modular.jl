@@ -1,10 +1,12 @@
 
 #=
-    The file contains rational reconstrction and CRT functions
+    The file contains rational reconstruction and CRT reconstruction functions
 =#
 
 #------------------------------------------------------------------------------
 
+# A reference implementation of rational reconstruction
+#
 # Rational number reconstruction implementation borrowed from CLUE
 # and modified a bit to suit the 'Modern Computer Algebra' definitions
 # Returns a rational r // h of QQ field in a canonical form such that
@@ -59,7 +61,7 @@ function rational_reconstruction(a::I, m::I) where {I<:Union{Int, BigInt}}
 end
 
 # returns the bound for rational reconstruction
-# based on the current modulo
+# based on the current modulo size
 #
 # The bound for rational reconstrction:
 # as soon as the numerator in rational reconstruction
@@ -150,7 +152,7 @@ function rational_reconstruction!(
 
     #=
     num and den are obviously coprime,
-    gcd is not nessesary
+    gcd is not nessesary here
 
     Base.GMP.MPZ.gcd!(buf, den, num)
     Base.GMP.MPZ.tdiv_q!(den, buf)
@@ -178,6 +180,8 @@ end
         buf = buffer
         n1  = buffer
         n2  = buffer
+        minv1 = m1^-1 mod M
+        minv2 = m2^-1 mod M
 =#
 function CRT!(
             M::BigInt, buf::BigInt, n1::BigInt, n2::BigInt,

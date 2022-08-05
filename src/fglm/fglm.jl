@@ -6,7 +6,7 @@
 
 mutable struct NextMonomials
     # monomials to check
-    monoms::Vector{Int}
+    monoms::Vector{ExponentIdx}
     load::Int
     done::Dict{Int, Int}
     ord::Symbol
@@ -16,15 +16,15 @@ Base.isempty(m::NextMonomials) = m.load == 0
 
 function initialize_nextmonomials(ht, ord)
     vidx = insert_in_hash_table!(ht, zero(ht.exponents[1]))
-    monoms = Vector{Int}(undef, 2^3)
+    monoms = Vector{ExponentIdx}(undef, 2^3)
     monoms[1] = vidx
     load = 1
-    NextMonomials(monoms, load, Dict{Int, Int}(vidx => 1), ord)
+    NextMonomials(monoms, load, Dict{ExponentIdx, Int}(vidx => 1), ord)
 end
 
 function insertnexts!(
             m::NextMonomials,
-            ht::MonomialHashtable, monom::Int)
+            ht::MonomialHashtable, monom::ExponentIdx)
     while m.load + ht.nvars >= length(m.monoms)
         resize!(m.monoms, length(m.monoms) * 2)
     end
@@ -106,7 +106,7 @@ function fglm_f4!(
     newbasis = initialize_basis(ring, basis.ntotal, C)
     nextmonoms = initialize_nextmonomials(ht, ord)
     matrix = initialize_double_matrix(basis)
-    staircase = Int[]
+    staircase = ExponentIdx[]
 
     while !isempty(nextmonoms)
         monom = nextmonomial!(nextmonoms)
@@ -188,7 +188,7 @@ end
 #------------------------------------------------------------------------------
 
 function extract_linear_basis(ring, matrix::DoubleMacaulayMatrix{C}) where {C}
-    exps = Vector{Vector{Int}}(undef, matrix.nrrows)
+    exps = Vector{Vector{ExponentIdx}}(undef, matrix.nrrows)
     coeffs = Vector{Vector{C}}(undef, matrix.nrrows)
 
     # println("Extracting")

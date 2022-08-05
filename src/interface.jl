@@ -80,10 +80,10 @@ function groebner(
     #= compute the groebner basis =#
     if metainfo.ground === :ff
         # if finite field #
-        bexps, bcoeffs = groebner_ff(ring, exps, coeffs, reduced, metainfo)
+        bexps, bcoeffs = groebner(ring, exps, coeffs, reduced, metainfo)
     else
         # if rational coefficients #
-        bexps, bcoeffs = groebner_qq(ring, exps, coeffs, reduced, metainfo)
+        bexps, bcoeffs = groebner(ring, exps, coeffs, reduced, metainfo)
     end
 
     # ordering in bexps here matches target ordering in metainfo
@@ -150,11 +150,11 @@ function isgroebner(
     if ring.ch != 0
         # if finite field
         # Always returns UInt coefficients #
-        flag = isgroebner_ff(ring, exps, coeffs, metainfo)
+        flag = isgroebner(ring, exps, coeffs, metainfo)
     else
         # if rational coefficients
         # Always returns rational coefficients #
-        flag = isgroebner_qq(ring, exps, coeffs, metainfo)
+        flag = isgroebner(ring, exps, coeffs, metainfo)
     end
 
     #=

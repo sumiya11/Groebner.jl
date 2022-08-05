@@ -95,7 +95,7 @@ function extract_coeffs(ring::PolyRing, orig_polys::Vector{T}) where {T}
 end
 
 function extract_coeffs_ff(ring::PolyRing, poly::Poly)
-    reverse(map(CoeffFF ∘ data, filter(!iszero, collect(coefficients(poly)))))
+    reverse(map(UInt64 ∘ data, filter(!iszero, collect(coefficients(poly)))))
 end
 
 function extract_coeffs_qq(ring::PolyRing, poly::Poly)
@@ -103,7 +103,7 @@ function extract_coeffs_qq(ring::PolyRing, poly::Poly)
 end
 
 function extract_coeffs_ff(ring::PolyRing, poly)
-    map(CoeffFF ∘ data, coefficients(poly))
+    map(UInt64 ∘ data, coefficients(poly))
 end
 
 function extract_coeffs_qq(ring::PolyRing, poly)
@@ -112,7 +112,7 @@ end
 
 function extract_coeffs_ff(ring::PolyRing, orig_polys::Vector{T}) where {T}
     npolys = length(orig_polys)
-    coeffs = Vector{Vector{CoeffFF}}(undef, npolys)
+    coeffs = Vector{Vector{UInt64}}(undef, npolys)
     for i in 1:npolys
         coeffs[i] = extract_coeffs_ff(ring, orig_polys[i])
     end
@@ -380,15 +380,15 @@ function check_and_convert_coeffs(coeffs_zz, T)
 end
 
 function convert_coeffs_to_output(
-        polycoeffs::Vector{CoeffQQ},
+        CoeffsVector::Vector{CoeffQQ},
         ::Type{T}) where {T<:Rational}
-    check_and_convert_coeffs(polycoeffs, T)
+    check_and_convert_coeffs(CoeffsVector, T)
 end
 
 function convert_coeffs_to_output(
-        polycoeffs::Vector{CoeffQQ},
+        CoeffsVector::Vector{CoeffQQ},
         ::Type{T}) where {T<:Integer}
-    coeffs_zz = scale_denominators(polycoeffs)
+    coeffs_zz = scale_denominators(CoeffsVector)
     check_and_convert_coeffs(coeffs_zz, T)
 end
 
@@ -403,7 +403,7 @@ function convert_to_output(
             metainfo::GroebnerMetainfo) where {P<:AbstractPolynomialLike{J}, I<:Coeff} where {J}
 
     # TODO: hardcoded
-    (metainfo.targetord != :deglex) && @warn "Input polynomial type does not support ordering $(metainfo.targetord). Computed basis is in $(metainfo.targetord), but terms are ordered in $(:deglex) in output"
+    (metainfo.targetord != :deglex) && @warn "Input polynomial type does not support ordering $(metainfo.targetord). \nComputed basis is correct in $(metainfo.targetord), but terms are ordered in $(:deglex) in output"
 
     origvars = MultivariatePolynomials.variables(origpolys)
     # xd

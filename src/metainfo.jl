@@ -1,14 +1,19 @@
 
 #------------------------------------------------------------------------------
 
-# GroebnerMetainfo
-# Stores parameters for groebner algorithm
+#=
+    GroebnerMetainfo
+    Stores parameters for groebner algorithms
+
+    
+
+=#
 struct GroebnerMetainfo{Rng}
     # if set, then use fglm algorithm for order conversion
     usefglm::Bool
-    # output polynomials order
+    # output polynomials monomial order
     targetord::Symbol
-    # order for computation
+    # monomial order for computation
     computeord::Symbol
 
     # correctness checks levels
@@ -17,7 +22,12 @@ struct GroebnerMetainfo{Rng}
     guaranteedcheck::Bool
 
     # linear algebra backend to be used
+    # Currently available are
+    #   :exact for exact linear algebra
+    #   :prob for probabilistic linear algebra
     linalg::Symbol
+    
+    ground::Symbol
 
     rng::Rng
 end
@@ -55,12 +65,19 @@ function set_metaparameters(ring, ordering, certify, forsolve, linalg, rng)
         guaranteedcheck = false
     end
 
+    ground = :qq
+    if ring.ch == 0
+        ground = :qq
+    else
+        ground = :ff
+    end
+
     @info "Computing in $computeord order, result is in $targetord order"
     @info "Using fglm: $usefglm"
 
     GroebnerMetainfo(usefglm, targetord, computeord,
                         heuristiccheck, randomizedcheck, guaranteedcheck,
-                        linalg, rng)
+                        linalg, ground, rng)
 end
 
 function select_tablesize(ring, exps)
