@@ -938,8 +938,6 @@ function select_isgroebner!(
     resize!(matrix.lowrows, matrix.nrows - matrix.ncols)
 end
 
-
-
 #------------------------------------------------------------------------------
 
 #=

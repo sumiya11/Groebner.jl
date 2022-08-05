@@ -224,8 +224,6 @@ function load_indexed_coefficients!(densecoeffs::Vector{T}, rowexps, cfsref) whe
     end
 end
 
-
-
 #------------------------------------------------------------------------------
 
 function reduce_dense_row_by_known_pivots_sparse!(

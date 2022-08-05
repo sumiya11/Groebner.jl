@@ -1,6 +1,5 @@
 
-include("../src/Groebner.jl")
-
+include("../../src/Groebner.jl")
 
 if !isdefined(Main, :Groebner)
     import Groebner
@@ -52,19 +51,19 @@ run_f4_ff_degrevlex_benchmarks(ground)
 
 #=
 cyclic 7
-  216.897 ms (96622 allocations: 70.60 MiB)
+  220.913 ms (96743 allocations: 54.72 MiB)
 cyclic 8
-  4.521 s (435192 allocations: 380.99 MiB)
+  4.700 s (435419 allocations: 276.82 MiB)
 root 12
-  74.583 ms (179896 allocations: 32.40 MiB)
+  72.045 ms (179992 allocations: 31.06 MiB)
 root 13
-  242.372 ms (451340 allocations: 67.87 MiB)
+  229.356 ms (451464 allocations: 63.35 MiB)
 katsura 9
-  761.210 ms (123510 allocations: 59.33 MiB)
+  799.492 ms (123585 allocations: 47.47 MiB)
 noon 7
-  248.028 ms (335407 allocations: 86.89 MiB)
+  225.302 ms (335522 allocations: 75.72 MiB)
 noon 8
-  1.960 s (1501606 allocations: 444.08 MiB)
+  1.785 s (1501610 allocations: 378.00 MiB)
 eco 10
-  191.307 ms (119125 allocations: 41.66 MiB)
+  196.429 ms (119221 allocations: 33.93 MiB)
 =#
