@@ -85,7 +85,7 @@ end
     exps       = [1:2, 2:4, 2:3]
     nterms     = [1:1, 1:2, 2:3]
     npolys     = [1:1, 1:3, 2:3]
-    grounds    = [ZZ, QQ]
+    grounds    = [QQ]
     coeffssize = [3, 1000, 2^31 - 1]
     orderings  = [:deglex, :lex, :degrevlex]
     p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize)))
