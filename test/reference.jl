@@ -2,6 +2,8 @@
 using .Groebner: _normal_form_reference, _reducegb_reference, _reducegb_reference!,
                     change_ordering, rootn
 
+using AbstractAlgebra: ordering
+
 @testset "Normal Form" begin
 
     R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"])

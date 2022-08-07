@@ -85,7 +85,7 @@ include("reference.jl")
 # computation parameters control
 include("metainfo.jl")
 
-# input-output conversions for polynomials
+# input-output coыnversions for polynomials
 include("io.jl")
 
 # modular arithmetic for CRT and rational reconstruction

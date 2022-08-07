@@ -67,7 +67,7 @@ end
                 x*y + 7//13*x,
                 x^2 - 3//22*x + 39//539*y]
 
-    #=
+    
     root = Groebner.change_ordering(Groebner.rootn(3, ground=QQ), :degrevlex)
     gb = Groebner.groebner(root)
     @test Groebner.isgroebner(gb)
@@ -79,17 +79,17 @@ end
     root = Groebner.change_ordering(Groebner.rootn(8, ground=QQ), :degrevlex)
     gb = Groebner.groebner(root)
     @test Groebner.isgroebner(gb)
-    =#
+    
 
-    #=
-    noon = Groebner.change_ordering(Groebner.noon3(ground=QQ), :degrevlex)
+    
+    noon = Groebner.change_ordering(Groebner.noonn(3, ground=QQ), :degrevlex)
     gb = Groebner.groebner(noon)
     @test Groebner.isgroebner(gb)
 
     noon = Groebner.change_ordering(Groebner.noonn(4, ground=QQ), :degrevlex)
     gb = Groebner.groebner(noon)
     @test Groebner.isgroebner(gb)
-    =#
+    
 end
 
 @testset "Groebner modular corner cases" begin

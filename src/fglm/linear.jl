@@ -251,11 +251,12 @@ function extract_sparse_row(row::Vector{C}, np, k) where {C}
 end
 
 function linear_relation!(
+            ring,
             matrix::DoubleMacaulayMatrix,
             monom::ExponentIdx, vector::Basis{C},
             ht) where {C<:Coeff}
 
-    magic = select_divisor(vector.coeffs, vector.ch)
+    magic = select_divisor(vector.coeffs, ring.ch)
 
     leftrow, rightrow = convert_to_double_dense_row(matrix, monom, vector, ht)
 

@@ -334,7 +334,7 @@ end
 
 # random system generator
 function generate_set(nvariables, exps, nterms, npolys, csz, rng,
-                        ground::AbstractAlgebra.Rationals, ordering)
+                        ground::T, ordering) where {T<:AbstractAlgebra.Rationals}
 
     semiground = GF(2^31 - 1)
     R, _ = PolynomialRing(
@@ -354,4 +354,19 @@ function generate_set(nvariables, exps, nterms, npolys, csz, rng,
         )
         for _ in 1:rand(rng, npolys)
     ])
+end
+
+# random system generator
+function generate_set(nvariables, exps, nterms, npolys, csz, rng,
+    ground::T, ordering) where {T<:AbstractAlgebra.Integers}
+
+    s = generate_set(nvariables, exps, nterms, npolys, csz, rng, QQ, ordering)
+    R, _ = PolynomialRing(
+        ground,
+        ["x$i" for i in 1:nvariables],
+        ordering=ordering
+    )
+    s = map(f -> AbstractAlgebra.map_coefficients(c -> numerator(c), f), s)
+    s = map(f -> AbstractAlgebra.change_coefficient_ring(ZZ, f), s)
+    s
 end

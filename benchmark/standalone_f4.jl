@@ -47,26 +47,26 @@ function run_f4_ff_degrevlex_benchmarks(ground)
 end
 
 println()
-ground = AbstractAlgebra.GF(2^31 - 1)
+ground = AbstractAlgebra.GF(2)
 run_f4_ff_degrevlex_benchmarks(ground)
 
 #=
+modulo 2^31 - 1
+
 cyclic 7
-  209.316 ms (229506 allocations: 79.33 MiB)
+  265.497 ms (96747 allocations: 54.72 MiB)
 cyclic 8
-  4.351 s (1362066 allocations: 455.37 MiB)
+  5.506 s (435423 allocations: 276.82 MiB)
 root 12
-  61.705 ms (179930 allocations: 32.39 MiB)
+  69.753 ms (179996 allocations: 31.06 MiB)
 root 13
-  211.091 ms (451378 allocations: 67.86 MiB)
-root 14
-  809.867 ms (1144701 allocations: 176.53 MiB)
+  235.030 ms (451468 allocations: 63.35 MiB)
 katsura 9
-  801.246 ms (149540 allocations: 59.57 MiB)
+  784.184 ms (123589 allocations: 47.47 MiB)
 noon 7
-  214.115 ms (419411 allocations: 91.51 MiB)
+  220.374 ms (335526 allocations: 75.72 MiB)
 noon 8
-  1.842 s (2074539 allocations: 492.01 MiB)
+  2.173 s (1501614 allocations: 378.00 MiB)
 eco 10
-  179.854 ms (137529 allocations: 41.41 MiB)
+  197.265 ms
 =#

@@ -7,11 +7,10 @@
 
     Good primes are prime numbers used for checking correctness.
     The sequence of good primes starts with FIRST_GOOD_PRIME
-
-    There are 50697537 primes between
-        FIRST_LUCKY_PRIME and FIRST_GOOD_PRIME
 =#
 
+# There are 50697537 primes between
+#         FIRST_LUCKY_PRIME and FIRST_GOOD_PRIME
 const FIRST_LUCKY_PRIME = 2^31 - 1
 const FIRST_GOOD_PRIME  = 2^30 + 3
 
@@ -20,7 +19,9 @@ const FIRST_GOOD_PRIME  = 2^30 + 3
 
 mutable struct PrimeTracker
     # integer generator coefficients from the input
-    coeffs::Vector{Vector{CoeffZZ}}
+    # Is this compatible with CoeffZZ ?
+    # Once parameters in coefficients are supported, revise this.
+    coeffs::Vector{Vector{BigInt}}
     # buffer for BigInts
     buf::BigInt
 
@@ -34,7 +35,7 @@ mutable struct PrimeTracker
     # product of all used lucky primes
     modulo::BigInt
 
-    function PrimeTracker(coeffs_zz::Vector{Vector{CoeffZZ}})
+    function PrimeTracker(coeffs_zz::Vector{Vector{BigInt}})
         new(coeffs_zz, BigInt(), FIRST_LUCKY_PRIME, FIRST_GOOD_PRIME,
             UInt64[], BigInt(1))
     end

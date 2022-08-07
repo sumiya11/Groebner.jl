@@ -71,17 +71,14 @@ function groebner(
     # now ring stores computation ordering
     # metainfo is now a struct to store target ordering
 
+    iszerobasis = clean_input_groebner!(ring, exps, coeffs)
+    iszerobasis && (return convert_to_output(ring, polynomials, exps, coeffs, metainfo))
+
     #= change input ordering if needed =#
     assure_ordering!(ring, exps, coeffs, metainfo)
 
     #= compute the groebner basis =#
-    if metainfo.ground === :ff
-        # if finite field #
-        bexps, bcoeffs = groebner(ring, exps, coeffs, reduced, metainfo)
-    else
-        # if rational coefficients #
-        bexps, bcoeffs = groebner(ring, exps, coeffs, reduced, metainfo)
-    end
+    bexps, bcoeffs = groebner(ring, exps, coeffs, reduced, metainfo)
 
     # ordering in bexps here matches target ordering in metainfo
 
@@ -136,19 +133,14 @@ function isgroebner(
     # now ring stores computation ordering
     # metainfo is now a struct to store target ordering
 
+    iszerobasis = clean_input_isgroebner!(ring, exps, coeffs)
+    iszerobasis && (return true)
+
     #= change input ordering if needed =#
     assure_ordering!(ring, exps, coeffs, metainfo)
 
-    #= compute the groebner basis =#
-    if ring.ch != 0
-        # if finite field
-        # Always returns UInt coefficients #
-        flag = isgroebner(ring, exps, coeffs, metainfo)
-    else
-        # if rational coefficients
-        # Always returns rational coefficients #
-        flag = isgroebner(ring, exps, coeffs, metainfo)
-    end
+    #= check if groebner basis =#
+    flag = isgroebner(ring, exps, coeffs, metainfo)
 
     #=
     Assuming ordering of `bexps` here matches `ring.ord`
@@ -161,7 +153,9 @@ function isgroebner(
 end
 
 #######################################
+
 # normalform
+
 
 """
     function normalform(
@@ -182,19 +176,16 @@ If `ordering` is explicitly specialized, it takes precedence.
 function normalform(
             basispolys::Vector{Poly},
             tobereduced::Poly;
+            check::Bool=true,
             ordering::Symbol=:input,
             rng::Rng=Random.MersenneTwister(42),
             loglevel::LogLevel=Logging.Warn
             ) where {Poly, Rng<:Random.AbstractRNG}
-
-    iszero(tobereduced) && return tobereduced
-
-    if !isgroebner(basispolys)
-        @warn "Input basis does not look like a groebner basis"
-    end
+    
+    iszero(tobereduced) && (return tobereduced)
 
     first(normalform(
-            basispolys, [tobereduced],
+            basispolys, [tobereduced], check=check,
             ordering=ordering, rng=rng, loglevel=loglevel)
     )
 end
@@ -202,6 +193,7 @@ end
 function normalform(
             basispolys::Vector{Poly},
             tobereduced::Vector{Poly};
+            check::Bool=true,
             ordering::Symbol=:input,
             rng::Rng=Random.MersenneTwister(42),
             loglevel::LogLevel=Logging.Warn
@@ -209,6 +201,8 @@ function normalform(
 
     #= set the logger =#
     prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
+
+    check && check_isgroebner(basispolys)
 
     #= extract ring information, exponents and coefficients
        from input basis polynomials =#
@@ -224,10 +218,12 @@ function normalform(
     #= check and set algorithm parameters =#
     metainfo = set_metaparameters(ring, ordering, false, false, :exact, rng)
 
+    iszerobasis = clean_input_normalform!(ring, basisexps, basiscoeffs, tbrexps, tbrcoeffs)
+    iszerobasis && (return convert_to_output(ring, tobereduced, tbrexps, tbrcoeffs, metainfo))
+
     #= change input ordering if needed =#
     assure_ordering!(ring, basisexps, basiscoeffs, metainfo)
     assure_ordering!(ring, tbrexps, tbrcoeffs, metainfo)
-
 
     # We assume basispolys is already a Groebner basis! #
 
@@ -265,6 +261,7 @@ Assumes `basis` is already a Groebner basis.
 """
 function fglm(
             basis::Vector{Poly};
+            check::Bool=true,
             rng::Rng=Random.MersenneTwister(42),
             loglevel::Logging.LogLevel=Logging.Warn
             ) where {Poly, Rng<:Random.AbstractRNG}
@@ -272,12 +269,17 @@ function fglm(
     #= set the logger =#
     prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
 
+    check && check_isgroebner(basis)
+
     #= extract ring information, exponents and coefficients
        from input polynomials =#
     # Copies input, so that polynomials would not be changed itself.
     ring, exps, coeffs = convert_to_internal(basis, :input)
 
     metainfo = set_metaparameters(ring, :lex, false, false, :exact, rng)
+    
+    iszerobasis = clean_input_fglm!(ring, exps, coeffs)
+    iszerobasis && (return convert_to_output(ring, basis, exps, coeffs, metainfo))
 
     bexps, bcoeffs = fglm_f4(ring, exps, coeffs, metainfo)
 
@@ -312,6 +314,7 @@ Assumes `basis` is already a Groebner basis.
 """
 function kbase(
             basis::Vector{Poly};
+            check::Bool=true,
             rng::Rng=Random.MersenneTwister(42),
             loglevel::Logging.LogLevel=Logging.Warn
             ) where {Poly, Rng<:Random.AbstractRNG}
@@ -319,12 +322,17 @@ function kbase(
     #= set the logger =#
     prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
 
+    check && check_isgroebner(basis)
+
     #= extract ring information, exponents and coefficients
        from input polynomials =#
     # Copies input, so that polynomials would not be changed itself.
     ring, exps, coeffs = convert_to_internal(basis, :input)
 
     metainfo = set_metaparameters(ring, :input, false, false, :exact, rng)
+    
+    iszerobasis = clean_input_kbase!(ring, exps, coeffs)
+    iszerobasis && (throw(DomainError(basis, "Groebner.kbase does not support zero input ideals, sorry")))
 
     bexps, bcoeffs = kbase_f4(ring, exps, coeffs, metainfo)
 

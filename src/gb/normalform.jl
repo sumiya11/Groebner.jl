@@ -1,4 +1,13 @@
 
+#------------------------------------------------------------------------------
+
+function clean_input_normalform!(ring::PolyRing, 
+        basisexps, basiscoeffs, tbrexps, tbrcoeffs)
+    clean_input_groebner!(ring, basisexps, basiscoeffs)
+end
+
+#------------------------------------------------------------------------------
+
 function normal_form_f4!(
             ring::PolyRing,
             basis::Basis{C},
@@ -35,7 +44,7 @@ function normal_form_f4!(
     @error "" Int(ring.ch)
     =#
 
-    exact_sparse_linear_algebra_nf!(matrix, tobereduced, basis)
+    exact_sparse_linear_algebra_nf!(ring, matrix, tobereduced, basis)
 
     # @warn "lll"
     # dump(matrix, maxdepth=5)
@@ -57,7 +66,7 @@ function normal_form_f4(
     basis, ht = initialize_structures(ring, basisexps,
                                         basiscoeffs, rng, tablesize)
 
-    tobereduced, ht = initialize_structures(ring, tobereducedexps,
+    tobereduced, ht = initialize_structures_nf(ring, tobereducedexps,
                                         tobereducedcfs, rng, tablesize, ht)
                                         
     tobereduced = normal_form_f4!(ring, basis, ht, tobereduced)

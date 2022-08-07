@@ -1,4 +1,16 @@
 
+function clean_input_fglm!(ring::PolyRing,
+        exps::Vector{Vector{ExponentVector}},
+        coeffs::Vector{CoeffsVector{T}}) where {T}
+    clean_input_groebner!(ring, exps, coeffs)
+end
+
+function clean_input_kbase!(ring::PolyRing,
+        exps::Vector{Vector{ExponentVector}},
+        coeffs::Vector{CoeffsVector{T}}) where {T}
+    clean_input_groebner!(ring, exps, coeffs)
+end
+
 #=
     The file contains the implementation of the FGLM algorithm,
     an algorithm for ordering conversion
@@ -8,7 +20,7 @@ mutable struct NextMonomials
     # monomials to check
     monoms::Vector{ExponentIdx}
     load::Int
-    done::Dict{Int, Int}
+    done::Dict{Int,Int}
     ord::Symbol
 end
 
@@ -19,12 +31,12 @@ function initialize_nextmonomials(ht, ord)
     monoms = Vector{ExponentIdx}(undef, 2^3)
     monoms[1] = vidx
     load = 1
-    NextMonomials(monoms, load, Dict{ExponentIdx, Int}(vidx => 1), ord)
+    NextMonomials(monoms, load, Dict{ExponentIdx,Int}(vidx => 1), ord)
 end
 
 function insertnexts!(
-            m::NextMonomials,
-            ht::MonomialHashtable, monom::ExponentIdx)
+    m::NextMonomials,
+    ht::MonomialHashtable, monom::ExponentIdx)
     while m.load + ht.nvars >= length(m.monoms)
         resize!(m.monoms, length(m.monoms) * 2)
     end
@@ -98,10 +110,10 @@ end
 #------------------------------------------------------------------------------
 
 function fglm_f4!(
-            ring::PolyRing,
-            basis::Basis{C},
-            ht::MonomialHashtable,
-            ord::Symbol) where {C<:Coeff}
+    ring::PolyRing,
+    basis::Basis{C},
+    ht::MonomialHashtable,
+    ord::Symbol) where {C<:Coeff}
 
     newbasis = initialize_basis(ring, basis.ntotal, C)
     nextmonoms = initialize_nextmonomials(ht, ord)
@@ -123,19 +135,19 @@ function fglm_f4!(
             continue
         end
 
-        tobereduced    = initialize_basis(ring, [[monom]], [C[1]])
+        tobereduced = initialize_basis(ring, [[monom]], [C[1]])
         tobereduced.ntotal = 1
 
         # compute normal form
         normal_form_f4!(ring, basis, ht, tobereduced)
 
         if debug()
-            println("Normal form ", tobereduced.gens[1], " " ,tobereduced.coeffs[1])
+            println("Normal form ", tobereduced.gens[1], " ", tobereduced.coeffs[1])
         end
 
         # matrix left rows can express tobereduced?
         # reduces monom and tobereduced
-        exists, relation = linear_relation!(matrix, monom, tobereduced, ht)
+        exists, relation = linear_relation!(ring, matrix, monom, tobereduced, ht)
 
         if debug()
             @warn "dump"
@@ -158,7 +170,7 @@ function fglm_f4!(
         end
     end
 
-    standardize_basis!(newbasis, ht, ord)
+    standardize_basis!(ring, newbasis, ht, ord)
 
     linbasis = extract_linear_basis(ring, matrix)
 
@@ -170,15 +182,15 @@ end
 
 
 function fglm_f4(
-            ring::PolyRing,
-            basisexps::Vector{Vector{ExponentVector}},
-            basiscoeffs::Vector{Vector{C}},
-            metainfo) where {Rng, C<:Coeff}
+    ring::PolyRing,
+    basisexps::Vector{Vector{ExponentVector}},
+    basiscoeffs::Vector{Vector{C}},
+    metainfo) where {Rng,C<:Coeff}
 
     tablesize = select_tablesize(ring, basisexps)
 
     basis, ht = initialize_structures(ring, basisexps,
-                                        basiscoeffs, metainfo.rng, tablesize)
+        basiscoeffs, metainfo.rng, tablesize)
 
     basis, linbasis, ht = fglm_f4!(ring, basis, ht, metainfo.computeord)
 
@@ -212,15 +224,15 @@ function extract_linear_basis(ring, matrix::DoubleMacaulayMatrix{C}) where {C}
 end
 
 function kbase_f4(
-            ring::PolyRing,
-            basisexps::Vector{Vector{ExponentVector}},
-            basiscoeffs::Vector{Vector{C}},
-            metainfo) where {Rng, C<:Coeff}
+    ring::PolyRing,
+    basisexps::Vector{Vector{ExponentVector}},
+    basiscoeffs::Vector{Vector{C}},
+    metainfo) where {Rng,C<:Coeff}
 
     tablesize = select_tablesize(ring, basisexps)
 
     basis, ht = initialize_structures(ring, basisexps,
-                                        basiscoeffs, metainfo.rng, tablesize)
+        basiscoeffs, metainfo.rng, tablesize)
 
     basis, linbasis, ht = fglm_f4!(ring, basis, ht, metainfo.computeord)
 

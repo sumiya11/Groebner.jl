@@ -1,30 +1,38 @@
 
 #=
+    Our conventions:
+    - Trying to compute a Groebner basis of an empty set is an error.
+    - The Groebner basis of [0] is [0].
+    - The Groebner basis of [0,..., 0] is [0].
+    - The Groebner basis of [f1,...,fn, 0] is the Groebner basis of [f1...fn]
+=#
+
+#=
     A note on how we represent polynomials
 
-    First, coefficients, exponents and polynomial ring metainfo
+    First, coefficients, exponents and polynomial ring
     are extracted from input polynomials with `convert_to_internal`.
 
     Inside the algorithm all exponents are hashed without collisions,
     so that an integer represents a single monomial.
-    That drastically decreases memory consumption.
-
-    For each monomial we also assign a divmask -- a compressed representation
-    of exponent vector used to speed up divisibility checks.
 
     Hence, a polynomial is represented with coefficients vector
     together with vector of hashtable indices.
 
-    Finally, the resulting basis in internal representation is dehashed,
-    and passed to `convert_to_output`
+    After the basis is computed, hash table indices are converted back to 
+    exponent vectors, and the `convert_to_output` is called.
 =#
+
+# The type of exponent vector entries used internally in
+# AbstractAlgebra.jl
+const AAexponenttype = UInt64
 
 #------------------------------------------------------------------------------
 
 """
     Contains info about polynomial ring
 """
-mutable struct PolyRing
+mutable struct PolyRing{Ch<:CoeffFF}
     # number of variables
     nvars::Int
     # raw length of exponent vector
@@ -34,7 +42,7 @@ mutable struct PolyRing
     # possible are :lex and :degrevlex
     ord::Symbol
     # characteristic of coefficient field
-    ch::UInt64
+    ch::Ch
     # information about the original ring of input. Options are:
     #    :abstract for AbstractAlgebra,
     #    :multivariate for MultivariatePolynomials, e.g, DynamicPolynomials,
@@ -49,24 +57,42 @@ end
     Extracts base ring information, exponents, and coefficients.
 
     This is the most general implementation.
-    It happened to work for polynomials from
+    Works for polynomials that implement AbstractAlgebra.MPoly intefrace:
+        . `AbstractAlgebra`
         . `Nemo`
+        . `Singular`
 
-    Currently, there are more efficient specializations for:
-        . `AbstractAlgebra.MPoly`
-        . `MultivariatePolynomials.AbstractPolynomial`
+    Currently, there are also specializations for polynomials from:
+        . `MultivariatePolynomials`
+
 """
 function convert_to_internal(
             orig_polys::Vector{T},
             ordering::Symbol) where {T}
-    isempty(orig_polys) && error("Empty input")
+    isempty(orig_polys) && throw(DomainError(orig_polys, "Empty input"))
     ordering in (:input, :lex, :degrevlex, :deglex) || error("Not supported ordering $ordering")
 
     if hasmethod(parent, Tuple{typeof(first(orig_polys))})
         convert_to_internal(orig_polys, ordering, Val(:hasparent))
     else
-        error("Sorry, we don't work with this type of polynomials yet. Feel free to open a github issue")
+        error("Sorry, we don't work with this type of polynomials yet. Feel free to open an issue")
     end
+end
+
+function determinechartype(ch)
+    Ch = UInt128 
+    if ch == 0
+        Ch = UInt64
+    elseif ch < 2^4
+        Ch = UInt8
+    elseif ch < 2^8
+        Ch = UInt16
+    elseif ch < 2^16
+        Ch = UInt32
+    elseif ch < 2^32
+        Ch = UInt64
+    end
+    Ch
 end
 
 function extract_ring(R::T) where {T}
@@ -76,17 +102,37 @@ function extract_ring(R::T) where {T}
 
     nv     = nvars(R)
     explen = nv + 1
-    ord = hasmethod(ordering, Tuple{T}) ? ordering(R) : :lex
+    ord = hasmethod(ordering, Tuple{T}) ? ordering(R) : :deglex
     ch     = characteristic(R)
 
     @assert nv + 1 == explen
     @assert ord in (:lex, :degrevlex, :deglex)
-    @assert 0 <= ch < 2^32
+    @assert 0 <= ch < UInt64(2)^64-1
 
-    PolyRing(nv, explen, ord, UInt64(ch), :hasparent)
+    Ch = determinechartype(ch)
+
+    PolyRing{Ch}(nv, explen, ord, Ch(ch), :hasparent)
 end
 
-function extract_coeffs(ring::PolyRing, orig_polys::Vector{T}) where {T}
+#------------------------------------------------------------------------------
+
+function iszero_coeffvector(v)
+    isempty(v)
+end
+
+function iszero_monomvector(v)
+    isempty(v)
+end
+
+function zero_coeffvector_ff(ring::PolyRing{Ch}) where {Ch}
+    Ch[]
+end
+
+function zero_coeffvector_qq(ring::PolyRing{Ch}) where {Ch}
+    Rational{BigInt}[]
+end
+
+function extract_coeffs(ring::PolyRing{Ch}, orig_polys::Vector{T}) where {Ch, T}
     if ring.ch > 0
         extract_coeffs_ff(ring, orig_polys)
     else
@@ -94,25 +140,34 @@ function extract_coeffs(ring::PolyRing, orig_polys::Vector{T}) where {T}
     end
 end
 
-function extract_coeffs_ff(ring::PolyRing, poly::Poly)
-    reverse(map(UInt64 ∘ data, filter(!iszero, collect(coefficients(poly)))))
+# specialization for univeriate polynomials
+function extract_coeffs_ff(ring::PolyRing{Ch}, poly::Poly) where {Ch}
+    iszero(poly) && (return zero_coeffvector_ff(ring))
+    reverse(map(Ch ∘ data, filter(!iszero, collect(coefficients(poly)))))
 end
 
+# specialization for univeriate polynomials
 function extract_coeffs_qq(ring::PolyRing, poly::Poly)
+    iszero(poly) && (return zero_coeffvector_qq(ring))
     reverse(map(Rational, filter(!iszero, collect(coefficients(poly)))))
 end
 
-function extract_coeffs_ff(ring::PolyRing, poly)
-    map(UInt64 ∘ data, coefficients(poly))
+# specialization for multivariate polynomials
+function extract_coeffs_ff(ring::PolyRing{Ch}, poly) where {Ch}
+    iszero(poly) && (return zero_coeffvector_ff(ring))
+    map(Ch ∘ data, coefficients(poly))
 end
 
+# specialization for multivariate polynomials
 function extract_coeffs_qq(ring::PolyRing, poly)
+    iszero(poly) && (return zero_coeffvector_qq(ring))
     map(Rational, coefficients(poly))
 end
 
-function extract_coeffs_ff(ring::PolyRing, orig_polys::Vector{T}) where {T}
+function extract_coeffs_ff(ring::PolyRing{Ch}, 
+                    orig_polys::Vector{T}) where {Ch, T}
     npolys = length(orig_polys)
-    coeffs = Vector{Vector{UInt64}}(undef, npolys)
+    coeffs = Vector{Vector{Ch}}(undef, npolys)
     for i in 1:npolys
         coeffs[i] = extract_coeffs_ff(ring, orig_polys[i])
     end
@@ -120,12 +175,7 @@ function extract_coeffs_ff(ring::PolyRing, orig_polys::Vector{T}) where {T}
 end
 
 function extract_coeffs_qq(ring::PolyRing, orig_polys::Vector{T}) where {T}
-    npolys = length(orig_polys)
-    coeffs = Vector{Vector{CoeffQQ}}(undef, npolys)
-    for i in 1:npolys
-        coeffs[i] = extract_coeffs_qq(ring, orig_polys[i])
-    end
-    coeffs
+    map(poly -> extract_coeffs_qq(ring, poly), orig_polys)
 end
 
 function extract_exponents(ring, poly)
@@ -191,25 +241,32 @@ function extract_ring(
 
     @assert nv + 1 == explen
     @assert ord in (:lex, :degrevlex, :deglex)
-    @assert 0 <= ch < 2^31
+    @assert 0 <= ch < UInt64(2)^64-1
 
-    PolyRing(nv, explen, ord, UInt64(ch), :multivariate)
+    Ch = determinechartype(ch)
+
+    PolyRing{Ch}(nv, explen, ord, Ch(ch), :multivariate)
+end
+
+function extract_coeffs_qq(ring::PolyRing, poly::T) where {T<:AbstractPolynomialLike{U}} where {U}
+    iszero(poly) && (return zero_coeffvector_qq(ring))
+    map(Rational, MultivariatePolynomials.coefficients(poly))
 end
 
 function extract_coeffs_qq(
             ring::PolyRing,
             orig_polys::Vector{T}) where {T<:AbstractPolynomialLike{U}} where {U}
     npolys = length(orig_polys)
-    coeffs = Vector{Vector{CoeffQQ}}(undef, npolys)
+    coeffs = Vector{Vector{Rational{BigInt}}}(undef, npolys)
     for i in 1:npolys
         poly = orig_polys[i]
-        coeffs[i] = map(Rational, MultivariatePolynomials.coefficients(poly))
+        coeffs[i] = extract_coeffs_qq(ring, poly)
     end
     coeffs
 end
 
 function exponents_wrt_vars(t, var2idx)
-    exp = zeros(UInt16, length(var2idx))
+    exp = zeros(Degree, length(var2idx))
     @inbounds for (v, p) in Groebner.MultivariatePolynomials.powers(t)
         exp[var2idx[v]] = p
     end
@@ -253,7 +310,7 @@ function convert_to_internal(
         orig_polys::Vector{T},
         ordering::Symbol) where {T<:AbstractPolynomialLike{U}} where {U}
 
-    isempty(orig_polys) && error("Empty input")
+    isempty(orig_polys) && throw(DomainError(orig_polys, "Empty input"))
     ordering in (:input, :lex, :degrevlex, :deglex) || error("Not supported ordering $ordering")
 
     ring = extract_ring(orig_polys)
@@ -317,7 +374,7 @@ end
 function convert_to_internal(
         orig_polys::Vector{MPoly{T}},
         ordering::Symbol) where {T}
-    isempty(orig_polys) && error("Empty input")
+    isempty(orig_polys) && throw(DomainError(orig_polys, "Empty input"))
 
     R = parent(first(orig_polys))
     ring = extract_ring(R)
@@ -380,14 +437,14 @@ function check_and_convert_coeffs(coeffs_zz, T)
 end
 
 function convert_coeffs_to_output(
-        CoeffsVector::Vector{CoeffQQ},
-        ::Type{T}) where {T<:Rational}
+        CoeffsVector::Vector{Q},
+        ::Type{T}) where {Q<:CoeffQQ, T<:Rational}
     check_and_convert_coeffs(CoeffsVector, T)
 end
 
 function convert_coeffs_to_output(
-        CoeffsVector::Vector{CoeffQQ},
-        ::Type{T}) where {T<:Integer}
+        CoeffsVector::Vector{Q},
+        ::Type{T}) where {Q<:CoeffQQ, T<:Integer}
     coeffs_zz = scale_denominators(CoeffsVector)
     check_and_convert_coeffs(coeffs_zz, T)
 end
@@ -532,7 +589,7 @@ function convert_to_output(
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     for i in 1:length(gbexps)
         cfs    = map(ground, gbcoeffs[i])
-        exps   = Matrix{UInt64}(undef, nv + 1, length(gbcoeffs[i]))
+        exps   = Matrix{AAexponenttype}(undef, nv + 1, length(gbcoeffs[i]))
         @inbounds for jt in 1:length(gbcoeffs[i])
             for je in 1:nv
                 exps[je, jt] = gbexps[i][jt][je]
@@ -559,7 +616,7 @@ function convert_to_output(
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     for i in 1:length(gbexps)
         cfs    = map(ground, gbcoeffs[i])
-        exps   = Matrix{UInt64}(undef, nv, length(gbcoeffs[i]))
+        exps   = Matrix{AAexponenttype}(undef, nv, length(gbcoeffs[i]))
         @inbounds for jt in 1:length(gbcoeffs[i])
             for je in 1:nv
                 exps[je, jt] = gbexps[i][jt][nv - je + 1]
@@ -586,7 +643,7 @@ function convert_to_output(
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     for i in 1:length(gbexps)
         cfs    = map(ground, gbcoeffs[i])
-        exps   = Matrix{UInt64}(undef, nv + 1, length(gbcoeffs[i]))
+        exps   = Matrix{AAexponenttype}(undef, nv + 1, length(gbcoeffs[i]))
         @inbounds for jt in 1:length(gbcoeffs[i])
             for je in 1:nv
                 exps[je, jt] = gbexps[i][jt][nv - je + 1]

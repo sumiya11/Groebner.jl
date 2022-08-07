@@ -1,5 +1,5 @@
 
-include("standard/parser.jl")
+include("../standard/parser.jl")
 
 import AbstractAlgebra
 using BenchmarkTools

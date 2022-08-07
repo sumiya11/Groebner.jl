@@ -1,23 +1,25 @@
 
+import AbstractAlgebra
+
 @testset "check parameter order change" begin
     R, (x, y, z) = PolynomialRing(QQ, ["x","y","z"], ordering=:deglex)
 
     fs = [y^2, x]
     x, y, z = gens(parent(first(Groebner.groebner(fs, ordering=:lex))))
     @test Groebner.groebner(fs, ordering=:lex) == [y^2, x]
-    @test ordering(parent(first(Groebner.groebner(fs, ordering=:lex)))) === :lex
+    @test AbstractAlgebra.ordering(parent(first(Groebner.groebner(fs, ordering=:lex)))) === :lex
 
     x, y, z = gens(parent(first(Groebner.groebner(fs, ordering=:degrevlex))))
     @test Groebner.groebner(fs, ordering=:degrevlex) == [x, y^2]
-    @test ordering(parent(first(Groebner.groebner(fs, ordering=:degrevlex)))) === :degrevlex
+    @test AbstractAlgebra.ordering(parent(first(Groebner.groebner(fs, ordering=:degrevlex)))) === :degrevlex
 
     x, y, z = gens(parent(first(fs)))
     @test Groebner.groebner(fs, ordering=:deglex) == [x, y^2]
-    @test ordering(parent(first(Groebner.groebner(fs, ordering=:deglex)))) === :deglex
+    @test AbstractAlgebra.ordering(parent(first(Groebner.groebner(fs, ordering=:deglex)))) === :deglex
 
     x, y, z = gens(parent(first(Groebner.groebner(fs, forsolve=true))))
     @test Groebner.groebner(fs, forsolve=true) == [y^2, x]
-    @test ordering(parent(first(Groebner.groebner(fs, forsolve=true)))) === :lex
+    @test AbstractAlgebra.ordering(parent(first(Groebner.groebner(fs, forsolve=true)))) === :lex
 
 
     noon = Groebner.change_ordering(Groebner.noonn(2), :lex)

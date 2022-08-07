@@ -109,12 +109,12 @@ end
 function scale_denominators(
             coeffbuff::CoeffBuffer,
             coeffs_qq::Vector{Vector{T}}) where {T<:CoeffQQ}
-    coeffs_zz = [[CoeffZZ(0) for _ in 1:length(c)] for c in coeffs_qq]
+    coeffs_zz = [[BigInt(0) for _ in 1:length(c)] for c in coeffs_qq]
     scale_denominators!(coeffbuff, coeffs_qq, coeffs_zz)
 end
 
 function scale_denominators(coeffs_qq::Vector{Vector{T}}) where {T<:CoeffQQ}
-    coeffs_zz = [[CoeffZZ(0) for _ in 1:length(c)] for c in coeffs_qq]
+    coeffs_zz = [[BigInt(0) for _ in 1:length(c)] for c in coeffs_qq]
     buf = BigInt()
     for i in 1:length(coeffs_qq)
         @assert length(coeffs_zz[i]) == length(coeffs_qq[i])
@@ -131,7 +131,7 @@ function scale_denominators(coeffs_qq::Vector{Vector{T}}) where {T<:CoeffQQ}
 end
 
 function scale_denominators(coeffs_qq::Vector{T}) where {T<:CoeffQQ}
-    coeffs_zz = [CoeffZZ(0) for _ in 1:length(coeffs_qq)]
+    coeffs_zz = [BigInt(0) for _ in 1:length(coeffs_qq)]
     buf = BigInt()
     den = common_denominator(coeffs_qq)
     for i in 1:length(coeffs_qq)
@@ -168,7 +168,7 @@ function reduce_modulo!(
             end
             # @assert c >= 0 # TODO
             Base.GMP.MPZ.tdiv_r!(buf, c, p)
-            coeffs_ff[i][j] = UInt64(buf)
+            coeffs_ff[i][j] = CoeffModular(buf)
         end
     end
 end
@@ -179,6 +179,7 @@ function reduce_modulo(
         prime::UInt64) where {T1<:CoeffZZ}
     coeffs_ff =  [Vector{UInt64}(undef, length(c)) for c in coeffs_zz]
     reduce_modulo!(coeffbuff, coeffs_zz, coeffs_ff, prime)
+    coeffs_ff
 end
 
 #------------------------------------------------------------------------------
@@ -188,9 +189,9 @@ function resize_accum!(coeffaccum::CoeffAccum, gb_coeffs)
     resize!(coeffaccum.prev_gb_coeffs_zz, length(gb_coeffs))
     resize!(coeffaccum.gb_coeffs_qq, length(gb_coeffs))
     @inbounds for i in 1:length(gb_coeffs)
-        coeffaccum.gb_coeffs_zz[i] = [CoeffZZ(0) for _ in 1:length(gb_coeffs[i])]
-        coeffaccum.prev_gb_coeffs_zz[i] = [CoeffZZ(0) for _ in 1:length(gb_coeffs[i])]
-        coeffaccum.gb_coeffs_qq[i] = [CoeffQQ(1) for _ in 1:length(gb_coeffs[i])]
+        coeffaccum.gb_coeffs_zz[i] = [BigInt(0) for _ in 1:length(gb_coeffs[i])]
+        coeffaccum.prev_gb_coeffs_zz[i] = [BigInt(0) for _ in 1:length(gb_coeffs[i])]
+        coeffaccum.gb_coeffs_qq[i] = [Rational{BigInt}(1) for _ in 1:length(gb_coeffs[i])]
     end
 end
 

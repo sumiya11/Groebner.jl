@@ -19,7 +19,7 @@ function test_params_isgb(rng, nvariables, exps, nterms,
                                 )
                                 isempty(set) && continue
                                 gb = Groebner.groebner(set)
-
+                                
                                 @test Groebner.isgroebner(gb)
                             end
                         end
@@ -71,5 +71,17 @@ end
     @info "producing $p $(orderings[1]) tests for isgroebner"
     test_params_isgb(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings)
 
+
+     # all other test cases
+     nvariables = [2, 3, 4]
+     exps       = [1:2, 2:4, 2:3]
+     nterms     = [1:1, 1:2, 2:3]
+     npolys     = [1:1, 1:3, 2:3]
+     grounds    = [QQ]
+     coeffssize = [3, 1000, 2^31 - 1]
+     orderings  = [:deglex, :degrevlex, :lex]
+     p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize)))
+     @info "producing $p tests for isgroebner"
+     test_params_isgb(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings)
 
 end

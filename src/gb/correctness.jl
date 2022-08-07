@@ -1,4 +1,11 @@
 
+# Checks if `basis` is groebner basis with 
+# a randomized algorithm
+function check_isgroebner(basis)
+    if !isgroebner(basis, certify=false)
+        throw(DomainError(basis, "Input does not look like a groebner basis"))
+    end
+end
 
 function correctness_check!(coeffaccum, coeffbuffer, primetracker, meta,
                                 ring, exps, coeffs, coeffs_zz, gens_temp_ff, gb_ff, ht)
@@ -71,7 +78,7 @@ function randomized_correctness_check!(
     reduce_modulo!(coeffbuffer, gb_coeffs_zz, gb_ff_copy.coeffs, goodprime)
     cleanup_gens!(ring, gb_ff_copy, goodprime)
 
-    @assert ring.ch == gb_ff_copy.ch == gens_ff_copy.ch
+    # @assert ring.ch == gb_ff_copy.ch == gens_ff_copy.ch
 
     # check that initial ideal contains in the computed groebner basis modulo goodprime
     normal_form_f4!(ring, gb_ff_copy, ht, gens_ff_copy)
@@ -140,8 +147,8 @@ function guaranteed_correctness_check!(ring, gbexps, gb_coeffs_qq,
     gens_qq, _ = initialize_structures(ring, gens_tmp_ff.gens[1:gens_tmp_ff.ntotal], coeffs, ht)
     gb_qq, _   = initialize_structures(ring, gbexps, gb_coeffs_qq, ht)
 
-    normalize_basis!(gb_qq)
-    normalize_basis!(gens_qq)
+    normalize_basis!(ring, gb_qq)
+    normalize_basis!(ring, gens_qq)
 
     gens_qq_copy = copy_basis_thorough(gens_qq)
 

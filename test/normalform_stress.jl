@@ -80,4 +80,16 @@ end
     @info "producing $p $(orderings[1]) tests for normal form"
     test_params_nf(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings)
 
+    # all other test cases
+    nvariables = [2, 3, 4]
+    exps       = [1:2, 2:4, 2:3]
+    nterms     = [1:1, 1:2, 2:3]
+    npolys     = [1:1, 1:3, 2:3]
+    grounds    = [ZZ, QQ]
+    coeffssize = [3, 1000, 2^31 - 1]
+    orderings  = [:deglex, :lex, :degrevlex]
+    p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize)))
+    @info "producing $p $(orderings[1]) tests for normal form"
+    test_params_nf(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings)
+
 end

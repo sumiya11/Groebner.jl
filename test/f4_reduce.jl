@@ -9,7 +9,7 @@
 
 end
 
-@testset "ff f4 yesreduce" begin
+@testset "ff f4 reduce" begin
 
     root = Groebner.change_ordering(Groebner.rootn(3, ground=GF(2^31 - 1)), :degrevlex)
     x1, x2, x3 = gens(parent(first(root)))

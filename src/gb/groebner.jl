@@ -39,12 +39,26 @@ function select_tablesize(ring, exps)
 end
 
 function cleanup_gens!(ring, gens_ff, prime)
-    gens_ff.ch = prime
     ring.ch = prime
-    normalize_basis!(gens_ff)
+    normalize_basis!(ring, gens_ff)
 end
 
-# Mutate everything!
+#------------------------------------------------------------------------------
+
+function clean_input_groebner!(ring::PolyRing, 
+            exps::Vector{Vector{ExponentVector}}, 
+            coeffs::Vector{CoeffsVector{T}}) where {T}
+    @assert length(exps) == length(coeffs)
+    filter!(!iszero_coeffvector, coeffs)
+    filter!(!iszero_monomvector, exps)
+    @assert length(exps) == length(coeffs)
+    iszerobasis = isempty(exps)
+    if iszerobasis
+        push!(exps, Vector{ExponentVector}())
+        push!(coeffs, CoeffsVector{T}())
+    end
+    iszerobasis
+end
 
 #------------------------------------------------------------------------------
 # Finite field groebner
@@ -185,7 +199,7 @@ function groebner(
         for j in 1:gap
             i += 1
 
-            # copy basis so that we initial exponents dont get lost
+            # copy basis so that initial exponents dont get lost
             gens_ff = copy_basis_thorough(gens_temp_ff)
             prime = nextluckyprime!(primetracker)
             @info "$i: selected lucky prime $prime"
@@ -315,33 +329,3 @@ function groebner(
     gb_exps, coeffaccum.gb_coeffs_qq
 end
 
-#######################################
-# Finite field isgroebner
-
-function isgroebner(
-            ring::PolyRing,
-            exps::Vector{Vector{ExponentVector}},
-            coeffs::Vector{Vector{T}},
-            meta) where {T<:CoeffFF}
-
-    isgroebner_f4(ring, exps, coeffs, meta.rng)
-end
-
-#######################################
-# Rational field groebner
-
-function isgroebner(
-            ring::PolyRing,
-            exps::Vector{Vector{ExponentVector}},
-            coeffs::Vector{Vector{T}},
-            meta) where {T<:CoeffQQ}
-    # if randomized result is ok
-    if !meta.guaranteedcheck
-        coeffs_zz = scale_denominators(coeffs)
-        goodprime = nextgoodprime(coeffs_zz, Int[], 2^30 + 3)
-        ring_ff, coeffs_ff = reduce_modulo(coeffs_zz, ring, goodprime)
-        isgroebner_f4(ring_ff, exps, coeffs_ff, meta.rng)
-    else # if proved result is needed, compute in rationals
-        isgroebner_f4(ring, exps, coeffs, meta.rng)
-    end
-end

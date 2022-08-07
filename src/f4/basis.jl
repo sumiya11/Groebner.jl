@@ -85,7 +85,7 @@ mutable struct Basis{T<:Coeff}
     nlead::Int
 
     # characteristic of the ground field
-    ch::FieldCharacteristic
+    # ch::T
 end
 
 function initialize_basis(ring::PolyRing, ngens::Int, ::Type{T}) where {T<:Coeff}
@@ -107,7 +107,7 @@ function initialize_basis(ring::PolyRing, ngens::Int, ::Type{T}) where {T<:Coeff
 
     ch = ring.ch
 
-    Basis(gens, coeffs, sz, ndone, ntotal, isred, nonred, lead, nlead, ch)
+    Basis(gens, coeffs, sz, ndone, ntotal, isred, nonred, lead, nlead)
 end
 
 function initialize_basis(ring::PolyRing, hashedexps, coeffs::Vector{CoeffsVector{T}}) where {T<:Coeff}
@@ -122,11 +122,10 @@ function initialize_basis(ring::PolyRing, hashedexps, coeffs::Vector{CoeffsVecto
 
     ch = ring.ch
 
-    Basis(hashedexps, coeffs, sz, ndone, ntotal, isred, nonred, lead, nlead, ch)
+    Basis(hashedexps, coeffs, sz, ndone, ntotal, isred, nonred, lead, nlead)
 end
 
 #------------------------------------------------------------------------------
-
 
 function copy_basis_thorough(basis::Basis{T}) where {T}
     #  That cost a day of debugging ////
@@ -145,7 +144,7 @@ function copy_basis_thorough(basis::Basis{T}) where {T}
     lead = copy(basis.lead)
     Basis(gens, coeffs, basis.size, basis.ndone,
         basis.ntotal, isred, nonred, lead,
-        basis.nlead, basis.ch)
+        basis.nlead)
 end
 
 #------------------------------------------------------------------------------
@@ -166,7 +165,7 @@ end
 
 # Normalize each element of the input basis
 # by dividing it by leading coefficient
-function normalize_basis!(basis::Basis{<:CoeffFF})
+function normalize_basis!(ring, basis::Basis{<:CoeffFF})
     cfs = basis.coeffs
     @inbounds for i in 1:basis.ntotal
         # mul = inv(cfs[i][1])
@@ -174,7 +173,7 @@ function normalize_basis!(basis::Basis{<:CoeffFF})
         if !isassigned(cfs, i)
             continue
         end
-        ch = basis.ch
+        ch = ring.ch
         mul = invmod(cfs[i][1], ch) % ch
         @inbounds for j in 2:length(cfs[i])
             # cfs[i][j] *= mul
@@ -188,7 +187,7 @@ end
 
 # Normalize each element of the input basis
 # by dividing it by leading coefficient
-function normalize_basis!(basis::Basis{<:CoeffQQ})
+function normalize_basis!(ring, basis::Basis{<:CoeffQQ})
     cfs = basis.coeffs
     @inbounds for i in 1:basis.ntotal
         # mul = inv(cfs[i][1])
@@ -506,7 +505,7 @@ function filter_redundant!(basis::Basis)
     basis
 end
 
-function standardize_basis!(basis::Basis, ht::MonomialHashtable, ord)
+function standardize_basis!(ring, basis::Basis, ht::MonomialHashtable, ord)
     for i in 1:basis.nlead
         idx = basis.nonred[i]
         # basis.lead[i] = basis.lead[idx]
@@ -523,7 +522,7 @@ function standardize_basis!(basis::Basis, ht::MonomialHashtable, ord)
     resize!(basis.isred, basis.ndone)
 
     sort_gens_by_lead_increasing_in_standardize!(basis, ht, ord)
-    normalize_basis!(basis)
+    normalize_basis!(ring, basis)
 end
 
 function export_basis_data(basis::Basis{C}, ht::MonomialHashtable) where {C<:Coeff}

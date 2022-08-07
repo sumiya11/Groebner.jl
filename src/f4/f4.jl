@@ -11,7 +11,7 @@
 # starts the reduction routine,
 # and returns reduced polynomials
 function reduction!(
-    basis::Basis, matrix::MacaulayMatrix,
+    ring::PolyRing, basis::Basis, matrix::MacaulayMatrix,
     ht::MonomialHashtable, symbol_ht::MonomialHashtable,
     linalg::Symbol,
     rng)
@@ -22,7 +22,7 @@ function reduction!(
     sort_matrix_rows_increasing!(matrix) # for reduced, CD part
 
     # exact_sparse_linear_algebra!(matrix, basis)
-    linear_algebra!(matrix, basis, Val(linalg), rng)
+    linear_algebra!(ring, matrix, basis, Val(linalg), rng)
 
     convert_matrix_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 end
@@ -57,7 +57,7 @@ function initialize_structures(
     sort_gens_by_lead_increasing!(basis, basis_ht)
 
     # divide each polynomial by leading coefficient
-    normalize_basis!(basis)
+    normalize_basis!(ring, basis)
 
     basis, basis_ht
 end
@@ -98,13 +98,13 @@ end
 #
 # Hashtable initial size is set to tablesize
 function initialize_structures_ff(
-    ring::PolyRing,
+    ring::PolyRing{Ch},
     exponents::Vector{Vector{ExponentVector}},
     coeffs::Vector{Vector{C}},
     rng::Random.AbstractRNG,
-    tablesize::Int) where {C<:Coeff}
+    tablesize::Int) where {Ch, C<:Coeff}
 
-    coeffs_ff = [Vector{UInt64}(undef, length(c)) for c in coeffs]
+    coeffs_ff = [Vector{Ch}(undef, length(c)) for c in coeffs]
     initialize_structures_no_normalize(ring, exponents, coeffs, coeffs_ff, rng, tablesize)
 end
 
@@ -136,11 +136,38 @@ function initialize_structures(
     sort_gens_by_lead_increasing!(basis, basis_ht, coeffs_zz, coeffs_qq)
 
     # divide each polynomial by leading coefficient
-    normalize_basis!(basis)
+    normalize_basis!(ring, basis)
 
     basis, basis_ht
 end
 
+# Initializes Basis with the given hashtable,
+# fills input data from exponents and coeffs
+function initialize_structures_nf(
+    ring::PolyRing,
+    exponents::Vector{Vector{ExponentVector}},
+    coeffs::Vector{Vector{C}},
+    rng::Random.AbstractRNG,
+    tablesize::Int,
+    present_ht::MonomialHashtable) where {C<:Coeff}
+
+    # basis for storing basis elements,
+    # pairset for storing critical pairs of basis elements to assess,
+    # hashtable for hashing monomials occuring in the basis
+    basis = initialize_basis(ring, length(exponents), C)
+
+    # filling the basis and hashtable with the given inputs
+    fill_data!(basis, present_ht, exponents, coeffs)
+
+    # sort input, smaller leading terms first
+    # sort_gens_by_lead_increasing!(basis, present_ht)
+
+    # divide each polynomial by leading coefficient
+    # We do not need normalization for normal forms
+    # normalize_basis!(basis)
+
+    basis, present_ht
+end
 
 # Initializes Basis with the given hashtable,
 # fills input data from exponents and coeffs
@@ -189,139 +216,8 @@ function initialize_structures(
     basis, present_ht
 end
 
-#------------------------------------------------------------------------------
-
-function reducegb_relaxed_f4!(
-    basis::Basis, matrix::MacaulayMatrix,
-    ht::MonomialHashtable, symbol_ht::MonomialHashtable)
-
-    for i in 1:basis.nlead
-        etmp = ht.exponents[1]
-        etmp = zero(etmp)
-        # etmp is now set to zero, and has a zero hash
-
-        reinitialize_matrix!(matrix, basis.nlead)
-        uprows = matrix.uprows
-
-        #=
-        @warn "entering reduce"
-        dump(basis, maxdepth=5)
-        @warn "ht"
-        println(ht.exponents[1:10])
-        @warn "symbol"
-        println(symbol_ht.exponents[1:10])
-        println("NONRED ", basis.nonred)
-        =#
-
-        # add all non redundant elements from basis
-        # as matrix upper rows
-
-        matrix.nrows += 1
-        uprows[matrix.nrows] = multiplied_poly_to_matrix_row!(
-            symbol_ht, ht, UInt32(0), etmp,
-            basis.gens[basis.nonred[i]])
-
-        matrix.up2coef[matrix.nrows] = basis.nonred[i]
-        # set lead index as 1
-        symbol_ht.hashdata[uprows[matrix.nrows][1]].idx = 1
-
-        # needed for correct counting in symbol
-        matrix.ncols = matrix.nrows
-        matrix.nup = matrix.nrows
-
-        #=
-        @warn "after multiplied_poly_to_matrix_row"
-        dump(basis, maxdepth=5)
-        @warn "matrix"
-        dump(matrix, maxdepth=5)
-        @warn "ht"
-        println(ht.exponents[1:10])
-        =#
-
-        symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
-        # all pivots are unknown
-        for j in symbol_ht.offset:symbol_ht.load
-            symbol_ht.hashdata[j].idx = 1
-        end
-
-        #=
-        @warn "after symbolic"
-        dump(basis, maxdepth=5)
-        @warn "matrix"
-        dump(matrix, maxdepth=5)
-        @warn "ht"
-        println(ht.exponents[1:10])
-        =#
-
-        # x1*x2^6 + 413612941*x1*x2^3
-        #  x1^2*x2^3 + 174101409*x1*x2^5
-        convert_hashes_to_columns!(matrix, symbol_ht)
-        matrix.ncols = matrix.nleft + matrix.nright
-
-        #=
-        @warn "after convert"
-        dump(matrix, maxdepth=5)
-        =#
-
-        sort_matrix_rows_decreasing!(matrix)
-
-        println(matrix.ncols)
-
-        println(basis.ndone)
-
-        interreduce_matrix_rows!(matrix, basis)
-
-        #=
-        @warn "after interreduce"
-        dump(matrix, maxdepth=5)
-        =#
-        # TODO
-        # convert_matrix_rows_to_basis_elements_use_symbol!(matrix, basis)
-        convert_matrix_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
-        # no longer need in two hashtables
-        # TODO
-        # ht = symbol_ht
-
-        basis.ntotal = matrix.npivots + basis.ndone
-        basis.ndone = matrix.npivots
-
-        #=
-        @warn "basis"
-        dump(basis, maxdepth=5)
-        =#
-
-        #= we may have added some multiples of reduced basis polynomials
-        * from the matrix, so we get rid of them. =#
-        k = 0
-        i = 1
-        @label Letsgo
-        while i <= basis.ndone
-            @inbounds for j in 1:k
-                if is_monom_divisible(
-                    basis.gens[basis.ntotal-i+1][1],
-                    basis.gens[basis.nonred[j]][1],
-                    ht)
-
-                    i += 1
-                    @goto Letsgo
-                end
-            end
-            k += 1
-            basis.nonred[k] = basis.ntotal - i + 1
-            # xd
-            basis.lead[k] = ht.hashdata[basis.gens[basis.nonred[k]][1]].divmask
-            i += 1
-        end
-        basis.nlead = k
-
-    end
-
-    # TODO
-    # sort_gens_by_lead_increasing_in_reduce!(basis, ht)
-end
-
 function reducegb_f4!(
-    basis::Basis, matrix::MacaulayMatrix,
+    ring::PolyRing, basis::Basis, matrix::MacaulayMatrix,
     ht::MonomialHashtable, symbol_ht::MonomialHashtable)
 
     etmp = ht.exponents[1]
@@ -346,7 +242,7 @@ function reducegb_f4!(
     @inbounds for i in 1:basis.nlead #
         matrix.nrows += 1
         uprows[matrix.nrows] = multiplied_poly_to_matrix_row!(
-            symbol_ht, ht, UInt32(0), etmp,
+            symbol_ht, ht, ExponentHash(0), etmp,
             basis.gens[basis.nonred[i]])
 
         matrix.up2coef[matrix.nrows] = basis.nonred[i]
@@ -394,7 +290,7 @@ function reducegb_f4!(
 
     sort_matrix_rows_decreasing!(matrix)
 
-    interreduce_matrix_rows!(matrix, basis)
+    interreduce_matrix_rows!(ring, matrix, basis)
 
     #=
     @warn "after interreduce"
@@ -454,7 +350,7 @@ function select_tobereduced!(
     resize!(matrix.lowrows, tobereduced.ntotal)
 
     # TODO
-    etmp = zeros(UInt16, ht.explen)
+    etmp = zeros(Degree, ht.explen)
 
     for i in 1:tobereduced.ntotal
         matrix.nrows += 1
@@ -942,12 +838,13 @@ end
 
 #=
     Input ivariants:
-        - ring is set, and ring.ch == basis.ch, and ring ~ ht
+        - ring is set, and ring ~ ht
         - divmasks in ht are set
         - basis is filled so that
             basis.ntotal = actual number of elements
             basis.ndone  = 0
             basis.nlead  = 0
+        - basis contain no zero polynomials (!)
 
     Output invariants:
         - basis.ndone == basis.ntotal == basis.nlead
@@ -967,7 +864,7 @@ function f4!(ring::PolyRing,
 
    # print("input: $(basis.ntotal) gens, $(ring.nvars) vars. ")
 
-   @assert ring.ch == basis.ch
+   # @assert ring.ch == basis.ch
    @assert ring.ord == ht.ord && ring.nvars == ht.nvars && ring.explen == ht.explen
    # @error "hashtable divmasks"
    # println(ht.exponents[2:ht.load])
@@ -1042,7 +939,7 @@ function f4!(ring::PolyRing,
        # @warn "ht symbolic" ht.load ht.size
 
        # reduces polys and obtains new potential basis elements
-       reduction!(basis, matrix, ht, symbol_ht, linalg, rng)
+       reduction!(ring, basis, matrix, ht, symbol_ht, linalg, rng)
        @debug "Matrix reduced, density TODO"
 
        if !tracer.ready
@@ -1092,10 +989,10 @@ function f4!(ring::PolyRing,
    filter_redundant!(basis)
 
    if reduced
-       reducegb_f4!(basis, matrix, ht, symbol_ht)
+       reducegb_f4!(ring, basis, matrix, ht, symbol_ht)
    end
 
-   standardize_basis!(basis, ht, ht.ord)
+   standardize_basis!(ring, basis, ht, ht.ord)
 
    # assertion
    #=
