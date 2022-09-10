@@ -185,7 +185,7 @@ function fglm_f4(
     ring::PolyRing,
     basisexps::Vector{Vector{ExponentVector}},
     basiscoeffs::Vector{Vector{C}},
-    metainfo) where {Rng,C<:Coeff}
+    metainfo) where {C<:Coeff}
 
     tablesize = select_tablesize(ring, basisexps)
 
@@ -227,7 +227,7 @@ function kbase_f4(
     ring::PolyRing,
     basisexps::Vector{Vector{ExponentVector}},
     basiscoeffs::Vector{Vector{C}},
-    metainfo) where {Rng,C<:Coeff}
+    metainfo) where {C<:Coeff}
 
     tablesize = select_tablesize(ring, basisexps)
 

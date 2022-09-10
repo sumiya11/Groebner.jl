@@ -485,7 +485,7 @@ function convert_to_output(
             origring::M,
             gbexps::Vector{Vector{ExponentVector}},
             gbcoeffs::Vector{Vector{I}},
-            metainfo::GroebnerMetainfo) where {M, T, I}
+            metainfo::GroebnerMetainfo) where {M, I}
 
     @assert hasmethod(base_ring, Tuple{typeof(origring)})
 
