@@ -221,9 +221,9 @@ function update_pairset!(
 
     new_lead = basis.gens[idx][1]
 
-    @error "Update pairset"
+    # @error "Update pairset"
 
-    println("pl = $pl, bl = $bl, ps = $(ps[1:4])")
+    # println("pl = $pl, bl = $bl, ps = $(ps[1:4])")
 
     # @error "" bl
     # initialize new critical lcms
@@ -247,14 +247,14 @@ function update_pairset!(
 
     # @error "" one two
 
-    println("BEFORE important loop")
-    println("pl = $pl, ps[1:4] = $(ps[1:4])")
+    # println("BEFORE important loop")
+    # println("pl = $pl, ps[1:4] = $(ps[1:4])")
 
     # traverse existing pairs
     @inbounds for i in 1:pl
         j = ps[i].poly1
         l = ps[i].poly2
-        println("iteration $i $j $l")
+        # println("iteration $i $j $l")
         m = max(ps[pl+l].deg, ps[pl+j].deg)
 
         # if an existing pair is divisible by lead of new poly

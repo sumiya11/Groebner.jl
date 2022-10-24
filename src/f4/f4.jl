@@ -18,24 +18,24 @@ function reduction!(
 
     convert_hashes_to_columns!(matrix, symbol_ht)
     
-    @warn "f4 reduction: "
-    println("after convert hashes to cols: matrix = ")
-    # dump(matrix, maxdepth=2)
-    println("after convert hashes to cols: symbol_ht = ")
+    # @warn "f4 reduction: "
+    # println("after convert hashes to cols: matrix = ")
+    # # dump(matrix, maxdepth=2)
+    # println("after convert hashes to cols: symbol_ht = ")
     # dump(symbol_ht, maxdepth=3)
 
     sort_matrix_rows_decreasing!(matrix) # for pivots,  AB part
     sort_matrix_rows_increasing!(matrix) # for reduced, CD part
 
-    @warn "f4 reduction: "
-    println("after sorting: matrix = ")
+    # @warn "f4 reduction: "
+    # println("after sorting: matrix = ")
     # dump(matrix, maxdepth=2)
 
     # exact_sparse_linear_algebra!(matrix, basis)
     linear_algebra!(ring, matrix, basis, Val(linalg), rng)
     
-    @warn "f4 reduction: "
-    println("after linear algebra: matrix = ")
+    # @warn "f4 reduction: "
+    # println("after linear algebra: matrix = ")
     # dump(matrix, maxdepth=2)
 
     convert_matrix_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
@@ -397,21 +397,21 @@ function find_multiplied_reducer!(
     blen = basis.ndone     #
     leaddiv = basis.lead  #
 
-    println("Start, In f4_find_multiplied_reducer")
+    # println("Start, In f4_find_multiplied_reducer")
     # dump(basis, maxdepth=2)
 
     # searching for a poly from state.basis whose leading monom
     # divides the given exponent e
     i = 1
     @label Letsgo
-    println("After Letsgo, i = ", i)
+    # println("After Letsgo, i = ", i)
     # println(Int32.(leaddiv))
 
     @inbounds while i <= basis.nlead && (leaddiv[i] & ~divmask) != 0
         i += 1
     end
 
-    println("In find_multiplied_reducer!, i = ", i)
+    # println("In find_multiplied_reducer!, i = ", i)
 
     #@inbounds while i <= basis.nlead && !divv(e, ht.exponents[basis.gens[basis.nonred[i]][1]])
     #    i += 1
@@ -472,9 +472,9 @@ function symbolic_preprocessing!(
         resize!(matrix.up2coef, matrix.size)
     end
 
-    println("f4_symbolic_preprocessing: ONE: symbol_ht")
-    # dump(symbol_ht, maxdepth=3)
-    println("f4_symbolic_preprocessing: ONE: matrixj")
+    # println("f4_symbolic_preprocessing: ONE: symbol_ht")
+    # # dump(symbol_ht, maxdepth=3)
+    # println("f4_symbolic_preprocessing: ONE: matrixj")
     # println(matrix)
 
     # @warn "symbolic_preprocessing! ZEROOOOO: ht"
@@ -497,9 +497,9 @@ function symbolic_preprocessing!(
         i += 1
     end
 
-    println("f4_symbolic_preprocessing: TWO: symbol_ht")
-    # dump(symbol_ht, maxdepth=3)
-    println("f4_symbolic_preprocessing: TWO: matrixj")
+    # println("f4_symbolic_preprocessing: TWO: symbol_ht")
+    # # dump(symbol_ht, maxdepth=3)
+    # println("f4_symbolic_preprocessing: TWO: matrixj")
     # println(matrix)
 
     # @warn "symbolic_preprocessing! TWO: symbol_ht"
@@ -940,11 +940,11 @@ function f4!(ring::PolyRing,
        resize!(plcm, tracer.basis_ntotal + 1)
    end
 
-   @warn "f4: input"
-   println("basis = ", )
-   dump(basis, maxdepth=2)
-   println("ht = ", )
-   dump(ht, maxdepth=2)
+#    @warn "f4: input"
+#    println("basis = ", )
+#    dump(basis, maxdepth=2)
+#    println("ht = ", )
+#    dump(ht, maxdepth=2)
 
    # @error "" length(pairset.pairs) length(plcm)
 
@@ -957,17 +957,17 @@ function f4!(ring::PolyRing,
 
    # @warn "ht update" ht.load ht.size
 
-   @warn "f4: after first update"
-   println("plcm = ", plcm[1:2])
-   println("pairs = ", pairset.pairs[1:2])
-   println("basis = ")
-   dump(basis, maxdepth=2)
+#    @warn "f4: after first update"
+#    println("plcm = ", plcm[1:2])
+#    println("pairs = ", pairset.pairs[1:2])
+#    println("basis = ")
+#    dump(basis, maxdepth=2)
 
    d = 0
    # while there are pairs to be reduced
    while !isempty(pairset)
        d += 1
-       @warn "F4 ITER $d"
+       # @warn "F4 ITER $d"
        @debug "Available $(pairset.load) pairs"
 
        # TODO: learn, and select\discard S-polynomials
@@ -983,12 +983,12 @@ function f4!(ring::PolyRing,
        # and puts these into the matrix rows
         select_normal!(pairset, basis, matrix, ht, symbol_ht)
        
-        @warn "f4: after select"
-        println("pairset.load = ", pairset.load)
-        println("matrix = ")
-        dump(matrix, maxdepth=2)
-        println("symbol ht = ")
-        dump(symbol_ht, maxdepth=3)
+        # @warn "f4: after select"
+        # println("pairset.load = ", pairset.load)
+        # println("matrix = ")
+        # dump(matrix, maxdepth=2)
+        # println("symbol ht = ")
+        # dump(symbol_ht, maxdepth=3)
 
        # @warn "ht select" ht.load ht.size
 
@@ -996,11 +996,11 @@ function f4!(ring::PolyRing,
        # symbolic_preprocessing_relaxed!(basis, matrix, ht, symbol_ht)
        @debug "Matrix of size $((matrix.nrows, matrix.ncols)), density TODO"
        
-       @warn "f4: after symbolic_preprocessing"
-        println("matrix = ")
-        dump(matrix, maxdepth=2)
-        println("symbol_ht = ")
-        dump(symbol_ht, maxdepth=2)
+    #    @warn "f4: after symbolic_preprocessing"
+    #     println("matrix = ")
+    #     dump(matrix, maxdepth=2)
+    #     println("symbol_ht = ")
+    #     dump(symbol_ht, maxdepth=2)
 
        # @warn "ht symbolic" ht.load ht.size
 
@@ -1025,11 +1025,11 @@ function f4!(ring::PolyRing,
        end
        =#
 
-       @warn "after reduction.."
-        println("matrix = ")
-        dump(matrix, maxdepth=2)
-        println("basis = ")
-        dump(basis, maxdepth=2)
+    #    @warn "after reduction.."
+    #     println("matrix = ")
+    #     dump(matrix, maxdepth=2)
+    #     println("basis = ")
+    #     dump(basis, maxdepth=2)
 
        # update the current basis with polynomials produced from reduction,
        # does not copy,
@@ -1040,11 +1040,11 @@ function f4!(ring::PolyRing,
        end
        # @warn "ht update" ht.load ht.size
        
-       @warn "after iteration update .."
-       println("pairs = ", pairset.pairs[1:3])
-       println("plcm = ", plcm[1:3])
-       println("basis = ")
-       dump(basis, maxdepth=2)
+    #    @warn "after iteration update .."
+    #    println("pairs = ", pairset.pairs[1:3])
+    #    println("plcm = ", plcm[1:3])
+    #    println("basis = ")
+    #    dump(basis, maxdepth=2)
 
        # TODO: is this okay hm ?
        # to be changed
@@ -1060,8 +1060,8 @@ function f4!(ring::PolyRing,
        end
    end
 
-   println("After the main loop")
-   dump(basis, maxdepth=2)
+#    println("After the main loop")
+#    dump(basis, maxdepth=2)
 
    tracer.ready = true
    tracer.basis_ntotal = basis.ntotal
@@ -1069,20 +1069,20 @@ function f4!(ring::PolyRing,
    # remove redundant elements
    filter_redundant!(basis)
 
-   println("After filter redundant")
-   dump(basis, maxdepth=2)
+#    println("After filter redundant")
+#    dump(basis, maxdepth=2)
 
    if reduced
        reducegb_f4!(ring, basis, matrix, ht, symbol_ht)
        
-       println("After reduce")
-       dump(basis, maxdepth=2)
+    #    println("After reduce")
+    #    dump(basis, maxdepth=2)
    end
 
    standardize_basis!(ring, basis, ht, ht.ord)
 
-   println("After standardize")
-   dump(basis, maxdepth=2)
+#    println("After standardize")
+#    dump(basis, maxdepth=2)
 
    # assertion
    #=

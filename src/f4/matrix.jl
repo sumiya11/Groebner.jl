@@ -634,9 +634,9 @@ function interreduce_matrix_rows!(ring::PolyRing, matrix::MacaulayMatrix{C}, bas
 
     magic = select_divisor(matrix.coeffs, ring.ch)
 
-    println("In interreduce")
-    dump(matrix, maxdepth=2)
-    dump(basis, maxdepth=2)
+    # println("In interreduce")
+    # dump(matrix, maxdepth=2)
+    # dump(basis, maxdepth=2)
 
     # same pivs as for rref
     # pivs: column idx --> vector of present columns
@@ -663,10 +663,10 @@ function interreduce_matrix_rows!(ring::PolyRing, matrix::MacaulayMatrix{C}, bas
                 densecfs[reducexps[j]] = cfs[j]
             end
             
-            println("Reducting, i =", i)
-            println("densecfs = ", densecfs)
-            println("pivs = ", pivs)
-            println("l = ", l)
+            # println("Reducting, i =", i)
+            # println("densecfs = ", densecfs)
+            # println("pivs = ", pivs)
+            # println("l = ", l)
 
             zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(densecfs, matrix, basis, pivs, l, l, magic)
 
