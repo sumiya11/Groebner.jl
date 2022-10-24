@@ -95,7 +95,7 @@ function groebner(
             exps::Vector{Vector{ExponentVector}},
             coeffs::Vector{CoeffsVector{T}},
             reduced::Bool,
-            meta::GroebnerMetainfo) where {T<:CoeffQQ, Rng<:Random.AbstractRNG}
+            meta::GroebnerMetainfo) where {T<:CoeffQQ}
 
     # we can mutate coeffs and exps here
 
