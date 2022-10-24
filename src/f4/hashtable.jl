@@ -122,6 +122,10 @@ function initialize_basis_hash_table(
         divvars[i] = i
     end
 
+    println("On HT initialize");
+    println(ndivvars, " ", ndivbits);
+    println(divvars, " ", divmap);
+
     # first stored exponent used as buffer lately
     exponents[1] = zeros(Degree, explen)
 
@@ -331,6 +335,9 @@ function fill_divmask!(ht::MonomialHashtable)
             end
         end
     end
+
+    println("In fill_divmask")
+    println(ht.ndivbits, " ", Int.(min_exp), " ", Int.(max_exp))
 
     ctr = 1
     steps = UInt32(0)
