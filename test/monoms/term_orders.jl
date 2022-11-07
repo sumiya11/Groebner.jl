@@ -103,7 +103,7 @@ implementations_to_test = [
             if sum(x) >= Groebner._overflow_threshold(UInt8)
                 continue
             end
-            if sum(x) >= Groebner._overflow_threshold(UInt8)
+            if sum(y) >= Groebner._overflow_threshold(UInt8)
                 continue
             end
             as = [
