@@ -8,7 +8,7 @@ using .Groebner
 using .Groebner.AbstractAlgebra
 
 # if some particular time consuming tests should be executed
-long_tests() = true
+long_tests() = false
 
 # Taken from JuMP/test/solvers.jl
 function try_import(name::Symbol)
