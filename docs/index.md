@@ -87,7 +87,7 @@ Computing Groebner bases largely depends on a single iterative algorithm, known 
 
 The Buchbergers algorithm is exponential by its nature, so any implementation is tricky.
 
-Our package implements **F4 algorithm** introduced by Jean-Charles Faugère, which can be seen as a modification of the Buchbergers. The performance of the implementation comes from thoughtful polynomial representation, monomial hashing, lightning-fast linear algebra, and technical modular algorithms.
+Our package implements **F4 algorithm** introduced by Jean-Charles Faugère.
 
 ## Acknowledgement
 

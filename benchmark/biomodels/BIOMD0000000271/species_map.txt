@@ -1,6 +1,0 @@
-x1 = EpoR
-x2 = Epo
-x3 = Epo_EpoR
-x4 = Epo_EpoRi
-x5 = dEpoi
-x6 = dEpoe

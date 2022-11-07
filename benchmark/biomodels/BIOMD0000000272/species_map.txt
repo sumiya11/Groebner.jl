@@ -1,6 +1,0 @@
-x1 = EpoR
-x2 = SAv
-x3 = SAv_EpoR
-x4 = SAv_EpoRi
-x5 = dSAvi
-x6 = dSAve

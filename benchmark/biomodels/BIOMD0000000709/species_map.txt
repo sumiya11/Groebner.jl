@@ -1,5 +1,0 @@
-x1 = S_a
-x2 = I_a
-x3 = S_h
-x4 = I_h
-x5 = R_h

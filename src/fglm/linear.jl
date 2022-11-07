@@ -35,13 +35,13 @@ end
 
 
 function initialize_double_matrix(basis::Basis{C}) where {C<:Coeff}
-    n = length(basis.gens)
+    n = length(basis.monoms)
     leftrows   = Vector{Vector{Int}}(undef, n)
     leftcoeffs = Vector{Vector{C}}(undef, n)
 
     pivot2idx = Vector{Int}(undef, n)
 
-    m = length(basis.gens)
+    m = length(basis.monoms)
     rightrows  = Vector{Vector{Int}}(undef, m)
     rightcoeffs= Vector{Vector{C}}(undef, m)
 
@@ -71,7 +71,7 @@ function convert_to_double_dense_row(matrix, monom, vector::Basis{C}, ht) where 
     rightrow = zeros(C, matrix.nrcols)
     rightrow[end] = one(C)
 
-    exps, coeffs = vector.gens[1], vector.coeffs[1]
+    exps, coeffs = vector.monoms[1], vector.coeffs[1]
     for i in 1:length(exps)
         if !haskey(matrix.lefthash2col, exps[i])
             if matrix.nlcols >= length(matrix.leftcol2hash)
@@ -233,7 +233,7 @@ function extract_sparse_row(row)
 end
 
 function extract_sparse_row(row::Vector{C}, np, k) where {C}
-    newrow = Vector{ExponentIdx}(undef, k)
+    newrow = Vector{MonomIdx}(undef, k)
     newcfs = Vector{C}(undef, k)
 
     # store new row in sparse format
@@ -253,7 +253,7 @@ end
 function linear_relation!(
             ring,
             matrix::DoubleMacaulayMatrix,
-            monom::ExponentIdx, vector::Basis{C},
+            monom::MonomIdx, vector::Basis{C},
             ht) where {C<:Coeff}
 
     magic = select_divisor(vector.coeffs, ring.ch)
@@ -263,7 +263,7 @@ function linear_relation!(
     if debug()
         @warn "start"
         println(monom)
-        println(vector.gens, " ", vector.coeffs)
+        println(vector.monoms, " ", vector.coeffs)
         println(leftrow)
         println(rightrow)
         println(matrix)

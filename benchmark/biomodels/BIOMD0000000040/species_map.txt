@@ -1,5 +1,0 @@
-x1 = Br
-x2 = BrO3
-x3 = Ce
-x4 = HBrO2
-x5 = HOBr

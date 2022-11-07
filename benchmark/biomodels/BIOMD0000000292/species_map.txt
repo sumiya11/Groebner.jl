@@ -1,6 +1,0 @@
-x1 = NADPH
-x2 = ADP
-x3 = ATP
-x4 = X
-x5 = Y
-x6 = NADP

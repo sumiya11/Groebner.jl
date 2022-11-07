@@ -1,9 +1,0 @@
-x1 = E
-x2 = E_P_1
-x3 = P
-x4 = M
-x5 = E_M
-x6 = T
-x7 = E_P_2
-x8 = P2
-x9 = E_P2

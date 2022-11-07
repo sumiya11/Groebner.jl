@@ -1,7 +1,0 @@
-x1 = Target_cells
-x2 = Infected_cells
-x3 = Infected_cells_antiviral
-x4 = Refractory_cells
-x5 = Virions
-x6 = IFN
-x7 = Fraction_target_cells_remaining

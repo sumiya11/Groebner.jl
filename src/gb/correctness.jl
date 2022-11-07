@@ -29,7 +29,7 @@ function correctness_check!(coeffaccum, coeffbuffer, primetracker, meta,
     end
 
     if meta.guaranteedcheck
-        return guaranteed_correctness_check!(ring, gb_ff.gens, coeffaccum.gb_coeffs_qq,
+        return guaranteed_correctness_check!(ring, gb_ff.monoms, coeffaccum.gb_coeffs_qq,
                                             exps, coeffs, gens_temp_ff, ht)
     end
 
@@ -144,7 +144,7 @@ function guaranteed_correctness_check!(ring, gbexps, gb_coeffs_qq,
     #                copy(coeffs[i])
     #                for i in 1:init_gens.ntotal]
 
-    gens_qq, _ = initialize_structures(ring, gens_tmp_ff.gens[1:gens_tmp_ff.ntotal], coeffs, ht)
+    gens_qq, _ = initialize_structures(ring, gens_tmp_ff.monoms[1:gens_tmp_ff.ntotal], coeffs, ht)
     gb_qq, _   = initialize_structures(ring, gbexps, gb_coeffs_qq, ht)
 
     normalize_basis!(ring, gb_qq)

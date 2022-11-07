@@ -56,12 +56,12 @@ end
 
 function normal_form_f4(
                 ring::PolyRing,
-                basisexps::Vector{Vector{ExponentVector}},
+                basisexps::Vector{Vector{M}},
                 basiscoeffs::Vector{Vector{C}},
-                tobereducedexps::Vector{Vector{ExponentVector}},
+                tobereducedexps::Vector{Vector{M}},
                 tobereducedcfs::Vector{Vector{C}},
                 rng::Rng,
-                tablesize::Int=2^16) where {Rng, C<:Coeff}
+                tablesize::Int=2^16) where {M, Rng, C<:Coeff}
 
     basis, ht = initialize_structures(ring, basisexps,
                                         basiscoeffs, rng, tablesize)

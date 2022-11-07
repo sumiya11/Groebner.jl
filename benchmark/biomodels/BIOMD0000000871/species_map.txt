@@ -1,8 +1,0 @@
-x1 = p100
-x2 = p52
-x3 = NIK
-x4 = IkBd
-x5 = IkBd_NIK
-x6 = p100_NIK
-x7 = RelB
-x8 = RelB_p52

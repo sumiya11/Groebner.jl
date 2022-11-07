@@ -1,8 +1,0 @@
-x1 = Pa
-x2 = Pb
-x3 = Da
-x4 = Db
-x5 = BDa
-x6 = BDb
-x7 = ESA
-x8 = ESB

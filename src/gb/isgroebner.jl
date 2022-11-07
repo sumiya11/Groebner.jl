@@ -2,8 +2,8 @@
 #------------------------------------------------------------------------------
 
 function clean_input_isgroebner!(ring::PolyRing,
-    exps::Vector{Vector{ExponentVector}},
-    coeffs::Vector{CoeffsVector{T}}) where {T}
+    exps::Vector{Vector{M}},
+    coeffs::Vector{Vector{T}}) where {M, T}
     clean_input_groebner!(ring, exps, coeffs)
 end
 
@@ -11,15 +11,15 @@ end
 
 function isgroebner_f4!(ring::PolyRing,
     basis::Basis{C},
-    ht::MonomialHashtable) where {C<:Coeff}
+    ht::MonomialHashtable{M}) where {M, C<:Coeff}
 
     matrix = initialize_matrix(ring, C)
     symbol_ht = initialize_secondary_hash_table(ht)
     update_ht = initialize_secondary_hash_table(ht)
 
-    pairset = initialize_pairset()
+    pairset = initialize_pairset(powertype(M))
 
-    plcm = Vector{ExponentIdx}(undef, 0)
+    plcm = Vector{MonomIdx}(undef, 0)
     update!(pairset, basis, ht, update_ht, plcm)
 
     if pairset.load == 0
@@ -40,9 +40,9 @@ end
 
 function isgroebner_f4(
     ring::PolyRing,
-    exps::Vector{Vector{ExponentVector}},
+    exps::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
-    rng) where {C<:Coeff}
+    rng) where {M,C<:Coeff}
 
     basis, ht = initialize_structures(ring, exps,
         coeffs, rng, 2^16)
@@ -55,9 +55,9 @@ end
 
 function isgroebner(
         ring::PolyRing,
-        exps::Vector{Vector{ExponentVector}},
+        exps::Vector{Vector{M}},
         coeffs::Vector{Vector{T}},
-        meta) where {T<:CoeffFF}
+        meta) where {M,T<:CoeffFF}
 
     isgroebner_f4(ring, exps, coeffs, meta.rng)
 end
@@ -67,9 +67,9 @@ end
 
 function isgroebner(
         ring::PolyRing,
-        exps::Vector{Vector{ExponentVector}},
+        exps::Vector{Vector{M}},
         coeffs::Vector{Vector{T}},
-        meta) where {T<:CoeffQQ}
+        meta) where {M,T<:CoeffQQ}
         # if randomized result is ok
     if !meta.guaranteedcheck
         coeffbuffer  = CoeffBuffer()

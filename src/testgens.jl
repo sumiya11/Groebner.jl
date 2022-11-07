@@ -7,8 +7,8 @@
     The root-n system
     (not to be confused with cyclic system)!!
 =#
-function rootn(n; ground=QQ)
-    R, xs = PolynomialRing(ground, ["x$i" for i in 1:n])
+function rootn(n; np=AbstractAlgebra, ground=np.QQ)
+    R, xs = np.PolynomialRing(ground, ["x$i" for i in 1:n])
     ans = [
         sum(map(prod, Combinatorics.combinations(xs, i)))
         for i in 1:n
@@ -23,8 +23,8 @@ end
     The cyclic-n system
     (not to be confused with cyclic system)!!
 =#
-function cyclicn(n; ground=QQ)
-    R, z = PolynomialRing(ground, ["z$i" for i in 1:n])
+function cyclicn(n; np=AbstractAlgebra, ground=np.QQ)
+    R, z = np.PolynomialRing(ground, ["z$i" for i in 1:n])
     [(sum(prod(z[(k-1) % n + 1] for k in j:j+m) for j in 1:n) for m=0:(n-2))...,prod(z)-1]
 end
 
@@ -33,8 +33,8 @@ end
 #=
     The reimer-n system
 =#
-function reimern(n; ground=QQ)
-    R, xs = PolynomialRing(ground, ["x$i" for i in 1:n])
+function reimern(n; np=AbstractAlgebra, ground=np.QQ)
+    R, xs = np.PolynomialRing(ground, ["x$i" for i in 1:n])
     ans = [
         sum((-1)^(i+1)*2*xs[i]^j for i in 1:n) - 1
         for j in 2:(n+1)
@@ -47,8 +47,8 @@ end
 #=
     The katsura-n system
 =#
-function katsuran(n; ground=QQ)
-    R, x = PolynomialRing(ground, ["x$i" for i in 0:n])
+function katsuran(n; np=AbstractAlgebra, ground=np.QQ)
+    R, x = np.PolynomialRing(ground, ["x$i" for i in 0:n])
 
     return [
         (sum(x[abs(l)+1]*x[abs(m-l)+1] for l=-n:n if abs(m-l)<=n) -
@@ -62,10 +62,10 @@ end
 #=
     The noon-n system
 =#
-function noonn(n; ground=QQ)
+function noonn(n; np=AbstractAlgebra, ground=np.QQ)
     without(x, k) = x[1:end .!= k]
 
-    R, xs = PolynomialRing(ground, ["x$i" for i in 1:n])
+    R, xs = np.PolynomialRing(ground, ["x$i" for i in 1:n])
     fs = zeros(R, n)
     for i in 1:n
         other = without(xs, i)
@@ -76,9 +76,9 @@ end
 
 #------------------------------------------------------------------------------
 
-function henrion5(;ground=QQ)
+function henrion5(;np=AbstractAlgebra, ground=np.QQ)
 
-    R, (f1,f2,f3,f4,f5,t) = PolynomialRing(ground, ["f1","f2","f3","f4","f5","t"])
+    R, (f1,f2,f3,f4,f5,t) = np.PolynomialRing(ground, ["f1","f2","f3","f4","f5","t"])
     fs = [
         2*f1*f2*f3*f4*f5-9823275,
         ground(21)//5*f1*f2*f4*f5+ground(16)//5*f1*f3*f4*f5+ground(9)//5*f2*f3*f4*f5+ground(24)//5*f1*f2*f3*f5+5*f4*f3*f1*f2-4465125,
@@ -89,8 +89,8 @@ function henrion5(;ground=QQ)
     ]
 end
 
-function henrion6(;ground=QQ)
-    R, (f1,f2,f3,f4,f5,f6) = PolynomialRing(ground, ["f1","f2","f3","f4","f5","f6"])
+function henrion6(;np=AbstractAlgebra, ground=np.QQ)
+    R, (f1,f2,f3,f4,f5,f6) = np.PolynomialRing(ground, ["f1","f2","f3","f4","f5","f6"])
 
     fs = [
         2*f1*f2*f3*f4*f5*f6-1404728325,
@@ -103,8 +103,8 @@ function henrion6(;ground=QQ)
 end
 
 # is this even possible to compute?..
-function henrion7(;ground=QQ)
-    R, (f1,f2,f3,f4,f5,f6,f7) = PolynomialRing(ground, ["f1","f2","f3","f4","f5","f6","f7"])
+function henrion7(;np=AbstractAlgebra, ground=np.QQ)
+    R, (f1,f2,f3,f4,f5,f6,f7) = np.PolynomialRing(ground, ["f1","f2","f3","f4","f5","f6","f7"])
 
     fs = [
         2*f1*f2*f3*f4*f5*f6*f7-273922023375,
@@ -120,8 +120,8 @@ end
 
 #------------------------------------------------------------------------------
 
-function eco5(;ground=GF(2^31-1))
-    R, (x1, x2, x3, x4, x5) = PolynomialRing(ground, ["x$i" for i in 1:5])
+function eco5(;np=AbstractAlgebra, ground=np.GF(2^31-1))
+    R, (x1, x2, x3, x4, x5) = np.PolynomialRing(ground, ["x$i" for i in 1:5])
 
     fs = [
     (x1 + x1*x2 + x2*x3 + x3*x4)*x5 - 1,
@@ -132,8 +132,8 @@ function eco5(;ground=GF(2^31-1))
     ]
 end
 
-function eco7(;ground=QQ)
-    R, (x1, x2, x3, x4, x5, x6, x7) = PolynomialRing(ground, ["x$i" for i in 1:7])
+function eco7(;np=AbstractAlgebra, ground=np.QQ)
+    R, (x1, x2, x3, x4, x5, x6, x7) = np.PolynomialRing(ground, ["x$i" for i in 1:7])
 
     fs = [
         (x1 + x1*x2 + x2*x3 + x3*x4 + x4*x5 + x5*x6)*x7 - 1,
@@ -147,8 +147,8 @@ function eco7(;ground=QQ)
     fs
 end
 
-function eco10(;ground=QQ)
-    R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9) = PolynomialRing(ground, ["x$i" for i in 1:11])
+function eco10(;np=AbstractAlgebra, ground=np.QQ)
+    R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9) = np.PolynomialRing(ground, ["x$i" for i in 1:11])
 
     fs = [
         x0*x1*x9+x1*x2*x9+x2*x3*x9+x3*x4*x9+x4*x5*x9+x5*x6*x9+x6*x7*x9+x7*x8*x9+x0*x9-1,
@@ -165,8 +165,8 @@ function eco10(;ground=QQ)
     fs
 end
 
-function eco11(;ground=QQ)
-    R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = PolynomialRing(ground, ["x$i" for i in 1:11])
+function eco11(;np=AbstractAlgebra, ground=np.QQ)
+    R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = np.PolynomialRing(ground, ["x$i" for i in 1:11])
 
     fs = [
         x0*x1*x10+x1*x2*x10+x2*x3*x10+x3*x4*x10+x4*x5*x10+x5*x6*x10+x6*x7*x10+x7*x8*x10+x8*x9*x10+x0*x10-1,
@@ -184,8 +184,8 @@ function eco11(;ground=QQ)
     fs
 end
 
-function eco12(;ground=QQ)
-    R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11) = PolynomialRing(ground, ["x$i" for i in 1:12])
+function eco12(;np=AbstractAlgebra, ground=np.QQ)
+    R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11) = np.PolynomialRing(ground, ["x$i" for i in 1:12])
 
     fs = [
         x0*x1*x11+x1*x2*x11+x2*x3*x11+x3*x4*x11+x4*x5*x11+x5*x6*x11+x6*x7*x11+x7*x8*x11+x8*x9*x11+x9*x10*x11+x0*x11-1,
@@ -204,8 +204,8 @@ function eco12(;ground=QQ)
     fs
 end
 
-function eco13(;ground=QQ)
-    R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12) = PolynomialRing(ground, ["x$i" for i in 1:13])
+function eco13(;np=AbstractAlgebra, ground=np.QQ)
+    R, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12) = np.PolynomialRing(ground, ["x$i" for i in 1:13])
 
     fs = [
         x0*x1*x12+x1*x2*x12+x2*x3*x12+x3*x4*x12+x4*x5*x12+x5*x6*x12+x6*x7*x12+x7*x8*x12+x8*x9*x12+x9*x10*x12+x10*x11*x12+x0*x12-1,
@@ -227,8 +227,8 @@ end
 
 #------------------------------------------------------------------------------
 
-function ku10(;ground=QQ)
-    R, (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = PolynomialRing(ground, ["x$i" for i in 1:10])
+function ku10(;np=AbstractAlgebra, ground=np.QQ)
+    R, (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = np.PolynomialRing(ground, ["x$i" for i in 1:10])
 
     fs = [
         5*x1*x2+ 5*x1+ 3*x2+ 55,
@@ -245,8 +245,8 @@ function ku10(;ground=QQ)
     fs
 end
 
-function kinema(;ground=QQ)
-    R, (z1, z2, z3, z4, z5, z6, z7, z8, z9) = PolynomialRing(ground, ["z$i" for i in 1:9])
+function kinema(;np=AbstractAlgebra, ground=np.QQ)
+    R, (z1, z2, z3, z4, z5, z6, z7, z8, z9) = np.PolynomialRing(ground, ["z$i" for i in 1:9])
 
     fs = [
     z1^2 + z2^2 + z3^2 - 12*z1 - 68;
@@ -261,8 +261,8 @@ function kinema(;ground=QQ)
     ]
 end
 
-function sparse5(; ground=QQ)
-    R, (x1, x2, x3, x4, x5) = PolynomialRing(ground, ["x$i" for i in 1:5])
+function sparse5(; np=AbstractAlgebra, ground=np.QQ)
+    R, (x1, x2, x3, x4, x5) = np.PolynomialRing(ground, ["x$i" for i in 1:5])
 
     fs = [
         x1^2*x2^2*x3^2*x4^2*x5^2 + 3*x1^2 + x2^2 + x3^2 + x4^2 + x5^2 + x1*x2*x3*x4*x5 + 5,
@@ -273,8 +273,8 @@ function sparse5(; ground=QQ)
     ]
 end
 
-function s9_1(; ground=QQ)
-    R, (a, b, c, d, e, f, g, h) = PolynomialRing(ground, ["x$i" for i in 1:8])
+function s9_1(; np=AbstractAlgebra, ground=np.QQ)
+    R, (a, b, c, d, e, f, g, h) = np.PolynomialRing(ground, ["x$i" for i in 1:8])
 
     fs = [-e*g - 2*d*h,
         9*e + 4*b,
@@ -286,8 +286,8 @@ function s9_1(; ground=QQ)
         9*c - 7*a + 8]
 end
 
-function ojika4(;ground=QQ)
-    R, (x1, x2, x3) = PolynomialRing(ground, ["x$i" for i in 1:3])
+function ojika4(;np=AbstractAlgebra, ground=np.QQ)
+    R, (x1, x2, x3) = np.PolynomialRing(ground, ["x$i" for i in 1:3])
 
     fs = [x1+x3*x1^3+x1*x3*x2^2-x1*x3,
     10*x2-2*x2*x3*x1^2-x3*x2^3-x2*x3,
@@ -295,16 +295,16 @@ function ojika4(;ground=QQ)
     ]
 end
 
-function ojika3_d1R2(;ground=QQ)
-    R, (x1, x2, x3) = PolynomialRing(ground, ["x$i" for i in 1:3])
+function ojika3_d1R2(;np=AbstractAlgebra, ground=np.QQ)
+    R, (x1, x2, x3) = np.PolynomialRing(ground, ["x$i" for i in 1:3])
 
     fs = [x1^3*x3+x1*x3*x2^2-x1*x3+x1,
 -2*x1^2*x3*x2-x3*x2^3-x3*x2+ 10*x2,
 -6*x1^4*x3^2-3*x1^2*x3^2*x2^2-3*x3^2*x2^4-x1^2*x3^2+ 2*x3^2*x2^2+ 28*x1^2*x3+ 7*x3*x2^2+x3^2-11*x3+ 10]
 end
 
-function ojika4_d1R2_d2R5(;ground=QQ)
-    R, (x1, x2, x3) = PolynomialRing(ground, ["x$i" for i in 1:3])
+function ojika4_d1R2_d2R5(;np=AbstractAlgebra, ground=np.QQ)
+    R, (x1, x2, x3) = np.PolynomialRing(ground, ["x$i" for i in 1:3])
 
     fs = [
     x1^3*x3+x1*x3*x2^2-x1*x3+x1,
@@ -314,8 +314,8 @@ function ojika4_d1R2_d2R5(;ground=QQ)
 end
 
 function generate_set(nvariables, exps, nterms, npolys, csz, rng,
-                            ground, ordering)
-    R, _ = PolynomialRing(
+                            ground, ordering; np=AbstractAlgebra)
+    R, _ = np.PolynomialRing(
         ground,
         ["x$i" for i in 1:nvariables],
         ordering=ordering
@@ -334,10 +334,10 @@ end
 
 # random system generator
 function generate_set(nvariables, exps, nterms, npolys, csz, rng,
-                        ground::T, ordering) where {T<:AbstractAlgebra.Rationals}
+                        ground::T, ordering; np=AbstractAlgebra) where {T<:AbstractAlgebra.Rationals}
 
     semiground = GF(2^31 - 1)
-    R, _ = PolynomialRing(
+    R, _ = np.PolynomialRing(
         semiground,
         ["x$i" for i in 1:nvariables],
         ordering=ordering
@@ -358,10 +358,10 @@ end
 
 # random system generator
 function generate_set(nvariables, exps, nterms, npolys, csz, rng,
-    ground::T, ordering) where {T<:AbstractAlgebra.Integers}
+    ground::T, ordering; np=AbstractAlgebra) where {T<:AbstractAlgebra.Integers}
 
     s = generate_set(nvariables, exps, nterms, npolys, csz, rng, QQ, ordering)
-    R, _ = PolynomialRing(
+    R, _ = np.PolynomialRing(
         ground,
         ["x$i" for i in 1:nvariables],
         ordering=ordering

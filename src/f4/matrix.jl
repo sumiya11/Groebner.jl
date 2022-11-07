@@ -1,16 +1,13 @@
-#------------------------------------------------------------------------------
-####### Matrix #######
 
 mutable struct MacaulayMatrix{T<:Coeff}
     #=
-        Matrix of the following structure
+        Matrix of the structure
 
         | A  B |
         | C  D |
 
         A contains known pivots of reducing rows,
         and CD are rows to be reduced by AB
-
     =#
 
     # rows from upper, AB part of the matrix,
@@ -22,12 +19,12 @@ mutable struct MacaulayMatrix{T<:Coeff}
 
     # maps column idx {1 ... ncols} to monomial hash idx {2 ... ht.load}
     # in some hashtable
-    col2hash::Vector{ExponentIdx}
+    col2hash::Vector{MonomIdx}
 
     # row coefficients
     # (some of the rows are stored in the basis,
-    #  and some are stored here)
-    coeffs::Vector{CoeffsVector{T}}
+    # and some are stored here)
+    coeffs::Vector{Vector{T}}
 
     #= sizes info =#
     # total number of allocated rows
@@ -74,7 +71,7 @@ end
 function initialize_matrix(ring::PolyRing, ::Type{T}) where {T<:Coeff}
     uprows = Vector{Vector{ColumnIdx}}(undef, 0)
     lowrows = Vector{Vector{ColumnIdx}}(undef, 0)
-    col2hash = Vector{ExponentIdx}(undef, 0)
+    col2hash = Vector{MonomIdx}(undef, 0)
     coeffs = Vector{Vector{T}}(undef, 0)
 
     size = 0
@@ -111,15 +108,14 @@ function reinitialize_matrix!(matrix::MacaulayMatrix{T}, npairs::Int) where {T}
     matrix
 end
 
-
 #------------------------------------------------------------------------------
 
 # if the field is finite, enable optimization
-function select_divisor(coeffs::Vector{CoeffsVector{T}}, ch) where {T<:CoeffFF}
+function select_divisor(coeffs::Vector{Vector{T}}, ch) where {T<:CoeffFF}
     Base.MultiplicativeInverses.UnsignedMultiplicativeInverse(ch)
 end
 
-function select_divisor(coeffs::Vector{CoeffsVector{T}}, ch) where {T<:CoeffQQ}
+function select_divisor(coeffs::Vector{Vector{T}}, ch) where {T<:CoeffQQ}
     ch
 end
 
@@ -201,7 +197,7 @@ end
 # zero entries of densecoeffs and load coefficients cfsref to indices rowexps
 #
 # Finite field specialization
-function load_indexed_coefficients!(densecoeffs::CoeffsVector{T}, rowexps, cfsref) where {T<:CoeffFF}
+function load_indexed_coefficients!(densecoeffs::Vector{T}, rowexps, cfsref) where {T<:CoeffFF}
     @inbounds for i in 1:length(densecoeffs)
         densecoeffs[i] = T(0)
     end
@@ -209,7 +205,6 @@ function load_indexed_coefficients!(densecoeffs::CoeffsVector{T}, rowexps, cfsre
         densecoeffs[rowexps[j]] = cfsref[j]
     end
 end
-
 
 # zero entries of densecoeffs and load coefficients cfsref to indices rowexps
 #
@@ -699,7 +694,7 @@ function convert_hashes_to_columns!(
 
     # monoms from symbolic table represent one column in the matrix
 
-    col2hash = Vector{ExponentIdx}(undef, load - 1)
+    col2hash = Vector{MonomIdx}(undef, load - 1)
     j = 1
     # number of pivotal cols
     k = 0
@@ -949,7 +944,7 @@ function convert_matrix_rows_to_basis_elements!(
 
         # an interesing way to find coefficients
         basis.coeffs[crs+i] = matrix.coeffs[matrix.low2coef[colidx]]
-        basis.gens[crs+i] = matrix.lowrows[i]
+        basis.monoms[crs+i] = matrix.lowrows[i]
     end
 
     basis.ntotal += matrix.npivots
@@ -973,7 +968,7 @@ function convert_matrix_rows_to_basis_elements_use_symbol!(
         end
 
         basis.coeffs[crs+i] = matrix.coeffs[matrix.low2coef[colidx]]
-        basis.gens[crs+i] = row
+        basis.monoms[crs+i] = row
     end
 end
 
@@ -995,11 +990,11 @@ function convert_nf_rows_to_basis_elements!(
 
             colidx = row[1]
             basis.coeffs[basis.ndone] = matrix.coeffs[i]
-            basis.gens[basis.ndone] = row
+            basis.monoms[basis.ndone] = row
         else
             # TODO
             empty!(basis.coeffs[basis.ndone])
-            empty!(basis.gens[basis.ndone])
+            empty!(basis.monoms[basis.ndone])
         end
     end
 end
