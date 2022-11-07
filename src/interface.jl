@@ -1,6 +1,4 @@
 
-#######################################
-
 """
     function groebner(
             polynomials;
@@ -9,6 +7,7 @@
             certify=false,
             forsolve=false,
             linalg=:exact,
+            monom_representation=best(),
             rng=MersenneTwister(42),
             loglevel=Logging.Warn
     )
@@ -62,40 +61,31 @@ function groebner(
             certify::Bool=false,
             forsolve::Bool=false,
             linalg::Symbol=:exact,
+            monom_representation=best(),
             rng::Rng=Random.MersenneTwister(42),
             loglevel::Logging.LogLevel=Logging.Warn
-            ) where {Poly, Rng<:Random.AbstractRNG}
-
+        ) where {Poly, Rng<:Random.AbstractRNG}
     #= set the logger =#
     prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
-
-    #= extract ring information, exponents and coefficients
-       from input polynomials =#
-    # Copies input, so that polynomials would not be changed itself.
-    ring, exps, coeffs = convert_to_internal(polynomials, ordering)
-
-    #= check and set algorithm parameters =#
-    metainfo = set_metaparameters(ring, ordering, certify, forsolve, linalg, rng)
-    # now ring stores computation ordering
-    # metainfo is now a struct to store target ordering
-
-    iszerobasis = clean_input_groebner!(ring, exps, coeffs)
-    iszerobasis && (return convert_to_output(ring, polynomials, exps, coeffs, metainfo))
-
-    #= change input ordering if needed =#
-    assure_ordering!(ring, exps, coeffs, metainfo)
-
-    #= compute the groebner basis =#
-    bexps, bcoeffs = groebner(ring, exps, coeffs, reduced, metainfo)
-
-    # ordering in bexps here matches target ordering in metainfo
-
-    #= revert logger =#
-    Logging.global_logger(prev_logger)
-
-    # ring contains ordering of computation, it is the requested ordering
-    #= convert result back to representation of input =#
-    convert_to_output(ring, polynomials, bexps, bcoeffs, metainfo)
+    representation = guess_effective_representation(polynomials, UnsafeRepresentation(), monom_representation)
+    try
+        #= guess the best representation for polynomials =#
+        return groebner(polynomials, representation, reduced, ordering, certify, forsolve, linalg, rng)
+    catch beda
+        if isa(beda, OverflowError)
+            # if computation fails due to exponent vector overflow
+            # compute safely
+            @warn "Monomial overflow ($(representation)); switching to another representation."
+            representation = default_safe_representation()
+            return groebner(polynomials, representation, reduced, ordering, certify, forsolve, linalg, rng)
+        else
+            # if computation jus fails for some reason
+            rethrow(beda)
+        end
+    finally
+        #= revert logger =#
+        Logging.global_logger(prev_logger)
+    end
 end
 
 #######################################
@@ -142,7 +132,7 @@ function isgroebner(
     #= extract ring information, exponents and coefficients
        from input polynomials =#
     # Copies input, so that polys would not be changed itself.
-    ring, exps, coeffs = convert_to_internal(polynomials, ordering)
+    ring, exps, coeffs = convert_to_internal(default_safe_representation(), polynomials, ordering)
 
     #= check and set algorithm parameters =#
     metainfo = set_metaparameters(ring, ordering, certify, false, :exact, rng)
@@ -169,9 +159,7 @@ function isgroebner(
 end
 
 #######################################
-
 # normalform
-
 
 """
     function normalform(
@@ -222,7 +210,6 @@ function normalform(
     )
 end
 
-
 function normalform(
             basispolys::Vector{Poly},
             tobereduced::Vector{Poly};
@@ -240,8 +227,8 @@ function normalform(
     #= extract ring information, exponents and coefficients
        from input basis polynomials =#
     # Copies input, so that polys would not be changed itself.
-    ring1, basisexps, basiscoeffs = convert_to_internal(basispolys, ordering)
-    ring2, tbrexps, tbrcoeffs = convert_to_internal(tobereduced, ordering)
+    ring1, basisexps, basiscoeffs = convert_to_internal(default_safe_representation(), basispolys, ordering)
+    ring2, tbrexps, tbrcoeffs = convert_to_internal(default_safe_representation(), tobereduced, ordering)
 
     @assert ring1.nvars == ring2.nvars && ring1.ch == ring2.ch
     @assert ring1.ord == ring2.ord
@@ -318,7 +305,7 @@ function fglm(
     #= extract ring information, exponents and coefficients
        from input polynomials =#
     # Copies input, so that polynomials would not be changed itself.
-    ring, exps, coeffs = convert_to_internal(basis, :input)
+    ring, exps, coeffs = convert_to_internal(default_safe_representation(), basis, :input)
 
     metainfo = set_metaparameters(ring, :lex, false, false, :exact, rng)
     
@@ -382,7 +369,7 @@ function kbase(
     #= extract ring information, exponents and coefficients
        from input polynomials =#
     # Copies input, so that polynomials would not be changed itself.
-    ring, exps, coeffs = convert_to_internal(basis, :input)
+    ring, exps, coeffs = convert_to_internal(default_safe_representation(), basis, :input)
 
     metainfo = set_metaparameters(ring, :input, false, false, :exact, rng)
     

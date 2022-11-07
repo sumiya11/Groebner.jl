@@ -151,7 +151,6 @@ function rational_reconstruction!(
     Base.GMP.MPZ.set!(num, v3)
 
     #=
-    num and den are obviously coprime,
     gcd is not nessesary here
 
     Base.GMP.MPZ.gcd!(buf, den, num)
@@ -197,5 +196,3 @@ function CRT!(
     Base.GMP.MPZ.add!(buf, n1, n2)
     Base.GMP.MPZ.fdiv_r!(buf, M)
 end
-
-#------------------------------------------------------------------------------

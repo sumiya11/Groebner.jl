@@ -1,7 +1,7 @@
 
 using Primes
 
-@testset "Chineese remainder theorem" begin
+@testset "chinese remainder theorem" begin
 
     modular_images(a, ms) = map(m -> mod(a, m), ms)
 

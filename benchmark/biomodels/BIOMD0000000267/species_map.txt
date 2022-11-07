@@ -1,4 +1,0 @@
-x1 = free
-x2 = bound
-x3 = translocate
-x4 = lytic

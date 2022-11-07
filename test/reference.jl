@@ -4,7 +4,7 @@ using .Groebner: _normal_form_reference, _reducegb_reference, _reducegb_referenc
 
 using AbstractAlgebra: ordering
 
-@testset "Normal Form" begin
+@testset "reference normal form" begin
 
     R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"])
 
@@ -45,7 +45,7 @@ using AbstractAlgebra: ordering
 
 end
 
-@testset "Change ordering" begin
+@testset "reference change order" begin
     R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"])
 
     fs = [1x + 2y*z + 3z^3, y*z, 5x]

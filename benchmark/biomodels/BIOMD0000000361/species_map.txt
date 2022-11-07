@@ -1,8 +1,0 @@
-x1 = VIIa_TF
-x2 = X
-x3 = VIIa_TF_X
-x4 = VIIa_TF_Xa
-x5 = Xa
-x6 = TFPI
-x7 = Xa_TFPI
-x8 = Xa_TFPI_VIIa_TF

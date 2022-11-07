@@ -1,32 +1,32 @@
 
-#------------------------------------------------------------------------------
 ####### Pairset and Basis #######
 
 # s-pair, a pair of polynomials
-struct SPair
+struct SPair{Power<:Integer}
     # first generator as index from the basis array
     poly1::Int
     # second generator -//-
     poly2::Int
     # index of lcm(poly1, poly2) in hashtable
-    lcm::ExponentIdx
+    lcm::MonomIdx
     # total degree of lcm
-    deg::Degree
+    deg::Power
 end
 
 #=
-    Core structure that stores S-pairs
+    Stores SPair's
 =#
-mutable struct Pairset
-    pairs::Vector{SPair}
+mutable struct Pairset{Power}
+    pairs::Vector{SPair{Power}}
     # number of filled pairs,
     # Initially zero
     load::Int
 end
 
 # Initialize and return a pairset with capacity for `initial_size` pairs
-function initialize_pairset(; initial_size=2^6) # TODO: fine tune 64
-    pairs = Vector{SPair}(undef, initial_size)
+function initialize_pairset(::Type{Power}; initial_size=2^6) where {Power} 
+    # fine tuned parameter 2^6
+    pairs = Vector{SPair{Power}}(undef, initial_size)
     Pairset(pairs, 0)
 end
 
@@ -35,7 +35,7 @@ function Base.isempty(ps::Pairset)
 end
 
 # checks if it's possible to add `added` number of pairs to the pairset,
-# and extend the pairset if not
+# and extends the pairset if not
 function check_enlarge_pairset!(ps::Pairset, added::Int)
     sz = length(ps.pairs)
     # TODO: shrink pairset ?
@@ -48,14 +48,14 @@ end
 #------------------------------------------------------------------------------
 
 #=
-    Core structure that stores basis generators and some additional info
+    Stores basis generators and some additional info
 =#
-mutable struct Basis{T<:Coeff}
+mutable struct Basis{C<:Coeff}
     # vector of polynomials, each polynomial is a vector of monomials,
-    # each monomial is represented with it's position in hashtable
-    gens::Vector{MonomsVector}
+    # each monomial is represented with it's index in hashtable
+    monoms::Vector{Vector{MonomIdx}}
     # polynomial coefficients
-    coeffs::Vector{CoeffsVector{T}}
+    coeffs::Vector{Vector{C}}
 
     #= Keeping track of sizes   =#
     #=  ndone <= ntotal <= size =#
@@ -83,9 +83,6 @@ mutable struct Basis{T<:Coeff}
     lead::Vector{DivisionMask}
     # number of filled elements in lead
     nlead::Int
-
-    # characteristic of the ground field
-    # ch::T
 end
 
 function initialize_basis(ring::PolyRing, ngens::Int, ::Type{T}) where {T<:Coeff}
@@ -99,8 +96,8 @@ function initialize_basis(ring::PolyRing, ngens::Int, ::Type{T}) where {T<:Coeff
     ntotal = 0
     nlead = 0
 
-    gens = Vector{MonomsVector}(undef, sz)
-    coeffs = Vector{CoeffsVector{T}}(undef, sz)
+    gens = Vector{Vector{MonomIdx}}(undef, sz)
+    coeffs = Vector{Vector{T}}(undef, sz)
     isred = zeros(Int8, sz)
     nonred = Vector{Int}(undef, sz)
     lead = Vector{DivisionMask}(undef, sz)
@@ -110,7 +107,7 @@ function initialize_basis(ring::PolyRing, ngens::Int, ::Type{T}) where {T<:Coeff
     Basis(gens, coeffs, sz, ndone, ntotal, isred, nonred, lead, nlead)
 end
 
-function initialize_basis(ring::PolyRing, hashedexps, coeffs::Vector{CoeffsVector{T}}) where {T<:Coeff}
+function initialize_basis(ring::PolyRing, hashedexps, coeffs::Vector{Vector{T}}) where {T<:Coeff}
     sz = length(hashedexps) # hmmm
     ndone = 0
     ntotal = 0
@@ -128,14 +125,13 @@ end
 #------------------------------------------------------------------------------
 
 function copy_basis_thorough(basis::Basis{T}) where {T}
-    #  That cost a day of debugging ////
-    gens = Vector{MonomsVector}(undef, basis.size)
-    coeffs = Vector{CoeffsVector{T}}(undef, basis.size)
+    gens = Vector{Vector{MonomIdx}}(undef, basis.size)
+    coeffs = Vector{Vector{T}}(undef, basis.size)
     @inbounds for i in 1:basis.ntotal
-        gens[i] = MonomsVector(undef, length(basis.gens[i]))
-        coeffs[i] = CoeffsVector{T}(undef, length(basis.coeffs[i]))
-        @inbounds for j in 1:length(basis.gens[i])
-            gens[i][j] = basis.gens[i][j]
+        gens[i] = Vector{MonomIdx}(undef, length(basis.monoms[i]))
+        coeffs[i] = Vector{T}(undef, length(basis.coeffs[i]))
+        @inbounds for j in 1:length(basis.monoms[i])
+            gens[i][j] = basis.monoms[i][j]
             coeffs[i][j] = basis.coeffs[i][j]
         end
     end
@@ -152,7 +148,7 @@ end
 function check_enlarge_basis!(basis::Basis{T}, added::Int) where {T}
     if basis.ndone + added >= basis.size
         basis.size = max(basis.size * 2, basis.ndone + added)
-        resize!(basis.gens, basis.size)
+        resize!(basis.monoms, basis.size)
         resize!(basis.coeffs, basis.size)
         resize!(basis.isred, basis.size)
         basis.isred[basis.ndone+1:end] .= 0
@@ -207,19 +203,20 @@ end
 #------------------------------------------------------------------------------
 
 function update_pairset!(
-    pairset::Pairset,
-    basis::Basis,
-    ht::MonomialHashtable,
-    update_ht::MonomialHashtable,
-    idx::Int,
-    plcm::Vector{ExponentIdx})
+        pairset::Pairset,
+        basis::Basis,
+        ht::MonomialHashtable{M},
+        update_ht::MonomialHashtable{M},
+        idx::Int,
+        plcm::Vector{MonomIdx}) where {M}
 
+    pr = powertype(M)
     pl = pairset.load
     bl = idx
     nl = pl + bl
     ps = pairset.pairs
 
-    new_lead = basis.gens[idx][1]
+    new_lead = basis.monoms[idx][1]
 
     # @error "Update pairset"
 
@@ -229,18 +226,18 @@ function update_pairset!(
     # initialize new critical lcms
     # plcm = Vector{Int}(undef, bl + 1)
 
-    # for each combination (new_Lead, basis.gens[i][1])
+    # for each combination (new_Lead, basis.monoms[i][1])
     # generate a pair
     @inbounds for i in 1:bl-1
-        plcm[i] = get_lcm(basis.gens[i][1], new_lead, ht, update_ht)
+        plcm[i] = get_lcm(basis.monoms[i][1], new_lead, ht, update_ht)
         deg = update_ht.hashdata[plcm[i]].deg
         newidx = pl + i
         # TRACE: move isred above
         if iszero(basis.isred[i])
-            ps[newidx] = SPair(i, idx, plcm[i], deg)
+            ps[newidx] = SPair(i, idx, plcm[i], pr(deg))
         else
             # lcm == 0 will mark redundancy of spair
-            ps[newidx] = SPair(i, idx, 0, deg)
+            ps[newidx] = SPair(i, idx, MonomIdx(0), pr(deg))
         end
 
     end
@@ -261,7 +258,7 @@ function update_pairset!(
         # and has a greater degree than newly generated one
         if is_monom_divisible(ps[i].lcm, new_lead, ht) && ps[i].deg > m
             # mark lcm as 0
-            ps[i] = SPair(ps[i].poly1, ps[i].poly2, 0, ps[i].deg)
+            ps[i] = SPair(ps[i].poly1, ps[i].poly2, MonomIdx(0), ps[i].deg)
         end
     end
     # TODO: this can be done faster if we
@@ -316,7 +313,7 @@ function update_pairset!(
     lml = basis.nlead
     @inbounds for i in 1:lml
         if iszero(basis.isred[nonred[i]])
-            if is_monom_divisible(basis.gens[nonred[i]][1], new_lead, ht)
+            if is_monom_divisible(basis.monoms[nonred[i]][1], new_lead, ht)
                 basis.isred[nonred[i]] = 1
             end
         end
@@ -348,7 +345,7 @@ function update_basis!(
 
     for i in basis.ndone+1:basis.ntotal
         if basis.isred[i] == 0
-            lead[k] = ht.hashdata[basis.gens[i][1]].divmask
+            lead[k] = ht.hashdata[basis.monoms[i][1]].divmask
             nonred[k] = i
             k += 1
         end
@@ -360,10 +357,10 @@ end
 
 # checks if element of basis at position idx is redundant
 function is_redundant!(
-    pairset::Pairset, basis::Basis, ht::MonomialHashtable, 
-    update_ht::MonomialHashtable, idx::Int)
+    pairset::Pairset, basis::Basis, ht::MonomialHashtable{M}, 
+    update_ht::MonomialHashtable{M}, idx::Int) where {M}
 
-    # TODO
+    pt = powertype(M)
     if 2 * update_ht.load > update_ht.size
         enlarge_hash_table!(update_ht)
     end
@@ -372,7 +369,7 @@ function is_redundant!(
     ps = pairset.pairs
 
     # lead of new polynomial
-    lead_new = basis.gens[idx][1]
+    lead_new = basis.monoms[idx][1]
     # degree of lead
     lead_deg = ht.hashdata[lead_new].deg
 
@@ -382,13 +379,13 @@ function is_redundant!(
             continue
         end
 
-        lead_i = basis.gens[i][1]
+        lead_i = basis.monoms[i][1]
 
         if is_monom_divisible(lead_new, lead_i, ht)
             lcm_new = get_lcm(lead_i, lead_new, ht, ht)
 
             psidx = pairset.load + 1
-            ps[psidx] = SPair(i, idx, lcm_new, ht.hashdata[lcm_new].deg)
+            ps[psidx] = SPair(i, idx, lcm_new, pt(ht.hashdata[lcm_new].deg))
 
             basis.isred[idx] = 1
             pairset.load += 1
@@ -402,13 +399,12 @@ end
 
 #------------------------------------------------------------------------------
 
-
 function update!(
     pairset::Pairset,
     basis::Basis,
-    ht::MonomialHashtable,
-    update_ht::MonomialHashtable,
-    plcm::Vector{ExponentIdx})
+    ht::MonomialHashtable{M},
+    update_ht::MonomialHashtable{M},
+    plcm::Vector{MonomIdx}) where {M}
 
     #=
         Always check redundancy, for now
@@ -450,10 +446,6 @@ function update!(
         # @error pairset.load
     end
 
-    # @error "" red basis.ntotal-basis.ndone
-    # println("--------------------------")
-    # @error "after update" pairset.load length(pairset.pairs)
-
     update_basis!(basis, ht, update_ht)
 
     pairset_size
@@ -463,8 +455,8 @@ end
 
 # given input exponent and coefficient vectors hashes exponents into `ht`
 # and then constructs hashed polynomial vectors for `basis`
-function fill_data!(basis::Basis, ht::MonomialHashtable, 
-        exponents::Vector{Vector{ExponentVector}}, coeffs::Vector{CoeffsVector{T}}) where {T}
+function fill_data!(basis::Basis, ht::MonomialHashtable{M}, 
+        exponents::Vector{Vector{M}}, coeffs::Vector{Vector{T}}) where {M,T}
     ngens = length(exponents)
 
     for i in 1:ngens
@@ -477,8 +469,8 @@ function fill_data!(basis::Basis, ht::MonomialHashtable,
 
         nterms = length(coeffs[i])
         basis.coeffs[i] = coeffs[i]
-        basis.gens[i] = Vector{ExponentIdx}(undef, nterms)
-        poly = basis.gens[i]
+        basis.monoms[i] = Vector{MonomIdx}(undef, nterms)
+        poly = basis.monoms[i]
         for j in 1:nterms
             poly[j] = insert_in_hash_table!(ht, exponents[i][j])
         end
@@ -502,7 +494,7 @@ function filter_redundant!(basis::Basis)
             basis.nonred[j] = basis.nonred[i]
             #=
             basis.coeffs[j] = basis.coeffs[basis.nonred[i]]
-            basis.gens[j] = basis.gens[basis.nonred[i]]
+            basis.monoms[j] = basis.monoms[basis.nonred[i]]
             =#
             j += 1
         end
@@ -520,11 +512,11 @@ function standardize_basis!(ring, basis::Basis, ht::MonomialHashtable, ord)
         basis.nonred[i] = i
         basis.isred[i] = 0
         basis.coeffs[i] = basis.coeffs[idx]
-        basis.gens[i] = basis.gens[idx]
+        basis.monoms[i] = basis.monoms[idx]
     end
     basis.size = basis.ndone = basis.ntotal = basis.nlead
     resize!(basis.coeffs, basis.ndone)
-    resize!(basis.gens, basis.ndone)
+    resize!(basis.monoms, basis.ndone)
     resize!(basis.lead, basis.ndone)
     resize!(basis.nonred, basis.ndone)
     resize!(basis.isred, basis.ndone)
@@ -533,14 +525,14 @@ function standardize_basis!(ring, basis::Basis, ht::MonomialHashtable, ord)
     normalize_basis!(ring, basis)
 end
 
-function export_basis_data(basis::Basis{C}, ht::MonomialHashtable) where {C<:Coeff}
-    exps = Vector{Vector{ExponentVector}}(undef, basis.nlead)
+function export_basis_data(basis::Basis{C}, ht::MonomialHashtable{M}) where {M<:Monom,C<:Coeff}
+    exps = Vector{Vector{M}}(undef, basis.nlead)
     coeffs = Vector{Vector{C}}(undef, basis.nlead)
 
     for i in 1:basis.nlead
         idx = basis.nonred[i]
-        poly = basis.gens[idx]
-        exps[i] = Vector{ExponentVector}(undef, length(poly))
+        poly = basis.monoms[idx]
+        exps[i] = Vector{M}(undef, length(poly))
         for j in 1:length(poly)
             exps[i][j] = ht.exponents[poly[j]]
         end
@@ -550,12 +542,12 @@ function export_basis_data(basis::Basis{C}, ht::MonomialHashtable) where {C<:Coe
     exps, coeffs
 end
 
-function hash_to_exponents(basis::Basis, ht::MonomialHashtable)
-    exps = Vector{Vector{ExponentVector}}(undef, basis.nlead)
+function hash_to_exponents(basis::Basis, ht::MonomialHashtable{M}) where {M}
+    exps = Vector{Vector{M}}(undef, basis.nlead)
     for i in 1:basis.nlead
         idx = basis.nonred[i]
-        poly = basis.gens[idx]
-        exps[i] = Vector{ExponentVector}(undef, length(poly))
+        poly = basis.monoms[idx]
+        exps[i] = Vector{M}(undef, length(poly))
         @inbounds for j in 1:length(poly)
             exps[i][j] = ht.exponents[poly[j]]
         end
@@ -566,15 +558,15 @@ end
 function insert_plcms_in_basis_hash_table!(
     pairset::Pairset,
     off::Int,
-    ht::MonomialHashtable,
-    update_ht::MonomialHashtable,
+    ht::MonomialHashtable{M},
+    update_ht::MonomialHashtable{M},
     basis::Basis,
-    plcm::Vector{ExponentIdx},
-    ifirst::Int, ilast::Int)
+    plcm::Vector{MonomIdx},
+    ifirst::Int, ilast::Int) where {M}
 
     # including ifirst and not including ilast
 
-    gens = basis.gens
+    gens = basis.monoms
     mod = UInt32(ht.size - 1)
     ps = pairset.pairs
 
@@ -594,8 +586,6 @@ function insert_plcms_in_basis_hash_table!(
 
         ps[m] = ps[off+l]
 
-        # TODO: IT IS NOT CORRECT
-        # upd: it is, but it can be done better
         h = update_ht.hashdata[plcm[l]].hash
         ht.exponents[ht.load+1] = copy(update_ht.exponents[plcm[l]])
         n = ht.exponents[ht.load+1]
@@ -615,13 +605,16 @@ function insert_plcms_in_basis_hash_table!(
 
             ehm = ht.exponents[hm]
 
-            # @info "SO, we have " n ehm m
-            for j in 1:ht.explen
-                if ehm[j] != n[j]
-                    i += ExponentHash(1)
-                    @goto Restart
-                end
+            if !is_monom_elementwise_eq(ehm, n)
+                i += MonomHash(1)
+                @goto Restart
             end
+            # for j in 1:ht.explen
+            #     if ehm[j] != n[j]
+            #         i += MonomHash(1)
+            #         @goto Restart
+            #     end
+            # end
 
             ps[m] = SPair(ps[m].poly1, ps[m].poly2, hm, ps[m].deg)
             m += 1
@@ -637,7 +630,7 @@ function insert_plcms_in_basis_hash_table!(
         ht.hashdata[ht.load+1] = Hashvalue(h, uhd[ll].divmask, 0, uhd[ll].deg)
 
         ht.load += 1
-        ps[m] = SPair(ps[m].poly1, ps[m].poly2, pos, ps[m].deg)
+        ps[m] = SPair(ps[m].poly1, ps[m].poly2, MonomIdx(pos), ps[m].deg)
         m += 1
         l += 1
     end

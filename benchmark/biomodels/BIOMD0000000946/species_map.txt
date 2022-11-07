@@ -1,7 +1,0 @@
-x1 = L_m
-x2 = H_m
-x3 = L_e
-x4 = H_e
-x5 = L_c
-x6 = H_c
-x7 = L_n

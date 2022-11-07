@@ -1,5 +1,0 @@
-x1 = Susceptible
-x2 = Exposed
-x3 = Infected
-x4 = Recovered
-x5 = Total_Population

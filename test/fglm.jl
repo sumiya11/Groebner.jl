@@ -1,21 +1,29 @@
 
+using AbstractAlgebra
+
 @testset "fglm finite field" begin
 
     R, (x, y) = PolynomialRing(GF(2^31-1), ["x","y"], ordering=:degrevlex)
-
+    
     noon = Groebner.change_ordering(Groebner.noonn(2, ground=GF(2^31-1)), :degrevlex)
     gb = Groebner.groebner(noon, ordering=:degrevlex)
+    @test AbstractAlgebra.ordering(AbstractAlgebra.parent(gb[1])) == :degrevlex
     x1, x2 = gens(parent(first(Groebner.fglm(gb))))
+    @test AbstractAlgebra.ordering(AbstractAlgebra.parent(x1)) == :lex
     @test Groebner.fglm(gb) == [x2^5 + 1952257860*x2^4 + 1288490186*x2^3 + 2*x2^2 + 1028839893*x2 + 644245093,
                                 x1 + x2^4 + 1952257860*x2^3 + 644245093*x2^2 + x2 + 1952257860]
-
+    
     gb = Groebner.groebner(noon, ordering=:deglex)
+    @test AbstractAlgebra.ordering(AbstractAlgebra.parent(gb[1])) == :deglex
     x1, x2 = gens(parent(first(Groebner.fglm(gb))))
+    @test AbstractAlgebra.ordering(AbstractAlgebra.parent(x1)) == :lex
     @test Groebner.fglm(gb) == [x2^5 + 1952257860*x2^4 + 1288490186*x2^3 + 2*x2^2 + 1028839893*x2 + 644245093,
                                 x1 + x2^4 + 1952257860*x2^3 + 644245093*x2^2 + x2 + 1952257860]
 
     gb = Groebner.groebner(noon, ordering=:lex)
+    @test AbstractAlgebra.ordering(AbstractAlgebra.parent(gb[1])) == :lex
     x1, x2 = gens(parent(first(Groebner.fglm(gb))))
+    @test AbstractAlgebra.ordering(AbstractAlgebra.parent(x1)) == :lex
     @test Groebner.fglm(gb) == [x2^5 + 1952257860*x2^4 + 1288490186*x2^3 + 2*x2^2 + 1028839893*x2 + 644245093,
                                 x1 + x2^4 + 1952257860*x2^3 + 644245093*x2^2 + x2 + 1952257860]
 

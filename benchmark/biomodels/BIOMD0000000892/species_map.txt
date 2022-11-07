@@ -1,4 +1,0 @@
-x1 = T
-x2 = I
-x3 = VI
-x4 = VNI

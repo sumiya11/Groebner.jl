@@ -1,7 +1,7 @@
 
 using AbstractAlgebra
 
-@testset "Groebner modular Integers" begin
+@testset "zz groebner modular" begin
     R, (x,) = PolynomialRing(ZZ, ["x"], ordering=:degrevlex)
     @test Groebner.groebner([x]) == [x]
     @test Groebner.groebner([4x]) == [x]
@@ -29,7 +29,7 @@ using AbstractAlgebra
     Groebner.groebner([4x + 1, 3y + 6])
 end
 
-@testset "Groebner modular Rationals" begin
+@testset "qq groebner modular" begin
     R, (x,) = PolynomialRing(QQ, ["x"], ordering=:degrevlex)
     @test Groebner.groebner([x]) == [x]
     @test Groebner.groebner([4x]) == [x]
@@ -80,8 +80,6 @@ end
     gb = Groebner.groebner(root)
     @test Groebner.isgroebner(gb)
     
-
-    
     noon = Groebner.change_ordering(Groebner.noonn(3, ground=QQ), :degrevlex)
     gb = Groebner.groebner(noon)
     @test Groebner.isgroebner(gb)
@@ -92,7 +90,7 @@ end
     
 end
 
-@testset "Groebner modular corner cases" begin
+@testset "qq groebner corners" begin
 
     R, (x, y, z, w) = PolynomialRing(QQ, ["x", "y", "z", "w"], ordering=:degrevlex)
 

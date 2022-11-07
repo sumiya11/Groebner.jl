@@ -1,8 +1,4 @@
 
-#=
-    Same as f4.jl, but with tracing.
-=#
-
 mutable struct Tracer
     isredundant_iter::Vector{Int}
     pairset_size::Int

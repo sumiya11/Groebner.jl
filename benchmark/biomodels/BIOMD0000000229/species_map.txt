@@ -1,7 +1,0 @@
-x1 = ACA
-x2 = CAR1
-x3 = PKA
-x4 = incAMP
-x5 = ERK2
-x6 = REGA
-x7 = excAMP

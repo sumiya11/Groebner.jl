@@ -1,137 +1,66 @@
 
-# sorts generators and corresponding coefficients from basis
-# by their leading monomial in increasing ordering
-#
-# Used only once to sort input generators
-function sort_gens_by_lead_increasing!(basis::Basis, ht::MonomialHashtable)
-    gens = basis.gens  # Vector{Vector{Int}} gens = [gen1, .. genn], geni = [3, 1, 4]
-    exps = ht.exponents # [exp1, exp2, exp3,... expm, undef...undef]
-
-    inds = collect(1:basis.ntotal)
-
-    if ht.ord == :degrevlex
-        cmp  = (x, y) -> exponent_isless_drl(
-                                @inbounds(exps[gens[x][1]]),
-                                @inbounds(exps[gens[y][1]]))
-    elseif ht.ord == :lex
-        cmp  = (x, y) -> exponent_isless_lex(
-                                @inbounds(exps[gens[x][1]]),
-                                @inbounds(exps[gens[y][1]]))
-    else
-        cmp  = (x, y) -> exponent_isless_dl(
-                                @inbounds(exps[gens[x][1]]),
-                                @inbounds(exps[gens[y][1]]))
-    end
-
-    sort!(inds, lt=cmp)
-    
-    # use array assignment insted of elemewise assignment
-    # Reason: slice array assignment uses fast setindex! based on unsafe copy
-    basis.gens[1:basis.ntotal]   = basis.gens[inds]
-    basis.coeffs[1:basis.ntotal] = basis.coeffs[inds]
+function monom_isless(a, b, ::Val{:degrevlex})
+    exponent_isless_drl(a, b)
 end
+
+function monom_isless(a, b, ::Val{:lex})
+    exponent_isless_lex(a, b)
+end
+
+function monom_isless(a, b, ::Val{:deglex})
+    exponent_isless_dl(a, b)
+end
+
+#------------------------------------------------------------------------------
 
 # sorts generators and corresponding coefficients from basis
 # by their leading monomial in increasing ordering
 #
 # Used only once to sort input generators
 function sort_gens_by_lead_increasing!(
-            basis::Basis, ht::MonomialHashtable, coeffs_zz, coeffs_qq)
-    gens = basis.gens
-    exps = ht.exponents
-
-    if length(gens) != basis.ntotal 
-        throw(DomainError("beda"))
-    end
-
-    inds = collect(1:basis.ntotal)
-
-    if ht.ord == :degrevlex
-        cmp  = (x, y) -> exponent_isless_drl(
-                                @inbounds(exps[gens[x][1]]),
-                                @inbounds(exps[gens[y][1]]))
-    elseif ht.ord == :lex
-        cmp  = (x, y) -> exponent_isless_lex(
-                                @inbounds(exps[gens[x][1]]),
-                                @inbounds(exps[gens[y][1]]))
-    else
-        cmp  = (x, y) -> exponent_isless_dl(
-                                @inbounds(exps[gens[x][1]]),
-                                @inbounds(exps[gens[y][1]]))
-    end
-    sort!(inds, lt=cmp)
-
-    # use array assignment insted of elemewise assignment
-    # Reason: slice array assignment uses fast setindex! based on unsafe copy
-    basis.gens[1:basis.ntotal]   = basis.gens[inds]
-    basis.coeffs[1:basis.ntotal] = basis.coeffs[inds]
-    coeffs_zz[1:basis.ntotal]    = coeffs_zz[inds]
-    coeffs_qq[1:basis.ntotal]    = coeffs_qq[inds]
-end
-
-function sort_gens_by_lead_increasing!(
-            basis::Basis, ht::MonomialHashtable, coeffs_zz)
-    gens = basis.gens
+            basis::Basis, ht::MonomialHashtable, abc...)
+    gens = basis.monoms
     exps = ht.exponents
 
     inds = collect(1:basis.ntotal)
 
-    if ht.ord == :degrevlex
-        cmp  = (x, y) -> exponent_isless_drl(
-                                @inbounds(exps[gens[x][1]]),
-                                @inbounds(exps[gens[y][1]]))
-    elseif ht.ord == :lex
-        cmp  = (x, y) -> exponent_isless_lex(
-                                @inbounds(exps[gens[x][1]]),
-                                @inbounds(exps[gens[y][1]]))
-    else
-        cmp  = (x, y) -> exponent_isless_dl(
-                                @inbounds(exps[gens[x][1]]),
-                                @inbounds(exps[gens[y][1]]))
-    end
+    cmp = (x, y) -> monom_isless(
+        @inbounds(exps[gens[x][1]]), 
+        @inbounds(exps[gens[y][1]]), 
+        Val(ht.ord)
+    )
+
     sort!(inds, lt=cmp)
 
     # use array assignment insted of elemewise assignment
-    # Reason: slice array assignment uses fast setindex! based on unsafe copy
-    basis.gens[1:basis.ntotal]   = basis.gens[inds]
+    basis.monoms[1:basis.ntotal]   = basis.monoms[inds]
     basis.coeffs[1:basis.ntotal] = basis.coeffs[inds]
-    coeffs_zz[1:basis.ntotal]    = coeffs_zz[inds]
+    for a in abc
+        a[1:basis.ntotal] = a[inds]
+    end
 end
 
-# sorts generators and corresponding coefficients from basis
-# by their leading monomial in increasing ordering
-#
-# Used only once to sort output generators
 function sort_gens_by_lead_increasing_in_reduce!(basis::Basis, ht::MonomialHashtable)
-    gens = basis.gens
+    gens = basis.monoms
     exps = ht.exponents
     nnr  = basis.nonred
 
     inds = collect(1:basis.nlead)
 
-    if ht.ord == :degrevlex
-        cmp  = (x, y) -> exponent_isless_drl(
-                                @inbounds(exps[gens[nnr[x]][1]]),
-                                @inbounds(exps[gens[nnr[y]][1]]))
-    elseif ht.ord == :lex
-        cmp  = (x, y) -> exponent_isless_lex(
-                                @inbounds(exps[gens[nnr[x]][1]]),
-                                @inbounds(exps[gens[nnr[y]][1]]))
-    else
-        cmp  = (x, y) -> exponent_isless_dl(
-                                @inbounds(exps[gens[nnr[x]][1]]),
-                                @inbounds(exps[gens[nnr[y]][1]]))
-    end
+    cmp = (x, y) -> monom_isless(
+        @inbounds(exps[gens[nnr[x]][1]]), 
+        @inbounds(exps[gens[nnr[y]][1]]), 
+        Val(ht.ord)
+    )
     sort!(inds, lt=cmp)
 
     # use array assignment insted of elemewise assignment
-    # Reason: slice array assignment uses fast setindex! based on unsafe copy
-    basis.gens[nnr[1:basis.nlead]]   = basis.gens[nnr[inds]]
+    basis.monoms[nnr[1:basis.nlead]]   = basis.monoms[nnr[inds]]
     basis.coeffs[nnr[1:basis.nlead]] = basis.coeffs[nnr[inds]]
 end
 
 function sort_gens_by_lead_increasing_in_standardize!(basis::Basis, ht::MonomialHashtable, ord)
-    gens = basis.gens
+    gens = basis.monoms
     exps = ht.exponents
     nnr  = basis.nonred
 
@@ -139,24 +68,16 @@ function sort_gens_by_lead_increasing_in_standardize!(basis::Basis, ht::Monomial
 
     @assert inds == nnr
 
-    if ord == :degrevlex
-        cmp  = (x, y) -> exponent_isless_drl(
-                                @inbounds(exps[gens[x][1]]),
-                                @inbounds(exps[gens[y][1]]))
-    elseif ord == :lex
-        cmp  = (x, y) -> exponent_isless_lex(
-                                @inbounds(exps[gens[x][1]]),
-                                @inbounds(exps[gens[y][1]]))
-    else
-        cmp  = (x, y) -> exponent_isless_dl(
-                                @inbounds(exps[gens[x][1]]),
-                                @inbounds(exps[gens[y][1]]))
-    end
+    cmp = (x, y) -> monom_isless(
+        @inbounds(exps[gens[x][1]]), 
+        @inbounds(exps[gens[y][1]]), 
+        Val(ord)
+    )
     sort!(inds, lt=cmp)
 
     # use array assignment insted of elemewise assignment
     # Reason: slice array assignment uses fast setindex! based on unsafe copy
-    basis.gens[1:basis.nlead]   = basis.gens[inds]
+    basis.monoms[1:basis.nlead]   = basis.monoms[inds]
     basis.coeffs[1:basis.nlead] = basis.coeffs[inds]
     basis.lead[1:basis.nlead]   = basis.lead[inds]
 end
@@ -188,19 +109,12 @@ function sort_pairset_by_lcm!(
     part = pairset.pairs[1:npairs]
     exps = ht.exponents
 
-    if ht.ord == :degrevlex
-        sort!(part, lt=(x, y) -> exponent_isless_drl(
-                                        @inbounds(exps[x.lcm]),
-                                        @inbounds(exps[y.lcm])))
-    elseif ht.ord == :lex
-        sort!(part, lt=(x, y) -> exponent_isless_lex(
-                                        @inbounds(exps[x.lcm]),
-                                        @inbounds(exps[y.lcm])))
-    else
-        sort!(part, lt=(x, y) -> exponent_isless_dl(
-                                        @inbounds(exps[x.lcm]),
-                                        @inbounds(exps[y.lcm])))
-    end
+    cmp = (x, y) -> monom_isless(
+        @inbounds(exps[x.lcm]), 
+        @inbounds(exps[y.lcm]), 
+        Val(ht.ord)
+    )
+    sort!(part, lt=cmp)
 
     pairset.pairs[1:npairs] = part
 end
@@ -210,67 +124,11 @@ end
 # sorts generators selected in normal strategy function
 # by their ordering in the current basis (identity sort)
 function sort_generators_by_position!(gens::Vector{Int}, load::Int)
-    # @info "Sorting first $load gens"
     part = gens[1:load]
 
     sort!(part)
 
     gens[1:load] = part
-end
-
-#------------------------------------------------------------------------------
-
-#=
-    :degrevlex exponent vector comparison
-=#
-function exponent_isless_drl(ea::ExponentVector, eb::ExponentVector)
-    if @inbounds ea[end] < eb[end]
-        return true
-    elseif @inbounds ea[end] != eb[end]
-        return false
-    end
-
-    # assuming length(ea) > 1
-    # @assert length(ea) > 1
-
-    i = length(ea) - 1
-    @inbounds while i > 1 && ea[i] == eb[i]
-        i -= 1
-    end
-
-    if ea[i] <= eb[i]
-        return false
-    else
-        return true
-    end
-end
-
-#=
-    :deglex exponent vector comparison
-=#
-function exponent_isless_dl(ea::ExponentVector, eb::ExponentVector)
-    if @inbounds ea[end] < eb[end]
-        return true
-    elseif @inbounds ea[end] != eb[end]
-        return false
-    end
-
-    i = 1
-    @inbounds while (i < length(ea) - 1) && ea[i] == eb[i]
-        i += 1
-    end
-    return ea[i] < eb[i] ? true : false
-end
-
-#=
-    :lex exponent vector comparison
-=#
-function exponent_isless_lex(ea::ExponentVector, eb::ExponentVector)
-    i = 1
-    @inbounds while (i < length(ea) - 1) && ea[i] == eb[i]
-        i += 1
-    end
-    return ea[i] < eb[i] ? true : false
 end
 
 #------------------------------------------------------------------------------
@@ -384,7 +242,6 @@ end
 function sort_columns_by_hash!(col2hash, symbol_ht)
     hd = symbol_ht.hashdata
     es = symbol_ht.exponents
-    len = symbol_ht.explen
 
     function cmp(a, b, exponent_isless)
         @inbounds ha = hd[a]
@@ -413,19 +270,11 @@ end
 
 function sort_input_to_change_ordering(exps, coeffs, ord::Symbol)
     for polyidx in 1:length(exps)
-        if ord == :degrevlex
-            cmp  = (x, y) -> exponent_isless_drl(
-                                    @inbounds(exps[polyidx][y]),
-                                    @inbounds(exps[polyidx][x]))
-        elseif ord == :lex
-            cmp  = (x, y) -> exponent_isless_lex(
-                                    @inbounds(exps[polyidx][y]),
-                                    @inbounds(exps[polyidx][x]))
-        else
-            cmp  = (x, y) -> exponent_isless_dl(
-                                    @inbounds(exps[polyidx][y]),
-                                    @inbounds(exps[polyidx][x]))
-        end
+        cmp = (x, y) -> monom_isless(
+            @inbounds(exps[polyidx][y]), 
+            @inbounds(exps[polyidx][x]), 
+            Val(ord)
+        )
 
         inds = collect(1:length(exps[polyidx]))
 
@@ -438,21 +287,14 @@ end
 
 #------------------------------------------------------------------------------
 
-function sort_monoms_increasing!(monoms::Vector{ExponentIdx}, cnt, ht, ord::Symbol)
+function sort_monoms_increasing!(monoms::Vector{MonomIdx}, cnt, ht, ord::Symbol)
     exps = ht.exponents
-    if ord == :degrevlex
-        cmp  = (x, y) -> exponent_isless_drl(
-                                @inbounds(exps[monoms[x]]),
-                                @inbounds(exps[monoms[y]]))
-    elseif ord == :lex
-        cmp  = (x, y) -> exponent_isless_lex(
-                                @inbounds(exps[monoms[x]]),
-                                @inbounds(exps[monoms[y]]))
-    else
-        cmp  = (x, y) -> exponent_isless_dl(
-                                @inbounds(exps[monoms[x]]),
-                                @inbounds(exps[monoms[y]]))
-    end
+
+    cmp = (x, y) -> monom_isless(
+        @inbounds(exps[monoms[x]]), 
+        @inbounds(exps[monoms[y]]), 
+        Val(ht.ord)
+    )
 
     inds = collect(1:cnt)
 
@@ -461,21 +303,14 @@ function sort_monoms_increasing!(monoms::Vector{ExponentIdx}, cnt, ht, ord::Symb
     monoms[1:cnt] = monoms[inds]
 end
 
-function sort_monoms_decreasing!(monoms::Vector{ExponentIdx}, cnt, ht, ord::Symbol)
+function sort_monoms_decreasing!(monoms::Vector{MonomIdx}, cnt, ht, ord::Symbol)
     exps = ht.exponents
-    if ord == :degrevlex
-        cmp  = (x, y) -> exponent_isless_drl(
-                                @inbounds(exps[monoms[y]]),
-                                @inbounds(exps[monoms[x]]))
-    elseif ord == :lex
-        cmp  = (x, y) -> exponent_isless_lex(
-                                @inbounds(exps[monoms[y]]),
-                                @inbounds(exps[monoms[x]]))
-    else
-        cmp  = (x, y) -> exponent_isless_dl(
-                                @inbounds(exps[monoms[y]]),
-                                @inbounds(exps[monoms[x]]))
-    end
+
+    cmp = (x, y) -> monom_isless(
+        @inbounds(exps[monoms[y]]), 
+        @inbounds(exps[monoms[x]]), 
+        Val(ord)
+    )
 
     inds = collect(1:cnt)
 
@@ -484,23 +319,14 @@ function sort_monoms_decreasing!(monoms::Vector{ExponentIdx}, cnt, ht, ord::Symb
     monoms[1:cnt] = monoms[inds]
 end
 
-#------------------------------------------------------------------------------
-
-function sort_terms_decreasing!(monoms::Vector{ExponentIdx}, coeffs, ht, ord::Symbol)
+function sort_terms_decreasing!(monoms::Vector{MonomIdx}, coeffs, ht, ord::Symbol)
     exps = ht.exponents
-    if ord == :degrevlex
-        cmp  = (x, y) -> exponent_isless_drl(
-                                @inbounds(exps[monoms[y]]),
-                                @inbounds(exps[monoms[x]]))
-    elseif ord == :lex
-        cmp  = (x, y) -> exponent_isless_lex(
-                                @inbounds(exps[monoms[y]]),
-                                @inbounds(exps[monoms[x]]))
-    else
-        cmp  = (x, y) -> exponent_isless_dl(
-                                @inbounds(exps[monoms[y]]),
-                                @inbounds(exps[monoms[x]]))
-    end
+    
+    cmp = (x, y) -> monom_isless(
+        @inbounds(exps[monoms[y]]), 
+        @inbounds(exps[monoms[x]]), 
+        Val(ord)
+    )
 
     inds = collect(1:length(monoms))
 

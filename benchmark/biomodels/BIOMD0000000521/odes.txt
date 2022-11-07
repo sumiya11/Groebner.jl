@@ -1,4 +1,0 @@
-{ diff(x1, t) = (-k9)*x1,
-  diff(x2, t) = k4*x2*(1 - (x2 + x3 + x4)/k10) + k6*x4 - k5*x2 - k8*x1*k9*x2,
-  diff(x3, t) = k5 - k8*x1*k9*x3,
-  diff(x4, t) = k8*x1*k9*x3 - k6*x4 - k7*x4 }

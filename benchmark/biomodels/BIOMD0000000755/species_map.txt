@@ -1,9 +1,0 @@
-x1 = TF
-x2 = X
-x3 = Xa_Va
-x4 = II
-x5 = IIa
-x6 = Xa_Va_II
-x7 = mIIa
-x8 = mIIa_ATIII
-x9 = IIa_ATIII

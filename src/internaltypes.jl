@@ -1,19 +1,23 @@
 
-#------------------------------------------------------------------------------
+# F4 supports several coefficient types
+# (Integers modulo prime, Integers, Rational numbers)
+# and several exponent-vector implementations
+# (Vector, Packed vector, Sparse Packed vector).
+# These are described below in the file.
 
 # Polynomial coefficient from finite field type.
 # Among those, UInt64 is the default type used in modular computations
 #=
     The most suitable type is chosen based on the size of the
-    field characteristic of computation:
+    field characteristic during combination:
 
     2^1  <= char < 2^4   ==>   UInt8
     2^4  <= char < 2^8   ==>   UInt16
     2^8  <= char < 2^16  ==>   UInt32
-    2^16 <= char < 2^32  ==>   UInt32
+    2^16 <= char < 2^32  ==>   UInt64
     2^32 <= char < 2^64  ==>   UInt128
-
 =#
+
 # Finite field characteristic will be of the same type
 # as the coefficients, hence, a subtype of CoeffFF
 if isdefined(Groebner, :UInt128)
@@ -28,11 +32,12 @@ const CoeffZZ = Union{BigInt}
 # Polynomial coefficient from rational field type
 const CoeffQQ = Union{Rational{BigInt}}
 
+# Polynomial coefficient from K[t1,...,tm] 
 # to be done with Gleb !
-# const CoeffParam = something
+const CoeffParam = Union{AbstractAlgebra.PolyElem, AbstractAlgebra.MPolyElem}
 
 # All supported coefficient types in F4
-const Coeff = Union{CoeffFF, CoeffZZ, CoeffQQ}
+const Coeff = Union{CoeffFF, CoeffZZ, CoeffQQ, CoeffParam}
 
 #------------------------------------------------------------------------------
 
@@ -44,37 +49,42 @@ const CoeffModular = UInt64
 
 #------------------------------------------------------------------------------
 
-# Polynomial monomial exponent vector type;
-#       works for total degrees up to 65535,
-#       that can be a limitation for very large problems
-#       (the problem has not been encountered yet)
-const ExponentVector = Vector{UInt16}
-const Degree = eltype(ExponentVector)
+# There are several possible exponent vector implementations
+# The default one is Packed implementation, which may vary
+# based on some heuristics
 
-# Hashtable index type: is basically an index for ExponentVector in a hashtable
-# get(h::Hashtable, i::ExponentIdx) --> v::ExponentVector
-const ExponentIdx = Int32
+# Sparse monomial exponent vector type;
+# used for computations in very sparse problems
+const SparseExponentVector = Union{Vector}
 
+# Packed monomial exponent vector type;
+# In 99% of cases, this representation is used
+const PackedExponentVector = Union{AbstractPackedPair}
+
+# Standard monomial exponent vector type;
+# works for total degrees up to 2^64-1;
+# Used as a last resort (in case Packed representation fails)
+# (which is the maximum degree possible in Julia)
+# (if we ensure compatibility with AbstractAlgebra.jl)
+const ExponentVector = Union{Vector}
+
+# All supported monomial implementations in F4
+const Monom = Union{ExponentVector, SparseExponentVector, PackedExponentVector}
+
+powertype(m::Monom) = eltype(m)
+powertype(::Type{M}) where {M<:Monom} = eltype(M)
+
+#------------------------------------------------------------------------------
+
+# Index of a monomial in the hashtable
+const MonomIdx = Int32
+
+# Hash of a monomial in the hashtable
+# !!! Changing the type of hash will cause errors
+const MonomHash = UInt32
+
+# Division mask of a monomial 
 const DivisionMask = UInt32
 
-# Hash of ExponentVector
-const ExponentHash = UInt32
-
-#------------------------------------------------------------------------------
-
-#=
-    MonomsVector of a zero polynomial is an empty `MonomsVector` object.
-    CoeffsVector of a zero polynomial{T} is an empty `CoeffsVector{T}` object.
-=#
-
-# Vector of polynomial monomials
-const MonomsVector = Vector{ExponentIdx}
-# Vector of polynomial coefficients
-const CoeffsVector{T<:Coeff} = Vector{T}
-
-#------------------------------------------------------------------------------
-
-# Column index of a matrix
+# Column index of a monomial in the matrix
 const ColumnIdx = Int32
-
-#------------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 
-@testset "Normal form f4 finite fields" begin
+@testset "ff normal form" begin
 
     R, (x, y, z) = PolynomialRing(GF(2^31 - 1), ["x", "y", "z"])
 
@@ -37,7 +37,7 @@
     @test_nowarn Groebner.normalform([x, x*y], x)
 end
 
-@testset "Normal form -- a lot of variables" begin
+@testset "normal form many variables" begin
     R, xs = PolynomialRing(QQ, ["x$i" for i in 1:63])
 
     GB = Groebner.groebner(xs)

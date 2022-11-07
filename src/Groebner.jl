@@ -45,6 +45,8 @@ function printall()
     CORRTIME = 0.0
 end
 
+import Base: ==
+
 # most of these are not needed
 # TODO
 import AbstractAlgebra
@@ -76,20 +78,24 @@ import Logging: ConsoleLogger, LogLevel
 import MultivariatePolynomials
 import MultivariatePolynomials: AbstractPolynomial, AbstractPolynomialLike
 
-# type aliases for internal objects
-include("internaltypes.jl")
-
 # some simple reference implementations
 include("reference.jl")
+
+# modular arithmetic for CRT and rational reconstruction
+include("arithmetic/modular.jl")
+# monomial implementations
+include("monoms/packedutils.jl")
+include("monoms/powervector.jl")
+include("monoms/packedpairs.jl")
+
+# type aliases for internal objects
+include("internaltypes.jl")
 
 # computation parameters control
 include("metainfo.jl")
 
 # input-output coыnversions for polynomials
 include("io.jl")
-
-# modular arithmetic for CRT and rational reconstruction
-include("arithmetic/modular.jl")
 
 #= generic f4 implementation =#
 #= the heart of this library =#
@@ -125,7 +131,6 @@ include("interface.jl")
 
 # example systems definitions
 include("testgens.jl")
-
 
 export groebner
 export isgroebner

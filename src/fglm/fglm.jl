@@ -1,13 +1,13 @@
 
 function clean_input_fglm!(ring::PolyRing,
-        exps::Vector{Vector{ExponentVector}},
-        coeffs::Vector{CoeffsVector{T}}) where {T}
+        exps::Vector{Vector{M}},
+        coeffs::Vector{Vector{T}}) where {M, T}
     clean_input_groebner!(ring, exps, coeffs)
 end
 
 function clean_input_kbase!(ring::PolyRing,
-        exps::Vector{Vector{ExponentVector}},
-        coeffs::Vector{CoeffsVector{T}}) where {T}
+        exps::Vector{Vector{M}},
+        coeffs::Vector{Vector{T}}) where {M, T}
     clean_input_groebner!(ring, exps, coeffs)
 end
 
@@ -18,7 +18,7 @@ end
 
 mutable struct NextMonomials
     # monomials to check
-    monoms::Vector{ExponentIdx}
+    monoms::Vector{MonomIdx}
     load::Int
     done::Dict{Int,Int}
     ord::Symbol
@@ -26,17 +26,19 @@ end
 
 Base.isempty(m::NextMonomials) = m.load == 0
 
-function initialize_nextmonomials(ht, ord)
-    vidx = insert_in_hash_table!(ht, zero(ht.exponents[1]))
-    monoms = Vector{ExponentIdx}(undef, 2^3)
+function initialize_nextmonomials(ht::MonomialHashtable{M}, ord) where {M}
+    zz = make_zero_ev(M, ht.nvars)
+    vidx = insert_in_hash_table!(ht, zz)
+    monoms = Vector{MonomIdx}(undef, 2^3)
     monoms[1] = vidx
     load = 1
-    NextMonomials(monoms, load, Dict{ExponentIdx,Int}(vidx => 1), ord)
+    NextMonomials(monoms, load, Dict{MonomIdx,Int}(vidx => 1), ord)
 end
 
 function insertnexts!(
     m::NextMonomials,
-    ht::MonomialHashtable, monom::ExponentIdx)
+    ht::MonomialHashtable{M}, monom::MonomIdx) where {M}
+
     while m.load + ht.nvars >= length(m.monoms)
         resize!(m.monoms, length(m.monoms) * 2)
     end
@@ -44,8 +46,10 @@ function insertnexts!(
     emonom = ht.exponents[monom]
     for i in 1:ht.nvars
         eprod = copy(emonom)
-        eprod[i] += 1
-        eprod[end] += 1
+        tmp = Vector{UInt}(undef, ht.nvars)
+        edense = make_dense!(tmp, eprod)
+        edense[i] += 1
+        eprod = make_ev(M, edense)
         vidx = insert_in_hash_table!(ht, eprod)
 
         if !haskey(m.done, vidx)
@@ -90,7 +94,7 @@ function add_generator!(basis::Basis{C}, matrix, relation, ht, ord) where {C<:Co
     basis.ndone += 1
     basis.nlead += 1
     basis.nonred[basis.nlead] = basis.nlead
-    basis.gens[basis.ndone] = rexps
+    basis.monoms[basis.ndone] = rexps
     basis.coeffs[basis.ndone] = rcoeffs
 end
 
@@ -114,11 +118,11 @@ function fglm_f4!(
     basis::Basis{C},
     ht::MonomialHashtable,
     ord::Symbol) where {C<:Coeff}
-
+    
     newbasis = initialize_basis(ring, basis.ntotal, C)
     nextmonoms = initialize_nextmonomials(ht, ord)
     matrix = initialize_double_matrix(basis)
-    staircase = ExponentIdx[]
+    staircase = MonomIdx[]
 
     while !isempty(nextmonoms)
         monom = nextmonomial!(nextmonoms)
@@ -128,7 +132,7 @@ function fglm_f4!(
             @warn "" ht
             println("#############")
             println(nextmonoms)
-            println(newbasis.gens, " ", newbasis.coeffs)
+            println(newbasis.monoms, " ", newbasis.coeffs)
         end
 
         if divides_staircase(monom, staircase, ht)
@@ -142,7 +146,7 @@ function fglm_f4!(
         normal_form_f4!(ring, basis, ht, tobereduced)
 
         if debug()
-            println("Normal form ", tobereduced.gens[1], " ", tobereduced.coeffs[1])
+            println("Normal form ", tobereduced.monoms[1], " ", tobereduced.coeffs[1])
         end
 
         # matrix left rows can express tobereduced?
@@ -183,9 +187,9 @@ end
 
 function fglm_f4(
     ring::PolyRing,
-    basisexps::Vector{Vector{ExponentVector}},
+    basisexps::Vector{Vector{M}},
     basiscoeffs::Vector{Vector{C}},
-    metainfo) where {C<:Coeff}
+    metainfo) where {M, C<:Coeff}
 
     tablesize = select_tablesize(ring, basisexps)
 
@@ -200,7 +204,7 @@ end
 #------------------------------------------------------------------------------
 
 function extract_linear_basis(ring, matrix::DoubleMacaulayMatrix{C}) where {C}
-    exps = Vector{Vector{ExponentIdx}}(undef, matrix.nrrows)
+    exps = Vector{Vector{MonomIdx}}(undef, matrix.nrrows)
     coeffs = Vector{Vector{C}}(undef, matrix.nrrows)
 
     # println("Extracting")
@@ -225,9 +229,9 @@ end
 
 function kbase_f4(
     ring::PolyRing,
-    basisexps::Vector{Vector{ExponentVector}},
+    basisexps::Vector{Vector{M}},
     basiscoeffs::Vector{Vector{C}},
-    metainfo) where {C<:Coeff}
+    metainfo) where {M,C<:Coeff}
 
     tablesize = select_tablesize(ring, basisexps)
 

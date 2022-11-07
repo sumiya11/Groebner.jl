@@ -1,7 +1,0 @@
-{ diff(x8, t) = 0/k14,
-  diff(x9, t) = 0/k14,
-  diff(x10, t) = 0/k14,
-  diff(x1, t) = k11*k3*x5*x6 - k12*k4*x1*x6 - k3*x1 - k9*x1*x7^(k13 + 1) + k4*x4 + k10*x4*x7,
-  diff(x2, t) = k6*x7*x6 - k8*x2 + k9*x1*x7^(k13 + 1) + k10*x4*x7,
-  diff(x3, t) = k5*x7^k13*x5 - k7*x3 + k9*x1*x7^(k13 + 1),
-  diff(x4, t) = k12*k4*x1*x6 - k4*x4 - k10*x4*x7 }

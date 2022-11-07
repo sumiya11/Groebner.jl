@@ -46,18 +46,54 @@ end
 #------------------------------------------------------------------------------
 
 function clean_input_groebner!(ring::PolyRing, 
-            exps::Vector{Vector{ExponentVector}}, 
-            coeffs::Vector{CoeffsVector{T}}) where {T}
+            exps::Vector{Vector{M}}, 
+            coeffs::Vector{Vector{T}}) where {M, T}
     @assert length(exps) == length(coeffs)
     filter!(!iszero_coeffvector, coeffs)
     filter!(!iszero_monomvector, exps)
     @assert length(exps) == length(coeffs)
     iszerobasis = isempty(exps)
     if iszerobasis
-        push!(exps, Vector{ExponentVector}())
-        push!(coeffs, CoeffsVector{T}())
+        push!(exps, Vector{M}())
+        push!(coeffs, Vector{T}())
     end
     iszerobasis
+end
+
+#------------------------------------------------------------------------------
+
+function groebner(polynomials, representation, reduced, ordering, certify, forsolve, linalg, rng)
+    #= extract ring information, exponents and coefficients
+       from input polynomials =#
+    # Copies input, so that polynomials would not be changed itself.
+    ring, exps, coeffs = convert_to_internal(representation, polynomials, ordering)
+
+    # @info "wuw"
+    # println(ring)
+    # println(exps)
+    # println(coeffs)
+    #= check and set algorithm parameters =#
+    metainfo = set_metaparameters(ring, ordering, certify, forsolve, linalg, rng)
+    # now ring stores computation ordering
+    # metainfo is now a struct to store target ordering
+
+    iszerobasis = clean_input_groebner!(ring, exps, coeffs)
+    iszerobasis && (return convert_to_output(ring, polynomials, exps, coeffs, metainfo))
+
+    #= change input ordering if needed =#
+    assure_ordering!(ring, exps, coeffs, metainfo)
+
+    #= compute the groebner basis =#
+    bexps, bcoeffs = groebner(ring, exps, coeffs, reduced, metainfo)
+
+    # @info "uwow"
+    # println(ring)
+    # println(bexps)
+    # println(bcoeffs)
+
+    # ring contains ordering of computation, it is the requested ordering
+    #= convert result back to representation of input =#
+    convert_to_output(ring, polynomials, bexps, bcoeffs, metainfo)
 end
 
 #------------------------------------------------------------------------------
@@ -70,10 +106,10 @@ end
 =#
 function groebner(
             ring::PolyRing,
-            exps::Vector{Vector{ExponentVector}},
-            coeffs::Vector{CoeffsVector{T}},
+            exps::Vector{Vector{M}},
+            coeffs::Vector{Vector{C}},
             reduced::Bool,
-            meta::GroebnerMetainfo{Rng}) where {T<:CoeffFF, Rng<:Random.AbstractRNG}
+            meta::GroebnerMetainfo{Rng}) where {M<:Monom, C<:CoeffFF, Rng<:Random.AbstractRNG}
 
     # select hashtable size
     tablesize = select_tablesize(ring, exps)
@@ -92,10 +128,10 @@ end
 
 function groebner(
             ring::PolyRing,
-            exps::Vector{Vector{ExponentVector}},
-            coeffs::Vector{CoeffsVector{T}},
+            exps::Vector{Vector{M}},
+            coeffs::Vector{Vector{C}},
             reduced::Bool,
-            meta::GroebnerMetainfo) where {T<:CoeffQQ}
+            meta::GroebnerMetainfo) where {M<:Monom, C<:CoeffQQ}
 
     # we can mutate coeffs and exps here
 
@@ -149,7 +185,7 @@ function groebner(
 
     tracer = Tracer()
 
-    pairset = initialize_pairset()
+    pairset = initialize_pairset(powertype(M))
 
     # ADDED
     global F4TIME
