@@ -110,7 +110,7 @@ end
                 maxvars = 3*div(sizeof(T), sizeof(B)) - 1
                 n = rand(1:maxvars)
                 @assert maxvars > 0
-                x = rand(0:10, n)
+                x = rand(0:div(typemax(B), 4*n), n)
                 tmp = similar(x)
                 ev = Groebner.make_ev(EV{T, B}, x)
                 @test x == Groebner.make_dense!(tmp, ev)
