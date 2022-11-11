@@ -16,7 +16,7 @@
     @test Groebner.capacity(Groebner.PackedPair1{UInt64, UInt16}) == 3
 
     y = [10, 20, 30, 40, 50]
-    @test_throws OverflowError Groebner.make_ev(EV{UInt64, UInt8}, y)
+    @test_throws Groebner.RecoverableException Groebner.make_ev(EV{UInt64, UInt8}, y)
 
     for B in (UInt8, UInt16,)
         for T in (UInt64, UInt32)
@@ -56,7 +56,7 @@ end
     @test Groebner.totaldeg(ev) == UInt16(10)
     
     y = [10, 20, 30, 40, 50]
-    @test_throws OverflowError Groebner.make_ev(EV{UInt64, UInt8}, y)
+    @test_throws Groebner.RecoverableException Groebner.make_ev(EV{UInt64, UInt8}, y)
 
     for B in (UInt8, UInt16,)
         for T in (UInt64, UInt32)
@@ -96,7 +96,7 @@ end
     @test Groebner.totaldeg(ev) == UInt16(10)
     
     y = [10, 20, 30, 40, 50]
-    @test_throws OverflowError Groebner.make_ev(EV{UInt64, UInt8}, y)
+    @test_throws Groebner.RecoverableException Groebner.make_ev(EV{UInt64, UInt8}, y)
 
     y = [1, 2, 3, 4, 5]
     ev = Groebner.make_ev(EV{UInt64, UInt32}, y)

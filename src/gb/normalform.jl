@@ -1,13 +1,4 @@
 
-#------------------------------------------------------------------------------
-
-function clean_input_normalform!(ring::PolyRing, 
-        basisexps, basiscoeffs, tbrexps, tbrcoeffs)
-    remove_zeros_from_input!(ring, basisexps, basiscoeffs)
-end
-
-#------------------------------------------------------------------------------
-
 function normal_form_f4!(
             ring::PolyRing,
             basis::Basis{C},
@@ -23,31 +14,9 @@ function normal_form_f4!(
 
     column_to_monom_mapping!(matrix, symbol_ht)
 
-    #dump(matrix, maxdepth=5)
-    #@error "((()))"
-
     sort_matrix_rows_decreasing!(matrix) # for pivots,  AB part
 
-    #=
-    dump(matrix, maxdepth=5)
-    @error "UPROWS"
-    for (i, u) in enumerate(matrix.uprows)
-        print(map(c -> symbol_ht.exponents[matrix.col2hash[c]], u))
-        println(" ", basis.coeffs[matrix.up2coef[i]])
-    end
-    @error "LOWrows"
-    for (i,u) in enumerate(matrix.lowrows)
-        println(map(c -> symbol_ht.exponents[matrix.col2hash[c]], u))
-        println(" ", tobereduced.coeffs[matrix.low2coef[i]])
-    end
-
-    @error "" Int(ring.ch)
-    =#
-
     exact_sparse_rref_nf!(ring, matrix, tobereduced, basis)
-
-    # @warn "lll"
-    # dump(matrix, maxdepth=5)
 
     convert_rows_to_basis_elements_nf!(matrix, tobereduced, ht, symbol_ht)
 

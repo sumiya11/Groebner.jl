@@ -1,14 +1,4 @@
 
-#------------------------------------------------------------------------------
-
-function clean_input_isgroebner!(ring::PolyRing,
-    exps::Vector{Vector{M}},
-    coeffs::Vector{Vector{T}}) where {M, T}
-    remove_zeros_from_input!(ring, exps, coeffs)
-end
-
-#------------------------------------------------------------------------------
-
 function isgroebner_f4!(ring::PolyRing,
     basis::Basis{C},
     ht::MonomialHashtable{M}) where {M, C<:Coeff}
@@ -50,7 +40,7 @@ function isgroebner_f4(
     isgroebner_f4!(ring, basis, ht)
 end
 
-#######################################
+#------------------------------------------------------------------------------
 # Finite field isgroebner
 
 function isgroebner(
@@ -62,15 +52,15 @@ function isgroebner(
     isgroebner_f4(ring, exps, coeffs, meta.rng)
 end
 
-#######################################
-# Rational field groebner
+#------------------------------------------------------------------------------
+# Rational numbers groebner
 
 function isgroebner(
         ring::PolyRing,
         exps::Vector{Vector{M}},
         coeffs::Vector{Vector{T}},
         meta) where {M,T<:CoeffQQ}
-        # if randomized result is ok
+    # if randomized result is ok
     if !meta.guaranteedcheck
         coeffbuffer  = CoeffBuffer()
         coeffs_zz = scale_denominators(coeffbuffer, coeffs)
@@ -79,7 +69,7 @@ function isgroebner(
         coeffs_ff = reduce_modulo(coeffbuffer, coeffs_zz, goodprime)
         ring.ch = goodprime
         isgroebner_f4(ring, exps, coeffs_ff, meta.rng)
-    else # if proved result is needed, compute in rationals
+    else # if proved result is needed, then compute in rationals
         isgroebner_f4(ring, exps, coeffs, meta.rng)
     end
 end

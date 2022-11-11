@@ -1,20 +1,4 @@
-
-function clean_input_fglm!(ring::PolyRing,
-        exps::Vector{Vector{M}},
-        coeffs::Vector{Vector{T}}) where {M, T}
-    remove_zeros_from_input!(ring, exps, coeffs)
-end
-
-function clean_input_kbase!(ring::PolyRing,
-        exps::Vector{Vector{M}},
-        coeffs::Vector{Vector{T}}) where {M, T}
-    remove_zeros_from_input!(ring, exps, coeffs)
-end
-
-#=
-    The file contains the implementation of the FGLM algorithm,
-    an algorithm for ordering conversion
-=#
+# FGLM implementation is correct, but is still WIP
 
 mutable struct NextMonomials
     # monomials to check
@@ -178,9 +162,6 @@ function fglm_f4!(
 
     linbasis = extract_linear_basis(ring, matrix)
 
-    # println(linbasis)
-    # println(newbasis)
-
     newbasis, linbasis, ht
 end
 
@@ -206,9 +187,6 @@ end
 function extract_linear_basis(ring, matrix::DoubleMacaulayMatrix{C}) where {C}
     exps = Vector{Vector{MonomIdx}}(undef, matrix.nrrows)
     coeffs = Vector{Vector{C}}(undef, matrix.nrrows)
-
-    # println("Extracting")
-    # dump(matrix, maxdepth=2)
 
     for i in 1:matrix.nrrows
         exps[i] = matrix.rightrows[i]

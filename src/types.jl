@@ -93,3 +93,19 @@ const MonomHash = UInt32
 const DivisionMask = UInt32
 
 const ColumnIdx = Int32
+
+#------------------------------------------------------------------------------
+
+# f4 may fail in some cases and throw a RecoverableException.
+# If we catch a RecoverableException, there is a hope to recover the program.
+#
+# Currently, RecoverableException can be caused by one of the following:
+# - overflow in monomial operations (monoms/packedpairs.jl),
+# - bad choce of a prime during rational computation (gb/groebner.jl),
+# - fail of randomized sparse linear algebra (f4/matrix.jl),
+#
+struct RecoverableException <: Exception
+    msg::String
+end
+
+Base.showerror(io::IO, e::RecoverableException) = print(io, e.msg)

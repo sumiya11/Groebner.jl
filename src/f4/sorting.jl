@@ -218,7 +218,7 @@ end
 
 #------------------------------------------------------------------------------
 
-function sort_input_to_change_ordering(exps, coeffs, ord::Symbol)
+function sort_input_to_change_ordering!(exps, coeffs, ord::Symbol)
     for polyidx in 1:length(exps)
         cmp = choose_comparator(ord)
         cmps = (x, y) -> cmp(

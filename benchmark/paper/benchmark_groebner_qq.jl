@@ -13,7 +13,7 @@ include("../systems/for_gleb/parser.jl")
 using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error))
 
-BENCHMARK_SAMPLES = 2
+BENCHMARK_SAMPLES = 4
 GROEBNER_PARAMS = (linalg=:prob, )
 
 ground = AbstractAlgebra.QQ

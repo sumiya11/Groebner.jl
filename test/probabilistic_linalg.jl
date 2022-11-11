@@ -1,5 +1,4 @@
 
-
 @testset "f4 probabilistic linear algebra" begin
     R, (x, y, z) = PolynomialRing(GF(2^31 - 1), ["x","y","z"], ordering=:lex)
 

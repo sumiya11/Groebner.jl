@@ -8,7 +8,7 @@
 # monom-monom multiplications (no more than twice)
 # and monom-monom lcm (no more than twice). 
 _overflow_threshold(B) = div(typemax(B), 2)
-@noinline _overflow_error(c, B) = throw(OverflowError("Overflow is probable with $c modulo $B."))
+@noinline _overflow_error(c, B) = throw(RecoverableException("Overflow is probable with $c modulo $B."))
 
 function _overflow_check(e::Integer, B)
     e >= _overflow_threshold(B) && _overflow_error(e, B)

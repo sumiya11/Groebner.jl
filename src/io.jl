@@ -84,7 +84,7 @@ function convert_to_internal(
         orig_polys::Vector{T},
         ordering::Symbol) where {T}
     isempty(orig_polys) && throw(DomainError(orig_polys, "Empty input."))
-    ordering in _supported_orderings || ordering === :input || error("Not supported ordering $ordering.")
+    ordering in _supported_orderings || ordering === :input || throw(DomainError(ordering, "Not supported ordering."))
 
     if hasmethod(AbstractAlgebra.parent, Tuple{typeof(first(orig_polys))})
         convert_to_internal(representation, orig_polys, ordering, Val(:hasparent))
@@ -412,6 +412,13 @@ function remove_zeros_from_input!(ring::PolyRing,
         push!(coeffs, Vector{T}())
     end
     iszerobasis
+end
+
+function assure_ordering!(ring, exps, coeffs, target_ord)
+    if ring.ord != target_ord
+        sort_input_to_change_ordering!(exps, coeffs, target_ord)
+    end
+    ring.ord = target_ord
 end
 
 #------------------------------------------------------------------------------

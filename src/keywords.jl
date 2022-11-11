@@ -100,6 +100,10 @@ end
 
 #------------------------------------------------------------------------------
 
+safe_linear_algebra() = :exact
+
+#------------------------------------------------------------------------------
+
 # Here we choose parameters for groebner basis computation
 # based on the specified input keywords
 
