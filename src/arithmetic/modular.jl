@@ -1,11 +1,7 @@
-
-#=
-    The file contains rational reconstruction and CRT reconstruction functions
-=#
-
-#------------------------------------------------------------------------------
+# The file contains rational reconstruction and CRT reconstruction functions
 
 # A reference implementation of rational reconstruction
+# (a little bit outdated)
 #
 # Rational number reconstruction implementation borrowed from CLUE
 # and modified a bit to suit the 'Modern Computer Algebra' definitions
@@ -17,7 +13,7 @@
 function rational_reconstruction(a::I, m::I) where {I<:Union{Int, BigInt}}
     a = mod(a, m)
     if a == 0 || m == 0
-        return QQ(0, 1)
+        return AbstractAlgebra.QQ(0, 1)
     end
     if m < 0
         m = -m
@@ -26,7 +22,7 @@ function rational_reconstruction(a::I, m::I) where {I<:Union{Int, BigInt}}
         a = m - a
     end
     if a == 1
-        return QQ(1, 1)
+        return AbstractAlgebra.QQ(1, 1)
     end
     bnd = sqrt(float(m) / 2)
 
@@ -51,7 +47,7 @@ function rational_reconstruction(a::I, m::I) where {I<:Union{Int, BigInt}}
     #    return QQ(r, t)
     # end
 
-    return QQ(r, t)
+    return AbstractAlgebra.QQ(r, t)
 
     # throw(DomainError(
     #    :($a//$m), "rational reconstruction of $a (mod $m) does not exist"
@@ -60,23 +56,26 @@ function rational_reconstruction(a::I, m::I) where {I<:Union{Int, BigInt}}
     # return QQ(0, 1)
 end
 
-# returns the bound for rational reconstruction
-# based on the current modulo size
+# Returns the bound for rational reconstruction
+# based on the size of the modulo
 #
 # The bound for rational reconstrction:
 # as soon as the numerator in rational reconstruction
-# exceeds this bound, the gcd iteration is stopped
+# exceeds this bound, the gcd iteration stops
 function rational_reconstruction_bound(modulo::BigInt)
     setprecision(2*Base.GMP.MPZ.sizeinbase(modulo, 2)) do
         ceil(BigInt, sqrt(BigFloat(modulo) / 2))
     end
 end
 
-# 0 allocations!
+# 0 allocations on Julia level!
 #=
     Computes the rational reconstruction of `a` mod `m`.
-    Namely, a pair of numbers num, den , such that
+    Namely, a pair of numbers num, den, such that
         num//den ≡ a (mod m)
+    Writes the answer to arguments `num` and `den`.
+
+    Returns true iff the reconstrction was successful. 
 
     Additional params:
         bnd  = stores stopping criterion threshold
@@ -115,7 +114,6 @@ function rational_reconstruction!(
 
     while true
         if Base.GMP.MPZ.cmp(v2, bnd) > 0
-            # @error "" v2 bnd
             return false
         end
 
@@ -151,8 +149,6 @@ function rational_reconstruction!(
     Base.GMP.MPZ.set!(num, v3)
 
     #=
-    gcd is not nessesary here
-
     Base.GMP.MPZ.gcd!(buf, den, num)
     Base.GMP.MPZ.tdiv_q!(den, buf)
     Base.GMP.MPZ.tdiv_q!(num, buf)
@@ -168,11 +164,13 @@ end
 
 #------------------------------------------------------------------------------
 
-# 0 allocations!
+# 0 allocations on Julia level!
 #=
     Computes the unique x s.t
         x ≡ a1 mod m1
         x ≡ a2 mod m2
+
+    Writes the answer to argument `buf`.
 
     Additional params:
         M   = m1*m2

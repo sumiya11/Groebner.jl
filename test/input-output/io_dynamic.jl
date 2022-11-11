@@ -2,7 +2,7 @@
 using DynamicPolynomials
 using Random
 
-@testset "Input-output DynamicPolynomials" begin
+@testset "input-output dynamicpolynomials" begin
     representation = Groebner.default_safe_representation(Groebner.NotPacked{UInt64}())
     rng = Random.MersenneTwister(42)
 
@@ -46,7 +46,7 @@ using Random
 
 end
 
-@testset "DynamicPolynomials io consistency" begin
+@testset "io consistency dynamicpolynomials" begin
     @polyvar x y
 
     fs = [x, y]

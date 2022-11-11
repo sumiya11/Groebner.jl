@@ -1,122 +1,91 @@
 
-function monom_isless(a, b, ::Val{:degrevlex})
-    exponent_isless_drl(a, b)
+_default_alg() = Base.Sort.DEFAULT_UNSTABLE
+
+# Sorts vector v at indices from:to
+function sort_part!(v, from::Integer, to::Integer;
+                    lt=isless, 
+                    alg=_default_alg(), 
+                    by=identity,
+                    rev=false)
+    ordr = Base.Sort.ord(lt,by,rev,Base.Sort.Forward)
+    sort!(v, from, to, alg, ordr)
 end
 
-function monom_isless(a, b, ::Val{:lex})
-    exponent_isless_lex(a, b)
-end
-
-function monom_isless(a, b, ::Val{:deglex})
-    exponent_isless_dl(a, b)
+function choose_comparator(ord::Symbol)
+    if ord === :degrevlex
+        exponent_isless_drl
+    elseif ord === :deglex
+        exponent_isless_dl
+    elseif ord === :lex
+        exponent_isless_lex
+    end
 end
 
 #------------------------------------------------------------------------------
 
-# sorts generators and corresponding coefficients from basis
-# by their leading monomial in increasing ordering
-#
-# Used only once to sort input generators
+# sorts polynomials from the basis
+# by their leading monomial in the non-decreasing way by term ordering
 function sort_gens_by_lead_increasing!(
-            basis::Basis, ht::MonomialHashtable, abc...)
+            basis::Basis, ht::MonomialHashtable, abc...; ord::Symbol=ht.ord)
     gens = basis.monoms
     exps = ht.exponents
 
     inds = collect(1:basis.ntotal)
 
-    cmp = (x, y) -> monom_isless(
+    cmp = choose_comparator(ord)
+    cmps = (x, y) -> cmp(
         @inbounds(exps[gens[x][1]]), 
-        @inbounds(exps[gens[y][1]]), 
-        Val(ht.ord)
+        @inbounds(exps[gens[y][1]])
     )
 
-    sort!(inds, lt=cmp)
+    sort!(inds, lt=cmps, alg=_default_alg())
 
     # use array assignment insted of elemewise assignment
-    basis.monoms[1:basis.ntotal]   = basis.monoms[inds]
+    basis.monoms[1:basis.ntotal] = basis.monoms[inds]
     basis.coeffs[1:basis.ntotal] = basis.coeffs[inds]
     for a in abc
         a[1:basis.ntotal] = a[inds]
     end
-end
-
-function sort_gens_by_lead_increasing_in_reduce!(basis::Basis, ht::MonomialHashtable)
-    gens = basis.monoms
-    exps = ht.exponents
-    nnr  = basis.nonred
-
-    inds = collect(1:basis.nlead)
-
-    cmp = (x, y) -> monom_isless(
-        @inbounds(exps[gens[nnr[x]][1]]), 
-        @inbounds(exps[gens[nnr[y]][1]]), 
-        Val(ht.ord)
-    )
-    sort!(inds, lt=cmp)
-
-    # use array assignment insted of elemewise assignment
-    basis.monoms[nnr[1:basis.nlead]]   = basis.monoms[nnr[inds]]
-    basis.coeffs[nnr[1:basis.nlead]] = basis.coeffs[nnr[inds]]
-end
-
-function sort_gens_by_lead_increasing_in_standardize!(basis::Basis, ht::MonomialHashtable, ord)
-    gens = basis.monoms
-    exps = ht.exponents
-    nnr  = basis.nonred
-
-    inds = collect(1:basis.nlead)
-
-    @assert inds == nnr
-
-    cmp = (x, y) -> monom_isless(
-        @inbounds(exps[gens[x][1]]), 
-        @inbounds(exps[gens[y][1]]), 
-        Val(ord)
-    )
-    sort!(inds, lt=cmp)
-
-    # use array assignment insted of elemewise assignment
-    # Reason: slice array assignment uses fast setindex! based on unsafe copy
-    basis.monoms[1:basis.nlead]   = basis.monoms[inds]
-    basis.coeffs[1:basis.nlead] = basis.coeffs[inds]
-    basis.lead[1:basis.nlead]   = basis.lead[inds]
+    nothing
 end
 
 #------------------------------------------------------------------------------
 
-# Sorts pairs from pairset in range [from, from+size]
+# Sorts pairs from pairset in the range [from, from+sz]
 # by lcm total degrees in increasing order
 #
-# Used in update once per one f4 iteration to sort pairs in pairset
+# Used in update once per one f4 iteration to sort pairs in pairset;
 # Also used in normal selection strategy also once per iteration
 function sort_pairset_by_degree!(ps::Pairset, from::Int, sz::Int)
-    part = ps.pairs[from:from + sz]
-
-    sort!(part, by=p -> p.deg)
-
-    ps.pairs[from:from + sz] = part
+    sort_part!(
+        ps.pairs, 
+        from, from+sz,
+        by=p -> p.deg, 
+        alg=_default_alg()
+    )
 end
 
 #------------------------------------------------------------------------------
 
-# sorts first npairs pairs from pairset by increasing of
-# lcm exponent wrt the given monomial ordering
-#
-# Used only in normal selection strategy once per f4 iteration
+# sorts first `npairs` pairs from `pairset` by non-decreasing of
+# lcm exponent vector wrt the given monomial ordering
 function sort_pairset_by_lcm!(
         pairset::Pairset, npairs::Int, ht::MonomialHashtable)
 
-    part = pairset.pairs[1:npairs]
     exps = ht.exponents
 
-    cmp = (x, y) -> monom_isless(
+    cmp = choose_comparator(ht.ord)
+    cmps = (x, y) -> cmp(
         @inbounds(exps[x.lcm]), 
-        @inbounds(exps[y.lcm]), 
-        Val(ht.ord)
+        @inbounds(exps[y.lcm])
     )
-    sort!(part, lt=cmp)
 
-    pairset.pairs[1:npairs] = part
+    sort_part!(
+        pairset.pairs, 
+        1, npairs,
+        lt=cmps, 
+        alg=_default_alg()
+    )
 end
 
 #------------------------------------------------------------------------------
@@ -124,18 +93,17 @@ end
 # sorts generators selected in normal strategy function
 # by their ordering in the current basis (identity sort)
 function sort_generators_by_position!(gens::Vector{Int}, load::Int)
-    part = gens[1:load]
-
-    sort!(part)
-
-    gens[1:load] = part
+    sort_part!(
+        gens, 
+        1, load,
+        alg=_default_alg()
+    )
 end
 
 #------------------------------------------------------------------------------
 
 function matrix_row_decreasing_cmp(a, b)
-    #= a, b - rows as arrays of exponent hashes =#
-
+    #= a, b - rows as arrays of exponent indices =#
     @inbounds va = a[1]
     @inbounds vb = b[1]
 
@@ -147,35 +115,33 @@ function matrix_row_decreasing_cmp(a, b)
     end
 
     # same column index => compare density of rows
-
     va = length(a)
     vb = length(b)
     if va > vb
-        return false
+        return true
     end
     if va < vb
-        return true
+        return false
     end
 
     # hmm, equal rows?
+    # should never happen
     return false
 end
 
 function matrix_row_increasing_cmp(a, b)
     #= a, b - rows as arrays of exponent hashes =#
-
     @inbounds va = a[1]
     @inbounds vb = b[1]
 
     if va > vb
-        return false
+        return true
     end
     if va < vb
-        return true
+        return false
     end
 
     # same column index => compare density of rows
-
     va = length(a)
     vb = length(b)
     if va > vb
@@ -186,6 +152,7 @@ function matrix_row_increasing_cmp(a, b)
     end
 
     # hmm, equal rows?
+    # should never happen
     return false
 end
 
@@ -194,22 +161,14 @@ function sort_matrix_rows_decreasing!(matrix)
     #= smaller means  pivot being more left  =#
     #= and density being smaller             =#
 
-    # @info "before up sort"
-    #println(matrix.uprows)
-    #println(matrix.up2coef)
-
     inds = collect(1:matrix.nup)
     cmp  = (x, y) ->  matrix_row_decreasing_cmp(
                                     @inbounds(matrix.uprows[x]),
                                     @inbounds(matrix.uprows[y]))
-    sort!(inds, lt=cmp)
+    sort!(inds, lt=cmp, alg=_default_alg())
 
     matrix.uprows[1:matrix.nup]  = matrix.uprows[inds]
     matrix.up2coef[1:matrix.nup] = matrix.up2coef[inds]
-
-    # @info "after up sort"
-    #println(matrix.uprows)
-    #println(matrix.up2coef)
 
     matrix
 end
@@ -219,22 +178,14 @@ function sort_matrix_rows_increasing!(matrix)
     #= smaller means  pivot being more right =#
     #= and density being larger =#
 
-    # @info "before low sort"
-    #println(matrix.lowrows)
-    #println(matrix.low2coef)
-
     inds = collect(1:matrix.nlow)
     cmp  = (x, y) ->  matrix_row_increasing_cmp(
                                         @inbounds(matrix.lowrows[x]),
                                         @inbounds(matrix.lowrows[y]))
-    sort!(inds, lt=cmp)
+    sort!(inds, lt=cmp, alg=_default_alg())
 
     matrix.lowrows[1:matrix.nlow]  = matrix.lowrows[inds]
     matrix.low2coef[1:matrix.nlow] = matrix.low2coef[inds]
-
-    # @info "after low sort"
-    #println(matrix.lowrows)
-    #println(matrix.low2coef)
 
     matrix
 end
@@ -262,23 +213,22 @@ function sort_columns_by_hash!(col2hash, symbol_ht)
         ordcmp = (x, y) -> cmp(x, y, exponent_isless_dl)
     end
 
-    sort!(col2hash, lt = ordcmp)
+    sort!(col2hash, lt = ordcmp, alg=_default_alg())
 end
 
 #------------------------------------------------------------------------------
-# TODO: ordering??
 
 function sort_input_to_change_ordering(exps, coeffs, ord::Symbol)
     for polyidx in 1:length(exps)
-        cmp = (x, y) -> monom_isless(
+        cmp = choose_comparator(ord)
+        cmps = (x, y) -> cmp(
             @inbounds(exps[polyidx][y]), 
             @inbounds(exps[polyidx][x]), 
-            Val(ord)
         )
 
         inds = collect(1:length(exps[polyidx]))
 
-        sort!(inds, lt=cmp)
+        sort!(inds, lt=cmps, alg=_default_alg())
 
         exps[polyidx][1:end] = exps[polyidx][inds]
         coeffs[polyidx][1:end] = coeffs[polyidx][inds]
@@ -287,50 +237,35 @@ end
 
 #------------------------------------------------------------------------------
 
-function sort_monoms_increasing!(monoms::Vector{MonomIdx}, cnt, ht, ord::Symbol)
-    exps = ht.exponents
-
-    cmp = (x, y) -> monom_isless(
-        @inbounds(exps[monoms[x]]), 
-        @inbounds(exps[monoms[y]]), 
-        Val(ht.ord)
-    )
-
-    inds = collect(1:cnt)
-
-    sort!(inds, lt=cmp)
-
-    monoms[1:cnt] = monoms[inds]
-end
-
 function sort_monoms_decreasing!(monoms::Vector{MonomIdx}, cnt, ht, ord::Symbol)
     exps = ht.exponents
 
-    cmp = (x, y) -> monom_isless(
-        @inbounds(exps[monoms[y]]), 
-        @inbounds(exps[monoms[x]]), 
-        Val(ord)
+    cmp = choose_comparator(ord)
+    cmps = (x, y) -> cmp(
+        @inbounds(exps[y]), 
+        @inbounds(exps[x])
     )
 
-    inds = collect(1:cnt)
-
-    sort!(inds, lt=cmp)
-
-    monoms[1:cnt] = monoms[inds]
+    sort_part!(
+        monoms, 
+        1, cnt,
+        lt=cmps,
+        alg=_default_alg()
+    )
 end
 
 function sort_terms_decreasing!(monoms::Vector{MonomIdx}, coeffs, ht, ord::Symbol)
     exps = ht.exponents
     
-    cmp = (x, y) -> monom_isless(
+    cmp = choose_comparator(ord)
+    cmps = (x, y) -> cmp(
         @inbounds(exps[monoms[y]]), 
-        @inbounds(exps[monoms[x]]), 
-        Val(ord)
+        @inbounds(exps[monoms[x]])
     )
 
     inds = collect(1:length(monoms))
 
-    sort!(inds, lt=cmp)
+    sort!(inds, lt=cmps, alg=Base.Sort.DEFAULT_UNSTABLE)
 
     monoms[1:end] = monoms[inds]
     coeffs[1:end] = coeffs[inds]

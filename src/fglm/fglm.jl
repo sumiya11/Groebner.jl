@@ -2,13 +2,13 @@
 function clean_input_fglm!(ring::PolyRing,
         exps::Vector{Vector{M}},
         coeffs::Vector{Vector{T}}) where {M, T}
-    clean_input_groebner!(ring, exps, coeffs)
+    remove_zeros_from_input!(ring, exps, coeffs)
 end
 
 function clean_input_kbase!(ring::PolyRing,
         exps::Vector{Vector{M}},
         coeffs::Vector{Vector{T}}) where {M, T}
-    clean_input_groebner!(ring, exps, coeffs)
+    remove_zeros_from_input!(ring, exps, coeffs)
 end
 
 #=

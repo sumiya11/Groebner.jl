@@ -3,7 +3,7 @@
 
 function clean_input_normalform!(ring::PolyRing, 
         basisexps, basiscoeffs, tbrexps, tbrcoeffs)
-    clean_input_groebner!(ring, basisexps, basiscoeffs)
+    remove_zeros_from_input!(ring, basisexps, basiscoeffs)
 end
 
 #------------------------------------------------------------------------------
@@ -21,7 +21,7 @@ function normal_form_f4!(
 
     symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
 
-    convert_hashes_to_columns!(matrix, symbol_ht)
+    column_to_monom_mapping!(matrix, symbol_ht)
 
     #dump(matrix, maxdepth=5)
     #@error "((()))"
@@ -44,12 +44,12 @@ function normal_form_f4!(
     @error "" Int(ring.ch)
     =#
 
-    exact_sparse_linear_algebra_nf!(ring, matrix, tobereduced, basis)
+    exact_sparse_rref_nf!(ring, matrix, tobereduced, basis)
 
     # @warn "lll"
     # dump(matrix, maxdepth=5)
 
-    convert_nf_rows_to_basis_elements!(matrix, tobereduced, ht, symbol_ht)
+    convert_rows_to_basis_elements_nf!(matrix, tobereduced, ht, symbol_ht)
 
     tobereduced
 end

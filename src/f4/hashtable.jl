@@ -1,28 +1,47 @@
+# Hashtable
 
-#------------------------------------------------------------------------------
-####### Hashtable ######
+# This hashtable stores monomials.
+# This hashtable implementation assumes 
+# that the hash function that acts on monomials is linear. 
+# (each monomial type should implement linear hash function)
 
-#=
-    stores hash of a monomial,
-    corresponding divmask to speed up divisibility checks,
-    index for position matrix (defaults to zero),
-    and the todal degree
-=#
+# Some monomial implementations are mutable, and some are not.
+# In order to maintain generic enough code that will work for both
+# we usually write something like:
+#   enew = monom_product!(enew, e1, e2)
+# Then, if a mutable implementation is used, 
+# enew would be overwritten inside of monom_product!.
+# Otherwise, monom_product! would return a new immutable object
+# that is then assigned to enew.
+# That allows us to write more or less independently
+# of the monomial implementation.
+
+# The hashtable size is always the power of two.
+# The hashtable size is doubled each time the load factor exceeds
+#   ht_resize_threshold()
+# (this ht_resize_threshold() should be around 0.5
+#  to balance the rehashing cost with the insertion cost)
+# (this ht_resize_threshold() should be a bit smaller than 0.5,
+#  since the number of hit insertions greatly exceeds the number
+#  of miss insertions in the hashtable)
+
+# Hashvalue.
+# stores index for position in the matrix (defaults to zero),
+# hash of a monomial,
+# corresponding divmask to speed up divisibility checks,
+# and the todal degree
 mutable struct Hashvalue
+    idx::Int
     hash::MonomHash
     divmask::DivisionMask
-    idx::Int
     deg::MonomHash
 end
 
 function copy_hashvalue(x::Hashvalue)
-    Hashvalue(x.hash, x.divmask, x.idx, x.deg)
+    Hashvalue(x.idx, x.hash, x.divmask, x.deg)
 end
 
-#=
-    Hashtable implementing linear probing
-    and designed to store and operate with monomials
-=#
+# Hashtable designed to store monomials
 mutable struct MonomialHashtable{M<:Monom}
     exponents::Vector{M}
 
@@ -35,7 +54,7 @@ mutable struct MonomialHashtable{M<:Monom}
     hashdata::Vector{Hashvalue}
 
     # values to hash exponents with, i.e
-    # hash(e) = sum(hasher .* e)
+    # hash(e) := hash(e, hasher)
     hasher::Vector{MonomHash}
 
     #= Ring information =#
@@ -61,8 +80,7 @@ end
 #------------------------------------------------------------------------------
 
 # Returns the next look-up position in the table 
-# (that is, implementing open addressing with quadratic probing) 
-function hashnextindex(h::MonomHash, j::MonomHash, mod::MonomHash)
+function nexthashindex(h::MonomHash, j::MonomHash, mod::MonomHash)
     (h + j) & mod + MonomHash(1)
 end
 
@@ -98,7 +116,7 @@ function initialize_basis_hash_table(
     # initialize fast divisibility params
     charbit = 8
     int32bits = charbit * sizeof(Int32)
-    int32bits != 32 && error("Strange story with ints")
+    int32bits != 32 && error("Strange story with Ints")
     ndivbits = div(int32bits, nvars)
     # division mask stores at least 1 bit
     # per each of first ndivvars variables
@@ -136,13 +154,10 @@ function copy_hashtable(ht::MonomialHashtable{M}) where {M}
         ht.size, ht.load, ht.offset)
 end
 
-#------------------------------------------------------------------------------
-
 # initialize hashtable either for `symbolic_preprocessing` or for `update` functions
 # These are of the same purpose and structure as basis hashtable,
 # but are more local oriented
 function initialize_secondary_hash_table(basis_ht::MonomialHashtable{M}) where {M}
-
     # 2^6 seems to be the best out of 2^5, 2^6, 2^7
     initial_size = 2^6
 
@@ -175,55 +190,81 @@ function initialize_secondary_hash_table(basis_ht::MonomialHashtable{M}) where {
         size, load, offset)
 end
 
+function select_tablesize(ring::PolyRing, polys::AbstractVector)
+    nvars = ring.nvars
+    sz = length(polys)
+
+    tablesize = 2^10
+    if nvars > 4
+        tablesize = 2^14
+    end
+    if nvars > 7
+        tablesize = 2^16
+    end
+
+    if sz < 3
+        tablesize = div(tablesize, 2)
+    end
+    if sz < 2
+        tablesize = div(tablesize, 2)
+    end
+
+    tablesize
+end
+
 #------------------------------------------------------------------------------
 
-# resizes (if needed) ht so that it can store `size` elements,
-# and clears all previoud data
-function reinitialize_hash_table!(ht::MonomialHashtable, size::Int)
-    if size > ht.size
-        while size > ht.size
-            ht.size *= 2
-        end
+ht_resize_threshold() = 0.4
+ht_needs_resize(size, load, added) = (load + added)/size > ht_resize_threshold()
+
+function check_enlarge_hashtable!(ht::MonomialHashtable, added::Integer)
+    newsize = ht.size
+    while ht_needs_resize(newsize, ht.load, added)
+        newsize *= 2
+    end
+    if newsize != ht.size
+        ht.size = newsize
+        @assert ispow2(ht.size)
+
         resize!(ht.hashdata, ht.size)
         resize!(ht.exponents, ht.size)
-    end
-    ht.hashtable = zeros(Int, ht.size)
-    ht.load = 1
-end
+        ht.hashtable = zeros(Int, ht.size)
+        
+        mod = MonomHash(ht.size - 1)
 
-# doubles the size of storage in `ht`,
-# and rehashes all elements
-function enlarge_hash_table!(ht::MonomialHashtable)
-    ht.size *= 2
-    resize!(ht.hashdata, ht.size)
-    resize!(ht.exponents, ht.size)
-
-    ht.hashtable = zeros(Int, ht.size)
-
-    mod = MonomHash(ht.size - 1)
-    for i in ht.offset:ht.load
-        # hash for this elem is already computed
-        he = ht.hashdata[i].hash
-        hidx = he
-        @inbounds for j in MonomHash(1):MonomHash(ht.size)
-            hidx = hashnextindex(he, j, mod)
-            !iszero(ht.hashtable[hidx]) && continue
-            ht.hashtable[hidx] = i
-            break
+        for i in ht.offset:ht.load
+            # hash for this elem is already computed
+            he = ht.hashdata[i].hash
+            hidx = he
+            @inbounds for j in MonomHash(1):MonomHash(ht.size)
+                hidx = nexthashindex(he, j, mod)
+                !iszero(ht.hashtable[hidx]) && continue
+                ht.hashtable[hidx] = i
+                break
+            end
         end
     end
+    nothing
 end
 
 #------------------------------------------------------------------------------
+
+# if hash collision happened
+function ishashcollision(ht::MonomialHashtable, vidx, e, he)
+    # if not free and not same hash
+    @inbounds if ht.hashdata[vidx].hash != he
+        return true
+    end
+    # if not free and not same monomial
+    @inbounds if !is_monom_elementwise_eq(ht.exponents[vidx], e)
+        return true
+    end
+    false
+end
 
 function insert_in_hash_table!(ht::MonomialHashtable{M}, e::M) where {M}
     # generate hash
     he::MonomHash = hash(e, ht.hasher)
-    # he
-
-    # @inbounds for i in 1:ht.explen
-    #     he += ht.hasher[i] * e[i]
-    # end
 
     # find new elem position in the table
     hidx = MonomHash(he)
@@ -233,34 +274,19 @@ function insert_in_hash_table!(ht::MonomialHashtable{M}, e::M) where {M}
     i = MonomHash(1)
     hsize = MonomHash(ht.size)
 
-    @label Restart
-    while i < hsize
-        hidx = hashnextindex(he, i, mod)
+    @inbounds while i < hsize
+        hidx = nexthashindex(he, i, mod)
 
-        @inbounds vidx = ht.hashtable[hidx]
+        vidx = ht.hashtable[hidx]
 
         # if free
         iszero(vidx) && break
 
         # if not free and not same hash
-        @inbounds if ht.hashdata[vidx].hash != he
+        if ishashcollision(ht, vidx, e, he)
             i += MonomHash(1)
             continue
         end
-
-        present = ht.exponents[vidx]
-        # if hash collision
-        if !is_monom_elementwise_eq(present, e)
-            i += MonomHash(1)
-            @goto Restart
-        end
-        # @inbounds for j in 1:ht.explen
-        #     # if hash collision
-        #     if present[j] != e[j]
-        #         i += MonomHash(1)
-        #         @goto Restart
-        #     end
-        # end
 
         # already present in hashtable
         return vidx
@@ -268,20 +294,10 @@ function insert_in_hash_table!(ht::MonomialHashtable{M}, e::M) where {M}
 
     # add its position to hashtable, and insert exponent to that position
     vidx = MonomIdx(ht.load + 1)
-    ht.hashtable[hidx] = vidx
-
-    # probably can be changed 
-
-    # TODO: check efficiency
-    # ht.exponents[vidx] = similar(e)
-    # ve = ht.exponents[vidx]
-    # @inbounds for i in 1:length(e)
-    #     ve[i] = e[i]
-    # end
-    ht.exponents[vidx] = copy(e)
-
+    @inbounds ht.hashtable[hidx] = vidx
+    @inbounds ht.exponents[vidx] = copy(e)
     divmask = monom_divmask(e, DivisionMask, ht.ndivvars, ht.divmap, ht.ndivbits)
-    ht.hashdata[vidx] = Hashvalue(he, divmask, 0, totaldeg(e))
+    @inbounds ht.hashdata[vidx] = Hashvalue(0, he, divmask, totaldeg(e))
 
     ht.load += 1
 
@@ -307,12 +323,12 @@ function fill_divmask!(ht::MonomialHashtable)
     e = Vector{UInt64}(undef, ht.nvars)
     make_dense!(e, ht.exponents[ht.offset])
 
-    for i in 1:ndivvars
+    @inbounds for i in 1:ndivvars
         min_exp[i] = e[i]
         max_exp[i] = e[i]
     end
 
-    for i in ht.offset:ht.load # TODO: offset
+    @inbounds for i in ht.offset:ht.load # TODO: offset
         make_dense!(e, ht.exponents[i])
         for j in 1:ndivvars
             if e[j] > max_exp[j]
@@ -327,7 +343,7 @@ function fill_divmask!(ht::MonomialHashtable)
 
     ctr = 1
     steps = UInt32(0)
-    for i in 1:ndivvars
+    @inbounds for i in 1:ndivvars
         steps = div(max_exp[i] - min_exp[i], UInt32(ht.ndivbits))
         (iszero(steps)) && (steps += UInt32(1))
         for j in 1:ht.ndivbits
@@ -336,12 +352,14 @@ function fill_divmask!(ht::MonomialHashtable)
             ctr += 1
         end
     end
-    for vidx in ht.offset:ht.load
+    @inbounds for vidx in ht.offset:ht.load
         unmasked = ht.hashdata[vidx]
         e = ht.exponents[vidx]
         divmask = monom_divmask(e, DivisionMask, ht.ndivvars, ht.divmap, ht.ndivbits)
-        ht.hashdata[vidx] = Hashvalue(unmasked.hash, divmask, 0, totaldeg(e))
+        ht.hashdata[vidx] = Hashvalue(0, unmasked.hash, divmask, totaldeg(e))
     end
+
+    nothing
 end
 
 #------------------------------------------------------------------------------
@@ -356,10 +374,25 @@ function is_monom_divisible(h1::MonomIdx, h2::MonomIdx, ht::MonomialHashtable)
     is_monom_divisible(e1, e2)
 end
 
+# checks that gcd(g1, h2) is one
 function is_gcd_const(h1::MonomIdx, h2::MonomIdx, ht::MonomialHashtable)
     @inbounds e1 = ht.exponents[h1]
     @inbounds e2 = ht.exponents[h2]
     is_gcd_const(e1, e2)
+end
+
+# computes lcm of he1 and he2 as exponent vectors from ht1
+# and inserts it in ht2
+function get_lcm(he1::MonomIdx, he2::MonomIdx,
+    ht1::MonomialHashtable{M}, ht2::MonomialHashtable{M}) where {M}
+
+    @inbounds e1 = ht1.exponents[he1]
+    @inbounds e2 = ht1.exponents[he2]
+    @inbounds etmp = ht1.exponents[1]
+
+    etmp = monom_lcm!(etmp, e1, e2)
+
+    insert_in_hash_table!(ht2, etmp)
 end
 
 #------------------------------------------------------------------------------
@@ -371,37 +404,31 @@ function check_monomial_division_in_update(
 
     # pairs are sorted, we only need to check entries above starting point
 
-    divmask = ht.hashdata[lcm].divmask
-    lcmexp = ht.exponents[lcm]
+    @inbounds divmask = ht.hashdata[lcm].divmask
+    @inbounds lcmexp = ht.exponents[lcm]
 
     j = first
-    @label Restart
-    while j <= last
+    @inbounds while j <= last
         # bad lcm
-        if a[j] == 0
+        if iszero(a[j])
             j += 1
             continue
         end
         # fast division check
-        @inbounds if !is_divmask_divisible(ht.hashdata[a[j]].divmask, divmask)
+        if !is_divmask_divisible(ht.hashdata[a[j]].divmask, divmask)
             j += 1
             continue
         end
-        @inbounds ea = ht.exponents[a[j]]
+        ea = ht.exponents[a[j]]
         if !is_monom_divisible(ea, lcmexp)
             j += 1
-            @goto Restart
+            continue
         end
-        # @inbounds for i in 1:ht.explen
-        #     if ea[i] < lcmexp[i]
-        #         j += 1
-        #         @goto Restart
-        #     end
-        # end
         # mark as redundant
         a[j] = 0
     end
 
+    nothing
 end
 
 #------------------------------------------------------------------------------
@@ -430,7 +457,7 @@ function insert_multiplied_poly_in_hash_table!(
 
     l = 1 # hardcoding 1 does not seem nice =(
     @label Letsgo
-    while l <= len
+    @inbounds while l <= len
         # we iterate over all monoms of the given poly,
         # multiplying them by htmp/etmp,
         # and inserting into symbolic hashtable
@@ -439,98 +466,46 @@ function insert_multiplied_poly_in_hash_table!(
         # hash(e1 + e2) = hash(e1) + hash(e2)
         # We also assume that the hashing vector is shared same
         # between all created hashtables
-        @inbounds h = htmp + bdata[poly[l]].hash
-        # TODO! -- check mult hash in the table
+        h = htmp + bdata[poly[l]].hash
 
-        @inbounds e = bexps[poly[l]]
-        # println("monom of index $(poly[l]) : $e")
+        e = bexps[poly[l]]
 
         lastidx = symbol_ht.load + 1
-        #=
-        if !isassigned(sexps, lastidx)
-            sexps[lastidx] = Vector{UInt16}(undef, explen)
-        end
-        enew = sexps[lastidx]
-        =#
-        @inbounds enew = sexps[1]
-
+        enew = sexps[1]
         enew = monom_product!(enew, etmp, e)
-        # @inbounds for j in 1:explen
-        #     # multiplied monom exponent
-        #     enew[j] = etmp[j] + e[j]
-        # end
 
-        # now insert into hashtable
+        # insert into hashtable
         k = h
 
         i = MonomHash(1)
         ssize = MonomHash(symbol_ht.size)
-        @label Restart
-        while i <= ssize
-            k = hashnextindex(h, i, mod)
+        @inbounds while i <= ssize
+            k = nexthashindex(h, i, mod)
+            vidx = symbol_ht.hashtable[k]
 
-            @inbounds vidx = symbol_ht.hashtable[k]
             # if index is free
             iszero(vidx) && break
-            # if different exponent is stored here
-            @inbounds if sdata[vidx].hash != h
 
-                # global ADD_ROW_COLLISION
-                # ADD_ROW_COLLISION += 1
-
-                i += UInt32(1)
+            if ishashcollision(symbol_ht, vidx, enew, h)
+                i += MonomHash(1)
                 continue
             end
-
-            @inbounds estored = sexps[vidx]
-            if !is_monom_elementwise_eq(estored, enew)
-                # hash collision, restarting search
-                i += MonomHash(1)
-                @goto Restart
-            end
-            # @inbounds for j in 1:explen
-            #     # hash collision, restarting search
-            #     if estored[j] != enew[j]
-            #         i += MonomHash(1)
-
-            #         # global ADD_ROW_COLLISION
-            #         # ADD_ROW_COLLISION += 1
-
-            #         @goto Restart
-            #     end
-            # end
-
-            # @error "hit"
-
-            # global ADD_ROW_HIT
-            # ADD_ROW_HIT += 1
-
-            @inbounds row[l] = vidx
+            
+            # hit
+            row[l] = vidx
             l += 1
 
             @goto Letsgo
         end
-
-        # global ADD_ROW_MISS
-        # ADD_ROW_MISS += 1
-
-        # @warn "miss"
+        # miss
 
         # add multiplied exponent to hash table
         sexps[lastidx] = copy(enew)
-        # if !isassigned(sexps, lastidx)
-        #     sexps[lastidx] = ExponentVector(undef, explen)
-        # end
-        # sexpsnew = sexps[lastidx]
-        # for j in 1:explen
-        #     # multiplied monom exponent
-        #     @inbounds sexpsnew[j] = enew[j]
-        # end
         symbol_ht.hashtable[k] = lastidx
 
         divmask = monom_divmask(enew, DivisionMask, 
                     symbol_ht.ndivvars, symbol_ht.divmap, symbol_ht.ndivbits)
-        sdata[lastidx] = Hashvalue(h, divmask, 0, totaldeg(enew))
+        sdata[lastidx] = Hashvalue(0, h, divmask, totaldeg(enew))
 
         row[l] = lastidx
         l += 1
@@ -540,20 +515,12 @@ function insert_multiplied_poly_in_hash_table!(
     row
 end
 
-# If symbolic hash table of the given size and load factor should be
-# enlarged after adding the polynomial of length `added` 
-function symbolic_ht_needscale(load::Int, added::Int, size::Int)
-    1.4*(load + added) >= size
-end
-
 function multiplied_poly_to_matrix_row!(
     symbolic_ht::MonomialHashtable, basis_ht::MonomialHashtable{M},
     htmp::MonomHash, etmp::M, poly::Vector{MonomIdx}) where {M}
 
     row = similar(poly)
-    while symbolic_ht_needscale(symbolic_ht.load, length(poly), symbolic_ht.size)
-        enlarge_hash_table!(symbolic_ht)
-    end
+    check_enlarge_hashtable!(symbolic_ht, length(poly))
 
     insert_multiplied_poly_in_hash_table!(row, htmp, etmp, poly, basis_ht, symbolic_ht)
 end
@@ -566,9 +533,7 @@ function insert_in_basis_hash_table_pivots(
     symbol_ht::MonomialHashtable{M},
     col2hash::Vector{MonomIdx}) where {M}
 
-    while ht.size - ht.load <= length(row)
-        enlarge_hash_table!(ht)
-    end
+    check_enlarge_hashtable!(ht, length(row))
 
     sdata = symbol_ht.hashdata
     sexps = symbol_ht.exponents
@@ -580,7 +545,7 @@ function insert_in_basis_hash_table_pivots(
 
     l = 1
     @label Letsgo
-    while l <= length(row)
+    @inbounds while l <= length(row)
         hidx = col2hash[row[l]]
 
         # symbolic hash
@@ -592,28 +557,16 @@ function insert_in_basis_hash_table_pivots(
 
         k = h
         i = MonomHash(1)
-        @label Restart
-        while i <= ht.size
-            k = hashnextindex(h, i, mod)
+        @inbounds while i <= ht.size
+            k = nexthashindex(h, i, mod)
             hm = bhash[k]
 
             iszero(hm) && break
-            @inbounds if bdata[hm].hash != h
+
+            if ishashcollision(ht, hm, e, h)
                 i += MonomHash(1)
                 continue
             end
-
-            ehm = bexps[hm]
-            if !is_monom_elementwise_eq(e, ehm)
-                i += MonomHash(1)
-                @goto Restart
-            end
-            # @inbounds for j in 1:explen
-            #     if e[j] != ehm[j]
-            #         i += MonomHash(1)
-            #         @goto Restart
-            #     end
-            # end
 
             row[l] = hm
             l += 1
@@ -624,25 +577,10 @@ function insert_in_basis_hash_table_pivots(
         row[l] = pos
         l += 1
 
-        bdata[pos] = Hashvalue(h, sdata[hidx].divmask,
-            sdata[hidx].idx, sdata[hidx].deg)
+        bdata[pos] = Hashvalue(sdata[hidx].idx, h, sdata[hidx].divmask, sdata[hidx].deg)
 
         ht.load += 1
     end
-end
 
-#------------------------------------------------------------------------------
-
-# computes lcm of he1 and he2 as exponent vectors from ht1
-# and inserts it in ht2
-function get_lcm(he1::MonomIdx, he2::MonomIdx,
-        ht1::MonomialHashtable{M}, ht2::MonomialHashtable{M}) where {M}
-
-    @inbounds e1 = ht1.exponents[he1]
-    @inbounds e2 = ht1.exponents[he2]
-    @inbounds etmp = ht1.exponents[1]
-
-    etmp = monom_lcm!(etmp, e1, e2)
-
-    insert_in_hash_table!(ht2, etmp)
+    nothing
 end

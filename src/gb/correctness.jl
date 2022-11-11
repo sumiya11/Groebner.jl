@@ -69,14 +69,14 @@ function randomized_correctness_check!(
     goodprime = nextgoodprime!(primetracker)
 
     reduce_modulo!(coeffbuffer, coeffs_zz, gens_temp_ff.coeffs, goodprime)
-    gens_ff_copy = copy_basis_thorough(gens_temp_ff)
-    cleanup_gens!(ring, gens_ff_copy, goodprime)
+    gens_ff_copy = deepcopy_basis(gens_temp_ff)
+    cleanup_basis!(ring, gens_ff_copy, goodprime)
 
     # TODO: can encapsulate BigInt coefficients into coeffaccum
     gb_coeffs_zz = scale_denominators(coeffbuffer, coeffaccum.gb_coeffs_qq)
-    gb_ff_copy = copy_basis_thorough(gb_ff)
+    gb_ff_copy = deepcopy_basis(gb_ff)
     reduce_modulo!(coeffbuffer, gb_coeffs_zz, gb_ff_copy.coeffs, goodprime)
-    cleanup_gens!(ring, gb_ff_copy, goodprime)
+    cleanup_basis!(ring, gb_ff_copy, goodprime)
 
     # @assert ring.ch == gb_ff_copy.ch == gens_ff_copy.ch
 
@@ -150,7 +150,7 @@ function guaranteed_correctness_check!(ring, gbexps, gb_coeffs_qq,
     normalize_basis!(ring, gb_qq)
     normalize_basis!(ring, gens_qq)
 
-    gens_qq_copy = copy_basis_thorough(gens_qq)
+    gens_qq_copy = deepcopy_basis(gens_qq)
 
     # check that initial ideal contains in the computed groebner basis modulo goodprime
     normal_form_f4!(ring, gb_qq, ht, gens_qq_copy)

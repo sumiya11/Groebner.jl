@@ -4,7 +4,7 @@
 function clean_input_isgroebner!(ring::PolyRing,
     exps::Vector{Vector{M}},
     coeffs::Vector{Vector{T}}) where {M, T}
-    clean_input_groebner!(ring, exps, coeffs)
+    remove_zeros_from_input!(ring, exps, coeffs)
 end
 
 #------------------------------------------------------------------------------
@@ -26,16 +26,16 @@ function isgroebner_f4!(ring::PolyRing,
         return true
     end
 
-    select_isgroebner!(pairset, basis, matrix, ht, symbol_ht)
+    select_normal!(pairset, basis, matrix, ht, symbol_ht, selectall=true)
 
     symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
 
-    convert_hashes_to_columns!(matrix, symbol_ht)
+    column_to_monom_mapping!(matrix, symbol_ht)
 
     sort_matrix_rows_increasing!(matrix)
     sort_matrix_rows_decreasing!(matrix) # for pivots,  AB part
 
-    exact_sparse_linear_algebra_isgroebner!(ring, matrix, basis)
+    exact_sparse_rref_isgroebner!(ring, matrix, basis)
 end
 
 function isgroebner_f4(

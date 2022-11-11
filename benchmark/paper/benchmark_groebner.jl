@@ -15,7 +15,7 @@ using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error))
 
 BENCHMARK_SAMPLES = 2
-GROEBNER_PARAMS = (linalg=:exact, )
+GROEBNER_PARAMS = (linalg=:prob, )
 
 function benchmark_system_groebner(system)
     system = Groebner.change_ordering(system, :degrevlex)
@@ -66,12 +66,12 @@ function run_f4_ff_degrevlex_benchmarks(ground)
     resulting_md *= "Versions of the dependencies:\n\n"
 
     deps = Pkg.dependencies()
-    stid_info = deps[findfirst(x -> x.name == "Groebner", deps)]
-    for (s, uid) in stid_info.dependencies
-        if deps[uid].version !== nothing
-            resulting_md *= "* $s : $(deps[uid].version)\n"
-        end
-    end
+    # stid_info = deps[findfirst(x -> x.name == "Groebner", deps)]
+    # for (s, uid) in stid_info.dependencies
+    #     if deps[uid].version !== nothing
+    #         resulting_md *= "* $s : $(deps[uid].version)\n"
+    #     end
+    # end
 
     open("groebner_benchmark_result.md", "w") do io
         write(io, resulting_md)

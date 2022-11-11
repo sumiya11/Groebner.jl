@@ -1,51 +1,5 @@
 
-#------------------------------------------------------------------------------
-
-function assure_ordering!(ring, exps, coeffs, metainfo)
-    if ring.ord != metainfo.computeord
-        sort_input_to_change_ordering(exps, coeffs, metainfo.computeord)
-    end
-    ring.ord = metainfo.computeord
-end
-
-# TODO: change project structure
-
-function input_statistics(exps)
-    sz = length(exps)
-    deg = maximum(sum(e[1]) for e in exps)
-    sz, deg
-end
-
-function select_tablesize(ring, exps)
-    nvars = ring.nvars
-    sz = length(exps)
-
-    tablesize = 2^10
-    if nvars > 4
-        tablesize = 2^14
-    end
-    if nvars > 7
-        tablesize = 2^16
-    end
-
-    if sz < 3
-        tablesize = div(tablesize, 2)
-    end
-    if sz < 2
-        tablesize = div(tablesize, 2)
-    end
-
-    tablesize
-end
-
-function cleanup_gens!(ring, gens_ff, prime)
-    ring.ch = prime
-    normalize_basis!(ring, gens_ff)
-end
-
-#------------------------------------------------------------------------------
-
-function clean_input_groebner!(ring::PolyRing, 
+function remove_zeros_from_input!(ring::PolyRing, 
             exps::Vector{Vector{M}}, 
             coeffs::Vector{Vector{T}}) where {M, T}
     @assert length(exps) == length(coeffs)
@@ -77,7 +31,7 @@ function groebner(polynomials, representation, reduced, ordering, certify, forso
     # now ring stores computation ordering
     # metainfo is now a struct to store target ordering
 
-    iszerobasis = clean_input_groebner!(ring, exps, coeffs)
+    iszerobasis = remove_zeros_from_input!(ring, exps, coeffs)
     iszerobasis && (return convert_to_output(ring, polynomials, exps, coeffs, metainfo))
 
     #= change input ordering if needed =#
@@ -142,7 +96,7 @@ function groebner(
     # initialize hashtable and finite field generators structs
     gens_temp_ff, ht = initialize_structures_ff(ring, exps,
                                         coeffs, meta.rng, tablesize)
-    gens_ff = copy_basis_thorough(gens_temp_ff)
+    gens_ff = deepcopy_basis(gens_temp_ff)
 
     # now hashtable is filled correctly,
     # and gens_temp_ff exponents are correct and in correct order.
@@ -167,7 +121,7 @@ function groebner(
     i = 1
 
     # copy basis so that we initial exponents dont get lost
-    gens_ff = copy_basis_thorough(gens_temp_ff)
+    gens_ff = deepcopy_basis(gens_temp_ff)
 
     prime = nextluckyprime!(primetracker)
     @info "$i: selected lucky prime $prime"
@@ -176,7 +130,7 @@ function groebner(
     reduce_modulo!(coeffbuffer, coeffs_zz, gens_ff.coeffs, prime)
 
     # do some things to ensure generators are correct
-    cleanup_gens!(ring, gens_ff, prime)
+    cleanup_basis!(ring, gens_ff, prime)
 
     # compute groebner basis in finite field
     #=
@@ -187,38 +141,35 @@ function groebner(
 
     pairset = initialize_pairset(powertype(M))
 
-    # ADDED
-    global F4TIME
-    # ADDED
-    F4TIME += @elapsed f4!(ring, gens_ff, tracer, pairset, ht, reduced, meta.linalg, meta.rng)
+    f4!(ring, gens_ff, tracer, pairset, ht, reduced, meta.linalg, meta.rng)
     # f4!(ring, gens_ff, ht, reduced, meta.linalg)
 
     # reconstruct into integers
     @info "CRT modulo ($(primetracker.modulo), $(prime))"
 
     # ADDED
-    global RECTIME
+    # global RECTIME
     # ADDED
-    RECTIME += @elapsed reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
+    reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
     # reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
 
     # reconstruct into rationals
     @info "Reconstructing modulo $(primetracker.modulo)"
     # ADDED
-    RECTIME += @elapsed reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
+    reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
     # reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
 
     correct = false
     # ADDED
-    global CORRTIME
+    # global CORRTIME
     t = time()
     if correctness_check!(coeffaccum, coeffbuffer, primetracker, meta,
                             ring, exps, coeffs, coeffs_zz, gens_temp_ff, gens_ff, ht)
         @info "Success!"
-        CORRTIME += time() - t
+        # CORRTIME += time() - t
         correct = true
     end
-    CORRTIME += time() - t
+    # CORRTIME += time() - t
 
     gap = 1
     primegaps = (1, 1, 1, 1, 1)
@@ -236,29 +187,29 @@ function groebner(
             i += 1
 
             # copy basis so that initial exponents dont get lost
-            gens_ff = copy_basis_thorough(gens_temp_ff)
+            gens_ff = deepcopy_basis(gens_temp_ff)
             prime = nextluckyprime!(primetracker)
             @info "$i: selected lucky prime $prime"
             # perform reduction and store result in gens_ff
             reduce_modulo!(coeffbuffer, coeffs_zz, gens_ff.coeffs, prime)
             # do some things to ensure generators are correct
-            cleanup_gens!(ring, gens_ff, prime)
+            cleanup_basis!(ring, gens_ff, prime)
             # compute groebner basis in finite field
             #=
             Need to make sure input invariants in f4! are satisfied, f4.jl for details
             =#
             # ADDED
-            global F4TIME
+            # global F4TIME
             # ADDED
 
             # @error "tracer" tracer
 
-            F4TIME += @elapsed f4!(ring, gens_ff, tracer, pairset, ht, reduced, meta.linalg, meta.rng)
+            f4!(ring, gens_ff, tracer, pairset, ht, reduced, meta.linalg, meta.rng)
             # f4!(ring, gens_ff, ht, reduced, meta.linalg)
             # reconstruct into integers
             @info "CRT modulo ($(primetracker.modulo), $(prime))"
             # ADDED
-            global RECTIME
+            # global RECTIME
             # ADDED
 
             if meta.linalg === :prob
@@ -269,8 +220,7 @@ function groebner(
             # ADDED
             # prevcoeffs = deepcopy(coeffaccum.gb_coeffs_zz)
 
-            RECTIME += @elapsed reconstruct_crt!(coeffbuffer, coeffaccum,
-                                        primetracker, gens_ff.coeffs, prime)
+            reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
             # reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
 
             #=
@@ -316,25 +266,22 @@ function groebner(
         # reconstruct into rationals
         @info "Reconstructing modulo $(primetracker.modulo)"
         # ADDED
-        stats = @timed reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
-        RECTIME += stats.time
-
-        # ADDED TODO
-        if !stats.value
+        success = reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
+        if !success
             continue
         end
 
         # reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
         # ADDED
-        global CORRTIME
+        # global CORRTIME
         t = time()
         if correctness_check!(coeffaccum, coeffbuffer, primetracker, meta,
                                 ring, exps, coeffs, coeffs_zz, gens_temp_ff, gens_ff, ht)
             @info "Success!"
-            CORRTIME += time() - t
+            # CORRTIME += time() - t
             correct = true
         end
-        CORRTIME += time() - t
+        # CORRTIME += time() - t
         #=
         if correctness_check!(coeffaccum, coeffbuffer, primetracker, meta,
                                 ring, exps, coeffs, coeffs_zz, gens_temp_ff, gens_ff, ht)
@@ -357,11 +304,17 @@ function groebner(
     =#
 
     # ADDED
-    global PRIMES
-    PRIMES = i
+    # global PRIMES
+    # PRIMES = i
 
     # normalize_coeffs!(gbcoeffs_qq)
     gb_exps = hash_to_exponents(gens_ff, ht)
     gb_exps, coeffaccum.gb_coeffs_qq
 end
 
+function assure_ordering!(ring, exps, coeffs, metainfo)
+    if ring.ord != metainfo.computeord
+        sort_input_to_change_ordering(exps, coeffs, metainfo.computeord)
+    end
+    ring.ord = metainfo.computeord
+end

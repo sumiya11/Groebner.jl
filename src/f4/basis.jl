@@ -1,21 +1,29 @@
+# Pairset and Basis
 
-####### Pairset and Basis #######
+# Basis is a structure that stores a list of polynomials in f4.
+# Each polynomial is represented as a sorted vector of monomials 
+# and a sorted vector of coefficients.
+# Monomials and coefficients are stored in the basis separately. 
+# Each monomial is represented with an integer -- 
+# an index to a bucket in the hashtable (see f4/hashtable.jl)
 
-# s-pair, a pair of polynomials
+# Pairset is a list of SPairs.
+# An SPair is a critical pair in f4.
+
+# S-pair{Power}, a pair of polynomials,
+# Power is the type of exponent vector entry
 struct SPair{Power<:Integer}
-    # first generator as index from the basis array
+    # first polynomial as an index from the basis array
     poly1::Int
-    # second generator -//-
+    # second polynomial -//-
     poly2::Int
-    # index of lcm(poly1, poly2) in hashtable
+    # index of lcm(lt(poly1), lt(poly2)) in hashtable
     lcm::MonomIdx
     # total degree of lcm
     deg::Power
 end
 
-#=
-    Stores SPair's
-=#
+# Stores S-Pairs
 mutable struct Pairset{Power}
     pairs::Vector{SPair{Power}}
     # number of filled pairs,
@@ -23,59 +31,57 @@ mutable struct Pairset{Power}
     load::Int
 end
 
-# Initialize and return a pairset with capacity for `initial_size` pairs
+# Initializes and returns pairset with capacity for `initial_size` pairs.
+# fine tuned parameter 2^6
 function initialize_pairset(::Type{Power}; initial_size=2^6) where {Power} 
-    # fine tuned parameter 2^6
     pairs = Vector{SPair{Power}}(undef, initial_size)
     Pairset(pairs, 0)
 end
 
-function Base.isempty(ps::Pairset)
-    ps.load == 0
-end
+Base.isempty(ps::Pairset) = ps.load == 0
 
-# checks if it's possible to add `added` number of pairs to the pairset,
+# Checks if it is possible to add `added` number of pairs to the pairset,
 # and extends the pairset if not
 function check_enlarge_pairset!(ps::Pairset, added::Int)
     sz = length(ps.pairs)
-    # TODO: shrink pairset ?
     if ps.load + added >= sz
         newsz = max(2 * sz, ps.load + added)
         resize!(ps.pairs, newsz)
     end
+    nothing
 end
 
 #------------------------------------------------------------------------------
 
-#=
-    Stores basis generators and some additional info
-=#
+# Stores basis generators and some additional info
 mutable struct Basis{C<:Coeff}
     # vector of polynomials, each polynomial is a vector of monomials,
-    # each monomial is represented with it's index in hashtable
+    # each monomial is represented with its index in hashtable
     monoms::Vector{Vector{MonomIdx}}
     # polynomial coefficients
     coeffs::Vector{Vector{C}}
 
     #= Keeping track of sizes   =#
     #=  ndone <= ntotal <= size =#
-    # total allocated size,
-    # size == length(gens) is always true
+    # total allocated size
     size::Int
-    # number of processed polynomials in `gens`
+    # number of processed polynomials in `monoms`
     # Iitially zero
     ndone::Int
-    # total number of polys filled in `gens`
+    # total number of polys filled in `monoms`
     # (these will be handled during next update! call)
     # Iitially zero
     ntotal::Int
+
+    # always true
+    # length(monoms) == length(coeffs) == length(isred) == size
 
     #= Keeping track of redundancy =#
     #= invariant =#
     #= length(lead) == length(nonred) == count(isred) == nlead =#
     # if element of the basis
     # is redundant
-    isred::Vector{Int8}
+    isred::Vector{Bool}
     # positions of non-redundant elements in the basis
     nonred::Vector{Int}
     # division masks of leading monomials of
@@ -85,96 +91,86 @@ mutable struct Basis{C<:Coeff}
     nlead::Int
 end
 
+# initialize basis for `ngens` elements with coefficient of type T
 function initialize_basis(ring::PolyRing, ngens::Int, ::Type{T}) where {T<:Coeff}
-    #=
-        always true
-        length(gens) == length(coeffs) == length(isred) == size
-    =#
-
-    sz = ngens * 2 # hmmm
+    sz = ngens * 2
     ndone = 0
     ntotal = 0
     nlead = 0
 
-    gens = Vector{Vector{MonomIdx}}(undef, sz)
+    monoms = Vector{Vector{MonomIdx}}(undef, sz)
     coeffs = Vector{Vector{T}}(undef, sz)
-    isred = zeros(Int8, sz)
+    isred = zeros(Bool, sz)
     nonred = Vector{Int}(undef, sz)
     lead = Vector{DivisionMask}(undef, sz)
 
-    ch = ring.ch
-
-    Basis(gens, coeffs, sz, ndone, ntotal, isred, nonred, lead, nlead)
+    Basis(monoms, coeffs, sz, ndone, ntotal, isred, nonred, lead, nlead)
 end
 
-function initialize_basis(ring::PolyRing, hashedexps, coeffs::Vector{Vector{T}}) where {T<:Coeff}
-    sz = length(hashedexps) # hmmm
+# initialize basis with the given hashed monomials and coefficients
+function initialize_basis(ring::PolyRing, hashedexps::Vector{Vector{MonomIdx}}, coeffs::Vector{Vector{T}}) where {T<:Coeff}
+    sz = length(hashedexps)
     ndone = 0
     ntotal = 0
     nlead = 0
 
-    isred = zeros(Int8, sz)
+    isred = zeros(Bool, sz)
     nonred = Vector{Int}(undef, sz)
     lead = Vector{DivisionMask}(undef, sz)
-
-    ch = ring.ch
 
     Basis(hashedexps, coeffs, sz, ndone, ntotal, isred, nonred, lead, nlead)
 end
 
-#------------------------------------------------------------------------------
-
-function copy_basis_thorough(basis::Basis{T}) where {T}
-    gens = Vector{Vector{MonomIdx}}(undef, basis.size)
+function deepcopy_basis(basis::Basis{T}) where {T}
+    # why not extend Base.deepcopy ?...
+    monoms = Vector{Vector{MonomIdx}}(undef, basis.size)
     coeffs = Vector{Vector{T}}(undef, basis.size)
     @inbounds for i in 1:basis.ntotal
-        gens[i] = Vector{MonomIdx}(undef, length(basis.monoms[i]))
+        monoms[i] = Vector{MonomIdx}(undef, length(basis.monoms[i]))
         coeffs[i] = Vector{T}(undef, length(basis.coeffs[i]))
         @inbounds for j in 1:length(basis.monoms[i])
-            gens[i][j] = basis.monoms[i][j]
+            monoms[i][j] = basis.monoms[i][j]
             coeffs[i][j] = basis.coeffs[i][j]
         end
     end
     isred = copy(basis.isred)
     nonred = copy(basis.nonred)
     lead = copy(basis.lead)
-    Basis(gens, coeffs, basis.size, basis.ndone,
+    Basis(monoms, coeffs, basis.size, basis.ndone,
         basis.ntotal, isred, nonred, lead,
         basis.nlead)
 end
 
-#------------------------------------------------------------------------------
-
 function check_enlarge_basis!(basis::Basis{T}, added::Int) where {T}
-    if basis.ndone + added >= basis.size
+    while basis.ndone + added >= basis.size
         basis.size = max(basis.size * 2, basis.ndone + added)
         resize!(basis.monoms, basis.size)
         resize!(basis.coeffs, basis.size)
         resize!(basis.isred, basis.size)
-        basis.isred[basis.ndone+1:end] .= 0
+        @inbounds basis.isred[basis.ndone+1:end] .= false
         resize!(basis.nonred, basis.size)
         resize!(basis.lead, basis.size)
     end
+    nothing
 end
 
 #------------------------------------------------------------------------------
+
+function cleanup_basis!(ring::PolyRing, basis::Basis, prime)
+    ring.ch = prime
+    normalize_basis!(ring, basis)
+end
 
 # Normalize each element of the input basis
 # by dividing it by leading coefficient
 function normalize_basis!(ring, basis::Basis{<:CoeffFF})
     cfs = basis.coeffs
     @inbounds for i in 1:basis.ntotal
-        # mul = inv(cfs[i][1])
-        # hack for now, TODODO
-        if !isassigned(cfs, i)
-            continue
-        end
+        !isassigned(cfs, i) && continue
         ch = ring.ch
         mul = invmod(cfs[i][1], ch) % ch
         @inbounds for j in 2:length(cfs[i])
-            # cfs[i][j] *= mul
-            # TODO: faster division
-            cfs[i][j] = cfs[i][j] * mul % ch
+            cfs[i][j] = (cfs[i][j] * mul) % ch
         end
         cfs[i][1] = one(cfs[i][1])
     end
@@ -186,11 +182,7 @@ end
 function normalize_basis!(ring, basis::Basis{<:CoeffQQ})
     cfs = basis.coeffs
     @inbounds for i in 1:basis.ntotal
-        # mul = inv(cfs[i][1])
-        # hack for now, TODODO
-        if !isassigned(cfs, i)
-            continue
-        end
+        !isassigned(cfs, i) && continue
         mul = inv(cfs[i][1])
         @inbounds for j in 2:length(cfs[i])
             cfs[i][j] *= mul
@@ -202,72 +194,54 @@ end
 
 #------------------------------------------------------------------------------
 
+# Generate new S-pairs from pairs of polynomials
+#   (basis[idx], basis[i])
+# for every i < idx
 function update_pairset!(
         pairset::Pairset,
-        basis::Basis,
+        basis::Basis{C},
         ht::MonomialHashtable{M},
         update_ht::MonomialHashtable{M},
         idx::Int,
-        plcm::Vector{MonomIdx}) where {M}
+        plcm::Vector{MonomIdx}) where {C<:Coeff, M<:Monom}
 
     pr = powertype(M)
-    pl = pairset.load
-    bl = idx
-    nl = pl + bl
+    pl, bl = pairset.load, idx
     ps = pairset.pairs
 
     new_lead = basis.monoms[idx][1]
 
-    # @error "Update pairset"
-
-    # println("pl = $pl, bl = $bl, ps = $(ps[1:4])")
-
-    # @error "" bl
-    # initialize new critical lcms
-    # plcm = Vector{Int}(undef, bl + 1)
-
-    # for each combination (new_Lead, basis.monoms[i][1])
-    # generate a pair
+    # generate a pair for each pair
     @inbounds for i in 1:bl-1
         plcm[i] = get_lcm(basis.monoms[i][1], new_lead, ht, update_ht)
         deg = update_ht.hashdata[plcm[i]].deg
         newidx = pl + i
-        # TRACE: move isred above
-        if iszero(basis.isred[i])
+        if !basis.isred[i]
             ps[newidx] = SPair(i, idx, plcm[i], pr(deg))
         else
-            # lcm == 0 will mark redundancy of spair
+            # lcm == 0 will mark redundancy of an S-pair
             ps[newidx] = SPair(i, idx, MonomIdx(0), pr(deg))
         end
-
     end
-
-    # @error "" one two
-
-    # println("BEFORE important loop")
-    # println("pl = $pl, ps[1:4] = $(ps[1:4])")
 
     # traverse existing pairs
     @inbounds for i in 1:pl
         j = ps[i].poly1
         l = ps[i].poly2
-        # println("iteration $i $j $l")
         m = max(ps[pl+l].deg, ps[pl+j].deg)
 
-        # if an existing pair is divisible by lead of new poly
-        # and has a greater degree than newly generated one
+        # if an existing pair is divisible by the lead of new poly
+        # and has a greater degree than newly generated one then
         if is_monom_divisible(ps[i].lcm, new_lead, ht) && ps[i].deg > m
-            # mark lcm as 0
+            # mark an existing pair redundant
             ps[i] = SPair(ps[i].poly1, ps[i].poly2, MonomIdx(0), ps[i].deg)
         end
     end
-    # TODO: this can be done faster if we
-    # create only non-redundant pairs at first
 
-    # traverse new pairs to check for redundancy
+    # traverse new pairs to move not-redundant ones first 
     j = 1
-    for i in 1:bl-1
-        if iszero(basis.isred[i])
+    @inbounds for i in 1:bl-1
+        if !basis.isred[i]
             ps[pl+j] = ps[pl+i]
             j += 1
         end
@@ -278,14 +252,14 @@ function update_pairset!(
     @inbounds for i in 1:j-1
         plcm[i] = ps[pl+i].lcm
     end
-    plcm[j] = 0
+    @inbounds plcm[j] = 0
     pc = j
     pc -= 1
 
-    # mark redundancy of some pairs from plcm
+    # mark redundancy of some pairs from plcm array
     @inbounds for j in 1:pc
-        # if is not redundant
-        if plcm[j] > 0
+        # if is not redundant already
+        if !iszero(plcm[j])
             check_monomial_division_in_update(plcm, j + 1, pc, plcm[j], update_ht)
         end
     end
@@ -299,43 +273,41 @@ function update_pairset!(
         j += 1
     end
 
-    # assure that basis hashtable can store new lcms
-    if ht.size - ht.load <= pc
-        enlarge_hash_table!(ht)
-    end
+    # ensure that basis hashtable can store new lcms
+    # YES
+    check_enlarge_hashtable!(ht, pc)
+    # if ht.size - ht.load <= pc
+    #     enlarge_hash_table!(ht)
+    # end
 
     # add new lcms to the basis hashtable,
-    # including j and not including pc
+    # including index j and not including index pc
     insert_plcms_in_basis_hash_table!(pairset, pl, ht, update_ht, basis, plcm, j, pc + 1)
 
-    # mark redundant elements in masis
+    # mark redundant polynomials in basis
     nonred = basis.nonred
     lml = basis.nlead
     @inbounds for i in 1:lml
-        if iszero(basis.isred[nonred[i]])
+        if !basis.isred[nonred[i]]
             if is_monom_divisible(basis.monoms[nonred[i]][1], new_lead, ht)
-                basis.isred[nonred[i]] = 1
+                basis.isred[nonred[i]] = true
             end
         end
     end
 
+    nothing
 end
 
-#------------------------------------------------------------------------------
-
+# Updates information about redundant generators in the basis
 function update_basis!(
-    basis::Basis,
-    ht::MonomialHashtable,
-    update_ht::MonomialHashtable)
-
-    # here we could check overall redundancy and update basis.lead
+        basis::Basis,
+        ht::MonomialHashtable{M}) where {M<:Monom}
 
     k = 1
     lead = basis.lead
     nonred = basis.nonred
-
-    for i in 1:basis.nlead
-        if basis.isred[nonred[i]] == 0
+    @inbounds for i in 1:basis.nlead
+        if !basis.isred[nonred[i]]
             basis.lead[k] = lead[i]
             basis.nonred[k] = nonred[i]
             k += 1
@@ -343,8 +315,8 @@ function update_basis!(
     end
     basis.nlead = k - 1
 
-    for i in basis.ndone+1:basis.ntotal
-        if basis.isred[i] == 0
+    @inbounds for i in basis.ndone+1:basis.ntotal
+        if !basis.isred[i]
             lead[k] = ht.hashdata[basis.monoms[i][1]].divmask
             nonred[k] = i
             k += 1
@@ -355,39 +327,33 @@ function update_basis!(
     basis.ndone = basis.ntotal
 end
 
-# checks if element of basis at position idx is redundant
+# Checks if element of basis at position idx is redundant
 function is_redundant!(
-    pairset::Pairset, basis::Basis, ht::MonomialHashtable{M}, 
-    update_ht::MonomialHashtable{M}, idx::Int) where {M}
+        pairset::Pairset, basis::Basis, ht::MonomialHashtable{M}, 
+        update_ht::MonomialHashtable{M}, idx::Int) where {M}
 
     pt = powertype(M)
-    if 2 * update_ht.load > update_ht.size
-        enlarge_hash_table!(update_ht)
-    end
-    # reinitialize_hash_table!(update_ht, 2*idx)
-
-    ps = pairset.pairs
+    check_enlarge_hashtable!(update_ht, 0)
 
     # lead of new polynomial
     lead_new = basis.monoms[idx][1]
-    # degree of lead
-    lead_deg = ht.hashdata[lead_new].deg
+    ps = pairset.pairs
 
-    for i in idx+1:basis.ntotal
+    @inbounds for i in idx+1:basis.ntotal
         i == idx && continue
-        if basis.isred[i] == 1
-            continue
-        end
+        basis.isred[i] && continue
 
+        # lead of new polynomial at index i > idx
         lead_i = basis.monoms[i][1]
 
         if is_monom_divisible(lead_new, lead_i, ht)
+            # add new S-pair corresponding to Spoly(i, idx)
             lcm_new = get_lcm(lead_i, lead_new, ht, ht)
-
             psidx = pairset.load + 1
             ps[psidx] = SPair(i, idx, lcm_new, pt(ht.hashdata[lcm_new].deg))
 
-            basis.isred[idx] = 1
+            # mark redundant
+            basis.isred[idx] = true
             pairset.load += 1
 
             return true
@@ -397,56 +363,54 @@ function is_redundant!(
     return false
 end
 
-#------------------------------------------------------------------------------
-
-function update!(
-    pairset::Pairset,
-    basis::Basis,
-    ht::MonomialHashtable{M},
-    update_ht::MonomialHashtable{M},
-    plcm::Vector{MonomIdx}) where {M}
-
-    #=
-        Always check redundancy, for now
-    =#
-
-    # number of added elements
-    npivs = basis.ntotal
-
-    # number of potential critical pairs to add
-    npairs = basis.ndone * npivs
-    for i in 1:npivs
-        npairs += i
+function check_enlarge_plcm!(plcm::Vector{T}, ntotal) where {T}
+    if length(plcm) < ntotal + 1
+        resize!(plcm, floor(Int, ntotal * 1.1) + 1)
     end
+    nothing
+end
+
+# Updates basis and pairset.
+# 
+# New elements added to the basis from the f4 matrix 
+# (the ones with indices from basis.ndone+1 to basis.ntotal)
+# are checked for being redundant.
+#
+# Then, pairset is updated with the new S-pairs formed
+# from the added elements
+#
+# Always checks new elements redundancy.
+function update!(
+        pairset::Pairset,
+        basis::Basis,
+        ht::MonomialHashtable{M},
+        update_ht::MonomialHashtable{M},
+        plcm::Vector{MonomIdx}) where {M<:Monom}
+
+    # total number of elements in the basis (old + new)
+    npivs = basis.ntotal
+    # number of potential critical pairs to add
+    npairs = basis.ndone * npivs + div((npivs + 1)*npivs, 2)
 
     # make sure pairset and update hashtable have enough
     # space to store new pairs
-    # TODO: we create too big array, can be fixed
-    # @error "before" pairset.load npairs pairset.load+npairs length(pairset.pairs)
+    # note: we create too big array, can be fixed
     check_enlarge_pairset!(pairset, npairs)
     pairset_size = length(pairset.pairs)
-    # @error "after enlarge" length(pairset.pairs)
 
-    # @error "" basis.ndone+1 basis.ntotal
-
-    if basis.ndone + 1 <= basis.ntotal
-        # red = 0
-        # for each new element in basis
-        # @error pairset.load basis.ndone+1 basis.ntotal
-        for i in basis.ndone+1:basis.ntotal
-            # check redundancy of new poly
-            if is_redundant!(pairset, basis, ht, update_ht, i)
-                continue
-            end
-            if length(plcm) < basis.ntotal + 1
-                resize!(plcm, floor(Int, basis.ntotal * 1.1) + 1)
-            end
-            update_pairset!(pairset, basis, ht, update_ht, i, plcm)
-        end
-        # @error pairset.load
+    # update pairset,
+    # for each new element in basis
+    @inbounds for i in basis.ndone+1:basis.ntotal
+        # check redundancy of new polynomial
+        is_redundant!(pairset, basis, ht, update_ht, i) && continue
+        # YES
+        check_enlarge_plcm!(plcm, basis.ntotal)
+        # if not redundant, then add new S-pairs to pairset
+        update_pairset!(pairset, basis, ht, update_ht, i, plcm)
     end
 
-    update_basis!(basis, ht, update_ht)
+    # update basis
+    update_basis!(basis, ht)
 
     pairset_size
 end
@@ -454,63 +418,53 @@ end
 #------------------------------------------------------------------------------
 
 # given input exponent and coefficient vectors hashes exponents into `ht`
-# and then constructs hashed polynomial vectors for `basis`
+# and then constructs hashed polynomials for `basis`
 function fill_data!(basis::Basis, ht::MonomialHashtable{M}, 
         exponents::Vector{Vector{M}}, coeffs::Vector{Vector{T}}) where {M,T}
+    
     ngens = length(exponents)
-
-    for i in 1:ngens
-        while length(exponents[i]) >= ht.size - ht.load
-            enlarge_hash_table!(ht)
-        end
-        # ht.exponents one can be reallocated together with ht,
-        # so we need to reset it on each iteration
-        etmp = ht.exponents[1]
+    @inbounds for i in 1:ngens
+        check_enlarge_hashtable!(ht, length(exponents[i]))
 
         nterms = length(coeffs[i])
         basis.coeffs[i] = coeffs[i]
         basis.monoms[i] = Vector{MonomIdx}(undef, nterms)
         poly = basis.monoms[i]
-        for j in 1:nterms
+        @inbounds for j in 1:nterms
             poly[j] = insert_in_hash_table!(ht, exponents[i][j])
         end
 
-        # sort terms (not needed),
-        # beautify coefficients (not needed),
-        # and all
+        # sort terms (not needed)
+        # beautifuly coefficients (not needed)
     end
 
-    # the initial update traverses all elements in
-    # basis.ndone+1:basis.ntotal
-    # which is 1:ngens
     basis.ntotal = ngens
 end
 
+# Remove redundant elements from the basis
+# by moving all non-redundant up front
 function filter_redundant!(basis::Basis)
     j = 1
-    for i in 1:basis.nlead
-        if basis.isred[basis.nonred[i]] == 0
+    @inbounds for i in 1:basis.nlead
+        if !basis.isred[basis.nonred[i]]
             basis.lead[j] = basis.lead[i]
             basis.nonred[j] = basis.nonred[i]
-            #=
-            basis.coeffs[j] = basis.coeffs[basis.nonred[i]]
-            basis.monoms[j] = basis.monoms[basis.nonred[i]]
-            =#
             j += 1
         end
     end
     basis.nlead = j - 1
     @assert basis.ndone == basis.ntotal
-    # basis.ndone = basis.ntotal = basis.nlead
     basis
 end
 
+# f4 must produce a `Basis` object which satisfies several conditions.
+# This functions standardizes the given basis so that conditions hold.
+# (see f4/f4.jl)
 function standardize_basis!(ring, basis::Basis, ht::MonomialHashtable, ord)
-    for i in 1:basis.nlead
+    @inbounds for i in 1:basis.nlead
         idx = basis.nonred[i]
-        # basis.lead[i] = basis.lead[idx]
         basis.nonred[i] = i
-        basis.isred[i] = 0
+        basis.isred[i] = false
         basis.coeffs[i] = basis.coeffs[idx]
         basis.monoms[i] = basis.monoms[idx]
     end
@@ -520,31 +474,14 @@ function standardize_basis!(ring, basis::Basis, ht::MonomialHashtable, ord)
     resize!(basis.lead, basis.ndone)
     resize!(basis.nonred, basis.ndone)
     resize!(basis.isred, basis.ndone)
-
-    sort_gens_by_lead_increasing_in_standardize!(basis, ht, ord)
+    sort_gens_by_lead_increasing!(basis, ht, ord=ord)
     normalize_basis!(ring, basis)
 end
 
-function export_basis_data(basis::Basis{C}, ht::MonomialHashtable{M}) where {M<:Monom,C<:Coeff}
+# Returns the exponent vectors of polynomials in the basis
+function hash_to_exponents(basis::Basis, ht::MonomialHashtable{M}) where {M<:Monom}
     exps = Vector{Vector{M}}(undef, basis.nlead)
-    coeffs = Vector{Vector{C}}(undef, basis.nlead)
-
-    for i in 1:basis.nlead
-        idx = basis.nonred[i]
-        poly = basis.monoms[idx]
-        exps[i] = Vector{M}(undef, length(poly))
-        for j in 1:length(poly)
-            exps[i][j] = ht.exponents[poly[j]]
-        end
-        coeffs[i] = basis.coeffs[idx]
-    end
-
-    exps, coeffs
-end
-
-function hash_to_exponents(basis::Basis, ht::MonomialHashtable{M}) where {M}
-    exps = Vector{Vector{M}}(undef, basis.nlead)
-    for i in 1:basis.nlead
+    @inbounds for i in 1:basis.nlead
         idx = basis.nonred[i]
         poly = basis.monoms[idx]
         exps[i] = Vector{M}(undef, length(poly))
@@ -555,31 +492,48 @@ function hash_to_exponents(basis::Basis, ht::MonomialHashtable{M}) where {M}
     exps
 end
 
-function insert_plcms_in_basis_hash_table!(
-    pairset::Pairset,
-    off::Int,
-    ht::MonomialHashtable{M},
-    update_ht::MonomialHashtable{M},
-    basis::Basis,
-    plcm::Vector{MonomIdx},
-    ifirst::Int, ilast::Int) where {M}
+# Returns the exponent vectors and the coefficients of polynomials in the basis
+function export_basis_data(basis::Basis{C}, ht::MonomialHashtable{M}) where {M<:Monom,C<:Coeff}
+    exps = hash_to_exponents(basis, ht)
+    coeffs = Vector{Vector{C}}(undef, basis.nlead)
+    @inbounds for i in 1:basis.nlead
+        idx = basis.nonred[i]
+        coeffs[i] = basis.coeffs[idx]
+    end
+    exps, coeffs
+end
 
+#------------------------------------------------------------------------------
+
+# For a given list of S-pairs and a list of indices `plcm`
+# adds indices from plcm[ifirst:ilast]
+# to the hashtable ht
+function insert_plcms_in_basis_hash_table!(
+        pairset::Pairset,
+        off::Int,
+        ht::MonomialHashtable{M},
+        update_ht::MonomialHashtable{M},
+        basis::Basis,
+        plcm::Vector{MonomIdx},
+        ifirst::Int, ilast::Int) where {M}
     # including ifirst and not including ilast
 
-    gens = basis.monoms
-    mod = UInt32(ht.size - 1)
+    monoms = basis.monoms
     ps = pairset.pairs
+
+    mod = MonomHash(ht.size - 1)
+    @assert ispow2(mod + 1)
 
     m = ifirst
     l = 1
     @label Letsgo
-    while l < ilast
-        if plcm[l] == 0
+    @inbounds while l < ilast
+        if iszero(plcm[l])
             l += 1
             continue
         end
 
-        if is_gcd_const(gens[ps[off+l].poly1][1], gens[ps[off+1].poly2][1], ht)
+        if is_gcd_const(monoms[ps[off+l].poly1][1], monoms[ps[off+1].poly2][1], ht)
             l += 1
             continue
         end
@@ -591,30 +545,18 @@ function insert_plcms_in_basis_hash_table!(
         n = ht.exponents[ht.load+1]
 
         k = h
-        i = UInt32(1)
-        @label Restart
-        while i <= ht.size
-            k = hashnextindex(h, i, mod)
+        i = MonomHash(1)
+        @inbounds while i <= ht.size
+            k = nexthashindex(h, i, mod)
             hm = ht.hashtable[k]
+            
+            # if free
+            iszero(hm) && break
 
-            hm == 0 && break
-            if ht.hashdata[hm].hash != h
-                i += UInt32(1)
+            if ishashcollision(ht, hm, n, h)
+                i += MonomHash(1)
                 continue
             end
-
-            ehm = ht.exponents[hm]
-
-            if !is_monom_elementwise_eq(ehm, n)
-                i += MonomHash(1)
-                @goto Restart
-            end
-            # for j in 1:ht.explen
-            #     if ehm[j] != n[j]
-            #         i += MonomHash(1)
-            #         @goto Restart
-            #     end
-            # end
 
             ps[m] = SPair(ps[m].poly1, ps[m].poly2, hm, ps[m].deg)
             m += 1
@@ -625,9 +567,8 @@ function insert_plcms_in_basis_hash_table!(
         ht.hashtable[k] = pos = ht.load + 1
 
         uhd = update_ht.hashdata
-
         ll = plcm[l]
-        ht.hashdata[ht.load+1] = Hashvalue(h, uhd[ll].divmask, 0, uhd[ll].deg)
+        ht.hashdata[ht.load+1] = Hashvalue(0, h, uhd[ll].divmask, uhd[ll].deg)
 
         ht.load += 1
         ps[m] = SPair(ps[m].poly1, ps[m].poly2, MonomIdx(pos), ps[m].deg)

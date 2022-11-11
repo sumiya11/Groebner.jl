@@ -24,7 +24,7 @@ end
 # set equality
 ≂(xs, ys) = ⊂(xs, ys) && ⊂(ys, xs)
 
-@testset "All tests" begin
+@time @testset "All tests" verbose=true begin
     @warn "Warnings during testing are fine."
 
     # test reference implementation
@@ -37,7 +37,7 @@ end
     @includetests ["input-output/io"]
     # test univriate input
     @includetests ["input-output/univariate"]
-    # test chinese remainder and rational reconstructions
+    # test crt and rational reconstructions
     @includetests ["crt_reconstruction", "mod_reconstruction"]
     # test `groebner`
     @includetests ["f4_reduce", 
@@ -54,7 +54,7 @@ end
     @includetests ["normalform", "normalform_stress", "array_normalform"]
     # test `fglm` and `kbase`
     @includetests ["fglm", "kbase"]
-    # test some special cases 
+    # test some special cases
     @includetests ["handling_zeros", "handling_checks", 
                 "many_variables", "large_exponents"]
     if try_import(:DynamicPolynomials)

@@ -70,7 +70,7 @@ end
     Extracts base ring information, exponents, and coefficients.
 
     This is the most general implementation.
-    Works for polynomials that implement AbstractAlgebra.MPoly intefrace:
+    Works for polynomials that implement AbstractAlgebra.Generic.MPoly intefrace:
         . `AbstractAlgebra`
         . `Nemo`
         . `Singular`
@@ -86,7 +86,7 @@ function convert_to_internal(
     isempty(orig_polys) && throw(DomainError(orig_polys, "Empty input."))
     ordering in _supported_orderings || ordering === :input || error("Not supported ordering $ordering.")
 
-    if hasmethod(parent, Tuple{typeof(first(orig_polys))})
+    if hasmethod(AbstractAlgebra.parent, Tuple{typeof(first(orig_polys))})
         convert_to_internal(representation, orig_polys, ordering, Val(:hasparent))
     else
         convert_to_internal(representation, orig_polys, ordering, Val(:undefined))
@@ -158,13 +158,13 @@ function check_domain(representation, ring)
 end
 
 function extract_ring(R::T) where {T}
-    @assert hasmethod(nvars, Tuple{T})
-    @assert hasmethod(characteristic, Tuple{T})
+    @assert hasmethod(AbstractAlgebra.nvars, Tuple{T})
+    @assert hasmethod(AbstractAlgebra.characteristic, Tuple{T})
 
-    nv     = nvars(R)
+    nv     = AbstractAlgebra.nvars(R)
     # deglex is the default ordering on univariate polynomials
-    ord = hasmethod(ordering, Tuple{T}) ? ordering(R) : :deglex
-    ch     = characteristic(R)
+    ord = hasmethod(AbstractAlgebra.ordering, Tuple{T}) ? AbstractAlgebra.ordering(R) : :deglex
+    ch     = AbstractAlgebra.characteristic(R)
 
     check_ground_domain(nv, ord, ch)
 
@@ -178,7 +178,7 @@ function extract_ring(orig_polys::Vector{<:AbstractPolynomialLike{T}}) where {T}
 
     nv = Groebner.MultivariatePolynomials.nvariables(orig_polys)
     ord    = :deglex
-    ch     = T <: Union{Integer, Rational} ? 0 : characteristic(parent(first(coefficients(f))))
+    ch     = 0
 
     check_ground_domain(nv, ord, ch)
 
@@ -229,27 +229,27 @@ function extract_coeffs(ring::PolyRing{Ch}, orig_polys::Vector{T}) where {Ch, T}
 end
 
 # specialization for univariate polynomials
-function extract_coeffs_ff(ring::PolyRing{Ch}, poly::Poly) where {Ch}
+function extract_coeffs_ff(ring::PolyRing{Ch}, poly::AbstractAlgebra.Generic.Poly) where {Ch}
     iszero(poly) && (return zero_coeffvector_ff(ring))
-    reverse(map(Ch ∘ data, filter(!iszero, collect(coefficients(poly)))))
+    reverse(map(Ch ∘ AbstractAlgebra.data, filter(!iszero, collect(AbstractAlgebra.coefficients(poly)))))
 end
 
 # specialization for univariate polynomials
-function extract_coeffs_qq(ring::PolyRing, poly::Poly)
+function extract_coeffs_qq(ring::PolyRing, poly::AbstractAlgebra.Generic.Poly)
     iszero(poly) && (return zero_coeffvector_qq(ring))
-    reverse(map(Rational, filter(!iszero, collect(coefficients(poly)))))
+    reverse(map(Rational, filter(!iszero, collect(AbstractAlgebra.coefficients(poly)))))
 end
 
 # specialization for multivariate polynomials
 function extract_coeffs_ff(ring::PolyRing{Ch}, poly) where {Ch}
     iszero(poly) && (return zero_coeffvector_ff(ring))
-    map(Ch ∘ data, coefficients(poly))
+    map(Ch ∘ AbstractAlgebra.data, AbstractAlgebra.coefficients(poly))
 end
 
 # specialization for multivariate polynomials
 function extract_coeffs_qq(ring::PolyRing, poly)
     iszero(poly) && (return zero_coeffvector_qq(ring))
-    map(Rational, coefficients(poly))
+    map(Rational, AbstractAlgebra.coefficients(poly))
 end
 
 function extract_coeffs_ff(ring::PolyRing{Ch}, 
@@ -288,7 +288,7 @@ end
 function extract_exponents(representation::Representation{M}, ring::PolyRing, poly) where {M}
     exps = Vector{M}(undef, length(poly))
     @inbounds for j in 1:length(poly)
-        exps[j] = make_ev(M, exponent_vector(poly, j))
+        exps[j] = make_ev(M, AbstractAlgebra.exponent_vector(poly, j))
     end
     exps
 end
@@ -296,7 +296,7 @@ end
 function extract_exponents(representation::Representation{M}, ring::PolyRing, poly::P) where {M, P<:AbstractAlgebra.Generic.PolyElem}
     exps = Vector{M}(undef, 0)
     @inbounds while !iszero(poly)
-        push!(exps, make_ev(M, [degree(poly)]))
+        push!(exps, make_ev(M, [AbstractAlgebra.degree(poly)]))
         poly = AbstractAlgebra.tail(poly)
     end
     exps
@@ -399,6 +399,21 @@ function extract_exponents(
     exps
 end
 
+function remove_zeros_from_input!(ring::PolyRing, 
+        exps::Vector{Vector{M}}, 
+        coeffs::Vector{Vector{T}}) where {M, T}
+    @assert length(exps) == length(coeffs)
+    filter!(!iszero_coeffvector, coeffs)
+    filter!(!iszero_monomvector, exps)
+    @assert length(exps) == length(coeffs)
+    iszerobasis = isempty(exps)
+    if iszerobasis
+        push!(exps, Vector{M}())
+        push!(coeffs, Vector{T}())
+    end
+    iszerobasis
+end
+
 #------------------------------------------------------------------------------
 
 """
@@ -409,7 +424,7 @@ end
         . `Nemo`
 
     There are also more efficient specializations for:
-        . `AbstractAlgebra.MPoly`
+        . `AbstractAlgebra.Generic.MPoly`
         . `MultivariatePolynomials.AbstractPolynomial`
 """
 function convert_to_output(
@@ -508,8 +523,8 @@ function convert_to_output(
     @assert hasmethod(base_ring, Tuple{typeof(origring)})
 
     # TODO: hardcoded
-    if hasmethod(ordering, Tuple{R})
-        (metainfo.targetord != ordering(origring)) && @warn "Unknown polynomial type. Computed basis is in $(metainfo.targetord), but terms are ordered in $(ordering(origring)) in output"
+    if hasmethod(AbstractAlgebra.ordering, Tuple{R})
+        (metainfo.targetord != AbstractAlgebra.ordering(origring)) && @warn "Unknown polynomial type. Computed basis is in $(metainfo.targetord), but terms are ordered in $(ordering(origring)) in output"
     end
 
     etype = elem_type(base_ring(origring))
@@ -560,49 +575,49 @@ end
 #------------------------------------------------------------------------------
 
 function create_polynomial(
-            origring::MPolyRing{T}, coeffs::Vector{T}, exps) where {T}
-    ground   = base_ring(origring)
+            origring::AbstractAlgebra.Generic.MPolyRing{T}, coeffs::Vector{T}, exps) where {T}
+    ground = base_ring(origring)
     if !isempty(coeffs)
-        MPoly{elem_type(ground)}(origring, coeffs, exps)
+        AbstractAlgebra.Generic.MPoly{elem_type(ground)}(origring, coeffs, exps)
     else
-        MPoly{elem_type(ground)}(origring)
+        AbstractAlgebra.Generic.MPoly{elem_type(ground)}(origring)
     end
 end
 
 """
-    `AbstractAlgebra.MPolyRing` conversion specialization
+    `AbstractAlgebra.Generic.MPolyRing` conversion specialization
 """
 function convert_to_output(
             ring::PolyRing,
-            origring::MPolyRing{T},
+            origring::AbstractAlgebra.Generic.MPolyRing{T},
             gbexps::Vector{Vector{M}},
             gbcoeffs::Vector{Vector{I}},
             metainfo::GroebnerMetainfo) where {M<:Monom,T, I}
 
-    ord = ordering(origring)
+    ord = AbstractAlgebra.ordering(origring)
     if metainfo.targetord != ord
-        origring, _ = PolynomialRing(base_ring(origring), symbols(origring), ordering=metainfo.targetord)
+        origring, _ = AbstractAlgebra.PolynomialRing(base_ring(origring), AbstractAlgebra.symbols(origring), ordering=metainfo.targetord)
     end
 
     if elem_type(base_ring(origring)) <: Integer
         coeffs_zz = scale_denominators(gbcoeffs)
-        convert_to_output(origring, gbexps, coeffs_zz, Val(ordering(origring)))
+        convert_to_output(origring, gbexps, coeffs_zz, Val(AbstractAlgebra.ordering(origring)))
     else
-        convert_to_output(origring, gbexps, gbcoeffs, Val(ordering(origring)))
+        convert_to_output(origring, gbexps, gbcoeffs, Val(AbstractAlgebra.ordering(origring)))
     end
 end
 
 """
     Rational, Integer, and Finite field :degrevlex
-    `AbstractAlgebra.MPolyRing` conversion specialization
+    `AbstractAlgebra.Generic.MPolyRing` conversion specialization
 """
 function convert_to_output(
-            origring::MPolyRing{U},
+            origring::AbstractAlgebra.Generic.MPolyRing{U},
             gbexps::Vector{Vector{M}},
             gbcoeffs::Vector{Vector{T}},
             ::Val{:degrevlex}) where  {M, T<:Coeff, U}
 
-    nv = nvars(origring)
+    nv = AbstractAlgebra.nvars(origring)
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     tmp = Vector{AAexponenttype}(undef, nv)
@@ -625,15 +640,15 @@ end
 
 """
     Rational, Integer, and Finite field :lex
-    `AbstractAlgebra.MPolyRing` conversion specialization
+    `AbstractAlgebra.Generic.MPolyRing` conversion specialization
 """
 function convert_to_output(
-            origring::MPolyRing{U},
+            origring::AbstractAlgebra.Generic.MPolyRing{U},
             gbexps::Vector{Vector{M}},
             gbcoeffs::Vector{Vector{T}},
             ::Val{:lex}) where {M, T<:Coeff, U}
 
-    nv = nvars(origring)
+    nv = AbstractAlgebra.nvars(origring)
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     tmp = Vector{AAexponenttype}(undef, nv)
@@ -655,15 +670,15 @@ end
 
 """
     Rational, Integer, and Finite field :deglex
-    `AbstractAlgebra.MPolyRing` conversion specialization
+    `AbstractAlgebra.Generic.MPolyRing` conversion specialization
 """
 function convert_to_output(
-            origring::MPolyRing{U},
+            origring::AbstractAlgebra.Generic.MPolyRing{U},
             gbexps::Vector{Vector{M}},
             gbcoeffs::Vector{Vector{T}},
             ::Val{:deglex}) where {M, T<:Coeff, U}
 
-    nv = nvars(origring)
+    nv = AbstractAlgebra.nvars(origring)
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     tmp = Vector{AAexponenttype}(undef, nv)

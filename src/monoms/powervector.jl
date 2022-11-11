@@ -1,20 +1,21 @@
-#=
-    PowerVector{T} is a dense vector of integers {T}
-    implementing exponent vector functionality.
+# PowerVector{T} is a dense vector of integers {T}
+# implementing exponent vector interface.
 
-    PowerVector stores total degree in addition to partial degrees.
-    Thus, PowerVector has length greater than 1 always.
-=#
+# PowerVector stores total degree in addition to partial degrees.
 
 const PowerVector{T} = Vector{T} where {T<:Integer}
 
+# checks that there is no risk of overflow for `e`.
+# If overflow if probable, throws.
 function _overflow_check(e::PowerVector{T}) where {T}
     _overflow_check(totaldeg(e), T)
 end
 
+# an object of type T can store capacity(T) integers at max
 capacity(::Type{PowerVector{T}}) where {T} = 2^32
-capacity(::PowerVector{T}) where {T} = capacity(PowerVector{T})
+capacity(p::PowerVector{T}) where {T} = capacity(typeof(p))
 
+# total degree of exponent vector
 totaldeg(pv::PowerVector) = @inbounds pv[1]
 
 powertype(::Type{PowerVector{T}}) where {T} = MonomHash
@@ -24,13 +25,14 @@ make_zero_ev(::Type{PowerVector{T}}, n::Integer) where {T} = zeros(T, n+1)
 
 function make_ev(::Type{PowerVector{T}}, ev::Vector{U}) where {T, U} 
     v = Vector{T}(undef, length(ev) + 1)
-    v[1] = sum(ev)
-    v[2:end] .= ev
+    @inbounds v[1] = sum(ev)
+    @inbounds v[2:end] .= ev
     PowerVector{T}(v)
 end
 
 function make_dense!(tmp::Vector{M}, pv::PowerVector{T}) where {M, T}
-    tmp[1:end] = pv[2:end]
+    @assert length(tmp) == length(pv) - 1
+    @inbounds tmp[1:end] = pv[2:end]
     tmp
 end
 
@@ -59,7 +61,6 @@ function exponent_isless_drl(ea::PowerVector, eb::PowerVector)
     end
 
     # assuming length(ea) > 1
-    # @assert length(ea) > 1
 
     i = length(ea)
     @inbounds while i > 2 && ea[i] == eb[i]
@@ -113,7 +114,7 @@ function monom_lcm!(ec::PowerVector{T}, ea::PowerVector{T}, eb::PowerVector{T}) 
 end
 
 function is_gcd_const(ea::PowerVector{T}, eb::PowerVector{T}) where {T}
-    for i in 2:length(ea)
+    @inbounds for i in 2:length(ea)
         if !iszero(ea[i]) && !iszero(eb[i])
             return false
         end
