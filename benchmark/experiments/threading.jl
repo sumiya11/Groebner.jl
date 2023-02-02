@@ -38,10 +38,6 @@ system = Groebner.katsuran(9, ground=ground, ordering=ord)
 system = Groebner.eco11(ground=ground, ordering=ord)
 @time Groebner.groebner(system; params...)
 
-@info "reimer 6.."
-system = Groebner.reimern(6, ground=ground, ordering=ord)
-@time Groebner.groebner(system; params...)
-
 @info "usual corner case"
 R, (x, y) = ground["x","y"]
 system = [x^2*y + BigInt(10)^1000, x*y^2 + BigInt(11)^1000]
