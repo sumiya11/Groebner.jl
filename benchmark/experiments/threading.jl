@@ -40,5 +40,6 @@ system = Groebner.eco11(ground=ground, ordering=ord)
 
 @info "usual corner case"
 R, (x, y) = ground["x","y"]
-system = [x^2*y + BigInt(10)^1000, x*y^2 + BigInt(11)^1000]
+system = [x^2*y + BigInt(10)^2000, x*y^2 + BigInt(11)^2000]
+Groebner.groebner(system; params...)
 @time Groebner.groebner(system; params...)
