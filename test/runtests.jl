@@ -1,4 +1,3 @@
-
 using Test
 using TestSetExtensions
 
@@ -66,6 +65,7 @@ end
 
     # test for regressions
     @includetests ["regressions"]
+    @includetests ["threading"]
 
     # test for some systems used in benchmarks
     @includetests ["small_benchmarks"]

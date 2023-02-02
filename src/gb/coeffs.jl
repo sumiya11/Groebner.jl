@@ -215,6 +215,41 @@ function reconstruct_trivial_crt!(coeffbuff::CoeffBuffer,
     end
 end
 
+function reconstruct_crt_at!(
+        from_idx, to_idx,
+        coeffbuff, coeffaccum, modulo, 
+        gb_coeffs_ff, ch::UInt64)
+    gb_coeffs_zz = coeffaccum.gb_coeffs_zz
+    prev_gb_coeffs_zz = coeffaccum.prev_gb_coeffs_zz
+
+    buf = coeffbuff.reconstructbuf1
+    n1, n2 = coeffbuff.reconstructbuf2, coeffbuff.reconstructbuf3
+    M = coeffbuff.reconstructbuf4
+    bigch = coeffbuff.reconstructbuf5
+    invm1, invm2 = coeffbuff.reconstructbuf6, coeffbuff.reconstructbuf7
+
+    # copy to previous gb coeffs
+    @inbounds for i in from_idx:to_idx
+        for j in 1:length(gb_coeffs_zz[i])
+            Base.GMP.MPZ.set!(prev_gb_coeffs_zz[i][j], gb_coeffs_zz[i][j])
+        end
+    end
+
+    Base.GMP.MPZ.set_ui!(bigch, ch)
+    Base.GMP.MPZ.mul_ui!(M, modulo, ch)
+    Base.GMP.MPZ.gcdext!(buf, invm1, invm2, modulo, bigch)
+
+    @inbounds for i in from_idx:to_idx
+        for j in 1:length(gb_coeffs_ff[i])
+            ca = gb_coeffs_zz[i][j]
+            cf = gb_coeffs_ff[i][j]
+            CRT!(M, buf, n1, n2, ca, invm1, cf, invm2, modulo, bigch)
+            Base.GMP.MPZ.set!(gb_coeffs_zz[i][j], buf)
+        end
+    end
+    nothing
+end
+
 # G == coeffaccum   mod P1*P2*...*Pk
 # G == gb_coeffs_ff mod P
 #
@@ -231,51 +266,23 @@ function reconstruct_crt!(
         resize_accum!(coeffaccum, gb_coeffs_ff)
         reconstruct_trivial_crt!(coeffbuff, coeffaccum, gb_coeffs_ff)
     else
-        gb_coeffs_zz = coeffaccum.gb_coeffs_zz
-        prev_gb_coeffs_zz = coeffaccum.prev_gb_coeffs_zz
-
-        # copy to previous gb coeffs
-        @inbounds for i in 1:length(gb_coeffs_zz)
-            for j in 1:length(gb_coeffs_zz[i])
-                Base.GMP.MPZ.set!(prev_gb_coeffs_zz[i][j], gb_coeffs_zz[i][j])
-            end
-        end
-
-        buf = coeffbuff.reconstructbuf1
-        n1, n2 = coeffbuff.reconstructbuf2, coeffbuff.reconstructbuf3
-        M = coeffbuff.reconstructbuf4
-        bigch = coeffbuff.reconstructbuf5
-        invm1, invm2 = coeffbuff.reconstructbuf6, coeffbuff.reconstructbuf7
-
-        Base.GMP.MPZ.set_ui!(bigch, ch)
-        Base.GMP.MPZ.mul_ui!(M, primetracker.modulo, ch)
-        Base.GMP.MPZ.gcdext!(buf, invm1, invm2, primetracker.modulo, bigch)
-
-        @inbounds for i in 1:length(gb_coeffs_ff)
-            for j in 1:length(gb_coeffs_ff[i])
-                ca = gb_coeffs_zz[i][j]
-                cf = gb_coeffs_ff[i][j]
-                CRT!(M, buf, n1, n2, ca, invm1, cf, invm2, primetracker.modulo, bigch)
-                Base.GMP.MPZ.set!(gb_coeffs_zz[i][j], buf)
-            end
-        end
+        reconstruct_crt_at!(
+            1, length(gb_coeffs_ff), 
+            coeffbuff, coeffaccum, primetracker.modulo, 
+            gb_coeffs_ff, ch
+        )
     end
-    updatemodulo!(primetracker)
+    updatemodulo!(primetracker, ch)
 end
 
 #------------------------------------------------------------------------------
 
-# N//D == coeffaccum (mod primetracker.modulo)
-# Finds N and D using rational reconstruction
-# and writes it to coeffaccum
-function reconstruct_modulo!(
+function reconstruct_modulo_at!(
+        from_idx, to_idx,
         coeffbuff::CoeffBuffer,
         coeffaccum::CoeffAccum,
-        primetracker::PrimeTracker)
-
-    modulo = primetracker.modulo
-
-    bnd = rational_reconstruction_bound(modulo)
+        modulo, bnd
+    )
     buf, buf1  = coeffbuff.reconstructbuf1, coeffbuff.reconstructbuf2
     buf2, buf3 = coeffbuff.reconstructbuf3, coeffbuff.reconstructbuf4
     u1, u2     = coeffbuff.reconstructbuf5, coeffbuff.reconstructbuf6
@@ -285,7 +292,7 @@ function reconstruct_modulo!(
     gb_coeffs_zz = coeffaccum.gb_coeffs_zz
     gb_coeffs_qq = coeffaccum.gb_coeffs_qq
 
-    @inbounds for i in 1:length(gb_coeffs_zz)
+    @inbounds for i in from_idx:to_idx
         for j in 2:length(gb_coeffs_zz[i])
             cz = gb_coeffs_zz[i][j]
             cq = gb_coeffs_qq[i][j]
@@ -299,6 +306,90 @@ function reconstruct_modulo!(
             end
         end
     end
-
     return true
+end
+
+# N//D == coeffaccum (mod primetracker.modulo)
+# Finds N and D using rational reconstruction
+# and writes it to coeffaccum
+function reconstruct_modulo!(
+        coeffbuff::CoeffBuffer,
+        coeffaccum::CoeffAccum,
+        primetracker::PrimeTracker)
+
+    modulo = primetracker.modulo
+    bnd = rational_reconstruction_bound(modulo)
+    reconstruct_modulo_at!(
+        1, length(coeffaccum.gb_coeffs_zz),
+        coeffbuff, coeffaccum,
+        modulo, bnd
+    )
+end
+
+#------------------------------------------------------------------------------
+
+function reconstruct_in_thread!(
+        coeffaccum, coeffbuff,
+        bnd, moduli, used_primes, computed_bases,
+        from_idx, to_idx
+    )
+    
+    final_modulo = moduli[end]
+
+    @inbounds for i in 1:length(used_primes)
+        modulo = moduli[i]
+        prime = used_primes[i]
+        coeffs_ff = computed_bases[i].coeffs
+        reconstruct_crt_at!(
+            from_idx, to_idx,
+            coeffbuff, coeffaccum, modulo, 
+            coeffs_ff, prime
+        )
+    end
+
+    return reconstruct_modulo_at!(
+        from_idx, to_idx,
+        coeffbuff, coeffaccum,
+        final_modulo, bnd
+    )
+end
+
+function threaded_reconstruct_coeffs!( 
+        polys_per_thread, n_active_threads,
+        coeff_buffers_per_thread, coeffaccum, primetracker,
+        used_primes, computed_bases
+    )
+    
+    futures = Vector{Task}(undef, n_active_threads)
+
+    moduli = map(x -> x*primetracker.modulo, cumprod(map(BigInt, used_primes)))
+    pushfirst!(moduli, primetracker.modulo)
+
+    final_modulo = moduli[end]
+    bnd = rational_reconstruction_bound(final_modulo)
+
+    # @warn "Threaded reconstruction" polys_per_thread n_active_threads
+    # @warn "" moduli final_modulo bnd
+
+    absolute_idx = 1
+    for th in 1:n_active_threads
+        from_idx = absolute_idx
+        to_idx = from_idx + polys_per_thread[th] - 1
+        absolute_idx = to_idx + 1
+        futures[th] = @tspawnat th reconstruct_in_thread!(
+            coeffaccum,
+            coeff_buffers_per_thread[th],
+            bnd, moduli, used_primes, computed_bases,
+            from_idx, to_idx
+        )
+    end
+
+    primetracker.modulo = final_modulo
+
+    ans = true
+    for j in 1:n_active_threads
+        ans = ans && fetch(futures[j])
+    end
+
+    ans
 end

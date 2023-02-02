@@ -15,11 +15,17 @@ is_iteration_redundant(tr::Tracer, i::Integer) = @inbounds tr.is_iteration_redun
 final_basis_size(tr::Tracer) = tr.basis_ntotal
 
 function set_ready!(tr::Tracer)
-    tr.isready = true
+    if !isready(tr)
+        tr.isready = true
+    end
+    nothing
 end
 
 function set_final_basis!(tr::Tracer, basis_size::Integer)
-    tr.basis_ntotal = basis_size
+    if !isready(tr)
+        tr.basis_ntotal = basis_size
+    end
+    nothing
 end
 
 function update_tracer_pairset!(tr::Tracer, pairset_size::Integer)

@@ -2,6 +2,7 @@
 """
     function groebner(
             polynomials;
+            
             reduced=true,
             ordering=:input,
             certify=false,
@@ -45,8 +46,12 @@ The algorithm automatically chooses the best monomial representation.
 Otherwise, you can set `monom_representation` to one of the following:
 
 - `best()` for automatic choice,
-- NotPacked{<:Unsigned}, e.g., NotPacked{UInt32}, for not packed representation with 32 bits per exponent,
-- Packed{<:Unsigned}, e.g., Packed{UInt8}, for packed representation with 8 bits per exponent.
+- `NotPacked{<:Unsigned}`, e.g., `NotPacked{UInt32}`, for not packed representation with 32 bits per exponent,
+- `Packed{<:Unsigned}`, e.g., `Packed{UInt8}`, for packed representation with 8 bits per exponent.
+
+Multi-threading for the computation is enabled by `threading = true`. The number of 
+available threads is controlled by the environment variable `JULIA_NUM_THREADS` or
+by the command-line argument `--threads=N`.
 
 The algorithm uses randomized hashing that depends on random number generator `rng`.
 
@@ -65,6 +70,7 @@ function groebner(
             polynomials::Vector{Poly};
             reduced::Bool=true,
             ordering::Symbol=:input,
+            threading::Bool=false,
             certify::Bool=false,
             forsolve::Bool=false,
             linalg::Symbol=:exact,
@@ -79,8 +85,8 @@ function groebner(
     representation = guess_effective_representation(polynomials, UnsafeRepresentation(), monom_representation)
     
     try
-        #= try to compute in this representation =# 
-        return groebner(polynomials, representation, reduced, ordering, certify, forsolve, linalg, rng)
+        #= try to compute in this representation =#
+        return groebner(polynomials, representation, reduced, ordering, threading, certify, forsolve, linalg, rng)
     catch beda
         if isa(beda, RecoverableException)
             # if computation fails recoverably
@@ -88,7 +94,7 @@ function groebner(
             representation = default_safe_representation()
             linalg = safe_linear_algebra()
             rng = Random.MersenneTwister(floor(Int, time()))
-            return groebner(polynomials, representation, reduced, ordering, certify, forsolve, linalg, rng)
+            return groebner(polynomials, representation, reduced, ordering, threading, certify, forsolve, linalg, rng)
         else
             # if the computation just fails for some reason
             rethrow(beda)

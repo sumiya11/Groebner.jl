@@ -135,6 +135,23 @@ function initialize_basis_hash_table(
         size, load, offset)
 end
 
+# Returns a threadsafe copy of the given hashtable.
+# Currently, this means that only exponents are in fact copied
+function threadsafe_copy(ht::MonomialHashtable{M}) where {M}
+    exps = Vector{M}(undef, ht.size)
+    exps[1] = make_zero_ev(M, ht.nvars)
+
+    @inbounds for i in 2:ht.load
+        exps[i] = copy(ht.exponents[i])
+    end
+
+    MonomialHashtable(
+        exps, ht.hashtable, ht.hashdata, ht.hasher,
+        ht.nvars, ht.ord,
+        ht.divmap, ht.ndivvars, ht.ndivbits,
+        ht.size, ht.load, ht.offset)
+end
+
 function copy_hashtable(ht::MonomialHashtable{M}) where {M}
     exps = Vector{M}(undef, ht.size)
     table = Vector{MonomIdx}(undef, ht.size)
@@ -147,6 +164,7 @@ function copy_hashtable(ht::MonomialHashtable{M}) where {M}
         data[i] = copy_hashvalue(ht.hashdata[i])
     end
 
+    # Alex: a bug?
     MonomialHashtable(
         ht.exponents, ht.hashtable, ht.hashdata, ht.hasher,
         ht.nvars, ht.ord,

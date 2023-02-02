@@ -46,7 +46,7 @@ mutable struct PrimeTracker
     end
 end
 
-updatemodulo!(tracker::PrimeTracker) = Base.GMP.MPZ.mul_ui!(tracker.modulo, last(tracker.primes))
+updatemodulo!(tracker::PrimeTracker, prime::CoeffModular) = Base.GMP.MPZ.mul_ui!(tracker.modulo, prime)
 
 # Check if prime is lucky w.r.t. coefficients from tracker
 # i.e., does not divide any of the leading coefficients

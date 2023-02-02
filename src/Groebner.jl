@@ -18,6 +18,10 @@ import Primes: nextprime
 
 import Random
 
+using Base.Threads
+
+include("utils.jl")
+
 # some simple reference implementations
 include("reference.jl")
 
