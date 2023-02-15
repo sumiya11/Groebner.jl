@@ -1,4 +1,7 @@
 
+# Tracer
+# Contains some information about previous finite field runs of F4
+# within the current modular run, which could be useful for subsequent rungs.
 mutable struct Tracer
     is_iteration_redundant::Vector{Int}
     pairset_size::Int

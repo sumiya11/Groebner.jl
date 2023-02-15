@@ -42,7 +42,7 @@ function copy_hashvalue(x::Hashvalue)
 end
 
 # Hashtable designed to store monomials
-mutable struct MonomialHashtable{M<:Monom}
+mutable struct MonomialHashtable{M<:Monom, Ord<:AbstractMonomialOrdering}
     exponents::Vector{M}
 
     # maps exponent hash to its position in exponents array
@@ -61,7 +61,7 @@ mutable struct MonomialHashtable{M<:Monom}
     # number of variables
     nvars::Int
     # ring monomial ordering
-    ord::Symbol
+    ord::Ord
 
     #= Monom divisibility =#
     # divisor map to check divisibility faster
@@ -88,10 +88,10 @@ end
 
 # initialize and set fields for basis hashtable
 function initialize_basis_hash_table(
-    ring::PolyRing,
+    ring::PolyRing{Char, Ord},
     rng::Random.AbstractRNG,
     MonomT;
-    initial_size::Int=2^16)
+    initial_size::Int=2^16) where {Char, Ord<:AbstractMonomialOrdering}
 
     # not necessary to create `initial_size` exponents
     exponents = Vector{MonomT}(undef, initial_size)
@@ -135,7 +135,7 @@ function initialize_basis_hash_table(
         size, load, offset)
 end
 
-function copy_hashtable(ht::MonomialHashtable{M}) where {M}
+function copy_hashtable(ht::MonomialHashtable{M, O}) where {M, O}
     exps = Vector{M}(undef, ht.size)
     table = Vector{MonomIdx}(undef, ht.size)
     data = Vector{Hashvalue}(undef, ht.size)

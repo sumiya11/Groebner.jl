@@ -219,54 +219,39 @@ function make_dense!(tmp::Vector{I}, pv::PackedPair3{T, B}) where {I, T, B}
 end
 
 #------------------------------------------------------------------------------
+# Monomial orderings implementations 
+# for the `PackedPairI` monomial implementation.
+# See monoms/orderings.jl for details.
 
-# Terms orders comparators
-
-function exponent_isless_lex(ea::PackedPair1{T, B}, eb::PackedPair1{T, B}) where {T, B}
+function monom_isless(
+        ea::PackedPair1{T, B}, eb::PackedPair1{T, B}, 
+        ord::Ord) where {T, B, Ord<:AbstractMonomialOrdering}
     s = div(sizeof(T), sizeof(B))-1
     tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
     a = make_ev(PowerVector{T}, make_dense!(tmp1, ea))
     b = make_ev(PowerVector{T}, make_dense!(tmp2, eb))
-    exponent_isless_lex(a, b)
+    monom_isless(a, b, ord)
 end
-function exponent_isless_lex(ea::PackedPair2{T, B}, eb::PackedPair2{T, B}) where {T, B}
+function monom_isless(
+        ea::PackedPair2{T, B}, eb::PackedPair2{T, B}, 
+        ord::Ord) where {T, B, Ord<:AbstractMonomialOrdering}    
     s = 2*div(sizeof(T), sizeof(B))-1
     tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
     a = make_ev(PowerVector{T}, make_dense!(tmp1, ea))
     b = make_ev(PowerVector{T}, make_dense!(tmp2, eb))
-    exponent_isless_lex(a, b)
+    monom_isless(a, b, ord)
 end
-function exponent_isless_lex(ea::PackedPair3{T, B}, eb::PackedPair3{T, B}) where {T, B}
+function monom_isless(
+        ea::PackedPair3{T, B}, eb::PackedPair3{T, B}, 
+        ord::Ord) where {T, B, Ord<:AbstractMonomialOrdering}   
     s = 3*div(sizeof(T), sizeof(B))-1
     tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
     a = make_ev(PowerVector{T}, make_dense!(tmp1, ea))
     b = make_ev(PowerVector{T}, make_dense!(tmp2, eb))
-    exponent_isless_lex(a, b)
+    monom_isless(a, b, ord)
 end
 
-function exponent_isless_dl(ea::PackedPair1{T, B}, eb::PackedPair1{T, B}) where {T, B}
-    s = div(sizeof(T), sizeof(B))-1
-    tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
-    a = make_ev(PowerVector{T}, make_dense!(tmp1, ea))
-    b = make_ev(PowerVector{T}, make_dense!(tmp2, eb))
-    exponent_isless_dl(a, b)
-end
-function exponent_isless_dl(ea::PackedPair2{T, B}, eb::PackedPair2{T, B}) where {T, B}
-    s = 2*div(sizeof(T), sizeof(B))-1
-    tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
-    a = make_ev(PowerVector{T}, make_dense!(tmp1, ea))
-    b = make_ev(PowerVector{T}, make_dense!(tmp2, eb))
-    exponent_isless_dl(a, b)
-end
-function exponent_isless_dl(ea::PackedPair3{T, B}, eb::PackedPair3{T, B}) where {T, B}
-    s = 3*div(sizeof(T), sizeof(B))-1
-    tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
-    a = make_ev(PowerVector{T}, make_dense!(tmp1, ea))
-    b = make_ev(PowerVector{T}, make_dense!(tmp2, eb))
-    exponent_isless_dl(a, b)
-end
-
-function exponent_isless_drl(ea::PackedPair1{T, B}, eb::PackedPair1{T, B}) where {T, B}
+function monom_isless(ea::PackedPair1{T, B}, eb::PackedPair1{T, B}, ::DegRevLex) where {T, B}
     da, db = totaldeg(ea), totaldeg(eb)
     if da < db
         return true
@@ -282,7 +267,7 @@ function exponent_isless_drl(ea::PackedPair1{T, B}, eb::PackedPair1{T, B}) where
     end
 end
 
-function exponent_isless_drl(ea::PackedPair2{T, B}, eb::PackedPair2{T, B}) where {T, B}
+function monom_isless(ea::PackedPair2{T, B}, eb::PackedPair2{T, B}, ::DegRevLex) where {T, B}
     da, db = totaldeg(ea), totaldeg(eb)
     if da < db
         return true
@@ -298,7 +283,7 @@ function exponent_isless_drl(ea::PackedPair2{T, B}, eb::PackedPair2{T, B}) where
     end
 end
 
-function exponent_isless_drl(ea::PackedPair3{T, B}, eb::PackedPair3{T, B}) where {T, B}
+function monom_isless(ea::PackedPair3{T, B}, eb::PackedPair3{T, B}, ::DegRevLex) where {T, B}
     da, db = totaldeg(ea), totaldeg(eb)
     if da < db
         return true
@@ -319,6 +304,7 @@ function exponent_isless_drl(ea::PackedPair3{T, B}, eb::PackedPair3{T, B}) where
 end
 
 #------------------------------------------------------------------------------
+# Monomial-Monomial arithmetic.
 
 function monom_lcm!(ec::PackedPair1{T, B}, ea::PackedPair1{T, B}, eb::PackedPair1{T, B}) where {T, B}
     x, si = packedmax(ea.a1, eb.a1, B, Val(1))
@@ -472,6 +458,8 @@ function is_monom_elementwise_eq(ea::PackedPair3{T, B}, eb::PackedPair3{T, B}) w
 end
 
 #------------------------------------------------------------------------------
+# Monomial division masks.
+# See f4/hashtable.jl for details.
 
 function monom_divmask(
         e::PackedPair1{T, B},

@@ -79,6 +79,10 @@ powertype(::Type{M}) where {M<:Monom} = eltype(M)
 
 #------------------------------------------------------------------------------
 
+
+
+#------------------------------------------------------------------------------
+
 # Index of a monomial in the hashtable
 # (see f4/hashtable.jl)
 const MonomIdx = Int32

@@ -1,11 +1,11 @@
 # FGLM implementation is correct, but is still WIP
 
-mutable struct NextMonomials
+mutable struct NextMonomials{Ord}
     # monomials to check
     monoms::Vector{MonomIdx}
     load::Int
     done::Dict{Int,Int}
-    ord::Symbol
+    ord::Ord
 end
 
 Base.isempty(m::NextMonomials) = m.load == 0
@@ -16,7 +16,7 @@ function initialize_nextmonomials(ht::MonomialHashtable{M}, ord) where {M}
     monoms = Vector{MonomIdx}(undef, 2^3)
     monoms[1] = vidx
     load = 1
-    NextMonomials(monoms, load, Dict{MonomIdx,Int}(vidx => 1), ord)
+    NextMonomials{typeof(ord)}(monoms, load, Dict{MonomIdx,Int}(vidx => 1), ord)
 end
 
 function insertnexts!(
@@ -43,7 +43,7 @@ function insertnexts!(
         end
     end
 
-    sort_monoms_decreasing!(m.monoms, m.load, ht, m.ord)
+    sort_monom_indices_decreasing!(m.monoms, m.load, ht, m.ord)
 end
 
 function nextmonomial!(m::NextMonomials)
@@ -66,7 +66,7 @@ function add_generator!(basis::Basis{C}, matrix, relation, ht, ord) where {C<:Co
         rexps[i] = matrix.rightcol2hash[rexps[i]]
     end
 
-    sort_terms_decreasing!(rexps, rcoeffs, ht, ord)
+    sort_term_indices_decreasing!(rexps, rcoeffs, ht, ord)
 
     if debug()
         @warn "extracted"
@@ -101,7 +101,7 @@ function fglm_f4!(
     ring::PolyRing,
     basis::Basis{C},
     ht::MonomialHashtable,
-    ord::Symbol) where {C<:Coeff}
+    ord::AbstractMonomialOrdering) where {C<:Coeff}
     
     newbasis = initialize_basis(ring, basis.ntotal, C)
     nextmonoms = initialize_nextmonomials(ht, ord)

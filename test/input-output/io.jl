@@ -24,8 +24,8 @@ representations_to_test = [
             for representation in representations_to_test
                 R, (x, y) = PolynomialRing(ground, ["x", "y"], ordering=ord)
                 fs = [x^2*y + 3, (2^31 - 5)*x - (2^31 - 4)*y]
-                ring, exps, cfs = Groebner.convert_to_internal(representation, fs, :input)
-                meta = Groebner.set_metaparameters(ring, ord, false, false, :exact, rng)
+                ring, exps, cfs = Groebner.convert_to_internal(representation, fs, Groebner.InputOrdering())
+                meta = Groebner.set_metaparameters(ring, Groebner.ordering_sym2typed(ord), false, false, :exact, rng)
                 fsfs = Groebner.convert_to_output(ring, fs, exps, cfs, meta)
                 @test fsfs == fs
 
@@ -33,8 +33,8 @@ representations_to_test = [
                     Groebner.rootn(6, ground=ground), 
                     ord
                 )
-                ring, exps, cfs = Groebner.convert_to_internal(representation, root, :input)
-                meta = Groebner.set_metaparameters(ring, ord, false, false, :exact, rng)
+                ring, exps, cfs = Groebner.convert_to_internal(representation, root, Groebner.InputOrdering())
+                meta = Groebner.set_metaparameters(ring, Groebner.ordering_sym2typed(ord), false, false, :exact, rng)
                 fsfs = Groebner.convert_to_output(ring, root, exps, cfs, meta)
                 @test fsfs == root
 
@@ -42,20 +42,20 @@ representations_to_test = [
                     Groebner.noonn(3, ground=ground), 
                     ord
                 )
-                ring, exps, cfs = Groebner.convert_to_internal(representation, noon, :input)
-                meta = Groebner.set_metaparameters(ring, ord, false, false, :exact, rng)
+                ring, exps, cfs = Groebner.convert_to_internal(representation, noon, Groebner.InputOrdering())
+                meta = Groebner.set_metaparameters(ring, Groebner.ordering_sym2typed(ord), false, false, :exact, rng)
                 fsfs = Groebner.convert_to_output(ring, noon, exps, cfs, meta)
                 @test fsfs == noon
 
                 for nn in (5, 10, 25)
                     R, xs = PolynomialRing(ground, ["x$i" for i in 1:nn], ordering=ord)
                     if Groebner.capacity(representation) >= nn
-                        ring, exps, cfs = Groebner.convert_to_internal(representation, xs, :input)
-                        meta = Groebner.set_metaparameters(ring, ord, false, false, :exact, rng)
+                        ring, exps, cfs = Groebner.convert_to_internal(representation, xs, Groebner.InputOrdering())
+                        meta = Groebner.set_metaparameters(ring, Groebner.ordering_sym2typed(ord), false, false, :exact, rng)
                         xsxs = Groebner.convert_to_output(ring, xs, exps, cfs, meta)
                         @test xsxs == xs
                     else
-                        @test_throws AssertionError Groebner.convert_to_internal(representation, xs, :input)
+                        @test_throws AssertionError Groebner.convert_to_internal(representation, xs, Groebner.InputOrdering())
                     end
                 end
             end
@@ -89,9 +89,9 @@ end
             for representation in representations_to_test
                 R, (x, y) = PolynomialRing(ground, ["x", "y"], ordering=ord)
                 fs = [x^2*y + 3, (2^31 - 5)*x - (2^31 - 4)*y]
-                ring, exps, cfs = Groebner.convert_to_internal(representation, fs, :input)
+                ring, exps, cfs = Groebner.convert_to_internal(representation, fs, Groebner.InputOrdering())
                 ring.origring = :hasparent
-                meta = Groebner.set_metaparameters(ring, ord, false, false, :exact, rng)
+                meta = Groebner.set_metaparameters(ring, Groebner.ordering_sym2typed(ord), false, false, :exact, rng)
                 fsfs = Groebner.convert_to_output(ring, fs, exps, cfs, meta)
                 @test fsfs == fs
             end

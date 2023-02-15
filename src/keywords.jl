@@ -98,6 +98,17 @@ function guess_effective_representation(
     end
 end
 
+function peek_at_polynomials(polynomials::Vector{T}) where {T}
+    (nvars=2^32,)
+end
+
+function peek_at_polynomials(polynomials::Vector{T}) where {T<:AbstractAlgebra.Generic.MPolyElem}
+    isempty(polynomials) && return (nvars=2^32,)
+    (
+        nvars=AbstractAlgebra.nvars(parent(polynomials[1])),
+    )
+end
+
 #------------------------------------------------------------------------------
 
 safe_linear_algebra() = :exact
@@ -107,13 +118,13 @@ safe_linear_algebra() = :exact
 # Here we choose parameters for groebner basis computation
 # based on the specified input keywords
 
-struct GroebnerMetainfo{Rng}
+struct GroebnerMetainfo{Rng, Ord1, Ord2}
     # if set, then use fglm algorithm for order conversion
     usefglm::Bool
     # output polynomials monomial order
-    targetord::Symbol
+    targetord::Ord1
     # monomial order for computation
-    computeord::Symbol
+    computeord::Ord2
 
     # correctness checks levels
     heuristiccheck::Bool
@@ -138,20 +149,20 @@ end
 
 function set_metaparameters(ring, ordering, certify, forsolve, linalg, rng)
     usefglm = false
-    targetord = :lex
-    computeord = :lex
+    targetord = Lex()
+    computeord = Lex()
 
     if forsolve
-        targetord = :lex
+        targetord = Lex()
         usefglm = true
-        if ordering in (:deglex, :degrevlex)
+        if ordering in (DegLex(), DegRevLex())
             computeord = ordering
         else
-            computeord = :degrevlex
+            computeord = DegRevLex()
         end
-        computeord = :lex
+        computeord = Lex()
     else
-        if ordering === :input
+        if ordering === InputOrdering()
             ordering = ring.ord
         end
         targetord = ordering

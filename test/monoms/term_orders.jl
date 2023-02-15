@@ -1,8 +1,8 @@
 
 make_ev = Groebner.make_ev
-lex = Groebner.exponent_isless_lex
-dl  = Groebner.exponent_isless_dl
-drl = Groebner.exponent_isless_drl
+lex = (x,y) -> Groebner.monom_isless(x, y, Groebner.Lex())
+dl  = (x,y) -> Groebner.monom_isless(x, y, Groebner.DegLex())
+drl = (x,y) -> Groebner.monom_isless(x, y, Groebner.DegRevLex())
 
 implementations_to_test = [
     Groebner.PowerVector{T} where {T},

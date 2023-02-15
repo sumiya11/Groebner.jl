@@ -23,6 +23,9 @@ include("reference.jl")
 
 # CRT and rational reconstruction
 include("arithmetic/modular.jl")
+
+# supported monomial orderings
+include("monoms/orderings.jl")
 # monomial implementations
 include("monoms/packedutils.jl")
 include("monoms/powervector.jl")
@@ -83,6 +86,9 @@ export normalform
 
 export fglm
 export kbase
+
+export Lex, DegLex, DegRevLex, InputOrdering
+export NotPacked, Packed, best
 
 # 라헬
 end
