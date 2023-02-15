@@ -35,7 +35,7 @@ struct Sparse{E<:Unsigned} <: RepresentationHint{E} end
 issafe(::T) where {T <: RepresentationHint{E}} where {E} = sizeof(E) >= 4
 
 # best hint (should be default)
-best() = Packed{UInt8}()
+best_monom_representation() = Packed{UInt8}()
 # best hint that is also a Safe representation
 bestsafe() = NotPacked{UInt64}()
 @assert issafe(bestsafe())
@@ -84,7 +84,7 @@ function guess_effective_representation(
         hint::Packed{E}) where {E}
     if !isgoodpacked(hint)
         _not_effective_repr(hint)
-        hint = best()
+        hint = best_monom_representation()
     end
     first_impression = peek_at_polynomials(polynomials)
     if first_impression.nvars < div(8, sizeof(E))

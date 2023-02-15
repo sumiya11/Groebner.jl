@@ -7,7 +7,7 @@
             certify=false,
             forsolve=false,
             linalg=:exact,
-            monom_representation=best(),
+            monoms=best_monom_representation(),
             rng=MersenneTwister(42),
             loglevel=Logging.Warn
     )
@@ -20,10 +20,10 @@ Uses the term ordering from `polynomials` by default (if any).
 If `ordering` parameter is explicitly specified, it takes precedence.
 Possible term orderings to specify are
 
-- :input for preserving the input ordering (default),
-- :lex for lexicographic,
-- :deglex for graded lexicographic,
-- :degrevlex for graded reverse lexicographic.
+- InputOrdering() for preserving the input ordering (default),
+- Lex() for lexicographic,
+- DegLex() for graded lexicographic,
+- DegRevLex() for graded reverse lexicographic.
 
 *Graded term orderings tend to be the fastest.*
 
@@ -42,11 +42,11 @@ Currently, available options are
 - `:prob` for probabilistic sparse linear algebra. Tends to be faster.
 
 The algorithm automatically chooses the best monomial representation.
-Otherwise, you can set `monom_representation` to one of the following:
+Otherwise, you can set `monoms` to one of the following:
 
-- `best()` for automatic choice,
-- NotPacked{<:Unsigned}, e.g., NotPacked{UInt32}, for not packed representation with 32 bits per exponent,
-- Packed{<:Unsigned}, e.g., Packed{UInt8}, for packed representation with 8 bits per exponent.
+- `best_monom_representation()` for automatic choice (default),
+- `NotPacked{<:Unsigned}`, e.g., `NotPacked{UInt32}`, for not packed representation with 32 bits per exponent,
+- `Packed{<:Unsigned}`, e.g., `Packed{UInt8}`, for packed representation with 8 bits per exponent.
 
 The algorithm uses randomized hashing that depends on random number generator `rng`.
 
@@ -68,7 +68,7 @@ function groebner(
             certify::Bool=false,
             forsolve::Bool=false,
             linalg::Symbol=:exact,
-            monom_representation=best(),
+            monoms=best_monom_representation(),
             rng::Rng=Random.MersenneTwister(42),
             loglevel::Logging.LogLevel=Logging.Warn
         ) where {Poly, Rng<:Random.AbstractRNG}
@@ -76,7 +76,7 @@ function groebner(
     prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
     
     #= guess the best representation for polynomials =#
-    representation = guess_effective_representation(polynomials, UnsafeRepresentation(), monom_representation)
+    representation = guess_effective_representation(polynomials, UnsafeRepresentation(), monoms)
     
     try
         #= try to compute in this representation =# 
@@ -102,7 +102,7 @@ end
 """
     function isgroebner(
                 polynomials;
-                ordering=:input,
+                ordering=InputOrdering(),
                 certify=false,
                 rng=MersenneTwister(42),
                 loglevel=Logging.Warn
@@ -170,7 +170,7 @@ end
                 basis,
                 tobereduced;
                 check=true,
-                ordering=:input,
+                ordering=InputOrdering(),
                 rng=MersenneTwister(42),
                 loglevel=Logging.Warn
     )
