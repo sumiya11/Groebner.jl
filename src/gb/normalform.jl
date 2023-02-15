@@ -14,7 +14,7 @@ function normal_form_f4!(
 
     column_to_monom_mapping!(matrix, symbol_ht)
 
-    sort_matrix_rows_decreasing!(matrix) # for pivots,  AB part
+    sort_matrix_upper_rows_decreasing!(matrix) # for pivots,  AB part
 
     exact_sparse_rref_nf!(ring, matrix, tobereduced, basis)
 

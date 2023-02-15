@@ -3,7 +3,7 @@ function groebner(
         polynomials::AbstractVector, 
         representation::RepresentationStyle, 
         reduced::Bool, 
-        ordering::Symbol, 
+        ordering::AbstractMonomialOrdering, 
         certify::Bool, 
         forsolve::Bool, 
         linalg::Symbol, 
@@ -22,14 +22,14 @@ function groebner(
     iszerobasis && (return convert_to_output(ring, polynomials, exps, coeffs, metainfo))
 
     #= change input ordering if needed =#
-    assure_ordering!(ring, exps, coeffs, metainfo.targetord)
+    newring = assure_ordering!(ring, exps, coeffs, metainfo.targetord)
 
     #= compute the groebner basis =#
-    bexps, bcoeffs = groebner(ring, exps, coeffs, reduced, metainfo)
+    bexps, bcoeffs = groebner(newring, exps, coeffs, reduced, metainfo)
 
     # ring contains ordering of computation, it is the requested ordering
     #= convert result back to representation of input =#
-    convert_to_output(ring, polynomials, bexps, bcoeffs, metainfo)
+    convert_to_output(newring, polynomials, bexps, bcoeffs, metainfo)
 end
 
 #------------------------------------------------------------------------------

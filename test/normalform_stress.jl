@@ -20,7 +20,7 @@ function test_params_nf(rng, nvariables, exps, nterms,
                                 gb = Groebner.groebner(set)
                                 f = rand(set)
 
-                                mynf = Groebner.normalform(gb, f)
+                                mynf = Groebner.normalform(gb, f, check=false)
                                 # TODO : add more tests
                                 @test mynf == 0
                                 if mynf != 0

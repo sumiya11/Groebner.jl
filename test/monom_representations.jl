@@ -62,7 +62,7 @@ end
                     # Groebner.change_ordering(Groebner.s9_1(ground=domain), :degrevlex),
                     Groebner.change_ordering(Groebner.kinema(ground=domain), :degrevlex)
                 ]
-                    gb = Groebner.groebner(s, monom_representation=EV{B}())
+                    gb = Groebner.groebner(s, monoms=EV{B}())
                     @test Groebner.isgroebner(gb)
                 end
             end

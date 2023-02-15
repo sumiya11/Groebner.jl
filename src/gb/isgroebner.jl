@@ -22,8 +22,8 @@ function isgroebner_f4!(ring::PolyRing,
 
     column_to_monom_mapping!(matrix, symbol_ht)
 
-    sort_matrix_rows_increasing!(matrix)
-    sort_matrix_rows_decreasing!(matrix) # for pivots,  AB part
+    sort_matrix_upper_rows_decreasing!(matrix) # for pivots,  AB part
+    sort_matrix_lower_rows_increasing!(matrix)
 
     exact_sparse_rref_isgroebner!(ring, matrix, basis)
 end

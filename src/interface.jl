@@ -3,11 +3,11 @@
     function groebner(
             polynomials;
             reduced=true,
-            ordering=:input,
+            ordering=InputOrdering(),
             certify=false,
             forsolve=false,
             linalg=:exact,
-            monom_representation=best(),
+            monoms=best_monom_representation(),
             rng=MersenneTwister(42),
             loglevel=Logging.Warn
     )
@@ -20,10 +20,10 @@ Uses the term ordering from `polynomials` by default (if any).
 If `ordering` parameter is explicitly specified, it takes precedence.
 Possible term orderings to specify are
 
-- :input for preserving the input ordering (default),
-- :lex for lexicographic,
-- :deglex for graded lexicographic,
-- :degrevlex for graded reverse lexicographic.
+- InputOrdering() for preserving the input ordering (default),
+- Lex() for lexicographic,
+- DegLex() for graded lexicographic,
+- DegRevLex() for graded reverse lexicographic.
 
 *Graded term orderings tend to be the fastest.*
 
@@ -42,11 +42,11 @@ Currently, available options are
 - `:prob` for probabilistic sparse linear algebra. Tends to be faster.
 
 The algorithm automatically chooses the best monomial representation.
-Otherwise, you can set `monom_representation` to one of the following:
+Otherwise, you can set `monoms` to one of the following:
 
-- `best()` for automatic choice,
-- NotPacked{<:Unsigned}, e.g., NotPacked{UInt32}, for not packed representation with 32 bits per exponent,
-- Packed{<:Unsigned}, e.g., Packed{UInt8}, for packed representation with 8 bits per exponent.
+- `best_monom_representation()` for automatic choice (default),
+- `NotPacked{<:Unsigned}`, e.g., `NotPacked{UInt32}`, for not packed representation with 32 bits per exponent,
+- `Packed{<:Unsigned}`, e.g., `Packed{UInt8}`, for packed representation with 8 bits per exponent.
 
 The algorithm uses randomized hashing that depends on random number generator `rng`.
 
@@ -64,11 +64,11 @@ julia> groebner([x*y^2 + x, y*x^2 + y])
 function groebner(
             polynomials::Vector{Poly};
             reduced::Bool=true,
-            ordering::Symbol=:input,
+            ordering::AbstractMonomialOrdering=InputOrdering(),
             certify::Bool=false,
             forsolve::Bool=false,
             linalg::Symbol=:exact,
-            monom_representation=best(),
+            monoms=best_monom_representation(),
             rng::Rng=Random.MersenneTwister(42),
             loglevel::Logging.LogLevel=Logging.Warn
         ) where {Poly, Rng<:Random.AbstractRNG}
@@ -76,7 +76,7 @@ function groebner(
     prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
     
     #= guess the best representation for polynomials =#
-    representation = guess_effective_representation(polynomials, UnsafeRepresentation(), monom_representation)
+    representation = guess_effective_representation(polynomials, UnsafeRepresentation(), monoms)
     
     try
         #= try to compute in this representation =# 
@@ -102,7 +102,7 @@ end
 """
     function isgroebner(
                 polynomials;
-                ordering=:input,
+                ordering=InputOrdering(),
                 certify=false,
                 rng=MersenneTwister(42),
                 loglevel=Logging.Warn
@@ -127,7 +127,7 @@ julia> isgroebner([y^2 + x, x^2 + y])
 """
 function isgroebner(
             polynomials::Vector{Poly};
-            ordering=:input,
+            ordering=InputOrdering(),
             certify::Bool=false,
             rng::Rng=Random.MersenneTwister(42),
             loglevel::LogLevel=Logging.Warn
@@ -150,10 +150,10 @@ function isgroebner(
     iszerobasis && (return true)
 
     #= change input ordering if needed =#
-    assure_ordering!(ring, exps, coeffs, metainfo.targetord)
+    newring = assure_ordering!(ring, exps, coeffs, metainfo.targetord)
 
     #= check if groebner basis =#
-    flag = isgroebner(ring, exps, coeffs, metainfo)
+    flag = isgroebner(newring, exps, coeffs, metainfo)
 
     #=
     Assuming ordering of `bexps` here matches `ring.ord`
@@ -170,7 +170,7 @@ end
                 basis,
                 tobereduced;
                 check=true,
-                ordering=:input,
+                ordering=InputOrdering(),
                 rng=MersenneTwister(42),
                 loglevel=Logging.Warn
     )
@@ -201,7 +201,7 @@ function normalform(
             basispolys::Vector{Poly},
             tobereduced::Poly;
             check::Bool=true,
-            ordering::Symbol=:input,
+            ordering::AbstractMonomialOrdering=InputOrdering(),
             rng::Rng=Random.MersenneTwister(42),
             loglevel::LogLevel=Logging.Warn
             ) where {Poly, Rng<:Random.AbstractRNG}
@@ -218,7 +218,7 @@ function normalform(
             basispolys::Vector{Poly},
             tobereduced::Vector{Poly};
             check::Bool=true,
-            ordering::Symbol=:input,
+            ordering::AbstractMonomialOrdering=InputOrdering(),
             rng::Rng=Random.MersenneTwister(42),
             loglevel::LogLevel=Logging.Warn
             ) where {Poly, Rng<:Random.AbstractRNG}
@@ -246,18 +246,18 @@ function normalform(
     iszerobasis && (return convert_to_output(ring, tobereduced, tbrexps, tbrcoeffs, metainfo))
 
     #= change input ordering if needed =#
-    assure_ordering!(ring, basisexps, basiscoeffs, metainfo.targetord)
-    assure_ordering!(ring, tbrexps, tbrcoeffs, metainfo.targetord)
+    newring = assure_ordering!(ring, basisexps, basiscoeffs, metainfo.targetord)
+    newring = assure_ordering!(ring, tbrexps, tbrcoeffs, metainfo.targetord)
 
     # We assume basispolys is already a Groebner basis! #
 
     #= compute the groebner basis =#
     bexps, bcoeffs = normal_form_f4(
-                        ring, basisexps, basiscoeffs,
+                        newring, basisexps, basiscoeffs,
                         tbrexps, tbrcoeffs, rng)
 
     #=
-    Assuming ordering of `bexps` here matches `ring.ord`
+    Assuming ordering of `bexps` here matches `newring.ord`
     =#
 
     #= revert logger =#
@@ -265,7 +265,7 @@ function normalform(
 
     # ring contains ordering of computation, it is the requested ordering
     #= convert result back to representation of input =#
-    convert_to_output(ring, tobereduced, bexps, bcoeffs, metainfo)
+    convert_to_output(newring, tobereduced, bexps, bcoeffs, metainfo)
 end
 
 """
@@ -306,17 +306,15 @@ function fglm(
     #= extract ring information, exponents and coefficients
        from input polynomials =#
     # Copies input, so that polynomials would not be changed itself.
-    ring, exps, coeffs = convert_to_internal(default_safe_representation(), basis, :input)
+    ring, exps, coeffs = convert_to_internal(default_safe_representation(), basis, InputOrdering())
 
-    metainfo = set_metaparameters(ring, :lex, false, false, :exact, rng)
+    metainfo = set_metaparameters(ring, Lex(), false, false, :exact, rng)
     
     iszerobasis = remove_zeros_from_input!(ring, exps, coeffs)
     iszerobasis && (return convert_to_output(ring, basis, exps, coeffs, metainfo))
 
     bexps, bcoeffs = fglm_f4(ring, exps, coeffs, metainfo)
-
-    # lol
-    ring.ord = :lex
+    newring = PolyRing(ring.nvars, Lex(), ring.ch, ring.origring)
 
     # ordering in bexps here matches target ordering in metainfo
 
@@ -325,7 +323,7 @@ function fglm(
 
     # ring contains ordering of computation, it is the requested ordering
     #= convert result back to representation of input =#
-    convert_to_output(ring, basis, bexps, bcoeffs, metainfo)
+    convert_to_output(newring, basis, bexps, bcoeffs, metainfo)
 end
 
 """
@@ -367,9 +365,9 @@ function kbase(
     #= extract ring information, exponents and coefficients
        from input polynomials =#
     # Copies input, so that polynomials would not be changed itself.
-    ring, exps, coeffs = convert_to_internal(default_safe_representation(), basis, :input)
+    ring, exps, coeffs = convert_to_internal(default_safe_representation(), basis, InputOrdering())
 
-    metainfo = set_metaparameters(ring, :input, false, false, :exact, rng)
+    metainfo = set_metaparameters(ring, InputOrdering(), false, false, :exact, rng)
     
     iszerobasis = remove_zeros_from_input!(ring, exps, coeffs)
     iszerobasis && (throw(DomainError(basis, "Groebner.kbase does not work with such ideals, sorry")))

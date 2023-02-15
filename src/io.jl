@@ -1,3 +1,9 @@
+# Input-output convertions of polynomials.
+# Currently, convertions work with polynomials from
+#  - AbstractAlgebra.jl
+#  - DynamicPolynomials.jl
+#  - Nemo.jl
+#  - Singular.jl (not tested at the moment)
 
 #=
     Our conventions:
@@ -8,59 +14,48 @@
 =#
 
 #=
-    A note on how we represent polynomials
+    A note on how we represent polynomials.
 
     First, coefficients, exponents and polynomial ring
     are extracted from input polynomials with `convert_to_internal`.
 
-    Inside the algorithm all exponents are hashed without collisions,
+    Inside the algorithm all monomials are hashed without collisions,
     so that an integer represents a single monomial.
+    A single monomial could be stored differently, 
+    according to the prescibed implementation.
 
-    Hence, a polynomial is represented with coefficients vector
-    together with vector of hashtable indices.
+    A polynomial is represented with coefficients vector
+    together with vector of hashtable indices of monomials.
 
     After the basis is computed, hash table indices are converted back to 
-    exponent vectors, and the `convert_to_output` is called.
+    monomials, and the `convert_to_output` is called 
+    to obtain the original polynomial type from the given input.
 =#
 
-# The type of exponent vector entries used internally in
-# AbstractAlgebra.jl
+# for compatibility with AbstractAlgebra.jl and Nemo.jl
+const _supported_orderings_symbols = (:lex, :deglex, :degrevlex)
+# The type of exponent vector entries used internally in AbstractAlgebra.jl
 const AAexponenttype = UInt64
 
 #------------------------------------------------------------------------------
 
-const _supported_orderings = (:lex, :deglex, :degrevlex)
-
 """
     Contains info about polynomial ring
 """
-mutable struct PolyRing{Ch<:CoeffFF}
+mutable struct PolyRing{Char<:CoeffFF, Ord<:AbstractMonomialOrdering}
     # number of variables
     nvars::Int
-    # ring monomial ordering,
-    # possible are :lex and :degrevlex
-    ord::Symbol
+    # ring monomial ordering
+    ord::Ord
     # characteristic of coefficient field
-    ch::Ch
+    ch::Char
     # information about the original ring of input. Options are:
     #    :AbstractAlgebra for AbstractAlgebra,
-    #    :MultivariatePolynomials for MultivariatePolynomials, e.g, DynamicPolynomials,
+    #    :MultivariatePolynomials for subtypes of MultivariatePolynomials.jl, 
+    #       e.g, for DynamicPolynomials.jl,
     #    :hasparent for polynomials constructed with parent ring, e.g., Nemo
     #    :undefined
     origring::Symbol
-end
-
-#------------------------------------------------------------------------------
-
-function peek_at_polynomials(polynomials::Vector{T}) where {T}
-    (nvars=2^32,)
-end
-
-function peek_at_polynomials(polynomials::Vector{T}) where {T<:AbstractAlgebra.Generic.MPolyElem}
-    isempty(polynomials) && return (nvars=2^32,)
-    (
-        nvars=AbstractAlgebra.nvars(parent(polynomials[1])),
-    )
 end
 
 #------------------------------------------------------------------------------
@@ -82,9 +77,8 @@ end
 function convert_to_internal(
         representation,
         orig_polys::Vector{T},
-        ordering::Symbol) where {T}
+        ordering::AbstractMonomialOrdering) where {T}
     isempty(orig_polys) && throw(DomainError(orig_polys, "Empty input."))
-    ordering in _supported_orderings || ordering === :input || throw(DomainError(ordering, "Not supported ordering."))
 
     if hasmethod(AbstractAlgebra.parent, Tuple{typeof(first(orig_polys))})
         convert_to_internal(representation, orig_polys, ordering, Val(:hasparent))
@@ -96,7 +90,7 @@ end
 function convert_to_internal(
         representation,
         orig_polys::Vector{T},
-        ordering::Symbol,
+        ordering::AbstractMonomialOrdering,
         ::Val{:undefined}) where {T}
     error("Sorry, we don't work with this type of polynomials ($T) yet. Feel free to open an issue")
 end
@@ -107,7 +101,7 @@ end
 function convert_to_internal(
         representation,
         orig_polys::Vector{T},
-        ordering::Symbol,
+        ordering::AbstractMonomialOrdering,
         ::Val{:hasparent}) where {T}
     R = parent(first(orig_polys))
     ring = extract_ring(R)
@@ -122,7 +116,7 @@ end
 function convert_to_internal(
         representation,
         orig_polys::Vector{T},
-        ordering::Symbol,
+        ordering::AbstractMonomialOrdering,
         ::Val{:undefined}) where {T<:AbstractPolynomialLike{U}} where {U}
     ring = extract_ring(orig_polys)
     check_domain(representation, ring)
@@ -131,6 +125,21 @@ function convert_to_internal(
 end
 
 #------------------------------------------------------------------------------
+
+ordering_typed2sym(ord::Lex) = :lex
+ordering_typed2sym(ord::DegLex) = :deglex
+ordering_typed2sym(ord::DegRevLex) = :degrevlex
+
+function ordering_sym2typed(ord::Symbol)
+    ord in _supported_orderings_symbols || throw(DomainError(ord, "Not a supported ordering."))
+    if ord === :lex
+        Lex()
+    elseif ord === :deglex
+        DegLex()
+    elseif ord ===:degrevlex
+        DegRevLex()
+    end
+end
 
 function determinechartype(ch)
     Ch = UInt128 
@@ -149,7 +158,7 @@ function determinechartype(ch)
 end
 
 function check_ground_domain(nv, ord, ch)
-    @assert ord in _supported_orderings
+    # @assert ord in _supported_orderings
     @assert 0 <= ch < typemax(UInt64)
 end
 
@@ -163,28 +172,30 @@ function extract_ring(R::T) where {T}
 
     nv     = AbstractAlgebra.nvars(R)
     # deglex is the default ordering on univariate polynomials
-    ord = hasmethod(AbstractAlgebra.ordering, Tuple{T}) ? AbstractAlgebra.ordering(R) : :deglex
+    ord    = hasmethod(AbstractAlgebra.ordering, Tuple{T}) ? AbstractAlgebra.ordering(R) : :deglex
+    # type unstable:
+    ordT   = ordering_sym2typed(ord)
     ch     = AbstractAlgebra.characteristic(R)
 
-    check_ground_domain(nv, ord, ch)
+    check_ground_domain(nv, ordT, ch)
 
-    Ch = determinechartype(ch)
+    Char = determinechartype(ch)
 
-    PolyRing{Ch}(nv, ord, Ch(ch), :AbstractAlgebra)
+    PolyRing{Char, typeof(ordT)}(nv, ordT, Char(ch), :AbstractAlgebra)
 end
 
 function extract_ring(orig_polys::Vector{<:AbstractPolynomialLike{T}}) where {T}
     f = first(orig_polys)
 
     nv = Groebner.MultivariatePolynomials.nvariables(orig_polys)
-    ord    = :deglex
+    ordT   = DegLex()
     ch     = 0
 
-    check_ground_domain(nv, ord, ch)
+    check_ground_domain(nv, ordT, ch)
 
-    Ch = determinechartype(ch)
+    Char = determinechartype(ch)
 
-    PolyRing{Ch}(nv, ord, Ch(ch), :MultivariatePolynomials)
+    PolyRing{Char, typeof(ordT)}(nv, ordT, Char(ch), :MultivariatePolynomials)
 end
 
 #------------------------------------------------------------------------------
@@ -193,7 +204,7 @@ function extract_polys(
         representation,
         ring::PolyRing,
         orig_polys::Vector{T},
-        ord::Symbol) where {T}
+        ord::AbstractMonomialOrdering) where {T}
     cfs = extract_coeffs(ring, orig_polys)
     exps = extract_exponents(representation, ring, orig_polys)
     exps, cfs
@@ -350,7 +361,7 @@ function extract_exponents(
         representation::Representation{M},
         ring::PolyRing,
         orig_polys::Vector{T},
-        ::Val{:deglex}) where {M, T}
+        ::DegLex) where {M, T}
 
     npolys = length(orig_polys)
     exps   = Vector{Vector{M}}(undef, npolys)
@@ -368,7 +379,7 @@ function extract_exponents(
         representation::Representation{M},
         ring::PolyRing,
         orig_polys::Vector{T},
-        ::Val{:lex}) where {M, T}
+        ::Lex) where {M, T}
 
     npolys = length(orig_polys)
     exps   = Vector{Vector{M}}(undef, npolys)
@@ -386,7 +397,7 @@ function extract_exponents(
         representation::Representation{M},
         ring::PolyRing,
         orig_polys::Vector{T},
-        ::Val{:degrevlex}) where {M, T}
+        ::DegRevLex) where {M, T}
     npolys = length(orig_polys)
     exps   = Vector{Vector{M}}(undef, npolys)
     for i in 1:npolys
@@ -418,7 +429,7 @@ function assure_ordering!(ring, exps, coeffs, target_ord)
     if ring.ord != target_ord
         sort_input_to_change_ordering!(exps, coeffs, target_ord)
     end
-    ring.ord = target_ord
+    PolyRing(ring.nvars, target_ord, ring.ch, ring.origring)
 end
 
 #------------------------------------------------------------------------------
@@ -499,7 +510,7 @@ function convert_to_output(
             metainfo::GroebnerMetainfo) where {M<:Monom, P<:AbstractPolynomialLike{J}, I<:Coeff} where {J}
 
     # TODO: hardcoded
-    (metainfo.targetord != :deglex) && @warn "Input polynomial type does not support ordering $(metainfo.targetord). \nComputed basis is correct in $(metainfo.targetord), but terms are ordered in $(:deglex) in output"
+    (metainfo.targetord != DegLex()) && @warn "Input polynomial type does not support ordering $(metainfo.targetord). \nComputed basis is correct in $(metainfo.targetord), but terms are ordered in $(DegLex()) in output"
 
     origvars = MultivariatePolynomials.variables(origpolys)
     # xd
@@ -528,11 +539,6 @@ function convert_to_output(
             metainfo::GroebnerMetainfo) where {R, M<:Monom, I}
 
     @assert hasmethod(base_ring, Tuple{typeof(origring)})
-
-    # TODO: hardcoded
-    if hasmethod(AbstractAlgebra.ordering, Tuple{R})
-        (metainfo.targetord != AbstractAlgebra.ordering(origring)) && @warn "Unknown polynomial type. Computed basis is in $(metainfo.targetord), but terms are ordered in $(ordering(origring)) in output"
-    end
 
     etype = elem_type(base_ring(origring))
     # rather weak but okay for now
@@ -602,15 +608,17 @@ function convert_to_output(
             metainfo::GroebnerMetainfo) where {M<:Monom,T, I}
 
     ord = AbstractAlgebra.ordering(origring)
-    if metainfo.targetord != ord
-        origring, _ = AbstractAlgebra.PolynomialRing(base_ring(origring), AbstractAlgebra.symbols(origring), ordering=metainfo.targetord)
+    ordT = ordering_sym2typed(ord)
+    if metainfo.targetord != ordT
+        ordS = ordering_typed2sym(metainfo.targetord)
+        origring, _ = AbstractAlgebra.PolynomialRing(base_ring(origring), AbstractAlgebra.symbols(origring), ordering=ordS)
     end
 
     if elem_type(base_ring(origring)) <: Integer
         coeffs_zz = scale_denominators(gbcoeffs)
-        convert_to_output(origring, gbexps, coeffs_zz, Val(AbstractAlgebra.ordering(origring)))
+        convert_to_output(origring, gbexps, coeffs_zz, metainfo.targetord)
     else
-        convert_to_output(origring, gbexps, gbcoeffs, Val(AbstractAlgebra.ordering(origring)))
+        convert_to_output(origring, gbexps, gbcoeffs, metainfo.targetord)
     end
 end
 
@@ -622,7 +630,7 @@ function convert_to_output(
             origring::AbstractAlgebra.Generic.MPolyRing{U},
             gbexps::Vector{Vector{M}},
             gbcoeffs::Vector{Vector{T}},
-            ::Val{:degrevlex}) where  {M, T<:Coeff, U}
+            ::DegRevLex) where  {M, T<:Coeff, U}
 
     nv = AbstractAlgebra.nvars(origring)
     ground   = base_ring(origring)
@@ -653,7 +661,7 @@ function convert_to_output(
             origring::AbstractAlgebra.Generic.MPolyRing{U},
             gbexps::Vector{Vector{M}},
             gbcoeffs::Vector{Vector{T}},
-            ::Val{:lex}) where {M, T<:Coeff, U}
+            ::Lex) where {M, T<:Coeff, U}
 
     nv = AbstractAlgebra.nvars(origring)
     ground   = base_ring(origring)
@@ -683,7 +691,7 @@ function convert_to_output(
             origring::AbstractAlgebra.Generic.MPolyRing{U},
             gbexps::Vector{Vector{M}},
             gbcoeffs::Vector{Vector{T}},
-            ::Val{:deglex}) where {M, T<:Coeff, U}
+            ::DegLex) where {M, T<:Coeff, U}
 
     nv = AbstractAlgebra.nvars(origring)
     ground   = base_ring(origring)

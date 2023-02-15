@@ -3,7 +3,7 @@
     # this will crash if the comparator is invalid
     function bug(gens::Vector{Int}, exps::Vector{Vector{T}}) where {T}
         inds = collect(1:length(gens))
-        cmp  = (x, y) -> Groebner.exponent_isless_drl(exps[gens[x]],exps[gens[y]])
+        cmp  = (x, y) -> Groebner.monom_isless(exps[gens[x]],exps[gens[y]], Groebner.DegRevLex())
         sort!(inds, lt=cmp)
         @test true
     end

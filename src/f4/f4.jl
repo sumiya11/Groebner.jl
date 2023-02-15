@@ -35,8 +35,8 @@ function reduction!(
 
     column_to_monom_mapping!(matrix, symbol_ht)
     
-    sort_matrix_rows_decreasing!(matrix) # for pivots,  AB part
-    sort_matrix_rows_increasing!(matrix) # for reduced, CD part
+    sort_matrix_upper_rows_decreasing!(matrix) # for pivots,  AB part
+    sort_matrix_lower_rows_increasing!(matrix) # for reduced, CD part
 
     linear_algebra!(ring, matrix, basis, Val(linalg), rng)
 
@@ -273,7 +273,7 @@ function reducegb_f4!(
     column_to_monom_mapping!(matrix, symbol_ht)
     matrix.ncols = matrix.nleft + matrix.nright
 
-    sort_matrix_rows_decreasing!(matrix)
+    sort_matrix_upper_rows_decreasing!(matrix)
 
     exact_sparse_rref_interreduce!(ring, matrix, basis)
 
