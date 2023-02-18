@@ -28,14 +28,14 @@ end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
-    ("cyclic 6", reverse(Groebner.cyclicn(6, ground=ground))),
     ("cyclic 7", reverse(Groebner.cyclicn(7, ground=ground))),
-        ("katsura 7", reverse(Groebner.katsuran(7, ground=ground))),
-        ("katsura 8", reverse(Groebner.katsuran(8, ground=ground))),
+    ("cyclic 8", reverse(Groebner.cyclicn(8, ground=ground))),
         ("katsura 9", reverse(Groebner.katsuran(9, ground=ground))),
-        ("noon 6"    ,Groebner.noonn(6, ground=ground)),
+        ("katsura 10", reverse(Groebner.katsuran(10, ground=ground))),
+        ("katsura 11", reverse(Groebner.katsuran(11, ground=ground))),
         ("noon 7"    ,Groebner.noonn(7, ground=ground)),
         ("noon 8"    ,Groebner.noonn(8, ground=ground)),
+        ("noon 9"    ,Groebner.noonn(9, ground=ground)),
         ("eco 10"    ,Groebner.eco10(ground=ground)),
         ("eco 11"    ,Groebner.eco11(ground=ground))
     ]
@@ -47,7 +47,7 @@ function run_f4_ff_degrevlex_benchmarks(ground)
 end
 
 println()
-ground = AbstractAlgebra.QQ
+ground = AbstractAlgebra.GF(2^31-1)
 run_f4_ff_degrevlex_benchmarks(ground)
 
 

@@ -1,5 +1,5 @@
 using AbstractAlgebra
-using Groebner
+# using Groebner
 R1, (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V) =  PolynomialRing(GF(101), ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V"], ordering = :degrevlex);
 polys = [
   d*g*j*m-c*h*j*m-d*f*k*m+b*h*k*m+c*f*l*m-b*g*l*m-d*g*i*n+c*h*i*n+d*e*k*n-a*h*k*n-c*e*l*n+a*g*l*n+d*f*i*o-b*h*i*o-d*e*j*o+a*h*j*o+b*e*l*o-a*f*l*o-c*f*i*p+b*g*i*p+c*e*j*p-a*g*j*p-b*e*k*p+a*f*k*p,

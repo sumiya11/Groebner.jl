@@ -727,6 +727,10 @@ function f4!(ring::PolyRing,
 
     standardize_basis!(ring, basis, ht, ht.ord)
 
+    if debug()
+        save("experimental/saved-data/hashtable.jld2", "ht", ht)
+    end
+
     nothing
 end
 
