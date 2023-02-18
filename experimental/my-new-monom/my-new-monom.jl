@@ -29,8 +29,7 @@ end
         this could always return false,
         meaning that there is no risk of exponent overflow in MyNewMonom
     - capacity(::Type{MyNewMonom}),
-        the maximum degree which can be safely stored in MyNewMonom;
-        in our case, this is 2^63
+        the maximum number of variables that can be safely stored in MyNewMonom.
     - capacity(mnm::MyNewMonom),
         -//-
     - totaldeg(mnm::MyNewMonom),
@@ -58,7 +57,7 @@ end
 totaldeg(mnm::MyNewMonom) = sum(mnm.degrees)
 _overflow_check(mnm::MyNewMonom) = false
 
-capacity(::Type{MyNewMonom}) = UInt64(2)^63
+capacity(::Type{MyNewMonom}) = 2^32
 capacity(mnm::MyNewMonom) = capacity(typeof(mnm))
 
 powertype(::Type{MyNewMonom}) = UInt64
