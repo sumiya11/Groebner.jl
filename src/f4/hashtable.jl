@@ -262,10 +262,6 @@ function ishashcollision(ht::MonomialHashtable, vidx, e, he)
     false
 end
 
-function insert_in_hash_table_quickpath(ht::MonomialHashtable{M}, he::MonomHash) where {M}
-
-end
-
 function insert_in_hash_table!(ht::MonomialHashtable{M}, e::M) where {M}
     # generate hash
     he::MonomHash = hash(e, ht.hasher)
@@ -294,48 +290,6 @@ function insert_in_hash_table!(ht::MonomialHashtable{M}, e::M) where {M}
 
         # already present in hashtable
         return vidx
-    end
-
-    # add its position to hashtable, and insert exponent to that position
-    vidx = MonomIdx(ht.load + 1)
-    @inbounds ht.hashtable[hidx] = vidx
-    @inbounds ht.exponents[vidx] = copy(e)
-    divmask = monom_divmask(e, DivisionMask, ht.ndivvars, ht.divmap, ht.ndivbits)
-    @inbounds ht.hashdata[vidx] = Hashvalue(0, he, divmask, totaldeg(e))
-
-    ht.load += 1
-
-    return vidx
-end
-
-function insert_in_hash_table_2!(ht::MonomialHashtable{M}, e::M) where {M}
-    # generate hash
-    he::MonomHash = hash(e, ht.hasher)
-
-    # find new elem position in the table
-    hidx = MonomHash(he)
-    # power of twoooo
-    @assert ispow2(ht.size)
-    mod = MonomHash(ht.size - 1)
-    i = MonomHash(1)
-    hsize = MonomHash(ht.size)
-
-    @inbounds while i < hsize
-        hidx = nexthashindex(he, i, mod)
-
-        vidx = ht.hashtable[hidx]
-
-        # if free
-        iszero(vidx) && break
-
-        # if not free and not same hash
-        if ishashcollision(ht, vidx, e, he)
-            i += MonomHash(1)
-            continue
-        end
-
-        # already present in hashtable
-        return i
     end
 
     # add its position to hashtable, and insert exponent to that position

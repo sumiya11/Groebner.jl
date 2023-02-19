@@ -18,8 +18,6 @@ import Primes: nextprime
 
 import Random
 
-using JLD2
-
 # some simple reference implementations
 include("reference.jl")
 
