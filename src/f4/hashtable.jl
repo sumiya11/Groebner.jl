@@ -499,7 +499,7 @@ function insert_multiplied_poly_in_hash_table!(
         end
         # miss
 
-        # add multiplied exponent to hash table
+        # add multiplied exponent to hash table        
         sexps[lastidx] = copy(enew)
         symbol_ht.hashtable[k] = lastidx
 
