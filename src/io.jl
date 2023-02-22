@@ -640,10 +640,8 @@ function convert_to_output(
         cfs    = map(ground, gbcoeffs[i])
         exps   = Matrix{AAexponenttype}(undef, nv + 1, length(gbcoeffs[i]))
         @inbounds for jt in 1:length(gbcoeffs[i])
-            # for je in 1:nv
-            #     exps[je, jt] = gbexps[i][jt][je]
-            # end
-            # exps[nv + 1, jt] = gbexps[i][jt][end]
+            # TODO x1:
+            # Write gbexps[i][jt] directly to exps[1:end-1, jt].
             make_dense!(tmp, gbexps[i][jt])
             exps[1:end-1, jt] .= tmp
             exps[end, jt] = sum(tmp)

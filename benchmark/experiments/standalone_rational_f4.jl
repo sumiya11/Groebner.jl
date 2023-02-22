@@ -3,6 +3,8 @@ if !isdefined(Main, :Groebner)
     import Groebner
 end
 
+include((@__DIR__) * "/../systems/for_gleb/parser.jl")
+
 import AbstractAlgebra
 using BenchmarkTools
 using Logging
@@ -18,20 +20,7 @@ function benchmark_system_my(system)
     # println("length = $(length(gb))")
     # println("degree = $(maximum(AbstractAlgebra.total_degree, gb))")
 
-    @btime gb = Groebner.groebner($system, reduced=false)
-    # gb = Groebner.groebner(system, reduced=false)
-end
-
-function benchmark_system_my_certify(system)
-    system = Groebner.change_ordering(system, :degrevlex)
-    Groebner.groebner([system[1]])
-
-    # gb = Groebner.groebner(system)
-    # println("length = $(length(gb))")
-    # println("degree = $(maximum(AbstractAlgebra.total_degree, gb))")
-
-    @btime gb = Groebner.groebner($system, reduced=false, linalg=:prob)
-    # gb = Groebner.groebner(system, reduced=false)
+    @btime gb = Groebner.groebner($system, linalg=:prob)
 end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
@@ -48,7 +37,7 @@ function run_f4_ff_degrevlex_benchmarks(ground)
     for (name, system) in systems
         println("$name")
         # benchmark_system_my(system)
-        benchmark_system_my_certify(system)
+        benchmark_system_my(system)
     end
 end
 

@@ -26,6 +26,13 @@ function f4!(ring, basis, ht)
 end
 =#
 
+@noinline function _f4_something_gone_wrong(metainfo)
+    msg = "Something has probably gone wrong in F4. Please submit a github issue."
+    throw(DomainError(metainfo, msg))
+end
+
+#------------------------------------------------------------------------------
+
 # Performs gaussian row reduction of rows in the `matrix`
 # and writes any nonzero results to `basis`
 function reduction!(
@@ -406,9 +413,6 @@ function symbolic_preprocessing!(
     nrr = matrix.ncols
     onrr = matrix.ncols
 
-    #=
-    YES
-    =#
     while matrix.size <= nrr + symbol_load
         matrix.size *= 2
         resize!(matrix.uprows, matrix.size)
@@ -474,7 +478,7 @@ function discard_normal!(pairset::Pairset, basis::Basis,
     symbol_ht::MonomialHashtable; maxpairs::Int=0)
 
     npairs = lowest_degree_pairs!(pairset)
-    @debug "Discarded $(npairs) pairs"
+    # Discarded "npairs" pairs
 
     ps = pairset.pairs
 
@@ -491,6 +495,7 @@ function select_normal!(
     pairset::Pairset, basis::Basis, matrix::MacaulayMatrix,
     ht::MonomialHashtable, symbol_ht::MonomialHashtable;
     maxpairs::Int=0, selectall::Bool=false)
+    # maxpairs argument is currently unused
 
     # number of selected pairs
     npairs = pairset.load
@@ -499,7 +504,7 @@ function select_normal!(
     end
     ps = pairset.pairs
 
-    @debug "Selected $(npairs) pairs"
+    # Selected "npairs" pairs
 
     sort_pairset_by_lcm!(pairset, npairs, ht)
 
@@ -671,8 +676,8 @@ function f4!(ring::PolyRing,
     # while there are pairs to be reduced
     while !isempty(pairset)
         d += 1
-        @debug "F4 iteration $d"
-        @debug "Available $(pairset.load) pairs"
+        # F4 iteration number d
+        # Available pairset.load critical pairs
 
         # if the iteration is redundant according to the previous modular run
         if isready(tracer)
@@ -690,11 +695,10 @@ function f4!(ring::PolyRing,
         select_normal!(pairset, basis, matrix, ht, symbol_ht)
 
         symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
-        @debug "Matrix of size $((matrix.nrows, matrix.ncols))"
+        # Matrix of size (matrix.nrows, matrix.ncols)
         
         # reduces polys and obtains new potential basis elements
         reduction!(ring, basis, matrix, ht, symbol_ht, linalg, rng)
-        @debug "Matrix reduced"
 
         update_tracer_iteration!(tracer, matrix.npivots == 0)
 
@@ -710,7 +714,7 @@ function f4!(ring::PolyRing,
         symbol_ht = initialize_secondary_hash_table(ht)
 
         if d > 10000
-            @error "Something has probably gone wrong in f4. Please submit a github issue."
+            _f4_something_gone_wrong((d, ))
             break
         end
     end

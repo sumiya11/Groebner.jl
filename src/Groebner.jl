@@ -2,6 +2,14 @@ module Groebner
 
 debug() = false
 
+"""
+    always_vectorize()
+
+Always try to vectorize hot loops using SIMD intrinsics.
+"""
+always_vectorize() = false
+
+# For compatibility with polynomial types from AbstractAlgebra
 import AbstractAlgebra
 import AbstractAlgebra: base_ring, elem_type
 
@@ -10,6 +18,7 @@ import Combinatorics
 import Logging
 import Logging: ConsoleLogger, LogLevel
 
+# For compatibility with polynomial types from MultivariatePolynomials
 import MultivariatePolynomials
 import MultivariatePolynomials: AbstractPolynomial, AbstractPolynomialLike
 
@@ -18,27 +27,27 @@ import Primes: nextprime
 
 import Random
 
-# some simple reference implementations
+# Some simple reference implementations
 include("reference.jl")
 
 # CRT and rational reconstruction
 include("arithmetic/modular.jl")
 
-# supported monomial orderings
+# Supported monomial orderings
 include("monoms/orderings.jl")
-# monomial implementations
+# Monomial implementations
 include("monoms/packedutils.jl")
 include("monoms/powervector.jl")
 include("monoms/packedpairs.jl")
 
-# type aliases for internal objects
+# Type aliases for internal objects
 include("types.jl")
 
-# control of keywords in groebner
-# and optimal parameter selection
+# Control of keywords in groebner and friends,
+# and selection of optimal hyper-parameters
 include("keywords.jl")
 
-# input-output conversions for polynomials
+# Input-output conversions for polynomials
 include("io.jl")
 
 #= generic f4 implementation =#
@@ -52,7 +61,7 @@ include("f4/matrix.jl")
 include("f4/sorting.jl")
 # Enable tracing
 include("f4/tracer.jl")
-# All together combined in generic f4 implementation 
+# All together combined in a generic f4 implementation 
 include("f4/f4.jl")
 
 #= more high level functions =#
@@ -89,6 +98,9 @@ export kbase
 
 export Lex, DegLex, DegRevLex, InputOrdering
 export NotPacked, Packed, best
+
+# Set the contents of README.md as the docstring to this module
+@doc read(joinpath(dirname(@__DIR__), "README.md"), String) Groebner
 
 # 라헬
 end

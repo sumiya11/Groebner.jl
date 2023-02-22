@@ -171,6 +171,26 @@ function reduce_by_pivot!(row::Vector{T}, indices::Vector{ColumnIdx},
         idx = indices[j]
         row[idx] = (row[idx] + mul * cfs[j]) % magic
     end
+    
+    # Not used version with unroll by a factor of 2.
+    #
+    # correction = isodd(length(indices))
+    # m = length(indices) - correction
+    # @inbounds for j in 1:2:m
+    #     idx1 = indices[j]
+    #     idx2 = indices[j + 1]
+    #     a1 = row[idx1] + mul * cfs[j]
+    #     a2 = row[idx2] + mul * cfs[j + 1]
+    #     a1 = a1 % magic
+    #     a2 = a2 % magic
+    #     row[idx1] = a1
+    #     row[idx2] = a2
+    # end
+    
+    # !correction && (return nothing)
+
+    # @inbounds idx = indices[end]
+    # @inbounds row[idx] = (row[idx] + mul * cfs[end]) % magic
 
     nothing
 end
@@ -224,6 +244,8 @@ function reduce_dense_row_by_known_pivots_sparse!(
             exact_colmap=exact_colmap)
 end
 
+const counter = Ref{Int}(0)
+
 function reduce_dense_row_by_known_pivots_sparse!(
     densecoeffs::Vector{C}, matrix::MacaulayMatrix{C}, basis::Basis{C},
     pivs::Vector{Vector{ColumnIdx}}, startcol::ColumnIdx, tmp_pos::ColumnIdx, magic;
@@ -238,6 +260,8 @@ function reduce_dense_row_by_known_pivots_sparse!(
 
     # new pivot index
     np = -1
+
+    counter[] = 0
 
     @inbounds for i in startcol:ncols
         # if row element zero - no reduction
@@ -263,9 +287,11 @@ function reduce_dense_row_by_known_pivots_sparse!(
         else # if reducer is from upper part of the matrix
             @inbounds cfs = matrix.coeffs[matrix.low2coef[i]]
         end
+        counter[] += 1
 
         reduce_by_pivot!(densecoeffs, reducerexps, cfs, magic)
     end
+    println(length(densecoeffs), ", ", ", ", counter[])
 
     newrow = Vector{ColumnIdx}(undef, k)
     newcfs = Vector{C}(undef, k)
