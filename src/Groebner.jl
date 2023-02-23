@@ -2,13 +2,6 @@ module Groebner
 
 debug() = false
 
-"""
-    always_vectorize()
-
-Always try to vectorize hot loops using SIMD intrinsics.
-"""
-always_vectorize() = false
-
 # For compatibility with polynomial types from AbstractAlgebra
 import AbstractAlgebra
 import AbstractAlgebra: base_ring, elem_type
@@ -27,11 +20,18 @@ import Primes: nextprime
 
 import Random
 
+# SIMD loops manually (where Julia fails to)
+import SIMD: LVec, Vec
+import SIMD.Intrinsics.llvm_type
+import VectorizationBase: pick_vector_width
+
 # Some simple reference implementations
 include("reference.jl")
 
+include("simd-utils.jl")
+
 # CRT and rational reconstruction
-include("arithmetic/modular.jl")
+include("arithmetic/reconstruction.jl")
 
 # Supported monomial orderings
 include("monoms/orderings.jl")
@@ -99,7 +99,7 @@ export kbase
 export Lex, DegLex, DegRevLex, InputOrdering
 export NotPacked, Packed, best
 
-# Set the contents of README.md as the docstring to this module
+# Set the contents of README.md as the docstring for this module
 @doc read(joinpath(dirname(@__DIR__), "README.md"), String) Groebner
 
 # 라헬

@@ -13,14 +13,14 @@
 The f4! function (at the bottom of the file) roughly follows the following classic flow:
 
 function f4!(ring, basis, ht)
-  matrix = initialize_matrix()    # macauley matrix
-  pairset = initialize_pairset()  # set of critical pairs
-  update!(pairset, basis, ht)     # add initial pairs
+  matrix = initialize_matrix()      # macaulay matrix
+  pairset = initialize_pairset()    # set of critical pairs
+  update!(pairset, basis, ht)       # add initial pairs to pairset
   while !isempty(pairset)
       select_normal!(pairset, matrix, basis, ht)  # select some critical pairs
       symbolic_preprocessing!(pairset, matrix, basis, ht) # add rows to the matrix
       reduction!(matrix, basis, ht)   # row-reduce
-      update!(pairset, basis, ht)  # add new critial pairs
+      update!(pairset, basis, ht)     # add new critial pairs to pairset
   end
   return basis
 end
@@ -654,6 +654,7 @@ function f4!(ring::PolyRing,
     @assert ring.ord == ht.ord && ring.nvars == ht.nvars
     @assert basis.ndone == 0
 
+    linalgcontext = LinalgContext(ring, linalg)
     matrix = initialize_matrix(ring, C)
 
     # initialize hash tables for update and symbolic preprocessing steps

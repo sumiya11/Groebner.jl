@@ -1,8 +1,6 @@
-# MacaulayMatrix
+# Linear algebra and MacaulayMatrix
 
-#
-#
-#
+struct LinearAlgebraContent
 
 mutable struct MacaulayMatrix{T<:Coeff}
     #=
@@ -157,6 +155,56 @@ function normalize_sparse_row!(row::Vector{T}, ch) where {T<:CoeffQQ}
     row
 end
 
+function ui_redmod_barrett_half!(row, indices, cfs, magic)
+    @inbounds mul = magic.divisor - row[indices[1]]
+    p = magic.divisor
+    ϕ = div(mul << 32, p, RoundUp)
+    @inbounds for i in 1:length(indices)
+        idx = indices[i]
+        c = (cfs[i] * ϕ) >> 32
+        x = row[idx] + mul*cfs[i] - c*p
+        row[idx] = min(x, x - p)
+    end
+    row
+end
+
+# This needs further tuning, not used at the moment
+function u64_red_inline_barrett_half_4t32!(row::Vector{T}, indices, cfs, magic) where {T<:UInt32}    
+    corr = isodd(length(indices))
+    lastidx = length(indices) - corr
+
+    N = 4
+    @inbounds mul = magic.divisor - row[indices[1]]
+    mulv = SIMD.Vec{N, UInt32}(mul)
+    pv = SIMD.Vec{N, UInt32}(magic.divisor)
+    ϕv = SIMD.Vec{2, UInt64}(div(UInt64(mul) << 32, magic.divisor))
+    zerov = SIMD.Vec{2, UInt64}(0)
+
+    @inbounds for i in 1:N:lastidx
+        cfs1, cfs2, cfs3, cfs4 = cfs[i], cfs[i + 1], cfs[i + 2], cfs[i + 3]
+        cfs12 = SIMD.Vec{2, UInt64}((cfs1, cfs2))
+        cfs34 = SIMD.Vec{2, UInt64}((cfs3, cfs4))
+        
+        c12 = cfs12 * ϕv
+        c34 = cfs34 * ϕv
+        c12 = unpack_hi(c12, zerov)
+        c34 = unpack_hi(c34, zerov)
+
+        c1234 = SIMD.Vec{N, UInt32}((c12[1], c12[2], c34[1], c34[2]))
+
+        cfs1234 = SIMD.Vec{4, UInt32}((cfs1, cfs2, cfs3, cfs4))
+        idx1234 = vload(SIMD.Vec{N, Int}, indices, i)
+        row1234 = vgather(row, idx1234)
+        
+        x1234 = row1234 + cfs1234 * mulv - c1234*pv
+        x1234 = min(x1234, x1234 - pv)
+        
+        SIMD.vscatter(x1234, row, idx1234)
+    end
+
+    row
+end
+
 # reduces row by mul*cfs modulo ch at indices positions
 #
 # Finite field magic specialization
@@ -171,26 +219,6 @@ function reduce_by_pivot!(row::Vector{T}, indices::Vector{ColumnIdx},
         idx = indices[j]
         row[idx] = (row[idx] + mul * cfs[j]) % magic
     end
-    
-    # Not used version with unroll by a factor of 2.
-    #
-    # correction = isodd(length(indices))
-    # m = length(indices) - correction
-    # @inbounds for j in 1:2:m
-    #     idx1 = indices[j]
-    #     idx2 = indices[j + 1]
-    #     a1 = row[idx1] + mul * cfs[j]
-    #     a2 = row[idx2] + mul * cfs[j + 1]
-    #     a1 = a1 % magic
-    #     a2 = a2 % magic
-    #     row[idx1] = a1
-    #     row[idx2] = a2
-    # end
-    
-    # !correction && (return nothing)
-
-    # @inbounds idx = indices[end]
-    # @inbounds row[idx] = (row[idx] + mul * cfs[end]) % magic
 
     nothing
 end

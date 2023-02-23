@@ -3,7 +3,7 @@ using LoopVectorization
 using BenchmarkTools
 using CairoMakie: Figure, Axis, Legend, lines!
 using CPUSummary
-using VectorizationBase
+import VectorizationBase
 using HostCPUFeatures
 
 function reduce_by_pivot!(row::Vector{T}, indices::Vector{Int},
@@ -217,7 +217,7 @@ function u64_red_noinline!(row, indices, cfs, magic)
 end
 
 function u64_red_baseline!(row, indices, cfs, magic)
-    @inbounds mul = row[indices[1]]
+    @inbounds mul = magic.divisor - row[indices[1]]
     @inbounds for j in 1:length(indices)
         idx = indices[j]
         row[idx] = (row[idx] + mul * cfs[j]) % magic
@@ -250,7 +250,7 @@ function u64_red_new_curious!(x::Vector{T}, y::Vector{T}, chi, mu, p, m) where {
 end
 
 function ui_redmod_baseline!(row::Vector{UInt64}, indices, cfs::Vector{UInt64}, magic)
-    @inbounds mul = row[indices[1]]
+    @inbounds mul = magic.divisor - row[indices[1]]
     @inbounds for j in 1:length(indices)
         idx = indices[j]
         row[idx] = (row[idx] + mul * cfs[j]) % magic
@@ -264,7 +264,7 @@ function ui_redmod_barrett_fused_half!(row::Vector{UInt64}, indices, cfs::Vector
     ϕ = UInt128(div(widen(mul) << (sizeof(UInt64)*8), p, RoundUp))
     @inbounds for j in 1:length(indices)
         idx = indices[j]
-        row[idx] = row[idx] + barrett_mul_mod_half(mul, cfs[j], ϕ, p)
+        row[idx] = (row[idx] + barrett_mul_mod_half(mul, cfs[j], ϕ, p)) % p
     end
     row
 end
@@ -280,6 +280,88 @@ function ui_redmod_barrett_fused!(row::Vector{T}, indices, cfs::Vector{T}, magic
     row
 end
 
+function u64_red_inline_barrett_half!(row, indices, cfs, magic)
+    @inbounds mul = magic.divisor - row[indices[1]]
+    p = magic.divisor
+    ϕ = div(mul << 32, p, RoundUp)
+    @inbounds for i in 1:length(indices)
+        idx = indices[i]
+        c = (cfs[i] * ϕ) >> 32
+        x = row[idx] + mul*cfs[i] - c*p
+        row[idx] = min(x, x - p)
+    end
+    row
+end
+
+function u32_red_inline_barrett_half!(row, indices, cfs, magic)
+    @inbounds mul = magic.divisor - row[indices[1]]
+    p = magic.divisor
+    ϕ = div(UInt32(mul) << 32, p, RoundUp)
+    @inbounds for i in 1:length(indices)
+        idx = indices[i]
+        c = ((cfs[i] * ϕ) >> 32) % UInt32
+        x = row[idx] + mul*cfs[i] - c*p
+        row[idx] = min(x, x - p)
+    end
+    row
+end
+
+function u64_red_inline_barrett_half_turbo!(row, indices, cfs, magic)
+    @inbounds mul = magic.divisor - row[indices[1]]
+    p = magic.divisor
+    ϕ = div(mul << 32, magic)
+    @turbo for i in 1:length(indices)
+        idx = indices[i]
+        c = (cfs[i] * ϕ) >> 32
+        x = row[idx] + mul*cfs[i] - c*p
+        row[idx] = min(x, x - p)
+    end
+    row
+end
+
+function u64_red_inline_barrett_half_4t32!(row::Vector{T}, indices, cfs, magic) where {T<:UInt32}    
+    corr = isodd(length(indices))
+    lastidx = length(indices) - corr
+
+    N = 4
+    @inbounds mul = magic.divisor - row[indices[1]]
+    mulv = SIMD.Vec{N, UInt32}(mul)
+    pv = SIMD.Vec{N, UInt32}(magic.divisor)
+    ϕv = SIMD.Vec{2, UInt64}(div(UInt64(mul) << 32, magic.divisor))
+    zerov = SIMD.Vec{2, UInt64}(0)
+    
+    #=
+    row[idx], cfs[i], mul, ϕ, p
+    b, x, y, ϕ, p, s
+    
+    c = (x * ϕ) >> s
+    b + x*y - c*p
+    =#
+    @inbounds for i in 1:N:lastidx
+        cfs1, cfs2, cfs3, cfs4 = cfs[i], cfs[i + 1], cfs[i + 2], cfs[i + 3]
+        cfs12 = SIMD.Vec{2, UInt64}((cfs1, cfs2))
+        cfs34 = SIMD.Vec{2, UInt64}((cfs3, cfs4))
+        
+        c12 = cfs12 * ϕv
+        c34 = cfs34 * ϕv
+        c12 = unpack_hi(c12, zerov)
+        c34 = unpack_hi(c34, zerov)
+
+        c1234 = SIMD.Vec{N, UInt32}((c12[1], c12[2], c34[1], c34[2]))
+
+        cfs1234 = SIMD.Vec{4, UInt32}((cfs1, cfs2, cfs3, cfs4))
+        idx1234 = vload(SIMD.Vec{N, Int}, indices, i)
+        row1234 = vgather(row, idx1234)
+        
+        x1234 = row1234 + cfs1234 * mulv - c1234*pv
+        x1234 = min(x1234, x1234 - pv)
+        
+        SIMD.vscatter(x1234, row, idx1234)
+    end
+
+    row
+end
+
 function setup(p, N, T)
     times = Float64[]
     magic = Base.MultiplicativeInverses.UnsignedMultiplicativeInverse(
@@ -289,12 +371,13 @@ function setup(p, N, T)
     times, magic, M
 end
 
-function get_times(func, N, T)
-    times, magic, M = setup(2^31-1, N, T)
+function get_times(func, N, T1, T2)
+    times, magic, M = setup(2^30+3, N, T1)
+    mask = typemax(T2)
     for n in N
-        row = rand(T, M)
+        row = rand(T1, M) .& mask
         inds = sort(unique(rand(1:M, n)))
-        cfs = rand(T, length(inds))
+        cfs = rand(T1, length(inds)) .& mask
         bench = @benchmark $func($row, $inds, $cfs, $magic)
         push!(times, minimum(bench.times))
     end
@@ -315,7 +398,7 @@ function get_times_prefetch_row(func, N, T)
 end
 
 function get_times_new(func, N, T)
-    p = UInt32(2^31 - 1)
+    p = UInt32(2^30 + 3)
     times, magic, M = setup(p, N, T)
     m = 31
     mu = UInt32(2)^m - UInt32(1)
@@ -336,9 +419,12 @@ end
 
 N = range(32, 256, step=10)
 
-times1 = get_times(ui_redmod_baseline!, N, UInt64)
-times2 = get_times(ui_redmod_barrett_fused_half!, N, UInt64)
-times3 = get_times(ui_redmod_barrett_fused!, N, UInt32)
+times1 = get_times(ui_redmod_baseline!, N, UInt64, UInt32)
+times2 = get_times(u64_red_inline!, N, UInt64, UInt32)
+times3 = get_times(u64_red_inline_barrett_half!, N, UInt64, UInt32)
+
+# times2 = get_times(ui_redmod_barrett_fused_half!, N, UInt64)
+# times3 = get_times(ui_redmod_barrett_fused!, N, UInt32)
 # times2 = get_times(u64_red_inline!, N, UInt64)
 # times3 = get_times(u64_red_noinline!, N, UInt64)
 # times4 = get_times(u64_red_inline!, N, UInt32)
@@ -378,9 +464,9 @@ begin
             # l8
             ], 
         [
-            "Baseline (UInt64)", 
-            "Barrett fused half (UInt64)",
-            "Barrett fused (UInt32)"
+            "Baseline (N=UInt64, M=UInt32)", 
+            "Something inlined (N=UInt64, M=UInt32)",
+            "Barrett half (N=UInt64, M=UInt32)"
             # "Inlined (UInt64)", "@noinline (UInt64)", 
             # "Inlined (UInt32)", 
             # "Inlined Manual 4 × 1 (UInt32)", 

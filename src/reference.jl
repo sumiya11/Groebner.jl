@@ -1,4 +1,4 @@
-# The file contains simple reference implementations
+# Simple reference implementations for testing
 
 #=
 Given a Groebner basis G, constructs the reduced one.
