@@ -19,9 +19,10 @@ Several of these systems are regular, in addition to being zero-dimensional.
 3. henrion-n.
 4. katsura-n.
 5. kinema. The rationals.
-6. noon-n.
+6. nbody-n-(sym). To be clarified.
+7. noon-n.
 8. reimer-n.
-7. root-n.
+9. root-n.
 In these systems, no S-polynomials are constructed.
 
 **Examples from msolve** (https://gitlab.lip6.fr/eder/msolve-examples).
