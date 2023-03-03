@@ -74,7 +74,7 @@ Systems from Gleb and Ilia are based on IO-equations from identifiability assess
 
 **A couple of challenging steady-state ideals for CRNs**.
 
-These systems are steady-state ideals of CRN models mainly from ODEbase, which *take some time* for Groebner basis computation in degree-reverse-lex ordering.
+These systems are steady-state ideals of CRN models obtained mainly from ODEbase (http://odebase.org/), which *take some time* for Groebner basis computation in degree-reverse-lex ordering.
 
 1. BIOMD0000000085.
 2. BIOMD0000000086.
