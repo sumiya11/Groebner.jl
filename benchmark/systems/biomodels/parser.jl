@@ -4,19 +4,19 @@ import AbstractAlgebra
 function read_BIOMDs(nspecies)
     @info "Reading biomodels"
     systems = []
-    for smth in readdir(abspath("benchmark/biomodels"))
+    for smth in readdir(@__DIR__)
         system = []
 
         @info "" smth
         !(occursin("BIOMD", smth)) && continue
 
-        io = open(abspath("benchmark/biomodels/$smth/species_map.txt"), "r")
+        io = open(abspath((@__DIR__)*"/$smth/species_map.txt"), "r")
         vs = map(strip ∘ first, map(split, readlines(io)))
         close(io)
         # @info "variables" vs
         !(length(vs) in nspecies) && continue
 
-        io = open(abspath("benchmark/biomodels/$smth/parameters.txt"), "r")
+        io = open(abspath((@__DIR__)*"/$smth/parameters.txt"), "r")
         params = readlines(io)
         params = map(p -> replace(p, "/"=>"//"), params)
         params = map(params) do p
@@ -30,7 +30,7 @@ function read_BIOMDs(nspecies)
         end
         close(io)
 
-        io = open(abspath("benchmark/biomodels/$smth/odes.txt"), "r")
+        io = open(abspath((@__DIR__)*"/$smth/odes.txt"), "r")
         odes = readlines(io)
         close(io)
 
