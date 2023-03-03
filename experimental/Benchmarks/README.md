@@ -48,6 +48,8 @@ Systems in this section make sense over rationals.
 **Examples from Gleb Pogudin** (private communication).
 See also https://github.com/SciML/StructuralIdentifiability.jl/tree/master/examples.
 
+Systems are based on IO-equations from identifiability assessments of ODE models. 
+
 A couple of these systems are special in a sense that input is a 100 mb file, and output is linear with simple coefficients.
 
 1. SIWR.
