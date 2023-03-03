@@ -27,11 +27,13 @@ In these systems, no S-polynomials are constructed.
 
 **Examples from msolve** (https://gitlab.lip6.fr/eder/msolve-examples).
 
+The origin of some of these is not clear to me.
+
 1. f633.
 2. phuoc-1. The rationals.
 3. sot-1. The rationals.
 4. vor-1. The rationals.
-5. KLYZ12, KLYZ13, KLYZ22, KLYZ23. The origin of these is not clear.
+5. KLYZ12, KLYZ13, KLYZ22, KLYZ23.
 
 **Some examples from HomotopyContinuation.jl** (https://www.juliahomotopycontinuation.org/PolynomialTestSystems.jl/stable/).
 
