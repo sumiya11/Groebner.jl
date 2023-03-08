@@ -87,8 +87,9 @@ export normalform
 export fglm
 export kbase
 
-export Lex, DegLex, DegRevLex, InputOrdering
-export NotPacked, Packed, best
+export Lex, DegLex, DegRevLex, InputOrdering, 
+        WeightedOrdering, BlockOrdering, MatrixOrdering
+export NotPacked, Packed, best_monom_representation
 
 # 라헬
 end

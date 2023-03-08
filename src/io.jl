@@ -1,5 +1,5 @@
-# Input-output convertions of polynomials.
-# Currently, convertions work with polynomials from
+# Input-output conversions of polynomials.
+# Currently, conversions work with polynomials from
 #  - AbstractAlgebra.jl
 #  - DynamicPolynomials.jl
 #  - Nemo.jl
@@ -16,26 +16,31 @@
 #=
     A note on how we represent polynomials.
 
-    First, coefficients, exponents and polynomial ring
+    First, coefficients, exponents and polynomial ring information
     are extracted from input polynomials with `convert_to_internal`.
 
     Inside the algorithm all monomials are hashed without collisions,
     so that an integer represents a single monomial.
-    A single monomial could be stored differently, 
-    according to the prescibed implementation.
+    A single monomial could be stored in several different ways, 
+    according to the prescibed monomial implementation.
 
-    A polynomial is represented with coefficients vector
-    together with vector of hashtable indices of monomials.
+    A polynomial is represented with a dynamic coefficients vector
+    together with a dynamic vector of hashtable indices of monomials.
 
     After the basis is computed, hash table indices are converted back to 
     monomials, and the `convert_to_output` is called 
-    to obtain the original polynomial type from the given input.
+    to convert internal structures to the original polynomial type.
 =#
 
-# for compatibility with AbstractAlgebra.jl and Nemo.jl
-const _supported_orderings_symbols = (:lex, :deglex, :degrevlex)
+#=
+    A note about monomial orderings.
+
+=#
+
+# For compatibility with polynomials from AbstractAlgebra.jl and Nemo.jl
+const _AA_supported_orderings_symbols = (:lex, :deglex, :degrevlex)
 # The type of exponent vector entries used internally in AbstractAlgebra.jl
-const AAexponenttype = UInt64
+const _AA_exponenttype = UInt64
 
 #------------------------------------------------------------------------------
 
@@ -45,9 +50,9 @@ const AAexponenttype = UInt64
 mutable struct PolyRing{Char<:CoeffFF, Ord<:AbstractMonomialOrdering}
     # number of variables
     nvars::Int
-    # ring monomial ordering
+    # monomial ordering
     ord::Ord
-    # characteristic of coefficient field
+    # characteristic of the coefficient field
     ch::Char
     # information about the original ring of input. Options are:
     #    :AbstractAlgebra for AbstractAlgebra,
@@ -131,12 +136,12 @@ ordering_typed2sym(ord::DegLex) = :deglex
 ordering_typed2sym(ord::DegRevLex) = :degrevlex
 
 function ordering_sym2typed(ord::Symbol)
-    ord in _supported_orderings_symbols || throw(DomainError(ord, "Not a supported ordering."))
+    ord in _AA_supported_orderings_symbols || throw(DomainError(ord, "Not a supported ordering."))
     if ord === :lex
         Lex()
     elseif ord === :deglex
         DegLex()
-    elseif ord ===:degrevlex
+    elseif ord === :degrevlex
         DegRevLex()
     end
 end
@@ -635,10 +640,10 @@ function convert_to_output(
     nv = AbstractAlgebra.nvars(origring)
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
-    tmp = Vector{AAexponenttype}(undef, nv)
+    tmp = Vector{_AA_exponenttype}(undef, nv)
     for i in 1:length(gbexps)
         cfs    = map(ground, gbcoeffs[i])
-        exps   = Matrix{AAexponenttype}(undef, nv + 1, length(gbcoeffs[i]))
+        exps   = Matrix{_AA_exponenttype}(undef, nv + 1, length(gbcoeffs[i]))
         @inbounds for jt in 1:length(gbcoeffs[i])
             # for je in 1:nv
             #     exps[je, jt] = gbexps[i][jt][je]
@@ -666,10 +671,10 @@ function convert_to_output(
     nv = AbstractAlgebra.nvars(origring)
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
-    tmp = Vector{AAexponenttype}(undef, nv)
+    tmp = Vector{_AA_exponenttype}(undef, nv)
     for i in 1:length(gbexps)
         cfs    = map(ground, gbcoeffs[i])
-        exps   = Matrix{AAexponenttype}(undef, nv, length(gbcoeffs[i]))
+        exps   = Matrix{_AA_exponenttype}(undef, nv, length(gbcoeffs[i]))
         @inbounds for jt in 1:length(gbcoeffs[i])
             # for je in 1:nv
             #     exps[je, jt] = gbexps[i][jt][nv - je + 1]
@@ -696,10 +701,10 @@ function convert_to_output(
     nv = AbstractAlgebra.nvars(origring)
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
-    tmp = Vector{AAexponenttype}(undef, nv)
+    tmp = Vector{_AA_exponenttype}(undef, nv)
     for i in 1:length(gbexps)
         cfs    = map(ground, gbcoeffs[i])
-        exps   = Matrix{AAexponenttype}(undef, nv + 1, length(gbcoeffs[i]))
+        exps   = Matrix{_AA_exponenttype}(undef, nv + 1, length(gbcoeffs[i]))
         @inbounds for jt in 1:length(gbcoeffs[i])
             # for je in 1:nv
             #     exps[je, jt] = gbexps[i][jt][nv - je + 1]

@@ -1,23 +1,35 @@
 # PowerVector{T} is a dense vector of integers {T}
 # implementing exponent vector interface.
 
-# PowerVector stores total degree in addition to partial degrees.
+# PowerVector stores the total degree in addition to partial degrees.
+# For example, x^2yz^5 may be stored as a *dynamic* vector [8, 2, 1, 5].
 
+# PowerVector.
+# PowerVector is just a dynamic vector of integers.
 const PowerVector{T} = Vector{T} where {T<:Integer}
 
-# checks that there is no risk of overflow for `e`.
-# If overflow if probable, throws.
+# Checks whether PowerVector{T} provides a comparator function implementation
+# for the given monomial ordering of type `O`
+function is_supported_ordering(::Type{PowerVector{T}}, ::O) where {T, O}
+    O <: AbstractMonomialOrdering
+end
+
+# Checks that there is no risk of exponent overflow for `e`.
+# If overflow if probable, throws a RecoverableException.
 function _overflow_check(e::PowerVector{T}) where {T}
     _overflow_check(totaldeg(e), T)
 end
 
-# an object of type T can store capacity(T) integers at max
+# The maximum number of variables that a PowerVector can store.
 capacity(::Type{PowerVector{T}}) where {T} = 2^32
 capacity(p::PowerVector{T}) where {T} = capacity(typeof(p))
 
-# total degree of exponent vector
+# The total degree of an exponent vector
 totaldeg(pv::PowerVector) = @inbounds pv[1]
 
+# The type of an entry of a PowerVector{T}. 
+# Note that this is not necessarily equal to T.
+# Change to entrytype?
 powertype(::Type{PowerVector{T}}) where {T} = MonomHash
 powertype(::PowerVector{T}) where {T} = MonomHash
 
@@ -49,7 +61,7 @@ function Base.hash(x::PowerVector{T}, b::PowerVector{MH}) where {T, MH}
 end
 
 #------------------------------------------------------------------------------
-# Monomial orderings implementations 
+# Monomial orderings comparator functions implementations
 # for the `PowerVector` monomial implementation.
 # See monoms/orderings.jl for details.
 
@@ -99,15 +111,52 @@ function monom_isless(ea::PowerVector, eb::PowerVector, ::Lex)
     @inbounds return ea[i] < eb[i] ? true : false
 end
 
-# Weighted Lex exponent vector comparison
-# (Currently not exported)
-function monom_isless(ea::PowerVector, eb::PowerVector, w::Weighted)
-    i = 2
+# Weighted exponent vector comparison.
+function monom_isless(ea::PowerVector, eb::PowerVector, w::WeightedOrdering)
     weights = w.weights
-    @inbounds while i < length(ea) && weights[i]*ea[i] == weights[i]*eb[i]
-        i += 1
+    sa, sb = zero(eltype(weights))
+    @inbounds for i in 1:length(ea)
+        sa += weights[i]*ea[i + 1]
+        sb += weights[i]*eb[i + 1]
     end
-    @inbounds return weights[i]*ea[i] < weights[i]*eb[i] ? true : false
+    if sa < sb 
+        true
+    elseif sa == sb 
+        monom_isless(ea, eb, w.ord)
+    else
+        false
+    end
+end
+
+# Block exponent vector comparison.
+function monom_isless(ea::PowerVector, eb::PowerVector, b::BlockOrdering)
+    r1, r2 = b.r1, b.r2
+    if monom_isless(ea[r1], eb[r1], b.ord1)
+        true
+    elseif monom_isless(eb[r1], ea[r1], b.ord1)
+        false
+    else
+        monom_isless(eb[r2], ea[r2], b.ord2)
+    end
+end
+
+# Matrix exponent vector comparison.
+function monom_isless(ea::PowerVector, eb::PowerVector, m::MatrixOrdering)
+    rows = m.rows
+    n = length(ea)
+    @inbounds for i in 1:length(rows)
+        sa, sb = zero(Int128), zero(Int128)
+        for j in 2:n
+            sa += rows[i][j - 1]*ea[j]
+            sb += rows[i][j - 1]*eb[j]
+        end
+        if sa < sb
+            return true
+        elseif sa > sb
+            return false
+        end
+    end
+    false
 end
 
 #------------------------------------------------------------------------------

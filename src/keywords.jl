@@ -6,12 +6,13 @@
 # If the user hint is feasible, we follow it.
 # Otherwise, we select some other representation automatically.
 
+_not_effective_repr(r) = @warn "Provided monom representation hint ($r) was ignored, sorry."
+
 # Two monomial representation styles are possible: safe and unsafe
 # - A monomal representation is considered safe
-#   if a monomial in this representation can safely store a very
-#   large exponent.
+#   if a monomial in this representation can safely store a very large exponent.
 # - If a monomial cannot store a very large exponent, 
-#   then the representation is unsafe.
+#   then the representation is considered unsafe.
 abstract type RepresentationStyle end
 struct SafeRepresentation <: RepresentationStyle end
 struct UnsafeRepresentation <: RepresentationStyle end
@@ -40,16 +41,12 @@ best_monom_representation() = Packed{UInt8}()
 bestsafe() = NotPacked{UInt64}()
 @assert issafe(bestsafe())
 
-# if the given representation is packed, return true if it is good 
+# if the given representation is packed, return true if it is a good packed representation
 # (which just means that there are more than 1 integers in one packed chunk)
 isgoodpacked(::Any) = true
 isgoodpacked(::Packed{E}) where {E} = true
 isgoodpacked(::Packed{UInt64}) = false
 isgoodpacked(::Packed{UInt128}) = false
-
-function _not_effective_repr(r)
-    @warn "Provided representation hint ($r) looks not effective for input polynomials and was ignored, sorry."
-end
 
 default_safe_representation() = default_safe_representation(bestsafe())
 function default_safe_representation(hint::T) where {T <: RepresentationHint{E}} where {E}
@@ -61,7 +58,9 @@ guess_effective_representation(polynomials) = guess_effective_representation(pol
 guess_effective_representation(polynomials, s::RepresentationStyle) = guess_effective_representation(polynomials, s, bestsafe())
 
 # guess effective Safe representation
-function guess_effective_representation(polynomials, s::SafeRepresentation, hint::T) where {T<:RepresentationHint{E}} where {E}
+function guess_effective_representation(
+        polynomials, s::SafeRepresentation, ordering, hint::T
+        ) where {T<:RepresentationHint{E}} where {E}
     if !issafe(hint) || !isgoodpacked(hint)
         _not_effective_repr(hint)
         hint = bestsafe()
@@ -69,11 +68,13 @@ function guess_effective_representation(polynomials, s::SafeRepresentation, hint
     default_safe_representation(hint)
 end
 
-# guess effective Unsafe Notpacked representation
+# guess effective Unsafe Not packed representation
 function guess_effective_representation(
         polynomials, 
         s::UnsafeRepresentation, 
+        ordering, 
         hint::NotPacked{E}) where {E}
+    @assert is_supported_ordering(PowerVector{E}, ordering)
     Representation{PowerVector{E}}()
 end
 
@@ -81,21 +82,30 @@ end
 function guess_effective_representation(
         polynomials, 
         s::UnsafeRepresentation, 
+        ordering, 
         hint::Packed{E}) where {E}
     if !isgoodpacked(hint)
         _not_effective_repr(hint)
         hint = best_monom_representation()
     end
     first_impression = peek_at_polynomials(polynomials)
-    if first_impression.nvars < div(8, sizeof(E))
-        Representation{PackedPair1{UInt64, E}}()
-    elseif first_impression.nvars < 2*div(8, sizeof(E))
-        Representation{PackedPair2{UInt64, E}}()
-    elseif first_impression.nvars < 3*div(8, sizeof(E))
-        Representation{PackedPair3{UInt64, E}}()
-    else
-        Representation{PowerVector{E}}()
+    elper8bytes = div(8, sizeof(E))
+    # if we want a non-packed representation
+    if first_impression.nvars > 3*elper8bytes
+        @assert is_supported_ordering(PowerVector{E}, ordering)
+        return Representation{PowerVector{E}}()
     end
+    # if we want a packed representation
+    if is_supported_ordering(AbstractPackedPair, ordering)
+        if first_impression.nvars < elper8bytes
+            Representation{PackedPair1{UInt64, E}}()
+        elseif first_impression.nvars < 2*elper8bytes
+            Representation{PackedPair2{UInt64, E}}()
+        elseif first_impression.nvars < 3*elper8bytes
+            Representation{PackedPair3{UInt64, E}}()
+        end
+    end
+    Representation{PowerVector{E}}()
 end
 
 function peek_at_polynomials(polynomials::Vector{T}) where {T}
@@ -111,6 +121,7 @@ end
 
 #------------------------------------------------------------------------------
 
+# Default safe option of linear algebra 
 safe_linear_algebra() = :exact
 
 #------------------------------------------------------------------------------
