@@ -114,10 +114,10 @@ end
 # Weighted exponent vector comparison.
 function monom_isless(ea::PowerVector, eb::PowerVector, w::WeightedOrdering)
     weights = w.weights
-    sa, sb = zero(eltype(weights))
-    @inbounds for i in 1:length(ea)
-        sa += weights[i]*ea[i + 1]
-        sb += weights[i]*eb[i + 1]
+    sa, sb = zero(eltype(weights)), zero(eltype(weights))
+    @inbounds for i in 2:length(ea)
+        sa += weights[i - 1]*ea[i]
+        sb += weights[i - 1]*eb[i]
     end
     if sa < sb 
         true

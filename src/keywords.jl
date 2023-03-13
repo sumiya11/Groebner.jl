@@ -98,14 +98,15 @@ function guess_effective_representation(
     # if we want a packed representation
     if is_supported_ordering(AbstractPackedPair, ordering)
         if first_impression.nvars < elper8bytes
-            Representation{PackedPair1{UInt64, E}}()
+            return Representation{PackedPair1{UInt64, E}}()
         elseif first_impression.nvars < 2*elper8bytes
-            Representation{PackedPair2{UInt64, E}}()
+            return Representation{PackedPair2{UInt64, E}}()
         elseif first_impression.nvars < 3*elper8bytes
-            Representation{PackedPair3{UInt64, E}}()
+            return Representation{PackedPair3{UInt64, E}}()
         end
     end
-    Representation{PowerVector{E}}()
+    # return the default safe representation
+    return default_safe_representation()
 end
 
 function peek_at_polynomials(polynomials::Vector{T}) where {T}

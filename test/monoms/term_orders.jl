@@ -9,10 +9,9 @@ implementations_to_test = [
     Groebner.PackedPair1{T, UInt8} where {T},
     Groebner.PackedPair2{T, UInt8} where {T},
     Groebner.PackedPair3{T, UInt8} where {T},
-    # Groebner.PackedVector{T, UInt8} where {T},
 ]
 
-@testset "term orders" begin
+@testset "term orders: Lex, DegLex, DegRevLex" begin
     for T in (UInt64, UInt32, UInt16)
         for EV in implementations_to_test
             a = make_ev(EV{T}, [0])
@@ -134,4 +133,107 @@ implementations_to_test = [
             end
         end
     end
+end
+
+function test_orderings(v1, v2, ords_to_test)
+    for wo in ords_to_test
+        ord = wo.ord
+        ans = wo.ans
+        @test Groebner.monom_isless(v1, v2, ord) == ans[1]
+        @test Groebner.monom_isless(v2, v1, ord) == ans[2]
+    end
+end
+
+@testset "term orders: WeightedOrdering" begin    
+    pv = Groebner.PowerVector{T} where {T}
+
+    v1 = Groebner.make_ev(pv{UInt64}, [1, 2, 3])
+    v2 = Groebner.make_ev(pv{UInt64}, [3, 2, 1])
+
+    ords_to_test = [
+        (ord=Groebner.WeightedOrdering([1, 1, 1]),ans=[true, false]),
+        (ord=Groebner.WeightedOrdering([0, 0, 1]),ans=[false, true]),
+        (ord=Groebner.WeightedOrdering([0, 1, 0]),ans=[true, false]),
+        (ord=Groebner.WeightedOrdering([1, 0, 0]),ans=[true, false]),
+        (ord=Groebner.WeightedOrdering([1, 1, 5]),ans=[false, true]),
+        (ord=Groebner.WeightedOrdering([1, 0, 0]),ans=[true, false]),
+    ]
+
+    test_orderings(v1, v2, ords_to_test)
+
+    v1 = Groebner.make_ev(pv{UInt64}, [1, 2, 3])
+    v2 = Groebner.make_ev(pv{UInt64}, [1, 2, 3])
+
+    ords_to_test = [
+        (ord=Groebner.WeightedOrdering([1, 1, 1]),ans=[false, false]),
+        (ord=Groebner.WeightedOrdering([0, 0, 1]),ans=[false, false]),
+        (ord=Groebner.WeightedOrdering([0, 1, 0]),ans=[false, false]),
+        (ord=Groebner.WeightedOrdering([1, 0, 0]),ans=[false, false]),
+        (ord=Groebner.WeightedOrdering([1, 1, 5]),ans=[false, false]),
+        (ord=Groebner.WeightedOrdering([1, 0, 0]),ans=[false, false]),
+    ]
+
+    test_orderings(v1, v2, ords_to_test)
+
+    v1 = Groebner.make_ev(pv{UInt64}, [1, 2, 3, 0, 0, 7])
+    v2 = Groebner.make_ev(pv{UInt64}, [4, 5, 0, 0, 1, 4])
+
+    ords_to_test = [
+        (ord=Groebner.WeightedOrdering([1, 1, 1]),ans=[false, false]),
+        (ord=Groebner.WeightedOrdering([0, 0, 1]),ans=[false, false]),
+        (ord=Groebner.WeightedOrdering([0, 1, 0]),ans=[false, false]),
+        (ord=Groebner.WeightedOrdering([1, 0, 0]),ans=[false, false]),
+        (ord=Groebner.WeightedOrdering([1, 1, 5]),ans=[false, false]),
+        (ord=Groebner.WeightedOrdering([1, 0, 0]),ans=[false, false]),
+    ]
+
+    test_orderings(v1, v2, ords_to_test)
+
+end
+
+@testset "term orders: BlockOrdering" begin
+    pv = Groebner.PowerVector{T} where {T}
+
+    v1 = Groebner.make_ev(pv{UInt64}, [1, 2, 3])
+    v2 = Groebner.make_ev(pv{UInt64}, [3, 2, 1])
+
+    wo_to_test = [
+        (ord=Groebner.WeightedOrdering([1, 1, 1]),ans=[true, false]),
+        (ord=Groebner.WeightedOrdering([0, 0, 1]),ans=[false, true]),
+        (ord=Groebner.WeightedOrdering([0, 1, 0]),ans=[true, false]),
+        (ord=Groebner.WeightedOrdering([1, 0, 0]),ans=[true, false]),
+        (ord=Groebner.WeightedOrdering([1, 1, 5]),ans=[false, true]),
+        (ord=Groebner.WeightedOrdering([1, 0, 0]),ans=[true, false]),
+    ]
+    for wo in wo_to_test
+        ord = wo.ord
+        ans = wo.ans
+        @test Groebner.monom_isless(v1, v2, ord) == ans[1]
+        @test Groebner.monom_isless(v2, v1, ord) == ans[2]
+    end
+
+end
+
+
+@testset "term orders: MatrixOrdering" begin
+    pv = Groebner.PowerVector{T} where {T}
+
+    v1 = Groebner.make_ev(pv{UInt64}, [1, 2, 3])
+    v2 = Groebner.make_ev(pv{UInt64}, [3, 2, 1])
+
+    wo_to_test = [
+        (ord=Groebner.WeightedOrdering([1, 1, 1]),ans=[true, false]),
+        (ord=Groebner.WeightedOrdering([0, 0, 1]),ans=[false, true]),
+        (ord=Groebner.WeightedOrdering([0, 1, 0]),ans=[true, false]),
+        (ord=Groebner.WeightedOrdering([1, 0, 0]),ans=[true, false]),
+        (ord=Groebner.WeightedOrdering([1, 1, 5]),ans=[false, true]),
+        (ord=Groebner.WeightedOrdering([1, 0, 0]),ans=[true, false]),
+    ]
+    for wo in wo_to_test
+        ord = wo.ord
+        ans = wo.ans
+        @test Groebner.monom_isless(v1, v2, ord) == ans[1]
+        @test Groebner.monom_isless(v2, v1, ord) == ans[2]
+    end
+
 end
