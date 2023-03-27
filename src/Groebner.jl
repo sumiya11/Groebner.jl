@@ -91,5 +91,7 @@ export Lex, DegLex, DegRevLex, InputOrdering,
         WeightedOrdering, BlockOrdering, MatrixOrdering
 export NotPacked, Packed, best_monom_representation
 
+@doc read(joinpath(dirname(@__DIR__), "README.md"), String) Groebner
+
 # 라헬
 end
