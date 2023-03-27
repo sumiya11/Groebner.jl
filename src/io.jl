@@ -3,7 +3,7 @@
 #  - AbstractAlgebra.jl
 #  - DynamicPolynomials.jl
 #  - Nemo.jl
-#  - Singular.jl (not tested at the moment)
+#  - Singular.jl (TODO: add tests)
 
 #=
     Our conventions:
@@ -42,7 +42,7 @@
     Polynomials from AbstractAlgebra.jl, DynamicPolynomials.jl, 
     and some other packages, do not support some of the orderings supported by Groebner.jl.
 
-    Our solution here is to compute the basis in the requested ordering in Groebner.jl,
+    We compute the basis in the requested ordering in Groebner.jl,
     and then output the polynomials in the ordering of the input.
 
     For example, say that the input polynomials are from AbstractAlgebra.jl 
@@ -146,6 +146,7 @@ end
 ordering_typed2sym(origord, targetord::Lex) = :lex
 ordering_typed2sym(origord, targetord::DegLex) = :deglex
 ordering_typed2sym(origord, targetord::DegRevLex) = :degrevlex
+ordering_typed2sym(origord) = origord
 ordering_typed2sym(origord, targetord::AbstractMonomialOrdering) = origord
 
 function ordering_sym2typed(ord::Symbol)
@@ -448,32 +449,48 @@ end
 # with respect to the monomial implementation and the length of exponent vector
 
 # Should this be moved to src/monoms ?
-@noinline function _throw_monomial_ordering_inconsistent(e, o)
+@noinline function _throw_monomial_ordering_inconsistent(
+        e, o, lo=2, hi=length(e)
+    )
     throw(DomainError(o, 
         "The given monomial ordering is inconsistent with the input.\n\
         Exponent: $e\n\
+        Indices : $lo to $hi\n\
         Ordering: $o\n\
-        Probable cause is that the numbers of variables do not agree."
+        Probable cause is that the number of variables does not agree."
     ))
 end
 
 check_ordering(e::M, o::Lex) where {M<:Monom} = true
 check_ordering(e::M, o::DegLex) where {M<:Monom} = true
 check_ordering(e::M, o::DegRevLex) where {M<:Monom} = true
+function check_ordering(e::M, o::Union{Lex, DegLex, DegRevLex}, lo, hi) where {M<:Monom}
+    if lo <= hi
+        true
+    else
+        _throw_monomial_ordering_inconsistent(e, wo, lo, hi)
+        false
+    end
+end
 
 function check_ordering(e::M, wo::WeightedOrdering{O}
     ) where {M<:Monom, O<:AbstractMonomialOrdering}
     _throw_monomial_ordering_inconsistent(e, wo)
     false
 end
-function check_ordering(e::PowerVector{T}, wo::WeightedOrdering{O}
+function check_ordering(e::PowerVector{T}, wo::WeightedOrdering{O},
+    lo::Int, hi::Int
     ) where {T, O<:AbstractMonomialOrdering}
-    check_ordering(e, wo.ord)
-    if length(e) - 1 != length(wo.weights)
-        _throw_monomial_ordering_inconsistent(e, wo)
+    check_ordering(e, wo.ord, lo, hi)
+    if hi - lo + 1 != length(wo.weights)
+        _throw_monomial_ordering_inconsistent(e, wo, lo, hi)
         return false
     end
     true
+end
+function check_ordering(e::PowerVector{T}, wo::WeightedOrdering{O}
+    ) where {T, O<:AbstractMonomialOrdering}
+    check_ordering(e, wo, 2, length(e))
 end
 
 function check_ordering(e::M, bo::BlockOrdering{R1, R2, O1, O2}
@@ -481,17 +498,22 @@ function check_ordering(e::M, bo::BlockOrdering{R1, R2, O1, O2}
     _throw_monomial_ordering_inconsistent(e, bo)
     false
 end
-function check_ordering(e::PowerVector{T}, bo::BlockOrdering{R1, R2, O1, O2}
-    ) where {T, R1, R2, O1<:AbstractMonomialOrdering, O2<:AbstractMonomialOrdering}
+function check_ordering(
+    e::PowerVector{T}, bo::BlockOrdering{R1, R2, O1, O2},
+    lo::Int, hi::Int) where {T, R1, R2, O1<:AbstractMonomialOrdering, O2<:AbstractMonomialOrdering}
     r1 = (first(bo.r1) + 1):(last(bo.r1) + 1)
     r2 = (first(bo.r2) + 1):(last(bo.r2) + 1)
-    e1 = e[r1]
-    prepend!(e1, sum(e1))
-    e2 = e[r2]
-    prepend!(e2, sum(e2))
-    check_ordering(e1, bo.ord1)
-    check_ordering(e2, bo.ord2)
+    if first(r1) != lo || last(r2) != hi
+        _throw_monomial_ordering_inconsistent(e, bo, lo, hi)
+        return false
+    end
+    check_ordering(e, bo.ord1, first(r1), last(r1))
+    check_ordering(e, bo.ord2, first(r2), last(r2))
     true
+end
+function check_ordering(e::PowerVector{T}, bo::BlockOrdering{R1, R2, O1, O2}
+    ) where {T, R1, R2, O1<:AbstractMonomialOrdering, O2<:AbstractMonomialOrdering}
+    check_ordering(e, bo, 2, length(e))
 end
 
 function check_ordering(e::M, mo::MatrixOrdering) where {M<:Monom}
@@ -499,11 +521,16 @@ function check_ordering(e::M, mo::MatrixOrdering) where {M<:Monom}
     false
 end
 function check_ordering(e::PowerVector{T}, mo::MatrixOrdering) where {T}
+    check_ordering(e, mo, 2, length(e))
+end
+function check_ordering(
+        e::PowerVector{T}, mo::MatrixOrdering,
+        lo::Int, hi::Int) where {T}
     rows = mo.rows
-    n = length(e) - 1
+    n = hi - lo + 1
     for i in 1:length(rows)
         if length(rows[i]) != n
-            _throw_monomial_ordering_inconsistent(e, mo)
+            _throw_monomial_ordering_inconsistent(e, mo, lo, hi)
             return false
         end
     end

@@ -65,6 +65,7 @@ end
 # for the `PowerVector` monomial implementation.
 # See monoms/orderings.jl for details.
 
+#####
 # DegRevLex exponent vector comparison
 function monom_isless(ea::PowerVector, eb::PowerVector, ::DegRevLex)
     if @inbounds ea[1] < eb[1]
@@ -72,21 +73,44 @@ function monom_isless(ea::PowerVector, eb::PowerVector, ::DegRevLex)
     elseif @inbounds ea[1] != eb[1]
         return false
     end
-
     # assuming length(ea) > 1
-
     i = length(ea)
     @inbounds while i > 2 && ea[i] == eb[i]
         i -= 1
     end
-
     @inbounds if ea[i] <= eb[i]
         return false
     else
         return true
     end
 end
+# DegRevLex, but on a given range of variables [lo:hi].
+# The flag hasdegree indicates whether the total degree is stored 
+# in ea[lo] and eb[lo], respectively.
+function monom_isless(
+        ea::PowerVector, eb::PowerVector, ::DegRevLex,
+        lo::Int, hi::Int, hasdegree::Bool)
+    @inbounds da = hasdegree ? ea[lo] : sum(view(ea, lo:hi))
+    @inbounds db = hasdegree ? eb[lo] : sum(view(eb, lo:hi))
+    if da < db
+        return true
+    elseif da != db
+        return false
+    end
+    # after the while loop terminates, 
+    # i is guaranteed to be in [lo + 1, hi]
+    i = hi
+    @inbounds while i > lo && ea[i] == eb[i]
+        i -= 1
+    end
+    @inbounds if ea[lo] <= eb[lo]
+        return false
+    else
+        return true
+    end
+end
 
+#####
 # DegLex exponent vector comparison
 function monom_isless(ea::PowerVector, eb::PowerVector, ::DegLex)
     if @inbounds ea[1] < eb[1]
@@ -94,15 +118,34 @@ function monom_isless(ea::PowerVector, eb::PowerVector, ::DegLex)
     elseif @inbounds ea[1] != eb[1]
         return false
     end
-
     i = 2
     @inbounds while i < length(ea) && ea[i] == eb[i]
         i += 1
     end
     @inbounds return ea[i] < eb[i] ? true : false
 end
+# DegLex, but on a given range of variables [lo:hi].
+# The flag hasdegree indicates whether the total degree is stored 
+# in ea[lo] and eb[lo], respectively.
+function monom_isless(
+        ea::PowerVector, eb::PowerVector, ::DegLex,
+        lo::Int, hi::Int, hasdegree::Bool)
+    @inbounds da = hasdegree ? ea[lo] : sum(view(ea, lo:hi))
+    @inbounds db = hasdegree ? eb[lo] : sum(view(eb, lo:hi))
+    if da < db
+        return true
+    elseif da != db
+        return false
+    end
+    i = lo + hasdegree
+    @inbounds while i < hi && ea[i] == eb[i]
+        i += 1
+    end
+    @inbounds return ea[i] < eb[i] ? true : false
+end
 
-# Lex exponent vector comparison
+#####
+# Lex
 function monom_isless(ea::PowerVector, eb::PowerVector, ::Lex)
     i = 2
     @inbounds while i < length(ea) && ea[i] == eb[i]
@@ -110,45 +153,84 @@ function monom_isless(ea::PowerVector, eb::PowerVector, ::Lex)
     end
     @inbounds return ea[i] < eb[i] ? true : false
 end
+# Lex, but on a given range of variables [lo:hi].
+# The flag hasdegree indicates whether the total degree is stored 
+# in ea[lo] and eb[lo], respectively.
+function monom_isless(
+        ea::PowerVector, eb::PowerVector, ::Lex,
+        lo::Int, hi::Int, hasdegree::Bool)
+    i = lo + hasdegree
+    @inbounds while i < hi && ea[i] == eb[i]
+        i += 1
+    end
+    @inbounds return ea[i] < eb[i] ? true : false
+end
 
+#####
 # Weighted exponent vector comparison.
 function monom_isless(ea::PowerVector, eb::PowerVector, w::WeightedOrdering)
+    monom_isless(ea, eb, w, 1, length(ea), true)
+end
+# Weighted, but on a given range of variables [lo:hi].
+function monom_isless(
+        ea::PowerVector, eb::PowerVector, w::WeightedOrdering,
+        lo::Int, hi::Int, hasdegree::Bool
+    )
     weights = w.weights
-    sa, sb = zero(eltype(weights)), zero(eltype(weights))
-    @inbounds for i in 2:length(ea)
-        sa += weights[i - 1]*ea[i]
-        sb += weights[i - 1]*eb[i]
+    common_type = promote_type(eltype(weights), eltype(ea))
+    sa, sb = zero(common_type), zero(common_type)
+    j = 1
+    @inbounds for i in (lo+hasdegree):hi
+        sa += weights[j]*ea[i]
+        sb += weights[j]*eb[i]
+        j += 1
     end
     if sa < sb 
         true
     elseif sa == sb 
-        monom_isless(ea, eb, w.ord)
+        monom_isless(ea, eb, w.ord, lo+hasdegree, hi, false)
     else
         false
     end
 end
 
+#####
 # Block exponent vector comparison.
 function monom_isless(ea::PowerVector, eb::PowerVector, b::BlockOrdering)
+    monom_isless(ea, eb, b, 1, length(ea), true)
+end
+# Block, but on a given range of variables [lo:hi].
+function monom_isless(
+        ea::PowerVector, eb::PowerVector, b::BlockOrdering,
+        lo::Int, hi::Int, hasdegree::Bool)
+    # here, it is assumed that lo:hi equals the union of r1 and r2
     r1, r2 = b.r1, b.r2
-    if monom_isless(ea[r1], eb[r1], b.ord1)
+    if monom_isless(ea, eb, b.ord1, first(r1)+hasdegree, last(r1)+hasdegree, false)
         true
-    elseif monom_isless(eb[r1], ea[r1], b.ord1)
+    elseif monom_isless(eb, ea, b.ord1, first(r1)+hasdegree, last(r1)+hasdegree, false)
         false
     else
-        monom_isless(eb[r2], ea[r2], b.ord2)
+        monom_isless(ea, eb, b.ord2, first(r2)+hasdegree, last(r2)+hasdegree, false)
     end
 end
 
 # Matrix exponent vector comparison.
 function monom_isless(ea::PowerVector, eb::PowerVector, m::MatrixOrdering)
+    monom_isless(ea, eb, m, 1, length(ea), true)
+end
+# Matrix, but on a given range of variables [lo:hi].
+function monom_isless(
+        ea::PowerVector, eb::PowerVector, m::MatrixOrdering,
+        lo::Int, hi::Int, hasdegree::Bool)
     rows = m.rows
-    n = length(ea)
+    @inbounds common_type = promote_type(eltype(rows[1]), eltype(ea))
     @inbounds for i in 1:length(rows)
-        sa, sb = zero(Int128), zero(Int128)
-        for j in 2:n
-            sa += rows[i][j - 1]*ea[j]
-            sb += rows[i][j - 1]*eb[j]
+        sa, sb = zero(common_type), zero(common_type)
+        k = 1
+        for j in lo+hasdegree:hi
+            sa += rows[i][k]*common_type(ea[j])
+            sb += rows[i][k]*common_type(eb[j])
+            k += 1
         end
         if sa < sb
             return true

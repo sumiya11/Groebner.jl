@@ -1,10 +1,10 @@
 # The file contains descriptions and constructors 
 # of all monomial orderings supported by this package.
 
-# Note that implementations of actual monomial comparator functions
+# Monomial comparator functions
 # are specific to the monomial implementation that is being used.
 # Thus, in the file with a particular monomial implementation,
-# all available comparators are implemented.
+# all comparators supported by the implementation are implemented.
 # (see, for example, src/monoms/powervector.jl - a simple exponent vector)
 
 # All monomial orderings are subtypes of AbstractMonomialOrdering
@@ -13,8 +13,20 @@ abstract type AbstractMonomialOrdering end
 # Tell the algorithm to preserve the monomial ordering defined on the
 # given input polynomials, if any.
 """
-    InputOrdering
+    struct InputOrdering
 
+Preserves the monomial ordering defined on the input polynomials.
+This is the default option.
+
+# Example
+
+```jldoctest
+using Groebner, AbstractAlgebra
+R, (x, y) = QQ["x", "y"];
+# uses the ordering InputOrdering, which,
+# in this case, defaults to Lex
+groebner([x*y + x, x + y^2])
+```
 """
 struct InputOrdering <: AbstractMonomialOrdering end
 
@@ -32,8 +44,17 @@ struct InputOrdering <: AbstractMonomialOrdering end
 #   aj = bj for j in 1..k-1 
 #   ak < bk
 """
-    Lex
+    struct Lex
 
+Lexicographical monomial ordering.
+
+# Example
+
+```jldoctest
+using Groebner, AbstractAlgebra
+R, (x, y) = QQ["x", "y"];
+groebner([x*y + x, x + y^2], ordering=Lex())
+```
 """
 struct Lex <: AbstractMonomialOrdering end
 
@@ -51,8 +72,17 @@ struct Lex <: AbstractMonomialOrdering end
 #   aj = bj for j in 1..k-1 
 #   ak < bk
 """
-    DegLex
+    struct DegLex
 
+Degree lexicographical monomial ordering.
+
+# Example
+
+```jldoctest
+using Groebner, AbstractAlgebra
+R, (x, y) = QQ["x", "y"];
+groebner([x*y + x, x + y^2], ordering=DegLex())
+```
 """
 struct DegLex <: AbstractMonomialOrdering end
 
@@ -70,8 +100,17 @@ struct DegLex <: AbstractMonomialOrdering end
 #   aj = bj for j in k+1..n 
 #   ak > bk
 """
-    DegRevLex
+    struct DegRevLex
 
+Degree reversed lexicographical monomial ordering.
+
+# Example
+
+```jldoctest
+using Groebner, AbstractAlgebra
+R, (x, y) = QQ["x", "y"];
+groebner([x*y + x, x + y^2], ordering=DegRevLex())
+```
 """
 struct DegRevLex <: AbstractMonomialOrdering end
 
@@ -95,13 +134,33 @@ struct DegRevLex <: AbstractMonomialOrdering end
 # In the implementation, <* defaults to Lex.
 # A custom <* can be provided.
 """
-    WeightedOrdering
+    struct WeightedOrdering
 
+Weighted monomial ordering.
+Only *non-negative weights* are supported at the moment.
+
+# Example
+
+```jldoctest
+using Groebner, AbstractAlgebra
+R, (x, y) = QQ["x", "y"];
+ord = WeightedOrdering([3, 1])
+groebner([x*y + x, x + y^2], ordering=ord)
+```
+
+Weighted ordering can be used in combination 
+with some other ordering *(which naturally defaults to `Lex`)*
+
+```jldoctest
+ord = WeightedOrdering([3, 1], DegRevLex())
+groebner([x*y + x, x + y^2], ordering=ord)
+```
 """
 struct WeightedOrdering{O} <: AbstractMonomialOrdering
-    weights::Vector{Int64}
+    weights::Vector{UInt64}
     ord::O
     function WeightedOrdering(weights::Vector{T}, o::O) where {T<:Integer, O<:AbstractMonomialOrdering}
+        @assert all(>=(0), weights) "Only non-negative weights are supported at the moment."
         new{O}(weights, o)
     end
     function WeightedOrdering(weights::Vector{T}) where {T<:Integer}
@@ -124,8 +183,31 @@ end
 #   x1^a1 ... xk^ak = x1^b1 ... xk^bk and
 #   x{k+1}^a{k+1} ... xn^an <_2 x{k+1}^b{k+1} ... xn^bn
 """
-    BlockOrdering
+    struct BlockOrdering
 
+Block monomial ordering.
+
+# Example
+
+Block ordering with the first two variables ordered by `Lex`
+and the last two variables ordered by `DegRevLex`:
+
+```jldoctest
+using Groebner, AbstractAlgebra
+R, (x, y, z, w) = QQ["x", "y", "z", "w"];
+ord = BlockOrdering(1:2, Lex(), 3:4, DegRevLex())
+groebner([x*y + w, y*z - w], ordering=ord)
+```
+
+Recursive creation of block orderings:
+
+```jldoctest
+using Groebner, AbstractAlgebra
+R, (x1,x2,x3,x4,x5,x6) = QQ["x1","x2","x3","x4","x5","x6"];
+ord_3_6 = BlockOrdering(3:4, DegRevLex(), 5:6, WeightedOrdering([0, 3]))
+ord = BlockOrdering(1:2, Lex(), 3:6, ord_3_6)
+groebner([x1 + x2 + x3 + x4 + x5 + x6], ordering=ord)
+```
 """
 struct BlockOrdering{R1, R2, O1, O2} <: AbstractMonomialOrdering
     r1::R1
@@ -154,8 +236,23 @@ end
 # where mj * a^T is the dot product of mj and a^T = (a1,...,an)^T
 #
 """
-    MatrixOrdering
+    struct MatrixOrdering
+    
+Matrix monomial ordering.
 
+# Example
+
+```jldoctest
+using Groebner, AbstractAlgebra
+R, (x, y, z, w) = QQ["x", "y", "z", "w"];
+# the number of columns equal to the number of variables
+ord = MatrixOrdering([
+    1 0  0  2;
+    0 0 -1 -2;
+    0 1  1  1;
+])
+groebner([x*y + w, y*z - w], ordering=ord)
+```
 """
 struct MatrixOrdering <: AbstractMonomialOrdering
     rows::Vector{Vector{Int}}
@@ -163,6 +260,7 @@ struct MatrixOrdering <: AbstractMonomialOrdering
     function MatrixOrdering(rows::Vector{Vector{T}}) where {T<:Integer}
         @assert all(!isempty, rows)
         @assert allequal(map(length, rows))
+        # @assert all(row -> all(>=(0), row), rows)
         new(rows)
     end
 

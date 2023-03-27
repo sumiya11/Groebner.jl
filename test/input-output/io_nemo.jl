@@ -2,7 +2,9 @@
 import Nemo
 using Random
 
-orderings_to_test = [Groebner.Lex(), Groebner.DegLex(), Groebner.DegRevLex()]
+orderings_to_test = [
+    :lex, :deglex, :degrevlex
+]
 grounds_to_test = [Nemo.GF(2^31-1), Nemo.QQ]
 representations_to_test = [
     Groebner.default_safe_representation(Groebner.NotPacked{UInt64}()),
@@ -18,10 +20,10 @@ representations_to_test = [
 @testset "input-output nemo" begin
     rng = Random.MersenneTwister(42)
 
-    for ord in orderings_to_test
+    for ord_sym in orderings_to_test
         for ground in grounds_to_test
             for representation in representations_to_test
-                ord_sym = Groebner.ordering_typed2sym(ord)
+                ord = Groebner.ordering_sym2typed(ord_sym)
                 R, (x, y) = Nemo.PolynomialRing(ground, ["x", "y"], ordering=ord_sym)
                 fs = [x^2*y + 3, (2^31 - 5)*x - (2^31 - 4)*y]
                 ring, exps, cfs = Groebner.convert_to_internal(representation, fs, Groebner.InputOrdering())

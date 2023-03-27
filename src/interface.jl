@@ -24,7 +24,7 @@ Possible monomial orderings to specify are
 - `Lex()` for lexicographic,
 - `DegLex()` for degree lexicographic,
 - `DegRevLex()` for degree reverse lexicographic,
-- `WeightedOrdering(weights, ordering)` for weighted ordering,
+- `WeightedOrdering(weights)` for weighted ordering,
 - `BlockOrdering(args...)` for block ordering,
 - `MatrixOrdering(matrix)` for matrix ordering.
 
@@ -54,9 +54,9 @@ Verboseness can be tweaked with the `loglevel` parameter (default is that only w
 # Example
 
 ```jldoctest
-julia> using Groebner, DynamicPolynomials
-julia> @polyvar x y;
-julia> groebner([x*y^2 + x, y*x^2 + y])
+using Groebner, DynamicPolynomials
+@polyvar x y;
+groebner([x*y^2 + x, y*x^2 + y])
 ```
 
 """
