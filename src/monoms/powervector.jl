@@ -247,7 +247,7 @@ end
 # Returns the lcm of monomials ea and eb.
 # Also writes the result to ec.
 function monom_lcm!(ec::PowerVector{T}, ea::PowerVector{T}, eb::PowerVector{T}) where {T}
-    @assert length(ec) == length(ea) == length(eb)
+    # @assert length(ec) == length(ea) == length(eb)
     @inbounds ec[1] = zero(T)
     @inbounds for i in 2:length(ec)
         ec[i] = max(ea[i], eb[i])
@@ -258,7 +258,7 @@ end
 
 # Checks if the gcd of monomials ea and eb is constant.
 function is_gcd_const(ea::PowerVector{T}, eb::PowerVector{T}) where {T}
-    @assert length(ea) == length(eb)
+    # @assert length(ea) == length(eb)
     @inbounds for i in 2:length(ea)
         if !iszero(ea[i]) && !iszero(eb[i])
             return false
@@ -270,7 +270,7 @@ end
 # Returns the product of monomials ea and eb.
 # Also writes the result to ec.
 function monom_product!(ec::PowerVector{T}, ea::PowerVector{T}, eb::PowerVector{T}) where {T}
-    @assert length(ec) == length(ea) == length(eb)
+    # @assert length(ec) == length(ea) == length(eb)
     @inbounds for j in 1:length(ec)
         ec[j] = ea[j] + eb[j]
     end
@@ -280,7 +280,7 @@ end
 # Returns the result of monomial division ea / eb.
 # Also writes the result to ec.
 function monom_division!(ec::PowerVector{T}, ea::PowerVector{T}, eb::PowerVector{T}) where {T}
-    @assert length(ec) == length(ea) == length(eb)
+    # @assert length(ec) == length(ea) == length(eb)
     @inbounds for j in 1:length(ec)
         ec[j] = ea[j] - eb[j]
     end

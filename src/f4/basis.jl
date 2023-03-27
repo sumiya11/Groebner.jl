@@ -213,26 +213,34 @@ function update_pairset!(
 
     # generate a pair for each pair
     @inbounds for i in 1:bl-1
-        plcm[i] = get_lcm(basis.monoms[i][1], new_lead, ht, update_ht)
-        deg = update_ht.hashdata[plcm[i]].deg
+        # plcm[i] = get_lcm(basis.monoms[i][1], new_lead, ht, update_ht)
+        # deg = update_ht.hashdata[plcm[i]].deg
         newidx = pl + i
-        if !basis.isred[i]
+        if !basis.isred[i] && !is_gcd_const(ht.exponents[basis.monoms[i][1]], ht.exponents[new_lead])
+            plcm[i] = get_lcm(basis.monoms[i][1], new_lead, ht, update_ht)
+            deg = update_ht.hashdata[plcm[i]].deg
             ps[newidx] = SPair(i, idx, plcm[i], pr(deg))
         else
             # lcm == 0 will mark redundancy of an S-pair
-            ps[newidx] = SPair(i, idx, MonomIdx(0), pr(deg))
+            plcm[i] = MonomIdx(0)
+            # ps[newidx] = SPair(i, idx, MonomIdx(0), pr(deg))
+            ps[newidx] = SPair(i, idx, MonomIdx(0), typemax(pr))
         end
     end
 
     # traverse existing pairs
     @inbounds for i in 1:pl
+        if iszero(ps[i].lcm)
+            continue
+        end
+
         j = ps[i].poly1
         l = ps[i].poly2
         m = max(ps[pl+l].deg, ps[pl+j].deg)
 
         # if an existing pair is divisible by the lead of new poly
         # and has a greater degree than newly generated one then
-        if is_monom_divisible(ps[i].lcm, new_lead, ht) && ps[i].deg > m
+        if ps[i].deg > m && is_monom_divisible(ps[i].lcm, new_lead, ht)
             # mark an existing pair redundant
             ps[i] = SPair(ps[i].poly1, ps[i].poly2, MonomIdx(0), ps[i].deg)
         end
@@ -274,7 +282,6 @@ function update_pairset!(
     end
 
     # ensure that basis hashtable can store new lcms
-    # YES
     check_enlarge_hashtable!(ht, pc)
     # if ht.size - ht.load <= pc
     #     enlarge_hash_table!(ht)
@@ -403,7 +410,6 @@ function update!(
     @inbounds for i in basis.ndone+1:basis.ntotal
         # check redundancy of new polynomial
         is_redundant!(pairset, basis, ht, update_ht, i) && continue
-        # YES
         check_enlarge_plcm!(plcm, basis.ntotal)
         # if not redundant, then add new S-pairs to pairset
         update_pairset!(pairset, basis, ht, update_ht, i, plcm)
