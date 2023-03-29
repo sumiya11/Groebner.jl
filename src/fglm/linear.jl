@@ -96,20 +96,20 @@ end
 #
 # Finite field magic specialization
 function reduce_by_pivot_simultaneous!(leftrow, leftexps, leftcfs::Vector{T},
-                rightrow, rightexps, rightcfs, magic) where {T<:CoeffFF}
+                rightrow, rightexps, rightcfs, arithmetic) where {T<:CoeffFF}
 
     # mul = -densecoeffs[i]
     # actually.. not bad!
-    mul = (magic.divisor - leftrow[leftexps[1]]) % magic
+    mul = mod_x(divisor(arithmetic) - leftrow[leftexps[1]], arithmetic)
 
     @inbounds for j in 1:length(leftexps)
         idx = leftexps[j]
-        leftrow[idx] = (leftrow[idx] + mul*leftcfs[j]) % magic
+        leftrow[idx] = mod_x(leftrow[idx] + mul*leftcfs[j], arithmetic)
     end
 
     @inbounds for j in 1:length(rightexps)
         idx = rightexps[j]
-        rightrow[idx] = (rightrow[idx] + mul*rightcfs[j]) % magic
+        rightrow[idx] = mod_x(rightrow[idx] + mul*rightcfs[j], arithmetic)
     end
 
     mul
@@ -117,23 +117,21 @@ end
 
 #
 # Finite field magic specialization
-function normalize_double_row_sparse!(leftcfs::Vector{T}, rightcfs, magic) where {T<:CoeffFF}
-    pinv = invmod(leftcfs[1], magic.divisor) % magic
+function normalize_double_row_sparse!(leftcfs::Vector{T}, rightcfs, arithmetic) where {T<:CoeffFF}
+    pinv = mod_x(invmod(leftcfs[1], divisor(arithmetic)), arithmetic)
     @inbounds for i in 2:length(leftcfs)
-        # row[i] *= pinv
-        leftcfs[i] = (leftcfs[i] * pinv) % magic
+        leftcfs[i] = mod_x(leftcfs[i] * pinv, arithmetic)
     end
     @inbounds leftcfs[1] = one(leftcfs[1])
 
     @inbounds for i in 1:length(rightcfs)
-        # row[i] *= pinv
-        rightcfs[i] = (rightcfs[i] * pinv) % magic
+        rightcfs[i] = mod_x(rightcfs[i] * pinv, arithmetic)
     end
 end
 
 #
 # Finite field magic specialization
-function normalize_double_row_sparse!(leftcfs::Vector{T}, rightcfs, magic) where {T<:CoeffQQ}
+function normalize_double_row_sparse!(leftcfs::Vector{T}, rightcfs, arithmetic) where {T<:CoeffQQ}
     pinv = inv(leftcfs[1])
     @inbounds for i in 2:length(leftcfs)
         # row[i] *= pinv
@@ -151,7 +149,7 @@ end
 #
 # Rational field specialization
 function reduce_by_pivot_simultaneous!(leftrow, leftexps, leftcfs::Vector{T},
-                rightrow, rightexps, rightcfs, magic) where {T<:CoeffQQ}
+                rightrow, rightexps, rightcfs, arithmetic) where {T<:CoeffQQ}
 
     # mul = -densecoeffs[i]
     # actually.. not bad!
@@ -174,7 +172,7 @@ end
 
 function reduce_double_dense_row_by_known_pivots_sparse!(
             matrix::DoubleMacaulayMatrix{C},
-            leftrow, rightrow, magic) where {C}
+            leftrow, rightrow, arithmetic) where {C}
 
     leftrows  = matrix.leftpivs
     rightrows = matrix.rightrows
@@ -218,7 +216,7 @@ function reduce_double_dense_row_by_known_pivots_sparse!(
         rightcfs  = matrix.rightcoeffs[pivot2idx[i]]
 
         mul = reduce_by_pivot_simultaneous!(leftrow, leftexps, leftcfs,
-                        rightrow, rightexps, rightcfs, magic)
+                        rightrow, rightexps, rightcfs, arithmetic)
 
     end
 
@@ -256,7 +254,7 @@ function linear_relation!(
             monom::MonomIdx, vector::Basis{C},
             ht) where {C<:Coeff}
 
-    magic = select_divisor(vector.coeffs, ring.ch)
+    arithmetic = select_arithmetic(vector.coeffs, ring.ch)
 
     leftrow, rightrow = convert_to_double_dense_row(matrix, monom, vector, ht)
 
@@ -269,7 +267,7 @@ function linear_relation!(
         println(matrix)
     end
 
-    reduced, np, k = reduce_double_dense_row_by_known_pivots_sparse!(matrix, leftrow, rightrow, magic)
+    reduced, np, k = reduce_double_dense_row_by_known_pivots_sparse!(matrix, leftrow, rightrow, arithmetic)
 
     if debug()
         @warn "reduced"
@@ -284,7 +282,7 @@ function linear_relation!(
         lexps, lcoeffs, _ = extract_sparse_row(leftrow, np, k)
         rexps, rcoeffs, _ = extract_sparse_row(rightrow)
 
-        normalize_double_row_sparse!(lcoeffs, rcoeffs, magic)
+        normalize_double_row_sparse!(lcoeffs, rcoeffs, arithmetic)
 
         if debug()
             @warn "extracted"

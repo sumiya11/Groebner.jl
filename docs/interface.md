@@ -32,16 +32,16 @@ See below for some examples.
 *Note that some frontends (e.g. `AbstractAlgebra.jl`) do not support weighted/block/matrix orderings. In such cases, the polynomial terms in the output may be ordered w.r.t. some other ordering.
 Still, the output is a correct Groebner basis in the requested ordering.*
 
-{{doc Lex Lex struct}}
+{{doc Lex Lex st}}
 
-{{doc DegLex DegLex struct}}
+{{doc DegLex DegLex st}}
 
-{{doc DegRevLex DegRevLex struct}}
+{{doc DegRevLex DegRevLex st}}
 
-{{doc InputOrdering InputOrdering struct}}
+{{doc InputOrdering InputOrdering st}}
 
-{{doc WeightedOrdering WeightedOrdering struct}}
+{{doc WeightedOrdering WeightedOrdering st}}
 
-{{doc BlockOrdering BlockOrdering struct}}
+{{doc BlockOrdering BlockOrdering str}}
 
-{{doc MatrixOrdering MatrixOrdering struct}}
+{{doc MatrixOrdering MatrixOrdering st}}

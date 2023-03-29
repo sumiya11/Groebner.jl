@@ -47,7 +47,7 @@ function run_f4_ff_degrevlex_benchmarks(ground)
 end
 
 println()
-ground = AbstractAlgebra.GF(2^31-1)
+ground = AbstractAlgebra.GF(2^50 + 55)
 run_f4_ff_degrevlex_benchmarks(ground)
 
 
