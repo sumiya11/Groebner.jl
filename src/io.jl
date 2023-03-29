@@ -453,11 +453,11 @@ end
         e, o, lo=2, hi=length(e)
     )
     throw(DomainError(o, 
-        "The given monomial ordering is inconsistent with the input.\n\
-        Exponent: $e\n\
-        Indices : $lo to $hi\n\
-        Ordering: $o\n\
-        Probable cause is that the number of variables does not agree."
+        """The given monomial ordering is inconsistent with the input.
+        Exponent: $e
+        Indices : $lo to $hi
+        Ordering: $o
+        Probable cause is that the number of variables does not agree."""
     ))
 end
 
