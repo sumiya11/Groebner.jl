@@ -22,6 +22,8 @@ import Random
 include("reference.jl")
 
 # CRT and rational reconstruction
+include("arithmetic/reconstruction.jl")
+# arithmetic in Zp
 include("arithmetic/modular.jl")
 
 # supported monomial orderings
