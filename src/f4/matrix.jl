@@ -364,7 +364,6 @@ function exact_sparse_rref!(ring, matrix::MacaulayMatrix{C},
     # unknown pivots,
     # we will modify them inplace when reducing by pivs
     upivs = matrix.lowrows
-
     densecoeffs = zeros(C, ncols)
 
     @inbounds for i in 1:nlow

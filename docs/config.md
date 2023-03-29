@@ -21,9 +21,9 @@ The latter allows you to plug in values that you would have defined here.
 @def title       = "Groebner.jl"
 @def prepath     = "Groebner.jl"
 @def description = """
-                   Groebner basis computation
+                   Groebner basis computation in Julia
                    """
-@def authors     = "Alexander Demin"
+@def authors     = "Alexander Demin, Shashi Gowda, and others"
 
 <!--  NAVBAR SPECS
   NOTE:

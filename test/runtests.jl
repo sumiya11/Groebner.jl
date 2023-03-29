@@ -1,13 +1,19 @@
 using Test
 using TestSetExtensions
 
+# Groebner.jl is tested for different polynomial implementations.
+# At the moment, the following list is tested:
+# - AbstractAlgebra.jl  (AbstractAlgebra.Generic.MPoly{T})
+# - Nemo.jl  (Nemo.fmpq_mpoly, Nemo.gfp_mpoly, ...)
+# - DynamicPolynomials.jl (DynamicPolynomials.Polynomial{true, T})
+
 include("../src/Groebner.jl")
 
 using .Groebner
 using .Groebner.AbstractAlgebra
 
 # if some particular time consuming tests should be executed
-long_tests() = false
+run_long_tests() = false
 
 # Taken from JuMP/test/solvers.jl
 function try_import(name::Symbol)
@@ -20,7 +26,6 @@ function try_import(name::Symbol)
 end
 
 ⊂(xs, ys) = all(in(ys), xs)
-# set equality
 ≂(xs, ys) = ⊂(xs, ys) && ⊂(ys, xs)
 
 @time @testset "All tests" verbose=true begin
@@ -41,7 +46,8 @@ end
     # test `groebner`
     @includetests ["f4_reduce", 
                  "f4_stress", "adaptive_coefficients",
-                 "f4", "rational_f4", "groebner_certify"]
+                 "f4", "rational_f4", "groebner_certify",
+                 "groebner_orders"]
     # test additional options in `groebner`
     @includetests ["probabilistic_linalg", "onthefly_order_change",
                 "monom_representations"]
@@ -68,7 +74,7 @@ end
 
     # test for some systems used in benchmarks
     @includetests ["small_benchmarks"]
-    if long_tests()
+    if run_long_tests()
         @includetests ["large_benchmarks"]
     end
 end

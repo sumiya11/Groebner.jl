@@ -1,9 +1,9 @@
-# Input-output convertions of polynomials.
-# Currently, convertions work with polynomials from
+# Input-output conversions of polynomials.
+# Currently, conversions work with polynomials from
 #  - AbstractAlgebra.jl
 #  - DynamicPolynomials.jl
 #  - Nemo.jl
-#  - Singular.jl (not tested at the moment)
+#  - Singular.jl (TODO: add tests)
 
 #=
     Our conventions:
@@ -16,38 +16,55 @@
 #=
     A note on how we represent polynomials.
 
-    First, coefficients, exponents and polynomial ring
+    First, coefficients, exponents and polynomial ring information
     are extracted from input polynomials with `convert_to_internal`.
 
     Inside the algorithm all monomials are hashed without collisions,
     so that an integer represents a single monomial.
-    A single monomial could be stored differently, 
-    according to the prescibed implementation.
+    A single monomial could be stored in several different ways, 
+    according to the prescibed monomial implementation.
 
-    A polynomial is represented with coefficients vector
-    together with vector of hashtable indices of monomials.
+    A polynomial is represented with a dynamic coefficients vector
+    together with a dynamic vector of hashtable indices of monomials.
 
     After the basis is computed, hash table indices are converted back to 
     monomials, and the `convert_to_output` is called 
-    to obtain the original polynomial type from the given input.
+    to convert internal structures to the original polynomial type.
 =#
 
-# for compatibility with AbstractAlgebra.jl and Nemo.jl
-const _supported_orderings_symbols = (:lex, :deglex, :degrevlex)
-# The type of exponent vector entries used internally in AbstractAlgebra.jl
-const AAexponenttype = UInt64
+#=
+    A note about monomial orderings.
 
-#------------------------------------------------------------------------------
+    Groebner.jl supports several monomial orderings 
+    (all of which are subtypes of AbstractMonomialOrdering, 
+    see src/monoms/orderings.jl for details)
+
+    Polynomials from AbstractAlgebra.jl, DynamicPolynomials.jl, 
+    and some other packages, do not support some of the orderings supported by Groebner.jl.
+
+    We compute the basis in the requested ordering in Groebner.jl,
+    and then output the polynomials in the ordering of the input.
+
+    For example, say that the input polynomials are from AbstractAlgebra.jl 
+    and are in the Lex ordering. The requested basis is in some Weighted ordering.
+    Then, the output should be a correct basis in the Weighted ordering,
+    though the terms in the output are ordered w.r.t. Lex ordering.
+=#
+
+# For compatibility with polynomials from AbstractAlgebra.jl and Nemo.jl
+const _AA_supported_orderings_symbols = (:lex, :deglex, :degrevlex)
+# The type of exponent vector entries used internally in AbstractAlgebra.jl
+const _AA_exponenttype = UInt64
 
 """
-    Contains info about polynomial ring
+    Contains information about some polynomial ring.
 """
 mutable struct PolyRing{Char<:CoeffFF, Ord<:AbstractMonomialOrdering}
     # number of variables
     nvars::Int
-    # ring monomial ordering
+    # monomial ordering
     ord::Ord
-    # characteristic of coefficient field
+    # characteristic of the coefficient field
     ch::Char
     # information about the original ring of input. Options are:
     #    :AbstractAlgebra for AbstractAlgebra,
@@ -58,11 +75,9 @@ mutable struct PolyRing{Char<:CoeffFF, Ord<:AbstractMonomialOrdering}
     origring::Symbol
 end
 
-#------------------------------------------------------------------------------
-
 """
     Converts input polynomials to internal representation used by the algorithm.
-    Extracts base ring information, exponents, and coefficients.
+    Extracts polynomial ring information, and polynomial exponents and coefficients.
 
     This is the most general implementation.
     Works for polynomials that implement AbstractAlgebra.Generic.MPoly intefrace:
@@ -126,17 +141,21 @@ end
 
 #------------------------------------------------------------------------------
 
-ordering_typed2sym(ord::Lex) = :lex
-ordering_typed2sym(ord::DegLex) = :deglex
-ordering_typed2sym(ord::DegRevLex) = :degrevlex
+# Determines the monomial ordering of the output,
+# given the original ordering `origord` and the targer ordering `targetord`
+ordering_typed2sym(origord, targetord::Lex) = :lex
+ordering_typed2sym(origord, targetord::DegLex) = :deglex
+ordering_typed2sym(origord, targetord::DegRevLex) = :degrevlex
+ordering_typed2sym(origord) = origord
+ordering_typed2sym(origord, targetord::AbstractMonomialOrdering) = origord
 
 function ordering_sym2typed(ord::Symbol)
-    ord in _supported_orderings_symbols || throw(DomainError(ord, "Not a supported ordering."))
+    ord in _AA_supported_orderings_symbols || throw(DomainError(ord, "Not a supported ordering."))
     if ord === :lex
         Lex()
     elseif ord === :deglex
         DegLex()
-    elseif ord ===:degrevlex
+    elseif ord === :degrevlex
         DegRevLex()
     end
 end
@@ -425,7 +444,113 @@ function remove_zeros_from_input!(ring::PolyRing,
     iszerobasis
 end
 
-function assure_ordering!(ring, exps, coeffs, target_ord)
+#------------------------------------------------------------------------------
+# Check the consistency of the given monomial ordering
+# with respect to the monomial implementation and the length of exponent vector
+
+# Should this be moved to src/monoms ?
+@noinline function _throw_monomial_ordering_inconsistent(
+        e, o, lo=2, hi=length(e)
+    )
+    throw(DomainError(o, 
+        "The given monomial ordering is inconsistent with the input.\n\
+        Exponent: $e\n\
+        Indices : $lo to $hi\n\
+        Ordering: $o\n\
+        Probable cause is that the number of variables does not agree."
+    ))
+end
+
+check_ordering(e::M, o::Lex) where {M<:Monom} = true
+check_ordering(e::M, o::DegLex) where {M<:Monom} = true
+check_ordering(e::M, o::DegRevLex) where {M<:Monom} = true
+function check_ordering(e::M, o::Union{Lex, DegLex, DegRevLex}, lo, hi) where {M<:Monom}
+    if lo <= hi
+        true
+    else
+        _throw_monomial_ordering_inconsistent(e, wo, lo, hi)
+        false
+    end
+end
+
+function check_ordering(e::M, wo::WeightedOrdering{O}
+    ) where {M<:Monom, O<:AbstractMonomialOrdering}
+    _throw_monomial_ordering_inconsistent(e, wo)
+    false
+end
+function check_ordering(e::PowerVector{T}, wo::WeightedOrdering{O},
+    lo::Int, hi::Int
+    ) where {T, O<:AbstractMonomialOrdering}
+    check_ordering(e, wo.ord, lo, hi)
+    if hi - lo + 1 != length(wo.weights)
+        _throw_monomial_ordering_inconsistent(e, wo, lo, hi)
+        return false
+    end
+    true
+end
+function check_ordering(e::PowerVector{T}, wo::WeightedOrdering{O}
+    ) where {T, O<:AbstractMonomialOrdering}
+    check_ordering(e, wo, 2, length(e))
+end
+
+function check_ordering(e::M, bo::BlockOrdering{R1, R2, O1, O2}
+    ) where {M<:Monom, R1, R2, O1<:AbstractMonomialOrdering, O2<:AbstractMonomialOrdering}
+    _throw_monomial_ordering_inconsistent(e, bo)
+    false
+end
+function check_ordering(
+    e::PowerVector{T}, bo::BlockOrdering{R1, R2, O1, O2},
+    lo::Int, hi::Int) where {T, R1, R2, O1<:AbstractMonomialOrdering, O2<:AbstractMonomialOrdering}
+    r1 = (first(bo.r1) + 1):(last(bo.r1) + 1)
+    r2 = (first(bo.r2) + 1):(last(bo.r2) + 1)
+    if first(r1) != lo || last(r2) != hi
+        _throw_monomial_ordering_inconsistent(e, bo, lo, hi)
+        return false
+    end
+    check_ordering(e, bo.ord1, first(r1), last(r1))
+    check_ordering(e, bo.ord2, first(r2), last(r2))
+    true
+end
+function check_ordering(e::PowerVector{T}, bo::BlockOrdering{R1, R2, O1, O2}
+    ) where {T, R1, R2, O1<:AbstractMonomialOrdering, O2<:AbstractMonomialOrdering}
+    check_ordering(e, bo, 2, length(e))
+end
+
+function check_ordering(e::M, mo::MatrixOrdering) where {M<:Monom}
+    _throw_monomial_ordering_inconsistent(e, mo)
+    false
+end
+function check_ordering(e::PowerVector{T}, mo::MatrixOrdering) where {T}
+    check_ordering(e, mo, 2, length(e))
+end
+function check_ordering(
+        e::PowerVector{T}, mo::MatrixOrdering,
+        lo::Int, hi::Int) where {T}
+    rows = mo.rows
+    n = hi - lo + 1
+    for i in 1:length(rows)
+        if length(rows[i]) != n
+            _throw_monomial_ordering_inconsistent(e, mo, lo, hi)
+            return false
+        end
+    end
+    true
+end
+
+#=
+    Checks that monomial orderings specified by the given `ring` and `target_ord` 
+    are consistent with the given input exponents `exps`.
+    In case the target ordering differs from the `ring` ordering,  
+    sorts the polynomials terms w.r.t. the target ordering.
+    Returns a new polynomial ring in the target ordering.
+
+    Assumes exps and coeffs are non-empty and do not contain zero elements.
+=#
+function assure_ordering!(
+        ring, exps, coeffs, target_ord::O2
+    ) where {O2<:AbstractMonomialOrdering}
+    @assert !isempty(exps) && !isempty(exps[1])
+    check_ordering(exps[1][1], target_ord)
     if ring.ord != target_ord
         sort_input_to_change_ordering!(exps, coeffs, target_ord)
     end
@@ -452,11 +577,11 @@ function convert_to_output(
             gbcoeffs::Vector{Vector{I}},
             metainfo::GroebnerMetainfo) where {P, M<:Monom, I<:Coeff}
 
-    if ring.origring == :AbstractAlgebra
+    if ring.origring === :AbstractAlgebra
         convert_to_output(ring, parent(first(origpolys)), gbexps, gbcoeffs, metainfo)
-    elseif ring.origring == :MultivariatePolynomials
+    elseif ring.origring === :MultivariatePolynomials
         convert_to_output(ring, origpolys, gbexps, gbcoeffs, metainfo)
-    elseif ring.origring == :hasparent
+    elseif ring.origring === :hasparent
         convert_to_output(ring, parent(first(origpolys)), gbexps, gbcoeffs, metainfo)
     else
         # this actually never happens
@@ -588,10 +713,20 @@ end
 #------------------------------------------------------------------------------
 
 function create_polynomial(
-            origring::AbstractAlgebra.Generic.MPolyRing{T}, coeffs::Vector{T}, exps) where {T}
+            origring::AbstractAlgebra.Generic.MPolyRing{T}, coeffs::Vector{T}, exps::Matrix{U}) where {T, U}
     ground = base_ring(origring)
     if !isempty(coeffs)
         AbstractAlgebra.Generic.MPoly{elem_type(ground)}(origring, coeffs, exps)
+    else
+        AbstractAlgebra.Generic.MPoly{elem_type(ground)}(origring)
+    end
+end
+
+function create_polynomial(
+            origring::AbstractAlgebra.Generic.MPolyRing{T}, coeffs::Vector{T}, exps::Vector{Vector{U}}) where {T, U}
+    ground = base_ring(origring)
+    if !isempty(coeffs)
+        origring(coeffs, exps)
     else
         AbstractAlgebra.Generic.MPoly{elem_type(ground)}(origring)
     end
@@ -610,7 +745,7 @@ function convert_to_output(
     ord = AbstractAlgebra.ordering(origring)
     ordT = ordering_sym2typed(ord)
     if metainfo.targetord != ordT
-        ordS = ordering_typed2sym(metainfo.targetord)
+        ordS = ordering_typed2sym(ord, metainfo.targetord)
         origring, _ = AbstractAlgebra.PolynomialRing(base_ring(origring), AbstractAlgebra.symbols(origring), ordering=ordS)
     end
 
@@ -623,7 +758,7 @@ function convert_to_output(
 end
 
 """
-    Rational, Integer, and Finite field :degrevlex
+    Rational, Integer, and Finite field degrevlex
     `AbstractAlgebra.Generic.MPolyRing` conversion specialization
 """
 function convert_to_output(
@@ -635,10 +770,10 @@ function convert_to_output(
     nv = AbstractAlgebra.nvars(origring)
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
-    tmp = Vector{AAexponenttype}(undef, nv)
+    tmp = Vector{_AA_exponenttype}(undef, nv)
     for i in 1:length(gbexps)
         cfs    = map(ground, gbcoeffs[i])
-        exps   = Matrix{AAexponenttype}(undef, nv + 1, length(gbcoeffs[i]))
+        exps   = Matrix{_AA_exponenttype}(undef, nv + 1, length(gbcoeffs[i]))
         @inbounds for jt in 1:length(gbcoeffs[i])
             # for je in 1:nv
             #     exps[je, jt] = gbexps[i][jt][je]
@@ -654,7 +789,7 @@ function convert_to_output(
 end
 
 """
-    Rational, Integer, and Finite field :lex
+    Rational, Integer, and Finite field lex
     `AbstractAlgebra.Generic.MPolyRing` conversion specialization
 """
 function convert_to_output(
@@ -666,10 +801,10 @@ function convert_to_output(
     nv = AbstractAlgebra.nvars(origring)
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
-    tmp = Vector{AAexponenttype}(undef, nv)
+    tmp = Vector{_AA_exponenttype}(undef, nv)
     for i in 1:length(gbexps)
         cfs    = map(ground, gbcoeffs[i])
-        exps   = Matrix{AAexponenttype}(undef, nv, length(gbcoeffs[i]))
+        exps   = Matrix{_AA_exponenttype}(undef, nv, length(gbcoeffs[i]))
         @inbounds for jt in 1:length(gbcoeffs[i])
             # for je in 1:nv
             #     exps[je, jt] = gbexps[i][jt][nv - je + 1]
@@ -684,7 +819,7 @@ function convert_to_output(
 end
 
 """
-    Rational, Integer, and Finite field :deglex
+    Rational, Integer, and Finite field deglex
     `AbstractAlgebra.Generic.MPolyRing` conversion specialization
 """
 function convert_to_output(
@@ -696,10 +831,10 @@ function convert_to_output(
     nv = AbstractAlgebra.nvars(origring)
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
-    tmp = Vector{AAexponenttype}(undef, nv)
+    tmp = Vector{_AA_exponenttype}(undef, nv)
     for i in 1:length(gbexps)
         cfs    = map(ground, gbcoeffs[i])
-        exps   = Matrix{AAexponenttype}(undef, nv + 1, length(gbcoeffs[i]))
+        exps   = Matrix{_AA_exponenttype}(undef, nv + 1, length(gbcoeffs[i]))
         @inbounds for jt in 1:length(gbcoeffs[i])
             # for je in 1:nv
             #     exps[je, jt] = gbexps[i][jt][nv - je + 1]
@@ -708,6 +843,32 @@ function convert_to_output(
             make_dense!(tmp, gbexps[i][jt])
             exps[end-1:-1:1, jt] .= tmp
             exps[end, jt] = sum(tmp)
+        end
+        exported[i] = create_polynomial(origring, cfs, exps)
+    end
+    exported
+end
+
+"""
+    Rational, Integer, and Finite field, *any other ordering*
+    `AbstractAlgebra.Generic.MPolyRing` conversion specialization
+"""
+function convert_to_output(
+            origring::AbstractAlgebra.Generic.MPolyRing{U},
+            gbexps::Vector{Vector{M}},
+            gbcoeffs::Vector{Vector{T}},
+            ord::O) where {M, T<:Coeff, U, O<:AbstractMonomialOrdering}
+
+    nv = AbstractAlgebra.nvars(origring)
+    ground   = base_ring(origring)
+    exported = Vector{elem_type(origring)}(undef, length(gbexps))
+    tmp = Vector{_AA_exponenttype}(undef, nv)
+    for i in 1:length(gbexps)
+        cfs    = map(ground, gbcoeffs[i])
+        exps   = Vector{Vector{Int}}(undef, length(gbcoeffs[i]))
+        @inbounds for jt in 1:length(gbcoeffs[i])
+            make_dense!(tmp, gbexps[i][jt])
+            exps[jt] = tmp
         end
         exported[i] = create_polynomial(origring, cfs, exps)
     end

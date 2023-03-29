@@ -11,6 +11,12 @@
 
 abstract type AbstractPackedPair{T<:Unsigned, B<:Unsigned} end
 
+# Checks whether AbstractPackedPair{T, B} provides a comparator function implementation
+# for the given monomial ordering of type `O`
+function is_supported_ordering(::Type{APP}, ::O) where {APP<:AbstractPackedPair, O}
+    O <: Union{Lex, DegLex, DegRevLex}
+end
+
 struct PackedPair1{T<:Unsigned, B<:Unsigned} <: AbstractPackedPair{T, B}
     a1::T    
 end

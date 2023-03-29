@@ -1,10 +1,10 @@
 
 using AbstractAlgebra
 using Random
-
+using Test
 
 orderings_to_test = [:lex, :degrevlex, :deglex]
-grounds_to_test = [GF(2^31-1), QQ]
+grounds_to_test = [AbstractAlgebra.GF(2^31-1), AbstractAlgebra.QQ]
 representations_to_test = [
     Groebner.default_safe_representation(Groebner.NotPacked{UInt64}()),
     Groebner.Representation{Groebner.PowerVector{UInt64}}(),
