@@ -259,7 +259,7 @@ struct MatrixOrdering <: AbstractMonomialOrdering
     
     function MatrixOrdering(rows::Vector{Vector{T}}) where {T<:Integer}
         @assert all(!isempty, rows)
-        @assert allequal(map(length, rows))
+        @assert length(unique(map(length, rows))) == 1
         # @assert all(row -> all(>=(0), row), rows)
         new(rows)
     end
