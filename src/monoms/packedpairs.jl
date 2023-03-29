@@ -88,6 +88,7 @@ Base.copy(pv::PackedPair3{T, B}) where {T, B} = PackedPair3{T,B}(pv.a1, pv.a2, p
 
 # Creates an exponent vector of the given type from regular vector `ev`
 function make_ev(::Type{PackedPair1{T, B}}, ev::Vector{U}) where {T, B, U}
+    println("uwu")
     n = length(ev)
     epc = elperchunk(T, B)
     @assert n < epc
@@ -106,6 +107,7 @@ function make_ev(::Type{PackedPair1{T, B}}, ev::Vector{U}) where {T, B, U}
     PackedPair1{T, B}(a1)
 end
 function make_ev(::Type{PackedPair2{T, B}}, ev::Vector{U}) where {T, B, U}
+    println("uwu")
     n = length(ev)
     epc = elperchunk(T, B)
     @assert n < 2*epc
