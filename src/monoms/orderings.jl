@@ -13,7 +13,7 @@ abstract type AbstractMonomialOrdering end
 # Tell the algorithm to preserve the monomial ordering defined on the
 # given input polynomials, if any.
 """
-    struct InputOrdering
+    InputOrdering
 
 Preserves the monomial ordering defined on the input polynomials.
 This is the default option.
@@ -44,7 +44,7 @@ struct InputOrdering <: AbstractMonomialOrdering end
 #   aj = bj for j in 1..k-1 
 #   ak < bk
 """
-    struct Lex
+    Lex
 
 Lexicographical monomial ordering.
 
