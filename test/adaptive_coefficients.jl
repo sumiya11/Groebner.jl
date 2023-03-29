@@ -7,7 +7,7 @@ using AbstractAlgebra
 @test Groebner.determinechartype(100) == UInt16
 @test Groebner.determinechartype(2^15) == UInt32
 @test Groebner.determinechartype(2^31-1) == UInt64
-# @test Groebner.determinechartype(2^60) == UInt128
+@test Groebner.determinechartype(2^60) == UInt128
 
 R, (x, y) = PolynomialRing(GF(2), ["x", "y"])
 fs = [
