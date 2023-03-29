@@ -73,11 +73,9 @@ function groebner(
         ) where {Poly, Rng<:Random.AbstractRNG}
     #= set the logger =#
     prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
-    
-    #= guess the best representation for polynomials =#
-    representation = guess_effective_representation(polynomials, UnsafeRepresentation(), ordering, monoms)
-    
     try
+        #= guess the best representation for polynomials =#
+        representation = guess_effective_representation(polynomials, UnsafeRepresentation(), ordering, monoms)
         #= try to compute in this representation =# 
         return groebner(polynomials, representation, reduced, ordering, certify, forsolve, linalg, rng)
     catch beda
