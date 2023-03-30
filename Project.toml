@@ -1,7 +1,7 @@
 name = "Groebner"
 uuid = "0b43b601-686d-58a3-8a1c-6623616c7cd4"
 authors = ["sumiya11"]
-version = "0.3.1"
+version = "0.3.2"
 
 [deps]
 AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
