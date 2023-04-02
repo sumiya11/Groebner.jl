@@ -2,7 +2,8 @@
 using DynamicPolynomials
 @testset "DynamicPolynomials basic groebner" begin
     @polyvar x y
-
+    
+    @test Groebner.groebner([(x - 1)*(x + 8), (x + 8)*(x + 11)]) == [x + 8]
     @test Groebner.groebner([(x - 2)*(x - 3), (x - 3)*(x - 4)]) == [x - 3]
 
     @test Groebner.groebner([x, y]) == Groebner.groebner([y, x]) == [y, x]

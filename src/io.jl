@@ -200,7 +200,7 @@ function extract_ring(R::T) where {T}
 
     Char = determinechartype(ch)
 
-    PolyRing{Char, typeof(ordT)}(nv, ordT, Char(ch), :AbstractAlgebra)
+    PolyRing{Char, typeof(ordT)}(nv, ordT, Char(BigInt(ch)), :AbstractAlgebra)
 end
 
 function extract_ring(orig_polys::Vector{<:AbstractPolynomialLike{T}}) where {T}
@@ -259,13 +259,13 @@ function extract_coeffs(ring::PolyRing{Ch}, orig_polys::Vector{T}) where {Ch, T}
 end
 
 # specialization for univariate polynomials
-function extract_coeffs_ff(ring::PolyRing{Ch}, poly::AbstractAlgebra.Generic.Poly) where {Ch}
+function extract_coeffs_ff(ring::PolyRing{Ch}, poly::Union{AbstractAlgebra.Generic.Poly, AbstractAlgebra.PolyElem}) where {Ch}
     iszero(poly) && (return zero_coeffvector_ff(ring))
     reverse(map(Ch ∘ AbstractAlgebra.data, filter(!iszero, collect(AbstractAlgebra.coefficients(poly)))))
 end
 
 # specialization for univariate polynomials
-function extract_coeffs_qq(ring::PolyRing, poly::AbstractAlgebra.Generic.Poly)
+function extract_coeffs_qq(ring::PolyRing, poly::Union{AbstractAlgebra.Generic.Poly, AbstractAlgebra.PolyElem})
     iszero(poly) && (return zero_coeffvector_qq(ring))
     reverse(map(Rational, filter(!iszero, collect(AbstractAlgebra.coefficients(poly)))))
 end
@@ -679,7 +679,10 @@ function convert_to_output(
             origring::R,
             gbexps::Vector{Vector{M}},
             gbcoeffs::Vector{Vector{I}},
-            metainfo::GroebnerMetainfo) where {R<:AbstractAlgebra.Generic.PolyRing, M<:Monom, I}
+            metainfo::GroebnerMetainfo) where {
+                R<:Union{AbstractAlgebra.Generic.PolyRing,AbstractAlgebra.PolyRing}, 
+                M<:Monom, I
+            }
 
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
