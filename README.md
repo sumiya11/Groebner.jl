@@ -5,6 +5,7 @@
 
 
 The package provides Groebner bases computation interface in pure Julia with the performance comparable to Singular.
+`Groebner.jl` works over finite fields and the rationals, and supports various monomial orderings.
 
 For documentation and more please check out https://sumiya11.github.io/Groebner.jl
 
@@ -13,14 +14,14 @@ For documentation and more please check out https://sumiya11.github.io/Groebner.
 Our package works with polynomials from `AbstractAlgebra.jl`, `DynamicPolynomials.jl`, and `Nemo.jl`. We will demonstrate the usage on a simple example. Lets first create a ring of polynomials in 3 variables
 
 ```julia
-julia> using AbstractAlgebra
-julia> R, (x1, x2, x3) = PolynomialRing(QQ, ["x1", "x2", "x3"]);
+using AbstractAlgebra
+R, (x1, x2, x3) = PolynomialRing(QQ, ["x1", "x2", "x3"]);
 ```
 
 Then we can define a simple polynomial system
 
 ```julia
-julia> polys = [
+polys = [
   x1 + x2 + x3,
   x1*x2 + x1*x3 + x2*x3,
   x1*x2*x3 - 1
@@ -31,8 +32,8 @@ And compute the Groebner basis passing the system to `groebner`
 
 
 ```julia
-julia> using Groebner
-julia> G = groebner(polys)
+using Groebner
+G = groebner(polys)
 3-element Vector{AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}:
  x1 + x2 + x3
  x2^2 + x2*x3 + x3^2
@@ -57,8 +58,6 @@ We compare the runtime of our implementation against the ones from `Singular` an
 The bases are computed in `degrevlex` monomial ordering over finite field of characteristic $2^{31}-1$ with all operations single-threaded.
 
 We emphasize that `Groebner.jl` is a specialized library while `Singular` is an extensive general purpose computer algebra system.
-
-If you discover a system where our package shows bad performance, you are very welcome to submit an issue!  
 
 ## Contacts
 
