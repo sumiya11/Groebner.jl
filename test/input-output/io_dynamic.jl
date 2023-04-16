@@ -9,8 +9,8 @@ using Random
             Groebner.default_safe_representation(Groebner.NotPacked{UInt64}()),
             Groebner.Representation{Groebner.PackedPair2{UInt64, UInt16}}()
         ]
-
         @polyvar x y
+
         fs = [x, y]
         ring, exps, cfs = Groebner.convert_to_internal(representation, fs, Groebner.InputOrdering())
         meta = Groebner.set_metaparameters(ring, Groebner.InputOrdering(), false, false, :exact, rng)
@@ -64,7 +64,7 @@ end
 
     fs = [x + BigInt(20)//BigInt(3), y]
     @test Groebner.groebner(fs) isa Vector{Polynomial{true, Rational{BigInt}}}
-
+    
     fs = [34343343433x*y^2 + 3431234567833, 3434343434x*y - 342343242342]
     @test_throws DomainError Groebner.groebner(fs)
 

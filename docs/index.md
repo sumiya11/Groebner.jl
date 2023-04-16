@@ -21,7 +21,8 @@ using Pkg
 Pkg.add("Groebner")
 ```
 
-For a detailed description of exported functions please see page **Interface**. You can find a quick introduction to Groebner bases and a couple of interesting use cases in **Tutorials**. Meanwhile, below are simple examples.
+See **Interface** for a description of all exported functions. 
+Find a quick introduction to Groebner bases and a couple of interesting use cases in **Tutorials**. Meanwhile, below are simple examples.
 
 ## Examples
 
@@ -55,9 +56,7 @@ We can also check that a set of polynomials forms a basis
 isgroebner(basis)
 ```
 
-Now, having a `basis` of the ideal $\langle x^3 + y^2, xy + x^2 \rangle$ computed, we can tackle the *ideal membership problem*. The task is to decide whether the given polynomial contains in the infinite ideal.
-
-In fact, if the normal form of polynomial w.r.t a Groebner basis *is zero*, then this polynomial lies in the ideal. Let's check if $x^2y^2 + 2x^3y - xy^2$ is a member of $\langle x^3 + y^2, xy + x^2 \rangle$, using the `normalform` function
+We check if $x^2y^2 + 2x^3y - xy^2$ is a member of $\langle x^3 + y^2, xy + x^2 \rangle$, using the `normalform` function
 
 ```julia:aagb
 normalform(basis, x^2*y^2 + 2x^3*y - x*y^2)
@@ -81,13 +80,17 @@ system = [10*x1*x2^2 - 11*x1 + 10,
 groebner(system)
 ```
 
-## Note on the Implementation
+<!-- ## Note on the Implementation
 
 Computing Groebner bases largely depends on a single iterative algorithm, known as **Buchbergers algorithm**. Modified and optimized versions of this algorithm are crucial for many Computer Algebra Systems (*e.g., Singular, Maple, Mathematica, Sage*).
 
 The Buchbergers algorithm is exponential by its nature, so any implementation is tricky.
 
-Our package implements **F4 algorithm** introduced by Jean-Charles Faugère.
+Our package implements **F4 algorithm** introduced by Jean-Charles Faugère. -->
+
+## Contacts
+
+This library is maintained by Alexander Demin (asdemin_2@edu.hse.ru)
 
 ## Acknowledgement
 
