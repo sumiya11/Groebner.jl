@@ -1,5 +1,5 @@
 
-The directory is used to run a tiny set of benchmark systems with `Groebner.jl`, `Singular`, and `Maple`.
+The directory is used to run a tiny set of benchmark systems with `Groebner.jl`, `Singular`, and `Maple` for the title page Groebner.jl/README.md.
 
 #### For `Groebner.jl` and `Singular` benchmarks, you will need:
 
