@@ -1,6 +1,8 @@
-# Linear algebra and MacaulayMatrix
+# MacaulayMatrix
 
-struct LinearAlgebraContent
+#
+#
+#
 
 mutable struct MacaulayMatrix{T<:Coeff}
     #=
@@ -165,56 +167,6 @@ function normalize_sparse_row!(row::Vector{T}, ch) where {T<:CoeffQQ}
     row
 end
 
-function ui_redmod_barrett_half!(row, indices, cfs, magic)
-    @inbounds mul = magic.divisor - row[indices[1]]
-    p = magic.divisor
-    ϕ = div(mul << 32, p, RoundUp)
-    @inbounds for i in 1:length(indices)
-        idx = indices[i]
-        c = (cfs[i] * ϕ) >> 32
-        x = row[idx] + mul*cfs[i] - c*p
-        row[idx] = min(x, x - p)
-    end
-    row
-end
-
-# This needs further tuning, not used at the moment
-function u64_red_inline_barrett_half_4t32!(row::Vector{T}, indices, cfs, magic) where {T<:UInt32}    
-    corr = isodd(length(indices))
-    lastidx = length(indices) - corr
-
-    N = 4
-    @inbounds mul = magic.divisor - row[indices[1]]
-    mulv = SIMD.Vec{N, UInt32}(mul)
-    pv = SIMD.Vec{N, UInt32}(magic.divisor)
-    ϕv = SIMD.Vec{2, UInt64}(div(UInt64(mul) << 32, magic.divisor))
-    zerov = SIMD.Vec{2, UInt64}(0)
-
-    @inbounds for i in 1:N:lastidx
-        cfs1, cfs2, cfs3, cfs4 = cfs[i], cfs[i + 1], cfs[i + 2], cfs[i + 3]
-        cfs12 = SIMD.Vec{2, UInt64}((cfs1, cfs2))
-        cfs34 = SIMD.Vec{2, UInt64}((cfs3, cfs4))
-        
-        c12 = cfs12 * ϕv
-        c34 = cfs34 * ϕv
-        c12 = unpack_hi(c12, zerov)
-        c34 = unpack_hi(c34, zerov)
-
-        c1234 = SIMD.Vec{N, UInt32}((c12[1], c12[2], c34[1], c34[2]))
-
-        cfs1234 = SIMD.Vec{4, UInt32}((cfs1, cfs2, cfs3, cfs4))
-        idx1234 = vload(SIMD.Vec{N, Int}, indices, i)
-        row1234 = vgather(row, idx1234)
-        
-        x1234 = row1234 + cfs1234 * mulv - c1234*pv
-        x1234 = min(x1234, x1234 - pv)
-        
-        SIMD.vscatter(x1234, row, idx1234)
-    end
-
-    row
-end
-
 # reduces row by mul*cfs modulo ch at indices positions
 #
 # Finite field magic specialization
@@ -282,8 +234,6 @@ function reduce_dense_row_by_known_pivots_sparse!(
             exact_colmap=exact_colmap)
 end
 
-const counter = Ref{Int}(0)
-
 function reduce_dense_row_by_known_pivots_sparse!(
     densecoeffs::Vector{C}, matrix::MacaulayMatrix{C}, basis::Basis{C},
     pivs::Vector{Vector{ColumnIdx}}, startcol::ColumnIdx, tmp_pos::ColumnIdx, 
@@ -299,8 +249,6 @@ function reduce_dense_row_by_known_pivots_sparse!(
 
     # new pivot index
     np = -1
-
-    counter[] = 0
 
     @inbounds for i in startcol:ncols
         # if row element zero - no reduction
@@ -326,11 +274,9 @@ function reduce_dense_row_by_known_pivots_sparse!(
         else # if reducer is from upper part of the matrix
             @inbounds cfs = matrix.coeffs[matrix.low2coef[i]]
         end
-        counter[] += 1
 
         reduce_by_pivot!(densecoeffs, reducerexps, cfs, arithmetic)
     end
-    println(length(densecoeffs), ", ", ", ", counter[])
 
     newrow = Vector{ColumnIdx}(undef, k)
     newcfs = Vector{C}(undef, k)

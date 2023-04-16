@@ -13,25 +13,18 @@
 The f4! function (at the bottom of the file) roughly follows the following classic flow:
 
 function f4!(ring, basis, ht)
-  matrix = initialize_matrix()      # macaulay matrix
-  pairset = initialize_pairset()    # set of critical pairs
-  update!(pairset, basis, ht)       # add initial pairs to pairset
+  matrix = initialize_matrix()    # macauley matrix
+  pairset = initialize_pairset()  # set of critical pairs
+  update!(pairset, basis, ht)     # add initial pairs
   while !isempty(pairset)
       select_normal!(pairset, matrix, basis, ht)  # select some critical pairs
       symbolic_preprocessing!(pairset, matrix, basis, ht) # add rows to the matrix
       reduction!(matrix, basis, ht)   # row-reduce
-      update!(pairset, basis, ht)     # add new critial pairs to pairset
+      update!(pairset, basis, ht)  # add new critial pairs
   end
   return basis
 end
 =#
-
-@noinline function _f4_something_gone_wrong(metainfo)
-    msg = "Something has probably gone wrong in F4. Please submit a github issue."
-    throw(DomainError(metainfo, msg))
-end
-
-#------------------------------------------------------------------------------
 
 # Performs gaussian row reduction of rows in the `matrix`
 # and writes any nonzero results to `basis`
@@ -413,6 +406,9 @@ function symbolic_preprocessing!(
     nrr = matrix.ncols
     onrr = matrix.ncols
 
+    #=
+    YES
+    =#
     while matrix.size <= nrr + symbol_load
         matrix.size *= 2
         resize!(matrix.uprows, matrix.size)
@@ -478,7 +474,7 @@ function discard_normal!(pairset::Pairset, basis::Basis,
     symbol_ht::MonomialHashtable; maxpairs::Int=0)
 
     npairs = lowest_degree_pairs!(pairset)
-    # Discarded "npairs" pairs
+    @debug "Discarded $(npairs) pairs"
 
     ps = pairset.pairs
 
@@ -495,7 +491,6 @@ function select_normal!(
     pairset::Pairset, basis::Basis, matrix::MacaulayMatrix,
     ht::MonomialHashtable, symbol_ht::MonomialHashtable;
     maxpairs::Int=0, selectall::Bool=false)
-    # maxpairs argument is currently unused
 
     # number of selected pairs
     npairs = pairset.load
@@ -504,7 +499,7 @@ function select_normal!(
     end
     ps = pairset.pairs
 
-    # Selected "npairs" pairs
+    @debug "Selected $(npairs) pairs"
 
     sort_pairset_by_lcm!(pairset, npairs, ht)
 
@@ -654,7 +649,6 @@ function f4!(ring::PolyRing,
     @assert ring.ord == ht.ord && ring.nvars == ht.nvars
     @assert basis.ndone == 0
 
-    linalgcontext = LinalgContext(ring, linalg)
     matrix = initialize_matrix(ring, C)
 
     # initialize hash tables for update and symbolic preprocessing steps
@@ -677,8 +671,8 @@ function f4!(ring::PolyRing,
     # while there are pairs to be reduced
     while !isempty(pairset)
         d += 1
-        # F4 iteration number d
-        # Available pairset.load critical pairs
+        @debug "F4 iteration $d"
+        @debug "Available $(pairset.load) pairs"
 
         # if the iteration is redundant according to the previous modular run
         if isready(tracer)
@@ -696,10 +690,11 @@ function f4!(ring::PolyRing,
         select_normal!(pairset, basis, matrix, ht, symbol_ht)
 
         symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
-        # Matrix of size (matrix.nrows, matrix.ncols)
+        @debug "Matrix of size $((matrix.nrows, matrix.ncols))"
         
         # reduces polys and obtains new potential basis elements
         reduction!(ring, basis, matrix, ht, symbol_ht, linalg, rng)
+        @debug "Matrix reduced"
 
         update_tracer_iteration!(tracer, matrix.npivots == 0)
 
@@ -715,7 +710,7 @@ function f4!(ring::PolyRing,
         symbol_ht = initialize_secondary_hash_table(ht)
 
         if d > 10000
-            _f4_something_gone_wrong((d, ))
+            @error "Something has probably gone wrong in f4. Please submit a github issue."
             break
         end
     end
