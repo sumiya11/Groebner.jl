@@ -11,6 +11,8 @@ Almost all of the benchmarks are reproducible; the instructions to run benchmark
 
 - The `experiments` directory is used for development purposes. Benchmarks there are not reproducible, and the directory is a mess;
 
+- The file `benchmarks.jl` is used for CI benchmarking;
+
 - The `systems` directory contains benchmark systems sources. Those include: 
 
     - `systems/biomodels`, polynomial chemical reaction network models obtained from https://odebase.org/;
