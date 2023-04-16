@@ -205,21 +205,23 @@ With this technique, one can split a complicated variety in parts, and treat eac
 
 ## Curve Implicitization
 
-\note{For some reason Tex in this subsection is not compiled properly.}
+<!-- \note{For some reason Tex in this subsection is not compiled properly.} -->
 
 Moreover, `Groebner.jl` can help converting a parametric curve representation to an implicit one. Say, we have a parametrization of *the circle on a plane*
 
-\[
-x = \frac{1 - t^2}{1 + t^2} ~~~~ y = \frac{2t}{1 + t^2}
-\]
+\[\left\{\begin{aligned}
+x = \frac{1 - t^2}{1 + t^2},\\
+y = \frac{2t}{1 + t^2}
+\end{aligned}\right.\]
 
 and we want to produce an implicit curve equation in $x, y$ and *without t*.
 
 First, let's clear denominators
 
-\[
-t^2y - 2t + y = 0 ~~~~ t^2x + t^2 + x - 1 = 0
-\]
+\[\left\{\begin{aligned}
+t^2y - 2t + y = 0,\\
+t^2x + t^2 + x - 1 = 0
+\end{aligned}\right.\]
 
 The Groebner basis of the above with $t > x > y$ in lexicographic order is
 
