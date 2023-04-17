@@ -18,6 +18,7 @@ BenchmarkTools = "1"
 Combinatorics = "1"
 MultivariatePolynomials = "0.4.3"
 Primes = "0.5"
+SnoopPrecompile = "1"
 TestSetExtensions = "2"
 julia = "1.6"
 
