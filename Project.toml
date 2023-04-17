@@ -10,6 +10,7 @@ Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 MultivariatePolynomials = "102ac46a-7ee4-5c85-9060-abc95bfdeaa3"
 Primes = "27ebfcd6-29c5-5fa9-bf4b-fb8fc14df3ae"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SnoopPrecompile = "66db9d55-30c0-4569-8b51-7e840670fc0c"
 
 [compat]
 AbstractAlgebra = "0.23, 0.24, 0.25, 0.26, 0.27, 0.28, 0.29"

@@ -82,6 +82,9 @@ include("interface.jl")
 # example systems definitions
 include("testsystems.jl")
 
+using SnoopPrecompile
+include("precompile.jl")
+
 export groebner
 export isgroebner
 export normalform
