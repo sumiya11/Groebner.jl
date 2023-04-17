@@ -159,12 +159,12 @@ struct GroebnerMetainfo{Rng, Ord1, Ord2}
     rng::Rng
 end
 
-function set_metaparameters(ring, ordering, certify, forsolve, linalg, rng)
+function set_metaparameters(ring, ordering, certify, linalg, rng)
     usefglm = false
     targetord = Lex()
     computeord = Lex()
 
-    if forsolve
+    if false
         targetord = Lex()
         usefglm = true
         if ordering in (DegLex(), DegRevLex())

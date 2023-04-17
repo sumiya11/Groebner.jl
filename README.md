@@ -68,3 +68,17 @@ This library is maintained by Alexander Demin (<asdemin_2@edu.hse.ru>)
 We would like to acknowledge Jérémy Berthomieu, Christian Eder and Mohab Safey El Din as this Library is inspired by their work ["msolve: A Library for Solving Polynomial Systems"](https://arxiv.org/abs/2104.03572). We are also grateful to Max-Planck-Institut für Informatik for assistance in producing benchmarks.
 
 Special thanks goes to Vladimir Kuznetsov for providing the sources of his F4 implementation.
+
+## Citing Groebner.jl
+
+If you find Groebner.jl useful in your work, you can cite the following preprint
+
+```
+@misc{groebnerjl2023,
+  title = {Groebner.jl: A package for Gr\"obner bases computations in Julia}, 
+  author = {Alexander Demin and Shashi Gowda},
+  year = {2023},
+  eprint = {2304.06935},
+  url = {https://arxiv.org/abs/2304.06935}
+}
+```

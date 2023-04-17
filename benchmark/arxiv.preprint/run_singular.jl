@@ -12,6 +12,7 @@ import Singular
 import AbstractAlgebra
 using BenchmarkTools
 using Logging
+include((@__DIR__)*"/generate/benchmark_systems.jl")
 global_logger(ConsoleLogger(stderr, Logging.Error))
 
 # Benchmark the given system
@@ -34,25 +35,22 @@ function benchmark_system_singular(system)
     @btime gb = Singular.std($ideal_s, complete_reduction=true)
 end
 
-function run_f4_ff_degrevlex_benchmarks(ground)
-    systems = [
-        ("cyclic 7", Groebner.cyclicn(7, ground=ground)),
-        ("cyclic 8", Groebner.cyclicn(8, ground=ground)),
-        ("katsura 10",Groebner.katsuran(10, ground=ground)),
-        ("katsura 11",Groebner.katsuran(11, ground=ground)),
-        ("eco 12",Groebner.eco12(ground=ground)),
-        ("eco 13",Groebner.eco13(ground=ground)),
-        ("noon 7"    ,Groebner.noonn(7, ground=ground)),
-        ("noon 8"    ,Groebner.noonn(8, ground=ground))
-    ]
+function run_f4_ff_degrevlex_benchmarks(flag)
+    if flag
+        ground = AbstractAlgebra.GF(2^31-1)
+        systems = benchmark_systems_ff(ground)
+    else
+        ground = AbstractAlgebra.QQ
+        systems = benchmark_systems_qq(ground)
+    end
 
-    println("Running Singular benchmarks")
+    println("Running Singular benchmarks over $ground")
     for (name, system) in systems
         println("==================")
-        println("System $name:")        
+        println("System $name:")
         benchmark_system_singular(system)
     end
 end
 
-ground = AbstractAlgebra.GF(2^31 - 1)
-run_f4_ff_degrevlex_benchmarks(ground)
+run_f4_ff_degrevlex_benchmarks(true)
+run_f4_ff_degrevlex_benchmarks(false)

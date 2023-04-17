@@ -1,5 +1,7 @@
 
-The directory is used to run a tiny set of benchmark systems with `Groebner.jl`, `Singular`, and `Maple` for the title page Groebner.jl/README.md.
+The directory is used to run benchmarks for `Groebner.jl`, `Singular`, and `Maple` for the arxiv preprint https://arxiv.org/abs/2304.06935.
+
+*running OpenF4 benchmarks is not possible at the moment, work in progress*
 
 #### For `Groebner.jl` and `Singular` benchmarks, you will need:
 
@@ -38,3 +40,4 @@ The directory is used to run a tiny set of benchmark systems with `Groebner.jl`,
 ```
 > maple run_maple.mpl
 ```
+

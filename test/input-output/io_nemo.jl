@@ -27,7 +27,7 @@ representations_to_test = [
                 R, (x, y) = Nemo.PolynomialRing(ground, ["x", "y"], ordering=ord_sym)
                 fs = [x^2*y + 3, (2^31 - 5)*x - (2^31 - 4)*y]
                 ring, exps, cfs = Groebner.convert_to_internal(representation, fs, Groebner.InputOrdering())
-                meta = Groebner.set_metaparameters(ring, ord, false, false, :exact, rng)
+                meta = Groebner.set_metaparameters(ring, ord, false, :exact, rng)
                 fsfs = Groebner.convert_to_output(ring, fs, exps, cfs, meta)
                 @test fsfs == fs
 
@@ -36,7 +36,7 @@ representations_to_test = [
                     ord_sym
                 )
                 ring, exps, cfs = Groebner.convert_to_internal(representation, root, Groebner.InputOrdering())
-                meta = Groebner.set_metaparameters(ring, ord, false, false, :exact, rng)
+                meta = Groebner.set_metaparameters(ring, ord, false, :exact, rng)
                 fsfs = Groebner.convert_to_output(ring, root, exps, cfs, meta)
                 @test fsfs == root
 
@@ -45,7 +45,7 @@ representations_to_test = [
                     ord_sym
                 )
                 ring, exps, cfs = Groebner.convert_to_internal(representation, noon, Groebner.InputOrdering())
-                meta = Groebner.set_metaparameters(ring, ord, false, false, :exact, rng)
+                meta = Groebner.set_metaparameters(ring, ord, false, :exact, rng)
                 fsfs = Groebner.convert_to_output(ring, noon, exps, cfs, meta)
                 @test fsfs == noon
 
@@ -53,7 +53,7 @@ representations_to_test = [
                     R, xs = Nemo.PolynomialRing(ground, ["x$i" for i in 1:nn], ordering=ord_sym)
                     if Groebner.capacity(representation) >= nn
                         ring, exps, cfs = Groebner.convert_to_internal(representation, xs, Groebner.InputOrdering())
-                        meta = Groebner.set_metaparameters(ring, ord, false, false, :exact, rng)
+                        meta = Groebner.set_metaparameters(ring, ord, false, :exact, rng)
                         xsxs = Groebner.convert_to_output(ring, xs, exps, cfs, meta)
                         @test xsxs == xs
                     else
@@ -100,7 +100,7 @@ end
                 fs = [x^2*y + 3, (2^31 - 5)*x - (2^31 - 4)*y]
                 ring, exps, cfs = Groebner.convert_to_internal(representation, fs, Groebner.InputOrdering())
                 ring.origring = :hasparent
-                meta = Groebner.set_metaparameters(ring, ord, false, false, :exact, rng)
+                meta = Groebner.set_metaparameters(ring, ord, false, :exact, rng)
                 fsfs = Groebner.convert_to_output(ring, fs, exps, cfs, meta)
                 @test fsfs == fs
             end
