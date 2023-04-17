@@ -5,7 +5,6 @@ function groebner(
         reduced::Bool, 
         ordering::AbstractMonomialOrdering, 
         certify::Bool, 
-        forsolve::Bool, 
         linalg::Symbol, 
         rng)
     #= extract ring information, exponents and coefficients
@@ -14,7 +13,7 @@ function groebner(
     ring, exps, coeffs = convert_to_internal(representation, polynomials, ordering)
 
     #= check and set algorithm parameters =#
-    metainfo = set_metaparameters(ring, ordering, certify, forsolve, linalg, rng)
+    metainfo = set_metaparameters(ring, ordering, certify, linalg, rng)
     # now ring stores computation ordering
     # metainfo is now a struct to store target ordering
 

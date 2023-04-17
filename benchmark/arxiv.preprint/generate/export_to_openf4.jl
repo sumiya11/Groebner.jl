@@ -1,7 +1,8 @@
 
 using AbstractAlgebra
+using Groebner
 
-include("/home/ademin/gr/Groebner.jl/src/Groebner.jl")
+include((@__DIR__)*"/benchmark_systems.jl")
 
 template = "
 int (5)F4(bool magma)
@@ -45,27 +46,9 @@ function export_openf4(io, name, system)
 end
 
 ground = GF(2^31-1)
+systems = benchmark_systems_ff(ground)
 
-systems = [
-    ("henrion5", Groebner.henrion5(ground=ground)),
-    ("henrion6", Groebner.henrion6(ground=ground)),
-    ("henrion7", Groebner.henrion7(ground=ground)),
-    ("katsura10", Groebner.katsuran(10, ground=ground)),
-    ("katsura11", Groebner.katsuran(11, ground=ground)),
-    ("katsura12", Groebner.katsuran(12, ground=ground)),
-    ("eco11", Groebner.eco11(ground=ground)),
-    ("eco12", Groebner.eco12(ground=ground)),
-    ("eco13", Groebner.eco13(ground=ground)),
-    ("noon7", Groebner.noonn(7, ground=ground)),
-    ("noon8", Groebner.noonn(8, ground=ground)),
-    ("noon9", Groebner.noonn(9, ground=ground)),
-    ("reimer6", Groebner.reimern(6, ground=ground)),
-    ("reimer7", Groebner.reimern(7, ground=ground)),
-    ("reimer8", Groebner.reimern(8, ground=ground)),
-
-]
-
-io = open("/home/ademin/gr/Groebner.jl/benchmark/paper/openf4_systems.txt", "w")
+io = open((@__DIR__)*"/../openf4_systems.txt", "w")
 
 for (name, system) in systems
     export_openf4(io, name, system)
