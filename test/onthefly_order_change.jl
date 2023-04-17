@@ -17,9 +17,9 @@ import AbstractAlgebra
     @test Groebner.groebner(fs, ordering=Groebner.DegLex()) == [x, y^2]
     @test AbstractAlgebra.ordering(parent(first(Groebner.groebner(fs, ordering=Groebner.DegLex())))) === :deglex
 
-    x, y, z = gens(parent(first(Groebner.groebner(fs, forsolve=true))))
-    @test Groebner.groebner(fs, forsolve=true) == [y^2, x]
-    @test AbstractAlgebra.ordering(parent(first(Groebner.groebner(fs, forsolve=true)))) === :lex
+#     x, y, z = gens(parent(first(Groebner.groebner(fs, forsolve=true))))
+#     @test Groebner.groebner(fs, forsolve=true) == [y^2, x]
+#     @test AbstractAlgebra.ordering(parent(first(Groebner.groebner(fs, forsolve=true)))) === :lex
 
 
     noon = Groebner.change_ordering(Groebner.noonn(2), :lex)

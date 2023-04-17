@@ -137,7 +137,7 @@ function isgroebner(
     ring, exps, coeffs = convert_to_internal(default_safe_representation(), polynomials, ordering)
 
     #= check and set algorithm parameters =#
-    metainfo = set_metaparameters(ring, ordering, certify, false, :exact, rng)
+    metainfo = set_metaparameters(ring, ordering, certify, :exact, rng)
     # now ring stores computation ordering
     # metainfo is now a struct to store target ordering
 
@@ -235,7 +235,7 @@ function normalform(
     ring = ring1
 
     #= check and set algorithm parameters =#
-    metainfo = set_metaparameters(ring, ordering, false, false, :exact, rng)
+    metainfo = set_metaparameters(ring, ordering, false, :exact, rng)
 
     iszerobasis = remove_zeros_from_input!(ring, basisexps, basiscoeffs)
     iszerobasis && (return convert_to_output(ring, tobereduced, tbrexps, tbrcoeffs, metainfo))
@@ -303,7 +303,7 @@ function fglm(
     # Copies input, so that polynomials would not be changed itself.
     ring, exps, coeffs = convert_to_internal(default_safe_representation(), basis, InputOrdering())
 
-    metainfo = set_metaparameters(ring, Lex(), false, false, :exact, rng)
+    metainfo = set_metaparameters(ring, Lex(), false, :exact, rng)
     
     iszerobasis = remove_zeros_from_input!(ring, exps, coeffs)
     iszerobasis && (return convert_to_output(ring, basis, exps, coeffs, metainfo))
@@ -362,7 +362,7 @@ function kbase(
     # Copies input, so that polynomials would not be changed itself.
     ring, exps, coeffs = convert_to_internal(default_safe_representation(), basis, InputOrdering())
 
-    metainfo = set_metaparameters(ring, InputOrdering(), false, false, :exact, rng)
+    metainfo = set_metaparameters(ring, InputOrdering(), false, :exact, rng)
     
     iszerobasis = remove_zeros_from_input!(ring, exps, coeffs)
     iszerobasis && (throw(DomainError(basis, "Groebner.kbase does not work with such ideals, sorry")))
