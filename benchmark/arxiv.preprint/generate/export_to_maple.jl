@@ -7,13 +7,15 @@ header = """
 with(Groebner):
 with(PolynomialIdeals):
 
+kernelopts(numcpus=1);
+
 """
 
 template = """
-J := PolynomialIdeal({(1)}, charactesistic=(3)):
+J := [(1)]:
 print("Running (4)");
 st := time[real]():
-Groebner[Basis](J, tdeg((2)), method=direct):
+Groebner[Basis](J, tdeg((2)), method=fgb, characteristic=(3)):
 print("(4): ", time[real]() - st);
 """
 
