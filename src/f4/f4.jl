@@ -484,6 +484,8 @@ function discard_normal!(pairset::Pairset, basis::Basis,
     pairset.load -= npairs
 end
 
+const _min_pairs = Ref{Int}(2^30)
+
 # Select all S-pairs of the lowest degree of lcm
 # from the pairset and write the corresponding polynomials
 # to the matrix
@@ -500,6 +502,7 @@ function select_normal!(
     ps = pairset.pairs
 
     @debug "Selected $(npairs) pairs"
+    npairs = min(npairs, _min_pairs[])
 
     sort_pairset_by_lcm!(pairset, npairs, ht)
 
@@ -687,14 +690,18 @@ function f4!(ring::PolyRing,
         # selects pairs for reduction from pairset following normal strategy
         # (minimal lcm degrees are selected),
         # and puts these into the matrix rows
+        # @warn "Iteration $d, available $(pairset.load) pairs"
         select_normal!(pairset, basis, matrix, ht, symbol_ht)
 
+        # @warn "After selection, available $(pairset.load) pairs, matrix:\nnrows, ncols = $((matrix.nrows, matrix.ncols))"
+
         symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
-        @debug "Matrix of size $((matrix.nrows, matrix.ncols))"
-        
+        # @debug "Matrix of size $((matrix.nrows, matrix.ncols))"
+        # @warn "Iteration $d, matrix:\nnrows, ncols = $((matrix.nrows, matrix.ncols))"
+
         # reduces polys and obtains new potential basis elements
         reduction!(ring, basis, matrix, ht, symbol_ht, linalg, rng)
-        @debug "Matrix reduced"
+        # @debug "Matrix reduced"
 
         update_tracer_iteration!(tracer, matrix.npivots == 0)
 
