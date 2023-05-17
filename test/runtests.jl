@@ -47,7 +47,7 @@ end
     @includetests ["f4_reduce", 
                  "f4_stress", "adaptive_coefficients",
                  "f4", "rational_f4", "groebner_certify",
-                 "groebner_orders"]
+                 "groebner_orders", "groebner_maxpairs"]
     # test additional options in `groebner`
     @includetests ["probabilistic_linalg", "onthefly_order_change",
                 "monom_representations"]

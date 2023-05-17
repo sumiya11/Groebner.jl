@@ -406,9 +406,7 @@ function symbolic_preprocessing!(
     nrr = matrix.ncols
     onrr = matrix.ncols
 
-    #=
-    YES
-    =#
+    # TODO!
     while matrix.size <= nrr + symbol_load
         matrix.size *= 2
         resize!(matrix.uprows, matrix.size)
@@ -434,7 +432,7 @@ function symbolic_preprocessing!(
     @inbounds while i <= symbol_ht.load
         if matrix.size == matrix.nup
             matrix.size *= 2
-            # YES:
+            # TODO::
             resize!(matrix.uprows, matrix.size)
             resize!(matrix.up2coef, matrix.size)
         end
@@ -484,15 +482,13 @@ function discard_normal!(pairset::Pairset, basis::Basis,
     pairset.load -= npairs
 end
 
-const _min_pairs = Ref{Int}(2^30)
-
 # Select all S-pairs of the lowest degree of lcm
 # from the pairset and write the corresponding polynomials
 # to the matrix
 function select_normal!(
     pairset::Pairset, basis::Basis, matrix::MacaulayMatrix,
     ht::MonomialHashtable, symbol_ht::MonomialHashtable;
-    maxpairs::Int=0, selectall::Bool=false)
+    maxpairs::Int=typemax(Int), selectall::Bool=false)
 
     # number of selected pairs
     npairs = pairset.load
@@ -501,8 +497,8 @@ function select_normal!(
     end
     ps = pairset.pairs
 
-    @debug "Selected $(npairs) pairs"
-    npairs = min(npairs, _min_pairs[])
+    npairs = min(npairs, maxpairs)
+    @info "Selected $(npairs) pairs"
 
     sort_pairset_by_lcm!(pairset, npairs, ht)
 
@@ -647,7 +643,8 @@ function f4!(ring::PolyRing,
         ht::MonomialHashtable{M},
         reduced,
         linalg,
-        rng) where {M<:Monom,C<:Coeff}
+        rng,
+        maxpairs) where {M<:Monom,C<:Coeff}
 
     @assert ring.ord == ht.ord && ring.nvars == ht.nvars
     @assert basis.ndone == 0
@@ -691,7 +688,7 @@ function f4!(ring::PolyRing,
         # (minimal lcm degrees are selected),
         # and puts these into the matrix rows
         # @warn "Iteration $d, available $(pairset.load) pairs"
-        select_normal!(pairset, basis, matrix, ht, symbol_ht)
+        select_normal!(pairset, basis, matrix, ht, symbol_ht, maxpairs=maxpairs)
 
         # @warn "After selection, available $(pairset.load) pairs, matrix:\nnrows, ncols = $((matrix.nrows, matrix.ncols))"
 
@@ -742,8 +739,9 @@ function f4!(ring::PolyRing,
         ht::MonomialHashtable{M},
         reduced,
         linalg,
-        rng) where {M<:Monom,C<:Coeff}
+        rng;
+        maxpairs=typemax(Int)) where {M<:Monom,C<:Coeff}
     ps = initialize_pairset(powertype(M))
     tracer = Tracer()
-    f4!(ring, basis, tracer, ps, ht, reduced, linalg, rng)
+    f4!(ring, basis, tracer, ps, ht, reduced, linalg, rng, maxpairs)
 end

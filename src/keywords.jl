@@ -159,7 +159,9 @@ struct GroebnerMetainfo{Rng, Ord1, Ord2}
     rng::Rng
 end
 
-function set_metaparameters(ring, ordering, certify, linalg, rng)
+function set_metaparameters(ring, ordering, certify, linalg, rng, maxpairs::Int=typemax(Int))
+    @assert maxpairs > 0 "The number of pairs must be greater than zero"
+    
     usefglm = false
     targetord = Lex()
     computeord = Lex()

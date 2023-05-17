@@ -6,14 +6,15 @@ function groebner(
         ordering::AbstractMonomialOrdering, 
         certify::Bool, 
         linalg::Symbol, 
-        rng)
+        rng,
+        maxpairs::Int)
     #= extract ring information, exponents and coefficients
        from input polynomials =#
     # Copies input, so that polynomials would not be changed itself.
     ring, exps, coeffs = convert_to_internal(representation, polynomials, ordering)
 
     #= check and set algorithm parameters =#
-    metainfo = set_metaparameters(ring, ordering, certify, linalg, rng)
+    metainfo = set_metaparameters(ring, ordering, certify, linalg, rng, maxpairs)
     # now ring stores computation ordering
     # metainfo is now a struct to store target ordering
 
@@ -24,7 +25,7 @@ function groebner(
     newring = assure_ordering!(ring, exps, coeffs, metainfo.targetord)
 
     #= compute the groebner basis =#
-    bexps, bcoeffs = groebner(newring, exps, coeffs, reduced, metainfo)
+    bexps, bcoeffs = groebner(newring, exps, coeffs, reduced, metainfo, maxpairs)
 
     # ring contains ordering of computation, it is the requested ordering
     #= convert result back to representation of input =#
@@ -42,7 +43,8 @@ function groebner(
         exps::Vector{Vector{M}},
         coeffs::Vector{Vector{C}},
         reduced::Bool,
-        meta::GroebnerMetainfo{Rng}) where {M<:Monom, C<:CoeffFF, Rng<:Random.AbstractRNG}
+        meta::GroebnerMetainfo{Rng},
+        maxpairs) where {M<:Monom, C<:CoeffFF, Rng<:Random.AbstractRNG}
 
     # select hashtable size
     tablesize = select_tablesize(ring, exps)
@@ -51,7 +53,7 @@ function groebner(
     basis, ht = initialize_structures(
                         ring, exps, coeffs, meta.rng, tablesize)
 
-    f4!(ring, basis, ht, reduced, meta.linalg, meta.rng)
+    f4!(ring, basis, ht, reduced, meta.linalg, meta.rng, maxpairs=maxpairs)
 
     # extract exponents from hashtable
     gbexps = hash_to_exponents(basis, ht)
@@ -85,7 +87,8 @@ function groebner(
             exps::Vector{Vector{M}},
             coeffs::Vector{Vector{C}},
             reduced::Bool,
-            meta::GroebnerMetainfo) where {M<:Monom, C<:CoeffQQ}
+            meta::GroebnerMetainfo,
+            maxpairs) where {M<:Monom, C<:CoeffQQ}
 
     # we can mutate coeffs and exps here
 
@@ -135,7 +138,7 @@ function groebner(
     tracer = Tracer()
     pairset = initialize_pairset(powertype(M))
 
-    f4!(ring, gens_ff, tracer, pairset, ht, reduced, meta.linalg, meta.rng)
+    f4!(ring, gens_ff, tracer, pairset, ht, reduced, meta.linalg, meta.rng, maxpairs)
 
     # reconstruct into integers
     @info "CRT modulo ($(primetracker.modulo), $(prime))"
@@ -180,7 +183,7 @@ function groebner(
             # compute groebner basis in finite field
             # Need to make sure input invariants in f4! are satisfied, see f4/f4.jl for details
 
-            f4!(ring, gens_ff, tracer, pairset, ht, reduced, meta.linalg, meta.rng)
+            f4!(ring, gens_ff, tracer, pairset, ht, reduced, meta.linalg, meta.rng, maxpairs)
             # reconstruct to integers
             @info "CRT modulo ($(primetracker.modulo), $(prime))"
 
