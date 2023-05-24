@@ -1,3 +1,6 @@
+#! format: off
+# Syntax formatting is off in this file.
+
 # Systems used for testing and benchmarking
 
 # The cyclic-n system
