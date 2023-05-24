@@ -2,7 +2,7 @@
 using AbstractAlgebra
 using Groebner
 
-include((@__DIR__)*"/benchmark_systems.jl")
+include((@__DIR__) * "/benchmark_systems.jl")
 
 template = "
 int (5)F4(bool magma)
@@ -28,7 +28,7 @@ int (5)F4(bool magma)
 function export_openf4(io, name, system)
     global ground
     nv = nvars(parent(first(system)))
-    newR, _ = PolynomialRing(ground, ["x$i" for i in 0:nv-1], ordering=:degrevlex)
+    newR, _ = PolynomialRing(ground, ["x$i" for i in 0:(nv - 1)], ordering=:degrevlex)
     system = map(f -> change_base_ring(ground, f, parent=newR), system)
     t1 = uppercase(name)
     t2 = string(nv)
@@ -41,14 +41,14 @@ function export_openf4(io, name, system)
     end
     t4 *= "\t////////////\n\n"
     t5 = name
-    s = replace(template, "(1)"=>t1,"(2)"=>t2,"(3)"=>t3,"(4)"=>t4,"(5)"=>t5)
+    s = replace(template, "(1)" => t1, "(2)" => t2, "(3)" => t3, "(4)" => t4, "(5)" => t5)
     println(io, s)
 end
 
-ground = GF(2^31-1)
+ground = GF(2^31 - 1)
 systems = benchmark_systems_ff(ground)
 
-io = open((@__DIR__)*"/../openf4_systems.txt", "w")
+io = open((@__DIR__) * "/../openf4_systems.txt", "w")
 
 for (name, system) in systems
     export_openf4(io, name, system)

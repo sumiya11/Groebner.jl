@@ -14,10 +14,7 @@ function benchmark_system(system)
 end
 
 function run_for_gleb()
-    fns = [
-        "gbSIWR",
-        "gbSEAIJRC"
-    ]
+    fns = ["gbSIWR", "gbSEAIJRC"]
 
     for fn in fns
         system = load_system(fn)

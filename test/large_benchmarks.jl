@@ -1,5 +1,5 @@
 
-ground = GF(2^31-1)
+ground = GF(2^31 - 1)
 systems = [
     ("henrion 7", Groebner.henrion7(ground=ground)),
     ("noon 8", Groebner.noonn(8, ground=ground)),
@@ -9,16 +9,13 @@ systems = [
     ("katsura 11", Groebner.katsuran(11, ground=ground)),
     # ("katsura 12", Groebner.katsuran(12)),
     # ("henrion 6", Groebner.henrion6()),
-    ("eco 12", Groebner.eco12()),
+    ("eco 12", Groebner.eco12())
 ]
 
 @testset "ff large benchmarks" begin
-
     for (name, system) in systems
         @info "testing" name
         system = Groebner.change_ordering(system, :degrevlex)
         @test Groebner.isgroebner(Groebner.groebner(system, linalg=:prob))
     end
-
 end
-

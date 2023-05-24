@@ -1,13 +1,13 @@
 
 #=
     Hashtable:
-    
+
     a Monomial is an Integer
 
     Integer is an index to hashtable, which maps integer -> exponent vector
 
     hashtable has two parts:
-    
+
 =#
 
 #=
@@ -30,7 +30,6 @@ degree 4 = degree 3 × degree 1
 ...
 
 =#
-
 
 import Random
 
@@ -78,7 +77,6 @@ mutable struct MonomialHashtable
     offset::Int
 end
 
-
 # Returns the next look-up position in the table 
 # (that is, implementing open addressing with quadratic probing) 
 function hashnextindex(h::Int, j::Int, mod::Int)
@@ -107,14 +105,14 @@ function ithvector(nvars, deg, i)
     15 [1, 2, 0]
     ...
     =#
-    s = ExponentVector(undef, nvars+1)
-    p = nvars-1
-    for j in 2:nvars+1
-        s[j] = div(i, (deg+1)^p)
-        i -= div(i, (deg+1)^p)*(deg+1)^p
+    s = ExponentVector(undef, nvars + 1)
+    p = nvars - 1
+    for j in 2:(nvars + 1)
+        s[j] = div(i, (deg + 1)^p)
+        i -= div(i, (deg + 1)^p) * (deg + 1)^p
         p -= 1
     end
-    s[1] = sum((s[j] for j in 2:nvars+1))
+    s[1] = sum((s[j] for j in 2:(nvars + 1)))
     s
 end
 
@@ -125,7 +123,7 @@ function monomprod(ht, i1, i2)
     if i2 < ht.offset
         m2 = ht.exponents[i2]
     end
-    
+
     # i1 * i2 = 1
 
     # if 
@@ -133,11 +131,12 @@ end
 
 # initialize and set fields for basis hashtable
 function initialize_hash_table(
-    nvars::Int, deg::Int;
+    nvars::Int,
+    deg::Int;
     cache=-1,
     rng::Random.AbstractRNG=Random.MersenneTwister(),
-    initial_size::Int=2^3)
-
+    initial_size::Int=2^3
+)
     exponents = Vector{ExponentVector}(undef, initial_size)
     hashdata  = Vector{Hashvalue}(undef, initial_size)
     hashtable = zeros(Int, initial_size)
@@ -145,26 +144,24 @@ function initialize_hash_table(
     nvars = nvars
 
     # initialize hashing vector
-    hasher = [Int(i) for i in 1:nvars+1]
-    
+    hasher = [Int(i) for i in 1:(nvars + 1)]
+
     # exponents[1:load] cover all stored exponents
     # , also exponents[1] is zeroed by default
     load = 1
     size = initial_size
 
-    offset = (deg+1)^nvars
+    offset = (deg + 1)^nvars
     if cache != -1
-        offset = cache+1
+        offset = cache + 1
     end
 
     for i in 1:offset
-        exponents[i] = ithvector(nvars, deg, i - 1) 
+        exponents[i] = ithvector(nvars, deg, i - 1)
         hashtable[i] = i
     end
 
-    MonomialHashtable(
-        exponents, hashtable, hashdata, hasher,
-        nvars, size, load, offset)
+    MonomialHashtable(exponents, hashtable, hashdata, hasher, nvars, size, load, offset)
 end
 
 function vars(ht)

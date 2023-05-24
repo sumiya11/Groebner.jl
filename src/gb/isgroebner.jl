@@ -1,8 +1,9 @@
 
-function isgroebner_f4!(ring::PolyRing,
+function isgroebner_f4!(
+    ring::PolyRing,
     basis::Basis{C},
-    ht::MonomialHashtable{M}) where {M, C<:Coeff}
-
+    ht::MonomialHashtable{M}
+) where {M, C <: Coeff}
     matrix = initialize_matrix(ring, C)
     symbol_ht = initialize_secondary_hash_table(ht)
     update_ht = initialize_secondary_hash_table(ht)
@@ -32,10 +33,9 @@ function isgroebner_f4(
     ring::PolyRing,
     exps::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
-    rng) where {M,C<:Coeff}
-
-    basis, ht = initialize_structures(ring, exps,
-        coeffs, rng, 2^16)
+    rng
+) where {M, C <: Coeff}
+    basis, ht = initialize_structures(ring, exps, coeffs, rng, 2^16)
 
     isgroebner_f4!(ring, basis, ht)
 end
@@ -44,11 +44,11 @@ end
 # Finite field isgroebner
 
 function isgroebner(
-        ring::PolyRing,
-        exps::Vector{Vector{M}},
-        coeffs::Vector{Vector{T}},
-        meta) where {M,T<:CoeffFF}
-
+    ring::PolyRing,
+    exps::Vector{Vector{M}},
+    coeffs::Vector{Vector{T}},
+    meta
+) where {M, T <: CoeffFF}
     isgroebner_f4(ring, exps, coeffs, meta.rng)
 end
 
@@ -56,13 +56,14 @@ end
 # Rational numbers groebner
 
 function isgroebner(
-        ring::PolyRing,
-        exps::Vector{Vector{M}},
-        coeffs::Vector{Vector{T}},
-        meta) where {M,T<:CoeffQQ}
+    ring::PolyRing,
+    exps::Vector{Vector{M}},
+    coeffs::Vector{Vector{T}},
+    meta
+) where {M, T <: CoeffQQ}
     # if randomized result is ok
     if !meta.guaranteedcheck
-        coeffbuffer  = CoeffBuffer()
+        coeffbuffer = CoeffBuffer()
         coeffs_zz = scale_denominators(coeffbuffer, coeffs)
         primes = PrimeTracker(coeffs_zz)
         goodprime = nextgoodprime!(primes)

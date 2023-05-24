@@ -17,7 +17,11 @@ function _reducegb_reference!(G)
         G[i] = _normal_form_reference(G[i], G[1:end .!= i])
     end
     filter!(!iszero, G)
-    scale = f -> AbstractAlgebra.map_coefficients(c -> c // AbstractAlgebra.leading_coefficient(f), f)
+    scale =
+        f -> AbstractAlgebra.map_coefficients(
+            c -> c // AbstractAlgebra.leading_coefficient(f),
+            f
+        )
     # questionable over QQ
     map!(scale, G, G)
     sort!(G, by=AbstractAlgebra.leading_monomial)
@@ -37,9 +41,16 @@ function _normal_form_eder(h, G)
         end
         i = 1
         while i <= length(G)
-            mul = div(AbstractAlgebra.leading_monomial(h), AbstractAlgebra.leading_monomial(G[i]))
+            mul = div(
+                AbstractAlgebra.leading_monomial(h),
+                AbstractAlgebra.leading_monomial(G[i])
+            )
             if !iszero(mul)
-                h -= AbstractAlgebra.leading_coefficient(h) * 1//AbstractAlgebra.leading_coefficient(G[i]) * mul * G[i]
+                h -=
+                    AbstractAlgebra.leading_coefficient(h) *
+                    1 // AbstractAlgebra.leading_coefficient(G[i]) *
+                    mul *
+                    G[i]
                 i = 1
                 break
             end
@@ -60,7 +71,8 @@ function _normal_form_reference(h, G)
         for t in AbstractAlgebra.terms(h)
             for g in G
                 iszero(g) && continue
-                is_divisible, _ = AbstractAlgebra.divides(t, AbstractAlgebra.leading_monomial(g))
+                is_divisible, _ =
+                    AbstractAlgebra.divides(t, AbstractAlgebra.leading_monomial(g))
                 if is_divisible
                     mul = AbstractAlgebra.divexact(t, AbstractAlgebra.leading_monomial(g))
                     h -= mul * g
@@ -93,8 +105,10 @@ end
 # The function is adapted from the eponymous function in
 # https://www.mathematik.uni-kl.de/~ederc/teaching/2019/computeralgebra.html#news
 function _spoly_reference(f, g)
-    mji, mij  = muls(f, g)
-    h = 1//AbstractAlgebra.leading_coefficient(f) * mji * f - 1//AbstractAlgebra.leading_coefficient(g) * mij * g
+    mji, mij = muls(f, g)
+    h =
+        1 // AbstractAlgebra.leading_coefficient(f) * mji * f -
+        1 // AbstractAlgebra.leading_coefficient(g) * mij * g
     h
 end
 
@@ -103,20 +117,20 @@ end
 # Checks if the given set of polynomials `fs` is a Groebner basis,
 # i.e all spoly's reduce to zero.
 # If `initial_gens` parameter is provided, also checks `initial_gens ⊆ fs` as ideals
-function _isgroebner_reference(fs::Vector{AbstractAlgebra.Generic.MPoly{T}}; initial_gens=[]) where {T}
+function _isgroebner_reference(
+    fs::Vector{AbstractAlgebra.Generic.MPoly{T}};
+    initial_gens=[]
+) where {T}
     sort!(fs, by=AbstractAlgebra.leading_monomial)
     for f in fs
         for g in fs
-            if !iszero( _normal_form_reference(_spoly_reference(f, g), fs) )
+            if !iszero(_normal_form_reference(_spoly_reference(f, g), fs))
                 return false
             end
         end
     end
     if !isempty(initial_gens)
-        return all(
-            i -> _normal_form_reference( i, fs ) == 0,
-            initial_gens
-        )
+        return all(i -> _normal_form_reference(i, fs) == 0, initial_gens)
     end
     true
 end

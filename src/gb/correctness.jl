@@ -12,7 +12,8 @@ end
 
 # Checks if basis is groebner basis with a randomized algorithm
 function _check_isgroebner(basis)
-    !isgroebner(basis, certify=false) && _not_a_basis_error(basis, "Input does not look like a groebner basis.")
+    !isgroebner(basis, certify=false) &&
+        _not_a_basis_error(basis, "Input does not look like a groebner basis.")
 end
 
 # Checks that all computed bases are of the same shape,
@@ -31,8 +32,8 @@ end
 
 # Heuristic check for correctness of the reconstructed basis over rationals
 function rational_correctness_bound(modulo::BigInt)
-    setprecision(2*Base.GMP.MPZ.sizeinbase(modulo, 2)) do
-        ceil(BigInt, BigFloat(modulo)^(1/10))
+    setprecision(2 * Base.GMP.MPZ.sizeinbase(modulo, 2)) do
+        ceil(BigInt, BigFloat(modulo)^(1 / 10))
     end
 end
 
@@ -58,8 +59,19 @@ end
 #
 # By default, only the first two are active, which gives the correct basis
 # with a high probability
-function correctness_check!(coeffaccum, coeffbuffer, primetracker, meta,
-                                ring, exps, coeffs, coeffs_zz, gens_temp_ff, gb_ff, ht)
+function correctness_check!(
+    coeffaccum,
+    coeffbuffer,
+    primetracker,
+    meta,
+    ring,
+    exps,
+    coeffs,
+    coeffs_zz,
+    gens_temp_ff,
+    gb_ff,
+    ht
+)
 
     # first we check coefficients with a heuristic check only
     if meta.heuristiccheck
@@ -72,8 +84,16 @@ function correctness_check!(coeffaccum, coeffbuffer, primetracker, meta,
 
     # then check that a basis is also a basis modulo a prime
     if meta.randomizedcheck
-        if !randomized_correctness_check!(coeffbuffer, coeffaccum, ring,
-                                            coeffs_zz, gens_temp_ff, gb_ff, primetracker, ht)
+        if !randomized_correctness_check!(
+            coeffbuffer,
+            coeffaccum,
+            ring,
+            coeffs_zz,
+            gens_temp_ff,
+            gb_ff,
+            primetracker,
+            ht
+        )
             @info "Randomized check failed."
             return false
         end
@@ -81,14 +101,21 @@ function correctness_check!(coeffaccum, coeffbuffer, primetracker, meta,
     end
 
     if meta.guaranteedcheck
-        return guaranteed_correctness_check!(ring, gb_ff.monoms, coeffaccum.gb_coeffs_qq,
-                                            exps, coeffs, gens_temp_ff, ht)
+        return guaranteed_correctness_check!(
+            ring,
+            gb_ff.monoms,
+            coeffaccum.gb_coeffs_qq,
+            exps,
+            coeffs,
+            gens_temp_ff,
+            ht
+        )
     end
 
     return true
 end
 
-threshold_in_heuristic(sznum, szden, szmod) = 1.30*(sznum + sznum) >= szmod
+threshold_in_heuristic(sznum, szden, szmod) = 1.30 * (sznum + sznum) >= szmod
 
 # Checks that 
 # ln(num) + ln(den) < c ln(modulo)
@@ -99,7 +126,11 @@ function heuristic_correctness_check(gbcoeffs_qq, modulo)
         for j in 1:length(gbcoeffs_qq[i])
             n = numerator(gbcoeffs_qq[i][j])
             d = denominator(gbcoeffs_qq[i][j])
-            if threshold_in_heuristic(Base.GMP.MPZ.sizeinbase(n, 2), Base.GMP.MPZ.sizeinbase(d, 2), lnm)
+            if threshold_in_heuristic(
+                Base.GMP.MPZ.sizeinbase(n, 2),
+                Base.GMP.MPZ.sizeinbase(d, 2),
+                lnm
+            )
                 return false
             end
         end
@@ -108,9 +139,15 @@ function heuristic_correctness_check(gbcoeffs_qq, modulo)
 end
 
 function randomized_correctness_check!(
-            coeffbuffer, coeffaccum,
-            ring, coeffs_zz, gens_temp_ff, gb_ff, primetracker, ht)
-
+    coeffbuffer,
+    coeffaccum,
+    ring,
+    coeffs_zz,
+    gens_temp_ff,
+    gb_ff,
+    primetracker,
+    ht
+)
     goodprime = nextgoodprime!(primetracker)
 
     reduce_modulo!(coeffbuffer, coeffs_zz, gens_temp_ff.coeffs, goodprime)
@@ -122,10 +159,9 @@ function randomized_correctness_check!(
     reduce_modulo!(coeffbuffer, gb_coeffs_zz, gb_ff_copy.coeffs, goodprime)
     cleanup_basis!(ring, gb_ff_copy, goodprime)
 
-
     # check that initial ideal contains in the computed groebner basis modulo goodprime
     normal_form_f4!(ring, gb_ff_copy, ht, gens_ff_copy)
-    for i in 1:gens_ff_copy.ndone
+    for i in 1:(gens_ff_copy.ndone)
         # meaning that something is not reduced
         if !iszero_coeffvector(gens_ff_copy.coeffs[i])
             return false
@@ -140,12 +176,18 @@ function randomized_correctness_check!(
     return true
 end
 
-function guaranteed_correctness_check!(ring, gbexps, gb_coeffs_qq,
-                                        exps, coeffs, gens_tmp_ff, ht)
-
+function guaranteed_correctness_check!(
+    ring,
+    gbexps,
+    gb_coeffs_qq,
+    exps,
+    coeffs,
+    gens_tmp_ff,
+    ht
+)
     @info "Setting parameter certify=true in groebner is not recommended."
 
-    gens_qq, _ = initialize_structures(ring, gens_tmp_ff.monoms[1:gens_tmp_ff.ntotal], coeffs, ht)
+    gens_qq, _ = initialize_structures(ring, gens_tmp_ff.monoms[1:(gens_tmp_ff.ntotal)], coeffs, ht)
     gb_qq, _   = initialize_structures(ring, gbexps, gb_coeffs_qq, ht)
 
     normalize_basis!(ring, gb_qq)
@@ -154,7 +196,7 @@ function guaranteed_correctness_check!(ring, gbexps, gb_coeffs_qq,
     gens_qq_copy = deepcopy_basis(gens_qq)
 
     normal_form_f4!(ring, gb_qq, ht, gens_qq_copy)
-    for i in 1:gens_qq_copy.ndone
+    for i in 1:(gens_qq_copy.ndone)
         # meaning that it is not reduced
         if !iszero_coeffvector(gens_qq_copy.coeffs[i])
             return false

@@ -30,9 +30,23 @@ mutable struct CoeffBuffer
     reconstructbuf10::BigInt
 
     function CoeffBuffer()
-        new(BigInt(), BigInt(), BigInt(), BigInt(), BigInt(),
-            BigInt(), BigInt(), BigInt(), BigInt(), BigInt(), BigInt(),
-            BigInt(), BigInt(), BigInt(), BigInt())
+        new(
+            BigInt(),
+            BigInt(),
+            BigInt(),
+            BigInt(),
+            BigInt(),
+            BigInt(),
+            BigInt(),
+            BigInt(),
+            BigInt(),
+            BigInt(),
+            BigInt(),
+            BigInt(),
+            BigInt(),
+            BigInt(),
+            BigInt()
+        )
     end
 end
 
@@ -40,22 +54,24 @@ end
 
 # CoeffAccum stores accumulated integer coefficients and
 # accumulated rational coefficients of a groebner basis
-mutable struct CoeffAccum{T1<:CoeffZZ, T2<:CoeffQQ}
+mutable struct CoeffAccum{T1 <: CoeffZZ, T2 <: CoeffQQ}
     gb_coeffs_zz::Vector{Vector{T1}}
     prev_gb_coeffs_zz::Vector{Vector{T1}}
-    gb_coeffs_qq::Vector{Vector{T2}} 
+    gb_coeffs_qq::Vector{Vector{T2}}
 
-    function CoeffAccum{T1, T2}() where {T1<:CoeffZZ, T2<:CoeffQQ}
-        new(Vector{Vector{T1}}(undef, 0),
+    function CoeffAccum{T1, T2}() where {T1 <: CoeffZZ, T2 <: CoeffQQ}
+        new(
             Vector{Vector{T1}}(undef, 0),
-            Vector{Vector{T2}}(undef, 0))
+            Vector{Vector{T1}}(undef, 0),
+            Vector{Vector{T2}}(undef, 0)
+        )
     end
 end
 
 #------------------------------------------------------------------------------
 
 # Computes the gcd of denominators of `coeffs`
-function common_denominator(coeffbuff::CoeffBuffer, coeffs::Vector{T}) where {T<:CoeffQQ}
+function common_denominator(coeffbuff::CoeffBuffer, coeffs::Vector{T}) where {T <: CoeffQQ}
     den = coeffbuff.scalebuf1
     Base.GMP.MPZ.set_si!(den, 1)
     for c in coeffs
@@ -65,7 +81,7 @@ function common_denominator(coeffbuff::CoeffBuffer, coeffs::Vector{T}) where {T<
 end
 
 # Computes the gcd of denominators of `coeffs`
-function common_denominator(coeffs::Vector{T}) where {T<:CoeffQQ}
+function common_denominator(coeffs::Vector{T}) where {T <: CoeffQQ}
     den = BigInt()
     Base.GMP.MPZ.set_si!(den, 1)
     for c in coeffs
@@ -77,9 +93,10 @@ end
 # Scales each vector in coeffs_qq by the common denominator
 # and writes integer results to coeffs_zz
 function scale_denominators!(
-            coeffbuff::CoeffBuffer,
-            coeffs_qq::Vector{Vector{T1}},
-            coeffs_zz::Vector{Vector{T2}}) where {T1<:CoeffQQ, T2<:CoeffZZ}
+    coeffbuff::CoeffBuffer,
+    coeffs_qq::Vector{Vector{T1}},
+    coeffs_zz::Vector{Vector{T2}}
+) where {T1 <: CoeffQQ, T2 <: CoeffZZ}
     @assert length(coeffs_zz) == length(coeffs_qq)
 
     buf = coeffbuff.scalebuf2
@@ -100,18 +117,19 @@ end
 # Scales each vector in coeffs_qq by the common denominator
 # and returns the results in a new vector
 function scale_denominators(
-            coeffbuff::CoeffBuffer,
-            coeffs_qq::Vector{Vector{T}}) where {T<:CoeffQQ}
+    coeffbuff::CoeffBuffer,
+    coeffs_qq::Vector{Vector{T}}
+) where {T <: CoeffQQ}
     coeffs_zz = [[BigInt(0) for _ in 1:length(c)] for c in coeffs_qq]
     scale_denominators!(coeffbuff, coeffs_qq, coeffs_zz)
 end
 
 # Scales each vector in coeffs_qq by the common denominator
 # and returns the results in a new vector
-function scale_denominators(coeffs_qq::Vector{Vector{T}}) where {T<:CoeffQQ}
+function scale_denominators(coeffs_qq::Vector{Vector{T}}) where {T <: CoeffQQ}
     coeffs_zz = [[BigInt(0) for _ in 1:length(c)] for c in coeffs_qq]
     buf = BigInt()
-    @inbounds  for i in 1:length(coeffs_qq)
+    @inbounds for i in 1:length(coeffs_qq)
         @assert length(coeffs_zz[i]) == length(coeffs_qq[i])
         den = common_denominator(coeffs_qq[i])
         for j in 1:length(coeffs_qq[i])
@@ -123,7 +141,7 @@ function scale_denominators(coeffs_qq::Vector{Vector{T}}) where {T<:CoeffQQ}
     coeffs_zz
 end
 
-function scale_denominators(coeffs_qq::Vector{T}) where {T<:CoeffQQ}
+function scale_denominators(coeffs_qq::Vector{T}) where {T <: CoeffQQ}
     coeffs_zz = [BigInt(0) for _ in 1:length(coeffs_qq)]
     buf = BigInt()
     den = common_denominator(coeffs_qq)
@@ -141,11 +159,11 @@ end
 # into the field of integers modulo `prime`
 # and writes result to `coeffs_ff`
 function reduce_modulo!(
-        coeffbuff::CoeffBuffer,
-        coeffs_zz::Vector{Vector{T1}},
-        coeffs_ff::Vector{Vector{T2}},
-        prime::T2) where {T1<:CoeffZZ, T2<:CoeffFF}
-
+    coeffbuff::CoeffBuffer,
+    coeffs_zz::Vector{Vector{T1}},
+    coeffs_ff::Vector{Vector{T2}},
+    prime::T2
+) where {T1 <: CoeffZZ, T2 <: CoeffFF}
     p   = coeffbuff.reducebuf1
     buf = coeffbuff.reducebuf2
     c   = coeffbuff.reducebuf3
@@ -168,10 +186,11 @@ function reduce_modulo!(
 end
 
 function reduce_modulo(
-        coeffbuff::CoeffBuffer,
-        coeffs_zz::Vector{Vector{T1}},
-        prime::T2) where {T1<:CoeffZZ, T2<:CoeffFF}
-    coeffs_ff =  [Vector{CoeffModular}(undef, length(c)) for c in coeffs_zz]
+    coeffbuff::CoeffBuffer,
+    coeffs_zz::Vector{Vector{T1}},
+    prime::T2
+) where {T1 <: CoeffZZ, T2 <: CoeffFF}
+    coeffs_ff = [Vector{CoeffModular}(undef, length(c)) for c in coeffs_zz]
     reduce_modulo!(coeffbuff, coeffs_zz, coeffs_ff, prime)
     coeffs_ff
 end
@@ -204,9 +223,11 @@ function assure_structure(coeffaccum, gb_coeffs_ff)
     return true
 end
 
-function reconstruct_trivial_crt!(coeffbuff::CoeffBuffer,
-                                    coeffaccum::CoeffAccum,
-                                    gb_coeffs_ff::Vector{Vector{T1}}) where {T1<:CoeffFF}
+function reconstruct_trivial_crt!(
+    coeffbuff::CoeffBuffer,
+    coeffaccum::CoeffAccum,
+    gb_coeffs_ff::Vector{Vector{T1}}
+) where {T1 <: CoeffFF}
     gb_coeffs_zz = coeffaccum.gb_coeffs_zz
     @inbounds for i in 1:length(gb_coeffs_ff)
         for j in 1:length(gb_coeffs_ff[i])
@@ -220,12 +241,12 @@ end
 #
 # Finds G using CRT and writes it to coeffaccum
 function reconstruct_crt!(
-        coeffbuff::CoeffBuffer,
-        coeffaccum::CoeffAccum,
-        primetracker::PrimeTracker,
-        gb_coeffs_ff::Vector{Vector{T1}},
-        ch::UInt64) where {T1<:CoeffFF}
-
+    coeffbuff::CoeffBuffer,
+    coeffaccum::CoeffAccum,
+    primetracker::PrimeTracker,
+    gb_coeffs_ff::Vector{Vector{T1}},
+    ch::UInt64
+) where {T1 <: CoeffFF}
     if isempty(coeffaccum.gb_coeffs_zz)
         # if first time reconstruction
         resize_accum!(coeffaccum, gb_coeffs_ff)
@@ -269,13 +290,13 @@ end
 # Finds N and D using rational reconstruction
 # and writes it to coeffaccum
 function reconstruct_modulo!(
-        coeffbuff::CoeffBuffer,
-        coeffaccum::CoeffAccum,
-        primetracker::PrimeTracker)
-
+    coeffbuff::CoeffBuffer,
+    coeffaccum::CoeffAccum,
+    primetracker::PrimeTracker
+)
     modulo = primetracker.modulo
 
-    bnd = rational_reconstruction_bound(modulo)
+    bnd        = rational_reconstruction_bound(modulo)
     buf, buf1  = coeffbuff.reconstructbuf1, coeffbuff.reconstructbuf2
     buf2, buf3 = coeffbuff.reconstructbuf3, coeffbuff.reconstructbuf4
     u1, u2     = coeffbuff.reconstructbuf5, coeffbuff.reconstructbuf6
@@ -290,10 +311,23 @@ function reconstruct_modulo!(
             cz = gb_coeffs_zz[i][j]
             cq = gb_coeffs_qq[i][j]
             num, den = numerator(cq), denominator(cq)
-            success = rational_reconstruction!(num, den, bnd, buf,
-                                        buf1, buf2, buf3,
-                                        u1, u2, u3, v1, v2, v3,
-                                        cz, modulo)
+            success = rational_reconstruction!(
+                num,
+                den,
+                bnd,
+                buf,
+                buf1,
+                buf2,
+                buf3,
+                u1,
+                u2,
+                u3,
+                v1,
+                v2,
+                v3,
+                cz,
+                modulo
+            )
             if !success
                 return false
             end

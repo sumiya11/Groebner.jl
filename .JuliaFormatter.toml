@@ -1,0 +1,13 @@
+align_assignment = true
+align_pair_arrow = true
+always_for_in = true
+format_markdown = false
+indent = 4
+margin = 92
+normalize_line_endings = "unix"
+remove_extra_newlines = true
+short_to_long_function_def = false
+trailing_comma = false
+whitespace_ops_in_indices = true
+whitespace_typedefs = true
+whitespace_in_kwargs = false

@@ -71,7 +71,7 @@ Special thanks goes to Vladimir Kuznetsov for providing the sources of his F4 im
 
 ## Citing Groebner.jl
 
-If you find Groebner.jl useful in your work, you can cite the following preprint
+If you find Groebner.jl useful in your work, you can cite [this paper](https://arxiv.org/abs/2304.06935)
 
 ```
 @misc{groebnerjl2023,

@@ -2,24 +2,25 @@
 import Primes
 
 @testset "Constants" begin
-    @test Groebner.FIRST_LUCKY_PRIME == 2^31-1
+    @test Groebner.FIRST_LUCKY_PRIME == 2^31 - 1
     @test Groebner.FIRST_GOOD_PRIME == 2^30 + 3
 end
 
 @testset "Lucky primes" begin
-    v = [[BigInt(1), BigInt(2), BigInt(7)*123, BigInt(9)*(2^31-1)], [BigInt(11)*4]]
+    v = [[BigInt(1), BigInt(2), BigInt(7) * 123, BigInt(9) * (2^31 - 1)], [BigInt(11) * 4]]
     vc = deepcopy(v)
 
     primes = Groebner.PrimeTracker(vc)
-    
+
     @test Groebner.isluckyprime(primes, UInt64(5))
     @test !Groebner.isluckyprime(primes, UInt64(11))
     @test !Groebner.isluckyprime(primes, UInt64(2))
     @test !Groebner.isluckyprime(primes, UInt64(7))
-    @test !Groebner.isluckyprime(primes, UInt64(2^31-1))
+    @test !Groebner.isluckyprime(primes, UInt64(2^31 - 1))
     @test Groebner.isluckyprime(primes, UInt64(13))
 
-    @test Groebner.nextluckyprime!(primes) == Primes.nextprime(1+Groebner.FIRST_LUCKY_PRIME)
+    @test Groebner.nextluckyprime!(primes) ==
+          Primes.nextprime(1 + Groebner.FIRST_LUCKY_PRIME)
 
     @test v == vc
 end

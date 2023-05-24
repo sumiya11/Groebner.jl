@@ -28,7 +28,7 @@ end
 ⊂(xs, ys) = all(in(ys), xs)
 ≂(xs, ys) = ⊂(xs, ys) && ⊂(ys, xs)
 
-@time @testset "All tests" verbose=true begin
+@time @testset "All tests" verbose = true begin
     @warn "Warnings during testing are fine."
 
     # test reference implementation
@@ -44,13 +44,18 @@ end
     # test crt and rational reconstructions
     @includetests ["crt_reconstruction", "mod_reconstruction"]
     # test `groebner`
-    @includetests ["f4_reduce", 
-                 "f4_stress", "adaptive_coefficients",
-                 "f4", "rational_f4", "groebner_certify",
-                 "groebner_orders"]
+    @includetests [
+        "f4_reduce",
+        "f4_stress",
+        "adaptive_coefficients",
+        "f4",
+        "rational_f4",
+        "groebner_certify",
+        "groebner_orders",
+        "groebner_maxpairs"
+    ]
     # test additional options in `groebner`
-    @includetests ["probabilistic_linalg", "onthefly_order_change",
-                "monom_representations"]
+    @includetests ["probabilistic_linalg", "onthefly_order_change", "monom_representations"]
     # test some problems with very large output
     @includetests ["large_problems_f4"]
     # test `isgroebner`
@@ -60,8 +65,7 @@ end
     # test `fglm` and `kbase`
     @includetests ["fglm", "kbase"]
     # test some special cases
-    @includetests ["handling_zeros", "handling_checks", 
-                "many_variables", "large_exponents"]
+    @includetests ["handling_zeros", "handling_checks", "many_variables", "large_exponents"]
     if try_import(:DynamicPolynomials)
         @includetests ["input-output/io_dynamic", "dynamic"]
     end

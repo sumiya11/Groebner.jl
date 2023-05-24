@@ -10,7 +10,7 @@
 #
 # let n = max( λ(a), λ(m) ) , where λ(x) is a number of bits for x
 # O(n^2)
-function rational_reconstruction(a::I, m::I) where {I<:Union{Int, BigInt}}
+function rational_reconstruction(a::I, m::I) where {I <: Union{Int, BigInt}}
     a = mod(a, m)
     if a == 0 || m == 0
         return AbstractAlgebra.QQ(0, 1)
@@ -63,7 +63,7 @@ end
 # as soon as the numerator in rational reconstruction
 # exceeds this bound, the gcd iteration stops
 function rational_reconstruction_bound(modulo::BigInt)
-    setprecision(2*Base.GMP.MPZ.sizeinbase(modulo, 2)) do
+    setprecision(2 * Base.GMP.MPZ.sizeinbase(modulo, 2)) do
         ceil(BigInt, sqrt(BigFloat(modulo) / 2))
     end
 end
@@ -84,12 +84,22 @@ end
         v1, v2, v3 = buffers
 =#
 function rational_reconstruction!(
-            num::BigInt, den::BigInt, bnd::BigInt, buf::BigInt,
-            buf1::BigInt, buf2::BigInt, buf3::BigInt,
-            u1::BigInt, u2::BigInt, u3::BigInt,
-            v1::BigInt, v2::BigInt, v3::BigInt,
-            a::BigInt, m::BigInt)
-
+    num::BigInt,
+    den::BigInt,
+    bnd::BigInt,
+    buf::BigInt,
+    buf1::BigInt,
+    buf2::BigInt,
+    buf3::BigInt,
+    u1::BigInt,
+    u2::BigInt,
+    u3::BigInt,
+    v1::BigInt,
+    v2::BigInt,
+    v3::BigInt,
+    a::BigInt,
+    m::BigInt
+)
     if Base.GMP.MPZ.cmp_ui(a, 0) == 0
         Base.GMP.MPZ.set_ui!(num, 0)
         Base.GMP.MPZ.set_ui!(den, 1)
@@ -181,10 +191,17 @@ end
         minv2 = m2^-1 mod M
 =#
 function CRT!(
-            M::BigInt, buf::BigInt, n1::BigInt, n2::BigInt,
-            a1::BigInt, minv1::BigInt, a2::UInt, minv2::BigInt,
-            m1::BigInt, m2::BigInt)
-
+    M::BigInt,
+    buf::BigInt,
+    n1::BigInt,
+    n2::BigInt,
+    a1::BigInt,
+    minv1::BigInt,
+    a2::UInt,
+    minv2::BigInt,
+    m1::BigInt,
+    m2::BigInt
+)
     Base.GMP.MPZ.mul!(buf, m1, minv1)
     Base.GMP.MPZ.mul_ui!(n1, buf, a2)
 

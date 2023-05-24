@@ -3,7 +3,8 @@
     PV{T, U} = Groebner.PackedVector{T, U} where {T, U}
 
     @test Groebner.decompose(0x00030201, UInt8) == (0x01, 0x02, 0x03, 0x00)
-    @test Groebner.decompose(0x0a00000400030201, UInt8) == (0x01, 0x02, 0x03, 0x00, 0x04, 0x00, 0x00, 0x0a)
+    @test Groebner.decompose(0x0a00000400030201, UInt8) ==
+          (0x01, 0x02, 0x03, 0x00, 0x04, 0x00, 0x00, 0x0a)
 
     x = [1, 2, 3, 0, 4]
     ev = Groebner.make_ev(PV{UInt64, UInt8}, x)
@@ -19,8 +20,8 @@
     @test Groebner.totaldeg(ev) == UInt16(10)
     @test Groebner.powertype(ev) === UInt16
 
-    for B in (UInt8,UInt16,UInt32)
-        for T in (UInt64,UInt32,UInt16)
+    for B in (UInt8, UInt16, UInt32)
+        for T in (UInt64, UInt32, UInt16)
             if sizeof(T) < sizeof(B)
                 continue
             end

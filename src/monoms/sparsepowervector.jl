@@ -3,7 +3,7 @@
 
 # SparsePowerVector stores total degree in addition to partial degrees.
 
-struct SparsePowerVector{T<:Unsigned}
+struct SparsePowerVector{T <: Unsigned}
     #=
     x_1^3 x_20 x_43^2  
     <-->  
@@ -31,9 +31,9 @@ totaldeg(pv::PowerVector) = @inbounds pv[1]
 powertype(::Type{PowerVector{T}}) where {T} = MonomHash
 powertype(::PowerVector{T}) where {T} = MonomHash
 
-make_zero_ev(::Type{PowerVector{T}}, n::Integer) where {T} = zeros(T, n+1)
+make_zero_ev(::Type{PowerVector{T}}, n::Integer) where {T} = zeros(T, n + 1)
 
-function make_ev(::Type{PowerVector{T}}, ev::Vector{U}) where {T, U} 
+function make_ev(::Type{PowerVector{T}}, ev::Vector{U}) where {T, U}
     v = Vector{T}(undef, length(ev) + 1)
     @inbounds v[1] = sum(ev)
     @inbounds v[2:end] .= ev
@@ -53,7 +53,7 @@ end
 function Base.hash(x::PowerVector{T}, b::PowerVector{MH}) where {T, MH}
     h = zero(MH)
     @inbounds for i in eachindex(x, b)
-        h += MH(x[i])*b[i]
+        h += MH(x[i]) * b[i]
     end
     mod(h, MonomHash)
 end
@@ -114,10 +114,10 @@ end
 function monom_isless(ea::PowerVector, eb::PowerVector, w::Weighted)
     i = 2
     weights = w.weights
-    @inbounds while i < length(ea) && weights[i]*ea[i] == weights[i]*eb[i]
+    @inbounds while i < length(ea) && weights[i] * ea[i] == weights[i] * eb[i]
         i += 1
     end
-    @inbounds return weights[i]*ea[i] < weights[i]*eb[i] ? true : false
+    @inbounds return weights[i] * ea[i] < weights[i] * eb[i] ? true : false
 end
 
 #------------------------------------------------------------------------------
@@ -148,7 +148,11 @@ end
 
 # Returns the product of monomials ea and eb.
 # Also writes the result to ec.
-function monom_product!(ec::PowerVector{T}, ea::PowerVector{T}, eb::PowerVector{T}) where {T}
+function monom_product!(
+    ec::PowerVector{T},
+    ea::PowerVector{T},
+    eb::PowerVector{T}
+) where {T}
     @assert length(ec) == length(ea) == length(eb)
     @inbounds for j in 1:length(ec)
         ec[j] = ea[j] + eb[j]
@@ -158,7 +162,11 @@ end
 
 # Returns the result of monomial division ea / eb.
 # Also writes the result to ec.
-function monom_division!(ec::PowerVector{T}, ea::PowerVector{T}, eb::PowerVector{T}) where {T}
+function monom_division!(
+    ec::PowerVector{T},
+    ea::PowerVector{T},
+    eb::PowerVector{T}
+) where {T}
     @assert length(ec) == length(ea) == length(eb)
     @inbounds for j in 1:length(ec)
         ec[j] = ea[j] - eb[j]
@@ -178,7 +186,11 @@ end
 
 # Checks if monomial eb divides monomial ea.
 # Also writes the resulting divisor to ec.
-function is_monom_divisible!(ec::PowerVector{T}, ea::PowerVector{T}, eb::PowerVector{T}) where {T}
+function is_monom_divisible!(
+    ec::PowerVector{T},
+    ea::PowerVector{T},
+    eb::PowerVector{T}
+) where {T}
     @inbounds for j in 1:length(ec)
         if ea[j] < eb[j]
             return false, ec
@@ -206,9 +218,10 @@ end
 function monom_divmask(
     e::PowerVector{T},
     DM::Type{Mask},
-    ndivvars, divmap,
-    ndivbits) where {T, Mask}
-
+    ndivvars,
+    divmap,
+    ndivbits
+) where {T, Mask}
     ctr = one(Mask)
     res = zero(Mask)
     o = one(Mask)

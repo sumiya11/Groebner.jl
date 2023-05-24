@@ -13,10 +13,10 @@ function monoms_of_degree_not_greater_than(N, degree)
     else
         prev = monoms_of_degree_not_greater_than(N, degree - 1)
         one_at_i = (N, i) -> (x = zeros(degtype(), N); x[i] += 1; x)
-        filter(x -> count(!iszero, x) < 4, union(prev, [
-            [pk + one_at_i(N, i) for pk in prev]
-            for i in 1:N
-        ]...))
+        filter(
+            x -> count(!iszero, x) < 4,
+            union(prev, [[pk + one_at_i(N, i) for pk in prev] for i in 1:N]...)
+        )
     end
 end
 
@@ -28,7 +28,7 @@ function linear_hash_all_buckets(N, H, deg)
     println("Monoms: $(length(monoms))")
     println("Hashtable: $(length(H))")
     for m in monoms
-        hm = sum(h .* m) + count(!iszero, m)*h2
+        hm = sum(h .* m) + count(!iszero, m) * h2
         hm = hm % length(H) + 1
         if length(H[hm]) > 0
             # println("collision: $(H[hm]) and $m")

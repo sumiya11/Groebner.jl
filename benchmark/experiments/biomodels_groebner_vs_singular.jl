@@ -33,10 +33,15 @@ function benchmark_system_singular(system)
 
     system_s = map(
         f -> AbstractAlgebra.change_base_ring(
-                    ground_s,
-                    AbstractAlgebra.map_coefficients(c -> ground_s(numerator(c), denominator(c)), f),
-                    parent=R_s),
-        system)
+            ground_s,
+            AbstractAlgebra.map_coefficients(
+                c -> ground_s(numerator(c), denominator(c)),
+                f
+            ),
+            parent=R_s
+        ),
+        system
+    )
 
     ideal_s = Singular.Ideal(R_s, system_s)
 

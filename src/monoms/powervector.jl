@@ -6,7 +6,7 @@
 
 # PowerVector.
 # PowerVector is just a dynamic vector of integers.
-const PowerVector{T} = Vector{T} where {T<:Integer}
+const PowerVector{T} = Vector{T} where {T <: Integer}
 
 # Checks whether PowerVector{T} provides a comparator function implementation
 # for the given monomial ordering of type `O`
@@ -33,9 +33,9 @@ totaldeg(pv::PowerVector) = @inbounds pv[1]
 powertype(::Type{PowerVector{T}}) where {T} = MonomHash
 powertype(::PowerVector{T}) where {T} = MonomHash
 
-make_zero_ev(::Type{PowerVector{T}}, n::Integer) where {T} = zeros(T, n+1)
+make_zero_ev(::Type{PowerVector{T}}, n::Integer) where {T} = zeros(T, n + 1)
 
-function make_ev(::Type{PowerVector{T}}, ev::Vector{U}) where {T, U} 
+function make_ev(::Type{PowerVector{T}}, ev::Vector{U}) where {T, U}
     v = Vector{T}(undef, length(ev) + 1)
     @inbounds v[1] = sum(ev)
     @inbounds v[2:end] .= ev
@@ -55,7 +55,7 @@ end
 function Base.hash(x::PowerVector{T}, b::PowerVector{MH}) where {T, MH}
     h = zero(MH)
     @inbounds for i in eachindex(x, b)
-        h += MH(x[i])*b[i]
+        h += MH(x[i]) * b[i]
     end
     mod(h, MonomHash)
 end
@@ -88,8 +88,13 @@ end
 # The flag hasdegree indicates whether the total degree is stored 
 # in ea[lo] and eb[lo], respectively.
 function monom_isless(
-        ea::PowerVector, eb::PowerVector, ::DegRevLex,
-        lo::Int, hi::Int, hasdegree::Bool)
+    ea::PowerVector,
+    eb::PowerVector,
+    ::DegRevLex,
+    lo::Int,
+    hi::Int,
+    hasdegree::Bool
+)
     @inbounds da = hasdegree ? ea[lo] : sum(view(ea, lo:hi))
     @inbounds db = hasdegree ? eb[lo] : sum(view(eb, lo:hi))
     if da < db
@@ -128,8 +133,13 @@ end
 # The flag hasdegree indicates whether the total degree is stored 
 # in ea[lo] and eb[lo], respectively.
 function monom_isless(
-        ea::PowerVector, eb::PowerVector, ::DegLex,
-        lo::Int, hi::Int, hasdegree::Bool)
+    ea::PowerVector,
+    eb::PowerVector,
+    ::DegLex,
+    lo::Int,
+    hi::Int,
+    hasdegree::Bool
+)
     @inbounds da = hasdegree ? ea[lo] : sum(view(ea, lo:hi))
     @inbounds db = hasdegree ? eb[lo] : sum(view(eb, lo:hi))
     if da < db
@@ -157,8 +167,13 @@ end
 # The flag hasdegree indicates whether the total degree is stored 
 # in ea[lo] and eb[lo], respectively.
 function monom_isless(
-        ea::PowerVector, eb::PowerVector, ::Lex,
-        lo::Int, hi::Int, hasdegree::Bool)
+    ea::PowerVector,
+    eb::PowerVector,
+    ::Lex,
+    lo::Int,
+    hi::Int,
+    hasdegree::Bool
+)
     i = lo + hasdegree
     @inbounds while i < hi && ea[i] == eb[i]
         i += 1
@@ -173,22 +188,26 @@ function monom_isless(ea::PowerVector, eb::PowerVector, w::WeightedOrdering)
 end
 # Weighted, but on a given range of variables [lo:hi].
 function monom_isless(
-        ea::PowerVector, eb::PowerVector, w::WeightedOrdering,
-        lo::Int, hi::Int, hasdegree::Bool
-    )
+    ea::PowerVector,
+    eb::PowerVector,
+    w::WeightedOrdering,
+    lo::Int,
+    hi::Int,
+    hasdegree::Bool
+)
     weights = w.weights
     common_type = promote_type(eltype(weights), eltype(ea))
     sa, sb = zero(common_type), zero(common_type)
     j = 1
-    @inbounds for i in (lo+hasdegree):hi
-        sa += weights[j]*ea[i]
-        sb += weights[j]*eb[i]
+    @inbounds for i in (lo + hasdegree):hi
+        sa += weights[j] * ea[i]
+        sb += weights[j] * eb[i]
         j += 1
     end
-    if sa < sb 
+    if sa < sb
         true
-    elseif sa == sb 
-        monom_isless(ea, eb, w.ord, lo+hasdegree, hi, false)
+    elseif sa == sb
+        monom_isless(ea, eb, w.ord, lo + hasdegree, hi, false)
     else
         false
     end
@@ -201,16 +220,21 @@ function monom_isless(ea::PowerVector, eb::PowerVector, b::BlockOrdering)
 end
 # Block, but on a given range of variables [lo:hi].
 function monom_isless(
-        ea::PowerVector, eb::PowerVector, b::BlockOrdering,
-        lo::Int, hi::Int, hasdegree::Bool)
+    ea::PowerVector,
+    eb::PowerVector,
+    b::BlockOrdering,
+    lo::Int,
+    hi::Int,
+    hasdegree::Bool
+)
     # here, it is assumed that lo:hi equals the union of r1 and r2
     r1, r2 = b.r1, b.r2
-    if monom_isless(ea, eb, b.ord1, first(r1)+hasdegree, last(r1)+hasdegree, false)
+    if monom_isless(ea, eb, b.ord1, first(r1) + hasdegree, last(r1) + hasdegree, false)
         true
-    elseif monom_isless(eb, ea, b.ord1, first(r1)+hasdegree, last(r1)+hasdegree, false)
+    elseif monom_isless(eb, ea, b.ord1, first(r1) + hasdegree, last(r1) + hasdegree, false)
         false
     else
-        monom_isless(ea, eb, b.ord2, first(r2)+hasdegree, last(r2)+hasdegree, false)
+        monom_isless(ea, eb, b.ord2, first(r2) + hasdegree, last(r2) + hasdegree, false)
     end
 end
 
@@ -220,16 +244,21 @@ function monom_isless(ea::PowerVector, eb::PowerVector, m::MatrixOrdering)
 end
 # Matrix, but on a given range of variables [lo:hi].
 function monom_isless(
-        ea::PowerVector, eb::PowerVector, m::MatrixOrdering,
-        lo::Int, hi::Int, hasdegree::Bool)
+    ea::PowerVector,
+    eb::PowerVector,
+    m::MatrixOrdering,
+    lo::Int,
+    hi::Int,
+    hasdegree::Bool
+)
     rows = m.rows
     @inbounds common_type = promote_type(eltype(rows[1]), eltype(ea))
     @inbounds for i in 1:length(rows)
         sa, sb = zero(common_type), zero(common_type)
         k = 1
-        for j in lo+hasdegree:hi
-            sa += rows[i][k]*common_type(ea[j])
-            sb += rows[i][k]*common_type(eb[j])
+        for j in (lo + hasdegree):hi
+            sa += rows[i][k] * common_type(ea[j])
+            sb += rows[i][k] * common_type(eb[j])
             k += 1
         end
         if sa < sb
@@ -269,7 +298,11 @@ end
 
 # Returns the product of monomials ea and eb.
 # Also writes the result to ec.
-function monom_product!(ec::PowerVector{T}, ea::PowerVector{T}, eb::PowerVector{T}) where {T}
+function monom_product!(
+    ec::PowerVector{T},
+    ea::PowerVector{T},
+    eb::PowerVector{T}
+) where {T}
     # @assert length(ec) == length(ea) == length(eb)
     @inbounds for j in 1:length(ec)
         ec[j] = ea[j] + eb[j]
@@ -279,7 +312,11 @@ end
 
 # Returns the result of monomial division ea / eb.
 # Also writes the result to ec.
-function monom_division!(ec::PowerVector{T}, ea::PowerVector{T}, eb::PowerVector{T}) where {T}
+function monom_division!(
+    ec::PowerVector{T},
+    ea::PowerVector{T},
+    eb::PowerVector{T}
+) where {T}
     # @assert length(ec) == length(ea) == length(eb)
     @inbounds for j in 1:length(ec)
         ec[j] = ea[j] - eb[j]
@@ -299,7 +336,11 @@ end
 
 # Checks if monomial eb divides monomial ea.
 # Also writes the resulting divisor to ec.
-function is_monom_divisible!(ec::PowerVector{T}, ea::PowerVector{T}, eb::PowerVector{T}) where {T}
+function is_monom_divisible!(
+    ec::PowerVector{T},
+    ea::PowerVector{T},
+    eb::PowerVector{T}
+) where {T}
     @inbounds for j in 1:length(ec)
         if ea[j] < eb[j]
             return false, ec
@@ -327,9 +368,10 @@ end
 function monom_divmask(
     e::PowerVector{T},
     DM::Type{Mask},
-    ndivvars, divmap,
-    ndivbits) where {T, Mask}
-
+    ndivvars,
+    divmap,
+    ndivbits
+) where {T, Mask}
     ctr = one(Mask)
     res = zero(Mask)
     o = one(Mask)
