@@ -13,7 +13,6 @@ global_logger(ConsoleLogger(stderr, Logging.Error))
 # BenchmarkTools.DEFAULT_PARAMETERS.seconds = 6
 BenchmarkTools.DEFAULT_PARAMETERS.samples = 4
 
-
 function benchmark_system_my(system)
     system = Groebner.change_ordering(system, :degrevlex)
     Groebner.groebner([system[1]])
@@ -23,21 +22,20 @@ function benchmark_system_my(system)
     # println("degree = $(maximum(AbstractAlgebra.total_degree, gb))")
 
     @btime Groebner.groebner($system, reduced=false, linalg=:prob)
-
 end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
-    ("cyclic 7", reverse(Groebner.cyclicn(7, ground=ground))),
-    ("cyclic 8", reverse(Groebner.cyclicn(8, ground=ground))),
+        ("cyclic 7", reverse(Groebner.cyclicn(7, ground=ground))),
+        ("cyclic 8", reverse(Groebner.cyclicn(8, ground=ground))),
         ("katsura 9", reverse(Groebner.katsuran(9, ground=ground))),
         ("katsura 10", reverse(Groebner.katsuran(10, ground=ground))),
         ("katsura 11", reverse(Groebner.katsuran(11, ground=ground))),
-        ("noon 7"    ,Groebner.noonn(7, ground=ground)),
-        ("noon 8"    ,Groebner.noonn(8, ground=ground)),
-        ("noon 9"    ,Groebner.noonn(9, ground=ground)),
-        ("eco 10"    ,Groebner.eco10(ground=ground)),
-        ("eco 11"    ,Groebner.eco11(ground=ground))
+        ("noon 7", Groebner.noonn(7, ground=ground)),
+        ("noon 8", Groebner.noonn(8, ground=ground)),
+        ("noon 9", Groebner.noonn(9, ground=ground)),
+        ("eco 10", Groebner.eco10(ground=ground)),
+        ("eco 11", Groebner.eco11(ground=ground))
     ]
 
     for (name, system) in systems
@@ -49,7 +47,6 @@ end
 println()
 ground = AbstractAlgebra.GF(2^50 + 55)
 run_f4_ff_degrevlex_benchmarks(ground)
-
 
 #=
 

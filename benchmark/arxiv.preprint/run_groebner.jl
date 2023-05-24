@@ -10,7 +10,7 @@ using Groebner
 import AbstractAlgebra
 using BenchmarkTools
 using Logging
-include((@__DIR__)*"/generate/benchmark_systems.jl")
+include((@__DIR__) * "/generate/benchmark_systems.jl")
 global_logger(ConsoleLogger(stderr, Logging.Error))
 
 # Benchmark the given system
@@ -25,7 +25,7 @@ end
 
 function run_f4_ff_degrevlex_benchmarks(flag)
     if flag
-        ground = AbstractAlgebra.GF(2^31-1)
+        ground = AbstractAlgebra.GF(2^31 - 1)
         systems = benchmark_systems_ff(ground)
     else
         ground = AbstractAlgebra.QQ

@@ -1,10 +1,10 @@
 
 function normal_form_f4!(
-            ring::PolyRing,
-            basis::Basis{C},
-            ht::MonomialHashtable,
-            tobereduced::Basis{C}) where {C<:Coeff}
-
+    ring::PolyRing,
+    basis::Basis{C},
+    ht::MonomialHashtable,
+    tobereduced::Basis{C}
+) where {C <: Coeff}
     matrix = initialize_matrix(ring, C)
     symbol_ht = initialize_secondary_hash_table(ht)
 
@@ -24,20 +24,19 @@ function normal_form_f4!(
 end
 
 function normal_form_f4(
-                ring::PolyRing,
-                basisexps::Vector{Vector{M}},
-                basiscoeffs::Vector{Vector{C}},
-                tobereducedexps::Vector{Vector{M}},
-                tobereducedcfs::Vector{Vector{C}},
-                rng::Rng,
-                tablesize::Int=2^16) where {M, Rng, C<:Coeff}
+    ring::PolyRing,
+    basisexps::Vector{Vector{M}},
+    basiscoeffs::Vector{Vector{C}},
+    tobereducedexps::Vector{Vector{M}},
+    tobereducedcfs::Vector{Vector{C}},
+    rng::Rng,
+    tablesize::Int=2^16
+) where {M, Rng, C <: Coeff}
+    basis, ht = initialize_structures(ring, basisexps, basiscoeffs, rng, tablesize)
 
-    basis, ht = initialize_structures(ring, basisexps,
-                                        basiscoeffs, rng, tablesize)
+    tobereduced, ht =
+        initialize_structures_nf(ring, tobereducedexps, tobereducedcfs, rng, tablesize, ht)
 
-    tobereduced, ht = initialize_structures_nf(ring, tobereducedexps,
-                                        tobereducedcfs, rng, tablesize, ht)
-                                        
     tobereduced = normal_form_f4!(ring, basis, ht, tobereduced)
 
     export_basis_data(tobereduced, ht)

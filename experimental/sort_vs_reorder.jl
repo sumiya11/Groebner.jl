@@ -27,7 +27,7 @@ end
 using BenchmarkTools
 
 x = rand(Int, 1000)
-x[rand(1:1000,500)] .= 0
+x[rand(1:1000, 500)] .= 0
 
 @benchmark f_continue($x)
 

@@ -6,7 +6,6 @@ using Base.Threads
 
 include("../src/Groebner.jl")
 
-
 function generatesystems(ground)
     [
         # ("noon 3", Groebner.noon3(ground=ground)),
@@ -15,7 +14,7 @@ function generatesystems(ground)
         ("cyclic 6", Groebner.cyclicn(6, ground=ground)),
         ("cyclic 7", Groebner.cyclicn(7, ground=ground)),
         ("cyclic 8", Groebner.cyclicn(8, ground=ground)),
-        ("cyclic 9", Groebner.cyclicn(9, ground=ground)),
+        ("cyclic 9", Groebner.cyclicn(9, ground=ground))
         # ("eco 11", Groebner.eco11(ground=ground)),
         # ("eco 12", Groebner.eco12(ground=ground)),
         # ("eco 13", Groebner.eco13(ground=ground))
@@ -31,7 +30,6 @@ function generatesystems(ground)
         # ("henrion 7", Groebner.henrion7(ground=ground))
     ]
 end
-
 
 function iszerodim(gb)
     R = parent(first(gb))
@@ -92,7 +90,6 @@ function systeminfo(system)
 end
 
 function runall(ground)
-
     println("-"^20)
     for (name, system) in generatesystems(ground)
         println(name)
@@ -101,5 +98,5 @@ function runall(ground)
     end
 end
 
-ground = GF(2^31-1)
+ground = GF(2^31 - 1)
 runall(ground)

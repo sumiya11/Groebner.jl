@@ -159,11 +159,14 @@ groebner([x*y + x, x + y^2], ordering=ord)
 struct WeightedOrdering{O} <: AbstractMonomialOrdering
     weights::Vector{UInt64}
     ord::O
-    function WeightedOrdering(weights::Vector{T}, o::O) where {T<:Integer, O<:AbstractMonomialOrdering}
+    function WeightedOrdering(
+        weights::Vector{T},
+        o::O
+    ) where {T <: Integer, O <: AbstractMonomialOrdering}
         @assert all(>=(0), weights) "Only non-negative weights are supported at the moment."
         new{O}(weights, o)
     end
-    function WeightedOrdering(weights::Vector{T}) where {T<:Integer}
+    function WeightedOrdering(weights::Vector{T}) where {T <: Integer}
         WeightedOrdering(weights, Lex())
     end
 end
@@ -215,10 +218,18 @@ struct BlockOrdering{R1, R2, O1, O2} <: AbstractMonomialOrdering
     ord1::O1
     ord2::O2
     function BlockOrdering(
-            r1::R1, o1::O1, r2::R2, o2::O2
-        ) where {R1<:AbstractRange, O1<:AbstractMonomialOrdering, R2<:AbstractRange, O2<:AbstractMonomialOrdering}
+        r1::R1,
+        o1::O1,
+        r2::R2,
+        o2::O2
+    ) where {
+        R1 <: AbstractRange,
+        O1 <: AbstractMonomialOrdering,
+        R2 <: AbstractRange,
+        O2 <: AbstractMonomialOrdering
+    }
         @assert isdisjoint(r1, r2) "Only disjoint ranges in the block ordering are supported. Given: $r1 and $r2"
-        @assert last(r1) + 1 == first(r2) "Only contiguous ranges in the block ordering are supported. Given: $r1 and $r2" 
+        @assert last(r1) + 1 == first(r2) "Only contiguous ranges in the block ordering are supported. Given: $r1 and $r2"
         new{R1, R2, O1, O2}(r1, r2, o1, o2)
     end
 end
@@ -256,18 +267,17 @@ groebner([x*y + w, y*z - w], ordering=ord)
 """
 struct MatrixOrdering <: AbstractMonomialOrdering
     rows::Vector{Vector{Int}}
-    
-    function MatrixOrdering(rows::Vector{Vector{T}}) where {T<:Integer}
+
+    function MatrixOrdering(rows::Vector{Vector{T}}) where {T <: Integer}
         @assert all(!isempty, rows)
         @assert length(unique(map(length, rows))) == 1
         # @assert all(row -> all(>=(0), row), rows)
         new(rows)
     end
 
-    function MatrixOrdering(mat::Matrix{T}) where {T<:Integer}
+    function MatrixOrdering(mat::Matrix{T}) where {T <: Integer}
         m, n = size(mat)
         rows = [mat[i, :] for i in 1:m]
         MatrixOrdering(rows)
     end
 end
-

@@ -75,11 +75,9 @@ const Monom = Union{ExponentVector, SparseExponentVector, PackedExponentVector}
 
 # the type of entry in the monom
 powertype(m::Monom) = eltype(typeof(m))
-powertype(::Type{M}) where {M<:Monom} = eltype(M)
+powertype(::Type{M}) where {M <: Monom} = eltype(M)
 
 #------------------------------------------------------------------------------
-
-
 
 #------------------------------------------------------------------------------
 

@@ -18,7 +18,7 @@
     y = [10, 20, 30, 40, 50]
     @test_throws Groebner.RecoverableException Groebner.make_ev(EV{UInt64, UInt8}, y)
 
-    for B in (UInt8, UInt16,)
+    for B in (UInt8, UInt16)
         for T in (UInt64, UInt32)
             for k in 1:10
                 maxvars = div(sizeof(T), sizeof(B)) - 1
@@ -54,14 +54,14 @@ end
     @test (ev.a1, ev.a2) == (0x000a000000000004, 0x0000000300020001)
     @test typeof(Groebner.totaldeg(ev)) === UInt64
     @test Groebner.totaldeg(ev) == UInt16(10)
-    
+
     y = [10, 20, 30, 40, 50]
     @test_throws Groebner.RecoverableException Groebner.make_ev(EV{UInt64, UInt8}, y)
 
-    for B in (UInt8, UInt16,)
+    for B in (UInt8, UInt16)
         for T in (UInt64, UInt32)
             for k in 1:10
-                maxvars = 2*div(sizeof(T), sizeof(B)) - 1
+                maxvars = 2 * div(sizeof(T), sizeof(B)) - 1
                 n = rand(1:maxvars)
                 @assert maxvars > 0
                 x = rand(0:10, n)
@@ -94,7 +94,7 @@ end
     @test (ev.a1, ev.a2) == (0x000a000000000004, 0x0000000300020001)
     @test typeof(Groebner.totaldeg(ev)) === UInt64
     @test Groebner.totaldeg(ev) == UInt16(10)
-    
+
     y = [10, 20, 30, 40, 50]
     @test_throws Groebner.RecoverableException Groebner.make_ev(EV{UInt64, UInt8}, y)
 
@@ -104,13 +104,13 @@ end
     @test ev.a2 == 0x0000000400000003
     @test ev.a3 == 0x0000000200000001
 
-    for B in (UInt8, UInt16,)
+    for B in (UInt8, UInt16)
         for T in (UInt64, UInt32)
             for k in 1:10
-                maxvars = 3*div(sizeof(T), sizeof(B)) - 1
+                maxvars = 3 * div(sizeof(T), sizeof(B)) - 1
                 n = rand(1:maxvars)
                 @assert maxvars > 0
-                x = rand(0:div(typemax(B), 4*n), n)
+                x = rand(0:div(typemax(B), 4 * n), n)
                 tmp = similar(x)
                 ev = Groebner.make_ev(EV{T, B}, x)
                 @test x == Groebner.make_dense!(tmp, ev)
@@ -119,4 +119,3 @@ end
         end
     end
 end
-

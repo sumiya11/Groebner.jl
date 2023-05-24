@@ -2,7 +2,6 @@
 using Primes
 
 @testset "chinese remainder theorem" begin
-
     modular_images(a, ms) = map(m -> mod(a, m), ms)
 
     Ms = [
@@ -16,7 +15,7 @@ using Primes
 
     for ms in Ms
         M = prod(ms)
-        nums = [rand(0:M-1) for _ in 1:1000]
+        nums = [rand(0:(M - 1)) for _ in 1:1000]
 
         msinv = [invmod(ms[1], ms[2]), invmod(ms[2], ms[1])]
         for a in nums
@@ -28,7 +27,5 @@ using Primes
             Groebner.CRT!(M, buf, n1, n2, r1, minv1, UInt64(r2), minv2, m1, m2)
             @test buf == a
         end
-
     end
-
 end

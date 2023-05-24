@@ -1,13 +1,14 @@
- 
+
 function groebner(
-        polynomials::AbstractVector, 
-        representation::RepresentationStyle, 
-        reduced::Bool, 
-        ordering::AbstractMonomialOrdering, 
-        certify::Bool, 
-        linalg::Symbol, 
-        rng,
-        maxpairs::Int)
+    polynomials::AbstractVector,
+    representation::RepresentationStyle,
+    reduced::Bool,
+    ordering::AbstractMonomialOrdering,
+    certify::Bool,
+    linalg::Symbol,
+    rng,
+    maxpairs::Int
+)
     #= extract ring information, exponents and coefficients
        from input polynomials =#
     # Copies input, so that polynomials would not be changed itself.
@@ -39,19 +40,19 @@ end
 # just initialize and call f4 modulo a prime.
 
 function groebner(
-        ring::PolyRing,
-        exps::Vector{Vector{M}},
-        coeffs::Vector{Vector{C}},
-        reduced::Bool,
-        meta::GroebnerMetainfo{Rng},
-        maxpairs) where {M<:Monom, C<:CoeffFF, Rng<:Random.AbstractRNG}
+    ring::PolyRing,
+    exps::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    reduced::Bool,
+    meta::GroebnerMetainfo{Rng},
+    maxpairs
+) where {M <: Monom, C <: CoeffFF, Rng <: Random.AbstractRNG}
 
     # select hashtable size
     tablesize = select_tablesize(ring, exps)
 
     # initialize basis and hashtable structures
-    basis, ht = initialize_structures(
-                        ring, exps, coeffs, meta.rng, tablesize)
+    basis, ht = initialize_structures(ring, exps, coeffs, meta.rng, tablesize)
 
     f4!(ring, basis, ht, reduced, meta.linalg, meta.rng, maxpairs=maxpairs)
 
@@ -83,12 +84,13 @@ initial_gaps() = (1, 1, 1, 1, 1)
 batchsize_multiplier() = 2
 
 function groebner(
-            ring::PolyRing,
-            exps::Vector{Vector{M}},
-            coeffs::Vector{Vector{C}},
-            reduced::Bool,
-            meta::GroebnerMetainfo,
-            maxpairs) where {M<:Monom, C<:CoeffQQ}
+    ring::PolyRing,
+    exps::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    reduced::Bool,
+    meta::GroebnerMetainfo,
+    maxpairs
+) where {M <: Monom, C <: CoeffQQ}
 
     # we can mutate coeffs and exps here
 
@@ -97,8 +99,7 @@ function groebner(
     @info "Selected tablesize $tablesize"
 
     # initialize hashtable and finite field basis structs
-    gens_temp_ff, ht = initialize_structures_ff(ring, exps,
-                                        coeffs, meta.rng, tablesize)
+    gens_temp_ff, ht = initialize_structures_ff(ring, exps, coeffs, meta.rng, tablesize)
     gens_ff = deepcopy_basis(gens_temp_ff)
 
     # now hashtable is filled correctly,
@@ -107,7 +108,7 @@ function groebner(
     # gens_temp_ff.ch is 0
 
     # to store integer and rational coefficients of groebner basis
-    coeffaccum  = CoeffAccum{BigInt, Rational{BigInt}}()
+    coeffaccum = CoeffAccum{BigInt, Rational{BigInt}}()
     # to store BigInt buffers and reduce overall memory usage
     coeffbuffer = CoeffBuffer()
 
@@ -150,12 +151,23 @@ function groebner(
     reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
 
     correct = false
-    if correctness_check!(coeffaccum, coeffbuffer, primetracker, meta,
-                            ring, exps, coeffs, coeffs_zz, gens_temp_ff, gens_ff, ht)
+    if correctness_check!(
+        coeffaccum,
+        coeffbuffer,
+        primetracker,
+        meta,
+        ring,
+        exps,
+        coeffs,
+        coeffs_zz,
+        gens_temp_ff,
+        gens_ff,
+        ht
+    )
         @info "Reconstructed successfuly"
         correct = true
     end
-    
+
     # initial batch size
     batchsize = initial_batchsize()
     gaps = initial_gaps()
@@ -166,7 +178,7 @@ function groebner(
         if i <= length(gaps)
             batchsize = gaps[i]
         else
-            batchsize = batchsize*multiplier
+            batchsize = batchsize * multiplier
         end
 
         for j in 1:batchsize
@@ -183,7 +195,17 @@ function groebner(
             # compute groebner basis in finite field
             # Need to make sure input invariants in f4! are satisfied, see f4/f4.jl for details
 
-            f4!(ring, gens_ff, tracer, pairset, ht, reduced, meta.linalg, meta.rng, maxpairs)
+            f4!(
+                ring,
+                gens_ff,
+                tracer,
+                pairset,
+                ht,
+                reduced,
+                meta.linalg,
+                meta.rng,
+                maxpairs
+            )
             # reconstruct to integers
             @info "CRT modulo ($(primetracker.modulo), $(prime))"
 
@@ -197,8 +219,19 @@ function groebner(
         success = reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
         !success && continue
 
-        if correctness_check!(coeffaccum, coeffbuffer, primetracker, meta,
-                                ring, exps, coeffs, coeffs_zz, gens_temp_ff, gens_ff, ht)
+        if correctness_check!(
+            coeffaccum,
+            coeffbuffer,
+            primetracker,
+            meta,
+            ring,
+            exps,
+            coeffs,
+            coeffs_zz,
+            gens_temp_ff,
+            gens_ff,
+            ht
+        )
             @info "Success!"
             correct = true
         end
@@ -216,4 +249,3 @@ function groebner(
     gb_exps = hash_to_exponents(gens_ff, ht)
     gb_exps, coeffaccum.gb_coeffs_qq
 end
-

@@ -1,25 +1,18 @@
 
-
-
-
-
-
-
 using AbstractAlgebra
 using Logging
 
 global_logger(Logging.ConsoleLogger(Logging.Info))
 
-
 struct RewriteSystem
-    tails  # vector of tails
-    rules  # vector of rewriters
+    tails::Any  # vector of tails
+    rules::Any  # vector of rewriters
 end
 
 struct Rewriter
     idx::Integer
-    monom
-    terminal
+    monom::Any
+    terminal::Any
 end
 
 function addrule!(RS, i, m)
@@ -33,11 +26,11 @@ end
 
 function findrewriter(monom, RS)
     for rule in reverse(RS.rules)
-        t, d = divides(monom, rule.monom*first(RS.tails[rule.idx]))
+        t, d = divides(monom, rule.monom * first(RS.tails[rule.idx]))
         if t
             @info "found rule" rule
-            addrule!(RS, rule.idx, rule.monom*d)
-            return d, rule.monom*last(RS.tails[rule.idx])
+            addrule!(RS, rule.idx, rule.monom * d)
+            return d, rule.monom * last(RS.tails[rule.idx])
         end
     end
     return monom, zero(monom)
@@ -47,11 +40,11 @@ function rewrite(mult, f, RS)
     newmonoms = []
     @warn "rewriting" mult f
     for m in monomials(f)
-        mm = mult*m
+        mm = mult * m
         mult1, rewriter = findrewriter(mm, RS)
         @info m mm mult1 rewriter
         if !iszero(rewriter)
-            append!(newmonoms, .- rewrite(mult1, rewriter, RS))
+            append!(newmonoms, .-rewrite(mult1, rewriter, RS))
         else
             push!(newmonoms, mm)
         end

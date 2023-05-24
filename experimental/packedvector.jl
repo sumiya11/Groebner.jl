@@ -15,7 +15,7 @@
 #
 # conversion from dense vector to PackedVector{T, B}: free
 # conversion from PackedVector{T, B} to dense vector: need length
-struct PackedVector{T<:Unsigned, B<:Unsigned}
+struct PackedVector{T <: Unsigned, B <: Unsigned}
     data::Vector{T}
 end
 
@@ -25,22 +25,22 @@ end
 
 Base.eltype(::Type{PackedVector{T, B}}) where {T, B} = B
 Base.eltype(::PackedVector{T, B}) where {T, B} = B
-Base.copy(pv::PackedVector{T,B}) where {T, B} = PackedVector{T,B}(copy(pv.data))
+Base.copy(pv::PackedVector{T, B}) where {T, B} = PackedVector{T, B}(copy(pv.data))
 
-capacity(::Type{PackedVector{T, B}}) where {T,B} = 2^32
-capacity(::PackedVector{T, B}) where {T,B} = capacity(PackedVector{T, B})
+capacity(::Type{PackedVector{T, B}}) where {T, B} = 2^32
+capacity(::PackedVector{T, B}) where {T, B} = capacity(PackedVector{T, B})
 
 PackedVector(ev) = PackedVector{UInt64}(ev)
-PackedVector{T}(ev) where {T<:Unsigned} = PackedVector{T, UInt8}(ev)
+PackedVector{T}(ev) where {T <: Unsigned} = PackedVector{T, UInt8}(ev)
 
 function totaldeg(pv::PackedVector{T, B}) where {T, B}
-    B(@inbounds(pv.data[1]) >> (8*(sizeof(T) - sizeof(B))))
+    B(@inbounds(pv.data[1]) >> (8 * (sizeof(T) - sizeof(B))))
 end
 
 function make_ev(::Type{PackedVector{T, B}}, ev::Vector{U}) where {T, B, U}
     ts, bs = sizeof(T), sizeof(B)
     epc = div(ts, bs)
-    @assert epc*bs == ts
+    @assert epc * bs == ts
     n = length(ev)
     nch = nchunks(T, B, n)
     indent = ts - degsize(T, B, n)
@@ -51,10 +51,10 @@ function make_ev(::Type{PackedVector{T, B}}, ev::Vector{U}) where {T, B, U}
         j = nch + 1 - (div(i - 1, epc) + 1)
         islast = iszero(mod(i - 1, epc))
         data[j] = data[j] | d
-        !islast && (data[j] = data[j] << (bs*8))
+        !islast && (data[j] = data[j] << (bs * 8))
         s += d
     end
-    @inbounds data[1] |= s << (indent*8)
+    @inbounds data[1] |= s << (indent * 8)
     PackedVector{T, B}(data)
 end
 
@@ -86,7 +86,7 @@ function Base.hash(x::PackedVector{T, B}, b::PackedVector{T, B}) where {T, B}
     maxT = promote_type(T, MonomHash)
     h = zero(maxT)
     @inbounds for i in 1:length(x.data)
-        h += maxT(x.data[i])*b.data[i]
+        h += maxT(x.data[i]) * b.data[i]
     end
     mod(h, MonomHash)
 end
@@ -97,10 +97,7 @@ function revealify(pv::PackedVector{T, B}) where {T, B}
     ans = Vector{Vector{String}}()
     for chunk in pv.data
         bs = bitstring(chunk)
-        s = [
-            bs[(i-1)*8+1:i*8] 
-            for i in 1:epc
-        ]
+        s = [bs[((i - 1) * 8 + 1):(i * 8)] for i in 1:epc]
         push!(ans, s)
     end
     ans
@@ -109,14 +106,14 @@ end
 #------------------------------------------------------------------------------
 
 function exponent_isless_lex(ea::PackedVector{T, B}, eb::PackedVector{T, B}) where {T, B}
-    s = div(sizeof(T), sizeof(B))*length(ea.data)
+    s = div(sizeof(T), sizeof(B)) * length(ea.data)
     a = make_ev(PowerVector{T}, make_dense(ea, s))
     b = make_ev(PowerVector{T}, make_dense(eb, s))
     exponent_isless_lex(a, b)
 end
 
 function exponent_isless_dl(ea::PackedVector{T, B}, eb::PackedVector{T, B}) where {T, B}
-    s = div(sizeof(T), sizeof(B))*length(ea.data)
+    s = div(sizeof(T), sizeof(B)) * length(ea.data)
     a = make_ev(PowerVector{T}, make_dense(ea, s))
     b = make_ev(PowerVector{T}, make_dense(eb, s))
     exponent_isless_dl(a, b)
@@ -142,12 +139,16 @@ end
 
 #------------------------------------------------------------------------------
 
-function monom_lcm!(ec::PackedVector{T, B}, ea::PackedVector{T, B}, eb::PackedVector{T, B}) where {T, B}
+function monom_lcm!(
+    ec::PackedVector{T, B},
+    ea::PackedVector{T, B},
+    eb::PackedVector{T, B}
+) where {T, B}
     @inbounds ec.data[1] = zero(T)
     @inbounds for i in 1:length(ec.data)
         a, b = ea.data[i], eb.data[i]
         ec.data[i], si = packedmax(a, b, B, Val(isone(i)))
-        ec.data[1] += si << ((sizeof(T) - sizeof(B))*8)
+        ec.data[1] += si << ((sizeof(T) - sizeof(B)) * 8)
     end
     _overflow_check(ec)
     ec
@@ -162,7 +163,11 @@ function is_gcd_const(ea::PackedVector{T, B}, eb::PackedVector{T, B}) where {T, 
     return true
 end
 
-function monom_product!(ec::PackedVector{T, B}, ea::PackedVector{T, B}, eb::PackedVector{T, B}) where {T, B}
+function monom_product!(
+    ec::PackedVector{T, B},
+    ea::PackedVector{T, B},
+    eb::PackedVector{T, B}
+) where {T, B}
     @assert length(ec.data) == length(ea.data) == length(eb.data)
     for i in 1:length(ec.data)
         ec.data[i] = ea.data[i] + eb.data[i]
@@ -171,7 +176,11 @@ function monom_product!(ec::PackedVector{T, B}, ea::PackedVector{T, B}, eb::Pack
     ec
 end
 
-function monom_division!(ec::PackedVector{T, B}, ea::PackedVector{T, B}, eb::PackedVector{T, B}) where {T, B}
+function monom_division!(
+    ec::PackedVector{T, B},
+    ea::PackedVector{T, B},
+    eb::PackedVector{T, B}
+) where {T, B}
     @assert length(ec.data) == length(ea.data) == length(eb.data)
     for i in 1:length(ec.data)
         ec.data[i] = ea.data[i] - eb.data[i]
@@ -188,13 +197,20 @@ function is_monom_divisible(ea::PackedVector{T, B}, eb::PackedVector{T, B}) wher
     return true
 end
 
-function is_monom_divisible!(ec::PackedVector{T, B}, ea::PackedVector{T, B}, eb::PackedVector{T, B}) where {T, B}
+function is_monom_divisible!(
+    ec::PackedVector{T, B},
+    ea::PackedVector{T, B},
+    eb::PackedVector{T, B}
+) where {T, B}
     ans = is_monom_divisible(ea, eb)
     ans && monom_division!(ec, ea, eb)
     ans, ec
 end
 
-function is_monom_elementwise_eq(ea::PackedVector{T, B}, eb::PackedVector{T, B}) where {T, B}
+function is_monom_elementwise_eq(
+    ea::PackedVector{T, B},
+    eb::PackedVector{T, B}
+) where {T, B}
     @inbounds ea.data[1] != eb.data[1] && return false
     @inbounds for i in 2:length(ea.data)
         if ea.data[i] != eb.data[i]
@@ -209,10 +225,11 @@ end
 function monom_divmask(
     e::PackedVector{T, B},
     DM::Type{Mask},
-    ndivvars, divmap,
-    ndivbits) where {T, B, Mask}
-
-    ee = make_dense(e, length(e.data)*div(sizeof(T), sizeof(B)))
+    ndivvars,
+    divmap,
+    ndivbits
+) where {T, B, Mask}
+    ee = make_dense(e, length(e.data) * div(sizeof(T), sizeof(B)))
 
     ctr = one(Mask)
     res = zero(Mask)

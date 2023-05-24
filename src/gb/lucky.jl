@@ -19,7 +19,11 @@ const FIRST_LUCKY_PRIME = 2^31 - 1
 const FIRST_GOOD_PRIME  = 2^30 + 3
 
 @noinline function _too_large_coefficient(modulo)
-    throw(ErrorException("Too large coefficient encountered in the basis (last prime is $modulo). This should not happen normally, please sumbit an issue."))
+    throw(
+        ErrorException(
+            "Too large coefficient encountered in the basis (last prime is $modulo). This should not happen normally, please sumbit an issue."
+        )
+    )
 end
 
 # PrimeTracker.
@@ -46,7 +50,8 @@ mutable struct PrimeTracker
     end
 end
 
-updatemodulo!(tracker::PrimeTracker) = Base.GMP.MPZ.mul_ui!(tracker.modulo, last(tracker.primes))
+updatemodulo!(tracker::PrimeTracker) =
+    Base.GMP.MPZ.mul_ui!(tracker.modulo, last(tracker.primes))
 
 # Check if prime is lucky w.r.t. coefficients from tracker
 # i.e., does not divide any of the leading coefficients

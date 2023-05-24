@@ -18,7 +18,7 @@ function read_BIOMDs(nspecies)
 
         io = open(abspath("benchmark/biomodels/$smth/parameters.txt"), "r")
         params = readlines(io)
-        params = map(p -> replace(p, "/"=>"//"), params)
+        params = map(p -> replace(p, "/" => "//"), params)
         params = map(params) do p
             p = split(p, " = ")
             if occursin("//", p[2])
@@ -36,14 +36,16 @@ function read_BIOMDs(nspecies)
 
         symvs = map(x -> Symbol(x), vs)
         expvs = Meta.parse(join(symvs, ","))
-        R, xs = eval(:((R, $expvs) = AbstractAlgebra.PolynomialRing(AbstractAlgebra.QQ, $symvs)))
+        R, xs = eval(
+            :((R, $expvs) = AbstractAlgebra.PolynomialRing(AbstractAlgebra.QQ, $symvs))
+        )
 
         for p in params
             p = eval(Meta.parse(p))
         end
 
         for ode in odes
-            ode = replace(ode, "{"=>"","}"=>"", "/"=>"//",","=>" ")
+            ode = replace(ode, "{" => "", "}" => "", "/" => "//", "," => " ")
             ode = strip(last(split(ode, "=")))
             poly = eval(Meta.parse(ode))
             push!(system, poly)

@@ -17,10 +17,10 @@ abstract type RepresentationStyle end
 struct SafeRepresentation <: RepresentationStyle end
 struct UnsafeRepresentation <: RepresentationStyle end
 
-struct Representation{M<:Monom} <: RepresentationStyle end
+struct Representation{M <: Monom} <: RepresentationStyle end
 
 # The number of variables in monomial representation max.
-capacity(::Representation{M}) where {M<:Monom} = capacity(M)
+capacity(::Representation{M}) where {M <: Monom} = capacity(M)
 
 # The user can give a hint of the desired monomal representation,
 # Possible hints are:
@@ -28,9 +28,9 @@ capacity(::Representation{M}) where {M<:Monom} = capacity(M)
 # - NotPacked{E<:Unsigned} - not packed representation with sizeof(E)*8 bits per exponent
 # - Sparse{E<:Unsigned} (currently not used)
 abstract type RepresentationHint{E} end
-struct NotPacked{E<:Unsigned} <: RepresentationHint{E} end
-struct Packed{E<:Unsigned} <: RepresentationHint{E} end
-struct Sparse{E<:Unsigned} <: RepresentationHint{E} end
+struct NotPacked{E <: Unsigned} <: RepresentationHint{E} end
+struct Packed{E <: Unsigned} <: RepresentationHint{E} end
+struct Sparse{E <: Unsigned} <: RepresentationHint{E} end
 
 # representation is safe if it can store exponents up to at least 2^32 - 1
 issafe(::T) where {T <: RepresentationHint{E}} where {E} = sizeof(E) >= 4
@@ -54,13 +54,18 @@ function default_safe_representation(hint::T) where {T <: RepresentationHint{E}}
     Representation{PowerVector{E}}()
 end
 
-guess_effective_representation(polynomials) = guess_effective_representation(polynomials, SafeRepresentation())
-guess_effective_representation(polynomials, s::RepresentationStyle) = guess_effective_representation(polynomials, s, bestsafe())
+guess_effective_representation(polynomials) =
+    guess_effective_representation(polynomials, SafeRepresentation())
+guess_effective_representation(polynomials, s::RepresentationStyle) =
+    guess_effective_representation(polynomials, s, bestsafe())
 
 # guess effective Safe representation
 function guess_effective_representation(
-        polynomials, s::SafeRepresentation, ordering, hint::T
-        ) where {T<:RepresentationHint{E}} where {E}
+    polynomials,
+    s::SafeRepresentation,
+    ordering,
+    hint::T
+) where {T <: RepresentationHint{E}} where {E}
     if !issafe(hint) || !isgoodpacked(hint)
         _not_effective_repr(hint)
         hint = bestsafe()
@@ -70,20 +75,22 @@ end
 
 # guess effective Unsafe Not packed representation
 function guess_effective_representation(
-        polynomials, 
-        s::UnsafeRepresentation, 
-        ordering, 
-        hint::NotPacked{E}) where {E}
+    polynomials,
+    s::UnsafeRepresentation,
+    ordering,
+    hint::NotPacked{E}
+) where {E}
     @assert is_supported_ordering(PowerVector{E}, ordering)
     Representation{PowerVector{E}}()
 end
 
 # guess effective Unsafe packed representation
 function guess_effective_representation(
-        polynomials, 
-        s::UnsafeRepresentation, 
-        ordering, 
-        hint::Packed{E}) where {E}
+    polynomials,
+    s::UnsafeRepresentation,
+    ordering,
+    hint::Packed{E}
+) where {E}
     if !isgoodpacked(hint)
         _not_effective_repr(hint)
         hint = best_monom_representation()
@@ -91,7 +98,7 @@ function guess_effective_representation(
     first_impression = peek_at_polynomials(polynomials)
     elper8bytes = div(8, sizeof(E))
     # if we want a non-packed representation
-    if first_impression.nvars > 3*elper8bytes
+    if first_impression.nvars > 3 * elper8bytes
         @assert is_supported_ordering(PowerVector{E}, ordering)
         return Representation{PowerVector{E}}()
     end
@@ -99,9 +106,9 @@ function guess_effective_representation(
     if is_supported_ordering(AbstractPackedPair, ordering)
         if first_impression.nvars < elper8bytes
             return Representation{PackedPair1{UInt64, E}}()
-        elseif first_impression.nvars < 2*elper8bytes
+        elseif first_impression.nvars < 2 * elper8bytes
             return Representation{PackedPair2{UInt64, E}}()
-        elseif first_impression.nvars < 3*elper8bytes
+        elseif first_impression.nvars < 3 * elper8bytes
             return Representation{PackedPair3{UInt64, E}}()
         end
     end
@@ -113,11 +120,11 @@ function peek_at_polynomials(polynomials::Vector{T}) where {T}
     (nvars=2^32,)
 end
 
-function peek_at_polynomials(polynomials::Vector{T}) where {T<:AbstractAlgebra.Generic.MPolyElem}
+function peek_at_polynomials(
+    polynomials::Vector{T}
+) where {T <: AbstractAlgebra.Generic.MPolyElem}
     isempty(polynomials) && return (nvars=2^32,)
-    (
-        nvars=AbstractAlgebra.nvars(parent(polynomials[1])),
-    )
+    (nvars=AbstractAlgebra.nvars(parent(polynomials[1])),)
 end
 
 #------------------------------------------------------------------------------
@@ -159,9 +166,16 @@ struct GroebnerMetainfo{Rng, Ord1, Ord2}
     rng::Rng
 end
 
-function set_metaparameters(ring, ordering, certify, linalg, rng, maxpairs::Int=typemax(Int))
+function set_metaparameters(
+    ring,
+    ordering,
+    certify,
+    linalg,
+    rng,
+    maxpairs::Int=typemax(Int)
+)
     @assert maxpairs > 0 "The number of pairs must be greater than zero"
-    
+
     usefglm = false
     targetord = Lex()
     computeord = Lex()
@@ -202,7 +216,15 @@ function set_metaparameters(ring, ordering, certify, linalg, rng, maxpairs::Int=
     @info "Computing in $computeord order, result is in $targetord order"
     @info "Using fglm: $usefglm"
 
-    GroebnerMetainfo(usefglm, targetord, computeord,
-                        heuristiccheck, randomizedcheck, guaranteedcheck,
-                        linalg, ground, rng)
+    GroebnerMetainfo(
+        usefglm,
+        targetord,
+        computeord,
+        heuristiccheck,
+        randomizedcheck,
+        guaranteedcheck,
+        linalg,
+        ground,
+        rng
+    )
 end

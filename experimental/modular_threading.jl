@@ -28,9 +28,4 @@ function uwu(rows)
     end
 end
 
-rows = [
-    randn(1000)
-    for i in 1:20
-];
-
-
+rows = [randn(1000) for i in 1:20];

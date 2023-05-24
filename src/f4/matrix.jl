@@ -4,7 +4,7 @@
 #
 #
 
-mutable struct MacaulayMatrix{T<:Coeff}
+mutable struct MacaulayMatrix{T <: Coeff}
     #=
         Matrix of the structure
 
@@ -64,7 +64,7 @@ mutable struct MacaulayMatrix{T<:Coeff}
 end
 
 # Initializes an empty matrix with coefficients of type T
-function initialize_matrix(ring::PolyRing, ::Type{T}) where {T<:Coeff}
+function initialize_matrix(ring::PolyRing, ::Type{T}) where {T <: Coeff}
     uprows = Vector{Vector{ColumnIdx}}(undef, 0)
     lowrows = Vector{Vector{ColumnIdx}}(undef, 0)
     col2hash = Vector{MonomIdx}(undef, 0)
@@ -83,10 +83,22 @@ function initialize_matrix(ring::PolyRing, ::Type{T}) where {T<:Coeff}
     up2coef = Vector{Int}(undef, 0)
     low2coef = Vector{Int}(undef, 0)
 
-    MacaulayMatrix(uprows, lowrows, col2hash, coeffs,
-        size, npivots, nrows, ncols,
-        nup, nlow, nleft, nright,
-        up2coef, low2coef)
+    MacaulayMatrix(
+        uprows,
+        lowrows,
+        col2hash,
+        coeffs,
+        size,
+        npivots,
+        nrows,
+        ncols,
+        nup,
+        nlow,
+        nleft,
+        nright,
+        up2coef,
+        low2coef
+    )
 end
 
 # Refresh and initialize matrix for `npairs` elements
@@ -106,12 +118,24 @@ end
 
 #------------------------------------------------------------------------------
 
-function linear_algebra!(ring::PolyRing, matrix::MacaulayMatrix, basis::Basis, linalg::Val{:exact}, rng)
+function linear_algebra!(
+    ring::PolyRing,
+    matrix::MacaulayMatrix,
+    basis::Basis,
+    linalg::Val{:exact},
+    rng
+)
     resize!(matrix.coeffs, matrix.nlow)
     exact_sparse_rref!(ring, matrix, basis)
 end
 
-function linear_algebra!(ring::PolyRing, matrix::MacaulayMatrix, basis::Basis, linalg::Val{:prob}, rng)
+function linear_algebra!(
+    ring::PolyRing,
+    matrix::MacaulayMatrix,
+    basis::Basis,
+    linalg::Val{:prob},
+    rng
+)
     resize!(matrix.coeffs, matrix.nlow)
     randomized_sparse_rref!(ring, matrix, basis, rng)
 end
@@ -121,7 +145,7 @@ end
 # TODO: Move this to arithmetic/modular.jl
 
 # finite field arithmetic in case of UInt8, UInt16, UInt32, UInt64
-function select_arithmetic(coeffs::Vector{Vector{T}}, ch) where {T<:CoeffFF}
+function select_arithmetic(coeffs::Vector{Vector{T}}, ch) where {T <: CoeffFF}
     SpecializedBuiltinModularArithmetic(ch)
 end
 
@@ -131,7 +155,7 @@ function select_arithmetic(coeffs::Vector{Vector{UInt128}}, ch)
 end
 
 # arithmetic over rational numbers
-function select_arithmetic(coeffs::Vector{Vector{T}}, ch) where {T<:CoeffQQ}
+function select_arithmetic(coeffs::Vector{Vector{T}}, ch) where {T <: CoeffQQ}
     ch
 end
 
@@ -140,7 +164,7 @@ end
 # Normalize `row` by first coefficient
 #
 # Finite field magic specialization
-function normalize_sparse_row!(row::Vector{T}, arithmetic) where {T<:CoeffFF}
+function normalize_sparse_row!(row::Vector{T}, arithmetic) where {T <: CoeffFF}
     @inbounds if isone(row[1])
         return row
     end
@@ -155,7 +179,7 @@ end
 # Normalize `row` by first coefficient
 #
 # Rational field specialization
-function normalize_sparse_row!(row::Vector{T}, ch) where {T<:CoeffQQ}
+function normalize_sparse_row!(row::Vector{T}, ch) where {T <: CoeffQQ}
     @inbounds if isone(row[1])
         return row
     end
@@ -170,9 +194,12 @@ end
 # reduces row by mul*cfs modulo ch at indices positions
 #
 # Finite field magic specialization
-function reduce_by_pivot!(row::Vector{T}, indices::Vector{ColumnIdx},
-        cfs::Vector{T}, arithmetic) where {T<:CoeffFF}
-
+function reduce_by_pivot!(
+    row::Vector{T},
+    indices::Vector{ColumnIdx},
+    cfs::Vector{T},
+    arithmetic
+) where {T <: CoeffFF}
     @inbounds mul = divisor(arithmetic) - row[indices[1]]
 
     # on our benchmarks usually
@@ -188,9 +215,12 @@ end
 # reduces row by mul*cfs at indices positions
 #
 # Rational field specialization
-function reduce_by_pivot!(row::Vector{T}, indices::Vector{ColumnIdx},
-        cfs::Vector{T}, ch) where {T<:CoeffQQ}
-
+function reduce_by_pivot!(
+    row::Vector{T},
+    indices::Vector{ColumnIdx},
+    cfs::Vector{T},
+    ch
+) where {T <: CoeffQQ}
     @inbounds mul = -row[indices[1]]
 
     @inbounds for j in 1:length(indices)
@@ -204,7 +234,11 @@ end
 # zero entries of densecoeffs and load coefficients cfsref to indices rowexps
 #
 # Finite field specialization
-function load_indexed_coefficients!(densecoeffs::Vector{T}, rowexps, cfsref) where {T<:CoeffFF}
+function load_indexed_coefficients!(
+    densecoeffs::Vector{T},
+    rowexps,
+    cfsref
+) where {T <: CoeffFF}
     @inbounds for i in 1:length(densecoeffs)
         densecoeffs[i] = T(0)
     end
@@ -216,7 +250,11 @@ end
 # zero entries of densecoeffs and load coefficients cfsref to indices rowexps
 #
 # Rational numbers specialization
-function load_indexed_coefficients!(densecoeffs::Vector{T}, rowexps, cfsref) where {T<:CoeffQQ}
+function load_indexed_coefficients!(
+    densecoeffs::Vector{T},
+    rowexps,
+    cfsref
+) where {T <: CoeffQQ}
     densecoeffs .= T(0)
     @inbounds for j in 1:length(rowexps)
         densecoeffs[rowexps[j]] = cfsref[j]
@@ -226,20 +264,37 @@ end
 #------------------------------------------------------------------------------
 
 function reduce_dense_row_by_known_pivots_sparse!(
-        densecoeffs::Vector{C}, matrix::MacaulayMatrix{C}, basis::Basis{C},
-        pivs::Vector{Vector{ColumnIdx}}, startcol, tmp_pos, magic;
-        exact_colmap::Bool=false) where {C<:Coeff}
-    reduce_dense_row_by_known_pivots_sparse!(densecoeffs, matrix, basis, pivs, 
-            ColumnIdx(startcol), ColumnIdx(tmp_pos), magic; 
-            exact_colmap=exact_colmap)
+    densecoeffs::Vector{C},
+    matrix::MacaulayMatrix{C},
+    basis::Basis{C},
+    pivs::Vector{Vector{ColumnIdx}},
+    startcol,
+    tmp_pos,
+    magic;
+    exact_colmap::Bool=false
+) where {C <: Coeff}
+    reduce_dense_row_by_known_pivots_sparse!(
+        densecoeffs,
+        matrix,
+        basis,
+        pivs,
+        ColumnIdx(startcol),
+        ColumnIdx(tmp_pos),
+        magic;
+        exact_colmap=exact_colmap
+    )
 end
 
 function reduce_dense_row_by_known_pivots_sparse!(
-    densecoeffs::Vector{C}, matrix::MacaulayMatrix{C}, basis::Basis{C},
-    pivs::Vector{Vector{ColumnIdx}}, startcol::ColumnIdx, tmp_pos::ColumnIdx, 
+    densecoeffs::Vector{C},
+    matrix::MacaulayMatrix{C},
+    basis::Basis{C},
+    pivs::Vector{Vector{ColumnIdx}},
+    startcol::ColumnIdx,
+    tmp_pos::ColumnIdx,
     arithmetic;
-    exact_colmap::Bool=false) where {C<:Coeff}
-
+    exact_colmap::Bool=false
+) where {C <: Coeff}
     ncols = matrix.ncols
     nleft = matrix.nleft
 
@@ -305,17 +360,23 @@ end
 
 function absolute_pivots!(matrix::MacaulayMatrix)
     pivs = Vector{Vector{ColumnIdx}}(undef, matrix.ncols)
-    @inbounds for i in 1:matrix.nup
+    @inbounds for i in 1:(matrix.nup)
         pivs[i] = matrix.uprows[i]
     end
     l2c_tmp = Vector{ColumnIdx}(undef, max(matrix.ncols, matrix.nlow))
-    @inbounds for i in 1:matrix.nlow
+    @inbounds for i in 1:(matrix.nlow)
         l2c_tmp[matrix.lowrows[i][1]] = matrix.low2coef[i]
     end
     pivs, l2c_tmp
 end
 
-function interreduce_lower_part!(matrix::MacaulayMatrix{C}, basis::Basis{C}, pivs, arithmetic; reversed=false) where {C<:Coeff}
+function interreduce_lower_part!(
+    matrix::MacaulayMatrix{C},
+    basis::Basis{C},
+    pivs,
+    arithmetic;
+    reversed=false
+) where {C <: Coeff}
     # number of new pivots
     newpivs = 0
     densecoeffs = zeros(C, matrix.ncols)
@@ -323,7 +384,7 @@ function interreduce_lower_part!(matrix::MacaulayMatrix{C}, basis::Basis{C}, piv
     resize!(matrix.lowrows, matrix.nright)
     # interreduce new pivots..
     # .. for each right (non-pivotal) column
-    @inbounds for i in 1:matrix.nright
+    @inbounds for i in 1:(matrix.nright)
         k = matrix.ncols - i + 1
         !isassigned(pivs, k) && continue
         if k <= matrix.nleft # upper part of matrix
@@ -338,7 +399,14 @@ function interreduce_lower_part!(matrix::MacaulayMatrix{C}, basis::Basis{C}, piv
         load_indexed_coefficients!(densecoeffs, pivs[k], cfsref)
 
         _, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(
-            densecoeffs, matrix, basis, pivs, startcol, startcol, arithmetic)
+            densecoeffs,
+            matrix,
+            basis,
+            pivs,
+            startcol,
+            startcol,
+            arithmetic
+        )
         newpivs += 1
 
         # update row and coeffs
@@ -359,8 +427,11 @@ function interreduce_lower_part!(matrix::MacaulayMatrix{C}, basis::Basis{C}, piv
 end
 
 # Linear algebra option 1
-function exact_sparse_rref!(ring, matrix::MacaulayMatrix{C}, 
-                        basis::Basis{C}) where {C<:Coeff}
+function exact_sparse_rref!(
+    ring,
+    matrix::MacaulayMatrix{C},
+    basis::Basis{C}
+) where {C <: Coeff}
     ncols = matrix.ncols
     nlow = matrix.nlow
 
@@ -395,7 +466,14 @@ function exact_sparse_rref!(ring, matrix::MacaulayMatrix{C},
         # first nonzero in densecoeffs is at startcol position
         startcol = rowexps[1]
         zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(
-            densecoeffs, matrix, basis, pivs, startcol, -1, arithmetic)
+            densecoeffs,
+            matrix,
+            basis,
+            pivs,
+            startcol,
+            -1,
+            arithmetic
+        )
         # if fully reduced
         zeroed && continue
 
@@ -419,8 +497,12 @@ function nblocks_in_randomized(nrows::Int)
     floor(Int, sqrt(nrows / 3)) + 1
 end
 
-function randomized_sparse_rref!(ring::PolyRing, matrix::MacaulayMatrix{C}, 
-                        basis::Basis{C}, rng) where {C<:Coeff}
+function randomized_sparse_rref!(
+    ring::PolyRing,
+    matrix::MacaulayMatrix{C},
+    basis::Basis{C},
+    rng
+) where {C <: Coeff}
     ncols = matrix.ncols
     nlow = matrix.nlow
 
@@ -464,14 +546,22 @@ function randomized_sparse_rref!(ring::PolyRing, matrix::MacaulayMatrix{C},
 
                 for l in 1:length(rowexps)
                     ridx = rowexps[l]
-                    densecoeffs[ridx] = mod_x(densecoeffs[ridx] + mulcoeffs[k] * cfsref[l], arithmetic)
+                    densecoeffs[ridx] =
+                        mod_x(densecoeffs[ridx] + mulcoeffs[k] * cfsref[l], arithmetic)
                 end
             end
 
             # reduce it with known pivots from matrix.uprows
             # first nonzero in densecoeffs is at startcol position
             zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(
-                densecoeffs, matrix, basis, pivs, startcol, -1, arithmetic)
+                densecoeffs,
+                matrix,
+                basis,
+                pivs,
+                startcol,
+                -1,
+                arithmetic
+            )
 
             if zeroed
                 ctr = nrowstotal
@@ -491,7 +581,7 @@ function randomized_sparse_rref!(ring::PolyRing, matrix::MacaulayMatrix{C},
 
             # normalize if needed
             normalize_sparse_row!(matrix.coeffs[absolute_i], arithmetic)
-            
+
             ctr += 1
         end
     end
@@ -499,7 +589,11 @@ function randomized_sparse_rref!(ring::PolyRing, matrix::MacaulayMatrix{C},
     interreduce_lower_part!(matrix, basis, pivs, arithmetic)
 end
 
-function exact_sparse_rref_interreduce!(ring::PolyRing, matrix::MacaulayMatrix{C}, basis::Basis{C}) where {C<:Coeff}
+function exact_sparse_rref_interreduce!(
+    ring::PolyRing,
+    matrix::MacaulayMatrix{C},
+    basis::Basis{C}
+) where {C <: Coeff}
     resize!(matrix.lowrows, matrix.ncols)
     resize!(matrix.up2coef, matrix.ncols)
     resize!(matrix.low2coef, matrix.ncols)
@@ -510,7 +604,7 @@ function exact_sparse_rref_interreduce!(ring::PolyRing, matrix::MacaulayMatrix{C
     # same pivs as for rref
     # pivs: column idx --> vector of present columns
     pivs = Vector{Vector{ColumnIdx}}(undef, matrix.ncols)
-    @inbounds for i in 1:matrix.nrows
+    @inbounds for i in 1:(matrix.nrows)
         pivs[matrix.uprows[i][1]] = matrix.uprows[i]
         matrix.low2coef[matrix.uprows[i][1]] = i
         matrix.coeffs[i] = copy(basis.coeffs[matrix.up2coef[i]])
@@ -519,7 +613,11 @@ function exact_sparse_rref_interreduce!(ring::PolyRing, matrix::MacaulayMatrix{C
     interreduce_lower_part!(matrix, basis, pivs, arithmetic, reversed=true)
 end
 
-function exact_sparse_rref_isgroebner!(ring::PolyRing, matrix::MacaulayMatrix{C}, basis::Basis{C}) where {C<:Coeff}
+function exact_sparse_rref_isgroebner!(
+    ring::PolyRing,
+    matrix::MacaulayMatrix{C},
+    basis::Basis{C}
+) where {C <: Coeff}
     arithmetic = select_arithmetic(matrix.coeffs, ring.ch)
 
     pivs, l2c_tmp = absolute_pivots!(matrix)
@@ -530,7 +628,7 @@ function exact_sparse_rref_isgroebner!(ring::PolyRing, matrix::MacaulayMatrix{C}
 
     densecoeffs = zeros(C, matrix.ncols)
 
-    @inbounds for i in 1:matrix.nlow
+    @inbounds for i in 1:(matrix.nlow)
         # select next row to be reduced
         # npiv ~ exponents
         rowexps = upivs[i]
@@ -543,7 +641,14 @@ function exact_sparse_rref_isgroebner!(ring::PolyRing, matrix::MacaulayMatrix{C}
         # first nonzero in densecoeffs is at startcol position
         startcol = rowexps[1]
         zeroed, _, _ = reduce_dense_row_by_known_pivots_sparse!(
-            densecoeffs, matrix, basis, pivs, startcol, -1, arithmetic)
+            densecoeffs,
+            matrix,
+            basis,
+            pivs,
+            startcol,
+            -1,
+            arithmetic
+        )
         # @warn "reduced " zeroed newrow newcfs
         # if fully reduced
         zeroed && continue
@@ -556,10 +661,10 @@ function exact_sparse_rref_nf!(
     ring::PolyRing,
     matrix::MacaulayMatrix{C},
     tobereduced::Basis{C},
-    basis::Basis{C}) where {C<:Coeff}
-
+    basis::Basis{C}
+) where {C <: Coeff}
     resize!(matrix.coeffs, matrix.nlow)
-    
+
     ncols = matrix.ncols
     nlow = matrix.nlow
 
@@ -588,7 +693,14 @@ function exact_sparse_rref_nf!(
         startcol = rowexps[1]
         # zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(densecoeffs, matrix, basis, pivs, startcol, -1)
         zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(
-            densecoeffs, matrix, basis, pivs, startcol, -1, arithmetic)
+            densecoeffs,
+            matrix,
+            basis,
+            pivs,
+            startcol,
+            -1,
+            arithmetic
+        )
         # @warn "reduced " zeroed
         # if fully reduced
         zeroed && continue
@@ -607,8 +719,7 @@ end
 
 #------------------------------------------------------------------------------
 
-function column_to_monom_mapping!(
-        matrix::MacaulayMatrix, symbol_ht::MonomialHashtable)
+function column_to_monom_mapping!(matrix::MacaulayMatrix, symbol_ht::MonomialHashtable)
 
     # monoms from symbolic table represent one column in the matrix
     hdata = symbol_ht.hashdata
@@ -618,7 +729,7 @@ function column_to_monom_mapping!(
     j = 1
     # number of pivotal cols
     k = 0
-    @inbounds for i in symbol_ht.offset:load
+    @inbounds for i in (symbol_ht.offset):load
         # column to hash index
         col2hash[j] = i
         j += 1
@@ -640,14 +751,14 @@ function column_to_monom_mapping!(
         hdata[col2hash[k]].idx = k
     end
 
-    @inbounds for k in 1:matrix.nup
+    @inbounds for k in 1:(matrix.nup)
         row = matrix.uprows[k]
         for j in 1:length(row)
             row[j] = hdata[row[j]].idx
         end
     end
 
-    @inbounds for k in 1:matrix.nlow
+    @inbounds for k in 1:(matrix.nlow)
         row = matrix.lowrows[k]
         for j in 1:length(row)
             row[j] = hdata[row[j]].idx
@@ -663,8 +774,11 @@ function column_to_monom_mapping!(
 end
 
 function convert_rows_to_basis_elements!(
-    matrix::MacaulayMatrix, basis::Basis,
-    ht::MonomialHashtable, symbol_ht::MonomialHashtable)
+    matrix::MacaulayMatrix,
+    basis::Basis,
+    ht::MonomialHashtable,
+    symbol_ht::MonomialHashtable
+)
 
     # we mutate basis array directly by adding new elements
 
@@ -672,23 +786,25 @@ function convert_rows_to_basis_elements!(
     rows = matrix.lowrows
     crs = basis.ndone
 
-    @inbounds for i in 1:matrix.npivots
+    @inbounds for i in 1:(matrix.npivots)
         colidx = rows[i][1]
         insert_in_basis_hash_table_pivots(rows[i], ht, symbol_ht, matrix.col2hash)
-        basis.coeffs[crs+i] = matrix.coeffs[matrix.low2coef[colidx]]
-        basis.monoms[crs+i] = matrix.lowrows[i]
+        basis.coeffs[crs + i] = matrix.coeffs[matrix.low2coef[colidx]]
+        basis.monoms[crs + i] = matrix.lowrows[i]
     end
 
     basis.ntotal += matrix.npivots
 end
 
 function convert_rows_to_basis_elements_nf!(
-    matrix::MacaulayMatrix, basis::Basis,
-    ht::MonomialHashtable, symbol_ht::MonomialHashtable)
-
+    matrix::MacaulayMatrix,
+    basis::Basis,
+    ht::MonomialHashtable,
+    symbol_ht::MonomialHashtable
+)
     check_enlarge_basis!(basis, matrix.npivots)
 
-    @inbounds for i in 1:matrix.npivots
+    @inbounds for i in 1:(matrix.npivots)
         basis.ndone += 1
         basis.nlead += 1
         basis.nonred[basis.nlead] = basis.ndone

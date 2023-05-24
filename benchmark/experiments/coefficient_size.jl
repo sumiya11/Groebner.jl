@@ -20,8 +20,14 @@ function my_system_coeffs_1(system)
 
     aver = [(0, 0) for i in 1:length(gb)]
     for (i, poly) in enumerate(gb)
-        num = sum([Base.GMP.MPZ.sizeinbase(numerator(c), 2) for c in AbstractAlgebra.coefficients(poly)])
-        den = sum([Base.GMP.MPZ.sizeinbase(denominator(c), 2) for c in AbstractAlgebra.coefficients(poly)])
+        num = sum([
+            Base.GMP.MPZ.sizeinbase(numerator(c), 2) for
+            c in AbstractAlgebra.coefficients(poly)
+        ])
+        den = sum([
+            Base.GMP.MPZ.sizeinbase(denominator(c), 2) for
+            c in AbstractAlgebra.coefficients(poly)
+        ])
 
         aver[i] = (num, den)
     end
@@ -32,7 +38,6 @@ function my_system_coeffs_1(system)
 
     println("Numerators: ", sum(x[1] for x in aver))
     println("Denominators: ", sum(x[2] for x in aver))
-
 end
 
 function my_system_coeffs_2(system)
@@ -48,7 +53,12 @@ function my_system_coeffs_2(system)
     aver = [(0, 0) for i in 1:length(gb)]
     for (i, poly) in enumerate(gb)
         @warn "new poly" i
-        println([(Base.GMP.MPZ.sizeinbase(numerator(c), 2), Base.GMP.MPZ.sizeinbase(denominator(c), 2)) for c in AbstractAlgebra.coefficients(poly)])
+        println([
+            (
+                Base.GMP.MPZ.sizeinbase(numerator(c), 2),
+                Base.GMP.MPZ.sizeinbase(denominator(c), 2)
+            ) for c in AbstractAlgebra.coefficients(poly)
+        ])
     end
 
     Groebner.printall()
@@ -57,17 +67,16 @@ function my_system_coeffs_2(system)
 
     println("Numerators: ", sum(x[1] for x in aver))
     println("Denominators: ", sum(x[2] for x in aver))
-
 end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
-        #("cyclic 7", Groebner.cyclicn(7, ground=ground)),
-        #("noon 8"    ,Groebner.noonn(8, ground=ground)),
-        # ("eco 11"    ,Groebner.eco11(ground=ground)),
-        ("katsura 8"    ,Groebner.katsuran(8, ground=ground)),
-        #("root 11"    ,Groebner.rootn(11, ground=ground)),
-        ]
+    #("cyclic 7", Groebner.cyclicn(7, ground=ground)),
+    #("noon 8"    ,Groebner.noonn(8, ground=ground)),
+    # ("eco 11"    ,Groebner.eco11(ground=ground)),
+        ("katsura 8", Groebner.katsuran(8, ground=ground))
+    #("root 11"    ,Groebner.rootn(11, ground=ground)),
+    ]
 
     println()
     for (name, system) in systems

@@ -63,23 +63,37 @@ groebner([x*y^2 + x, y*x^2 + y])
 
 """
 function groebner(
-            polynomials::Vector{Poly};
-            reduced::Bool=true,
-            ordering::AbstractMonomialOrdering=InputOrdering(),
-            certify::Bool=false,
-            linalg::Symbol=:prob,
-            monoms=best_monom_representation(),
-            rng::Rng=Random.MersenneTwister(42),
-            loglevel::Logging.LogLevel=Logging.Warn,
-            maxpairs=typemax(Int)
-        ) where {Poly, Rng<:Random.AbstractRNG}
+    polynomials::Vector{Poly};
+    reduced::Bool=true,
+    ordering::AbstractMonomialOrdering=InputOrdering(),
+    certify::Bool=false,
+    linalg::Symbol=:prob,
+    monoms=best_monom_representation(),
+    rng::Rng=Random.MersenneTwister(42),
+    loglevel::Logging.LogLevel=Logging.Warn,
+    maxpairs=typemax(Int)
+) where {Poly, Rng <: Random.AbstractRNG}
     #= set the logger =#
     prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
     try
         #= guess the best representation for polynomials =#
-        representation = guess_effective_representation(polynomials, UnsafeRepresentation(), ordering, monoms)
-        #= try to compute in this representation =# 
-        return groebner(polynomials, representation, reduced, ordering, certify, linalg, rng, maxpairs)
+        representation = guess_effective_representation(
+            polynomials,
+            UnsafeRepresentation(),
+            ordering,
+            monoms
+        )
+        #= try to compute in this representation =#
+        return groebner(
+            polynomials,
+            representation,
+            reduced,
+            ordering,
+            certify,
+            linalg,
+            rng,
+            maxpairs
+        )
     catch beda
         if isa(beda, RecoverableException)
             # if computation fails recoverably
@@ -87,7 +101,16 @@ function groebner(
             representation = default_safe_representation()
             linalg = safe_linear_algebra()
             rng = Random.MersenneTwister(floor(Int, time()))
-            return groebner(polynomials, representation, reduced, ordering, certify, linalg, rng, maxpairs)
+            return groebner(
+                polynomials,
+                representation,
+                reduced,
+                ordering,
+                certify,
+                linalg,
+                rng,
+                maxpairs
+            )
         else
             # if the computation just fails for some reason
             rethrow(beda)
@@ -125,12 +148,12 @@ julia> isgroebner([y^2 + x, x^2 + y])
 
 """
 function isgroebner(
-            polynomials::Vector{Poly};
-            ordering=InputOrdering(),
-            certify::Bool=false,
-            rng::Rng=Random.MersenneTwister(42),
-            loglevel::LogLevel=Logging.Warn
-    ) where {Poly, Rng<:Random.AbstractRNG}
+    polynomials::Vector{Poly};
+    ordering=InputOrdering(),
+    certify::Bool=false,
+    rng::Rng=Random.MersenneTwister(42),
+    loglevel::LogLevel=Logging.Warn
+) where {Poly, Rng <: Random.AbstractRNG}
 
     #= set the logger =#
     prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
@@ -138,7 +161,8 @@ function isgroebner(
     #= extract ring information, exponents and coefficients
        from input polynomials =#
     # Copies input, so that polys would not be changed itself.
-    ring, exps, coeffs = convert_to_internal(default_safe_representation(), polynomials, ordering)
+    ring, exps, coeffs =
+        convert_to_internal(default_safe_representation(), polynomials, ordering)
 
     #= check and set algorithm parameters =#
     metainfo = set_metaparameters(ring, ordering, certify, :exact, rng)
@@ -197,30 +221,35 @@ julia> normalform([y^2 + x, x^2 + y], x^2 + y^2 + 1, check=false)
 
 """
 function normalform(
-            basispolys::Vector{Poly},
-            tobereduced::Poly;
-            check::Bool=true,
-            ordering::AbstractMonomialOrdering=InputOrdering(),
-            rng::Rng=Random.MersenneTwister(42),
-            loglevel::LogLevel=Logging.Warn
-            ) where {Poly, Rng<:Random.AbstractRNG}
-    
+    basispolys::Vector{Poly},
+    tobereduced::Poly;
+    check::Bool=true,
+    ordering::AbstractMonomialOrdering=InputOrdering(),
+    rng::Rng=Random.MersenneTwister(42),
+    loglevel::LogLevel=Logging.Warn
+) where {Poly, Rng <: Random.AbstractRNG}
     iszero(tobereduced) && (return tobereduced)
 
-    first(normalform(
-            basispolys, [tobereduced], check=check,
-            ordering=ordering, rng=rng, loglevel=loglevel)
+    first(
+        normalform(
+            basispolys,
+            [tobereduced],
+            check=check,
+            ordering=ordering,
+            rng=rng,
+            loglevel=loglevel
+        )
     )
 end
 
 function normalform(
-            basispolys::Vector{Poly},
-            tobereduced::Vector{Poly};
-            check::Bool=true,
-            ordering::AbstractMonomialOrdering=InputOrdering(),
-            rng::Rng=Random.MersenneTwister(42),
-            loglevel::LogLevel=Logging.Warn
-            ) where {Poly, Rng<:Random.AbstractRNG}
+    basispolys::Vector{Poly},
+    tobereduced::Vector{Poly};
+    check::Bool=true,
+    ordering::AbstractMonomialOrdering=InputOrdering(),
+    rng::Rng=Random.MersenneTwister(42),
+    loglevel::LogLevel=Logging.Warn
+) where {Poly, Rng <: Random.AbstractRNG}
 
     #= set the logger =#
     prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
@@ -230,8 +259,10 @@ function normalform(
     #= extract ring information, exponents and coefficients
        from input basis polynomials =#
     # Copies input, so that polys would not be changed itself.
-    ring1, basisexps, basiscoeffs = convert_to_internal(default_safe_representation(), basispolys, ordering)
-    ring2, tbrexps, tbrcoeffs = convert_to_internal(default_safe_representation(), tobereduced, ordering)
+    ring1, basisexps, basiscoeffs =
+        convert_to_internal(default_safe_representation(), basispolys, ordering)
+    ring2, tbrexps, tbrcoeffs =
+        convert_to_internal(default_safe_representation(), tobereduced, ordering)
 
     @assert ring1.nvars == ring2.nvars && ring1.ch == ring2.ch
     @assert ring1.ord == ring2.ord
@@ -242,7 +273,8 @@ function normalform(
     metainfo = set_metaparameters(ring, ordering, false, :exact, rng)
 
     iszerobasis = remove_zeros_from_input!(ring, basisexps, basiscoeffs)
-    iszerobasis && (return convert_to_output(ring, tobereduced, tbrexps, tbrcoeffs, metainfo))
+    iszerobasis &&
+        (return convert_to_output(ring, tobereduced, tbrexps, tbrcoeffs, metainfo))
 
     #= change input ordering if needed =#
     newring = assure_ordering!(ring, basisexps, basiscoeffs, metainfo.targetord)
@@ -251,9 +283,8 @@ function normalform(
     # We assume basispolys is already a Groebner basis! #
 
     #= compute the groebner basis =#
-    bexps, bcoeffs = normal_form_f4(
-                        newring, basisexps, basiscoeffs,
-                        tbrexps, tbrcoeffs, rng)
+    bexps, bcoeffs =
+        normal_form_f4(newring, basisexps, basiscoeffs, tbrexps, tbrcoeffs, rng)
 
     #=
     Assuming ordering of `bexps` here matches `newring.ord`
@@ -291,11 +322,11 @@ julia> fglm([y^2 + x, x^2 + y], check=true)
 
 """
 function fglm(
-            basis::Vector{Poly};
-            check::Bool=true,
-            rng::Rng=Random.MersenneTwister(42),
-            loglevel::Logging.LogLevel=Logging.Warn
-            ) where {Poly, Rng<:Random.AbstractRNG}
+    basis::Vector{Poly};
+    check::Bool=true,
+    rng::Rng=Random.MersenneTwister(42),
+    loglevel::Logging.LogLevel=Logging.Warn
+) where {Poly, Rng <: Random.AbstractRNG}
 
     #= set the logger =#
     prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
@@ -305,10 +336,11 @@ function fglm(
     #= extract ring information, exponents and coefficients
        from input polynomials =#
     # Copies input, so that polynomials would not be changed itself.
-    ring, exps, coeffs = convert_to_internal(default_safe_representation(), basis, InputOrdering())
+    ring, exps, coeffs =
+        convert_to_internal(default_safe_representation(), basis, InputOrdering())
 
     metainfo = set_metaparameters(ring, Lex(), false, :exact, rng)
-    
+
     iszerobasis = remove_zeros_from_input!(ring, exps, coeffs)
     iszerobasis && (return convert_to_output(ring, basis, exps, coeffs, metainfo))
 
@@ -350,11 +382,11 @@ julia> kbase([y^2 + x, x^2 + y], check=true)
 
 """
 function kbase(
-            basis::Vector{Poly};
-            check::Bool=true,
-            rng::Rng=Random.MersenneTwister(42),
-            loglevel::Logging.LogLevel=Logging.Warn
-            ) where {Poly, Rng<:Random.AbstractRNG}
+    basis::Vector{Poly};
+    check::Bool=true,
+    rng::Rng=Random.MersenneTwister(42),
+    loglevel::Logging.LogLevel=Logging.Warn
+) where {Poly, Rng <: Random.AbstractRNG}
 
     #= set the logger =#
     prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
@@ -364,12 +396,14 @@ function kbase(
     #= extract ring information, exponents and coefficients
        from input polynomials =#
     # Copies input, so that polynomials would not be changed itself.
-    ring, exps, coeffs = convert_to_internal(default_safe_representation(), basis, InputOrdering())
+    ring, exps, coeffs =
+        convert_to_internal(default_safe_representation(), basis, InputOrdering())
 
     metainfo = set_metaparameters(ring, InputOrdering(), false, :exact, rng)
-    
+
     iszerobasis = remove_zeros_from_input!(ring, exps, coeffs)
-    iszerobasis && (throw(DomainError(basis, "Groebner.kbase does not work with such ideals, sorry")))
+    iszerobasis &&
+        (throw(DomainError(basis, "Groebner.kbase does not work with such ideals, sorry")))
 
     bexps, bcoeffs = kbase_f4(ring, exps, coeffs, metainfo)
 

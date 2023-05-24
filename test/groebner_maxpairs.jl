@@ -2,7 +2,7 @@
 using Logging
 
 @testset "groebner maxpairs" begin
-    s = Groebner.noonn(5, ordering=:degrevlex, ground=GF(2^31-1))
+    s = Groebner.noonn(5, ordering=:degrevlex, ground=GF(2^31 - 1))
     gb = Groebner.groebner(s)
     @test gb == Groebner.groebner(s, maxpairs=100)
     @test gb == Groebner.groebner(s, maxpairs=10)

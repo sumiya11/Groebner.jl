@@ -1,11 +1,17 @@
 
-
 import Random
 using AbstractAlgebra
 
-function test_params_nf(rng, nvariables, exps, nterms,
-                        npolys, grounds, coeffssize, orderings)
-
+function test_params_nf(
+    rng,
+    nvariables,
+    exps,
+    nterms,
+    npolys,
+    grounds,
+    coeffssize,
+    orderings
+)
     for n in nvariables
         for e in exps
             for nt in nterms
@@ -13,9 +19,7 @@ function test_params_nf(rng, nvariables, exps, nterms,
                     for gr in grounds
                         for ord in orderings
                             for csz in coeffssize
-                                set = Groebner.generate_set(
-                                    n, e, nt, np, csz, rng, gr, ord
-                                )
+                                set = Groebner.generate_set(n, e, nt, np, csz, rng, gr, ord)
                                 isempty(set) && continue
                                 gb = Groebner.groebner(set)
                                 f = rand(set)
@@ -39,9 +43,7 @@ function test_params_nf(rng, nvariables, exps, nterms,
     end
 end
 
-
 @testset "normalform random stress tests" begin
-
     rng = Random.MersenneTwister(42)
 
     # :degrevlex finite case tests
@@ -52,7 +54,7 @@ end
     grounds    = [GF(1031), GF(2^31 - 1)]
     coeffssize = [3, 1000, 2^31 - 1]
     orderings  = [:degrevlex]
-    p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize)))
+    p          = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize)))
     @info "producing $p $(orderings[1]) tests for normal form"
     test_params_nf(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings)
 
@@ -64,7 +66,7 @@ end
     grounds    = [GF(1031), GF(2^31 - 1)]
     coeffssize = [3, 1000, 2^31 - 1]
     orderings  = [:lex]
-    p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize)))
+    p          = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize)))
     @info "producing $p $(orderings[1]) tests for normal form"
     test_params_nf(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings)
 
@@ -76,7 +78,7 @@ end
     grounds    = [GF(1031), GF(2^31 - 1)]
     coeffssize = [3, 1000, 2^31 - 1]
     orderings  = [:deglex]
-    p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize)))
+    p          = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize)))
     @info "producing $p $(orderings[1]) tests for normal form"
     test_params_nf(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings)
 
@@ -88,8 +90,7 @@ end
     grounds    = [QQ]
     coeffssize = [3, 1000, 2^31 - 1]
     orderings  = [:deglex, :lex, :degrevlex]
-    p = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize)))
+    p          = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize)))
     @info "producing $p $(orderings[1]) tests for normal form"
     test_params_nf(rng, nvariables, exps, nterms, npolys, grounds, coeffssize, orderings)
-
 end

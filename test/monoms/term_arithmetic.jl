@@ -14,7 +14,7 @@ implementations_to_test = [
     Groebner.PowerVector{T} where {T},
     Groebner.PackedPair1{T, B} where {T},
     Groebner.PackedPair2{T, B} where {T},
-    Groebner.PackedPair3{T, B} where {T},
+    Groebner.PackedPair3{T, B} where {T}
     # Groebner.PackedVector{T, B} where {T},
 ]
 
@@ -28,7 +28,7 @@ implementations_to_test = [
             c = monom_product!(c, a, b)
             @test is_monom_elementwise_eq(c, a)
             @test is_monom_elementwise_eq(c, b)
-            
+
             d = make_ev(EV{T}, [1, 2])
             @test is_monom_elementwise_eq(a, b)
             @test !is_monom_elementwise_eq(a, d)
@@ -92,33 +92,58 @@ end
 
 @testset "term division mask" begin
     nvars = 4
-    divmap  = UInt32[
-        0x00000001, 0x00000002, 0x00000003, 0x00000004, 
-        0x00000005, 0x00000006, 0x00000007, 0x00000008, 
-        0x00000001, 0x00000002, 0x00000003, 0x00000004, 
-        0x00000005, 0x00000006, 0x00000007, 0x00000008, 
-        0x00000001, 0x00000002, 0x00000003, 0x00000004, 
-        0x00000005, 0x00000006, 0x00000007, 0x00000008, 
-        0x00000001, 0x00000002, 0x00000003, 0x00000004, 
-        0x00000005, 0x00000006, 0x00000007, 0x00000008]
+    divmap = UInt32[
+        0x00000001,
+        0x00000002,
+        0x00000003,
+        0x00000004,
+        0x00000005,
+        0x00000006,
+        0x00000007,
+        0x00000008,
+        0x00000001,
+        0x00000002,
+        0x00000003,
+        0x00000004,
+        0x00000005,
+        0x00000006,
+        0x00000007,
+        0x00000008,
+        0x00000001,
+        0x00000002,
+        0x00000003,
+        0x00000004,
+        0x00000005,
+        0x00000006,
+        0x00000007,
+        0x00000008,
+        0x00000001,
+        0x00000002,
+        0x00000003,
+        0x00000004,
+        0x00000005,
+        0x00000006,
+        0x00000007,
+        0x00000008
+    ]
     ndivbits = 8
     cases = [
-        (monom=UInt8[0x00, 0x00, 0x00, 0x00],mask="00000000000000000000000000000000"),
-        (monom=UInt8[0x01, 0x00, 0x1a, 0x00],mask="00000000111111110000000000000001"),
-        (monom=UInt8[0x00, 0x01, 0x00, 0x00],mask="00000000000000000000000100000000"),
-        (monom=UInt8[0x00, 0x00, 0x01, 0x00],mask="00000000000000010000000000000000"),
-        (monom=UInt8[0x00, 0x00, 0x00, 0x01],mask="00000001000000000000000000000000"),
-        (monom=UInt8[0x01, 0x01, 0x00, 0x00],mask="00000000000000000000000100000001"),
-        (monom=UInt8[0x01, 0x00, 0x01, 0x00],mask="00000000000000010000000000000001"),
-        (monom=UInt8[0x00, 0x03, 0x02, 0x00],mask="00000000000000110000011100000000"),
-        (monom=UInt8[0x01, 0x00, 0x00, 0x01],mask="00000001000000000000000000000001"),
-        (monom=UInt8[0x00, 0x01, 0x00, 0x01],mask="00000001000000000000000100000000"),
-        (monom=UInt8[0x00, 0x00, 0x01, 0x01],mask="00000001000000010000000000000000"),
-        (monom=UInt8[0x01, 0x01, 0x01, 0x00],mask="00000000000000010000000100000001"),
-        (monom=UInt8[0x01, 0x01, 0x00, 0x01],mask="00000001000000000000000100000001"),
-        (monom=UInt8[0x01, 0x0a, 0x01, 0x01],mask="00000001000000011111111100000001"),
-        (monom=UInt8[0x00, 0x01, 0x01, 0x01],mask="00000001000000010000000100000000"),
-        (monom=UInt8[0x01, 0x01, 0x01, 0x01],mask="00000001000000010000000100000001"),
+        (monom=UInt8[0x00, 0x00, 0x00, 0x00], mask="00000000000000000000000000000000"),
+        (monom=UInt8[0x01, 0x00, 0x1a, 0x00], mask="00000000111111110000000000000001"),
+        (monom=UInt8[0x00, 0x01, 0x00, 0x00], mask="00000000000000000000000100000000"),
+        (monom=UInt8[0x00, 0x00, 0x01, 0x00], mask="00000000000000010000000000000000"),
+        (monom=UInt8[0x00, 0x00, 0x00, 0x01], mask="00000001000000000000000000000000"),
+        (monom=UInt8[0x01, 0x01, 0x00, 0x00], mask="00000000000000000000000100000001"),
+        (monom=UInt8[0x01, 0x00, 0x01, 0x00], mask="00000000000000010000000000000001"),
+        (monom=UInt8[0x00, 0x03, 0x02, 0x00], mask="00000000000000110000011100000000"),
+        (monom=UInt8[0x01, 0x00, 0x00, 0x01], mask="00000001000000000000000000000001"),
+        (monom=UInt8[0x00, 0x01, 0x00, 0x01], mask="00000001000000000000000100000000"),
+        (monom=UInt8[0x00, 0x00, 0x01, 0x01], mask="00000001000000010000000000000000"),
+        (monom=UInt8[0x01, 0x01, 0x01, 0x00], mask="00000000000000010000000100000001"),
+        (monom=UInt8[0x01, 0x01, 0x00, 0x01], mask="00000001000000000000000100000001"),
+        (monom=UInt8[0x01, 0x0a, 0x01, 0x01], mask="00000001000000011111111100000001"),
+        (monom=UInt8[0x00, 0x01, 0x01, 0x01], mask="00000001000000010000000100000000"),
+        (monom=UInt8[0x01, 0x01, 0x01, 0x01], mask="00000001000000010000000100000001")
     ]
 
     for case in cases
@@ -131,7 +156,13 @@ end
                 end
                 m = make_ev(EV{T}, monom)
                 ans = parse(Groebner.DivisionMask, mask, base=2)
-                dm = Groebner.monom_divmask(m, Groebner.DivisionMask, nvars, divmap, ndivbits)
+                dm = Groebner.monom_divmask(
+                    m,
+                    Groebner.DivisionMask,
+                    nvars,
+                    divmap,
+                    ndivbits
+                )
                 @test ans == dm
             end
         end
@@ -146,12 +177,12 @@ end
                 if n > Groebner.capacity(EV{T})
                     continue
                 end
-                t = div(typemax(UInt8), 8*n)
+                t = div(typemax(UInt8), 8 * n)
                 x, y = rand(1:max(t, 1), n), rand(1:max(t, 1), n)
                 a = make_ev(EV{T}, x)
                 b = make_ev(EV{T}, y)
                 c = Groebner.make_zero_ev(EV{T}, n)
-                c = monom_product!(c, a, b) 
+                c = monom_product!(c, a, b)
                 h = Groebner.make_hasher(EV{T}, n)
                 @test typeof(hash(a, h)) === Groebner.MonomHash
                 @test hash(a, h) + hash(b, h) == hash(c, h)

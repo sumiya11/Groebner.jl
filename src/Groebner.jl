@@ -92,8 +92,8 @@ export normalform
 export fglm
 export kbase
 
-export Lex, DegLex, DegRevLex, InputOrdering, 
-        WeightedOrdering, BlockOrdering, MatrixOrdering
+export Lex,
+    DegLex, DegRevLex, InputOrdering, WeightedOrdering, BlockOrdering, MatrixOrdering
 export NotPacked, Packed, best_monom_representation
 
 @doc read(joinpath(dirname(@__DIR__), "README.md"), String) Groebner

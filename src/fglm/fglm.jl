@@ -4,7 +4,7 @@ mutable struct NextMonomials{Ord}
     # monomials to check
     monoms::Vector{MonomIdx}
     load::Int
-    done::Dict{Int,Int}
+    done::Dict{Int, Int}
     ord::Ord
 end
 
@@ -16,19 +16,16 @@ function initialize_nextmonomials(ht::MonomialHashtable{M}, ord) where {M}
     monoms = Vector{MonomIdx}(undef, 2^3)
     monoms[1] = vidx
     load = 1
-    NextMonomials{typeof(ord)}(monoms, load, Dict{MonomIdx,Int}(vidx => 1), ord)
+    NextMonomials{typeof(ord)}(monoms, load, Dict{MonomIdx, Int}(vidx => 1), ord)
 end
 
-function insertnexts!(
-    m::NextMonomials,
-    ht::MonomialHashtable{M}, monom::MonomIdx) where {M}
-
+function insertnexts!(m::NextMonomials, ht::MonomialHashtable{M}, monom::MonomIdx) where {M}
     while m.load + ht.nvars >= length(m.monoms)
         resize!(m.monoms, length(m.monoms) * 2)
     end
 
     emonom = ht.exponents[monom]
-    for i in 1:ht.nvars
+    for i in 1:(ht.nvars)
         eprod = copy(emonom)
         tmp = Vector{UInt}(undef, ht.nvars)
         edense = make_dense!(tmp, eprod)
@@ -53,7 +50,7 @@ function nextmonomial!(m::NextMonomials)
     monom
 end
 
-function add_generator!(basis::Basis{C}, matrix, relation, ht, ord) where {C<:Coeff}
+function add_generator!(basis::Basis{C}, matrix, relation, ht, ord) where {C <: Coeff}
     rexps, rcoeffs, _ = extract_sparse_row(relation)
 
     if debug()
@@ -101,8 +98,8 @@ function fglm_f4!(
     ring::PolyRing,
     basis::Basis{C},
     ht::MonomialHashtable,
-    ord::AbstractMonomialOrdering) where {C<:Coeff}
-    
+    ord::AbstractMonomialOrdering
+) where {C <: Coeff}
     newbasis = initialize_basis(ring, basis.ntotal, C)
     nextmonoms = initialize_nextmonomials(ht, ord)
     matrix = initialize_double_matrix(basis)
@@ -165,17 +162,15 @@ function fglm_f4!(
     newbasis, linbasis, ht
 end
 
-
 function fglm_f4(
     ring::PolyRing,
     basisexps::Vector{Vector{M}},
     basiscoeffs::Vector{Vector{C}},
-    metainfo) where {M, C<:Coeff}
-
+    metainfo
+) where {M, C <: Coeff}
     tablesize = select_tablesize(ring, basisexps)
 
-    basis, ht = initialize_structures(ring, basisexps,
-        basiscoeffs, metainfo.rng, tablesize)
+    basis, ht = initialize_structures(ring, basisexps, basiscoeffs, metainfo.rng, tablesize)
 
     basis, linbasis, ht = fglm_f4!(ring, basis, ht, metainfo.computeord)
 
@@ -188,7 +183,7 @@ function extract_linear_basis(ring, matrix::DoubleMacaulayMatrix{C}) where {C}
     exps = Vector{Vector{MonomIdx}}(undef, matrix.nrrows)
     coeffs = Vector{Vector{C}}(undef, matrix.nrrows)
 
-    for i in 1:matrix.nrrows
+    for i in 1:(matrix.nrrows)
         exps[i] = matrix.rightrows[i]
         coeffs[i] = matrix.rightcoeffs[i]
         for j in 1:length(exps[i])
@@ -200,7 +195,7 @@ function extract_linear_basis(ring, matrix::DoubleMacaulayMatrix{C}) where {C}
 
     linbasis.ndone = length(exps)
     linbasis.nlead = length(exps)
-    linbasis.nonred = collect(1:linbasis.ndone)
+    linbasis.nonred = collect(1:(linbasis.ndone))
 
     linbasis
 end
@@ -209,12 +204,11 @@ function kbase_f4(
     ring::PolyRing,
     basisexps::Vector{Vector{M}},
     basiscoeffs::Vector{Vector{C}},
-    metainfo) where {M,C<:Coeff}
-
+    metainfo
+) where {M, C <: Coeff}
     tablesize = select_tablesize(ring, basisexps)
 
-    basis, ht = initialize_structures(ring, basisexps,
-        basiscoeffs, metainfo.rng, tablesize)
+    basis, ht = initialize_structures(ring, basisexps, basiscoeffs, metainfo.rng, tablesize)
 
     basis, linbasis, ht = fglm_f4!(ring, basis, ht, metainfo.computeord)
 

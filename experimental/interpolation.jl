@@ -25,15 +25,13 @@ function groebner_formal_parametric(F)
     R1u, u = PolynomialRing(base_ring(R1), "u")
     # maximal degree
     d = 10
-    seq = [d^(i-1) for i in 1:np]
+    seq = [d^(i - 1) for i in 1:np]
     us = [u^seq[i] for i in 1:np]
     Fu = map(f -> map_coefficients(c -> evaluate(c, us), f), F)
     @info "univariate" Fu
 
     # Generating generic points
-    generic_points = [
-        rand(1:2^20) for _ in 1:50
-    ]
+    generic_points = [rand(1:(2^20)) for _ in 1:50]
     @info "points" generic_points
 
     # Computing specialized groebner bases
@@ -43,7 +41,7 @@ function groebner_formal_parametric(F)
         push!(groebner_bases, groebner(Fp))
     end
     @info "bases" groebner_bases
-    
+
     # check bases correctness
     check_bases_shape(groebner_bases)
 
@@ -53,7 +51,7 @@ function groebner_formal_parametric(F)
         for (j, c) in enumerate(f)
             xs = [QQ(point[1]) for point in generic_points]
             ys = [coeff(gb[i], j) for gb in groebner_bases]
-            
+
             @info "interpol" i j
             println(xs, " --> ", ys)
 
@@ -70,18 +68,22 @@ function groebner_formal_parametric(F)
     invseq = map(f -> map(c -> map(cc -> digits(cc, base=d), 0:degree(c)), f), basis)
     basis = [
         [
-            sum(map(prod, zip(coefficients(basis[i][j]), map(ss -> prod(ps .^ ss), invseq[i][j]))))
-            for j in 1:length(basis[i])
-        ]
-        for i in 1:length(basis)
+            sum(
+                map(
+                    prod,
+                    zip(coefficients(basis[i][j]), map(ss -> prod(ps .^ ss), invseq[i][j]))
+                )
+            ) for j in 1:length(basis[i])
+        ] for i in 1:length(basis)
     ]
     @info "multivariate" basis
 
     # construct the answer
-    groebner_bases = map(gb -> map(f -> change_base_ring(R1, f, parent=R), gb), groebner_bases)
+    groebner_bases =
+        map(gb -> map(f -> change_base_ring(R1, f, parent=R), gb), groebner_bases)
     [
-        sum(map(prod, zip(basis[i], monomials(f))))
-        for (i, f) in enumerate(first(groebner_bases))
+        sum(map(prod, zip(basis[i], monomials(f)))) for
+        (i, f) in enumerate(first(groebner_bases))
     ]
 end
 
@@ -89,7 +91,7 @@ R1, (a, b) = PolynomialRing(QQ, ["a", "b"])
 R, (x, y) = R1["x", "y"]
 
 f1 = x + a + b
-f2 = a*b*y
+f2 = a * b * y
 
 F = [f1, f2]
 

@@ -8,7 +8,6 @@ using Logging
 
 # BenchmarkTools.DEFAULT_PARAMETERS.seconds = 6
 
-
 function benchmark_system_my(system)
     system = Groebner.change_ordering(system, :degrevlex)
     Groebner.groebner([system[1]])
@@ -23,17 +22,17 @@ end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
-    ("cyclic 7", Groebner.cyclicn(7, ground=ground)),
-    ("cyclic 8", Groebner.cyclicn(8, ground=ground)),
-    ("katsura 9", Groebner.katsuran(9, ground=ground)),
-    ("katsura 10", Groebner.katsuran(10, ground=ground)),
-    ("katsura 11", Groebner.katsuran(11, ground=ground)),
-    ("noon 7"    ,Groebner.noonn(7, ground=ground)),
-    ("noon 8"    ,Groebner.noonn(8, ground=ground)),
-    ("noon 9"    ,Groebner.noonn(9, ground=ground)),
-    ("eco 10"    ,Groebner.eco10(ground=ground)),
-    ("eco 11"    ,Groebner.eco11(ground=ground)),
-    ("eco 12"    ,Groebner.eco12(ground=ground))
+        ("cyclic 7", Groebner.cyclicn(7, ground=ground)),
+        ("cyclic 8", Groebner.cyclicn(8, ground=ground)),
+        ("katsura 9", Groebner.katsuran(9, ground=ground)),
+        ("katsura 10", Groebner.katsuran(10, ground=ground)),
+        ("katsura 11", Groebner.katsuran(11, ground=ground)),
+        ("noon 7", Groebner.noonn(7, ground=ground)),
+        ("noon 8", Groebner.noonn(8, ground=ground)),
+        ("noon 9", Groebner.noonn(9, ground=ground)),
+        ("eco 10", Groebner.eco10(ground=ground)),
+        ("eco 11", Groebner.eco11(ground=ground)),
+        ("eco 12", Groebner.eco12(ground=ground))
     ]
 
     for (name, system) in systems

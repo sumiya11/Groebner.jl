@@ -17,8 +17,8 @@
     @test typeof(Groebner.totaldeg(ev)) === UInt32
     @test Groebner.totaldeg(ev) == UInt32(10)
     @test Groebner.powertype(ev) === Groebner.MonomHash
-    
-    for T in (UInt64,UInt32,UInt16,UInt8)
+
+    for T in (UInt64, UInt32, UInt16, UInt8)
         for k in 1:10
             n = rand(1:20)
             x = rand(0:10, n)

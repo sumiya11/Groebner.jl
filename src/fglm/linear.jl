@@ -1,5 +1,4 @@
 
-
 mutable struct DoubleMacaulayMatrix{C}
     # pivot -> row
     leftpivs::Vector{Vector{Int}}
@@ -33,17 +32,16 @@ mutable struct DoubleMacaulayMatrix{C}
     nrcols::Int
 end
 
-
-function initialize_double_matrix(basis::Basis{C}) where {C<:Coeff}
-    n = length(basis.monoms)
+function initialize_double_matrix(basis::Basis{C}) where {C <: Coeff}
+    n          = length(basis.monoms)
     leftrows   = Vector{Vector{Int}}(undef, n)
     leftcoeffs = Vector{Vector{C}}(undef, n)
 
     pivot2idx = Vector{Int}(undef, n)
 
-    m = length(basis.monoms)
-    rightrows  = Vector{Vector{Int}}(undef, m)
-    rightcoeffs= Vector{Vector{C}}(undef, m)
+    m           = length(basis.monoms)
+    rightrows   = Vector{Vector{Int}}(undef, m)
+    rightcoeffs = Vector{Vector{C}}(undef, m)
 
     lsz = n
     lefthash2col = Dict{Int, Int}()
@@ -53,16 +51,27 @@ function initialize_double_matrix(basis::Basis{C}) where {C<:Coeff}
     righthash2col = Dict{Int, Int}()
     rightcol2hash = Vector{Int}(undef, rsz)
 
-    DoubleMacaulayMatrix(leftrows, leftcoeffs, rightrows,
-                rightcoeffs, pivot2idx, lefthash2col, leftcol2hash,
-                righthash2col, rightcol2hash, n, 0, m, 0, 0)
+    DoubleMacaulayMatrix(
+        leftrows,
+        leftcoeffs,
+        rightrows,
+        rightcoeffs,
+        pivot2idx,
+        lefthash2col,
+        leftcol2hash,
+        righthash2col,
+        rightcol2hash,
+        n,
+        0,
+        m,
+        0,
+        0
+    )
 end
 
-
-function convert_to_double_dense_row(matrix, monom, vector::Basis{C}, ht) where {C<:Coeff}
-
+function convert_to_double_dense_row(matrix, monom, vector::Basis{C}, ht) where {C <: Coeff}
     if matrix.nrcols >= length(matrix.rightcol2hash)
-        resize!(matrix.rightcol2hash, 2*length(matrix.rightcol2hash))
+        resize!(matrix.rightcol2hash, 2 * length(matrix.rightcol2hash))
     end
     matrix.nrcols += 1
     matrix.rightcol2hash[matrix.nrcols] = monom
@@ -75,14 +84,13 @@ function convert_to_double_dense_row(matrix, monom, vector::Basis{C}, ht) where 
     for i in 1:length(exps)
         if !haskey(matrix.lefthash2col, exps[i])
             if matrix.nlcols >= length(matrix.leftcol2hash)
-                resize!(matrix.leftcol2hash, 2*length(matrix.leftcol2hash))
+                resize!(matrix.leftcol2hash, 2 * length(matrix.leftcol2hash))
             end
             matrix.nlcols += 1
             matrix.lefthash2col[exps[i]] = matrix.nlcols
             matrix.leftcol2hash[matrix.nlcols] = exps[i]
         end
     end
-
 
     leftrow = zeros(C, matrix.nlcols)
     for i in 1:length(exps)
@@ -95,8 +103,15 @@ end
 # reduces row by mul*cfs modulo ch at indices positions
 #
 # Finite field magic specialization
-function reduce_by_pivot_simultaneous!(leftrow, leftexps, leftcfs::Vector{T},
-                rightrow, rightexps, rightcfs, arithmetic) where {T<:CoeffFF}
+function reduce_by_pivot_simultaneous!(
+    leftrow,
+    leftexps,
+    leftcfs::Vector{T},
+    rightrow,
+    rightexps,
+    rightcfs,
+    arithmetic
+) where {T <: CoeffFF}
 
     # mul = -densecoeffs[i]
     # actually.. not bad!
@@ -104,12 +119,12 @@ function reduce_by_pivot_simultaneous!(leftrow, leftexps, leftcfs::Vector{T},
 
     @inbounds for j in 1:length(leftexps)
         idx = leftexps[j]
-        leftrow[idx] = mod_x(leftrow[idx] + mul*leftcfs[j], arithmetic)
+        leftrow[idx] = mod_x(leftrow[idx] + mul * leftcfs[j], arithmetic)
     end
 
     @inbounds for j in 1:length(rightexps)
         idx = rightexps[j]
-        rightrow[idx] = mod_x(rightrow[idx] + mul*rightcfs[j], arithmetic)
+        rightrow[idx] = mod_x(rightrow[idx] + mul * rightcfs[j], arithmetic)
     end
 
     mul
@@ -117,7 +132,11 @@ end
 
 #
 # Finite field magic specialization
-function normalize_double_row_sparse!(leftcfs::Vector{T}, rightcfs, arithmetic) where {T<:CoeffFF}
+function normalize_double_row_sparse!(
+    leftcfs::Vector{T},
+    rightcfs,
+    arithmetic
+) where {T <: CoeffFF}
     pinv = mod_x(invmod(leftcfs[1], divisor(arithmetic)), arithmetic)
     @inbounds for i in 2:length(leftcfs)
         leftcfs[i] = mod_x(leftcfs[i] * pinv, arithmetic)
@@ -131,7 +150,11 @@ end
 
 #
 # Finite field magic specialization
-function normalize_double_row_sparse!(leftcfs::Vector{T}, rightcfs, arithmetic) where {T<:CoeffQQ}
+function normalize_double_row_sparse!(
+    leftcfs::Vector{T},
+    rightcfs,
+    arithmetic
+) where {T <: CoeffQQ}
     pinv = inv(leftcfs[1])
     @inbounds for i in 2:length(leftcfs)
         # row[i] *= pinv
@@ -144,12 +167,18 @@ function normalize_double_row_sparse!(leftcfs::Vector{T}, rightcfs, arithmetic) 
     end
 end
 
-
 # reduces row by mul*cfs modulo ch at indices positions
 #
 # Rational field specialization
-function reduce_by_pivot_simultaneous!(leftrow, leftexps, leftcfs::Vector{T},
-                rightrow, rightexps, rightcfs, arithmetic) where {T<:CoeffQQ}
+function reduce_by_pivot_simultaneous!(
+    leftrow,
+    leftexps,
+    leftcfs::Vector{T},
+    rightrow,
+    rightexps,
+    rightcfs,
+    arithmetic
+) where {T <: CoeffQQ}
 
     # mul = -densecoeffs[i]
     # actually.. not bad!
@@ -158,22 +187,23 @@ function reduce_by_pivot_simultaneous!(leftrow, leftexps, leftcfs::Vector{T},
 
     @inbounds for j in 1:length(leftexps)
         idx = leftexps[j]
-        leftrow[idx] = leftrow[idx] + mul*leftcfs[j]
+        leftrow[idx] = leftrow[idx] + mul * leftcfs[j]
     end
 
     @inbounds for j in 1:length(rightexps)
         idx = rightexps[j]
-        rightrow[idx] = rightrow[idx] + mul*rightcfs[j]
+        rightrow[idx] = rightrow[idx] + mul * rightcfs[j]
     end
 
     mul
 end
 
-
 function reduce_double_dense_row_by_known_pivots_sparse!(
-            matrix::DoubleMacaulayMatrix{C},
-            leftrow, rightrow, arithmetic) where {C}
-
+    matrix::DoubleMacaulayMatrix{C},
+    leftrow,
+    rightrow,
+    arithmetic
+) where {C}
     leftrows  = matrix.leftpivs
     rightrows = matrix.rightrows
 
@@ -191,7 +221,7 @@ function reduce_double_dense_row_by_known_pivots_sparse!(
         @warn "hmm" leftrow
     end
 
-    for i in 1:matrix.nlcols
+    for i in 1:(matrix.nlcols)
 
         # if row element zero - no reduction
         @inbounds if leftrow[i] == uzero
@@ -215,9 +245,15 @@ function reduce_double_dense_row_by_known_pivots_sparse!(
         rightexps = rightrows[pivot2idx[i]]
         rightcfs  = matrix.rightcoeffs[pivot2idx[i]]
 
-        mul = reduce_by_pivot_simultaneous!(leftrow, leftexps, leftcfs,
-                        rightrow, rightexps, rightcfs, arithmetic)
-
+        mul = reduce_by_pivot_simultaneous!(
+            leftrow,
+            leftexps,
+            leftcfs,
+            rightrow,
+            rightexps,
+            rightcfs,
+            arithmetic
+        )
     end
 
     return k == 0, np, k
@@ -249,11 +285,12 @@ function extract_sparse_row(row::Vector{C}, np, k) where {C}
 end
 
 function linear_relation!(
-            ring,
-            matrix::DoubleMacaulayMatrix,
-            monom::MonomIdx, vector::Basis{C},
-            ht) where {C<:Coeff}
-
+    ring,
+    matrix::DoubleMacaulayMatrix,
+    monom::MonomIdx,
+    vector::Basis{C},
+    ht
+) where {C <: Coeff}
     arithmetic = select_arithmetic(vector.coeffs, ring.ch)
 
     leftrow, rightrow = convert_to_double_dense_row(matrix, monom, vector, ht)
@@ -267,7 +304,12 @@ function linear_relation!(
         println(matrix)
     end
 
-    reduced, np, k = reduce_double_dense_row_by_known_pivots_sparse!(matrix, leftrow, rightrow, arithmetic)
+    reduced, np, k = reduce_double_dense_row_by_known_pivots_sparse!(
+        matrix,
+        leftrow,
+        rightrow,
+        arithmetic
+    )
 
     if debug()
         @warn "reduced"

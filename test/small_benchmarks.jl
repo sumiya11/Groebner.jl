@@ -1,6 +1,5 @@
 
 @testset "qq small benchmarks" begin
-
     systems = [
         ("noon 5", Groebner.change_ordering(Groebner.noonn(5), :degrevlex)),
         ("noon 6", Groebner.change_ordering(Groebner.noonn(6), :degrevlex)),
@@ -10,7 +9,7 @@
         ("katsura 5", Groebner.change_ordering(Groebner.katsuran(5), :degrevlex)),
         ("katsura 6", Groebner.change_ordering(Groebner.katsuran(6), :degrevlex)),
         ("katsura 7", Groebner.change_ordering(Groebner.katsuran(7), :degrevlex)),
-        ("henrion 5", Groebner.change_ordering(Groebner.henrion5(), :degrevlex)),
+        ("henrion 5", Groebner.change_ordering(Groebner.henrion5(), :degrevlex))
         # ("henrion 6", Groebner.change_ordering(Groebner.henrion6(), :degrevlex)),
     ]
 
@@ -18,6 +17,4 @@
         @info "testing" name
         @test Groebner.isgroebner(Groebner.groebner(system))
     end
-
 end
-
