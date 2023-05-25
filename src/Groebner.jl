@@ -18,10 +18,7 @@ import Primes: nextprime
 
 import Random
 
-# some simple reference implementations
-include("reference.jl")
-
-# CRT and rational reconstruction
+# CRT and rational number reconstruction
 include("arithmetic/reconstruction.jl")
 # arithmetic in Zp
 include("arithmetic/modular.jl")
@@ -41,7 +38,7 @@ include("types.jl")
 include("keywords.jl")
 
 # input-output conversions for polynomials
-include("io.jl")
+include("input-output.jl")
 
 #= generic f4 implementation =#
 #= the heart of this library =#

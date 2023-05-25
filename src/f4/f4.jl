@@ -686,6 +686,8 @@ function f4!(
     @assert ring.ord == ht.ord && ring.nvars == ht.nvars
     @assert basis.ndone == 0
 
+    # TODO: decide on the number field arithmetic implementation here!!!
+
     matrix = initialize_matrix(ring, C)
 
     # initialize hash tables for update and symbolic preprocessing steps

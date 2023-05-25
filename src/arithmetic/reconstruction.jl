@@ -1,88 +1,31 @@
-# The file contains rational reconstruction and CRT reconstruction functions
+# Rational reconstruction and Chinese remainder theorem (CRT) reconstruction
 
-# A reference implementation of rational reconstruction
-# (a little bit outdated)
-#
-# Rational number reconstruction implementation borrowed from CLUE
-# and modified a bit to suit the 'Modern Computer Algebra' definitions
-# Returns a rational r // h of QQ field in a canonical form such that
-#   r // h ≡ a (mod m)
-#
-# let n = max( λ(a), λ(m) ) , where λ(x) is a number of bits for x
-# O(n^2)
-function rational_reconstruction(a::I, m::I) where {I <: Union{Int, BigInt}}
-    a = mod(a, m)
-    if a == 0 || m == 0
-        return AbstractAlgebra.QQ(0, 1)
-    end
-    if m < 0
-        m = -m
-    end
-    if a < 0
-        a = m - a
-    end
-    if a == 1
-        return AbstractAlgebra.QQ(1, 1)
-    end
-    bnd = sqrt(float(m) / 2)
-
-    @debug "" bnd
-    U = (I(1), I(0), m)
-    V = (I(0), I(1), a)
-    while abs(V[3]) >= bnd
-        q = div(U[3], V[3])
-        T = U .- q .* V
-        U = V
-        V = T
-    end
-
-    t = abs(V[2])
-    r = V[3] * sign(V[2])
-
-    @debug "" r t
-
-    # changed from `<= bnd` to `<= m / bnd`
-    # we can speed up this !
-    # if t <= bnd && gcd(r, t) == 1
-    #    return QQ(r, t)
-    # end
-
-    return AbstractAlgebra.QQ(r, t)
-
-    # throw(DomainError(
-    #    :($a//$m), "rational reconstruction of $a (mod $m) does not exist"
-    # ))
-
-    # return QQ(0, 1)
-end
-
-# Returns the bound for rational reconstruction
-# based on the size of the modulo
-#
-# The bound for rational reconstrction:
-# as soon as the numerator in rational reconstruction
-# exceeds this bound, the gcd iteration stops
+"""
+Returns the bound for rational reconstruction (see `rational_reconstruction!`)
+based on the bitsize of the modulo. As soon as the numerator in rational
+reconstruction exceeds this bound, the gcd iteration stops
+"""
 function rational_reconstruction_bound(modulo::BigInt)
     setprecision(2 * Base.GMP.MPZ.sizeinbase(modulo, 2)) do
         ceil(BigInt, sqrt(BigFloat(modulo) / 2))
     end
 end
 
-# 0 allocations on Julia level!
-#=
-    Computes the rational reconstruction of `a` mod `m`.
-    Namely, a pair of numbers num, den, such that
-        num//den ≡ a (mod m)
-    Writes the answer to arguments `num` and `den`.
+"""
+Computes the rational reconstruction of `a` mod `m`. Namely, a pair of numbers
+`num`, `den`, such that 
 
-    Returns true iff the reconstrction was successful. 
+    num//den ≡ a (mod m)
 
-    Additional params:
-        bnd  = stores stopping criterion threshold
-        buf, buf1, buf2, buf3  = buffers
-        u1, u2, u3 = buffers
-        v1, v2, v3 = buffers
-=#
+Writes the answer to `num` and `den` inplace.
+
+Returns `true` if the reconstrction was successful and `false` otherwise. 
+
+# Additional parameters:
+- `bnd`: stores the stopping criterion threshold 
+    (see `rational_reconstruction_bound`) 
+- `buf`, `buf1`, `buf2`, `buf3`, `u1`, `u2`, `u3`,  `v1`, `v2`, `v3`: buffers
+"""
 function rational_reconstruction!(
     num::BigInt,
     den::BigInt,
@@ -106,9 +49,10 @@ function rational_reconstruction!(
         return true
     end
 
-    # assumes input is nonnegative
+    # assumes the input is nonnegative
     @assert Base.GMP.MPZ.cmp_ui(a, 0) > 0
 
+    # fast path for 1//1 if the input is 1
     if Base.GMP.MPZ.cmp_ui(a, 1) == 0
         Base.GMP.MPZ.set_ui!(num, 1)
         Base.GMP.MPZ.set_ui!(den, 1)
@@ -172,24 +116,21 @@ function rational_reconstruction!(
     true
 end
 
-#------------------------------------------------------------------------------
+"""
+Implements the Chinese remainder algorithm.
+Computes the unique `x` such that
+        
+    x ≡ a1 mod m1
+    x ≡ a2 mod m2
 
-# 0 allocations on Julia level!
-#=
-    Computes the unique x s.t
-        x ≡ a1 mod m1
-        x ≡ a2 mod m2
+Writes the answer to `buf` inplace.
 
-    Writes the answer to argument `buf`.
-
-    Additional params:
-        M   = m1*m2
-        buf = buffer
-        n1  = buffer
-        n2  = buffer
-        minv1 = m1^-1 mod M
-        minv2 = m2^-1 mod M
-=#
+# Additional params:
+- `M`: must be equal `m1 * m2`
+- `buf`, `n1`, `n2`: buffers
+- `minv1`: must be equal `m1^-1 mod M`
+- `minv2`: must be equal `m2^-1 mod M`
+"""
 function CRT!(
     M::BigInt,
     buf::BigInt,
