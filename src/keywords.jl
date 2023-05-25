@@ -1,3 +1,8 @@
+# 
+
+_default_rng(seed) = Random.Xoshiro(seed)
+
+
 # The game with monomial representations:
 #  - there are our internal representations (<:RepresentationStyle), 
 #  - and user-given hints in the input (<:RepresentationHint).

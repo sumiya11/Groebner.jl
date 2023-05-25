@@ -21,7 +21,7 @@ Writes the answer to `num` and `den` inplace.
 
 Returns `true` if the reconstrction was successful and `false` otherwise. 
 
-# Additional parameters:
+## Additional parameters:
 - `bnd`: stores the stopping criterion threshold 
     (see `rational_reconstruction_bound`) 
 - `buf`, `buf1`, `buf2`, `buf3`, `u1`, `u2`, `u3`,  `v1`, `v2`, `v3`: buffers
@@ -125,7 +125,7 @@ Computes the unique `x` such that
 
 Writes the answer to `buf` inplace.
 
-# Additional params:
+## Additional params:
 - `M`: must be equal `m1 * m2`
 - `buf`, `n1`, `n2`: buffers
 - `minv1`: must be equal `m1^-1 mod M`
