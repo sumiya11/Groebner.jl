@@ -1,54 +1,53 @@
+# Backend for `groebner`.
 
-function groebner(
-    polynomials::AbstractVector,
-    representation::RepresentationStyle,
-    reduced::Bool,
-    ordering::AbstractMonomialOrdering,
-    certify::Bool,
-    linalg::Symbol,
-    rng,
-    maxpairs::Int
-)
-    #= extract ring information, exponents and coefficients
-       from input polynomials =#
-    # Copies input, so that polynomials would not be changed itself.
-    ring, exps, coeffs = convert_to_internal(representation, polynomials, ordering)
-
-    #= check and set algorithm parameters =#
-    metainfo = set_metaparameters(ring, ordering, certify, linalg, rng, maxpairs)
-    # now ring stores computation ordering
-    # metainfo is now a struct to store target ordering
-
-    iszerobasis = remove_zeros_from_input!(ring, exps, coeffs)
-    iszerobasis && (return convert_to_output(ring, polynomials, exps, coeffs, metainfo))
-
-    #= change input ordering if needed =#
-    newring = assure_ordering!(ring, exps, coeffs, metainfo.targetord)
-
-    #= compute the groebner basis =#
-    bexps, bcoeffs = groebner(newring, exps, coeffs, reduced, metainfo, maxpairs)
-
-    # ring contains ordering of computation, it is the requested ordering
-    #= convert result back to representation of input =#
-    convert_to_output(newring, polynomials, bexps, bcoeffs, metainfo)
+# A proxy function to safely dispatch between specialized algorithms
+function _groebner(polynomials, kws::Keywords)
+    # Try to guess efficient internal representation for polynomials
+    representation = guess_representation(polynomials, kws, UnsafeRepresentation())
+    try
+        # Some polynomial representations are considered "unsafe" 
+        # (e.g., overflow). 
+        # The computation with such representation may fail,
+        # so wrap it in a try/catch
+        return _groebner(polynomials, kws, representation)
+    catch beda
+        # If failed with a recoverable exception 
+        if isa(beda, ExponentOverflow)
+            representation = default_safe_representation(kws)
+            return _groebner(polynomials, kws, representation)
+        else
+            rethrow(beda)
+        end
+    end
 end
 
-#------------------------------------------------------------------------------
-# Finite field groebner
+function _groebner(polynomials, kws::Keywords, r::Representation)
+    # Extract ring information, exponents, and coefficients from input polynomials.
+    # This copies the input, so that `polynomials` itself is not modified.
+    ring, exps, coeffs = convert_to_internal(representation, polynomials, kws)
+    # Check and set algorithm parameters
+    params = Parameters(ring, kws)
+    # TODO: move to input-output.jl ?
+    iszerox = remove_zeros_from_input!(ring, exps, coeffs)
+    iszerox && (return convert_to_output(ring, polynomials, exps, coeffs, metainfo))
 
-# groebner over integers modulo a prime is simple:
-# just initialize and call f4 modulo a prime.
+    # Change input ordering if needed
+    newring = assure_ordering!(ring, exps, coeffs, params)
+    # Compute a groebner basis
+    bexps, bcoeffs = _groebner(newring, exps, coeffs, params)
+    # Convert result back to the representation of input
+    convert_to_output(newring, polynomials, bexps, bcoeffs, params)
+end
 
-function groebner(
+function _groebner(
     ring::PolyRing,
-    exps::Vector{Vector{M}},
+    monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
-    reduced::Bool,
-    meta::GroebnerMetainfo{Rng},
-    maxpairs
-) where {M <: Monom, C <: CoeffFF, Rng <: Random.AbstractRNG}
+    params::Parameters
+) where {M <: Monom, C <: CoeffFF}
 
     # select hashtable size
+    # TODO: move into `initialize_structures`
     tablesize = select_tablesize(ring, exps)
 
     # initialize basis and hashtable structures
@@ -83,13 +82,11 @@ initial_batchsize() = 1
 initial_gaps() = (1, 1, 1, 1, 1)
 batchsize_multiplier() = 2
 
-function groebner(
+function _groebner(
     ring::PolyRing,
     exps::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
-    reduced::Bool,
-    meta::GroebnerMetainfo,
-    maxpairs
+    params::Parameters
 ) where {M <: Monom, C <: CoeffQQ}
 
     # we can mutate coeffs and exps here
@@ -248,4 +245,12 @@ function groebner(
 
     gb_exps = hash_to_exponents(gens_ff, ht)
     gb_exps, coeffaccum.gb_coeffs_qq
+end
+
+function _groebner(
+    ring::PolyRing,
+    monoms::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    params
+) where {M <: Monom, C <: CoeffParam}
 end

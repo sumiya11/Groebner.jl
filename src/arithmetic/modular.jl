@@ -1,4 +1,4 @@
-# Modular arithmetic -- arithmetic in Zp
+# Modular arithmetic -- arithmetic in Zp.
 
 # The file provides implementation(s) of modular arithmetic. 
 # Modular arithmetic is used in f4/matrix.jl and f4/f4.jl in case

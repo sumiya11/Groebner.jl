@@ -1,4 +1,45 @@
 
+function isgroebner(
+    polynomials;
+    ordering=InputOrdering(),
+    certify=false,
+    seed=42,
+    loglevel=Logging.Warn
+)
+
+    #= set the logger =#
+    prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
+
+    #= extract ring information, exponents and coefficients
+       from input polynomials =#
+    # Copies input, so that polys would not be changed itself.
+    ring, exps, coeffs =
+        convert_to_internal(default_safe_representation(), polynomials, ordering)
+
+    #= check and set algorithm parameters =#
+    metainfo = set_metaparameters(ring, ordering, certify, :exact, rng)
+    # now ring stores computation ordering
+    # metainfo is now a struct to store target ordering
+
+    iszerobasis = remove_zeros_from_input!(ring, exps, coeffs)
+    iszerobasis && (return true)
+
+    #= change input ordering if needed =#
+    newring = assure_ordering!(ring, exps, coeffs, metainfo.targetord)
+
+    #= check if groebner basis =#
+    flag = isgroebner(newring, exps, coeffs, metainfo)
+
+    #=
+    Assuming ordering of `bexps` here matches `ring.ord`
+    =#
+
+    #= revert logger =#
+    Logging.global_logger(prev_logger)
+
+    flag
+end
+
 function isgroebner_f4!(
     ring::PolyRing,
     basis::Basis{C},

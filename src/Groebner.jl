@@ -1,7 +1,40 @@
 module Groebner
+# Groebner is a package for computing Gröbner bases.
+#
+# Groebner works over integers modulo a prime and over the rationals. Groebner
+# does not provide a polynomial implementation of its own but relies on existing
+# symbolic computation packages in Julia for communicating with the user
+# instead. At its heart Groebner implements F4 and modular techniques.
+#
+# Here is how Groebner works from bird's eye view. 
+# The primary function exported by Groebner is `groebner`.
+#
+#     (1)             (2)             (3)            (4)            (5)
+#   polynoms  -->  internal  -->  F4 backend  -->  internal  -->  polynoms
+#                    repr.                           repr.
+#
+# (1) -> (2): The `groebner` function accepts an array of polynomials and
+# extracts the raw data: polynomial ring information, polynomial exponent
+# vectors, polynomial coefficients. Then, it converts the data to an internal
+# representation, which may depend on the features of input. For example,
+# exponent vectors could be stored densely or sparsely. See
+# `src/input-output.jl` for details. 
+# (2) -> (3): The appropriate algorithm is called (Z_p vs. Q). The algorithm
+# initializes the data structures necessary for F4 (hashtables for monomials,
+# storages for critical pairs and polynomials) and invokes the F4 backend.
+# Over the rationals modular computations are used to reduce the task to Z_p.
+# This logic is implemented in `src/gb`. The F4 backend is encapsulated within
+# the `src/f4` directory.
+# (3) -> (4), (4) -> (5): The correctness of result is checked and some
+# post-processing steps may be applied. Finally, the internal representation is
+# extracted from the F4 data structures and converted back to the original
+# polynomial types.
 
 debug() = false
 
+# Groebner accepts as an input polynomials from the Julia packages
+# AbstractAlgebra.jl (Oscar.jl) and MultivariatePolynomials.jl.
+# This list can be extended; see `src/input-output.jl` for details.
 import AbstractAlgebra
 import AbstractAlgebra: base_ring, elem_type
 
@@ -20,7 +53,7 @@ import Random
 
 # CRT and rational number reconstruction
 include("arithmetic/reconstruction.jl")
-# arithmetic in Zp
+# arithmetic in Z_p
 include("arithmetic/modular.jl")
 
 # supported monomial orderings
@@ -51,7 +84,7 @@ include("f4/matrix.jl")
 include("f4/sorting.jl")
 # Enable tracing
 include("f4/tracer.jl")
-# All together combined in generic f4 implementation 
+# All together combined in F4 algorithm
 include("f4/f4.jl")
 
 #= more high level functions =#
@@ -96,4 +129,4 @@ export NotPacked, Packed, best_monom_representation
 @doc read(joinpath(dirname(@__DIR__), "README.md"), String) Groebner
 
 # 라헬
-end
+end # module Groebner

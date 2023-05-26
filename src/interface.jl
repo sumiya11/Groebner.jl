@@ -59,28 +59,8 @@ groebner([x*y^2 + x, y*x^2 + y])
 ```
 
 """
-function groebner(
-    polynomials;
-    reduced=true,
-    ordering=InputOrdering(),
-    certify=false,
-    linalg=:prob,
-    monoms=best_monom_representation(),
-    seed=42,
-    loglevel=Logging.Warn,
-    maxpairs=typemax(Int)
-)
-    _groebner(
-        polynomials,
-        reduced,
-        ordering,
-        certify,
-        linalg,
-        monoms,
-        seed,
-        loglevel,
-        maxpairs
-    )
+function groebner(polynomials::AbstractVector; kws...)
+    _groebner(polynomials, Keywords(kws))
 end
 
 """
@@ -128,49 +108,12 @@ isgroebner([x*y^2 + x, y*x^2 + y])
 ```
 
 """
-function isgroebner(
-    polynomials;
-    ordering=InputOrdering(),
-    certify=false,
-    seed=42,
-    loglevel=Logging.Warn
-)
-
-    #= set the logger =#
-    prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
-
-    #= extract ring information, exponents and coefficients
-       from input polynomials =#
-    # Copies input, so that polys would not be changed itself.
-    ring, exps, coeffs =
-        convert_to_internal(default_safe_representation(), polynomials, ordering)
-
-    #= check and set algorithm parameters =#
-    metainfo = set_metaparameters(ring, ordering, certify, :exact, rng)
-    # now ring stores computation ordering
-    # metainfo is now a struct to store target ordering
-
-    iszerobasis = remove_zeros_from_input!(ring, exps, coeffs)
-    iszerobasis && (return true)
-
-    #= change input ordering if needed =#
-    newring = assure_ordering!(ring, exps, coeffs, metainfo.targetord)
-
-    #= check if groebner basis =#
-    flag = isgroebner(newring, exps, coeffs, metainfo)
-
-    #=
-    Assuming ordering of `bexps` here matches `ring.ord`
-    =#
-
-    #= revert logger =#
-    Logging.global_logger(prev_logger)
-
-    flag
+function isgroebner(polynomials::AbstractVector; kws...)
+    _isgroebner(polynomials, Keywords(kws))
 end
 
 """
-    normalform(basis, tobereduced; options)
+    normalform(basis, tobereduced; options...)
 
 Computes the normal form of polynomials `tobereduced` w.r.t `basis`.
 `tobereduced` can be either a single polynomial or an array of polynomials.
@@ -230,91 +173,12 @@ julia> normalform([y^2 + x, x^2 + y], x^2 + y^2 + 1)
 ```
 
 """
-function normalform(
-    basis,
-    tobereduced;
-    check=true,
-    ordering=InputOrdering(),
-    rng=Random.MersenneTwister(42),
-    loglevel=Logging.Warn
-)
-    iszero(tobereduced) && (return tobereduced)
-
-    first(
-        normalform(
-            basis,
-            [tobereduced],
-            check=check,
-            ordering=ordering,
-            rng=rng,
-            loglevel=loglevel
-        )
-    )
-end
-
-function normalform(
-    basispolys::Vector{Poly},
-    tobereduced::Vector{Poly};
-    check::Bool=true,
-    ordering::AbstractMonomialOrdering=InputOrdering(),
-    rng::Rng=Random.MersenneTwister(42),
-    loglevel::LogLevel=Logging.Warn
-) where {Poly, Rng <: Random.AbstractRNG}
-
-    #= set the logger =#
-    prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
-
-    check && _check_isgroebner(basispolys)
-
-    #= extract ring information, exponents and coefficients
-       from input basis polynomials =#
-    # Copies input, so that polys would not be changed itself.
-    ring1, basisexps, basiscoeffs =
-        convert_to_internal(default_safe_representation(), basispolys, ordering)
-    ring2, tbrexps, tbrcoeffs =
-        convert_to_internal(default_safe_representation(), tobereduced, ordering)
-
-    @assert ring1.nvars == ring2.nvars && ring1.ch == ring2.ch
-    @assert ring1.ord == ring2.ord
-
-    ring = ring1
-
-    #= check and set algorithm parameters =#
-    metainfo = set_metaparameters(ring, ordering, false, :exact, rng)
-
-    iszerobasis = remove_zeros_from_input!(ring, basisexps, basiscoeffs)
-    iszerobasis &&
-        (return convert_to_output(ring, tobereduced, tbrexps, tbrcoeffs, metainfo))
-
-    #= change input ordering if needed =#
-    newring = assure_ordering!(ring, basisexps, basiscoeffs, metainfo.targetord)
-    newring = assure_ordering!(ring, tbrexps, tbrcoeffs, metainfo.targetord)
-
-    # We assume basispolys is already a Groebner basis! #
-
-    #= compute the groebner basis =#
-    bexps, bcoeffs =
-        normal_form_f4(newring, basisexps, basiscoeffs, tbrexps, tbrcoeffs, rng)
-
-    #=
-    Assuming ordering of `bexps` here matches `newring.ord`
-    =#
-
-    #= revert logger =#
-    Logging.global_logger(prev_logger)
-
-    # ring contains ordering of computation, it is the requested ordering
-    #= convert result back to representation of input =#
-    convert_to_output(newring, tobereduced, bexps, bcoeffs, metainfo)
+function normalform(basis::AbstractVector, tobereduced; kws...)
+    _normalform(basis, tobereduced, Keywords(kws))
 end
 
 """
-    function kbase(
-        basis;
-        check=true,
-        rng=MersenneTwister(42),
-        loglevel=Warn
-    )
+    kbase(basis; options...)
 
 Computes the basis of polynomial ring modulo the zero-dimensional ideal
 generated by `basis` as a basis of vector space.
@@ -332,38 +196,6 @@ julia> kbase([y^2 + x, x^2 + y], check=true)
 ```
 
 """
-function kbase(
-    basis::Vector{Poly};
-    check::Bool=true,
-    rng::Rng=Random.MersenneTwister(42),
-    loglevel::Logging.LogLevel=Logging.Warn
-) where {Poly, Rng <: Random.AbstractRNG}
-
-    #= set the logger =#
-    prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
-
-    check && _check_isgroebner(basis)
-
-    #= extract ring information, exponents and coefficients
-       from input polynomials =#
-    # Copies input, so that polynomials would not be changed itself.
-    ring, exps, coeffs =
-        convert_to_internal(default_safe_representation(), basis, InputOrdering())
-
-    metainfo = set_metaparameters(ring, InputOrdering(), false, :exact, rng)
-
-    iszerobasis = remove_zeros_from_input!(ring, exps, coeffs)
-    iszerobasis &&
-        (throw(DomainError(basis, "Groebner.kbase does not work with such ideals, sorry")))
-
-    bexps, bcoeffs = kbase_f4(ring, exps, coeffs, metainfo)
-
-    # ordering in bexps here matches target ordering in metainfo
-
-    #= revert logger =#
-    Logging.global_logger(prev_logger)
-
-    # ring contains ordering of computation, it is the requested ordering
-    #= convert result back to representation of input =#
-    convert_to_output(ring, basis, bexps, bcoeffs, metainfo)
+function kbase(basis::AbstractVector; kws...) 
+    _kbase(basis, Keywords(kws))
 end

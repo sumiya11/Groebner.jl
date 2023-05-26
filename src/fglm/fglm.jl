@@ -214,3 +214,32 @@ function kbase_f4(
 
     export_basis_data(linbasis, ht)
 end
+
+    #= set the logger =#
+    prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
+
+    check && _check_isgroebner(basis)
+
+    #= extract ring information, exponents and coefficients
+       from input polynomials =#
+    # Copies input, so that polynomials would not be changed itself.
+    ring, exps, coeffs =
+        convert_to_internal(default_safe_representation(), basis, InputOrdering())
+
+    metainfo = set_metaparameters(ring, InputOrdering(), false, :exact, rng)
+
+    iszerobasis = remove_zeros_from_input!(ring, exps, coeffs)
+    iszerobasis &&
+        (throw(DomainError(basis, "Groebner.kbase does not work with such ideals, sorry")))
+
+    bexps, bcoeffs = kbase_f4(ring, exps, coeffs, metainfo)
+
+    # ordering in bexps here matches target ordering in metainfo
+
+    #= revert logger =#
+    Logging.global_logger(prev_logger)
+
+    # ring contains ordering of computation, it is the requested ordering
+    #= convert result back to representation of input =#
+    convert_to_output(ring, basis, bexps, bcoeffs, metainfo)
+end

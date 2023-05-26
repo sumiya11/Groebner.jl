@@ -5,9 +5,11 @@
 
 
 The package provides Groebner bases computation interface in pure Julia with the performance comparable to Singular.
-`Groebner.jl` works over finite fields and the rationals, and supports various monomial orderings.
+`Groebner.jl` works over finite fields and over the rationals, and supports various monomial orderings.
 
 For documentation and more please check out https://sumiya11.github.io/Groebner.jl
+
+Groebner.jl can be extended : how the code is structured .
 
 ## How to use Groebner.jl?
 

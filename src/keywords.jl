@@ -1,7 +1,29 @@
 # 
 
-_default_rng(seed) = Random.Xoshiro(seed)
+"""
+    Keywords
 
+
+"""
+struct Keywords{Ord <: AbstractMonomialOrdering, M <: Representation}
+    reduced::Bool
+    ordering::Ord
+    certify::Bool
+    linalg::Symbol
+    monoms::M
+    seed::Int
+    loglevel::Logging.LogLevel
+    maxpairs::Int
+
+    function Keywords(kws)
+        new(
+            get(kws, :reduced, true),
+        )
+    end
+
+end
+
+_default_rng(seed) = Random.Xoshiro(seed)
 
 # The game with monomial representations:
 #  - there are our internal representations (<:RepresentationStyle), 
