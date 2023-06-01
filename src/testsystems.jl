@@ -1,5 +1,5 @@
 #! format: off
-# Syntax formatting is off in this file.
+# Syntax formatting is disabled in this file.
 
 # Systems used for testing and benchmarking
 

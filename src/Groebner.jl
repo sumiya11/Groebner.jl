@@ -30,7 +30,31 @@ module Groebner
 # extracted from the F4 data structures and converted back to the original
 # polynomial types.
 
-debug() = false
+# Adapted from 
+#   https://discourse.julialang.org/t/assert-alternatives/24775
+"""
+    enable_invariants()
+
+Enforce runtime invariant checking. If `true`, checks are enabled. If
+`false`, checks are disabled and have no runtime overhead.
+"""
+enable_invariants() = true
+
+"""
+    @invariant expr
+
+Throw an `AssertionError` if `expr` evaluates to `false`.
+Can be enabled/disabled by `enable_invariants`.
+
+**Note:** the Julia's `@assert` will trigger independently of the value returned by `enable_invariants`.
+"""
+macro invariant(expr)
+    esc(:(
+        if $(@__MODULE__).enable_invariants()
+            @assert $expr
+        end
+    ))
+end
 
 # Groebner accepts as an input polynomials from the Julia packages
 # AbstractAlgebra.jl (Oscar.jl) and MultivariatePolynomials.jl.
@@ -119,7 +143,6 @@ export groebner
 export isgroebner
 export normalform
 
-export fglm
 export kbase
 
 export Lex,

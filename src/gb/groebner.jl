@@ -1,22 +1,31 @@
-# Backend for `groebner`.
+# Backend for `groebner`
 
-# A proxy function to safely dispatch between specialized algorithms
+# Proxy function dedicated to handling errors.
 function _groebner(polynomials, kws::Keywords)
-    # Try to guess efficient internal representation for polynomials
-    representation = guess_representation(polynomials, kws, UnsafeRepresentation())
+    # We try to guess efficient internal polynomial representation, i.e., a
+    # suitable representation of monomials and coefficients. Some polynomial
+    # representations are considered unsafe, implying that the computation may
+    # fail. 
+    #
+    # The backend is wrapped in a try/catch to catch exceptions that one can
+    # hope to recover from (and, perhaps, restart the computation with safer
+    # parameters).
+    unsafe_representation =
+        guess_exponent_vector_representation(polynomials, kws, UnsafeRepresentation())
     try
-        # Some polynomial representations are considered "unsafe" 
-        # (e.g., overflow). 
-        # The computation with such representation may fail,
-        # so wrap it in a try/catch
-        return _groebner(polynomials, kws, representation)
-    catch beda
-        # If failed with a recoverable exception 
-        if isa(beda, ExponentOverflow)
-            representation = default_safe_representation(kws)
-            return _groebner(polynomials, kws, representation)
+        return _groebner(polynomials, kws, unsafe_representation)
+    catch err
+        if isa(err, ExponentOverflow)
+            # Exponent vector overflow happened. Restart the computation with at
+            # least 64 bits per exponent.
+            safe_representation = default_safe_representation(kws)
+            return _groebner(polynomials, kws, safe_representation)
+        elseif isa(err, UnluckyCoefficientCancellation)
+            # Unlucky cancellation of some coefficient happened.
+
         else
-            rethrow(beda)
+            # Something bad happened.
+            rethrow(err)
         end
     end
 end
@@ -252,5 +261,4 @@ function _groebner(
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     params
-) where {M <: Monom, C <: CoeffParam}
-end
+) where {M <: Monom, C <: CoeffParam} end

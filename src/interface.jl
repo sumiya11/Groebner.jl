@@ -60,7 +60,7 @@ groebner([x*y^2 + x, y*x^2 + y])
 
 """
 function groebner(polynomials::AbstractVector; kws...)
-    _groebner(polynomials, Keywords(kws))
+    _groebner(polynomials, Keywords(:groebner, kws))
 end
 
 """
