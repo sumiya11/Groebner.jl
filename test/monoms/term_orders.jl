@@ -8,7 +8,8 @@ implementations_to_test = [
     Groebner.PowerVector{T} where {T},
     Groebner.PackedPair1{T, UInt8} where {T},
     Groebner.PackedPair2{T, UInt8} where {T},
-    Groebner.PackedPair3{T, UInt8} where {T}
+    Groebner.PackedPair3{T, UInt8} where {T},
+    Groebner.PackedPair4{T, UInt8} where {T}
 ]
 
 @testset "term orders: Lex, DegLex, DegRevLex" begin
@@ -83,6 +84,13 @@ implementations_to_test = [
             25 > Groebner.capacity(EV{T}) && continue
             a = make_ev(EV{T}, ones(UInt, 25))
             b = make_ev(EV{T}, ones(UInt, 25))
+            @test !lex(a, b)
+            @test !dl(a, b)
+            @test !drl(a, b)
+
+            30 > Groebner.capacity(EV{T}) && continue
+            a = make_ev(EV{T}, ones(UInt, 30))
+            b = make_ev(EV{T}, ones(UInt, 30))
             @test !lex(a, b)
             @test !dl(a, b)
             @test !drl(a, b)

@@ -14,7 +14,8 @@ implementations_to_test = [
     Groebner.PowerVector{T} where {T},
     Groebner.PackedPair1{T, B} where {T},
     Groebner.PackedPair2{T, B} where {T},
-    Groebner.PackedPair3{T, B} where {T}
+    Groebner.PackedPair3{T, B} where {T},
+    Groebner.PackedPair4{T, B} where {T}
     # Groebner.PackedVector{T, B} where {T},
 ]
 

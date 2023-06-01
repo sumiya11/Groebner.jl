@@ -32,6 +32,13 @@ struct PackedPair3{T <: Unsigned, B <: Unsigned} <: AbstractPackedPair{T, B}
     a3::T
 end
 
+struct PackedPair4{T <: Unsigned, B <: Unsigned} <: AbstractPackedPair{T, B}
+    a1::T
+    a2::T
+    a3::T
+    a4::T
+end
+
 # a `p` object can store capacity(p) integers at max. 
 capacity(p::AbstractPackedPair) = capacity(typeof(p))
 
@@ -41,7 +48,8 @@ function _overflow_check(e::AbstractPackedPair{T, B}) where {T, B}
     _overflow_check(totaldeg(e), B)
 end
 
-const _defined_packed_pairs = ((:PackedPair1, 1), (:PackedPair2, 2), (:PackedPair3, 3))
+const _defined_packed_pairs =
+    ((:PackedPair1, 1), (:PackedPair2, 2), (:PackedPair3, 3), (:PackedPair4, 4))
 
 # for each PackedPairI define something..
 for (op, n) in _defined_packed_pairs
@@ -81,6 +89,8 @@ end
 Base.copy(pv::PackedPair1{T, B}) where {T, B} = PackedPair1{T, B}(pv.a1)
 Base.copy(pv::PackedPair2{T, B}) where {T, B} = PackedPair2{T, B}(pv.a1, pv.a2)
 Base.copy(pv::PackedPair3{T, B}) where {T, B} = PackedPair3{T, B}(pv.a1, pv.a2, pv.a3)
+Base.copy(pv::PackedPair4{T, B}) where {T, B} =
+    PackedPair4{T, B}(pv.a1, pv.a2, pv.a3, pv.a4)
 
 # Creates an exponent vector of the given type from regular vector `ev`
 function make_ev(::Type{PackedPair1{T, B}}, ev::Vector{U}) where {T, B, U}
@@ -158,6 +168,39 @@ function make_ev(::Type{PackedPair3{T, B}}, ev::Vector{U}) where {T, B, U}
     a1 |= s << (indent * 8)
     PackedPair3{T, B}(a1, a2, a3)
 end
+function make_ev(::Type{PackedPair4{T, B}}, ev::Vector{U}) where {T, B, U}
+    n = length(ev)
+    epc = elperchunk(T, B)
+    @assert n < 4 * epc
+    if n < 3 * epc
+        small = make_ev(PackedPair3{T, B}, ev)
+        return PackedPair4{T, B}(small.a1, small.a2, small.a3, zero(T))
+    end
+    indent = sizeof(T) - degsize(T, B, n)
+    a1, a2, a3, a4 = zero(T), zero(T), zero(T), zero(T)
+    s = zero(T)
+    @inbounds for i in n:-1:1
+        _overflow_check(ev[i], B)
+        d = T(ev[i])
+        if div(i - 1, epc) == 3
+            a1 = a1 << (sizeof(B) * 8)
+            a1 = a1 | d
+        elseif div(i - 1, epc) == 2
+            a2 = a2 << (sizeof(B) * 8)
+            a2 = a2 | d
+        elseif div(i - 1, epc) == 1
+            a3 = a3 << (sizeof(B) * 8)
+            a3 = a3 | d
+        else
+            a4 = a4 << (sizeof(B) * 8)
+            a4 = a4 | d
+        end
+        _overflow_check(s, B)
+        s += d
+    end
+    a1 |= s << (indent * 8)
+    PackedPair4{T, B}(a1, a2, a3, a4)
+end
 
 # Creates a zero exponent vector of the given type of length n
 function make_zero_ev(::Type{PackedPair1{T, B}}, n::Integer) where {T, B}
@@ -168,6 +211,9 @@ function make_zero_ev(::Type{PackedPair2{T, B}}, n::Integer) where {T, B}
 end
 function make_zero_ev(::Type{PackedPair3{T, B}}, n::Integer) where {T, B}
     PackedPair3{T, B}(zero(T), zero(T), zero(T))
+end
+function make_zero_ev(::Type{PackedPair4{T, B}}, n::Integer) where {T, B}
+    PackedPair4{T, B}(zero(T), zero(T), zero(T), zero(T))
 end
 
 # Hash of exponent vector `x`
@@ -202,6 +248,20 @@ function Base.hash(x::PackedPair3{T, B}, b::Vector{MH}) where {T, B, MH}
         )
     mod(h, MonomHash)
 end
+function Base.hash(x::PackedPair4{T, B}, b::Vector{MH}) where {T, B, MH}
+    epc = elperchunk(T, B)
+    h = packeddot(x.a4, b, B, 0)
+    h = h + packeddot(x.a3, view(b, (epc + 1):(2 * epc)), B, 0)
+    h = h + packeddot(x.a2, view(b, (2epc + 1):(3 * epc)), B, 0)
+    h =
+        h + packeddot(
+            x.a1,
+            view(b, (3 * epc + 1):length(b)),
+            B,
+            epc - max(epc - 1, length(b) - 3 * epc)
+        )
+    mod(h, MonomHash)
+end
 
 # Creates a regular vector from an exponent vector `pv` 
 # and writes the answer to `tmp`
@@ -229,6 +289,20 @@ function make_dense!(tmp::Vector{I}, pv::PackedPair3{T, B}) where {I, T, B}
     packedunpack!(view(tmp, (epc + 1):(2 * epc)), pv.a2, B, indent)
     indent = epc - min(epc - 1, length(tmp) - 2 * epc)
     packedunpack!(view(tmp, (2 * epc + 1):length(tmp)), pv.a1, B, indent)
+    tmp
+end
+function make_dense!(tmp::Vector{I}, pv::PackedPair4{T, B}) where {I, T, B}
+    epc = elperchunk(T, B)
+    (length(tmp) < 3 * epc) &&
+        return make_dense!(tmp, PackedPair3{T, B}(pv.a1, pv.a2, pv.a3))
+    indent = 0
+    packedunpack!(tmp, pv.a4, B, indent)
+    indent = 0
+    packedunpack!(view(tmp, (epc + 1):(2 * epc)), pv.a3, B, indent)
+    indent = 0
+    packedunpack!(view(tmp, (2 * epc + 1):(3 * epc)), pv.a2, B, indent)
+    indent = epc - min(epc - 1, length(tmp) - 3 * epc)
+    packedunpack!(view(tmp, (3 * epc + 1):length(tmp)), pv.a1, B, indent)
     tmp
 end
 
@@ -265,6 +339,17 @@ function monom_isless(
     ord::Ord
 ) where {T, B, Ord <: AbstractMonomialOrdering}
     s = 3 * div(sizeof(T), sizeof(B)) - 1
+    tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
+    a = make_ev(PowerVector{T}, make_dense!(tmp1, ea))
+    b = make_ev(PowerVector{T}, make_dense!(tmp2, eb))
+    monom_isless(a, b, ord)
+end
+function monom_isless(
+    ea::PackedPair4{T, B},
+    eb::PackedPair4{T, B},
+    ord::Ord
+) where {T, B, Ord <: AbstractMonomialOrdering}
+    s = 4 * div(sizeof(T), sizeof(B)) - 1
     tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
     a = make_ev(PowerVector{T}, make_dense!(tmp1, ea))
     b = make_ev(PowerVector{T}, make_dense!(tmp2, eb))
@@ -335,6 +420,34 @@ function monom_isless(
     end
 end
 
+function monom_isless(
+    ea::PackedPair4{T, B},
+    eb::PackedPair4{T, B},
+    ::DegRevLex
+) where {T, B}
+    da, db = totaldeg(ea), totaldeg(eb)
+    if da < db
+        return true
+    end
+    if da > db
+        return false
+    end
+
+    if ea.a1 == eb.a1
+        if ea.a2 == eb.a2
+            if ea.a3 == eb.a3
+                return !(ea.a4 <= eb.a4)
+            else
+                return !(ea.a3 <= eb.a3)
+            end
+        else
+            return !(ea.a2 <= eb.a2)
+        end
+    else
+        return !(ea.a1 <= eb.a1)
+    end
+end
+
 #------------------------------------------------------------------------------
 # Monomial-Monomial arithmetic.
 
@@ -374,6 +487,20 @@ function monom_lcm!(
     _overflow_check(ans)
     ans
 end
+function monom_lcm!(
+    ec::PackedPair4{T, B},
+    ea::PackedPair4{T, B},
+    eb::PackedPair4{T, B}
+) where {T, B}
+    x1, si1 = packedmax(ea.a1, eb.a1, B, Val(1))
+    x2, si2 = packedmax(ea.a2, eb.a2, B, Val(0))
+    x3, si3 = packedmax(ea.a3, eb.a3, B, Val(0))
+    x4, si4 = packedmax(ea.a4, eb.a4, B, Val(0))
+    x1 = x1 + ((si1 + si2 + si3 + si4) << ((sizeof(T) - sizeof(B)) * 8))
+    ans = PackedPair4{T, B}(x1, x2, x3, x4)
+    _overflow_check(ans)
+    ans
+end
 
 function is_gcd_const(ea::PackedPair1{T, B}, eb::PackedPair1{T, B}) where {T, B}
     if !packedorth(ea.a1, eb.a1, B, Val(1))
@@ -398,6 +525,21 @@ function is_gcd_const(ea::PackedPair3{T, B}, eb::PackedPair3{T, B}) where {T, B}
         return false
     end
     if !packedorth(ea.a3, eb.a3, B, Val(0))
+        return false
+    end
+    return true
+end
+function is_gcd_const(ea::PackedPair4{T, B}, eb::PackedPair4{T, B}) where {T, B}
+    if !packedorth(ea.a1, eb.a1, B, Val(1))
+        return false
+    end
+    if !packedorth(ea.a2, eb.a2, B, Val(0))
+        return false
+    end
+    if !packedorth(ea.a3, eb.a3, B, Val(0))
+        return false
+    end
+    if !packedorth(ea.a4, eb.a4, B, Val(0))
         return false
     end
     return true
@@ -436,6 +578,19 @@ function monom_product!(
     _overflow_check(ans)
     ans
 end
+function monom_product!(
+    ec::PackedPair4{T, B},
+    ea::PackedPair4{T, B},
+    eb::PackedPair4{T, B}
+) where {T, B}
+    x1 = ea.a1 + eb.a1
+    x2 = ea.a2 + eb.a2
+    x3 = ea.a3 + eb.a3
+    x4 = ea.a4 + eb.a4
+    ans = PackedPair4{T, B}(x1, x2, x3, x4)
+    _overflow_check(ans)
+    ans
+end
 
 function monom_division!(
     ec::PackedPair1{T, B},
@@ -467,6 +622,18 @@ function monom_division!(
     ans = PackedPair3{T, B}(x1, x2, x3)
     ans
 end
+function monom_division!(
+    ec::PackedPair4{T, B},
+    ea::PackedPair4{T, B},
+    eb::PackedPair4{T, B}
+) where {T, B}
+    x1 = ea.a1 - eb.a1
+    x2 = ea.a2 - eb.a2
+    x3 = ea.a3 - eb.a3
+    x4 = ea.a4 - eb.a4
+    ans = PackedPair4{T, B}(x1, x2, x3, x4)
+    ans
+end
 
 function is_monom_divisible(ea::PackedPair1{T, B}, eb::PackedPair1{T, B}) where {T, B}
     if !packedge(ea.a1, eb.a1, B, Val(1))
@@ -491,6 +658,21 @@ function is_monom_divisible(ea::PackedPair3{T, B}, eb::PackedPair3{T, B}) where 
         return false
     end
     if !packedge(ea.a3, eb.a3, B, Val(0))
+        return false
+    end
+    return true
+end
+function is_monom_divisible(ea::PackedPair4{T, B}, eb::PackedPair4{T, B}) where {T, B}
+    if !packedge(ea.a1, eb.a1, B, Val(1))
+        return false
+    end
+    if !packedge(ea.a2, eb.a2, B, Val(0))
+        return false
+    end
+    if !packedge(ea.a3, eb.a3, B, Val(0))
+        return false
+    end
+    if !packedge(ea.a4, eb.a4, B, Val(0))
         return false
     end
     return true
@@ -526,6 +708,16 @@ function is_monom_divisible!(
     ans && (e = monom_division!(ec, ea, eb))
     ans, e
 end
+function is_monom_divisible!(
+    ec::PackedPair4{T, B},
+    ea::PackedPair4{T, B},
+    eb::PackedPair4{T, B}
+) where {T, B}
+    ans = is_monom_divisible(ea, eb)
+    e = ec
+    ans && (e = monom_division!(ec, ea, eb))
+    ans, e
+end
 
 function is_monom_elementwise_eq(ea::PackedPair1{T, B}, eb::PackedPair1{T, B}) where {T, B}
     ea.a1 == eb.a1
@@ -535,6 +727,9 @@ function is_monom_elementwise_eq(ea::PackedPair2{T, B}, eb::PackedPair2{T, B}) w
 end
 function is_monom_elementwise_eq(ea::PackedPair3{T, B}, eb::PackedPair3{T, B}) where {T, B}
     ea.a1 == eb.a1 && ea.a2 == eb.a2 && ea.a3 == eb.a3
+end
+function is_monom_elementwise_eq(ea::PackedPair4{T, B}, eb::PackedPair4{T, B}) where {T, B}
+    ea.a1 == eb.a1 && ea.a2 == eb.a2 && ea.a3 == eb.a3 && ea.a4 == eb.a4
 end
 
 #------------------------------------------------------------------------------
@@ -653,6 +848,80 @@ function monom_divmask(
 
     a1 = e.a1
     for i in (2 * epc + 1):min(3 * epc - 1, ndivvars)
+        ei = mod(a1, B)
+        a1 = a1 >> (sizeof(B) * 8)
+        for j in 1:ndivbits
+            @inbounds if ei >= divmap[ctr]
+                res |= o << (ctr - 1)
+            end
+            ctr += o
+        end
+    end
+
+    res
+end
+
+function monom_divmask(
+    e::PackedPair4{T, B},
+    DM::Type{Mask},
+    ndivvars,
+    divmap,
+    ndivbits
+) where {T, B, Mask}
+    epc = elperchunk(T, B)
+
+    if ndivvars < 3 * epc
+        return monom_divmask(
+            PackedPair3{T, B}(e.a1, e.a2, e.a3),
+            DM,
+            ndivvars,
+            divmap,
+            ndivbits
+        )
+    end
+
+    ctr = one(Mask)
+    res = zero(Mask)
+    o = one(Mask)
+
+    a4 = e.a4
+    for i in 1:epc
+        ei = mod(a3, B)
+        a4 = a4 >> (sizeof(B) * 8)
+        for j in 1:ndivbits
+            @inbounds if ei >= divmap[ctr]
+                res |= o << (ctr - 1)
+            end
+            ctr += o
+        end
+    end
+
+    a3 = e.a3
+    for i in (epc + 1):(2 * epc)
+        ei = mod(a3, B)
+        a3 = a3 >> (sizeof(B) * 8)
+        for j in 1:ndivbits
+            @inbounds if ei >= divmap[ctr]
+                res |= o << (ctr - 1)
+            end
+            ctr += o
+        end
+    end
+
+    a2 = e.a2
+    for i in (2 * epc + 1):(3 * epc)
+        ei = mod(a2, B)
+        a2 = a2 >> (sizeof(B) * 8)
+        for j in 1:ndivbits
+            @inbounds if ei >= divmap[ctr]
+                res |= o << (ctr - 1)
+            end
+            ctr += o
+        end
+    end
+
+    a1 = e.a1
+    for i in (3 * epc + 1):min(4 * epc - 1, ndivvars)
         ei = mod(a1, B)
         a1 = a1 >> (sizeof(B) * 8)
         for j in 1:ndivbits

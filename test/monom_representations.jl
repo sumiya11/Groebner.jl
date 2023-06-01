@@ -163,6 +163,13 @@ all_hint_params = [UInt8, UInt16, UInt32, UInt64]
         Groebner.Lex(),
         Groebner.Packed{UInt64}()
     )
+    @test repr{Groebner.PackedPair4{T, UInt64}}() ==
+          Groebner.guess_effective_representation(
+        f,
+        unsaferepr(),
+        Groebner.Lex(),
+        Groebner.Packed{UInt64}()
+    )
 end
 
 @testset "f4 monom representations" begin

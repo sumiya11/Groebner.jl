@@ -14,9 +14,9 @@
 # Power is the type of exponent vector entry
 struct SPair{Power <: Integer}
     # first polynomial as an index from the basis array
-    poly1::Int
+    poly1::Int32
     # second polynomial -//-
-    poly2::Int
+    poly2::Int32
     # index of lcm(lt(poly1), lt(poly2)) in hashtable
     lcm::MonomIdx
     # total degree of lcm
@@ -232,12 +232,12 @@ function update_pairset!(
            !is_gcd_const(ht.exponents[basis.monoms[i][1]], ht.exponents[new_lead])
             plcm[i] = get_lcm(basis.monoms[i][1], new_lead, ht, update_ht)
             deg = update_ht.hashdata[plcm[i]].deg
-            ps[newidx] = SPair(i, idx, plcm[i], pr(deg))
+            ps[newidx] = SPair{pr}(i, idx, plcm[i], pr(deg))
         else
             # lcm == 0 will mark redundancy of an S-pair
             plcm[i] = MonomIdx(0)
             # ps[newidx] = SPair(i, idx, MonomIdx(0), pr(deg))
-            ps[newidx] = SPair(i, idx, MonomIdx(0), typemax(pr))
+            ps[newidx] = SPair{pr}(i, idx, MonomIdx(0), typemax(pr))
         end
     end
 
@@ -255,7 +255,7 @@ function update_pairset!(
         # and has a greater degree than newly generated one then
         if ps[i].deg > m && is_monom_divisible(ps[i].lcm, new_lead, ht)
             # mark an existing pair redundant
-            ps[i] = SPair(ps[i].poly1, ps[i].poly2, MonomIdx(0), ps[i].deg)
+            ps[i] = SPair{pr}(ps[i].poly1, ps[i].poly2, MonomIdx(0), ps[i].deg)
         end
     end
 
@@ -370,7 +370,7 @@ function is_redundant!(
             # add new S-pair corresponding to Spoly(i, idx)
             lcm_new = get_lcm(lead_i, lead_new, ht, ht)
             psidx = pairset.load + 1
-            ps[psidx] = SPair(i, idx, lcm_new, pt(ht.hashdata[lcm_new].deg))
+            ps[psidx] = SPair{pt}(i, idx, lcm_new, pt(ht.hashdata[lcm_new].deg))
 
             # mark redundant
             basis.isred[idx] = true
@@ -586,7 +586,7 @@ function insert_plcms_in_basis_hash_table!(
                 continue
             end
 
-            ps[m] = SPair(ps[m].poly1, ps[m].poly2, hm, ps[m].deg)
+            ps[m] = SPair{typeof(ps[m].deg)}(ps[m].poly1, ps[m].poly2, hm, ps[m].deg)
             m += 1
             l += 1
             @goto Letsgo
@@ -599,7 +599,7 @@ function insert_plcms_in_basis_hash_table!(
         ht.hashdata[ht.load + 1] = Hashvalue(0, h, uhd[ll].divmask, uhd[ll].deg)
 
         ht.load += 1
-        ps[m] = SPair(ps[m].poly1, ps[m].poly2, MonomIdx(pos), ps[m].deg)
+        ps[m] = SPair{typeof(ps[m].deg)}(ps[m].poly1, ps[m].poly2, MonomIdx(pos), ps[m].deg)
         m += 1
         l += 1
     end

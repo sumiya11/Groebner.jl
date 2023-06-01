@@ -4,7 +4,6 @@ using Printf
 
 include((@__DIR__) * "/rss_tracker.jl")
 include((@__DIR__) * "/aa-runge-kutta-8-7_gf.jl");
-include((@__DIR__) * "/aa-runge-kutta-6-6.jl");
 
 setup_memuse_tracker()
 
