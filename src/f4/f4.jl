@@ -484,8 +484,8 @@ function lowest_degree_pairs!(pairset::Pairset)
     sort_pairset_by_degree!(pairset, 1, pairset.load - 1)
     ps = pairset.pairs
     @inbounds min_deg = ps[1].deg
-    min_idx = 0
-    @inbounds while min_idx < pairset.load && ps[min_idx + 1].deg == min_deg
+    min_idx = 1
+    @inbounds while min_idx < (pairset.load - 1) && ps[min_idx + 1].deg == min_deg
         min_idx += 1
     end
     min_idx
@@ -499,12 +499,27 @@ function discard_normal!(
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable;
-    maxpairs::Int=0
+    maxpairs::Int=typemax(Int)
 )
+    npairs = pairset.load
     npairs = lowest_degree_pairs!(pairset)
-    @debug "Discarded $(npairs) pairs"
-
     ps = pairset.pairs
+
+    # if maxpairs is set
+    if maxpairs != typemax(Int)
+        sort_pairset_by_lcm!(pairset, npairs, ht)
+
+        if npairs > maxpairs
+            navailable = npairs
+            npairs = maxpairs
+            lastlcm = ps[npairs].lcm
+            while npairs < navailable && ps[npairs + 1].lcm == lastlcm
+                npairs += 1
+            end
+        end
+    end
+
+    @debug "Discarded $(npairs) pairs"
 
     @inbounds for i in 1:(pairset.load - npairs)
         ps[i] = ps[i + npairs]
@@ -532,10 +547,18 @@ function select_normal!(
     end
     ps = pairset.pairs
 
-    npairs = min(npairs, maxpairs)
-    @info "Selected $(npairs) pairs"
-
     sort_pairset_by_lcm!(pairset, npairs, ht)
+
+    if npairs > maxpairs
+        navailable = npairs
+        npairs = maxpairs
+        lastlcm = ps[npairs].lcm
+        while npairs < navailable && ps[npairs + 1].lcm == lastlcm
+            npairs += 1
+        end
+    end
+
+    @info "Selected $(npairs) pairs"
 
     reinitialize_matrix!(matrix, npairs)
 
@@ -714,7 +737,7 @@ function f4!(
         # if the iteration is redundant according to the previous modular run
         if isready(tracer)
             if is_iteration_redundant(tracer, d)
-                discard_normal!(pairset, basis, matrix, ht, symbol_ht)
+                discard_normal!(pairset, basis, matrix, ht, symbol_ht, maxpairs=maxpairs)
                 matrix    = initialize_matrix(ring, C)
                 symbol_ht = initialize_secondary_hash_table(ht)
                 continue

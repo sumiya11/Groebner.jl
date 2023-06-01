@@ -70,7 +70,8 @@ function correctness_check!(
     coeffs_zz,
     gens_temp_ff,
     gb_ff,
-    ht
+    ht,
+    maxpairs
 )
 
     # first we check coefficients with a heuristic check only
@@ -92,7 +93,8 @@ function correctness_check!(
             gens_temp_ff,
             gb_ff,
             primetracker,
-            ht
+            ht,
+            maxpairs
         )
             @info "Randomized check failed."
             return false
@@ -108,7 +110,8 @@ function correctness_check!(
             exps,
             coeffs,
             gens_temp_ff,
-            ht
+            ht,
+            maxpairs
         )
     end
 
@@ -146,7 +149,8 @@ function randomized_correctness_check!(
     gens_temp_ff,
     gb_ff,
     primetracker,
-    ht
+    ht,
+    maxpairs
 )
     goodprime = nextgoodprime!(primetracker)
 
@@ -183,7 +187,8 @@ function guaranteed_correctness_check!(
     exps,
     coeffs,
     gens_tmp_ff,
-    ht
+    ht,
+    maxpairs
 )
     @info "Setting parameter certify=true in groebner is not recommended."
 

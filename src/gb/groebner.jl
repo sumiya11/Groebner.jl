@@ -162,7 +162,8 @@ function groebner(
         coeffs_zz,
         gens_temp_ff,
         gens_ff,
-        ht
+        ht,
+        maxpairs
     )
         @info "Reconstructed successfuly"
         correct = true
@@ -230,7 +231,8 @@ function groebner(
             coeffs_zz,
             gens_temp_ff,
             gens_ff,
-            ht
+            ht,
+            maxpairs
         )
             @info "Success!"
             correct = true
