@@ -46,7 +46,7 @@ const _supported_kw_args = Base.ImmutableDict(
 Stores keyword arguments passed to one of the functions in the interface. On
 creation, Checks that the keyword arguments are correct.
 """
-struct Keywords
+struct KeywordsHandler
     reduced::Bool
     ordering::Ord
     certify::Bool

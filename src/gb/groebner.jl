@@ -31,6 +31,7 @@ function _groebner(polynomials, kws::Keywords)
 end
 
 function _groebner(polynomials, kws::Keywords, r::Representation)
+    stats = Statistics()
     # Extract ring information, exponents, and coefficients from input polynomials.
     # This copies the input, so that `polynomials` itself is not modified.
     ring, exps, coeffs = convert_to_internal(representation, polynomials, kws)
@@ -40,6 +41,7 @@ function _groebner(polynomials, kws::Keywords, r::Representation)
     iszerox = remove_zeros_from_input!(ring, exps, coeffs)
     iszerox && (return convert_to_output(ring, polynomials, exps, coeffs, metainfo))
 
+    # NOTE(alex)
     # Change input ordering if needed
     newring = assure_ordering!(ring, exps, coeffs, params)
     # Compute a groebner basis
@@ -54,13 +56,10 @@ function _groebner(
     coeffs::Vector{Vector{C}},
     params::Parameters
 ) where {M <: Monom, C <: CoeffFF}
-
-    # select hashtable size
-    # TODO: move into `initialize_structures`
-    tablesize = select_tablesize(ring, exps)
+    # TODO(alex): exponents --> monoms
 
     # initialize basis and hashtable structures
-    basis, ht = initialize_structures(ring, exps, coeffs, meta.rng, tablesize)
+    basis, ht = initialize_structures(ring, exps, coeffs, params)
 
     f4!(ring, basis, ht, reduced, meta.linalg, meta.rng, maxpairs=maxpairs)
 

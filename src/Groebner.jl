@@ -36,7 +36,7 @@ module Groebner
     enable_invariants()
 
 Enforce runtime invariant checking. If `true`, checks are enabled. If
-`false`, checks are disabled and have no runtime overhead.
+`false`, checks are disabled and entail no runtime overhead.
 """
 enable_invariants() = true
 
@@ -53,6 +53,12 @@ macro invariant(expr)
         if $(@__MODULE__).enable_invariants()
             @assert $expr
         end
+    ))
+end
+
+macro record(condition, expr)
+    esc(:(
+
     ))
 end
 

@@ -57,9 +57,10 @@ function initialize_structures(
     exponents::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     rng::Random.AbstractRNG,
-    tablesize::Int;
     normalize::Bool=true
 ) where {M <: Monom, C <: Coeff}
+
+    tablesize = select_tablesize(ring, exponents)
 
     # basis for storing basis elements,
     # pairset for storing critical pairs of basis elements,
@@ -699,6 +700,7 @@ function f4!(
     # checks for redundancy of new elems
     plcm = Vector{MonomIdx}(undef, 0)
     if isready(tracer)
+        # TODO: `plcm` belongs to pairset!!!
         resize!(plcm, final_basis_size(tracer) + 1)
     end
 
