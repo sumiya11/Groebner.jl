@@ -28,7 +28,7 @@ end
 
 # Performs gaussian row reduction of rows in the `matrix`
 # and writes any nonzero results to `basis`
-function reduction!(
+@timed_block function reduction!(
     ring::PolyRing,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -52,7 +52,7 @@ end
 # Initializes Basis and MonomialHashtable structs,
 # fills them with data from the given exponents and coeffs,
 # and returns the resulting structures
-function initialize_structures(
+@timed_block function initialize_structures(
     ring::PolyRing,
     exponents::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -89,7 +89,7 @@ end
 # fills input data from exponents and coeffs
 #
 # Hashtable initial size is set to tablesize
-function initialize_structures_no_normalize(
+@timed_block function initialize_structures_no_normalize(
     ring::PolyRing,
     exponents::Vector{Vector{M}},
     coeffs_qq,
@@ -121,7 +121,7 @@ end
 # fills input data from exponents and coeffs
 #
 # Hashtable initial size is set to tablesize
-function initialize_structures_ff(
+@timed_block function initialize_structures_ff(
     ring::PolyRing{Ch},
     exponents::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -134,7 +134,7 @@ end
 
 # Initializes Basis and MonomialHashtable structures,
 # fills input data from exponents and coeffs
-function initialize_structures(
+@timed_block function initialize_structures(
     ring::PolyRing,
     exponents::Vector{Vector{M}},
     coeffs_qq::Vector{Vector{T1}},
@@ -168,7 +168,7 @@ end
 
 # Initializes Basis with the given hashtable,
 # fills input data from exponents and coeffs
-function initialize_structures_nf(
+@timed_block function initialize_structures_nf(
     ring::PolyRing,
     exponents::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -197,7 +197,7 @@ end
 
 # Initializes Basis with the given hashtable,
 # fills input data from exponents and coeffs
-function initialize_structures(
+@timed_block function initialize_structures(
     ring::PolyRing,
     exponents::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -225,7 +225,7 @@ function initialize_structures(
 end
 
 # Initializes Basis with the given hashed exponents and coefficients
-function initialize_structures(
+@timed_block function initialize_structures(
     ring::PolyRing,
     hashedexps::Vector{Vector{MonomIdx}},
     coeffs::Vector{Vector{C}},
@@ -248,7 +248,7 @@ end
 
 # Given a `basis` object that stores some groebner basis
 # performs basis interreduction and writes the result to `basis` inplace
-function reducegb_f4!(
+@timed_block function reducegb_f4!(
     ring::PolyRing,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -324,7 +324,7 @@ function reducegb_f4!(
     basis.nlead = k
 end
 
-function select_tobereduced!(
+@timed_block function select_tobereduced!(
     basis::Basis,
     tobereduced::Basis,
     matrix::MacaulayMatrix,
@@ -365,7 +365,7 @@ end
 # with leading term that divides monomial `vidx`. 
 # If such polynomial was found, 
 # writes the divisor polynomial to the hashtable `symbol_ht`
-function find_multiplied_reducer!(
+@timed_block function find_multiplied_reducer!(
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
@@ -422,7 +422,7 @@ end
 # Recursively finds all polynomials from `basis` with the leading term
 # that divides any of the monomials stored in hashtable `symbol_ht`,
 # and writes all found polynomials to the `matrix`
-function symbolic_preprocessing!(
+@timed_block function symbolic_preprocessing!(
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
@@ -481,7 +481,7 @@ end
 #------------------------------------------------------------------------------
 
 # Returns the number of critical pairs of the smallest degree of lcm
-function lowest_degree_pairs!(pairset::Pairset)
+@timed_block function lowest_degree_pairs!(pairset::Pairset)
     sort_pairset_by_degree!(pairset, 1, pairset.load - 1)
     ps = pairset.pairs
     @inbounds min_deg = ps[1].deg
@@ -494,7 +494,7 @@ end
 
 # Discard all S-pairs of the lowest degree of lcm
 # from the pairset
-function discard_normal!(
+@timed_block function discard_normal!(
     pairset::Pairset,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -516,7 +516,7 @@ end
 # Select all S-pairs of the lowest degree of lcm
 # from the pairset and write the corresponding polynomials
 # to the matrix
-function select_normal!(
+@timed_block function select_normal!(
     pairset::Pairset,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -673,7 +673,7 @@ end
     - divmasks in basis are filled and coincide with divmasks in hashtable
 
 =#
-function f4!(
+@timed_block function f4!(
     ring::PolyRing,
     basis::Basis{C},
     tracer::Tracer,

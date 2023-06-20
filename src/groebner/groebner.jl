@@ -90,7 +90,7 @@ initial_batchsize() = 1
 initial_gaps() = (1, 1, 1, 1, 1)
 batchsize_multiplier() = 2
 
-function _groebner(
+@timed_block function _groebner(
     ring::PolyRing,
     exps::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},

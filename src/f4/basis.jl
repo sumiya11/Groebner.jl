@@ -175,7 +175,7 @@ end
 
 # Normalize each element of the input basis
 # by dividing it by leading coefficient
-function normalize_basis!(ring, basis::Basis{<:CoeffFF})
+@timed_block function normalize_basis!(ring, basis::Basis{<:CoeffFF})
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.ntotal)
         !isassigned(cfs, i) && continue
@@ -209,7 +209,7 @@ end
 # Generate new S-pairs from pairs of polynomials
 #   (basis[idx], basis[i])
 # for every i < idx
-function update_pairset!(
+@timed_block function update_pairset!(
     pairset::Pairset,
     basis::Basis{C},
     ht::MonomialHashtable{M},
@@ -319,7 +319,7 @@ function update_pairset!(
 end
 
 # Updates information about redundant generators in the basis
-function update_basis!(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
+@timed_block function update_basis!(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
     k = 1
     lead = basis.lead
     nonred = basis.nonred
@@ -383,7 +383,7 @@ function is_redundant!(
     return false
 end
 
-function check_enlarge_plcm!(plcm::Vector{T}, ntotal) where {T}
+@timed_block function check_enlarge_plcm!(plcm::Vector{T}, ntotal) where {T}
     if length(plcm) < ntotal + 1
         resize!(plcm, floor(Int, ntotal * 1.1) + 1)
     end
@@ -400,14 +400,13 @@ end
 # from the added elements
 #
 # Always checks new elements redundancy.
-function update!(
+@timed_block function update!(
     pairset::Pairset,
     basis::Basis,
     ht::MonomialHashtable{M},
     update_ht::MonomialHashtable{M},
     plcm::Vector{MonomIdx}
 ) where {M <: Monom}
-    @begin_timed_block
     # total number of elements in the basis (old + new)
     npivs = basis.ntotal
     # number of potential critical pairs to add
@@ -431,7 +430,6 @@ function update!(
 
     # update basis
     update_basis!(basis, ht)
-    @end_timed_block
     pairset_size
 end
 
@@ -439,7 +437,7 @@ end
 
 # given input exponent and coefficient vectors hashes exponents into `ht`
 # and then constructs hashed polynomials for `basis`
-function fill_data!(
+@timed_block function fill_data!(
     basis::Basis,
     ht::MonomialHashtable{M},
     exponents::Vector{Vector{M}},
@@ -466,7 +464,7 @@ end
 
 # Remove redundant elements from the basis
 # by moving all non-redundant up front
-function filter_redundant!(basis::Basis)
+@timed_block function filter_redundant!(basis::Basis)
     j = 1
     @inbounds for i in 1:(basis.nlead)
         if !basis.isred[basis.nonred[i]]
@@ -483,7 +481,7 @@ end
 # f4 must produce a `Basis` object which satisfies several conditions.
 # This functions standardizes the given basis so that conditions hold.
 # (see f4/f4.jl)
-function standardize_basis!(ring, basis::Basis, ht::MonomialHashtable, ord)
+@timed_block function standardize_basis!(ring, basis::Basis, ht::MonomialHashtable, ord)
     @inbounds for i in 1:(basis.nlead)
         idx = basis.nonred[i]
         basis.nonred[i] = i
@@ -502,7 +500,7 @@ function standardize_basis!(ring, basis::Basis, ht::MonomialHashtable, ord)
 end
 
 # Returns the exponent vectors of polynomials in the basis
-function hash_to_exponents(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
+@timed_block function hash_to_exponents(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
     exps = Vector{Vector{M}}(undef, basis.nlead)
     @inbounds for i in 1:(basis.nlead)
         idx = basis.nonred[i]
@@ -516,7 +514,7 @@ function hash_to_exponents(basis::Basis, ht::MonomialHashtable{M}) where {M <: M
 end
 
 # Returns the exponent vectors and the coefficients of polynomials in the basis
-function export_basis_data(
+@timed_block function export_basis_data(
     basis::Basis{C},
     ht::MonomialHashtable{M}
 ) where {M <: Monom, C <: Coeff}
@@ -534,7 +532,7 @@ end
 # For a given list of S-pairs and a list of indices `plcm`
 # adds indices from plcm[ifirst:ilast]
 # to the hashtable ht
-function insert_plcms_in_basis_hash_table!(
+@timed_block function insert_plcms_in_basis_hash_table!(
     pairset::Pairset,
     off::Int,
     ht::MonomialHashtable{M},
