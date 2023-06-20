@@ -407,7 +407,7 @@ function update!(
     update_ht::MonomialHashtable{M},
     plcm::Vector{MonomIdx}
 ) where {M <: Monom}
-
+    @begin_timed_block
     # total number of elements in the basis (old + new)
     npivs = basis.ntotal
     # number of potential critical pairs to add
@@ -431,7 +431,7 @@ function update!(
 
     # update basis
     update_basis!(basis, ht)
-
+    @end_timed_block
     pairset_size
 end
 

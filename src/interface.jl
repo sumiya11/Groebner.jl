@@ -61,6 +61,9 @@ groebner([x*y^2 + x, y*x^2 + y])
 
 """
 function groebner(polynomials::AbstractVector; kws...)
+    # NOTE(Alex): 
+    # check if run in multithread,
+    # warn if so!
     _groebner(polynomials, KeywordHandler(:groebner, kws))
 end
 

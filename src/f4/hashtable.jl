@@ -291,6 +291,8 @@ function ishashcollision(ht::MonomialHashtable, vidx, e, he)
 end
 
 function insert_in_hash_table!(ht::MonomialHashtable{M}, e::M) where {M}
+    @begin_timed_block insert_in_hash_table!
+
     # generate hash
     he::MonomHash = hash(e, ht.hasher)
 
@@ -317,6 +319,7 @@ function insert_in_hash_table!(ht::MonomialHashtable{M}, e::M) where {M}
         end
 
         # already present in hashtable
+        @end_timed_block insert_in_hash_table!
         return vidx
     end
 

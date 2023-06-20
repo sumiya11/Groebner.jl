@@ -35,10 +35,21 @@ module Groebner
 """
     enable_invariants()
 
-Enforce runtime invariant checking. If `true`, checks are enabled. If
+Globally enable runtime invariant checking. If `true`, checks are enabled. If
 `false`, checks are disabled and entail no runtime overhead.
+
+**Note:** disable to get the best performance!
 """
-enable_invariants() = true
+enable_invariants() = false
+
+"""
+    enable_debugging()
+
+Globally enable debugging/logging/statistics.
+
+**Note:** disable to get the best performance!
+"""
+enable_debugging() = false
 
 """
     @invariant expr
@@ -56,11 +67,7 @@ macro invariant(expr)
     ))
 end
 
-macro record(condition, expr)
-    esc(:(
 
-    ))
-end
 
 # Groebner accepts as an input polynomials from the Julia packages
 # AbstractAlgebra.jl (Oscar.jl) and MultivariatePolynomials.jl.
