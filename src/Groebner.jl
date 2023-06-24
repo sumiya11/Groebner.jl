@@ -16,6 +16,11 @@ See also `enable_invariants`.
 invariants_enabled() = true
 
 """
+    
+"""
+logging_enabled() = true
+
+"""
     performance_counters_enabled()
 
 

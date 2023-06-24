@@ -31,13 +31,17 @@ function _groebner(polynomials, kws::Keywords)
 end
 
 function _groebner(polynomials, kws::Keywords, r::Representation)
-    stats = Statistics()
+    @log Level(1) "Frontend: X"
+    @log Level(1) "Internal representation of polynomials is:"
     # Extract ring information, exponents, and coefficients from input polynomials.
     # This copies the input, so that `polynomials` itself is not modified.
     ring, exps, coeffs = convert_to_internal(representation, polynomials, kws)
+    @log Level(1) "X polynomials over Y in variables Z"
     # Check and set algorithm parameters
     params = Parameters(ring, kws)
+    @log "Parameters: X, Y, Z"
     # TODO: move to input-output.jl ?
+    # YES!!
     iszerox = remove_zeros_from_input!(ring, exps, coeffs)
     iszerox && (return convert_to_output(ring, polynomials, exps, coeffs, metainfo))
 
@@ -57,11 +61,10 @@ function _groebner(
     params::Parameters
 ) where {M <: Monom, C <: CoeffFF}
     # TODO(alex): exponents --> monoms
+    @log "Backend: F4 over Z_p in ordering"
+    pairset, basis, hashtable, tracer = initialize_structures(ring, monoms, coeffs, params)
 
-    # initialize basis and hashtable structures
-    basis, ht = initialize_structures(ring, exps, coeffs, params)
-
-    f4!(ring, basis, ht, reduced, meta.linalg, meta.rng, maxpairs=maxpairs)
+    f4!(ring, basis, ht, params)
 
     # extract exponents from hashtable
     gbexps = hash_to_exponents(basis, ht)
@@ -69,9 +72,7 @@ function _groebner(
     gbexps, basis.coeffs
 end
 
-#------------------------------------------------------------------------------
 # Rational numbers groebner
-
 # groebner over rationals is implemented roughly in the following way:
 #
 # k = 1
@@ -84,7 +85,6 @@ end
 #   if the basis gb_qq is correct, then break
 # end
 # return gb_qq
-#
 
 initial_batchsize() = 1
 initial_gaps() = (1, 1, 1, 1, 1)

@@ -25,6 +25,9 @@ function try_import(name::Symbol)
     end
 end
 
+@test isempty(Test.detect_unbound_args(Groebner))
+@test isempty(Test.detect_ambiguities(Groebner))
+
 ⊂(xs, ys) = all(in(ys), xs)
 ≂(xs, ys) = ⊂(xs, ys) && ⊂(ys, xs)
 

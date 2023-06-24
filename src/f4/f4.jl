@@ -676,16 +676,14 @@ end
 @timed_block function f4!(
     ring::PolyRing,
     basis::Basis{C},
-    tracer::Tracer,
     pairset::Pairset,
-    ht::MonomialHashtable{M},
-    reduced,
-    linalg,
-    rng,
-    maxpairs
+    hashtable::MonomialHashtable{M},
+    tracer::Tracer,
+    params::Parameters
 ) where {M <: Monom, C <: Coeff}
-    @assert ring.ord == ht.ord && ring.nvars == ht.nvars
-    @assert basis.ndone == 0
+    @invariant hashtable_well_formed(:input_f4!, ring, hashtable)
+    @invariant basis_well_formed(:input_f4!, ring, basis, ht)
+    @invariant pairset_well_formed(:input_f4!, pairset, basis, ht)
 
     # TODO: decide on the number field arithmetic implementation here!!!
 
@@ -700,7 +698,7 @@ end
     # checks for redundancy of new elems
     plcm = Vector{MonomIdx}(undef, 0)
     if isready(tracer)
-        # TODO: `plcm` belongs to pairset!!!
+        # TODO: `plcm` belongs into the pairset!!!
         resize!(plcm, final_basis_size(tracer) + 1)
     end
 
@@ -708,14 +706,15 @@ end
     pairset_size = update!(pairset, basis, ht, update_ht, plcm)
     update_tracer_pairset!(tracer, pairset_size)
 
-    d = 0
+    i = 0
     # while there are pairs to be reduced
     while !isempty(pairset)
-        d += 1
-        @debug "F4 iteration $d"
-        @debug "Available $(pairset.load) pairs"
+        i += 1
+        @log "iteration $i"
+        @log "available $(pairset.load) pairs"
 
         # if the iteration is redundant according to the previous modular run
+        # TODO: MOVE!
         if isready(tracer)
             if is_iteration_redundant(tracer, d)
                 discard_normal!(pairset, basis, matrix, ht, symbol_ht)
@@ -728,18 +727,16 @@ end
         # selects pairs for reduction from pairset following normal strategy
         # (minimal lcm degrees are selected),
         # and puts these into the matrix rows
-        # @warn "Iteration $d, available $(pairset.load) pairs"
         select_normal!(pairset, basis, matrix, ht, symbol_ht, maxpairs=maxpairs)
-
-        # @warn "After selection, available $(pairset.load) pairs, matrix:\nnrows, ncols = $((matrix.nrows, matrix.ncols))"
+        # Color with [F4]
+        @log "selected X pairs of degree Z from pairset, Y pairs left"
 
         symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
-        # @debug "Matrix of size $((matrix.nrows, matrix.ncols))"
-        # @warn "Iteration $d, matrix:\nnrows, ncols = $((matrix.nrows, matrix.ncols))"
+        @log "formed matrix of size X, DISPLAY_MATRIX"
 
         # reduces polys and obtains new potential basis elements
         reduction!(ring, basis, matrix, ht, symbol_ht, linalg, rng)
-        # @debug "Matrix reduced"
+        @log ""
 
         update_tracer_iteration!(tracer, matrix.npivots == 0)
 
@@ -748,15 +745,18 @@ end
         # checks for redundancy
         pairset_size = update!(pairset, basis, ht, update_ht, plcm)
         update_tracer_pairset!(tracer, pairset_size)
+        # TODO: move the above
+        @log "something something"
 
         # clear symbolic hashtable
         # clear matrix
         matrix    = initialize_matrix(ring, C)
         symbol_ht = initialize_secondary_hash_table(ht)
 
-        if d > 10000
-            @error "Something has probably gone wrong in f4. Please submit a github issue."
-            break
+        if i > 10_000
+            # TODO: log useful info here
+            @log Level(100) "Something has probably gone wrong in F4. An exception will follow."
+            __error_maximal_number_exceeded("Something has probably gone wrong in F4. Please submit a github issue.")
         end
     end
 
@@ -772,6 +772,9 @@ end
 
     standardize_basis!(ring, basis, ht, ht.ord)
 
+    @invariant hashtable_well_formed(:output_f4!, ring, hashtable)
+    @invariant basis_well_formed(:output_f4!, ring, basis, hashtable)  
+
     nothing
 end
 
@@ -784,6 +787,7 @@ function f4!(
     rng;
     maxpairs=typemax(Int)
 ) where {M <: Monom, C <: Coeff}
+    # TODO: move this into initialize_structures
     ps = initialize_pairset(powertype(M))
     tracer = Tracer()
     f4!(ring, basis, tracer, ps, ht, reduced, linalg, rng, maxpairs)
