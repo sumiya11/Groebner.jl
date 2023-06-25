@@ -61,9 +61,9 @@ groebner([x*y^2 + x, y*x^2 + y])
 
 """
 function groebner(polynomials::AbstractVector; kws...)
-    # NOTE(Alex): 
-    # check if run in multithread,
-    # warn if so!
+    # `KeywordHandler` does several useful things on initialization:
+    #   - checks that the keyword arguments are valid,
+    #   - sets the global logging level for this module.
     _groebner(polynomials, KeywordHandler(:groebner, kws))
 end
 

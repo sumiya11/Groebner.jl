@@ -11,6 +11,8 @@ For documentation and more please check out https://sumiya11.github.io/Groebner.
 
 Groebner.jl can be extended : how the code is structured .
 
+# TODO: say how one can contribute.
+
 ## How to use Groebner.jl?
 
 Our package works with polynomials from `AbstractAlgebra.jl`, `DynamicPolynomials.jl`, and `Nemo.jl`. We will demonstrate the usage on a simple example. Lets first create a ring of polynomials in 3 variables

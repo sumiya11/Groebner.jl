@@ -1,4 +1,5 @@
 
+# TODO: separate this into function-dedicated files
 @testset "normalform checks" begin
     R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"], ordering=:lex)
 

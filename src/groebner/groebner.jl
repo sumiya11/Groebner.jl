@@ -1,28 +1,23 @@
 # Backend for `groebner`
 
 # Proxy function dedicated to handling errors.
-function _groebner(polynomials, kws::Keywords)
+function _groebner(polynomials, kws::KeywordHandler)
     # We try to guess efficient internal polynomial representation, i.e., a
-    # suitable representation of monomials and coefficients. Some polynomial
-    # representations are considered unsafe, implying that the computation may
-    # fail. 
-    #
-    # The backend is wrapped in a try/catch to catch exceptions that one can
-    # hope to recover from (and, perhaps, restart the computation with safer
-    # parameters).
-    unsafe_representation =
-        guess_exponent_vector_representation(polynomials, kws, UnsafeRepresentation())
+    # suitable representation of monomials and coefficients.
+    polynomial_repr = select_polynomial_representation(polynomials, kws)
     try
-        return _groebner(polynomials, kws, unsafe_representation)
+        # The backend is wrapped in a try/catch to catch exceptions that one can
+        # hope to recover from (and, perhaps, restart the computation with safer
+        # parameters).
+        return _groebner(polynomials, kws, polynomial_repr)
     catch err
-        if isa(err, ExponentOverflow)
-            # Exponent vector overflow happened. Restart the computation with at
-            # least 64 bits per exponent.
-            safe_representation = default_safe_representation(kws)
-            return _groebner(polynomials, kws, safe_representation)
-        elseif isa(err, UnluckyCoefficientCancellation)
-            # Unlucky cancellation of some coefficient happened.
-
+        if isa(err, ExponentVectorOverflow)
+            # Exponent vector overflow might have happened. 
+            # Restart the computation with at least 32 bits per exponent.
+            # NOTE(Alex): consider using long arithmetic for storing exponents? 
+            polynomial_repr =
+                select_polynomial_representation(polynomials, kws, bits_per_exponent=32)
+            return _groebner(polynomials, kws, polynomial_repr)
         else
             # Something bad happened.
             rethrow(err)
@@ -30,81 +25,101 @@ function _groebner(polynomials, kws::Keywords)
     end
 end
 
-function _groebner(polynomials, kws::Keywords, r::Representation)
+function _groebner(polynomials, kws::Keywords, representation::Representation)
     @log Level(1) "Frontend: X"
     @log Level(1) "Internal representation of polynomials is:"
-    # Extract ring information, exponents, and coefficients from input polynomials.
-    # This copies the input, so that `polynomials` itself is not modified.
-    ring, exps, coeffs = convert_to_internal(representation, polynomials, kws)
+    # Extract ring information, exponents, and coefficients from the input polynomials.
+    # Convert these to an internal polynomial representation.
+    # This must copy the input, so that `polynomials` itself is not modified.
+    allzeros, ring, monoms, coeffs = convert_to_internal(representation, polynomials, kws)
     @log Level(1) "X polynomials over Y in variables Z"
+    # Fast path for the input of zeros
+    allzeros && return convert_to_output(ring, monoms, coeffs)
     # Check and set algorithm parameters
     params = Parameters(ring, kws)
     @log "Parameters: X, Y, Z"
-    # TODO: move to input-output.jl ?
-    # YES!!
-    iszerox = remove_zeros_from_input!(ring, exps, coeffs)
-    iszerox && (return convert_to_output(ring, polynomials, exps, coeffs, metainfo))
-
-    # NOTE(alex)
-    # Change input ordering if needed
-    newring = assure_ordering!(ring, exps, coeffs, params)
-    # Compute a groebner basis
-    bexps, bcoeffs = _groebner(newring, exps, coeffs, params)
+    # NOTE: at this point, we already know the computation method we are going to use,
+    # and the parameters are set.
+    change_monom_ordering_if_needed!(ring, monoms, coeffs, params)
+    # Compute a groebner basis!
+    gbmonoms, gbcoeffs = _groebner(ring, monoms, coeffs, params)
     # Convert result back to the representation of input
-    convert_to_output(newring, polynomials, bexps, bcoeffs, params)
+    convert_to_output(ring, gbmonoms, gbcoeffs, params)
 end
 
+# Groebner basis over Z_p.
+# Just calls f4 directly.
 function _groebner(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     params::Parameters
 ) where {M <: Monom, C <: CoeffFF}
-    # TODO(alex): exponents --> monoms
+    # NOTE: we can mutate ring, monoms, and coeffs here.
     @log "Backend: F4 over Z_p in ordering"
-    pairset, basis, hashtable, tracer = initialize_structures(ring, monoms, coeffs, params)
-
-    f4!(ring, basis, ht, params)
-
-    # extract exponents from hashtable
-    gbexps = hash_to_exponents(basis, ht)
-
-    gbexps, basis.coeffs
+    basis, pairset, hashtable, tracer = initialize_structs(ring, monoms, coeffs, params)
+    f4!(ring, basis, pairset, hashtable, tracer, params)
+    # Extract monomials and coefficients from basis and hashtable
+    gmbonoms, gbcoeffs = extract_monoms_coeffs(basis, hashtable)
+    gmbonoms, gbcoeffs
 end
 
-# Rational numbers groebner
-# groebner over rationals is implemented roughly in the following way:
-#
-# k = 1
-# while !(correctly reconstructed)
-#   k = k*2
-#   select a batch of small prime numbers p1..pk
-#   compute a batch of finite field groebner bases gb1..gbk
-#   reconstruct gb1..gbk to gb_zz modulo prod(p1..pk) with CRT
-#   reconstruct gb_zz to gb_qq with rational reconstruction
-#   if the basis gb_qq is correct, then break
-# end
-# return gb_qq
+# Groebner basis over Q.
+# GB over the rationals uses modular computation.
+# There are two approaches: TODO
 
 initial_batchsize() = 1
 initial_gaps() = (1, 1, 1, 1, 1)
 batchsize_multiplier() = 2
 
-@timed_block function _groebner(
+function _groebner(
     ring::PolyRing,
-    exps::Vector{Vector{M}},
+    monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     params::Parameters
 ) where {M <: Monom, C <: CoeffQQ}
+    if params.strategy === :learn_and_apply
+        _groebner_learn_and_apply(ring, monoms, coeffs, params)
+    else
+        @assert params.strategy === :classic_modular
+        _groebner_classic_modular(ring, monoms, coeffs, params)
+    end
+end
 
-    # we can mutate coeffs and exps here
+function _groebner_learn_and_apply(
+    ring::PolyRing,
+    monoms::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    params
+) where {M <: Monom, C <: CoeffQQ}
+    # Learn and apply TODO, msolve
 
-    # select hashtable size
-    tablesize = select_tablesize(ring, exps)
-    @info "Selected tablesize $tablesize"
+    # Learn stage:
+    f4!(ring, basis, pairset, hashtable, tracer, params)
+    reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
+    reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
 
-    # initialize hashtable and finite field basis structs
-    gens_temp_ff, ht = initialize_structures_ff(ring, exps, coeffs, meta.rng, tablesize)
+    if correctness_check!(coeffaccum, coeffbuffer, basis)
+        1
+    end
+
+    correct = false
+    while !correct
+        # Apply stage
+        f4!(ring, basis, pairset, hashtable, tracer, params)
+        reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
+        reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
+    end
+end
+
+function _groebner_classic_modular(
+    ring::PolyRing,
+    monoms::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    params::Parameters
+) where {M <: Monom, C <: CoeffQQ}
+    # NOTE: we can mutate ring, monoms, and coeffs here.
+    gens_temp_ff, ht = initialize_structs(ring, monoms, coeffs, params)
     gens_ff = deepcopy_basis(gens_temp_ff)
 
     # now hashtable is filled correctly,
@@ -254,10 +269,3 @@ batchsize_multiplier() = 2
     gb_exps = hash_to_exponents(gens_ff, ht)
     gb_exps, coeffaccum.gb_coeffs_qq
 end
-
-function _groebner(
-    ring::PolyRing,
-    monoms::Vector{Vector{M}},
-    coeffs::Vector{Vector{C}},
-    params
-) where {M <: Monom, C <: CoeffParam} end

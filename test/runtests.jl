@@ -7,12 +7,10 @@ using TestSetExtensions
 # - Nemo.jl  (Nemo.fmpq_mpoly, Nemo.gfp_mpoly, ...)
 # - DynamicPolynomials.jl (DynamicPolynomials.Polynomial{true, T})
 
-include("../src/Groebner.jl")
+using AbstractAlgebra
+using Groebner
 
-using .Groebner
-using .Groebner.AbstractAlgebra
-
-# if some particular time consuming tests should be executed
+# Run time consuming tests
 run_long_tests() = false
 
 # Taken from JuMP/test/solvers.jl
@@ -32,10 +30,8 @@ end
 ≂(xs, ys) = ⊂(xs, ys) && ⊂(ys, xs)
 
 @time @testset "All tests" verbose = true begin
-    @warn "Warnings during testing are fine."
+    @warn "Warnings from Groebner during testing are fine."
 
-    # test reference implementation
-    @includetests ["reference"]
     # test different implementations of monomial 
     @includetests ["monoms/powervector", "monoms/packedpairs"]
     # test high-level monomial arithmetic and term orders

@@ -60,6 +60,9 @@ end
     normalize::Bool=true
 ) where {M <: Monom, C <: Coeff}
 
+    # TODO: select tablesize here
+    # tablesize = select_tablesize(ring, exps)
+    # @info "Selected tablesize $tablesize"
     tablesize = select_tablesize(ring, exponents)
 
     # basis for storing basis elements,

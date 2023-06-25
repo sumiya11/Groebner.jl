@@ -9,26 +9,22 @@ module Groebner
 """
     invariants_enabled()
 
-A flag that indicates if asserts and invariants are checked.
+Specifies if custom asserts and invariants are checked.
+If `false`, then all checks are disabled, and entail no runtime overhead.
 
 See also `enable_invariants`.
 """
 invariants_enabled() = true
 
 """
-    
+    logging_enabled()
+
+Specifies if custom logging is enabled.
+If `false`, then all logging is disabled, and entails no runtime overhead.
+
+See also `enable_logging`.
 """
 logging_enabled() = true
-
-"""
-    performance_counters_enabled()
-
-
-"""
-performance_counters_enabled() = true
-macro __COUNTER__ end
-macro timed_block end
-macro display_performance_counters end
 
 # Groebner accepts as input polynomials from the Julia packages
 # AbstractAlgebra.jl (Oscar.jl) and MultivariatePolynomials.jl.
@@ -52,6 +48,11 @@ import Primes: nextprime
 
 import Random
 
+import Base.Threads: atomic_xchg!
+
+include("utils/logging.jl")
+include("utils/invariants.jl")
+
 # Fast arithmetic in Z_p
 include("arithmetic/Z_p.jl")
 # Chinese remainder theorem and rational number reconstruction
@@ -73,7 +74,9 @@ include("types.jl")
 include("keywords.jl")
 
 # input-output conversions for polynomials
-include("input-output.jl")
+include("input-output/common.jl")
+include("input-output/AbstractAlgebra.jl")
+include("input-output/DynamicPolynomials.jl")
 
 #= generic f4 implementation =#
 #= the heart of this library =#
@@ -113,10 +116,6 @@ include("interface.jl")
 
 using SnoopPrecompile
 include("precompile.jl")
-
-# For collecting performance markers.
-# NOTE: this file must be included last
-include("utils/performance.jl")
 
 export groebner
 export isgroebner
