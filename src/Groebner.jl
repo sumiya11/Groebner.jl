@@ -37,9 +37,6 @@ import Combinatorics
 
 using ExprTools: splitdef, combinedef
 
-import Logging
-import Logging: ConsoleLogger, LogLevel
-
 import MultivariatePolynomials
 import MultivariatePolynomials: AbstractPolynomial, AbstractPolynomialLike
 
@@ -48,33 +45,26 @@ import Primes: nextprime
 
 import Random
 
-import Base.Threads: atomic_xchg!
-
+import Base.Threads
+ 
 include("utils/logging.jl")
 include("utils/invariants.jl")
+include("utils/keywords.jl")
+include("utils/types.jl")
 
 # Fast arithmetic in Z_p
 include("arithmetic/Z_p.jl")
-# Chinese remainder theorem and rational number reconstruction
-include("arithmetic/reconstruction.jl")
 
 # Supported monomial orderings
-include("monoms/orderings.jl")
+include("monomials/orderings.jl")
 # Monomial implementations
-include("monoms/packedutils.jl")
-include("monoms/powervector.jl")
-include("monoms/packedpairs.jl")
+include("monomials/packedutils.jl")
+include("monomials/powervector.jl")
+include("monomials/packedpairs.jl")
 
-# type aliases for internal objects
-# TODO(Alex): eliminate this file!
-include("types.jl")
-
-# control of keywords in groebner
-# and optimal parameter selection
-include("keywords.jl")
-
-# input-output conversions for polynomials
-include("input-output/common.jl")
+# Input-output conversions for polynomials
+include("input-output/input-output.jl")
+include("input-output/representations.jl")
 include("input-output/AbstractAlgebra.jl")
 include("input-output/DynamicPolynomials.jl")
 

@@ -12,11 +12,11 @@ function _groebner(polynomials, kws::KeywordHandler)
         return _groebner(polynomials, kws, polynomial_repr)
     catch err
         if isa(err, ExponentVectorOverflow)
-            # Exponent vector overflow might have happened. 
-            # Restart the computation with at least 32 bits per exponent.
-            # NOTE(Alex): consider using long arithmetic for storing exponents? 
+            # Exponent vector overflow might have happened. Restart the
+            # computation with at least 32 bits per exponent.
+            @log level = 0 "Possible overflow of exponent vector detected. Restarting with $(32) bits per exponent."
             polynomial_repr =
-                select_polynomial_representation(polynomials, kws, bits_per_exponent=32)
+                select_polynomial_representation(polynomials, kws, hint=:large_exponents)
             return _groebner(polynomials, kws, polynomial_repr)
         else
             # Something bad happened.
@@ -26,25 +26,21 @@ function _groebner(polynomials, kws::KeywordHandler)
 end
 
 function _groebner(polynomials, kws::Keywords, representation::Representation)
-    @log Level(1) "Frontend: X"
-    @log Level(1) "Internal representation of polynomials is:"
     # Extract ring information, exponents, and coefficients from the input polynomials.
     # Convert these to an internal polynomial representation.
     # This must copy the input, so that `polynomials` itself is not modified.
     allzeros, ring, monoms, coeffs = convert_to_internal(representation, polynomials, kws)
-    @log Level(1) "X polynomials over Y in variables Z"
     # Fast path for the input of zeros
-    allzeros && return convert_to_output(ring, monoms, coeffs)
-    # Check and set algorithm parameters
-    params = Parameters(ring, kws)
-    @log "Parameters: X, Y, Z"
+    allzeros && return convert_to_output(ring, polynomials, monoms, coeffs, params)
+    # Check and set parameters
+    params = AlgorithmParameters(ring, kws)
     # NOTE: at this point, we already know the computation method we are going to use,
     # and the parameters are set.
-    change_monom_ordering_if_needed!(ring, monoms, coeffs, params)
+    change_ordering_if_needed!(ring, monoms, coeffs, params)
     # Compute a groebner basis!
     gbmonoms, gbcoeffs = _groebner(ring, monoms, coeffs, params)
     # Convert result back to the representation of input
-    convert_to_output(ring, gbmonoms, gbcoeffs, params)
+    convert_to_output(ring, polynomials, gbmonoms, gbcoeffs, params)
 end
 
 # Groebner basis over Z_p.
@@ -56,28 +52,23 @@ function _groebner(
     params::Parameters
 ) where {M <: Monom, C <: CoeffFF}
     # NOTE: we can mutate ring, monoms, and coeffs here.
-    @log "Backend: F4 over Z_p in ordering"
+    @log level = 1 "Backend: F4 over Z_$(ring.characteristic)"
     basis, pairset, hashtable, tracer = initialize_structs(ring, monoms, coeffs, params)
     f4!(ring, basis, pairset, hashtable, tracer, params)
     # Extract monomials and coefficients from basis and hashtable
-    gmbonoms, gbcoeffs = extract_monoms_coeffs(basis, hashtable)
-    gmbonoms, gbcoeffs
+    gbmonoms, gbcoeffs = extract_monoms_coeffs(basis, hashtable)
+    gbmonoms, gbcoeffs
 end
 
 # Groebner basis over Q.
 # GB over the rationals uses modular computation.
-# There are two approaches: TODO
-
-initial_batchsize() = 1
-initial_gaps() = (1, 1, 1, 1, 1)
-batchsize_multiplier() = 2
-
 function _groebner(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     params::Parameters
 ) where {M <: Monom, C <: CoeffQQ}
+    # NOTE: we can mutate ring, monoms, and coeffs here.
     if params.strategy === :learn_and_apply
         _groebner_learn_and_apply(ring, monoms, coeffs, params)
     else
@@ -92,24 +83,8 @@ function _groebner_learn_and_apply(
     coeffs::Vector{Vector{C}},
     params
 ) where {M <: Monom, C <: CoeffQQ}
-    # Learn and apply TODO, msolve
-
-    # Learn stage:
-    f4!(ring, basis, pairset, hashtable, tracer, params)
-    reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
-    reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
-
-    if correctness_check!(coeffaccum, coeffbuffer, basis)
-        1
-    end
-
-    correct = false
-    while !correct
-        # Apply stage
-        f4!(ring, basis, pairset, hashtable, tracer, params)
-        reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
-        reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
-    end
+    @log level = 1 "Backend: multi-modular tracing (learn-apply)"
+    monoms, coeffs
 end
 
 function _groebner_classic_modular(
@@ -118,7 +93,7 @@ function _groebner_classic_modular(
     coeffs::Vector{Vector{C}},
     params::Parameters
 ) where {M <: Monom, C <: CoeffQQ}
-    # NOTE: we can mutate ring, monoms, and coeffs here.
+    @log level = 1 "Backend: classic multi-modular"
     gens_temp_ff, ht = initialize_structs(ring, monoms, coeffs, params)
     gens_ff = deepcopy_basis(gens_temp_ff)
 
@@ -145,7 +120,7 @@ function _groebner_classic_modular(
     gens_ff = deepcopy_basis(gens_temp_ff)
 
     prime = nextluckyprime!(primetracker)
-    @info "$i: selected lucky prime $prime"
+    # @info "$i: selected lucky prime $prime"
 
     # perform reduction and store result in gens_ff
     reduce_modulo!(coeffbuffer, coeffs_zz, gens_ff.coeffs, prime)
@@ -162,12 +137,12 @@ function _groebner_classic_modular(
     f4!(ring, gens_ff, tracer, pairset, ht, reduced, meta.linalg, meta.rng, maxpairs)
 
     # reconstruct into integers
-    @info "CRT modulo ($(primetracker.modulo), $(prime))"
+    # @info "CRT modulo ($(primetracker.modulo), $(prime))"
 
     reconstruct_crt!(coeffbuffer, coeffaccum, primetracker, gens_ff.coeffs, prime)
 
     # reconstruct into rationals
-    @info "Reconstructing modulo $(primetracker.modulo)"
+    # @info "Reconstructing modulo $(primetracker.modulo)"
     reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
 
     correct = false
@@ -184,7 +159,7 @@ function _groebner_classic_modular(
         gens_ff,
         ht
     )
-        @info "Reconstructed successfuly"
+        # @info "Reconstructed successfuly"
         correct = true
     end
 
@@ -207,7 +182,7 @@ function _groebner_classic_modular(
             # copy basis so that initial exponents dont get lost
             gens_ff = deepcopy_basis(gens_temp_ff)
             prime = nextluckyprime!(primetracker)
-            @info "$i: selected lucky prime $prime"
+            # @info "$i: selected lucky prime $prime"
             # perform reduction and store result in gens_ff
             reduce_modulo!(coeffbuffer, coeffs_zz, gens_ff.coeffs, prime)
             # do some things to ensure generators are correct
@@ -227,7 +202,7 @@ function _groebner_classic_modular(
                 maxpairs
             )
             # reconstruct to integers
-            @info "CRT modulo ($(primetracker.modulo), $(prime))"
+            # @info "CRT modulo ($(primetracker.modulo), $(prime))"
 
             batchsize > 1 && basis_shape_control(coeffaccum.gb_coeffs_qq, gens_ff.coeffs)
 
@@ -235,7 +210,7 @@ function _groebner_classic_modular(
         end
 
         # reconstruct to rationals
-        @info "Reconstructing modulo $(primetracker.modulo)"
+        # @info "Reconstructing modulo $(primetracker.modulo)"
         success = reconstruct_modulo!(coeffbuffer, coeffaccum, primetracker)
         !success && continue
 
@@ -252,7 +227,7 @@ function _groebner_classic_modular(
             gens_ff,
             ht
         )
-            @info "Success!"
+            # @info "Success!"
             correct = true
         end
 

@@ -649,7 +649,7 @@ function exact_sparse_rref_isgroebner!(
             -1,
             arithmetic
         )
-        # @warn "reduced " zeroed newrow newcfs
+        # # @warn "reduced " zeroed newrow newcfs
         # if fully reduced
         zeroed && continue
         return false
@@ -701,7 +701,7 @@ function exact_sparse_rref_nf!(
             -1,
             arithmetic
         )
-        # @warn "reduced " zeroed
+        # # @warn "reduced " zeroed
         # if fully reduced
         zeroed && continue
 

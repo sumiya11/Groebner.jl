@@ -1,94 +1,86 @@
 # Pairset and Basis
 
-# Basis is a structure that stores a list of polynomials in f4.
-# Each polynomial is represented as a sorted vector of monomials 
-# and a sorted vector of coefficients.
-# Monomials and coefficients are stored in the basis separately. 
-# Each monomial is represented with an integer -- 
-# an index to a bucket in the hashtable (see f4/hashtable.jl)
+# Basis is a structure that stores a list of polynomials in F4. Each polynomial
+# is represented as a sorted vector of monomials and a sorted vector of
+# coefficients. Monomials and coefficients are stored in the basis separately.
+# Each monomial is represented with an integer --- an index to a bucket in the
+# hashtable (see f4/hashtable.jl).
 
 # Pairset is a list of SPairs.
-# An SPair is a critical pair in f4.
+# An SPair is a critical pair in F4.
 
-# S-pair{Power}, a pair of polynomials,
-# Power is the type of exponent vector entry
-struct SPair{Power <: Integer}
-    # first polynomial as an index from the basis array
+# S-pair{Degree}, a pair of polynomials,
+struct SPair{Degree}
+    # First polynomial given by its index in the basis array
     poly1::Int
-    # second polynomial -//-
+    # Second polynomial -//-
     poly2::Int
-    # index of lcm(lt(poly1), lt(poly2)) in hashtable
+    # TODO: remove this field
+    # Index of lcm(lead(poly1), lead(poly2)) in hashtable
     lcm::MonomIdx
-    # total degree of lcm
-    deg::Power
+    # Total degree of lcm
+    deg::Degree
 end
 
-# Stores S-Pairs
-mutable struct Pairset{Power}
-    pairs::Vector{SPair{Power}}
-    # number of filled pairs,
-    # Initially zero
+# Stores S-Pairs and some additional info.
+mutable struct Pairset{Degree}
+    pairs::Vector{SPair{Degree}}
+    # For each pair (poly1, poly2) in array `pairs`, stores the lcm monomial of
+    # lcm(lead(poly1), lead(poly2)) as its index in hashtable
+    lcms::Vector{MonomIdx}
+    # Number of filled pairs, initially zero
     load::Int
 end
 
-# Initializes and returns pairset with capacity for `initial_size` pairs.
-# fine tuned parameter 2^6
-function initialize_pairset(::Type{Power}; initial_size=2^6) where {Power}
-    pairs = Vector{SPair{Power}}(undef, initial_size)
-    Pairset(pairs, 0)
+# Initializes and returns a pairset with capacity for `initial_size` pairs.
+#
+# TODO: Parameter `initial_size` is currently fine-tuned across small and large
+# benchmark systems, which results in an okay "average case" solution. Maybe
+# select different values for `initial_size` depending on the input system?
+function initialize_pairset(::Type{Degree}; initial_size=2^6) where {Degree}
+    pairs = Vector{SPair{Degree}}(undef, initial_size)
+    lcms = Vector{MonomIdx}(undef, initial_size)
+    Pairset(pairs, lcms, 0)
 end
 
 Base.isempty(ps::Pairset) = ps.load == 0
 
-# Checks if it is possible to add `added` number of pairs to the pairset,
-# and extends the pairset if not
-function check_enlarge_pairset!(ps::Pairset, added::Int)
-    sz = length(ps.pairs)
-    if ps.load + added >= sz
-        newsz = max(2 * sz, ps.load + added)
-        resize!(ps.pairs, newsz)
+# Checks if it is possible to add `to_add` number of pairs to the pairset, and
+# resizes the pairset if not
+function resize_pairset_if_needed!(ps::Pairset, to_add::Int)
+    newsize = length(ps.pairs)
+    while ps.load + to_add > newsize
+        newsize = max(2 * newsize, ps.load + to_add)
     end
+    resize!(ps.pairs, newsz)
+    resize!(ps.lcms, newsz)
     nothing
 end
 
-#------------------------------------------------------------------------------
-
 # Stores basis generators and some additional info
 mutable struct Basis{C <: Coeff}
-    # vector of polynomials, each polynomial is a vector of monomials,
+    # Vector of polynomials, each polynomial is a vector of monomials,
     # each monomial is represented with its index in hashtable
     monoms::Vector{Vector{MonomIdx}}
-    # polynomial coefficients
+    # Polynomial coefficients
     coeffs::Vector{Vector{C}}
-
-    #= Keeping track of sizes   =#
-    #=  ndone <= ntotal <= size =#
-    # total allocated size
+    
+    # Max. number of polynomials that the basis can hold
     size::Int
-    # number of processed polynomials in `monoms`
-    # Iitially zero
-    ndone::Int
-    # total number of polys filled in `monoms`
-    # (these will be handled during next update! call)
-    # Iitially zero
+    # Number of processed polynomials, initially zero
+    nprocessed::Int
+    # Total number of polys filled, initially zero
     ntotal::Int
 
-    # always true
-    # length(monoms) == length(coeffs) == length(isred) == size
-
-    #= Keeping track of redundancy =#
-    #= invariant =#
-    #= length(lead) == length(nonred) == count(isred) == nlead =#
-    # if element of the basis
-    # is redundant
-    isred::Vector{Bool}
-    # positions of non-redundant elements in the basis
-    nonred::Vector{Int}
-    # division masks of leading monomials of
-    # non redundant basis elements
-    lead::Vector{DivisionMask}
-    # number of filled elements in lead
-    nlead::Int
+    # If element of the basis at some index is redundant
+    isredundant::Vector{Bool}
+    # Positions of non-redundant elements in the basis
+    nonredundant::Vector{Int}
+    # Division masks of leading monomials of non-redundant basis elements
+    # TODO: remove this field?
+    divmasks::Vector{DivisionMask}
+    # The number of filled elements in `divmasks`
+    ndivmasks::Int
 end
 
 # initialize basis for `ngens` elements with coefficient of type T
@@ -153,9 +145,11 @@ function deepcopy_basis(basis::Basis{T}) where {T}
     )
 end
 
-function check_enlarge_basis!(basis::Basis{T}, added::Int) where {T}
-    while basis.ndone + added >= basis.size
-        basis.size = max(basis.size * 2, basis.ndone + added)
+# 
+function resize_basis_if_needed!(basis::Basis{T}, to_add::Int) where {T}
+    # TODO: maybe resize basis in chunks of 2^k?
+    while basis.nprocessed + to_add >= basis.size
+        basis.size = max(basis.size * 2, basis.ndone + to_add)
         resize!(basis.monoms, basis.size)
         resize!(basis.coeffs, basis.size)
         resize!(basis.isred, basis.size)
@@ -163,6 +157,7 @@ function check_enlarge_basis!(basis::Basis{T}, added::Int) where {T}
         resize!(basis.nonred, basis.size)
         resize!(basis.lead, basis.size)
     end
+    @invariant basis.size <= basis.nprocessed + to_add
     nothing
 end
 

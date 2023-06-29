@@ -2,7 +2,7 @@
 # If one of the primes in the modular computation 
 # was unlucky all along
 function _monte_carlo_error(msg)
-    @warn msg
+    # @warn msg
     throw(RecoverableException(msg))
 end
 
@@ -76,10 +76,10 @@ function correctness_check!(
     # first we check coefficients with a heuristic check only
     if meta.heuristiccheck
         if !heuristic_correctness_check(coeffaccum.gb_coeffs_qq, primetracker.modulo)
-            @info "Heuristic check failed."
+            # @info "Heuristic check failed."
             return false
         end
-        @info "Heuristic check passed!"
+        # @info "Heuristic check passed!"
     end
 
     # then check that a basis is also a basis modulo a prime
@@ -94,10 +94,10 @@ function correctness_check!(
             primetracker,
             ht
         )
-            @info "Randomized check failed."
+            # @info "Randomized check failed."
             return false
         end
-        @info "Randomized check passed!"
+        # @info "Randomized check passed!"
     end
 
     if meta.guaranteedcheck
@@ -185,7 +185,7 @@ function guaranteed_correctness_check!(
     gens_tmp_ff,
     ht
 )
-    @info "Setting parameter certify=true in groebner is not recommended."
+    # @info "Setting parameter certify=true in groebner is not recommended."
 
     gens_qq, _ = initialize_structures(ring, gens_tmp_ff.monoms[1:(gens_tmp_ff.ntotal)], coeffs, ht)
     gb_qq, _   = initialize_structures(ring, gbexps, gb_coeffs_qq, ht)

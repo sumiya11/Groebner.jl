@@ -1,35 +1,28 @@
-# Hashtable
+# This file implements monomial hashtable.
 
-# This hashtable stores monomials.
-# This hashtable implementation assumes 
-# that the hash function that acts on monomials is linear. 
-# (each monomial type should implement linear hash function)
+# This hashtable implementation assumes that
+# the hash function is linear. (each monomial implementation must implement
+# linear hash function)
 
-# Some monomial implementations are mutable, and some are not.
-# In order to maintain generic enough code that will work for both
-# we usually write something like:
-#   enew = monom_product!(enew, e1, e2)
-# Then, if a mutable implementation is used, 
-# enew would be overwritten inside of monom_product!.
-# Otherwise, monom_product! would return a new immutable object
-# that is then assigned to enew.
-# That allows us to write more or less independently
-# of the monomial implementation.
+# The hashtable size is always the power of two. The hashtable size is doubled
+# each time the load factor exceeds ht_resize_threshold (see below).
+# ht_resize_threshold can be a bit smaller than 0.5, since the number of hits
+# greatly exceeds the number of misses usually
 
-# The hashtable size is always the power of two.
-# The hashtable size is doubled each time the load factor exceeds
-#   ht_resize_threshold()
-# (this ht_resize_threshold() should be around 0.5
-#  to balance the rehashing cost with the insertion cost)
-# (this ht_resize_threshold() should be a bit smaller than 0.5,
-#  since the number of hit insertions greatly exceeds the number
-#  of miss insertions in the hashtable)
+# Some monomial implementations are mutable, and some are not. In order to
+# maintain generic code that will work for both, we usually write something
+# like: m3 = monom_product!(m3, m1, m2) Then, if a mutable implementation is
+#   used, m3 would be overwritten inside of monom_product!. Otherwise,
+# monom_product! would return a new immutable object that is then assigned to
+# m3. That allows us to write more or less independently of the monomial
+# implementation.
 
-# Hashvalue.
-# stores index for position in the matrix (defaults to zero),
-# hash of a monomial,
-# corresponding divmask to speed up divisibility checks,
-# and the todal degree
+# Hashvalue of a single monomial.
+# Has fields: TODO: is this true?
+#   idx - index of the monomial in the F4 matrix (defaults to zero),
+#   hash - hash of the monomial,
+#   divmask - corresponding divmask to speed up divisibility checks,
+#   deg - total degree of the monomial
 mutable struct Hashvalue
     idx::Int
     hash::MonomHash
@@ -37,24 +30,19 @@ mutable struct Hashvalue
     deg::MonomHash
 end
 
-function copy_hashvalue(x::Hashvalue)
-    Hashvalue(x.idx, x.hash, x.divmask, x.deg)
-end
+copy_hashvalue(x::Hashvalue) = Hashvalue(x.idx, x.hash, x.divmask, x.deg)
 
-# Hashtable designed to store monomials
+# Open addressing, linear scan, hashtable.
 mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractMonomialOrdering}
-    exponents::Vector{M}
-
-    # maps exponent hash to its position in exponents array
+    #= Data =#
+    monoms::Vector{M}
+    # Maps monomial hash to its position in the `monoms` array
     hashtable::Vector{MonomIdx}
-
-    # stores hashes, division masks,
-    # and other valuable info
-    # for each hashtable enrty
+    # Stores hashes, division masks, and other valuable info for each hashtable
+    # enrty
     hashdata::Vector{Hashvalue}
-
-    # values to hash exponents with, i.e
-    # hash(e) := hash(e, hasher)
+    # Hash vector. Hash of a monomial is a dot product of the `hasher` vector
+    # and the monomial exponent vector
     hasher::Vector{MonomHash}
 
     #= Ring information =#
@@ -64,37 +52,32 @@ mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractMonomialOrdering}
     ord::Ord
 
     #= Monom divisibility =#
-    # divisor map to check divisibility faster
+    # Divisor map to check divisibility faster
     divmap::Vector{UInt32}
     ndivvars::Int
-    # bits per div variable
+    # Number of bits per div variable
     ndivbits::Int
 
+    # Hashtable size (always power of two)
     size::Int
-    # elements added
+    # Elements currently added
     load::Int
-    #
     offset::Int
 end
 
-#------------------------------------------------------------------------------
+# Resize hashtable if load factor exceeds this ht_resize_threshold. Load factor
+# of a hashtable instance must be smaller than ht_resize_threshold at any point
+# in its lifetime
+ht_resize_threshold() = 0.4
+ht_needs_resize(size, load, added) = (load + added) / size > ht_resize_threshold()
 
-# Returns the next look-up position in the table 
-function nexthashindex(h::MonomHash, j::MonomHash, mod::MonomHash)
-    (h + j) & mod + MonomHash(1)
-end
 
-#------------------------------------------------------------------------------
-
-# initialize and set fields for basis hashtable
-function initialize_basis_hash_table(
+function initialize_hashtable(
     ring::PolyRing{Char, Ord},
-    rng::Random.AbstractRNG,
-    MonomT;
-    initial_size::Int=2^16
+    rng,
+    MonomT,
+    initial_size
 ) where {Char, Ord <: AbstractMonomialOrdering}
-
-    # not necessary to create `initial_size` exponents
     exponents = Vector{MonomT}(undef, initial_size)
     hashdata = Vector{Hashvalue}(undef, initial_size)
     hashtable = zeros(MonomIdx, initial_size)
@@ -218,7 +201,7 @@ function initialize_secondary_hash_table(basis_ht::MonomialHashtable{M}) where {
     )
 end
 
-function select_tablesize(ring::PolyRing, polys::AbstractVector)
+function select_hashtable_size(ring::PolyRing, polys::AbstractVector)
     nvars = ring.nvars
     sz = length(polys)
 
@@ -240,10 +223,12 @@ function select_tablesize(ring::PolyRing, polys::AbstractVector)
     tablesize
 end
 
-#------------------------------------------------------------------------------
+# Returns the next look-up position in the table 
+function next_lookup_index(h::MonomHash, j::MonomHash, mod::MonomHash)
+    (h + j) & mod + MonomHash(1)
+end
 
-ht_resize_threshold() = 0.4
-ht_needs_resize(size, load, added) = (load + added) / size > ht_resize_threshold()
+#------------------------------------------------------------------------------
 
 function check_enlarge_hashtable!(ht::MonomialHashtable, added::Integer)
     newsize = ht.size

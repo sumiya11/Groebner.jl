@@ -54,7 +54,7 @@ function add_generator!(basis::Basis{C}, matrix, relation, ht, ord) where {C <: 
     rexps, rcoeffs, _ = extract_sparse_row(relation)
 
     if debug()
-        @warn "add generator"
+        # @warn "add generator"
         println(relation)
         println(rexps, " ", rcoeffs)
     end
@@ -66,7 +66,7 @@ function add_generator!(basis::Basis{C}, matrix, relation, ht, ord) where {C <: 
     sort_term_indices_decreasing!(rexps, rcoeffs, ht, ord)
 
     if debug()
-        @warn "extracted"
+        # @warn "extracted"
         println(rexps)
         println(rcoeffs)
     end
@@ -82,7 +82,7 @@ end
 function divides_staircase(monom, staircase, ht)
     for m in staircase
         if debug()
-            @warn "uwu"
+            # @warn "uwu"
             println("is $(ht.exponents[m]) divisible by $(ht.exponents[monom])")
         end
         if is_monom_divisible(monom, m, ht)
@@ -109,8 +109,8 @@ function fglm_f4!(
         monom = nextmonomial!(nextmonoms)
 
         if debug()
-            @warn "new iteration" ht.exponents[monom]
-            @warn "" ht
+            # @warn "new iteration" ht.exponents[monom]
+            # @warn "" ht
             println("#############")
             println(nextmonoms)
             println(newbasis.monoms, " ", newbasis.coeffs)
@@ -135,7 +135,7 @@ function fglm_f4!(
         exists, relation = linear_relation!(ring, matrix, monom, tobereduced, ht)
 
         if debug()
-            @warn "dump"
+            # @warn "dump"
             dump(matrix, maxdepth=2)
             println(exists)
         end
@@ -145,7 +145,7 @@ function fglm_f4!(
             lead = ht.exponents[monom]
 
             if debug()
-                @error "produced element" lead
+                # @error "produced element" lead
             end
 
             add_generator!(newbasis, matrix, relation, ht, ord)

@@ -62,7 +62,7 @@ end
 
     # TODO: select tablesize here
     # tablesize = select_tablesize(ring, exps)
-    # @info "Selected tablesize $tablesize"
+    # # @info "Selected tablesize $tablesize"
     tablesize = select_tablesize(ring, exponents)
 
     # basis for storing basis elements,
@@ -506,7 +506,7 @@ end
     maxpairs::Int=0
 )
     npairs = lowest_degree_pairs!(pairset)
-    @debug "Discarded $(npairs) pairs"
+    # @debug "Discarded $(npairs) pairs"
 
     ps = pairset.pairs
 
@@ -537,7 +537,7 @@ end
     ps = pairset.pairs
 
     npairs = min(npairs, maxpairs)
-    @info "Selected $(npairs) pairs"
+    # @info "Selected $(npairs) pairs"
 
     sort_pairset_by_lcm!(pairset, npairs, ht)
 
@@ -699,11 +699,12 @@ end
     # makes basis fields valid,
     # does not copy,
     # checks for redundancy of new elems
-    plcm = Vector{MonomIdx}(undef, 0)
-    if isready(tracer)
-        # TODO: `plcm` belongs into the pairset!!!
-        resize!(plcm, final_basis_size(tracer) + 1)
-    end
+    # TODO: move to basis.jl
+    # plcm = Vector{MonomIdx}(undef, 0)
+    # if isready(tracer)
+    #     # TODO: `plcm` belongs into the pairset!!!
+    #     resize!(plcm, final_basis_size(tracer) + 1)
+    # end
 
     # add the first batch of critical pairs to the pairset
     pairset_size = update!(pairset, basis, ht, update_ht, plcm)

@@ -1,3 +1,42 @@
+# Internal representations of polynomials
+
+struct PolynomialRepresentation
+    monomtype::Type
+    coefftype::Type
+end
+
+function determine_monomtype(basering, nvars)
+    elper8bytes = div(8, sizeof(E))
+    # if we want a non-packed representation
+    if first_impression.nvars > 3 * elper8bytes
+        @assert is_supported_ordering(PowerVector{E}, ordering)
+        return Representation{PowerVector{E}}()
+    end
+    # if we want a packed representation
+    if is_supported_ordering(AbstractPackedPair, ordering)
+        if first_impression.nvars < elper8bytes
+            return Representation{PackedPair1{UInt64, E}}()
+        elseif first_impression.nvars < 2 * elper8bytes
+            return Representation{PackedPair2{UInt64, E}}()
+        elseif first_impression.nvars < 3 * elper8bytes
+            return Representation{PackedPair3{UInt64, E}}()
+        end
+    end
+end
+
+function determine_coefftype(basering, nvars)
+
+end
+
+function select_polynomial_representation(polynomials, kws; hint=nothing)
+    frontend, npolys, basering, nvars, ordering = peek_at_polynomials(polynomials)
+    monomtype = determine_monomtype(basering, nvars)
+    coefftype = determine_coefftype(basering, nvars)
+    @log level=1 "Frontend: $frontend"
+    @log level=1 "Input: $npolys polynomials over $basering in $nvars variables, $ordering ordering"
+    @log level=1 "Internal representation: monomials are $monomtype, coefficients are $coefftype"
+    PolynomialRepresentation(monomtype, coefftype)
+end
 
 
 # The game with monomial representations:
@@ -128,106 +167,3 @@ function peek_at_polynomials(
     isempty(polynomials) && return (nvars=2^32,)
     (nvars=AbstractAlgebra.nvars(parent(polynomials[1])),)
 end
-
-#------------------------------------------------------------------------------
-
-# Default safe option of linear algebra 
-safe_linear_algebra() = :exact
-
-#------------------------------------------------------------------------------
-
-# Here we choose parameters for groebner basis computation
-# based on the specified input keywords
-
-struct AlgorithmParameters{Rng, Ord1, Ord2}
-    # if set, then use fglm algorithm for order conversion
-    usefglm::Bool
-    # output polynomials monomial order
-    targetord::Ord1
-    # monomial order for computation
-    computeord::Ord2
-
-    # correctness checks levels
-    heuristiccheck::Bool
-    randomizedcheck::Bool
-    guaranteedcheck::Bool
-
-    # linear algebra backend to be used
-    # Currently available are
-    #   :exact for exact linear algebra,
-    #   :prob for probabilistic linear algebra
-    linalg::Symbol
-
-    # ground field of computation.
-    # Current options are
-    #   :qq for rationals,
-    #   :ff for integers modulo prime
-    ground::Symbol
-
-    # random number generator
-    rng::Rng
-end
-
-function set_metaparameters(
-    ring,
-    ordering,
-    certify,
-    linalg,
-    rng,
-    maxpairs::Int=typemax(Int)
-)
-    @assert maxpairs > 0 "The number of pairs must be greater than zero"
-
-    usefglm = false
-    targetord = Lex()
-    computeord = Lex()
-
-    if false
-        targetord = Lex()
-        usefglm = true
-        if ordering in (DegLex(), DegRevLex())
-            computeord = ordering
-        else
-            computeord = DegRevLex()
-        end
-        computeord = Lex()
-    else
-        if ordering === InputOrdering()
-            ordering = ring.ord
-        end
-        targetord = ordering
-        usefglm = false
-        computeord = targetord
-    end
-
-    heuristiccheck = true
-    randomizedcheck = true
-    if certify
-        guaranteedcheck = true
-    else
-        guaranteedcheck = false
-    end
-
-    ground = :qq
-    if ring.ch == 0
-        ground = :qq
-    else
-        ground = :ff
-    end
-
-    # @info "Computing in $computeord order, result is in $targetord order"
-    # @info "Using fglm: $usefglm"
-
-    GroebnerMetainfo(
-        usefglm,
-        targetord,
-        computeord,
-        heuristiccheck,
-        randomizedcheck,
-        guaranteedcheck,
-        linalg,
-        ground,
-        rng
-    )
-end
-
