@@ -1,34 +1,16 @@
-# Main file that defines the f4! function - 
-# computation of a groebner basis over integers modulo prime.
-#
+# Main file that defines the f4! function.
+
 # Functions in this file mostly accept a subset of these arguments:
-#   ring - current polynomial ring,
-#   basis - a struct that stores polynomials,
-#   matrix - a struct that stores coefficients of polynomials 
-#            to compute normal forms,
-#   ht - a hashtable that stores monomials.
-#        (each monomial in `basis` points to a bucket in `ht`)
-
-#=
-The f4! function (at the bottom of the file) roughly follows the following classic flow:
-
-function f4!(ring, basis, ht)
-  matrix = initialize_matrix()    # macauley matrix
-  pairset = initialize_pairset()  # set of critical pairs
-  update!(pairset, basis, ht)     # add initial pairs
-  while !isempty(pairset)
-      select_normal!(pairset, matrix, basis, ht)  # select some critical pairs
-      symbolic_preprocessing!(pairset, matrix, basis, ht) # add rows to the matrix
-      reduction!(matrix, basis, ht)   # row-reduce
-      update!(pairset, basis, ht)  # add new critial pairs
-  end
-  return basis
-end
-=#
+# ring - current polynomial ring,
+# basis - a struct that stores polynomials,
+# matrix - a struct that stores coefficients of polynomials to compute normal
+#            forms,
+# hashtable - a hashtable that stores monomials. (each monomial in the basis
+#        points to a bucket in the hashtable)
 
 # Performs gaussian row reduction of rows in the `matrix`
 # and writes any nonzero results to `basis`
-@timed_block function reduction!(
+function reduction!(
     ring::PolyRing,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -52,7 +34,7 @@ end
 # Initializes Basis and MonomialHashtable structs,
 # fills them with data from the given exponents and coeffs,
 # and returns the resulting structures
-@timed_block function initialize_structures(
+function initialize_structs(
     ring::PolyRing,
     exponents::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -92,7 +74,7 @@ end
 # fills input data from exponents and coeffs
 #
 # Hashtable initial size is set to tablesize
-@timed_block function initialize_structures_no_normalize(
+function initialize_structs_no_normalize(
     ring::PolyRing,
     exponents::Vector{Vector{M}},
     coeffs_qq,
@@ -124,7 +106,7 @@ end
 # fills input data from exponents and coeffs
 #
 # Hashtable initial size is set to tablesize
-@timed_block function initialize_structures_ff(
+function initialize_structs_ff(
     ring::PolyRing{Ch},
     exponents::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -132,12 +114,12 @@ end
     tablesize::Int
 ) where {Ch, M, C <: Coeff}
     coeffs_ff = [Vector{Ch}(undef, length(c)) for c in coeffs]
-    initialize_structures_no_normalize(ring, exponents, coeffs, coeffs_ff, rng, tablesize)
+    initialize_structs_no_normalize(ring, exponents, coeffs, coeffs_ff, rng, tablesize)
 end
 
 # Initializes Basis and MonomialHashtable structures,
 # fills input data from exponents and coeffs
-@timed_block function initialize_structures(
+function initialize_structs(
     ring::PolyRing,
     exponents::Vector{Vector{M}},
     coeffs_qq::Vector{Vector{T1}},
@@ -171,7 +153,7 @@ end
 
 # Initializes Basis with the given hashtable,
 # fills input data from exponents and coeffs
-@timed_block function initialize_structures_nf(
+function initialize_structs_nf(
     ring::PolyRing,
     exponents::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -200,7 +182,7 @@ end
 
 # Initializes Basis with the given hashtable,
 # fills input data from exponents and coeffs
-@timed_block function initialize_structures(
+function initialize_structs(
     ring::PolyRing,
     exponents::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -228,7 +210,7 @@ end
 end
 
 # Initializes Basis with the given hashed exponents and coefficients
-@timed_block function initialize_structures(
+function initialize_structs(
     ring::PolyRing,
     hashedexps::Vector{Vector{MonomIdx}},
     coeffs::Vector{Vector{C}},
@@ -251,7 +233,7 @@ end
 
 # Given a `basis` object that stores some groebner basis
 # performs basis interreduction and writes the result to `basis` inplace
-@timed_block function reducegb_f4!(
+function reducegb_f4!(
     ring::PolyRing,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -327,7 +309,7 @@ end
     basis.nlead = k
 end
 
-@timed_block function select_tobereduced!(
+function select_tobereduced!(
     basis::Basis,
     tobereduced::Basis,
     matrix::MacaulayMatrix,
@@ -368,7 +350,7 @@ end
 # with leading term that divides monomial `vidx`. 
 # If such polynomial was found, 
 # writes the divisor polynomial to the hashtable `symbol_ht`
-@timed_block function find_multiplied_reducer!(
+function find_multiplied_reducer!(
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
@@ -425,7 +407,7 @@ end
 # Recursively finds all polynomials from `basis` with the leading term
 # that divides any of the monomials stored in hashtable `symbol_ht`,
 # and writes all found polynomials to the `matrix`
-@timed_block function symbolic_preprocessing!(
+function symbolic_preprocessing!(
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
@@ -484,7 +466,7 @@ end
 #------------------------------------------------------------------------------
 
 # Returns the number of critical pairs of the smallest degree of lcm
-@timed_block function lowest_degree_pairs!(pairset::Pairset)
+function lowest_degree_pairs!(pairset::Pairset)
     sort_pairset_by_degree!(pairset, 1, pairset.load - 1)
     ps = pairset.pairs
     @inbounds min_deg = ps[1].deg
@@ -497,7 +479,7 @@ end
 
 # Discard all S-pairs of the lowest degree of lcm
 # from the pairset
-@timed_block function discard_normal!(
+function discard_normal!(
     pairset::Pairset,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -519,7 +501,7 @@ end
 # Select all S-pairs of the lowest degree of lcm
 # from the pairset and write the corresponding polynomials
 # to the matrix
-@timed_block function select_normal!(
+function select_normal!(
     pairset::Pairset,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -650,39 +632,34 @@ end
     pairset.load -= npairs
 end
 
-#------------------------------------------------------------------------------
-
-#=
-    F4 !!!
-
-    Computes the groebner basis of the given `basis` inplace.
-
-    Uses `pairset` to store critical pairs, 
-    uses `ht` hashtable for hashing monomials,
-    uses `tracer` to record information useful in subsequent runs.
-
-    Input ivariants:
-    - divmasks in the ht are set,
-    - basis is filled so that
-        basis.ntotal is the actual number of set elements,
-        basis.ndone  = 0,
-        basis.nlead  = 0,
-    - basis contains no zero polynomials (!!!).
-
-    Output invariants:
-    - basis.ndone == basis.ntotal == basis.nlead
-    - basis.monoms and basis.coeffs are of size basis.ndone
-    - basis elements are sorted increasingly wrt the term ordering on lead elements
-    - divmasks in basis are filled and coincide with divmasks in hashtable
-
-=#
-@timed_block function f4!(
+# F4 algorithm.
+#
+# Computes a groebner basis of the given `basis` inplace.
+#
+# Uses `pairset` to store critical pairs, 
+# uses `hashtable` for hashing monomials,
+# uses `tracer` to record information useful in subsequent runs.
+#
+# Input ivariants:
+# - divmasks in the ht are set,
+# - basis is filled so that
+#     basis.ntotal is the actual number of set elements,
+#     basis.ndone  = 0,
+#     basis.nlead  = 0,
+# - basis contains no zero polynomials (!!!).
+#
+# Output invariants:
+# - basis.ndone == basis.ntotal == basis.nlead
+# - basis.monoms and basis.coeffs are of size basis.ndone
+# - basis elements are sorted increasingly wrt the term ordering on lead elements
+# - divmasks in basis are filled and coincide with divmasks in hashtable
+function f4!(
     ring::PolyRing,
     basis::Basis{C},
     pairset::Pairset,
     hashtable::MonomialHashtable{M},
     tracer::Tracer,
-    params::Parameters
+    params::AlgorithmParameters
 ) where {M <: Monom, C <: Coeff}
     @invariant hashtable_well_formed(:input_f4!, ring, hashtable)
     @invariant basis_well_formed(:input_f4!, ring, basis, ht)
@@ -759,7 +736,7 @@ end
 
         if i > 10_000
             # TODO: log useful info here
-            @log Level(100) "Something has probably gone wrong in F4. An exception will follow."
+            @log level=100 "Something has probably gone wrong in F4. An exception will follow."
             __error_maximal_number_exceeded("Something has probably gone wrong in F4. Please submit a github issue.")
         end
     end
@@ -791,7 +768,7 @@ function f4!(
     rng;
     maxpairs=typemax(Int)
 ) where {M <: Monom, C <: Coeff}
-    # TODO: move this into initialize_structures
+    # TODO: move this into initialize_structs
     ps = initialize_pairset(powertype(M))
     tracer = Tracer()
     f4!(ring, basis, tracer, ps, ht, reduced, linalg, rng, maxpairs)

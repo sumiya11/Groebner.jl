@@ -1,33 +1,33 @@
 # Handling keyword arguments in the interface.
 
 #! format: off
-# Syntax formatting is disabled for the next couple of lines.
-#
+# Syntax formatting is disabled for the next several lines.
+
 # Maps a function name to a set of supported keyword arguments with their
-# default values.
-const _supported_kw_args = Base.ImmutableDict(
-    :groebner => Base.ImmutableDict(
+# corresponding default values. default values.
+const _supported_kw_args = Dict(
+    :groebner => Dict{Symbol, Any}(
         :reduced  => true, 
-        :ordering => InputOrdering(),
+        :ordering => nothing,
         :certify  => false,
-        :linalg   => :prob,
-        :monoms   => Best(),
+        :linalg   => :randomized,
+        :monoms   => nothing,
         :seed     => 42,
         :loglevel => _default_logging_level,
         :maxpairs => 0
     ),
-    :normalform => Base.ImmutableDict(
+    :normalform => Dict{Symbol, Any}(
         :check    => true,
-        :ordering => InputOrdering(),
+        :ordering => nothing,
         :loglevel => _default_logging_level
     ),
-    :isgroebner => Base.ImmutableDict(
-        :ordering => InputOrdering(),
+    :isgroebner => Dict{Symbol, Any}(
+        :ordering => nothing,
         :loglevel => _default_logging_level
     ),
-    :kbase => Base.ImmutableDict(
+    :kbase => Dict{Symbol, Any}(
         :check    => true,
-        :ordering => InputOrdering(),
+        :ordering => nothing,
         :loglevel => _default_logging_level
     )
 )
@@ -41,26 +41,26 @@ creation, checks that the arguments are correct.
 
 Sets the global logging level.
 """
-struct KeywordsHandler
+struct KeywordsHandler{Ord, Monoms}
     reduced::Bool
-    ordering::Ord
+    ordering::Union{Ord, Nothing}
     certify::Bool
     linalg::Symbol
-    monoms::M
+    monoms::Union{Monoms, Nothing}
     seed::Int
     loglevel::Int
     maxpairs::Int
 
     function KeywordsHandler(function_key, kws)
-        @assert function_key in _supported_kw_arguments
+        @assert haskey(_supported_kw_args, function_key)
         default_kw_args = _supported_kw_args[function_key]
-        @assert all(in(default_kw_args), kw)
+        @assert all(in(default_kw_args), kws)
         reduced = get(kws, :reduced, get(default_kw_args, :reduced, true))
-        ordering = get(kws, :ordering, get(default_kw_args, :ordering, InputOrdering()))
+        ordering = get(kws, :ordering, get(default_kw_args, :ordering, nothing))
         certify = get(kws, :certify, get(default_kw_args, :certify, false))
-        linalg = get(kws, :linalg, get(default_kw_args, :linalg, :prob))
-        @assert linalg in (:prob, :det)
-        monoms = get(kws, :monoms, get(default_kw_args, :monoms, default_monom_representation()))
+        linalg = get(kws, :linalg, get(default_kw_args, :linalg, :randomized))
+        @assert linalg in (:randomized, :deterministic)
+        monoms = get(kws, :monoms, get(default_kw_args, :monoms, nothing))
         seed = get(kws, :seed, get(default_kw_args, :seed, 42))
         loglevel = get(kws, :loglevel, get(default_kw_args, :loglevel, 0))
         update_logging_level(LogLevel(loglevel))
@@ -69,6 +69,25 @@ struct KeywordsHandler
         # end
         maxpairs = get(kws, :linalg, get(default_kw_args, :maxpairs, 0))
         @assert maxpairs >= 0
-        new(reduced, ordering, certify, linalg, monoms, seed, loglevel, maxpairs)
+        @log level = 3 """
+          Using keywords: 
+          reduced=$reduced, 
+          ordering=$ordering, 
+          certify=$certify, 
+          linalg=$linalg, 
+          monoms=$monoms, 
+          seed=$seed, 
+          loglevel=$loglevel, 
+          maxpairs=$maxpairs"""
+        new{typeof(ordering), typeof(monoms)}(
+            reduced,
+            ordering,
+            certify,
+            linalg,
+            monoms,
+            seed,
+            loglevel,
+            maxpairs
+        )
     end
 end

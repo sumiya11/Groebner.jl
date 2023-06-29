@@ -3,6 +3,10 @@
 const _AA_supported_orderings_symbols = (:lex, :deglex, :degrevlex)
 const _AA_exponent_type = UInt64
 
+function peek_at_polynomials(polynomials)
+    :abstractalgebra, length(polynomials), :zp, 3, :lex
+end
+
 # Determines the monomial ordering of the output,
 # given the original ordering `origord` and the targer ordering `targetord`
 ordering_typed2sym(origord, targetord::Lex) = :lex
@@ -23,7 +27,9 @@ function ordering_sym2typed(ord::Symbol)
     end
 end
 
-function extract_ring(R::T) where {T}
+function extract_ring(polynomials)
+    R = parent(first(polynomials))
+    T = typeof(R)
     @assert hasmethod(AbstractAlgebra.nvars, Tuple{T})
     @assert hasmethod(AbstractAlgebra.characteristic, Tuple{T})
 
@@ -36,18 +42,32 @@ function extract_ring(R::T) where {T}
     ordT = ordering_sym2typed(ord)
     ch   = AbstractAlgebra.characteristic(R)
 
-    check_ground_domain(nv, ordT, ch)
+    # check_ground_domain(nv, ordT, ch)
 
-    Char = determinechartype(ch)
+    # Char = determinechartype(ch)
 
-    PolyRing{Char, typeof(ordT)}(nv, ordT, Char(BigInt(ch)), :AbstractAlgebra)
+    PolyRing{typeof(ordT)}(nv, ordT, Int(BigInt(ch)))
 end
 
-function extract_coeffs(ring::PolyRing{Ch}, orig_polys::Vector{T}) where {Ch, T}
+function extract_coeffs(
+    representation::PolynomialRepresentation,
+    ring::PolyRing,
+    orig_polys::Vector{T}
+) where {T}
+    npolys = length(orig_polys)
+    coeffs = Vector{Vector{representation.coefftype}}(undef, npolys)
+    @inbounds for i in 1:npolys
+        poly = orig_polys[i]
+        coeffs[i] = extract_coeffs(representation, ring, poly)
+    end
+    coeffs
+end
+
+function extract_coeffs(representation::PolynomialRepresentation, ring::PolyRing, orig_poly)
     if ring.ch > 0
-        extract_coeffs_ff(ring, orig_polys)
+        extract_coeffs_ff(ring, orig_poly)
     else
-        extract_coeffs_qq(ring, orig_polys)
+        extract_coeffs_qq(ring, orig_poly)
     end
 end
 
@@ -87,37 +107,37 @@ function extract_coeffs_qq(ring::PolyRing, poly)
 end
 
 function extract_monoms(
-    representation::Representation{M},
+    representation::PolynomialRepresentation,
     ring::PolyRing,
     poly
 ) where {M}
-    exps = Vector{M}(undef, length(poly))
+    exps = Vector{representation.monomtype}(undef, length(poly))
     @inbounds for j in 1:length(poly)
-        exps[j] = make_ev(M, AbstractAlgebra.exponent_vector(poly, j))
+        exps[j] = make_ev(representation.monomtype, AbstractAlgebra.exponent_vector(poly, j))
     end
     exps
 end
 
 function extract_monoms(
-    representation::Representation{M},
+    representation::PolynomialRepresentation,
     ring::PolyRing,
     poly::P
-) where {M, P <: AbstractAlgebra.Generic.PolyElem}
-    exps = Vector{M}(undef, 0)
+) where {P <: AbstractAlgebra.Generic.PolyElem}
+    exps = Vector{representation.monomtype}(undef, 0)
     @inbounds while !iszero(poly)
-        push!(exps, make_ev(M, [AbstractAlgebra.degree(poly)]))
+        push!(exps, make_ev(representation.monomtype, [AbstractAlgebra.degree(poly)]))
         poly = AbstractAlgebra.tail(poly)
     end
     exps
 end
 
 function extract_monoms(
-    representation::Representation{M},
+    representation::PolynomialRepresentation,
     ring::PolyRing,
     orig_polys::Vector{T}
 ) where {M, T}
     npolys = length(orig_polys)
-    exps = Vector{Vector{M}}(undef, npolys)
+    exps = Vector{Vector{representation.monomtype}}(undef, npolys)
     @inbounds for i in 1:npolys
         poly = orig_polys[i]
         exps[i] = extract_monoms(representation, ring, poly)
@@ -126,54 +146,54 @@ function extract_monoms(
 end
 
 function extract_monoms(
-    representation::Representation{M},
+    representation::PolynomialRepresentation,
     ring::PolyRing,
     orig_polys::Vector{T},
     ::DegLex
 ) where {M, T}
     npolys = length(orig_polys)
-    exps   = Vector{Vector{M}}(undef, npolys)
+    exps   = Vector{Vector{representation.monomtype}}(undef, npolys)
     for i in 1:npolys
         poly = orig_polys[i]
-        exps[i] = Vector{M}(undef, length(poly))
+        exps[i] = Vector{representation.monomtype}(undef, length(poly))
         @inbounds for j in 1:length(poly)
-            exps[i][j] = make_ev(M, poly.exps[(end - 1):-1:1, j])
+            exps[i][j] = make_ev(representation.monomtype, poly.exps[(end - 1):-1:1, j])
         end
     end
     exps
 end
 
 function extract_monoms(
-    representation::Representation{M},
+    representation::PolynomialRepresentation,
     ring::PolyRing,
     orig_polys::Vector{T},
     ::Lex
 ) where {M, T}
     npolys = length(orig_polys)
-    exps   = Vector{Vector{M}}(undef, npolys)
+    exps   = Vector{Vector{representation.monomtype}}(undef, npolys)
     for i in 1:npolys
         poly = orig_polys[i]
-        exps[i] = Vector{M}(undef, length(poly))
+        exps[i] = Vector{representation.monomtype}(undef, length(poly))
         @inbounds for j in 1:length(poly)
-            exps[i][j] = make_ev(M, poly.exps[end:-1:1, j])
+            exps[i][j] = make_ev(representation.monomtype, poly.exps[end:-1:1, j])
         end
     end
     exps
 end
 
 function extract_monoms(
-    representation::Representation{M},
+    representation::PolynomialRepresentation,
     ring::PolyRing,
     orig_polys::Vector{T},
     ::DegRevLex
 ) where {M, T}
     npolys = length(orig_polys)
-    exps   = Vector{Vector{M}}(undef, npolys)
+    exps   = Vector{Vector{representation.monomtype}}(undef, npolys)
     for i in 1:npolys
         poly = orig_polys[i]
-        exps[i] = Vector{M}(undef, length(poly))
+        exps[i] = Vector{representation.monomtype}(undef, length(poly))
         @inbounds for j in 1:length(poly)
-            exps[i][j] = make_ev(M, poly.exps[1:(end - 1), j])
+            exps[i][j] = make_ev(representation.monomtype, poly.exps[1:(end - 1), j])
         end
     end
     exps
@@ -183,7 +203,7 @@ function convert_to_output(
     origring::R,
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{I}},
-    metainfo::GroebnerMetainfo
+    metainfo::AlgorithmParameters
 ) where {
     R <: Union{AbstractAlgebra.Generic.PolyRing, AbstractAlgebra.PolyRing},
     M <: Monom,
@@ -205,7 +225,7 @@ function convert_to_output(
     origring::R,
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{I}},
-    metainfo::GroebnerMetainfo
+    metainfo::AlgorithmParameters
 ) where {R, M <: Monom, I}
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
@@ -252,7 +272,7 @@ function convert_to_output(
     origring::AbstractAlgebra.Generic.MPolyRing{T},
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{I}},
-    metainfo::GroebnerMetainfo
+    metainfo::AlgorithmParameters
 ) where {M <: Monom, T, I}
     ord = AbstractAlgebra.ordering(origring)
     ordT = ordering_sym2typed(ord)

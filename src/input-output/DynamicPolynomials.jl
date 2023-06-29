@@ -1,5 +1,4 @@
 
-
 function extract_ring(orig_polys::Vector{<:AbstractPolynomialLike{T}}) where {T}
     f = first(orig_polys)
 
@@ -48,7 +47,7 @@ multivariate_length(p::MultivariatePolynomials.AbstractTermLike) = 1
 multivariate_length(p::AbstractPolynomialLike) = length(p)
 
 function extract_monoms(
-    representation::Representation{M},
+    representation::PolynomialRepresentation,
     ring::PolyRing,
     orig_polys::Vector{T}
 ) where {M, T <: AbstractPolynomialLike{U}} where {U}
@@ -74,12 +73,12 @@ function convert_to_output(
     origpolys::Vector{P},
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{I}},
-    metainfo::GroebnerMetainfo
+    metainfo::AlgorithmParameters
 ) where {M <: Monom, P <: AbstractPolynomialLike{J}, I <: Coeff} where {J}
 
     # TODO: hardcoded
     (metainfo.targetord != DegLex()) &&
-        # @warn "Input polynomial type does not support ordering $(metainfo.targetord). \nComputed basis is correct in $(metainfo.targetord), but terms are ordered in $(DegLex()) in output"
+        @warn "Input polynomial type does not support ordering $(metainfo.targetord). \nComputed basis is correct in $(metainfo.targetord), but terms are ordered in $(DegLex()) in output"
 
     origvars = MultivariatePolynomials.variables(origpolys)
     # xd

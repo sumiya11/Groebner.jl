@@ -1,4 +1,5 @@
 # Here we define and describe some types used throughout the code.
+# TODO: DESCRIBE BETTER
 
 # F4 supports several coefficient types:
 #   1. Integers modulo prime, 
@@ -96,8 +97,7 @@ const DivisionMask = UInt32
 
 const ColumnIdx = Int32
 
-#------------------------------------------------------------------------------
-
+# TODO
 # f4 may fail in some cases and throw a RecoverableException.
 # If we catch a RecoverableException, there is a hope to recover the program.
 #
@@ -106,8 +106,8 @@ const ColumnIdx = Int32
 # - bad choce of a prime during rational computation (gb/groebner.jl),
 # - fail of randomized sparse linear algebra (f4/matrix.jl),
 #
-struct RecoverableException <: Exception
+struct ExponentVectorOverflow <: Exception
     msg::String
 end
 
-Base.showerror(io::IO, e::RecoverableException) = print(io, e.msg)
+Base.showerror(io::IO, e::ExponentVectorOverflow) = print(io, e.msg)

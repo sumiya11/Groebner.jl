@@ -1,7 +1,7 @@
 # Backend for `groebner`
 
 # Proxy function dedicated to handling errors.
-function _groebner(polynomials, kws::KeywordHandler)
+function _groebner(polynomials, kws::KeywordsHandler)
     # We try to guess efficient internal polynomial representation, i.e., a
     # suitable representation of monomials and coefficients.
     polynomial_repr = select_polynomial_representation(polynomials, kws)
@@ -25,15 +25,21 @@ function _groebner(polynomials, kws::KeywordHandler)
     end
 end
 
-function _groebner(polynomials, kws::Keywords, representation::Representation)
+function _groebner(
+    polynomials,
+    kws::KeywordsHandler,
+    representation::PolynomialRepresentation
+)
     # Extract ring information, exponents, and coefficients from the input polynomials.
     # Convert these to an internal polynomial representation.
     # This must copy the input, so that `polynomials` itself is not modified.
-    allzeros, ring, monoms, coeffs = convert_to_internal(representation, polynomials, kws)
+    ring, monoms, coeffs = convert_to_internal(representation, polynomials, kws)
     # Fast path for the input of zeros
-    allzeros && return convert_to_output(ring, polynomials, monoms, coeffs, params)
+    # allzeros = remove_zeros_from_input!(ring, monoms, coeffs)
+    # allzeros && return convert_to_output(ring, polynomials, monoms, coeffs, params)
     # Check and set parameters
     params = AlgorithmParameters(ring, kws)
+    @log level = 1 "Selected parameters:\n$(params)"
     # NOTE: at this point, we already know the computation method we are going to use,
     # and the parameters are set.
     change_ordering_if_needed!(ring, monoms, coeffs, params)
@@ -49,10 +55,10 @@ function _groebner(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
-    params::Parameters
+    params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffFF}
     # NOTE: we can mutate ring, monoms, and coeffs here.
-    @log level = 1 "Backend: F4 over Z_$(ring.characteristic)"
+    @log level = 1 "Backend: F4 over Z_$(ring.ch)"
     basis, pairset, hashtable, tracer = initialize_structs(ring, monoms, coeffs, params)
     f4!(ring, basis, pairset, hashtable, tracer, params)
     # Extract monomials and coefficients from basis and hashtable
@@ -66,7 +72,7 @@ function _groebner(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
-    params::Parameters
+    params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
     # NOTE: we can mutate ring, monoms, and coeffs here.
     if params.strategy === :learn_and_apply
@@ -81,7 +87,7 @@ function _groebner_learn_and_apply(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
-    params
+    params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
     @log level = 1 "Backend: multi-modular tracing (learn-apply)"
     monoms, coeffs
@@ -91,7 +97,7 @@ function _groebner_classic_modular(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
-    params::Parameters
+    params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
     @log level = 1 "Backend: classic multi-modular"
     gens_temp_ff, ht = initialize_structs(ring, monoms, coeffs, params)
@@ -134,7 +140,7 @@ function _groebner_classic_modular(
     tracer = Tracer()
     pairset = initialize_pairset(powertype(M))
 
-    f4!(ring, gens_ff, tracer, pairset, ht, reduced, meta.linalg, meta.rng, maxpairs)
+    f4!(ring, gens_ff, tracer, pairset, ht, params)
 
     # reconstruct into integers
     # @info "CRT modulo ($(primetracker.modulo), $(prime))"

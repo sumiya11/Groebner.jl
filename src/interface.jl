@@ -34,7 +34,7 @@ The `groebner` routine takes the following options:
     - `Packed{<:Unsigned}`, e.g., `Packed{UInt8}()`, for packed representation
       with `8` bits per exponent.
 - `seed`: The seed for randomization. Default value is `42`.
-    Random number generator is `$(:($(_default_rng(seed))))`.
+    Random number generator is 
 - `loglevel`: Logging level. Default value is `Logging.Warn`, 
     so that only warnings are produced.
 - `maxpairs`: The maximum number of critical pairs used at once in matrix 
@@ -61,10 +61,10 @@ groebner([x*y^2 + x, y*x^2 + y])
 
 """
 function groebner(polynomials::AbstractVector; kws...)
-    # `KeywordHandler` does several useful things on initialization:
+    # `KeywordsHandler` does several useful things on initialization:
     #   - checks that the keyword arguments are valid,
     #   - sets the global logging level for this module.
-    _groebner(polynomials, KeywordHandler(:groebner, kws))
+    _groebner(polynomials, KeywordsHandler(:groebner, kws))
 end
 
 """
@@ -89,7 +89,6 @@ The `isgroebner` routine takes the following options:
   algorithm is randomized, and the result is correct with high probability
   *(default)*.
 - `seed`: The seed for randomization. Default value is `42`.
-  Random number generator is `$(:($(_default_rng(seed))))`.
 - `loglevel`: Logging level. Default value is `Logging.Warn`, 
     so that only warnings are produced.
 
@@ -113,7 +112,7 @@ isgroebner([x*y^2 + x, y*x^2 + y])
 
 """
 function isgroebner(polynomials::AbstractVector; kws...)
-    _isgroebner(polynomials, KeywordHandler(kws))
+    _isgroebner(polynomials, KeywordsHandler(kws))
 end
 
 """
@@ -178,7 +177,7 @@ julia> normalform([y^2 + x, x^2 + y], x^2 + y^2 + 1)
 
 """
 function normalform(basis::AbstractVector, tobereduced; kws...)
-    _normalform(basis, tobereduced, KeywordHandler(kws))
+    _normalform(basis, tobereduced, KeywordsHandler(kws))
 end
 
 """
@@ -201,5 +200,5 @@ julia> kbase([y^2 + x, x^2 + y], check=true)
 
 """
 function kbase(basis::AbstractVector; kws...) 
-    _kbase(basis, KeywordHandler(kws))
+    _kbase(basis, KeywordsHandler(kws))
 end

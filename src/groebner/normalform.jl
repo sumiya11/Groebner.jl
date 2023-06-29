@@ -1,12 +1,12 @@
 
-function _normalform(basis, tobereduced, kws::Keywords) end
+function _normalform(basis, tobereduced, kws::KeywordsHandler) end
 
 function normalform(basis::AbstractVector, tobereduced; kws...)
     iszero(tobereduced) && return tobereduced
     first(normalform(basis, [tobereduced], kws))
 end
 
-function normalform(basis::AbstractVector, tobereduced::AbstractVector, kws::Keywords)
+function normalform(basis::AbstractVector, tobereduced::AbstractVector, kws::KeywordsHandler)
     #= set the logger =#
     prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
 
@@ -87,10 +87,10 @@ function normal_form_f4(
     rng::Rng,
     tablesize::Int=2^16
 ) where {M, Rng, C <: Coeff}
-    basis, ht = initialize_structures(ring, basisexps, basiscoeffs, rng, tablesize)
+    basis, ht = initialize_structs(ring, basisexps, basiscoeffs, rng, tablesize)
 
     tobereduced, ht =
-        initialize_structures_nf(ring, tobereducedexps, tobereducedcfs, rng, tablesize, ht)
+        initialize_structs_nf(ring, tobereducedexps, tobereducedcfs, rng, tablesize, ht)
 
     tobereduced = normal_form_f4!(ring, basis, ht, tobereduced)
 

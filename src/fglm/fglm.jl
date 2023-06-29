@@ -170,7 +170,7 @@ function fglm_f4(
 ) where {M, C <: Coeff}
     tablesize = select_tablesize(ring, basisexps)
 
-    basis, ht = initialize_structures(ring, basisexps, basiscoeffs, metainfo.rng, tablesize)
+    basis, ht = initialize_structs(ring, basisexps, basiscoeffs, metainfo.rng, tablesize)
 
     basis, linbasis, ht = fglm_f4!(ring, basis, ht, metainfo.computeord)
 
@@ -208,15 +208,14 @@ function kbase_f4(
 ) where {M, C <: Coeff}
     tablesize = select_tablesize(ring, basisexps)
 
-    basis, ht = initialize_structures(ring, basisexps, basiscoeffs, metainfo.rng, tablesize)
+    basis, ht = initialize_structs(ring, basisexps, basiscoeffs, metainfo.rng, tablesize)
 
     basis, linbasis, ht = fglm_f4!(ring, basis, ht, metainfo.computeord)
 
     export_basis_data(linbasis, ht)
-end
 
     #= set the logger =#
-    prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
+    # prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
 
     check && _check_isgroebner(basis)
 
@@ -237,7 +236,7 @@ end
     # ordering in bexps here matches target ordering in metainfo
 
     #= revert logger =#
-    Logging.global_logger(prev_logger)
+    # Logging.global_logger(prev_logger)
 
     # ring contains ordering of computation, it is the requested ordering
     #= convert result back to representation of input =#

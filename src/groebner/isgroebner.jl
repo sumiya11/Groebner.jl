@@ -76,7 +76,7 @@ function isgroebner_f4(
     coeffs::Vector{Vector{C}},
     rng
 ) where {M, C <: Coeff}
-    basis, ht = initialize_structures(ring, exps, coeffs, rng, 2^16)
+    basis, ht = initialize_structs(ring, exps, coeffs, rng, 2^16)
 
     isgroebner_f4!(ring, basis, ht)
 end

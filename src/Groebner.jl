@@ -1,10 +1,10 @@
 module Groebner
 # Groebner is a package for computing Gröbner bases.
-#
-# Groebner works over integers modulo a prime and over the rationals. Groebner
-# does not provide a polynomial implementation of its own but relies on existing
-# symbolic computation packages in Julia for communicating with the user
-# instead. At its heart Groebner implements F4 and modular techniques.
+
+# Groebner works over integers modulo a prime and over the rationals. At its
+# heart Groebner implements F4 and modular techniques. Groebner does not provide
+# a polynomial implementation of its own but relies on existing symbolic
+# computation packages in Julia for communicating with the user instead.
 
 """
     invariants_enabled()
@@ -35,8 +35,6 @@ import AbstractAlgebra: base_ring, elem_type
 
 import Combinatorics
 
-using ExprTools: splitdef, combinedef
-
 import MultivariatePolynomials
 import MultivariatePolynomials: AbstractPolynomial, AbstractPolynomialLike
 
@@ -45,15 +43,11 @@ import Primes: nextprime
 
 import Random
 
-import Base.Threads
+import Base.Threads: Atomic, threadid, atomic_xchg!
  
 include("utils/logging.jl")
 include("utils/invariants.jl")
 include("utils/keywords.jl")
-include("utils/types.jl")
-
-# Fast arithmetic in Z_p
-include("arithmetic/Z_p.jl")
 
 # Supported monomial orderings
 include("monomials/orderings.jl")
@@ -62,11 +56,19 @@ include("monomials/packedutils.jl")
 include("monomials/powervector.jl")
 include("monomials/packedpairs.jl")
 
+# Fast arithmetic in Z_p
+include("arithmetic/Z_p.jl")
+
+# Defines some type aliases for Groebner
+include("utils/types.jl")
+
+# Selecting algorithm parameters
+include("utils/parameters.jl")
+
 # Input-output conversions for polynomials
 include("input-output/input-output.jl")
-include("input-output/representations.jl")
 include("input-output/AbstractAlgebra.jl")
-include("input-output/DynamicPolynomials.jl")
+# include("input-output/DynamicPolynomials.jl")
 
 #= generic f4 implementation =#
 #= the heart of this library =#
@@ -84,24 +86,23 @@ include("f4/f4.jl")
 
 #= more high level functions =#
 # Lucky prime numbers
-include("gb/lucky.jl")
+include("groebner/lucky.jl")
 # Manipulation with big polynomial coefficients
-include("gb/coeffs.jl")
+include("groebner/coeffs.jl")
 # Correctness checks
-include("gb/correctness.jl")
+include("groebner/correctness.jl")
 # `groebner` backend
-include("gb/groebner.jl")
+include("groebner/groebner.jl")
 # `isgroebner` backend
-include("gb/isgroebner.jl")
+include("groebner/isgroebner.jl")
 # `normalform` backend
-include("gb/normalform.jl")
+include("groebner/normalform.jl")
 
 #= generic fglm implementation =#
 include("fglm/linear.jl")
-# `fglm` and `kbase` backend
 include("fglm/fglm.jl")
 
-# api
+# API
 include("interface.jl")
 
 using SnoopPrecompile

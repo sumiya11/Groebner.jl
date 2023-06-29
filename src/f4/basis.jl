@@ -47,6 +47,7 @@ Base.isempty(ps::Pairset) = ps.load == 0
 
 # Checks if it is possible to add `to_add` number of pairs to the pairset, and
 # resizes the pairset if not
+# TODO: Rename friends to resize_X_if_needed!
 function resize_pairset_if_needed!(ps::Pairset, to_add::Int)
     newsize = length(ps.pairs)
     while ps.load + to_add > newsize
@@ -170,7 +171,7 @@ end
 
 # Normalize each element of the input basis
 # by dividing it by leading coefficient
-@timed_block function normalize_basis!(ring, basis::Basis{<:CoeffFF})
+function normalize_basis!(ring, basis::Basis{<:CoeffFF})
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.ntotal)
         !isassigned(cfs, i) && continue
@@ -204,7 +205,7 @@ end
 # Generate new S-pairs from pairs of polynomials
 #   (basis[idx], basis[i])
 # for every i < idx
-@timed_block function update_pairset!(
+function update_pairset!(
     pairset::Pairset,
     basis::Basis{C},
     ht::MonomialHashtable{M},
@@ -291,9 +292,6 @@ end
 
     # ensure that basis hashtable can store new lcms
     check_enlarge_hashtable!(ht, pc)
-    # if ht.size - ht.load <= pc
-    #     enlarge_hash_table!(ht)
-    # end
 
     # add new lcms to the basis hashtable,
     # including index j and not including index pc
@@ -314,7 +312,7 @@ end
 end
 
 # Updates information about redundant generators in the basis
-@timed_block function update_basis!(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
+function update_basis!(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
     k = 1
     lead = basis.lead
     nonred = basis.nonred
@@ -378,7 +376,7 @@ function is_redundant!(
     return false
 end
 
-@timed_block function check_enlarge_plcm!(plcm::Vector{T}, ntotal) where {T}
+function check_enlarge_plcm!(plcm::Vector{T}, ntotal) where {T}
     if length(plcm) < ntotal + 1
         resize!(plcm, floor(Int, ntotal * 1.1) + 1)
     end
@@ -395,7 +393,7 @@ end
 # from the added elements
 #
 # Always checks new elements redundancy.
-@timed_block function update!(
+function update!(
     pairset::Pairset,
     basis::Basis,
     ht::MonomialHashtable{M},
@@ -432,7 +430,7 @@ end
 
 # given input exponent and coefficient vectors hashes exponents into `ht`
 # and then constructs hashed polynomials for `basis`
-@timed_block function fill_data!(
+function fill_data!(
     basis::Basis,
     ht::MonomialHashtable{M},
     exponents::Vector{Vector{M}},
@@ -459,7 +457,7 @@ end
 
 # Remove redundant elements from the basis
 # by moving all non-redundant up front
-@timed_block function filter_redundant!(basis::Basis)
+function filter_redundant!(basis::Basis)
     j = 1
     @inbounds for i in 1:(basis.nlead)
         if !basis.isred[basis.nonred[i]]
@@ -476,7 +474,7 @@ end
 # f4 must produce a `Basis` object which satisfies several conditions.
 # This functions standardizes the given basis so that conditions hold.
 # (see f4/f4.jl)
-@timed_block function standardize_basis!(ring, basis::Basis, ht::MonomialHashtable, ord)
+function standardize_basis!(ring, basis::Basis, ht::MonomialHashtable, ord)
     @inbounds for i in 1:(basis.nlead)
         idx = basis.nonred[i]
         basis.nonred[i] = i
@@ -495,7 +493,7 @@ end
 end
 
 # Returns the exponent vectors of polynomials in the basis
-@timed_block function hash_to_exponents(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
+function hash_to_exponents(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
     exps = Vector{Vector{M}}(undef, basis.nlead)
     @inbounds for i in 1:(basis.nlead)
         idx = basis.nonred[i]
@@ -509,7 +507,7 @@ end
 end
 
 # Returns the exponent vectors and the coefficients of polynomials in the basis
-@timed_block function export_basis_data(
+function export_basis_data(
     basis::Basis{C},
     ht::MonomialHashtable{M}
 ) where {M <: Monom, C <: Coeff}
@@ -527,7 +525,7 @@ end
 # For a given list of S-pairs and a list of indices `plcm`
 # adds indices from plcm[ifirst:ilast]
 # to the hashtable ht
-@timed_block function insert_plcms_in_basis_hash_table!(
+function insert_plcms_in_basis_hash_table!(
     pairset::Pairset,
     off::Int,
     ht::MonomialHashtable{M},

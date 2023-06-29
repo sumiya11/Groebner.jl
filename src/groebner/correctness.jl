@@ -3,7 +3,8 @@
 # was unlucky all along
 function _monte_carlo_error(msg)
     # @warn msg
-    throw(RecoverableException(msg))
+    # TODO
+    # throw(RecoverableException(msg))
 end
 
 function _not_a_basis_error(basis, msg)
@@ -187,8 +188,8 @@ function guaranteed_correctness_check!(
 )
     # @info "Setting parameter certify=true in groebner is not recommended."
 
-    gens_qq, _ = initialize_structures(ring, gens_tmp_ff.monoms[1:(gens_tmp_ff.ntotal)], coeffs, ht)
-    gb_qq, _   = initialize_structures(ring, gbexps, gb_coeffs_qq, ht)
+    gens_qq, _ = initialize_structs(ring, gens_tmp_ff.monoms[1:(gens_tmp_ff.ntotal)], coeffs, ht)
+    gb_qq, _   = initialize_structs(ring, gbexps, gb_coeffs_qq, ht)
 
     normalize_basis!(ring, gb_qq)
     normalize_basis!(ring, gens_qq)
