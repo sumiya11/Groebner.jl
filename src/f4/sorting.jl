@@ -24,14 +24,14 @@ end
 # by their leading monomial in the non-decreasing way
 # by the given term ordering.
 # Also sorts any arrays passed in `abc` in the same order as basis.
-function sort_gens_by_lead_increasing!(
+function sort_polys_by_lead_increasing!(
     basis::Basis,
     ht::MonomialHashtable,
     abc...;
     ord::Ord=ht.ord
 ) where {Ord <: AbstractMonomialOrdering}
     gens = basis.monoms
-    exps = ht.exponents
+    exps = ht.monoms
 
     inds = collect(1:(basis.ntotal))
 
@@ -192,7 +192,7 @@ end
 # See f4/matrix.jl for details
 function sort_columns_by_hash!(col2hash::Vector{T}, symbol_ht::MonomialHashtable) where {T}
     hd = symbol_ht.hashdata
-    es = symbol_ht.exponents
+    es = symbol_ht.monoms
 
     function cmp(a, b, ord)
         @inbounds ha = hd[a]

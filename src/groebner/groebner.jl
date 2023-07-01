@@ -59,7 +59,8 @@ function _groebner(
 ) where {M <: Monom, C <: CoeffFF}
     # NOTE: we can mutate ring, monoms, and coeffs here.
     @log level = 1 "Backend: F4 over Z_$(ring.ch)"
-    basis, pairset, hashtable, tracer = initialize_structs(ring, monoms, coeffs, params)
+    basis, pairset, hashtable = initialize_structs(ring, monoms, coeffs, params)
+    tracer = Tracer()
     f4!(ring, basis, pairset, hashtable, tracer, params)
     # Extract monomials and coefficients from basis and hashtable
     gbmonoms, gbcoeffs = extract_monoms_coeffs(basis, hashtable)
@@ -100,7 +101,7 @@ function _groebner_classic_modular(
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
     @log level = 1 "Backend: classic multi-modular"
-    gens_temp_ff, ht = initialize_structs(ring, monoms, coeffs, params)
+    basis, pairset, hashtable, tracer = initialize_structs(ring, monoms, coeffs, params)
     gens_ff = deepcopy_basis(gens_temp_ff)
 
     # now hashtable is filled correctly,

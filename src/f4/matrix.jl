@@ -784,7 +784,7 @@ function convert_rows_to_basis_elements!(
 
     check_enlarge_basis!(basis, matrix.npivots)
     rows = matrix.lowrows
-    crs = basis.ndone
+    crs = basis.nprocessed
 
     @inbounds for i in 1:(matrix.npivots)
         colidx = rows[i][1]
@@ -805,17 +805,17 @@ function convert_rows_to_basis_elements_nf!(
     check_enlarge_basis!(basis, matrix.npivots)
 
     @inbounds for i in 1:(matrix.npivots)
-        basis.ndone += 1
-        basis.nlead += 1
-        basis.nonred[basis.nlead] = basis.ndone
+        basis.nprocessed += 1
+        basis.ndivmasks += 1
+        basis.nonredundant[basis.ndivmasks] = basis.nprocessed
         if isassigned(matrix.coeffs, i)
             row = matrix.lowrows[i]
             insert_in_basis_hash_table_pivots(row, ht, symbol_ht, matrix.col2hash)
-            basis.coeffs[basis.ndone] = matrix.coeffs[i]
-            basis.monoms[basis.ndone] = row
+            basis.coeffs[basis.nprocessed] = matrix.coeffs[i]
+            basis.monoms[basis.nprocessed] = row
         else
-            empty!(basis.coeffs[basis.ndone])
-            empty!(basis.monoms[basis.ndone])
+            empty!(basis.coeffs[basis.nprocessed])
+            empty!(basis.monoms[basis.nprocessed])
         end
     end
 

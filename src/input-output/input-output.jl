@@ -65,7 +65,7 @@ function determine_monomtype(basering, npolys, nvars, kws)
 end
 
 function determine_coefftype(basering, npolys, nvars, kws)
-    Rational{BigInt}
+    basering == :zp ? UInt64 : Rational{BigInt}
 end
 
 function select_polynomial_representation(polynomials, kws; hint=nothing)
@@ -109,9 +109,9 @@ function convert_to_internal(
     monoms, coeffs = extract_polys(representation, ring, polynomials)
     # allzeros = remove_zeros_from_input!(ring, monoms, coeffs)
     @log level = 3 "Done converting input polynomials to internal representation."
-    # @log level = 3 "Are all zeros? $allzeros"
     @log level = 4 """
     Polynomials in internal representation:
+    Ring: $ring
     Monomials: $monoms
     Coefficients: $coeffs"""
     ring, monoms, coeffs

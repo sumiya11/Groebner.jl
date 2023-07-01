@@ -4,7 +4,12 @@ const _AA_supported_orderings_symbols = (:lex, :deglex, :degrevlex)
 const _AA_exponent_type = UInt64
 
 function peek_at_polynomials(polynomials)
-    :abstractalgebra, length(polynomials), :zp, 3, :lex
+    p = first(polynomials)
+    R = parent(p)
+    ground = iszero(AbstractAlgebra.characteristic(R)) ? :qq : :zp
+    nvars = AbstractAlgebra.nvars(R)
+    ord = AbstractAlgebra.ordering(R)
+    :abstractalgebra, length(polynomials), ground, nvars, ord
 end
 
 # Determines the monomial ordering of the output,
@@ -65,18 +70,19 @@ end
 
 function extract_coeffs(representation::PolynomialRepresentation, ring::PolyRing, orig_poly)
     if ring.ch > 0
-        extract_coeffs_ff(ring, orig_poly)
+        extract_coeffs_ff(representation, ring, orig_poly)
     else
-        extract_coeffs_qq(ring, orig_poly)
+        extract_coeffs_qq(representation, ring, orig_poly)
     end
 end
 
 # specialization for univariate polynomials
 function extract_coeffs_ff(
+    representation,
     ring::PolyRing{Ch},
     poly::Union{AbstractAlgebra.Generic.Poly, AbstractAlgebra.PolyElem}
-) where {Ch}
-    iszero(poly) && (return zero_coeffvector_ff(ring))
+) where {Ch}  # TODO
+    iszero(poly) && (return zero_coeffs_ff(ring))
     reverse(
         map(
             Ch ∘ AbstractAlgebra.data,
@@ -87,22 +93,24 @@ end
 
 # specialization for univariate polynomials
 function extract_coeffs_qq(
+    representation,
     ring::PolyRing,
     poly::Union{AbstractAlgebra.Generic.Poly, AbstractAlgebra.PolyElem}
 )
-    iszero(poly) && (return zero_coeffvector_qq(ring))
+    iszero(poly) && (return zero_coeffs_qq(ring))
     reverse(map(Rational, filter(!iszero, collect(AbstractAlgebra.coefficients(poly)))))
 end
 
 # specialization for multivariate polynomials
-function extract_coeffs_ff(ring::PolyRing{Ch}, poly) where {Ch}
-    iszero(poly) && (return zero_coeffvector_ff(ring))
+function extract_coeffs_ff(representation, ring::PolyRing, poly)
+    iszero(poly) && (return zero_coeffs_ff(ring))
+    Ch = representation.coefftype
     map(Ch ∘ AbstractAlgebra.data, AbstractAlgebra.coefficients(poly))
 end
 
 # specialization for multivariate polynomials
-function extract_coeffs_qq(ring::PolyRing, poly)
-    iszero(poly) && (return zero_coeffvector_qq(ring))
+function extract_coeffs_qq(representation, ring::PolyRing, poly)
+    iszero(poly) && (return zero_coeffs_qq(ring))
     map(Rational, AbstractAlgebra.coefficients(poly))
 end
 
@@ -113,7 +121,8 @@ function extract_monoms(
 ) where {M}
     exps = Vector{representation.monomtype}(undef, length(poly))
     @inbounds for j in 1:length(poly)
-        exps[j] = make_ev(representation.monomtype, AbstractAlgebra.exponent_vector(poly, j))
+        exps[j] =
+            make_ev(representation.monomtype, AbstractAlgebra.exponent_vector(poly, j))
     end
     exps
 end

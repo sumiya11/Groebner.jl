@@ -33,6 +33,7 @@ struct AlgorithmParameters{Ord1, Ord2}
 
     # Random number generator seed
     seed::UInt64
+    rng::Random.Xoshiro
 end
 
 function AlgorithmParameters(ring, kwargs::KeywordsHandler)
@@ -75,6 +76,7 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler)
         ground,
         strategy,
         threading,
-        UInt64(seed)
+        UInt64(seed),
+        Random.Xoshiro(seed)
     )
 end

@@ -71,7 +71,6 @@ end
 ht_resize_threshold() = 0.4
 ht_needs_resize(size, load, added) = (load + added) / size > ht_resize_threshold()
 
-
 function initialize_hashtable(
     ring::PolyRing{Ord},
     rng,
@@ -159,7 +158,7 @@ end
 # initialize hashtable either for `symbolic_preprocessing` or for `update` functions
 # These are of the same purpose and structure as basis hashtable,
 # but are more local oriented
-function initialize_secondary_hash_table(basis_ht::MonomialHashtable{M}) where {M}
+function initialize_secondary_hashtable(basis_ht::MonomialHashtable{M}) where {M}
     # 2^6 seems to be the best out of 2^5, 2^6, 2^7
     initial_size = 2^6
 
@@ -201,9 +200,9 @@ function initialize_secondary_hash_table(basis_ht::MonomialHashtable{M}) where {
     )
 end
 
-function select_hashtable_size(ring::PolyRing, polys::AbstractVector)
+function select_hashtable_size(ring::PolyRing, monoms)
     nvars = ring.nvars
-    sz = length(polys)
+    sz = length(monoms)
 
     tablesize = 2^10
     if nvars > 4
@@ -228,8 +227,6 @@ function next_lookup_index(h::MonomHash, j::MonomHash, mod::MonomHash)
     (h + j) & mod + MonomHash(1)
 end
 
-#------------------------------------------------------------------------------
-
 function check_enlarge_hashtable!(ht::MonomialHashtable, added::Integer)
     newsize = ht.size
     while ht_needs_resize(newsize, ht.load, added)
@@ -250,7 +247,7 @@ function check_enlarge_hashtable!(ht::MonomialHashtable, added::Integer)
             he = ht.hashdata[i].hash
             hidx = he
             @inbounds for j in MonomHash(1):MonomHash(ht.size)
-                hidx = nexthashindex(he, j, mod)
+                hidx = next_lookup_index(he, j, mod)
                 !iszero(ht.hashtable[hidx]) && continue
                 ht.hashtable[hidx] = i
                 break
@@ -288,7 +285,7 @@ function insert_in_hash_table!(ht::MonomialHashtable{M}, e::M) where {M}
     hsize = MonomHash(ht.size)
 
     @inbounds while i < hsize
-        hidx = nexthashindex(he, i, mod)
+        hidx = next_lookup_index(he, i, mod)
 
         vidx = ht.hashtable[hidx]
 
@@ -308,7 +305,7 @@ function insert_in_hash_table!(ht::MonomialHashtable{M}, e::M) where {M}
     # add its position to hashtable, and insert exponent to that position
     vidx = MonomIdx(ht.load + 1)
     @inbounds ht.hashtable[hidx] = vidx
-    @inbounds ht.exponents[vidx] = copy(e)
+    @inbounds ht.monoms[vidx] = copy(e)
     divmask = monom_divmask(e, DivisionMask, ht.ndivvars, ht.divmap, ht.ndivbits)
     @inbounds ht.hashdata[vidx] = Hashvalue(0, he, divmask, totaldeg(e))
 
@@ -334,7 +331,7 @@ function fill_divmask!(ht::MonomialHashtable)
     max_exp = Vector{UInt64}(undef, ndivvars)
 
     e = Vector{UInt64}(undef, ht.nvars)
-    make_dense!(e, ht.exponents[ht.offset])
+    make_dense!(e, ht.monoms[ht.offset])
 
     @inbounds for i in 1:ndivvars
         min_exp[i] = e[i]
@@ -342,7 +339,7 @@ function fill_divmask!(ht::MonomialHashtable)
     end
 
     @inbounds for i in (ht.offset):(ht.load) # TODO: offset
-        make_dense!(e, ht.exponents[i])
+        make_dense!(e, ht.monoms[i])
         for j in 1:ndivvars
             if e[j] > max_exp[j]
                 max_exp[j] = e[j]
@@ -367,7 +364,7 @@ function fill_divmask!(ht::MonomialHashtable)
     end
     @inbounds for vidx in (ht.offset):(ht.load)
         unmasked = ht.hashdata[vidx]
-        e = ht.exponents[vidx]
+        e = ht.monoms[vidx]
         divmask = monom_divmask(e, DivisionMask, ht.ndivvars, ht.divmap, ht.ndivbits)
         ht.hashdata[vidx] = Hashvalue(0, unmasked.hash, divmask, totaldeg(e))
     end
@@ -470,10 +467,10 @@ function insert_multiplied_poly_in_hash_table!(
 
     mod = MonomHash(symbol_ht.size - 1)
 
-    bexps = ht.exponents
+    bexps = ht.monoms
     bdata = ht.hashdata
 
-    sexps = symbol_ht.exponents
+    sexps = symbol_ht.monoms
     sdata = symbol_ht.hashdata
 
     l = 1 # hardcoding 1 does not seem nice =(
@@ -501,7 +498,7 @@ function insert_multiplied_poly_in_hash_table!(
         i = MonomHash(1)
         ssize = MonomHash(symbol_ht.size)
         @inbounds while i <= ssize
-            k = nexthashindex(h, i, mod)
+            k = next_lookup_index(h, i, mod)
             vidx = symbol_ht.hashtable[k]
 
             # if index is free
@@ -587,7 +584,7 @@ function insert_in_basis_hash_table_pivots(
         k = h
         i = MonomHash(1)
         @inbounds while i <= ht.size
-            k = nexthashindex(h, i, mod)
+            k = next_lookup_index(h, i, mod)
             hm = bhash[k]
 
             iszero(hm) && break

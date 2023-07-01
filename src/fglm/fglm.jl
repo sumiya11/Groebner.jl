@@ -72,11 +72,11 @@ function add_generator!(basis::Basis{C}, matrix, relation, ht, ord) where {C <: 
     end
 
     check_enlarge_basis!(basis, 1)
-    basis.ndone += 1
-    basis.nlead += 1
-    basis.nonred[basis.nlead] = basis.nlead
-    basis.monoms[basis.ndone] = rexps
-    basis.coeffs[basis.ndone] = rcoeffs
+    basis.nprocessed += 1
+    basis.ndivmasks += 1
+    basis.nonredundant[basis.ndivmasks] = basis.ndivmasks
+    basis.monoms[basis.nprocessed] = rexps
+    basis.coeffs[basis.nprocessed] = rcoeffs
 end
 
 function divides_staircase(monom, staircase, ht)
@@ -193,9 +193,9 @@ function extract_linear_basis(ring, matrix::DoubleMacaulayMatrix{C}) where {C}
 
     linbasis = initialize_basis(ring, exps, coeffs)
 
-    linbasis.ndone = length(exps)
-    linbasis.nlead = length(exps)
-    linbasis.nonred = collect(1:(linbasis.ndone))
+    linbasis.nprocessed = length(exps)
+    linbasis.ndivmasks = length(exps)
+    linbasis.nonredundant = collect(1:(linbasis.nprocessed))
 
     linbasis
 end

@@ -46,8 +46,8 @@ function isgroebner_f4!(
     ht::MonomialHashtable{M}
 ) where {M, C <: Coeff}
     matrix = initialize_matrix(ring, C)
-    symbol_ht = initialize_secondary_hash_table(ht)
-    update_ht = initialize_secondary_hash_table(ht)
+    symbol_ht = hashtable(ht)
+    update_ht = hashtable(ht)
 
     pairset = initialize_pairset(powertype(M))
 
