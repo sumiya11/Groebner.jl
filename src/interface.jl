@@ -272,9 +272,19 @@ function normalform(
     #= check and set algorithm parameters =#
     metainfo = set_metaparameters(ring, ordering, false, :exact, rng)
 
-    iszerobasis = remove_zeros_from_input!(ring, basisexps, basiscoeffs)
-    iszerobasis &&
-        (return convert_to_output(ring, tobereduced, tbrexps, tbrcoeffs, metainfo))
+    # remove zeros from input
+    input_sz = length(tbrexps)
+    nonzero_indices = filter(i -> !isempty(tbrexps[i]), 1:input_sz)
+    tbrexps = tbrexps[nonzero_indices]
+    tbrcoeffs = tbrcoeffs[nonzero_indices]
+
+    if isempty(tbrexps)
+        for i in 1:input_sz
+            push!(tbrexps, empty(basisexps[1]))
+            push!(tbrcoeffs, empty(basiscoeffs[1]))
+        end
+        return convert_to_output(ring, tobereduced, tbrexps, tbrcoeffs, metainfo)
+    end
 
     #= change input ordering if needed =#
     newring = assure_ordering!(ring, basisexps, basiscoeffs, metainfo.targetord)
@@ -286,6 +296,17 @@ function normalform(
     bexps, bcoeffs =
         normal_form_f4(newring, basisexps, basiscoeffs, tbrexps, tbrcoeffs, rng)
 
+    # bring back zeros
+    bexps_with_zeros = Vector{eltype(bexps)}(undef, input_sz)
+    bcoeffs_with_zeros = Vector{eltype(bcoeffs)}(undef, input_sz)
+    bexps_with_zeros[nonzero_indices] = bexps
+    bcoeffs_with_zeros[nonzero_indices] = bcoeffs
+    for i in 1:input_sz
+        if !(i in nonzero_indices)
+            bexps_with_zeros[i] = empty(basisexps[1])
+            bcoeffs_with_zeros[i] = empty(basiscoeffs[1])
+        end
+    end
     #=
     Assuming ordering of `bexps` here matches `newring.ord`
     =#
@@ -295,7 +316,7 @@ function normalform(
 
     # ring contains ordering of computation, it is the requested ordering
     #= convert result back to representation of input =#
-    convert_to_output(newring, tobereduced, bexps, bcoeffs, metainfo)
+    convert_to_output(newring, tobereduced, bexps_with_zeros, bcoeffs_with_zeros, metainfo)
 end
 
 """

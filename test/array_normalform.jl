@@ -5,6 +5,12 @@ using AbstractAlgebra
     for field in [GF(17), GF(2^31 - 1), ZZ, QQ]
         R, (x, y) = PolynomialRing(field, ["x", "y"])
         gb = [x, y]
+
+        @test Groebner.normalform(gb, [R(0)]) == [R(0)]
+        @test Groebner.normalform(gb, [R(0), R(1), R(0), R(0)]) == [R(0), R(1), R(0), R(0)]
+        @test Groebner.normalform(gb, [R(0), R(0), R(0), R(0)]) == [R(0), R(0), R(0), R(0)]
+        @test Groebner.normalform(gb, [R(0), x, R(0), x + 1, y, R(0)]) == [R(0), R(0), R(0), R(1), R(0), R(0)]
+
         @test Groebner.normalform(gb, [x, y + 1]) == [R(0), R(1)]
         @test Groebner.normalform(gb, [y + 1, x]) == [R(1), R(0)]
         @test Groebner.normalform(
