@@ -216,10 +216,10 @@ function reduce_double_dense_row_by_known_pivots_sparse!(
     # new pivot index
     np = -1
 
-    if debug()
-        # @warn "in reduce" matrix.nlcols matrix.nrcols matrix.leftpivs
-        # @warn "hmm" leftrow
-    end
+    # if debug()
+    #     # @warn "in reduce" matrix.nlcols matrix.nrcols matrix.leftpivs
+    #     # @warn "hmm" leftrow
+    # end
 
     for i in 1:(matrix.nlcols)
 
@@ -295,14 +295,14 @@ function linear_relation!(
 
     leftrow, rightrow = convert_to_double_dense_row(matrix, monom, vector, ht)
 
-    if debug()
-        # @warn "start"
-        println(monom)
-        println(vector.monoms, " ", vector.coeffs)
-        println(leftrow)
-        println(rightrow)
-        println(matrix)
-    end
+    # if debug()
+    #     # @warn "start"
+    #     println(monom)
+    #     println(vector.monoms, " ", vector.coeffs)
+    #     println(leftrow)
+    #     println(rightrow)
+    #     println(matrix)
+    # end
 
     reduced, np, k = reduce_double_dense_row_by_known_pivots_sparse!(
         matrix,
@@ -311,12 +311,12 @@ function linear_relation!(
         arithmetic
     )
 
-    if debug()
-        # @warn "reduced"
-        println(reduced, " ", np, " ", k)
-        println(leftrow)
-        println(rightrow)
-    end
+    # if debug()
+    #     # @warn "reduced"
+    #     println(reduced, " ", np, " ", k)
+    #     println(leftrow)
+    #     println(rightrow)
+    # end
 
     if reduced
         # pass
@@ -326,11 +326,11 @@ function linear_relation!(
 
         normalize_double_row_sparse!(lcoeffs, rcoeffs, arithmetic)
 
-        if debug()
-            # @warn "extracted"
-            println(lexps, " ", lcoeffs)
-            println(rexps, " ", rcoeffs)
-        end
+        # if debug()
+        #     # @warn "extracted"
+        #     println(lexps, " ", lcoeffs)
+        #     println(rexps, " ", rcoeffs)
+        # end
 
         while np >= matrix.nlsize
             matrix.nlsize *= 2

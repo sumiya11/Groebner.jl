@@ -46,13 +46,12 @@ function isgroebner_f4!(
     ht::MonomialHashtable{M}
 ) where {M, C <: Coeff}
     matrix = initialize_matrix(ring, C)
-    symbol_ht = hashtable(ht)
-    update_ht = hashtable(ht)
+    symbol_ht = initialize_secondary_hashtable(ht)
+    update_ht = initialize_secondary_hashtable(ht)
 
     pairset = initialize_pairset(powertype(M))
 
-    plcm = Vector{MonomIdx}(undef, 0)
-    update!(pairset, basis, ht, update_ht, plcm)
+    update!(pairset, basis, ht, update_ht)
 
     if pairset.load == 0
         return true
@@ -106,7 +105,7 @@ function isgroebner(
     if !meta.guaranteedcheck
         coeffbuffer = CoeffBuffer()
         coeffs_zz = scale_denominators(coeffbuffer, coeffs)
-        primes = PrimeTracker(coeffs_zz)
+        primes = LuckyPrimes(coeffs_zz)
         goodprime = nextgoodprime!(primes)
         coeffs_ff = reduce_modulo(coeffbuffer, coeffs_zz, goodprime)
         ring.ch = goodprime

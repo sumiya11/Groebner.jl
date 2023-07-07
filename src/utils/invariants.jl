@@ -1,24 +1,27 @@
+# Custom assertions for Groebner
+#
+# Provides the @invariant macro that can be turned off to have no runtime
+# overhead.
 
 """
-    macro invariant
+    @invariant expr
 
-1
+Check that expr evaluates to `true` at runtime. If not, throw an
+`AssertionError`.
+
+## Examples
+
+```jldoctest
+@invariant 2 > 1
+@invariant 1 > 2  # throws!
+```
 """
-macro invariant(arg)
-    dir = @__DIR__
-    file, line = String(__source__.file), Int(__source__.line)
+macro invariant(arg) 
     esc(:(
         if $(@__MODULE__).invariants_enabled()
-            _invariant($dir, $file, $line, $arg, $(string(arg)))
+            @assert $arg
         else
             nothing
         end
     ))
-end
-
-function _invariant(dir, file, line, arg, str)
-    if !arg
-        throw(AssertionError("$str"))
-    end
-    nothing
 end

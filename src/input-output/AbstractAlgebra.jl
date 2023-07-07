@@ -212,7 +212,7 @@ function convert_to_output(
     origring::R,
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{I}},
-    metainfo::AlgorithmParameters
+    metainfo::KeywordsHandler
 ) where {
     R <: Union{AbstractAlgebra.Generic.PolyRing, AbstractAlgebra.PolyRing},
     M <: Monom,
@@ -234,7 +234,7 @@ function convert_to_output(
     origring::R,
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{I}},
-    metainfo::AlgorithmParameters
+    metainfo::KeywordsHandler
 ) where {R, M <: Monom, I}
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
@@ -281,7 +281,7 @@ function convert_to_output(
     origring::AbstractAlgebra.Generic.MPolyRing{T},
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{I}},
-    metainfo::AlgorithmParameters
+    metainfo::KeywordsHandler
 ) where {M <: Monom, T, I}
     ord = AbstractAlgebra.ordering(origring)
     ordT = ordering_sym2typed(ord)

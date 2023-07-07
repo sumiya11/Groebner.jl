@@ -134,13 +134,13 @@ function copy_hashtable(ht::MonomialHashtable{M, O}) where {M, O}
     exps[1] = make_zero_ev(M, ht.nvars)
 
     @inbounds for i in 2:(ht.load)
-        exps[i] = copy(ht.exponents[i])
+        exps[i] = copy(ht.monoms[i])
         table[i] = ht.hashtable[i]
         data[i] = copy_hashvalue(ht.hashdata[i])
     end
 
     MonomialHashtable(
-        ht.exponents,
+        ht.monoms,
         ht.hashtable,
         ht.hashdata,
         ht.hasher,
@@ -237,7 +237,7 @@ function check_enlarge_hashtable!(ht::MonomialHashtable, added::Integer)
         @assert ispow2(ht.size)
 
         resize!(ht.hashdata, ht.size)
-        resize!(ht.exponents, ht.size)
+        resize!(ht.monoms, ht.size)
         ht.hashtable = zeros(Int, ht.size)
 
         mod = MonomHash(ht.size - 1)
@@ -266,7 +266,7 @@ function ishashcollision(ht::MonomialHashtable, vidx, e, he)
         return true
     end
     # if not free and not same monomial
-    @inbounds if !is_monom_elementwise_eq(ht.exponents[vidx], e)
+    @inbounds if !is_monom_elementwise_eq(ht.monoms[vidx], e)
         return true
     end
     false
@@ -379,15 +379,15 @@ function is_monom_divisible(h1::MonomIdx, h2::MonomIdx, ht::MonomialHashtable)
     @inbounds if !is_divmask_divisible(ht.hashdata[h1].divmask, ht.hashdata[h2].divmask)
         return false
     end
-    @inbounds e1 = ht.exponents[h1]
-    @inbounds e2 = ht.exponents[h2]
+    @inbounds e1 = ht.monoms[h1]
+    @inbounds e2 = ht.monoms[h2]
     is_monom_divisible(e1, e2)
 end
 
 # checks that gcd(g1, h2) is one
 function is_gcd_const(h1::MonomIdx, h2::MonomIdx, ht::MonomialHashtable)
-    @inbounds e1 = ht.exponents[h1]
-    @inbounds e2 = ht.exponents[h2]
+    @inbounds e1 = ht.monoms[h1]
+    @inbounds e2 = ht.monoms[h2]
     is_gcd_const(e1, e2)
 end
 
@@ -399,9 +399,9 @@ function get_lcm(
     ht1::MonomialHashtable{M},
     ht2::MonomialHashtable{M}
 ) where {M}
-    @inbounds e1 = ht1.exponents[he1]
-    @inbounds e2 = ht1.exponents[he2]
-    @inbounds etmp = ht1.exponents[1]
+    @inbounds e1 = ht1.monoms[he1]
+    @inbounds e2 = ht1.monoms[he2]
+    @inbounds etmp = ht1.monoms[1]
 
     etmp = monom_lcm!(etmp, e1, e2)
 
@@ -422,7 +422,7 @@ function check_monomial_division_in_update(
     # pairs are sorted, we only need to check entries above starting point
 
     @inbounds divmask = ht.hashdata[lcm].divmask
-    @inbounds lcmexp = ht.exponents[lcm]
+    @inbounds lcmexp = ht.monoms[lcm]
 
     j = first
     @inbounds while j <= last
@@ -436,7 +436,7 @@ function check_monomial_division_in_update(
             j += 1
             continue
         end
-        ea = ht.exponents[a[j]]
+        ea = ht.monoms[a[j]]
         if !is_monom_divisible(ea, lcmexp)
             j += 1
             continue
@@ -562,11 +562,11 @@ function insert_in_basis_hash_table_pivots(
     check_enlarge_hashtable!(ht, length(row))
 
     sdata = symbol_ht.hashdata
-    sexps = symbol_ht.exponents
+    sexps = symbol_ht.monoms
 
     mod = MonomHash(ht.size - 1)
     bdata = ht.hashdata
-    bexps = ht.exponents
+    bexps = ht.monoms
     bhash = ht.hashtable
 
     l = 1

@@ -5,16 +5,16 @@
     @test Groebner.groebner([x, y]) == Groebner.groebner([y, x]) == [y, x]
 
     fs = [x^2 + y, x * y]
-    @test Groebner.groebner(fs, linalg=:prob) == [y^2, x * y, x^2 + y]
+    @test Groebner.groebner(fs, linalg=:randomized) == [y^2, x * y, x^2 + y]
 
     root = Groebner.change_ordering(Groebner.rootn(3, ground=GF(2^31 - 1)), :degrevlex)
     x1, x2, x3 = gens(parent(first(root)))
-    gb = Groebner.groebner(root, linalg=:prob, reduced=true)
+    gb = Groebner.groebner(root, linalg=:randomized, reduced=true)
     @test gb == [x1 + x2 + x3, x2^2 + x2 * x3 + x3^2, x3^3 + 2147483646]
 
     root = Groebner.change_ordering(Groebner.rootn(6, ground=GF(2^31 - 1)), :degrevlex)
     x1, x2, x3, x4, x5, x6 = gens(parent(first(root)))
-    gb = Groebner.groebner(root, linalg=:prob, reduced=true)
+    gb = Groebner.groebner(root, linalg=:randomized, reduced=true)
     @test gb == [
         x1 + x2 + x3 + x4 + x5 + x6,
         x2^2 +
@@ -73,7 +73,7 @@
 
     ku = Groebner.change_ordering(Groebner.ku10(ground=GF(2^31 - 1)), :degrevlex)
     x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = gens(parent(first(ku)))
-    gb = Groebner.groebner(ku, linalg=:prob, reduced=true)
+    gb = Groebner.groebner(ku, linalg=:randomized, reduced=true)
 
     @test gb == [
         x9 + 1272065637 * x10 + 875418006,

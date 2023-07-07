@@ -1,11 +1,5 @@
 # Input-output conversions of polynomials.
-#
 # Conversions between input polynomials and internal polynomial representations
-# in Groebner.jl.
-
-# 
-# Should provide functions `extract_ring` and `extract_polys`.
-# See src/input-output/AbstractAlgebra.jl for an example.
 
 # Our conventions on some edge cases:
 # - Trying to compute a Groebner basis of an empty set is an error.
@@ -14,10 +8,9 @@
 
 # Polynomials from frontend packages, such as AbstractAlgebra.jl and
 # DynamicPolynomials.jl, may not support some of the orderings supported by
-# Groebner.jl, e.g., matrix orderings.
-# We compute the basis in the requested ordering in Groebner.jl, and then order
-# the terms in the output according to some ordering that is supported by the
-# frontend
+# Groebner.jl, e.g., matrix orderings. We compute the basis in the requested
+# ordering in Groebner.jl, and then order the terms in the output according to
+# some ordering that is supported by the frontend
 
 """
     PolyRing
@@ -36,7 +29,7 @@ end
 """
     PolynomialRepresentation
 
-rrr
+
 """
 struct PolynomialRepresentation
     monomtype::Type
@@ -109,7 +102,7 @@ function convert_to_internal(
     monoms, coeffs = extract_polys(representation, ring, polynomials)
     # allzeros = remove_zeros_from_input!(ring, monoms, coeffs)
     @log level = 3 "Done converting input polynomials to internal representation."
-    @log level = 4 """
+    @log level = -100 """
     Polynomials in internal representation:
     Ring: $ring
     Monomials: $monoms
@@ -139,7 +132,7 @@ polynomials in the output format.
 function convert_to_output(ring, polynomials, monoms, coeffs, params)
     # NOTE: Internal polynomials must not be modified.
     # TODO: throw warning if the output format is strange
-
+    convert_to_output(parent(first(polynomials)), monoms, coeffs, params)
 end
 
 # checks that the coefficient `c` can be represented exactly in type `T`.

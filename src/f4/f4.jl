@@ -24,7 +24,7 @@ function reduction!(
     sort_matrix_upper_rows_decreasing!(matrix) # for pivots,  AB part
     sort_matrix_lower_rows_increasing!(matrix) # for reduced, CD part
 
-    linear_algebra!(ring, matrix, basis, Val(linalg), rng)
+    linear_algebra!(ring, matrix, basis, linalg, rng)
 
     convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 end
@@ -33,8 +33,8 @@ function initialize_structs(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
-    params::AlgorithmParameters,
-    normalize::Bool=true
+    params::AlgorithmParameters;
+    normalize=true
 ) where {M <: Monom, C <: Coeff}
     @log level = 3 "Initializing structs.."
 
@@ -255,6 +255,7 @@ function reducegb_f4!(
         )
 
         matrix.up2coef[matrix.nrows] = basis.nonredundant[i]
+        matrix.up2mult[matrix.nrows] = insert_in_hash_table!(symbol_ht, etmp)
         # set lead index as 1
         symbol_ht.hashdata[uprows[matrix.nrows][1]].idx = 1
     end
@@ -327,6 +328,7 @@ function select_tobereduced!(
         matrix.lowrows[matrix.nrows] =
             multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, gen)
         matrix.low2coef[matrix.nrows] = i
+        matrix.low2mult[matrix.nrows] = insert_in_hash_table!(symbol_ht, etmp)
     end
 
     basis.ntotal
@@ -353,8 +355,8 @@ function find_multiplied_reducer!(
     symbol_ht::MonomialHashtable,
     vidx::MonomIdx
 )
-    e = symbol_ht.exponents[vidx]
-    etmp = ht.exponents[1]
+    e = symbol_ht.monoms[vidx]
+    etmp = ht.monoms[1]
     divmask = symbol_ht.hashdata[vidx].divmask
 
     leaddiv = basis.divmasks
@@ -369,11 +371,11 @@ function find_multiplied_reducer!(
     end
 
     # here found polynomial from basis with leading monom
-    # dividing symbol_ht.exponents[vidx]
+    # dividing symbol_ht.monoms[vidx]
     if i <= basis.ndivmasks
         # reducers index and exponent in hash table
         @inbounds rpoly = basis.monoms[basis.nonredundant[i]]
-        @inbounds rexp = ht.exponents[rpoly[1]]
+        @inbounds rexp = ht.monoms[rpoly[1]]
 
         # precisely, etmp = e .- rexp 
         flag, etmp = is_monom_divisible!(etmp, e, rexp)
@@ -388,6 +390,8 @@ function find_multiplied_reducer!(
         matrix.uprows[matrix.nup + 1] =
             multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, rpoly)
         @inbounds matrix.up2coef[matrix.nup + 1] = basis.nonredundant[i]
+        # TODO
+        matrix.up2mult[matrix.nup + 1] = insert_in_hash_table!(symbol_ht, etmp)
 
         # up-size matrix
         symbol_ht.hashdata[vidx].idx = 2
@@ -419,6 +423,7 @@ function symbolic_preprocessing!(
         matrix.size *= 2
         resize!(matrix.uprows, matrix.size)
         resize!(matrix.up2coef, matrix.size)
+        resize!(matrix.up2mult, matrix.size)
     end
 
     # for each lcm present in symbolic_ht set on select stage
@@ -443,6 +448,7 @@ function symbolic_preprocessing!(
             # TODO::
             resize!(matrix.uprows, matrix.size)
             resize!(matrix.up2coef, matrix.size)
+            resize!(matrix.up2mult, matrix.size)
         end
 
         symbol_ht.hashdata[i].idx = 1
@@ -528,8 +534,10 @@ function select_normal!(
     # (future rows of the matrix)
     gens = Vector{Int}(undef, 2 * npairs)
 
+    deg = ps[1].deg
+
     # monomial buffer
-    etmp = ht.exponents[1]
+    etmp = ht.monoms[1]
     i = 1
     @inbounds while i <= npairs
         matrix.ncols += 1
@@ -560,9 +568,9 @@ function select_normal!(
         vidx = poly[1]
 
         # first generator exponent
-        eidx = ht.exponents[vidx]
+        eidx = ht.monoms[vidx]
         # exponent of lcm corresponding to first generator
-        elcm = ht.exponents[lcm]
+        elcm = ht.monoms[lcm]
         etmp = monom_division!(etmp, elcm, eidx)
         # now etmp contents complement to eidx in elcm
 
@@ -574,6 +582,8 @@ function select_normal!(
         uprows[matrix.nup] = multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly)
         # map upper row to index in basis
         matrix.up2coef[matrix.nup] = prev
+        # TODO
+        matrix.up2mult[matrix.nup] = insert_in_hash_table!(symbol_ht, etmp)
 
         # mark lcm column as reducer in symbolic hashtable
         symbol_ht.hashdata[uprows[matrix.nup][1]].idx = 2
@@ -590,7 +600,7 @@ function select_normal!(
             end
 
             # if the table was reallocated
-            elcm = ht.exponents[lcm]
+            elcm = ht.monoms[lcm]
 
             # index in gb
             prev = gens[k]
@@ -598,7 +608,7 @@ function select_normal!(
             poly = basis.monoms[prev]
             vidx = poly[1]
             # leading monom idx
-            eidx = ht.exponents[vidx]
+            eidx = ht.monoms[vidx]
 
             etmp = monom_division!(etmp, elcm, eidx)
 
@@ -610,6 +620,7 @@ function select_normal!(
                 multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly)
             # map lower row to index in basis
             matrix.low2coef[matrix.nlow] = prev
+            matrix.low2mult[matrix.nlow] = insert_in_hash_table!(symbol_ht, etmp)
 
             symbol_ht.hashdata[lowrows[matrix.nlow][1]].idx = 2
 
@@ -626,6 +637,17 @@ function select_normal!(
         ps[i] = ps[i + npairs]
     end
     pairset.load -= npairs
+
+    @log "Selected $(npairs) pairs of degree $(deg) from pairset, $(pairset.load) pairs left"
+    nothing
+end
+
+function basis_well_formed(key, ring, basis, hashtable)
+    if key in (:input_f4!, :input_f4_learn!, :input_f4_apply!)
+        (isempty(basis.monoms) || isempty(basis.coeffs)) && return false
+        (basis.size == 0 || basis.ntotal == 0) && return false
+    end
+    true
 end
 
 # F4 algorithm.
@@ -658,12 +680,13 @@ function f4!(
     params::AlgorithmParameters
 ) where {M <: Monom, C <: Coeff}
     # @invariant hashtable_well_formed(:input_f4!, ring, hashtable)
-    # @invariant basis_well_formed(:input_f4!, ring, basis, ht)
+    @invariant basis_well_formed(:input_f4!, ring, basis, hashtable)
     # @invariant pairset_well_formed(:input_f4!, pairset, basis, ht)
 
     @log level = 5 "Entering F4."
     # TODO: decide on the number field arithmetic implementation
-
+    normalize_basis!(ring, basis)
+    
     matrix = initialize_matrix(ring, C)
 
     # initialize hash tables for update and symbolic preprocessing steps
@@ -697,7 +720,7 @@ function f4!(
         # if the iteration is redundant according to the previous modular run
         # TODO: MOVE!
         if isready(tracer)
-            if is_iteration_redundant(tracer, d)
+            if is_iteration_redundant(tracer, i)
                 discard_normal!(pairset, basis, matrix, hashtable, symbol_ht)
                 matrix    = initialize_matrix(ring, C)
                 symbol_ht = initialize_secondary_hashtable(hashtable)
@@ -708,12 +731,18 @@ function f4!(
         # selects pairs for reduction from pairset following normal strategy
         # (minimal lcm degrees are selected),
         # and puts these into the matrix rows
-        select_normal!(pairset, basis, matrix, hashtable, symbol_ht, maxpairs=params.maxpairs)
+        select_normal!(
+            pairset,
+            basis,
+            matrix,
+            hashtable,
+            symbol_ht,
+            maxpairs=params.maxpairs
+        )
         # Color with [F4]
-        @log "Selected X pairs of degree Z from pairset, Y pairs left"
 
         symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
-        @log "formed matrix of size X, DISPLAY_MATRIX"
+        @log "Formed a matrix of size X, DISPLAY_MATRIX"
 
         # reduces polys and obtains new potential basis elements
         reduction!(ring, basis, matrix, hashtable, symbol_ht, params.linalg, params.rng)
@@ -732,7 +761,7 @@ function f4!(
         # clear symbolic hashtable
         # clear matrix
         matrix    = initialize_matrix(ring, C)
-        symbol_ht = hashtable(ht)
+        symbol_ht = initialize_secondary_hashtable(hashtable)
 
         if i > 10_000
             # TODO: log useful info here
@@ -748,9 +777,12 @@ function f4!(
 
     # remove redundant elements
     filter_redundant!(basis)
+    @log "Filtered elements marked redundant"
 
     if params.reduced
+        @log "Autoreducing the final basis.."
         reducegb_f4!(ring, basis, matrix, hashtable, symbol_ht)
+        @log "Autoreduced!"
     end
 
     standardize_basis!(ring, basis, hashtable, hashtable.ord)

@@ -1,6 +1,6 @@
 
-@testset "SI comparator bug" begin
-    # this will crash if the comparator is invalid
+@testset "SI.jl cmp bug is fixed" begin
+    # this may crash if the comparator is invalid
     function bug(gens::Vector{Int}, exps::Vector{Vector{T}}) where {T}
         inds = collect(1:length(gens))
         cmp  = (x, y) -> Groebner.monom_isless(exps[gens[x]], exps[gens[y]], Groebner.DegRevLex())

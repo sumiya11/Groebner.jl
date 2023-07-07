@@ -61,7 +61,7 @@ function normal_form_f4!(
     tobereduced::Basis{C}
 ) where {C <: Coeff}
     matrix = initialize_matrix(ring, C)
-    symbol_ht = hashtable(ht)
+    symbol_ht = initialize_secondary_hashtable(ht)
 
     select_tobereduced!(basis, tobereduced, matrix, symbol_ht, ht)
 

@@ -1,4 +1,4 @@
-# Select parameters for groebner basis computation
+# Select parameters for Groebner basis computation
 
 struct AlgorithmParameters{Ord1, Ord2}
     # Output polynomials monomial ordering
@@ -28,6 +28,8 @@ struct AlgorithmParameters{Ord1, Ord2}
 
     # TODO
     strategy::Symbol
+    majority_threshold::Int
+    emit_computation_graph::Bool
 
     threading::Bool
 
@@ -60,9 +62,12 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler)
 
     threading = false
 
-    strategy = :classic_modular
+    strategy = kwargs.strategy
+    majority_threshold = 1
 
     seed = kwargs.seed
+
+    emit_computation_graph = false
 
     AlgorithmParameters(
         target_ord,
@@ -75,6 +80,8 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler)
         maxpairs,
         ground,
         strategy,
+        majority_threshold,
+        emit_computation_graph,
         threading,
         UInt64(seed),
         Random.Xoshiro(seed)

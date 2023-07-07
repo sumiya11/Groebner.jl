@@ -1,15 +1,35 @@
 # Logging for Groebner
 #
-# Provides the `@log` macro, see below.
+# Provides the macro @log, which can be used as @log message to log a record
+# with the given message. @log wraps the standard Logging.@logmsg.
+# 
+# Logging is disabled on all threads except the one with threadid() == 1.
 
-# Verbosity of logging in the Groebner module. 
-const LogLevel = Int
-const _default_logging_level = LogLevel(0)
-const _global_logging_level = Ref{Atomic{LogLevel}}(Atomic{LogLevel}(0))
+const _default_logger =
+    Ref{Logging.ConsoleLogger}(Logging.ConsoleLogger(Logging.Info, show_limited=false))
+const _default_message_loglevel = LogLevel(0)
 
-# Updates the global logging level in the Groebner module.
-function update_logging_level(loglevel::LogLevel)
-    atomic_xchg!(_global_logging_level[], loglevel)
+# Updates the global logging parameters in the Groebner module. 
+function update_logger(; stream=nothing, loglevel=nothing)
+    # Don't change anything if run from a worker thread.
+    # Maybe throw a warning?
+    threadid() != 1 && return nothing
+    if stream !== nothing
+        prev_logger = _default_logger[]
+        _default_logger[] = Logging.ConsoleLogger(
+            stream,
+            prev_logger.min_level,
+            show_limited=prev_logger.show_limited
+        )
+    end
+    if loglevel !== nothing
+        prev_logger = _default_logger[]
+        _default_logger[] = Logging.ConsoleLogger(
+            prev_logger.stream,
+            loglevel,
+            show_limited=prev_logger.show_limited
+        )
+    end
     nothing
 end
 
@@ -20,9 +40,9 @@ end
 Logs a record with `expr` as a message.
 Allows to specify the logging level with `level=N`.
 
-*Examples:*
+## Examples
 
-```julia
+```jldoctest
 @log "Hello, world!"
 @log level=1 "Hello, world!"
 ```
@@ -31,43 +51,34 @@ macro log end
 
 @noinline __throw_log_macro_error(file, line, error) =
     throw(LoadError(file, line, "Invalid syntax for @log macro. $error"))
+
+# Parses the arguments to the @log macro and returns a tuple of expressions that
+# would evaluate to (loglevel, msg1, msg2, ...).
 function pruneargs(file, line, args)
-    (length(args) > 2 || length(args) < 1) &&
+    length(args) < 1 &&
         __throw_log_macro_error(file, line, "Argument list must be non-empty")
-    level, message = _default_logging_level, first(args)
-    length(args) == 1 && return level, message
-    @assert length(args) == 2
+    level = _default_message_loglevel
+    length(args) == 1 && return level, args
     if args[1] isa Expr && args[1].head == :(=)
         @assert args[1].args[1] == :level
         level = args[1].args[2]
-        message = args[2]
-    elseif args[2] isa Expr && args[2].head == :(=)
-        @assert args[2].args[1] == :level
-        level = args[2].args[2]
-        message = args[1]
-    else
-        __throw_log_macro_error(file, line, "Supported syntax is: `@log level=N message")
+        args = args[2:end]
     end
-    level, message
+    level, args
 end
 
 macro log(args...)
-    dir = @__DIR__
     file, line = String(__source__.file), Int(__source__.line)
-    level, msg = pruneargs(file, line, args)
+    level, msgs = pruneargs(file, line, args)
     esc(:(
         if $(@__MODULE__).logging_enabled()
-            _log($dir, $file, $line, $level, $msg)
+            if threadid() == 1
+                with_logger($(_default_logger[])) do
+                    @logmsg LogLevel($level) $(msgs...)
+                end
+            end
         else
             nothing
         end
     ))
-end
-
-function _log(dir, file, line, level, msg)
-    level < _global_logging_level[][] && return nothing
-    if threadid() == 1
-        println("[Groebner] [$level] $msg")
-    end
-    nothing
 end

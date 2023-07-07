@@ -139,7 +139,7 @@ using Primes
 end
 
 @testset "groebner large problems" begin
-    noon = Groebner.change_ordering(Groebner.noonn(4, ground=ZZ), :degrevlex)
+    noon = Groebner.change_ordering(Groebner.noonn(4, ground=QQ), :degrevlex)
     (x1, x2, x3, x4) = gens(parent(first(noon)))
 
     gb = Groebner.groebner(noon)
@@ -335,9 +335,9 @@ end
         110 * x1 * x2 - 110 * x1 * x4 - 110 * x2 * x4
     ]
 
-    @test gb == sing_ans
+    @test gb == map(f -> divexact(f, leading_coefficient(f)), sing_ans)
 
-    noon = Groebner.change_ordering(Groebner.noonn(5, ground=ZZ), :degrevlex)
+    noon = Groebner.change_ordering(Groebner.noonn(5, ground=QQ), :degrevlex)
     (x1, x2, x3, x4, x5) = gens(parent(first(noon)))
 
     gb = Groebner.groebner(noon)
@@ -1529,9 +1529,9 @@ end
         1000
     ]
 
-    @test gb == sing_ans
+    @test gb == map(f -> divexact(f, leading_coefficient(f)), sing_ans)
 
-    kat = Groebner.change_ordering(Groebner.katsuran(6, ground=ZZ), :degrevlex)
+    kat = Groebner.change_ordering(Groebner.katsuran(6, ground=QQ), :degrevlex)
     (x1, x2, x3, x4, x5, x6, x7) = gens(parent(first(kat)))
 
     gb = Groebner.groebner(kat)
@@ -2890,5 +2890,5 @@ end
         415209119922756093620278917053680 * x6 - 615052252138533091728635488833348 * x7
     ]
 
-    @test gb == sing_ans
+    @test gb == map(f -> divexact(f, leading_coefficient(f)), sing_ans)
 end

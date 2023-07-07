@@ -71,7 +71,7 @@ mutable struct Basis{C <: Coeff}
     monoms::Vector{Vector{MonomIdx}}
     # Polynomial coefficients
     coeffs::Vector{Vector{C}}
-    
+
     # Max. number of polynomials that the basis can hold
     size::Int
     # Number of processed polynomials, initially zero
@@ -90,9 +90,9 @@ mutable struct Basis{C <: Coeff}
     ndivmasks::Int
 end
 
-# initialize basis for `ngens` elements with coefficient of type T
+# Initialize basis for `ngens` elements with coefficient of type T
 function initialize_basis(ring::PolyRing, ngens::Int, ::Type{T}) where {T <: Coeff}
-    sz = ngens * 2
+    sz = ngens # * 2
     ndone = 0
     ntotal = 0
     nlead = 0
@@ -106,7 +106,8 @@ function initialize_basis(ring::PolyRing, ngens::Int, ::Type{T}) where {T <: Coe
     Basis(monoms, coeffs, sz, ndone, ntotal, isred, nonred, lead, nlead)
 end
 
-# initialize basis with the given hashed monomials and coefficients
+# initialize basis with the given hashed monomials and coefficients.
+# TODO: to be removed
 function initialize_basis(
     ring::PolyRing,
     hashedexps::Vector{Vector{MonomIdx}},
@@ -114,7 +115,7 @@ function initialize_basis(
 ) where {T <: Coeff}
     sz = length(hashedexps)
     ndone = 0
-    ntotal = 0
+    ntotal = sz
     nlead = 0
 
     isred = zeros(Bool, sz)
@@ -124,21 +125,19 @@ function initialize_basis(
     Basis(hashedexps, coeffs, sz, ndone, ntotal, isred, nonred, lead, nlead)
 end
 
-function deepcopy_basis(basis::Basis{T}) where {T}
-    # why not extend Base.deepcopy ?...
-    monoms = Vector{Vector{MonomIdx}}(undef, basis.size)
-    coeffs = Vector{Vector{T}}(undef, basis.size)
-    @inbounds for i in 1:(basis.ntotal)
-        monoms[i] = Vector{MonomIdx}(undef, length(basis.monoms[i]))
-        coeffs[i] = Vector{T}(undef, length(basis.coeffs[i]))
-        @inbounds for j in 1:length(basis.monoms[i])
-            monoms[i][j] = basis.monoms[i][j]
-            coeffs[i][j] = basis.coeffs[i][j]
-        end
+function copy_basis(
+    basis::Basis{C},
+    new_coeffs::Vector{Vector{T}};
+    deepcopy=true
+) where {C <: Coeff, T <: Coeff}
+    if deepcopy
+        basis = _deepcopy_basis(basis, new_coeffs)
     end
-    isred = copy(basis.isredundant)
-    nonred = copy(basis.nonredundant)
-    lead = copy(basis.divmasks)
+    monoms = basis.monoms
+    coeffs = new_coeffs
+    isred = basis.isredundant
+    nonred = basis.nonredundant
+    lead = basis.divmasks
     Basis(
         monoms,
         coeffs,
@@ -148,8 +147,45 @@ function deepcopy_basis(basis::Basis{T}) where {T}
         isred,
         nonred,
         lead,
+        basis.ndivmasks   # TODO: rename
+    )
+end
+
+function _deepcopy_basis(basis::Basis{T}, new_coeffs::Vector{Vector{C}}) where {T, C}
+    # is trivially copyable
+    @assert T <: Integer
+    monoms = Vector{Vector{MonomIdx}}(undef, basis.size)
+    @inbounds for i in 1:(basis.ntotal)
+        monoms[i] = Vector{MonomIdx}(undef, length(basis.monoms[i]))
+        for j in 1:length(basis.monoms[i])
+            monoms[i][j] = basis.monoms[i][j]
+        end
+    end
+    isred = copy(basis.isredundant)
+    nonred = copy(basis.nonredundant)
+    lead = copy(basis.divmasks)
+    Basis(
+        monoms,
+        new_coeffs,
+        basis.size,
+        basis.nprocessed,
+        basis.ntotal,
+        isred,
+        nonred,
+        lead,
         basis.ndivmasks
     )
+end
+
+function deepcopy_basis(basis::Basis{T}) where {T <: CoeffFF}
+    new_coeffs = Vector{Vector{T}}(undef, basis.size)
+    @inbounds for i in 1:(basis.ntotal)
+        new_coeffs[i] = Vector{T}(undef, length(basis.coeffs[i]))
+        for j in 1:length(basis.coeffs[i])
+            new_coeffs[i][j] = basis.coeffs[i][j]
+        end
+    end
+    _deepcopy_basis(basis, new_coeffs)
 end
 
 # 
@@ -164,15 +200,8 @@ function resize_basis_if_needed!(basis::Basis{T}, to_add::Int) where {T}
         resize!(basis.nonredundant, basis.size)
         resize!(basis.divmasks, basis.size)
     end
-    @invariant basis.size <= basis.nprocessed + to_add
+    @invariant basis.size >= basis.nprocessed + to_add
     nothing
-end
-
-#------------------------------------------------------------------------------
-
-function cleanup_basis!(ring::PolyRing, basis::Basis, prime)
-    ring.ch = prime
-    normalize_basis!(ring, basis)
 end
 
 # Normalize each element of the input basis
@@ -180,10 +209,10 @@ end
 function normalize_basis!(ring, basis::Basis{<:CoeffFF})
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.ntotal)
-        !isassigned(cfs, i) && continue
+        !isassigned(cfs, i) && continue   # TODO: this is kind of bad
         ch = ring.ch
         mul = invmod(cfs[i][1], ch) % ch
-        @inbounds for j in 2:length(cfs[i])
+        for j in 2:length(cfs[i])
             cfs[i][j] = (cfs[i][j] * mul) % ch
         end
         cfs[i][1] = one(cfs[i][1])
@@ -198,7 +227,7 @@ function normalize_basis!(ring, basis::Basis{<:CoeffQQ})
     @inbounds for i in 1:(basis.ntotal)
         !isassigned(cfs, i) && continue
         mul = inv(cfs[i][1])
-        @inbounds for j in 2:length(cfs[i])
+        for j in 2:length(cfs[i])
             cfs[i][j] *= mul
         end
         cfs[i][1] = one(cfs[i][1])
@@ -394,7 +423,7 @@ function update!(
     pairset::Pairset,
     basis::Basis,
     ht::MonomialHashtable{M},
-    update_ht::MonomialHashtable{M},
+    update_ht::MonomialHashtable{M}
 ) where {M <: Monom}
     # total number of elements in the basis (old + new)
     npivs = basis.ntotal
@@ -496,7 +525,7 @@ function hash_to_exponents(basis::Basis, ht::MonomialHashtable{M}) where {M <: M
         poly = basis.monoms[idx]
         exps[i] = Vector{M}(undef, length(poly))
         @inbounds for j in 1:length(poly)
-            exps[i][j] = ht.exponents[poly[j]]
+            exps[i][j] = ht.monoms[poly[j]]
         end
     end
     exps
@@ -556,8 +585,8 @@ function insert_lcms_in_basis_hash_table!(
         ps[m] = ps[off + l]
 
         h = update_ht.hashdata[plcm[l]].hash
-        ht.exponents[ht.load + 1] = copy(update_ht.exponents[plcm[l]])
-        n = ht.exponents[ht.load + 1]
+        ht.monoms[ht.load + 1] = copy(update_ht.monoms[plcm[l]])
+        n = ht.monoms[ht.load + 1]
 
         k = h
         i = MonomHash(1)

@@ -61,6 +61,9 @@ mutable struct MacaulayMatrix{T <: Coeff}
     # should be row to coef
     up2coef::Vector{Int}
     low2coef::Vector{Int}
+
+    up2mult::Vector{MonomIdx}
+    low2mult::Vector{MonomIdx}
 end
 
 # Initializes an empty matrix with coefficients of type T
@@ -83,6 +86,9 @@ function initialize_matrix(ring::PolyRing, ::Type{T}) where {T <: Coeff}
     up2coef = Vector{Int}(undef, 0)
     low2coef = Vector{Int}(undef, 0)
 
+    up2mult = Vector{MonomIdx}(undef, 0)
+    low2mult = Vector{MonomIdx}(undef, 0)
+
     MacaulayMatrix(
         uprows,
         lowrows,
@@ -97,7 +103,9 @@ function initialize_matrix(ring::PolyRing, ::Type{T}) where {T <: Coeff}
         nleft,
         nright,
         up2coef,
-        low2coef
+        low2coef,
+        up2mult,
+        low2mult
     )
 end
 
@@ -107,6 +115,8 @@ function reinitialize_matrix!(matrix::MacaulayMatrix{T}, npairs::Int) where {T}
     resize!(matrix.lowrows, npairs * 2)
     resize!(matrix.up2coef, npairs * 2)
     resize!(matrix.low2coef, npairs * 2)
+    resize!(matrix.up2mult, npairs * 2)
+    resize!(matrix.low2mult, npairs * 2)
     matrix.size = 2 * npairs
     matrix.ncols = 0
     matrix.nleft = 0
@@ -116,47 +126,25 @@ function reinitialize_matrix!(matrix::MacaulayMatrix{T}, npairs::Int) where {T}
     matrix
 end
 
-#------------------------------------------------------------------------------
-
 function linear_algebra!(
+    graph,
     ring::PolyRing,
     matrix::MacaulayMatrix,
     basis::Basis,
-    linalg::Val{:exact},
+    linalg,
     rng
 )
     resize!(matrix.coeffs, matrix.nlow)
-    exact_sparse_rref!(ring, matrix, basis)
+    learn_sparse_rref!(graph, ring, matrix, basis, rng)
 end
 
-function linear_algebra!(
-    ring::PolyRing,
-    matrix::MacaulayMatrix,
-    basis::Basis,
-    linalg::Val{:prob},
-    rng
-)
+function linear_algebra!(ring::PolyRing, matrix::MacaulayMatrix, basis::Basis, linalg, rng)
     resize!(matrix.coeffs, matrix.nlow)
-    randomized_sparse_rref!(ring, matrix, basis, rng)
-end
-
-#------------------------------------------------------------------------------
-
-# TODO: Move this to arithmetic/modular.jl
-
-# finite field arithmetic in case of UInt8, UInt16, UInt32, UInt64
-function select_arithmetic(coeffs::Vector{Vector{T}}, ch) where {T <: CoeffFF}
-    SpecializedBuiltinModularArithmetic(ch)
-end
-
-# finite field arithmetic in case of UInt128
-function select_arithmetic(coeffs::Vector{Vector{UInt128}}, ch)
-    SpecializedBuiltinModularArithmetic(ch)
-end
-
-# arithmetic over rational numbers
-function select_arithmetic(coeffs::Vector{Vector{T}}, ch) where {T <: CoeffQQ}
-    ch
+    if linalg === :deterministic
+        exact_sparse_rref!(ring, matrix, basis)
+    else
+        randomized_sparse_rref!(ring, matrix, basis, rng)
+    end
 end
 
 #------------------------------------------------------------------------------
@@ -493,6 +481,85 @@ function exact_sparse_rref!(
     interreduce_lower_part!(matrix, basis, pivs, arithmetic)
 end
 
+# Linear algebra option 3
+function learn_sparse_rref!(
+    graph::ComputationGraphF4,
+    ring,
+    matrix::MacaulayMatrix{C},
+    basis::Basis{C},
+    rng
+) where {C <: Coeff}
+    ncols = matrix.ncols
+    nlow = matrix.nlow
+
+    arithmetic = select_arithmetic(matrix.coeffs, ring.ch)
+
+    # move known matrix pivots,
+    # no copy
+    # YES
+    pivs, l2c_tmp = absolute_pivots!(matrix)
+    rowidx2coef = matrix.low2coef
+    matrix.low2coef = l2c_tmp
+
+    # unknown pivots,
+    # we will modify them inplace when reducing by pivs
+    upivs = matrix.lowrows
+    densecoeffs = zeros(C, ncols)
+
+    reduced_to_zero = Int[]
+
+    @inbounds for i in 1:nlow
+        # select next row to be reduced
+        # npiv ~ exponents
+        rowexps = upivs[i]
+
+        # corresponding coefficients from basis
+        # (no need to copy here)
+        cfsref = basis.coeffs[rowidx2coef[i]]
+
+        # we load coefficients into dense array
+        # into rowexps indices
+        load_indexed_coefficients!(densecoeffs, rowexps, cfsref)
+
+        # reduce it with known pivots from matrix.uprows
+        # first nonzero in densecoeffs is at startcol position
+        startcol = rowexps[1]
+        zeroed, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(
+            densecoeffs,
+            matrix,
+            basis,
+            pivs,
+            startcol,
+            -1,
+            arithmetic
+        )
+        if zeroed
+            push!(reduced_to_zero, i)
+        end
+        # if fully reduced
+        zeroed && continue
+
+        # matrix coeffs sparsely stores coefficients of new row
+        matrix.coeffs[i] = newcfs
+        # add new pivot at column index newrow[1]
+        #  (which is the first nnz column of newrow)
+        pivs[newrow[1]] = newrow
+        # set ref to coefficient to matrix
+        # guaranteed to be from lower part
+        matrix.low2coef[newrow[1]] = i
+
+        # normalize if needed
+        normalize_sparse_row!(matrix.coeffs[i], arithmetic)
+    end
+
+    push!(graph.matrix_infos, (nup=matrix.nup, nlow=matrix.nlow, ncols=matrix.ncols))
+    push!(graph.matrix_zeroed_rows, reduced_to_zero)
+    push!(graph.matrix_upper_rows, (matrix.up2coef, matrix.up2mult))
+    push!(graph.matrix_lower_rows, (matrix.low2coef, matrix.low2mult))
+
+    interreduce_lower_part!(matrix, basis, pivs, arithmetic)
+end
+
 function nblocks_in_randomized(nrows::Int)
     floor(Int, sqrt(nrows / 3)) + 1
 end
@@ -596,10 +663,12 @@ function exact_sparse_rref_interreduce!(
 ) where {C <: Coeff}
     resize!(matrix.lowrows, matrix.ncols)
     resize!(matrix.up2coef, matrix.ncols)
+    resize!(matrix.up2mult, matrix.ncols)
     resize!(matrix.low2coef, matrix.ncols)
+    resize!(matrix.low2mult, matrix.ncols)
     resize!(matrix.coeffs, matrix.ncols)
 
-    arithmetic = select_arithmetic(matrix.coeffs, ring.ch)
+    arithmetic = select_arithmetic(matrix.coeffs, UInt64(ring.ch))
 
     # same pivs as for rref
     # pivs: column idx --> vector of present columns
@@ -782,7 +851,7 @@ function convert_rows_to_basis_elements!(
 
     # we mutate basis array directly by adding new elements
 
-    check_enlarge_basis!(basis, matrix.npivots)
+    resize_basis_if_needed!(basis, matrix.npivots)
     rows = matrix.lowrows
     crs = basis.nprocessed
 
@@ -802,7 +871,7 @@ function convert_rows_to_basis_elements_nf!(
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable
 )
-    check_enlarge_basis!(basis, matrix.npivots)
+    resize_basis_if_needed!(basis, matrix.npivots)
 
     @inbounds for i in 1:(matrix.npivots)
         basis.nprocessed += 1

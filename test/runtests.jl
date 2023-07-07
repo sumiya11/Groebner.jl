@@ -1,8 +1,7 @@
 using Test
 using TestSetExtensions
 
-# Groebner.jl is tested for different polynomial implementations.
-# At the moment, the following list is tested:
+# Groebner.jl is tested for different frontends: 
 # - AbstractAlgebra.jl  (AbstractAlgebra.Generic.MPoly{T})
 # - Nemo.jl  (Nemo.fmpq_mpoly, Nemo.gfp_mpoly, ...)
 # - DynamicPolynomials.jl (DynamicPolynomials.Polynomial{true, T})
@@ -71,6 +70,8 @@ end
     if try_import(:Nemo)
         @includetests ["input-output/io_nemo"]
     end
+
+    @includetests ["output_inferred"]
 
     # test for regressions
     @includetests ["regressions"]

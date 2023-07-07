@@ -1,11 +1,10 @@
-# The file contains descriptions and constructors 
-# of all monomial orderings supported by this package.
+# Monomial orderings supported by this package.
 
-# Monomial comparator functions
-# are specific to the monomial implementation that is being used.
-# Thus, in the file with a particular monomial implementation,
-# all comparators supported by the implementation are implemented.
-# (see, for example, src/monoms/powervector.jl - a simple exponent vector)
+# NOTE: only global monomial orderings are supported.
+
+# NOTE: the functions that actually implement comparators for monomials are
+# specific to the implementation of a monomial. Thus, comparators are defined in
+# the files that implement monomials.
 
 # All monomial orderings are subtypes of AbstractMonomialOrdering
 abstract type AbstractMonomialOrdering end
@@ -18,128 +17,134 @@ abstract type AbstractMonomialOrdering end
 Preserves the monomial ordering defined on the input polynomials.
 This is the default option.
 
-# Example
+## Example
 
 ```jldoctest
 using Groebner, AbstractAlgebra
-R, (x, y) = QQ["x", "y"];
-# uses the ordering InputOrdering, which,
-# in this case, defaults to Lex
+R, (x, y) = QQ["x", "y"]
+
+# Uses the ordering `InputOrdering`, which, in this case, 
+# defaults to the lexicographical ordering with x < y
 groebner([x*y + x, x + y^2])
 ```
 """
 struct InputOrdering <: AbstractMonomialOrdering end
 
-###
-# Global orderings.
-
-# Lexicographical monomial ordering.
-#
-# We use the following formal description.
-#
-# Given x1^a1 x2^a2 ... xn^an and y1^b1 y2^b2 ... yn^bn, 
-# the lexicographical ordering is defined as follows:
-#   x1^a1 x2^a2 ... xn^an < y1^b1 y2^b2 ... yn^bn
-# iff, there exists k ∈ 1..n such that
-#   aj = bj for j in 1..k-1 
-#   ak < bk
 """
     Lex
+    Lex(variables)
 
-Lexicographical monomial ordering.
+Lexicographical monomial ordering, defined as follows:
 
-# Example
+\$x_1^a_1...x_n^a_n < x_1^b_1...x_n^b_n\$
+
+if there exists \$k ∈ 1..n\$ such that \$a_j = b_j\$ for \$j\$ in \$1..k-1\$ and
+\$a_k < b_k\$.
+
+## Example
 
 ```jldoctest
 using Groebner, AbstractAlgebra
 R, (x, y) = QQ["x", "y"];
+
+# Lexicographical ordering with x > y
 groebner([x*y + x, x + y^2], ordering=Lex())
+
+# Lexicographical ordering with x < y
+groebner([x*y + x, x + y^2], ordering=Lex([x, y]))
 ```
 """
-struct Lex <: AbstractMonomialOrdering end
+struct Lex{T} <: AbstractMonomialOrdering
+    variables::Union{Vector{T}, Nothing}
+    Lex() = new{Nothing}(nothing)
+    function Lex(variables::Vector{T}) where {T}
+        @assert !isempty(variables)
+        @assert length(unique(variables)) == length(variables)
+        new{T}(variables)
+    end
+end
 
-# Degree lexicographical monomial ordering.
-#
-# We use the following formal description.
-#
-# Given x1^a1 x2^a2 ... xn^an and y1^b1 y2^b2 ... yn^bn, 
-# the degree lexicographical ordering is defined as follows:
-#   x1^a1 x2^a2 ... xn^an < y1^b1 y2^b2 ... yn^bn
-# iff,
-#   sum(a1..an) < sum(b1..bn) 
-# or, sum(a1..an) = sum(b1..bn),
-# and there exists k ∈ 1..n such that
-#   aj = bj for j in 1..k-1 
-#   ak < bk
 """
-    struct DegLex
+    DegLex
+    DegLex(variables)
 
-Degree lexicographical monomial ordering.
+Degree lexicographical monomial ordering, defined as follows:
 
-# Example
+\$x_1^a_1...x_n^a_n < x_1^b_1...x_n^b_n\$
+
+- if \$a_1 +...+ a_n < b_1 +...+ b_n\$, or, 
+- if \$a_1 +...+ a_n = b_1 +...+ b_n\$ and there exists \$k ∈ 1..n\$ such that
+    \$a_j = b_j\$ for \$j\$ in \$1..k-1\$ and \$a_k < b_k\$.
+
+## Example
 
 ```jldoctest
 using Groebner, AbstractAlgebra
 R, (x, y) = QQ["x", "y"];
+
+# Degree lexicographical ordering with x > y
 groebner([x*y + x, x + y^2], ordering=DegLex())
+
+# Degree lexicographical ordering with x < y
+groebner([x*y + x, x + y^2], ordering=DegLex([x, y]))
 ```
 """
-struct DegLex <: AbstractMonomialOrdering end
+struct DegLex{T} <: AbstractMonomialOrdering
+    variables::Union{Vector{T}, Nothing}
+    DegLex() = new{Nothing}(nothing)
+    function DegLex(variables::Vector{T}) where {T}
+        @assert !isempty(variables)
+        @assert length(unique(variables)) == length(variables)
+        new{T}(variables)
+    end
+end
 
-# Degree reversed lexicographical monomial ordering.
-#
-# We use the following formal description.
-#
-# Given x1^a1 x2^a2 ... xn^an and y1^b1 y2^b2 ... yn^bn, 
-# the degree reversed lexicographical ordering is defined as follows:
-#   x1^a1 x2^a2 ... xn^an < y1^b1 y2^b2 ... yn^bn
-# iff,
-#   sum(a1..an) < sum(b1..bn) 
-# or, sum(a1..an) = sum(b1..bn),
-# and there exists k ∈ 1..n such that
-#   aj = bj for j in k+1..n 
-#   ak > bk
 """
-    struct DegRevLex
+    DegRevLex
+    DegRevLex(variables)
 
-Degree reversed lexicographical monomial ordering.
+Degree reverse lexicographical monomial ordering, defined as follows:
 
-# Example
+\$x_1^a_1...x_n^a_n < x_1^b_1...x_n^b_n\$
+
+- if \$a_1 +...+ a_n < b_1 +...+ b_n\$, or, 
+- if \$a_1 +...+ a_n = b_1 +...+ b_n\$ and there exists \$k ∈ 1..n\$ such that
+    \$a_j = b_j\$ for \$j\$ in \$k+1..n\$ and \$a_k > b_k\$.
+
+## Example
 
 ```jldoctest
 using Groebner, AbstractAlgebra
 R, (x, y) = QQ["x", "y"];
+
+# Degree reverse lexicographical ordering with x > y
+groebner([x*y + x, x + y^2], ordering=DegRevLex())
+
+# Degree reverse lexicographical ordering on x < y
 groebner([x*y + x, x + y^2], ordering=DegRevLex())
 ```
 """
-struct DegRevLex <: AbstractMonomialOrdering end
+struct DegRevLex{T} <: AbstractMonomialOrdering
+    variables::Union{Vector{T}, Nothing}
+    DegRevLex() = new{Nothing}(nothing)
+    function DegRevLex(variables::Vector{T}) where {T}
+        @assert !isempty(variables)
+        @assert length(unique(variables)) == length(variables)
+        new{T}(variables)
+    end
+end
 
-###
-# Possibly local orderings.
-
-# Weighted monomial ordering.
-#
-# We use the following formal description.
-#
-# Let w = (w1, ..., wn) be a vector of integers. Let <* be a monomial ordering.
-#
-# Given w, <*, and x1^a1 x2^a2 ... xn^an and y1^b1 y2^b2 ... yn^bn, 
-# the weighted orderings is defined as follows:
-#   x1^a1 x2^a2 ... xn^an < y1^b1 y2^b2 ... yn^bn
-# iff
-#   w1a1 + ... + wnan < w1b1 + ... + wnbn
-# or, w1a1 + ... + wnan = w1b1 + ... + wnbn, and
-#   x1^a1 x2^a2 ... xn^an <* y1^b1 y2^b2 ... yn^bn
-#
-# In the implementation, <* defaults to Lex.
-# A custom <* can be provided.
 """
-    struct WeightedOrdering
+    WeightedOrdering(weights)
+    WeightedOrdering(weights, variables)
 
-Weighted monomial ordering.
-Only *non-negative weights* are supported at the moment.
+Weighted monomial ordering. Only positive weights are supported.
 
-# Example
+We use the following formal description:
+
+TODO!
+
+## Example
 
 ```jldoctest
 using Groebner, AbstractAlgebra
@@ -149,25 +154,27 @@ groebner([x*y + x, x + y^2], ordering=ord)
 ```
 
 Weighted ordering can be used in combination 
-with some other ordering *(which naturally defaults to `Lex`)*
+with some other ordering (which defaults to `Lex`)
 
 ```jldoctest
 ord = WeightedOrdering([3, 1], DegRevLex())
 groebner([x*y + x, x + y^2], ordering=ord)
 ```
 """
-struct WeightedOrdering{O} <: AbstractMonomialOrdering
+struct WeightedOrdering{T} <: AbstractMonomialOrdering
     weights::Vector{UInt64}
-    ord::O
+    variables::Vector{T}
     function WeightedOrdering(
         weights::Vector{T},
-        o::O
-    ) where {T <: Integer, O <: AbstractMonomialOrdering}
-        @assert all(>=(0), weights) "Only non-negative weights are supported at the moment."
-        new{O}(weights, o)
+        variables::Union{Vector{V}, Nothing}
+    ) where {T <: Integer, V}
+        @assert !isempty(weights)
+        @assert all(>(0), weights) "Only weights are supported."
+        @assert length(weights) == length(variables)
+        new{V}(weights, variables)
     end
     function WeightedOrdering(weights::Vector{T}) where {T <: Integer}
-        WeightedOrdering(weights, Lex())
+        WeightedOrdering(weights, nothing)
     end
 end
 

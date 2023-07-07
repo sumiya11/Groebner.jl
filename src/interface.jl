@@ -67,6 +67,16 @@ function groebner(polynomials::AbstractVector; kws...)
     _groebner(polynomials, KeywordsHandler(:groebner, kws))
 end
 
+# returns a graph
+function groebner_learn(polynomials::AbstractVector; kws...)
+    _groebner_learn(polynomials, KeywordsHandler(:groebner_learn, kws))
+end
+
+# returns a basis
+function groebner_apply(graph, polynomials::AbstractVector; kws...)
+    _groebner_apply(graph, polynomials, KeywordsHandler(:groebner_apply, kws))
+end
+
 """
     isgroebner(polynomials; options...)
 
@@ -112,7 +122,7 @@ isgroebner([x*y^2 + x, y*x^2 + y])
 
 """
 function isgroebner(polynomials::AbstractVector; kws...)
-    _isgroebner(polynomials, KeywordsHandler(kws))
+    _isgroebner(polynomials, KeywordsHandler(:isgroebner, kws))
 end
 
 """
@@ -177,7 +187,7 @@ julia> normalform([y^2 + x, x^2 + y], x^2 + y^2 + 1)
 
 """
 function normalform(basis::AbstractVector, tobereduced; kws...)
-    _normalform(basis, tobereduced, KeywordsHandler(kws))
+    _normalform(basis, tobereduced, KeywordsHandler(:normalform, kws))
 end
 
 """
@@ -200,5 +210,5 @@ julia> kbase([y^2 + x, x^2 + y], check=true)
 
 """
 function kbase(basis::AbstractVector; kws...) 
-    _kbase(basis, KeywordsHandler(kws))
+    _kbase(basis, KeywordsHandler(:kbase, kws))
 end

@@ -26,9 +26,8 @@ const FIRST_GOOD_PRIME  = 2^30 + 3
     )
 end
 
-# PrimeTracker.
 # Keeps track of used prime numbers and helps selecting new ones
-mutable struct PrimeTracker
+mutable struct LuckyPrimes
     # TODO in the future: once parametric coefficients are supported, revise this
     # integer coefficients of input polynomials
     coeffs::Vector{Vector{BigInt}}
@@ -45,17 +44,17 @@ mutable struct PrimeTracker
     # product of all used lucky primes
     modulo::BigInt
 
-    function PrimeTracker(coeffs::Vector{Vector{BigInt}})
+    function LuckyPrimes(coeffs::Vector{Vector{BigInt}})
         new(coeffs, BigInt(), FIRST_LUCKY_PRIME, FIRST_GOOD_PRIME, UInt64[], BigInt(1))
     end
 end
 
-updatemodulo!(tracker::PrimeTracker) =
+updatemodulo!(tracker::LuckyPrimes) =
     Base.GMP.MPZ.mul_ui!(tracker.modulo, last(tracker.primes))
 
 # Check if prime is lucky w.r.t. coefficients from tracker
 # i.e., does not divide any of the leading coefficients
-function isluckyprime(tracker::PrimeTracker, prime::UInt64)
+function isluckyprime(tracker::LuckyPrimes, prime::UInt64)
     buf = tracker.buf
     p   = BigInt(prime)
     for poly in tracker.coeffs
@@ -69,7 +68,7 @@ function isluckyprime(tracker::PrimeTracker, prime::UInt64)
 end
 
 # Returns the next lucky prime
-function nextluckyprime!(tracker::PrimeTracker)
+function nextluckyprime!(tracker::LuckyPrimes)
     prime = tracker.luckyprime
 
     while !isluckyprime(tracker, prime)
@@ -86,7 +85,7 @@ function nextluckyprime!(tracker::PrimeTracker)
     return prime
 end
 
-function nextgoodprime!(tracker::PrimeTracker)
+function nextgoodprime!(tracker::LuckyPrimes)
     prime = tracker.goodprime
 
     while !isluckyprime(tracker, prime)
