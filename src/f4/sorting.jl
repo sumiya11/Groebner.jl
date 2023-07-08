@@ -162,8 +162,10 @@ function sort_matrix_upper_rows_decreasing!(matrix)
 
     matrix.uprows[1:(matrix.nup)] = matrix.uprows[inds]
     matrix.up2coef[1:(matrix.nup)] = matrix.up2coef[inds]
-    matrix.up2mult[1:(matrix.nup)] = matrix.up2mult[inds]
-
+    # TODO
+    if !isempty(matrix.up2mult)
+        matrix.up2mult[1:(matrix.nup)] = matrix.up2mult[inds]
+    end
     matrix
 end
 
@@ -182,8 +184,9 @@ function sort_matrix_lower_rows_increasing!(matrix)
 
     matrix.lowrows[1:(matrix.nlow)] = matrix.lowrows[inds]
     matrix.low2coef[1:(matrix.nlow)] = matrix.low2coef[inds]
-    matrix.low2mult[1:(matrix.nlow)] = matrix.low2mult[inds]
-
+    if !isempty(matrix.low2mult)
+        matrix.low2mult[1:(matrix.nlow)] = matrix.low2mult[inds]
+    end
     matrix
 end
 

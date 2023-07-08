@@ -6,8 +6,8 @@ mutable struct ComputationGraphF4{C, M, Ord}
     # The number of columns,
     # The number of upper rows,
     # The number of lower rows
-    matrix_infos::Vector{Any}
-    matrix_zeroed_rows::Vector{Vector{Int}}
+    matrix_infos::Vector{NamedTuple{(:nup, :nlow, :ncols), Tuple{Int64, Int64, Int64}}}
+    matrix_nonzeroed_rows::Vector{Vector{Int}}
     matrix_upper_rows::Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}
     matrix_lower_rows::Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}
     # F4 iteration number --> index in the basis
@@ -24,7 +24,7 @@ function initialize_computation_graph_f4(input_basis, gb_basis, hashtable)
         input_basis,
         gb_basis,
         hashtable,
-        Vector{Any}(),
+        Vector{NamedTuple{(:nup, :nlow, :ncols), Tuple{Int64, Int64, Int64}}}(),
         Vector{Vector{Int}}(),
         Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}(),
         Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}(),
@@ -34,7 +34,7 @@ end
 function Base.show(io::IO, ::MIME"text/plain", graph::ComputationGraphF4)
     println(io, "Computation graph of F4.")
     total_matrix_rows = sum(x -> x.nlow, graph.matrix_infos)
-    total_redundant_rows = sum(length, graph.matrix_zeroed_rows)
+    # total_redundant_rows = sum(length, graph.matrix_zeroed_rows)
     println(io, "Matrix rows in total: $(total_matrix_rows)")
-    print("Redundant matrix rows: $(total_redundant_rows) ($(round(total_redundant_rows / total_matrix_rows * 100, digits=2)) %)")
+    # print("Nonzero matrix rows: $(total_redundant_rows) ($(round(total_redundant_rows / total_matrix_rows * 100, digits=2)) %)")
 end

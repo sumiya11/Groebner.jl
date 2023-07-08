@@ -255,7 +255,7 @@ function reducegb_f4!(
         )
 
         matrix.up2coef[matrix.nrows] = basis.nonredundant[i]
-        matrix.up2mult[matrix.nrows] = insert_in_hash_table!(symbol_ht, etmp)
+        matrix.up2mult[matrix.nrows] = insert_in_hash_table!(ht, etmp)
         # set lead index as 1
         symbol_ht.hashdata[uprows[matrix.nrows][1]].idx = 1
     end
@@ -328,7 +328,7 @@ function select_tobereduced!(
         matrix.lowrows[matrix.nrows] =
             multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, gen)
         matrix.low2coef[matrix.nrows] = i
-        matrix.low2mult[matrix.nrows] = insert_in_hash_table!(symbol_ht, etmp)
+        matrix.low2mult[matrix.nrows] = insert_in_hash_table!(ht, etmp)
     end
 
     basis.ntotal
@@ -391,7 +391,8 @@ function find_multiplied_reducer!(
             multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, rpoly)
         @inbounds matrix.up2coef[matrix.nup + 1] = basis.nonredundant[i]
         # TODO
-        matrix.up2mult[matrix.nup + 1] = insert_in_hash_table!(symbol_ht, etmp)
+        # TODO: insert in basis hashtable
+        matrix.up2mult[matrix.nup + 1] = insert_in_hash_table!(ht, etmp)
 
         # up-size matrix
         symbol_ht.hashdata[vidx].idx = 2
@@ -583,7 +584,7 @@ function select_normal!(
         # map upper row to index in basis
         matrix.up2coef[matrix.nup] = prev
         # TODO
-        matrix.up2mult[matrix.nup] = insert_in_hash_table!(symbol_ht, etmp)
+        matrix.up2mult[matrix.nup] = insert_in_hash_table!(ht, etmp)
 
         # mark lcm column as reducer in symbolic hashtable
         symbol_ht.hashdata[uprows[matrix.nup][1]].idx = 2
@@ -620,7 +621,7 @@ function select_normal!(
                 multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly)
             # map lower row to index in basis
             matrix.low2coef[matrix.nlow] = prev
-            matrix.low2mult[matrix.nlow] = insert_in_hash_table!(symbol_ht, etmp)
+            matrix.low2mult[matrix.nlow] = insert_in_hash_table!(ht, etmp)
 
             symbol_ht.hashdata[lowrows[matrix.nlow][1]].idx = 2
 

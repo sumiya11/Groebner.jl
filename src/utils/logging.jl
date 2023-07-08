@@ -73,7 +73,7 @@ macro log(args...)
     esc(:(
         if $(@__MODULE__).logging_enabled()
             if threadid() == 1
-                with_logger($(_default_logger[])) do
+                with_logger(_default_logger[]) do
                     @logmsg LogLevel($level) $(msgs...)
                 end
             end
@@ -81,4 +81,12 @@ macro log(args...)
             nothing
         end
     ))
+end
+
+function _log(level, msgs...)
+    if threadid() == 1
+        with_logger(_default_logger[]) do
+            # @logmsg(LogLevel(level), msgs...)
+        end
+    end
 end

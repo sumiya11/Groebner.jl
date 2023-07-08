@@ -34,11 +34,11 @@ const _supported_kw_args = (
     ),
     groebner_learn = (
         seed     = 42,
-        loglevel = 42
+        loglevel = 0
     ),
     groebner_apply = (
         seed     = 42,
-        loglevel = 42
+        loglevel = 0
     )
 )
 #! format: on

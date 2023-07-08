@@ -90,8 +90,8 @@ function _groebner_learn(polynomials, kws)
     params = AlgorithmParameters(ring, kws)
     @log level = 1 "Selected parameters:\n$(params)"
     change_ordering_if_needed!(ring, monoms, coeffs, params)
-    graph = _groebner_learn(ring, monoms, coeffs, params)
-    graph
+    graph, gb_monoms, gb_coeffs = _groebner_learn(ring, monoms, coeffs, params)
+    graph, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, kws)
 end
 
 function _groebner_apply(graph, polynomials, kws)
@@ -145,7 +145,8 @@ function _groebner_learn(ring, monoms, coeffs::Vector{Vector{C}}, params) where 
     @log level = -6 "Before F4:" basis_ff
     f4_learn!(graph, ring_ff, basis_ff, pairset, hashtable, params)
     @log level = -6 "After F4:" basis_ff
-    graph
+    gb_monoms, gb_coeffs = export_basis_data(basis_ff, graph.hashtable)
+    graph, gb_monoms, gb_coeffs
 end
 
 function _groebner_apply(
