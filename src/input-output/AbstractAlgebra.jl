@@ -3,13 +3,14 @@
 const _AA_supported_orderings_symbols = (:lex, :deglex, :degrevlex)
 const _AA_exponent_type = UInt64
 
-function peek_at_polynomials(polynomials)
+function peek_at_polynomials(polynomials::Vector{T}) where {T}
+    @assert !isempty(polynomials) "Input must not be empty" 
     p = first(polynomials)
     R = parent(p)
-    ground = iszero(AbstractAlgebra.characteristic(R)) ? :qq : :zp
     nvars = AbstractAlgebra.nvars(R)
     ord = AbstractAlgebra.ordering(R)
-    :abstractalgebra, length(polynomials), ground, nvars, ord
+    char = Int(AbstractAlgebra.characteristic(R))
+    :abstractalgebra, length(polynomials), char, nvars, ord
 end
 
 # Determines the monomial ordering of the output,
@@ -122,7 +123,7 @@ function extract_monoms(
     exps = Vector{representation.monomtype}(undef, length(poly))
     @inbounds for j in 1:length(poly)
         exps[j] =
-            make_ev(representation.monomtype, AbstractAlgebra.exponent_vector(poly, j))
+            construct_monom(representation.monomtype, AbstractAlgebra.exponent_vector(poly, j))
     end
     exps
 end
@@ -134,7 +135,7 @@ function extract_monoms(
 ) where {P <: AbstractAlgebra.Generic.PolyElem}
     exps = Vector{representation.monomtype}(undef, 0)
     @inbounds while !iszero(poly)
-        push!(exps, make_ev(representation.monomtype, [AbstractAlgebra.degree(poly)]))
+        push!(exps, construct_monom(representation.monomtype, [AbstractAlgebra.degree(poly)]))
         poly = AbstractAlgebra.tail(poly)
     end
     exps
@@ -166,7 +167,7 @@ function extract_monoms(
         poly = orig_polys[i]
         exps[i] = Vector{representation.monomtype}(undef, length(poly))
         @inbounds for j in 1:length(poly)
-            exps[i][j] = make_ev(representation.monomtype, poly.exps[(end - 1):-1:1, j])
+            exps[i][j] = construct_monom(representation.monomtype, poly.exps[(end - 1):-1:1, j])
         end
     end
     exps
@@ -184,7 +185,7 @@ function extract_monoms(
         poly = orig_polys[i]
         exps[i] = Vector{representation.monomtype}(undef, length(poly))
         @inbounds for j in 1:length(poly)
-            exps[i][j] = make_ev(representation.monomtype, poly.exps[end:-1:1, j])
+            exps[i][j] = construct_monom(representation.monomtype, poly.exps[end:-1:1, j])
         end
     end
     exps
@@ -202,7 +203,7 @@ function extract_monoms(
         poly = orig_polys[i]
         exps[i] = Vector{representation.monomtype}(undef, length(poly))
         @inbounds for j in 1:length(poly)
-            exps[i][j] = make_ev(representation.monomtype, poly.exps[1:(end - 1), j])
+            exps[i][j] = construct_monom(representation.monomtype, poly.exps[1:(end - 1), j])
         end
     end
     exps
@@ -241,7 +242,7 @@ function convert_to_output(
     tmp      = Vector{Int}(undef, AbstractAlgebra.nvars(origring))
     @inbounds for i in 1:length(gbexps)
         cfs = map(ground, gbcoeffs[i])
-        exps = [Int.(make_dense!(tmp, gbexps[i][j])) for j in 1:length(gbexps[i])]
+        exps = [Int.(monom_to_dense_vector!(tmp, gbexps[i][j])) for j in 1:length(gbexps[i])]
         exported[i] = origring(cfs, exps)
     end
     exported
@@ -324,7 +325,7 @@ function convert_to_output(
             #     exps[je, jt] = gbexps[i][jt][je]
             # end
             # exps[nv + 1, jt] = gbexps[i][jt][end]
-            make_dense!(tmp, gbexps[i][jt])
+            monom_to_dense_vector!(tmp, gbexps[i][jt])
             exps[1:(end - 1), jt] .= tmp
             exps[end, jt] = sum(tmp)
         end
@@ -354,7 +355,7 @@ function convert_to_output(
             # for je in 1:nv
             #     exps[je, jt] = gbexps[i][jt][nv - je + 1]
             # end
-            make_dense!(tmp, gbexps[i][jt])
+            monom_to_dense_vector!(tmp, gbexps[i][jt])
             exps[end:-1:1, jt] .= tmp
         end
         # exps   = UInt64.(hcat(map(x -> x[end-1:-1:1], gbexps[i])...))
@@ -385,7 +386,7 @@ function convert_to_output(
             #     exps[je, jt] = gbexps[i][jt][nv - je + 1]
             # end
             # exps[nv + 1, jt] = gbexps[i][jt][end]
-            make_dense!(tmp, gbexps[i][jt])
+            monom_to_dense_vector!(tmp, gbexps[i][jt])
             exps[(end - 1):-1:1, jt] .= tmp
             exps[end, jt] = sum(tmp)
         end
@@ -412,7 +413,7 @@ function convert_to_output(
         cfs  = map(ground, gbcoeffs[i])
         exps = Vector{Vector{Int}}(undef, length(gbcoeffs[i]))
         @inbounds for jt in 1:length(gbcoeffs[i])
-            make_dense!(tmp, gbexps[i][jt])
+            monom_to_dense_vector!(tmp, gbexps[i][jt])
             exps[jt] = tmp
         end
         exported[i] = create_polynomial(origring, cfs, exps)

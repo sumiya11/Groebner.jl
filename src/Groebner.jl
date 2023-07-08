@@ -51,15 +51,18 @@ import Base.MultiplicativeInverses: UnsignedMultiplicativeInverse
 
 include("utils/logging.jl")
 include("utils/invariants.jl")
-include("utils/keywords.jl")
 include("utils/testsystems.jl")
 
 # Supported monomial orderings
 include("monomials/orderings.jl")
+
+include("utils/keywords.jl")
+
 # Monomial implementations
+include("monomials/common.jl")
 include("monomials/packedutils.jl")
+include("monomials/packedtuples.jl")
 include("monomials/exponentvector.jl")
-include("monomials/packedvector.jl")
 
 # Defines some type aliases for Groebner
 include("utils/types.jl")
@@ -120,7 +123,7 @@ include("interface.jl")
 using SnoopPrecompile
 include("precompile.jl")
 
-export groebner
+export groebner, groebner_learn, groebner_apply
 export isgroebner
 export normalform
 

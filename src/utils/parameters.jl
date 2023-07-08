@@ -11,6 +11,8 @@ struct AlgorithmParameters{Ord1, Ord2}
     randomized_check::Bool
     guaranteed_check::Bool
 
+    check::Bool
+
     # Linear algebra backend to be used. Currently available are
     # - :deterministic for exact deterministic algebra,
     # - :randomized for probabilistic linear algebra
@@ -69,12 +71,36 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler)
 
     emit_computation_graph = false
 
+    rng = Random.Xoshiro(seed)
+
+    useed = UInt64(seed)
+
+    @log level = 1 """
+    Selected parameters:
+    target_ord = $target_ord
+    computation_ord = $computation_ord
+    heuristic_check = $heuristic_check
+    randomized_check = $randomized_check
+    guaranteed_check = $guaranteed_check
+    check = $kwargs.check
+    linalg = $linalg
+    reduced = $reduced
+    maxpairs = $maxpairs
+    ground = $ground
+    strategy = $strategy
+    majority_threshold = $majority_threshold
+    emit_computation_graph = $emit_computation_graph
+    threading = $threading
+    seed = $seed
+    rng = $rng"""
+    
     AlgorithmParameters(
         target_ord,
         computation_ord,
         heuristic_check,
         randomized_check,
         guaranteed_check,
+        kwargs.check,
         linalg,
         reduced,
         maxpairs,
@@ -83,7 +109,7 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler)
         majority_threshold,
         emit_computation_graph,
         threading,
-        UInt64(seed),
-        Random.Xoshiro(seed)
+        useed,
+        rng
     )
 end

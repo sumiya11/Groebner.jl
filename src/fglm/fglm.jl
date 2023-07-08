@@ -11,7 +11,7 @@ end
 Base.isempty(m::NextMonomials) = m.load == 0
 
 function initialize_nextmonomials(ht::MonomialHashtable{M}, ord) where {M}
-    zz = make_zero_ev(M, ht.nvars)
+    zz = construct_const_monom(M, ht.nvars)
     vidx = insert_in_hash_table!(ht, zz)
     monoms = Vector{MonomIdx}(undef, 2^3)
     monoms[1] = vidx
@@ -28,9 +28,9 @@ function insertnexts!(m::NextMonomials, ht::MonomialHashtable{M}, monom::MonomId
     for i in 1:(ht.nvars)
         eprod = copy(emonom)
         tmp = Vector{UInt}(undef, ht.nvars)
-        edense = make_dense!(tmp, eprod)
+        edense = monom_to_dense_vector!(tmp, eprod)
         edense[i] += 1
-        eprod = make_ev(M, edense)
+        eprod = construct_monom(M, edense)
         vidx = insert_in_hash_table!(ht, eprod)
 
         if !haskey(m.done, vidx)
@@ -124,7 +124,7 @@ function fglm_f4!(
         tobereduced.ntotal = 1
 
         # compute normal form
-        normal_form_f4!(ring, basis, ht, tobereduced)
+        f4_normalform!(ring, basis, tobereduced, ht)
 
         # if debug()
         #     println("Normal form ", tobereduced.monoms[1], " ", tobereduced.coeffs[1])
@@ -202,6 +202,17 @@ end
 function _kbase(polynomials, kws)
     representation = select_polynomial_representation(polynomials, kws)
     ring, monoms, coeffs = convert_to_internal(representation, polynomials, kws)
+    if isempty(monoms)
+        @log "Input consisting of zero polynomials."
+        throw(DomainError("Input consisting of zero polynomials to Groebner.kbase."))
+        return convert_to_output(ring, polynomials, monoms, coeffs, kws)
+    end
+    if kws.check
+        @log "Checking if a Grobner basis"
+        if !isgroebner(polynomials)
+            throw(DomainError("Input is not a Groebner basis."))
+        end
+    end
     params = AlgorithmParameters(ring, kws)
     m, c = kbase_f4(ring, monoms, coeffs, params, representation)
     convert_to_output(ring, polynomials, m, c, kws)

@@ -1,21 +1,5 @@
 # Utilities for packed monomial representation
 
-# Threshold for overflow error to trigger.
-# > If entries in exponent vector are of type B,
-# > then typemax(B)/2 is enough.
-# That is, the maximal element of the exponent vector is the total degree.
-# The total degree can grow with
-# monom-monom multiplications (no more than twice)
-# and monom-monom lcm (no more than twice). 
-_overflow_threshold(B) = div(typemax(B), 2)
-@noinline _overflow_error(c, B) =
-    throw(ExponentVectorOverflow("Overflow is probable with $c modulo $B."))
-
-function _overflow_check(e::Integer, B)
-    e >= _overflow_threshold(B) && _overflow_error(e, B)
-    true
-end
-
 # How many integers of type B can be stored
 # in an integer of type T
 function elperchunk(T, B)

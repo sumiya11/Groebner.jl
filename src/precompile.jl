@@ -11,7 +11,9 @@
         R, (x, y) =
             AbstractAlgebra.PolynomialRing(AbstractAlgebra.QQ, ["x", "y"], ordering=:lex)
         arr = [x, y]
-        groebner(arr)
+        gb = groebner(arr)
+        isgroebner(arr)
+        normalform(arr, [x, y])
     end
 end
 

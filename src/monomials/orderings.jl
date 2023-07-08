@@ -169,9 +169,9 @@ struct WeightedOrdering{T} <: AbstractMonomialOrdering
         variables::Union{Vector{V}, Nothing}
     ) where {T <: Integer, V}
         @assert !isempty(weights)
-        @assert all(>(0), weights) "Only weights are supported."
-        @assert length(weights) == length(variables)
-        new{V}(weights, variables)
+        @assert all(>=(0), weights) "Only nonnegative weights are supported."
+        # @assert length(weights) == length(variables)
+        new{eltype(variables)}(weights, variables)
     end
     function WeightedOrdering(weights::Vector{T}) where {T <: Integer}
         WeightedOrdering(weights, nothing)

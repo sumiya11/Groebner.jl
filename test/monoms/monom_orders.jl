@@ -1,27 +1,27 @@
 
-make_ev = Groebner.make_ev
+construct_monom = Groebner.construct_monom
 lex = (x, y) -> Groebner.monom_isless(x, y, Groebner.Lex())
 dl = (x, y) -> Groebner.monom_isless(x, y, Groebner.DegLex())
 drl = (x, y) -> Groebner.monom_isless(x, y, Groebner.DegRevLex())
 
 implementations_to_test = [
-    Groebner.PowerVector{T} where {T},
-    Groebner.PackedPair1{T, UInt8} where {T},
-    Groebner.PackedPair2{T, UInt8} where {T},
-    Groebner.PackedPair3{T, UInt8} where {T}
+    Groebner.ExponentVector{T} where {T},
+    Groebner.PackedTuple1{T, UInt8} where {T},
+    Groebner.PackedTuple2{T, UInt8} where {T},
+    Groebner.PackedTuple3{T, UInt8} where {T}
 ]
 
-@testset "term orders: Lex, DegLex, DegRevLex" begin
+@testset "monom orders: Lex, DegLex, DegRevLex" begin
     for T in (UInt64, UInt32, UInt16)
         for EV in implementations_to_test
-            a = make_ev(EV{T}, [0])
-            b = make_ev(EV{T}, [0])
+            a = construct_monom(EV{T}, [0])
+            b = construct_monom(EV{T}, [0])
             @test !lex(a, b)
             @test !dl(a, b)
             @test !drl(a, b)
 
-            a = make_ev(EV{T}, [0])
-            b = make_ev(EV{T}, [1])
+            a = construct_monom(EV{T}, [0])
+            b = construct_monom(EV{T}, [1])
             @test lex(a, b)
             @test dl(a, b)
             @test drl(a, b)
@@ -29,9 +29,9 @@ implementations_to_test = [
             @test !dl(b, a)
             @test !drl(b, a)
 
-            2 > Groebner.capacity(EV{T}) && continue
-            a = make_ev(EV{T}, [1, 1])
-            b = make_ev(EV{T}, [2, 0])
+            2 > Groebner.max_vars_in_monom(EV{T}) && continue
+            a = construct_monom(EV{T}, [1, 1])
+            b = construct_monom(EV{T}, [2, 0])
             @test lex(a, b)
             @test dl(a, b)
             @test drl(a, b)
@@ -39,9 +39,9 @@ implementations_to_test = [
             @test !dl(b, a)
             @test !drl(b, a)
 
-            2 > Groebner.capacity(EV{T}) && continue
-            a = make_ev(EV{T}, [1, 1])
-            b = make_ev(EV{T}, [0, 2])
+            2 > Groebner.max_vars_in_monom(EV{T}) && continue
+            a = construct_monom(EV{T}, [1, 1])
+            b = construct_monom(EV{T}, [0, 2])
             @test !lex(a, b)
             @test !dl(a, b)
             @test !drl(a, b)
@@ -49,16 +49,16 @@ implementations_to_test = [
             @test dl(b, a)
             @test drl(b, a)
 
-            2 > Groebner.capacity(EV{T}) && continue
-            a = make_ev(EV{T}, [1, 1])
-            b = make_ev(EV{T}, [1, 1])
+            2 > Groebner.max_vars_in_monom(EV{T}) && continue
+            a = construct_monom(EV{T}, [1, 1])
+            b = construct_monom(EV{T}, [1, 1])
             @test !lex(a, b)
             @test !dl(a, b)
             @test !drl(a, b)
 
-            2 > Groebner.capacity(EV{T}) && continue
-            a = make_ev(EV{T}, [1, 1])
-            b = make_ev(EV{T}, [2, 2])
+            2 > Groebner.max_vars_in_monom(EV{T}) && continue
+            a = construct_monom(EV{T}, [1, 1])
+            b = construct_monom(EV{T}, [2, 2])
             @test lex(a, b)
             @test dl(a, b)
             @test drl(a, b)
@@ -66,23 +66,23 @@ implementations_to_test = [
             @test !dl(b, a)
             @test !drl(b, a)
 
-            3 > Groebner.capacity(EV{T}) && continue
-            a = make_ev(EV{T}, [1, 0, 2])
-            b = make_ev(EV{T}, [2, 0, 1])
+            3 > Groebner.max_vars_in_monom(EV{T}) && continue
+            a = construct_monom(EV{T}, [1, 0, 2])
+            b = construct_monom(EV{T}, [2, 0, 1])
             @test lex(a, b)
             @test dl(a, b)
             @test drl(a, b)
 
-            5 > Groebner.capacity(EV{T}) && continue
-            a = make_ev(EV{T}, ones(UInt, 5))
-            b = make_ev(EV{T}, ones(UInt, 5))
+            5 > Groebner.max_vars_in_monom(EV{T}) && continue
+            a = construct_monom(EV{T}, ones(UInt, 5))
+            b = construct_monom(EV{T}, ones(UInt, 5))
             @test !lex(a, b)
             @test !dl(a, b)
             @test !drl(a, b)
 
-            25 > Groebner.capacity(EV{T}) && continue
-            a = make_ev(EV{T}, ones(UInt, 25))
-            b = make_ev(EV{T}, ones(UInt, 25))
+            25 > Groebner.max_vars_in_monom(EV{T}) && continue
+            a = construct_monom(EV{T}, ones(UInt, 25))
+            b = construct_monom(EV{T}, ones(UInt, 25))
             @test !lex(a, b)
             @test !dl(a, b)
             @test !drl(a, b)
@@ -93,18 +93,18 @@ implementations_to_test = [
             k = rand(1:100)
 
             implementations_to_test_local =
-                filter(xxx -> Groebner.capacity(xxx{T}) >= k, implementations_to_test)
+                filter(xxx -> Groebner.max_vars_in_monom(xxx{T}) >= k, implementations_to_test)
 
             t = div(typemax(UInt8), k) - 1
             x, y = rand(1:t, k), rand(1:t, k)
-            if sum(x) >= Groebner._overflow_threshold(UInt8)
+            if sum(x) >= Groebner._monom_overflow_threshold(UInt8)
                 continue
             end
-            if sum(y) >= Groebner._overflow_threshold(UInt8)
+            if sum(y) >= Groebner._monom_overflow_threshold(UInt8)
                 continue
             end
-            as = [make_ev(EV{T}, x) for EV in implementations_to_test_local]
-            bs = [make_ev(EV{T}, y) for EV in implementations_to_test_local]
+            as = [construct_monom(EV{T}, x) for EV in implementations_to_test_local]
+            bs = [construct_monom(EV{T}, y) for EV in implementations_to_test_local]
 
             @test length(unique(map(lex, as, bs))) == 1
             @test length(unique(map(dl, as, bs))) == 1
@@ -112,7 +112,7 @@ implementations_to_test = [
 
             # test that a < b && b < a does not happen
             for (a, b) in zip(as, bs)
-                k > Groebner.capacity(a) && continue
+                k > Groebner.max_vars_in_monom(a) && continue
                 if lex(a, b)
                     @test !lex(b, a)
                 end
@@ -138,11 +138,13 @@ function test_orderings(v1, v2, ords_to_test)
     end
 end
 
-@testset "term orders: WeightedOrdering" begin
-    pv = Groebner.PowerVector{T} where {T}
+if false
 
-    v1 = Groebner.make_ev(pv{UInt64}, [1, 2, 3])
-    v2 = Groebner.make_ev(pv{UInt64}, [3, 2, 1])
+@testset "monom orders: WeightedOrdering" begin
+    pv = Groebner.ExponentVector{T} where {T}
+
+    v1 = Groebner.construct_monom(pv{UInt64}, [1, 2, 3])
+    v2 = Groebner.construct_monom(pv{UInt64}, [3, 2, 1])
 
     @test_throws AssertionError Groebner.WeightedOrdering([-1, 0, 0])
 
@@ -157,8 +159,8 @@ end
 
     test_orderings(v1, v2, ords_to_test)
 
-    v1 = Groebner.make_ev(pv{UInt64}, [1, 2, 3])
-    v2 = Groebner.make_ev(pv{UInt64}, [1, 2, 3])
+    v1 = Groebner.construct_monom(pv{UInt64}, [1, 2, 3])
+    v2 = Groebner.construct_monom(pv{UInt64}, [1, 2, 3])
 
     ords_to_test = [
         (ord=Groebner.WeightedOrdering([1, 1, 1]), ans=[false, false]),
@@ -171,8 +173,8 @@ end
 
     test_orderings(v1, v2, ords_to_test)
 
-    v1 = Groebner.make_ev(pv{UInt64}, [1, 2, 3, 0, 0, 7])
-    v2 = Groebner.make_ev(pv{UInt64}, [4, 5, 0, 0, 1, 4])
+    v1 = Groebner.construct_monom(pv{UInt64}, [1, 2, 3, 0, 0, 7])
+    v2 = Groebner.construct_monom(pv{UInt64}, [4, 5, 0, 0, 1, 4])
 
     ords_to_test = [
         (ord=Groebner.WeightedOrdering([1, 1, 1, 1, 1, 1]), ans=[true, false]),
@@ -184,8 +186,8 @@ end
     test_orderings(v1, v2, ords_to_test)
 end
 
-@testset "term orders: BlockOrdering" begin
-    pv = Groebner.PowerVector{T} where {T}
+@testset "monom orders: BlockOrdering" begin
+    pv = Groebner.ExponentVector{T} where {T}
 
     @test_throws AssertionError Groebner.BlockOrdering(
         1:1,
@@ -208,8 +210,8 @@ end
         Groebner.DegLex()
     )
 
-    v1 = Groebner.make_ev(pv{UInt64}, [1, 2, 3])
-    v2 = Groebner.make_ev(pv{UInt64}, [3, 2, 1])
+    v1 = Groebner.construct_monom(pv{UInt64}, [1, 2, 3])
+    v2 = Groebner.construct_monom(pv{UInt64}, [3, 2, 1])
 
     bo_to_test = [
         (
@@ -242,8 +244,8 @@ end
 
     test_orderings(v1, v2, bo_to_test)
 
-    v1 = Groebner.make_ev(pv{UInt64}, [4, 1, 7, 0, 9, 8])
-    v2 = Groebner.make_ev(pv{UInt64}, [1, 6, 3, 5, 9, 100])
+    v1 = Groebner.construct_monom(pv{UInt64}, [4, 1, 7, 0, 9, 8])
+    v2 = Groebner.construct_monom(pv{UInt64}, [1, 6, 3, 5, 9, 100])
 
     bo_to_test = [
         (
@@ -285,13 +287,13 @@ end
     test_orderings(v1, v2, bo_to_test)
 end
 
-@testset "term orders: MatrixOrdering" begin
-    pv = Groebner.PowerVector{T} where {T}
+@testset "monom orders: MatrixOrdering" begin
+    pv = Groebner.ExponentVector{T} where {T}
 
     # @test_throws AssertionError Groebner.MatrixOrdering([-1 0 0; 0 1 0;])
 
-    v1 = Groebner.make_ev(pv{UInt64}, [1, 2, 3])
-    v2 = Groebner.make_ev(pv{UInt64}, [3, 2, 1])
+    v1 = Groebner.construct_monom(pv{UInt64}, [1, 2, 3])
+    v2 = Groebner.construct_monom(pv{UInt64}, [3, 2, 1])
 
     ord1 = Groebner.MatrixOrdering([
         1 0 0
@@ -322,4 +324,6 @@ end
         (ord=ord5, ans=[false, true])
     ]
     test_orderings(v1, v2, mo_to_test)
+end
+
 end

@@ -1,5 +1,5 @@
 
-make_ev = Groebner.make_ev
+construct_monom = Groebner.construct_monom
 monom_product! = Groebner.monom_product!
 monom_division! = Groebner.monom_division!
 monom_lcm! = Groebner.monom_lcm!
@@ -11,25 +11,24 @@ is_monom_elementwise_eq = Groebner.is_monom_elementwise_eq
 B = UInt8
 types_to_test = [UInt64, UInt32]
 implementations_to_test = [
-    Groebner.PowerVector{T} where {T},
-    Groebner.PackedPair1{T, B} where {T},
-    Groebner.PackedPair2{T, B} where {T},
-    Groebner.PackedPair3{T, B} where {T}
-    # Groebner.PackedVector{T, B} where {T},
+    Groebner.ExponentVector{T} where {T},
+    Groebner.PackedTuple1{T, B} where {T},
+    Groebner.PackedTuple2{T, B} where {T},
+    Groebner.PackedTuple3{T, B} where {T}
 ]
 
-@testset "term arithmetic" begin
+@testset "monom arithmetic" begin
     for T in types_to_test
         for EV in implementations_to_test
-            a = make_ev(EV{T}, [0, 0])
-            b = make_ev(EV{T}, [0, 0])
+            a = construct_monom(EV{T}, [0, 0])
+            b = construct_monom(EV{T}, [0, 0])
             c = copy(a)
             @test is_gcd_const(a, b)
             c = monom_product!(c, a, b)
             @test is_monom_elementwise_eq(c, a)
             @test is_monom_elementwise_eq(c, b)
 
-            d = make_ev(EV{T}, [1, 2])
+            d = construct_monom(EV{T}, [1, 2])
             @test is_monom_elementwise_eq(a, b)
             @test !is_monom_elementwise_eq(a, d)
             @test is_gcd_const(d, a)
@@ -42,14 +41,14 @@ implementations_to_test = [
             @test is_monom_elementwise_eq(c, d)
 
             n = 6
-            if n > Groebner.capacity(EV{T})
+            if n > Groebner.max_vars_in_monom(EV{T})
                 continue
             end
-            a = make_ev(EV{T}, [1, 2, 0, 3, 0, 4])
-            b = make_ev(EV{T}, [0, 1, 0, 2, 0, 4])
-            c = make_ev(EV{T}, [1, 3, 0, 5, 0, 8])
-            d = make_ev(EV{T}, [1, 1, 0, 1, 0, 0])
-            e = make_ev(EV{T}, [1, 2, 0, 3, 0, 4])
+            a = construct_monom(EV{T}, [1, 2, 0, 3, 0, 4])
+            b = construct_monom(EV{T}, [0, 1, 0, 2, 0, 4])
+            c = construct_monom(EV{T}, [1, 3, 0, 5, 0, 8])
+            d = construct_monom(EV{T}, [1, 1, 0, 1, 0, 0])
+            e = construct_monom(EV{T}, [1, 2, 0, 3, 0, 4])
             tmp = copy(a)
             @test is_monom_divisible(a, b)
             flag, tmp = is_monom_divisible!(tmp, a, b)
@@ -65,14 +64,14 @@ implementations_to_test = [
             @test is_monom_elementwise_eq(tmp, e)
 
             n = 9
-            if n > Groebner.capacity(EV{T})
+            if n > Groebner.max_vars_in_monom(EV{T})
                 continue
             end
-            a = make_ev(EV{T}, [1, 2, 0, 3, 0, 4, 0, 5, 6])
-            b = make_ev(EV{T}, [0, 1, 0, 2, 0, 4, 0, 0, 2])
-            c = make_ev(EV{T}, [1, 3, 0, 5, 0, 8, 0, 5, 8])
-            d = make_ev(EV{T}, [1, 1, 0, 1, 0, 0, 0, 5, 4])
-            e = make_ev(EV{T}, [1, 2, 0, 3, 0, 4, 0, 5, 6])
+            a = construct_monom(EV{T}, [1, 2, 0, 3, 0, 4, 0, 5, 6])
+            b = construct_monom(EV{T}, [0, 1, 0, 2, 0, 4, 0, 0, 2])
+            c = construct_monom(EV{T}, [1, 3, 0, 5, 0, 8, 0, 5, 8])
+            d = construct_monom(EV{T}, [1, 1, 0, 1, 0, 0, 0, 5, 4])
+            e = construct_monom(EV{T}, [1, 2, 0, 3, 0, 4, 0, 5, 6])
             tmp = copy(a)
             @test is_monom_divisible(a, b)
             flag, tmp = is_monom_divisible!(tmp, a, b)
@@ -90,7 +89,7 @@ implementations_to_test = [
     end
 end
 
-@testset "term division mask" begin
+@testset "monom division mask" begin
     nvars = 4
     divmap = UInt32[
         0x00000001,
@@ -151,10 +150,10 @@ end
         for T in types_to_test
             for EV in implementations_to_test
                 n = nvars
-                if n > Groebner.capacity(EV{T})
+                if n > Groebner.max_vars_in_monom(EV{T})
                     continue
                 end
-                m = make_ev(EV{T}, monom)
+                m = construct_monom(EV{T}, monom)
                 ans = parse(Groebner.DivisionMask, mask, base=2)
                 dm = Groebner.monom_divmask(
                     m,
@@ -169,23 +168,24 @@ end
     end
 end
 
-@testset "term hash linearity" begin
+@testset "monom hash linearity" begin
     for _ in 1:30
         for T in types_to_test
             for EV in implementations_to_test
                 n = rand(1:50)
-                if n > Groebner.capacity(EV{T})
+                if n > Groebner.max_vars_in_monom(EV{T})
                     continue
                 end
                 t = div(typemax(UInt8), 8 * n)
                 x, y = rand(1:max(t, 1), n), rand(1:max(t, 1), n)
-                a = make_ev(EV{T}, x)
-                b = make_ev(EV{T}, y)
-                c = Groebner.make_zero_ev(EV{T}, n)
+                a = construct_monom(EV{T}, x)
+                b = construct_monom(EV{T}, y)
+                c = Groebner.construct_const_monom(EV{T}, n)
                 c = monom_product!(c, a, b)
-                h = Groebner.make_hasher(EV{T}, n)
-                @test typeof(hash(a, h)) === Groebner.MonomHash
-                @test hash(a, h) + hash(b, h) == hash(c, h)
+                h = Groebner.construct_hash_vector(EV{T}, n)
+                @test typeof(Groebner.monom_hash(a, h)) === Groebner.MonomHash
+                @test Groebner.monom_hash(a, h) + Groebner.monom_hash(b, h) ==
+                      Groebner.monom_hash(c, h)
             end
         end
     end

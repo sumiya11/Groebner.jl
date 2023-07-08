@@ -36,6 +36,17 @@
     @test length(Groebner.kbase([8x^77 + 1, y^34 - 1])) == 77 * 34
 end
 
+@testset "kbase zeros" begin
+    for field in [GF(2), GF(2^31 - 1), ZZ, QQ]
+        R, (x, y, z) = PolynomialRing(field, ["x", "y", "z"], ordering=:lex)
+
+        @test_throws DomainError Groebner.kbase([R(0)])
+        @test_throws DomainError Groebner.kbase([R(0), R(0), R(0)])
+
+        @test Groebner.kbase([x, y^2, R(0), z, R(0)]) == [R(1), y]
+    end
+end
+
 @testset "kbase big" begin
     root4 = Groebner.rootn(4)
     gb = Groebner.groebner(root4)

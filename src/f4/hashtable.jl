@@ -85,7 +85,7 @@ function initialize_hashtable(
     ord = ring.ord
 
     # initialize hashing vector
-    hasher = make_hasher(MonomT, nvars)
+    hasher = construct_hash_vector(MonomT, nvars)
 
     # exponents[1:load] cover all stored exponents
     # , also exponents[1] is zeroed by default
@@ -109,7 +109,7 @@ function initialize_hashtable(
     divmap = Vector{DivisionMask}(undef, ndivvars * ndivbits)
 
     # first stored exponent used as buffer lately
-    exponents[1] = make_zero_ev(MonomT, nvars)
+    exponents[1] = construct_const_monom(MonomT, nvars)
 
     MonomialHashtable(
         exponents,
@@ -131,7 +131,7 @@ function copy_hashtable(ht::MonomialHashtable{M, O}) where {M, O}
     exps = Vector{M}(undef, ht.size)
     table = Vector{MonomIdx}(undef, ht.size)
     data = Vector{Hashvalue}(undef, ht.size)
-    exps[1] = make_zero_ev(M, ht.nvars)
+    exps[1] = construct_const_monom(M, ht.nvars)
 
     @inbounds for i in 2:(ht.load)
         exps[i] = copy(ht.monoms[i])
@@ -182,7 +182,7 @@ function initialize_secondary_hashtable(basis_ht::MonomialHashtable{M}) where {M
     size = initial_size
     offset = 2
 
-    exponents[1] = make_zero_ev(M, nvars)
+    exponents[1] = construct_const_monom(M, nvars)
 
     MonomialHashtable(
         exponents,
@@ -274,7 +274,7 @@ end
 
 function insert_in_hash_table!(ht::MonomialHashtable{M}, e::M) where {M}
     # generate hash
-    he::MonomHash = hash(e, ht.hasher)
+    he::MonomHash = monom_hash(e, ht.hasher)
 
     # find new elem position in the table
     hidx = MonomHash(he)
@@ -331,7 +331,7 @@ function fill_divmask!(ht::MonomialHashtable)
     max_exp = Vector{UInt64}(undef, ndivvars)
 
     e = Vector{UInt64}(undef, ht.nvars)
-    make_dense!(e, ht.monoms[ht.offset])
+    monom_to_dense_vector!(e, ht.monoms[ht.offset])
 
     @inbounds for i in 1:ndivvars
         min_exp[i] = e[i]
@@ -339,7 +339,7 @@ function fill_divmask!(ht::MonomialHashtable)
     end
 
     @inbounds for i in (ht.offset):(ht.load) # TODO: offset
-        make_dense!(e, ht.monoms[i])
+        monom_to_dense_vector!(e, ht.monoms[i])
         for j in 1:ndivvars
             if e[j] > max_exp[j]
                 max_exp[j] = e[j]
@@ -481,7 +481,7 @@ function insert_multiplied_poly_in_hash_table!(
         # and inserting into symbolic hashtable
 
         # hash is linear, so that
-        # hash(e1 + e2) = hash(e1) + hash(e2)
+        # monom_hash(e1 + e2) = monom_hash(e1) + monom_hash(e2)
         # We also assume that the hashing vector is shared same
         # between all created hashtables
         h = htmp + bdata[poly[l]].hash

@@ -11,7 +11,7 @@ function _groebner(polynomials, kws::KeywordsHandler)
         # parameters).
         return _groebner(polynomials, kws, polynomial_repr)
     catch err
-        if isa(err, ExponentVectorOverflow)
+        if isa(err, MonomialDegreeOverflow)
             @log level = 0 """
             Possible overflow of exponent vector detected. 
             Restarting with at least $(32) bits per exponent."""
@@ -35,14 +35,15 @@ function _groebner(
     # This must copy the input, so that `polynomials` itself is not modified.
     ring, monoms, coeffs = convert_to_internal(representation, polynomials, kws)
     # Fast path for the input of zeros
-    # allzeros = remove_zeros_from_input!(ring, monoms, coeffs)
-    # allzeros && return convert_to_output(ring, polynomials, monoms, coeffs, params)
+    if isempty(monoms)
+        @log "Input consisting of zero polynomials. Returning zero."
+        return convert_to_output(ring, polynomials, monoms, coeffs, kws)
+    end
     # Check and set parameters
     params = AlgorithmParameters(ring, kws)
-    @log level = 1 "Selected parameters:\n$(params)"
     # NOTE: at this point, we already know the computation method we are going to use,
     # and the parameters are set.
-    change_ordering_if_needed!(ring, monoms, coeffs, params)
+    ring = change_ordering_if_needed!(ring, monoms, coeffs, params)
     # Compute a groebner basis!
     gbmonoms, gbcoeffs = _groebner(ring, monoms, coeffs, params)
     # Convert result back to the representation of input
@@ -88,8 +89,7 @@ function _groebner_learn(polynomials, kws)
     representation = select_polynomial_representation(polynomials, kws)
     ring, monoms, coeffs = convert_to_internal(representation, polynomials, kws)
     params = AlgorithmParameters(ring, kws)
-    @log level = 1 "Selected parameters:\n$(params)"
-    change_ordering_if_needed!(ring, monoms, coeffs, params)
+    ring = change_ordering_if_needed!(ring, monoms, coeffs, params)
     graph, gb_monoms, gb_coeffs = _groebner_learn(ring, monoms, coeffs, params)
     graph, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, kws)
 end
@@ -98,8 +98,7 @@ function _groebner_apply(graph, polynomials, kws)
     representation = select_polynomial_representation(polynomials, kws)
     ring, monoms, coeffs = convert_to_internal(representation, polynomials, kws)
     params = AlgorithmParameters(ring, kws)
-    @log level = 1 "Selected parameters:\n$(params)"
-    change_ordering_if_needed!(ring, monoms, coeffs, params)
+    ring = change_ordering_if_needed!(ring, monoms, coeffs, params)
     gb_monoms, gb_coeffs = _groebner_apply(graph, ring, monoms, coeffs, params)
     convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, kws)
 end

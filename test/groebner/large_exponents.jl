@@ -1,7 +1,7 @@
+# For Lex, DegLex, and DegRevLex, we can guarantee correctness up to total
+# degrees of 2^32-1 / 2
 
-# We guarantee correctness up to total degrees of 2^32-1
-
-@testset "large exponents handling" begin
+@testset "handling large exponents" begin
     R, (x, y) = PolynomialRing(QQ, ["x", "y"], ordering=:degrevlex)
 
     # up to 2^8-1

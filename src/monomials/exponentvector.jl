@@ -1,58 +1,69 @@
-# PowerVector{T} is a dense vector of integers {T}
-# implementing exponent vector interface.
+# ExponentVector{T} is a dense vector of integers of type T that implements the
+# monomial interface.
 
-# PowerVector stores the total degree in addition to partial degrees.
-# For example, x^2yz^5 may be stored as a *dynamic* vector [8, 2, 1, 5].
+# ExponentVector stores the total degree inline with the partial degrees.
+# For example, x^2 y z^5 is stored as a dynamic vector [8, 2, 1, 5].
 
-# PowerVector.
-# PowerVector is just a dynamic vector of integers.
-const PowerVector{T} = Vector{T} where {T <: Integer}
+# ExponentVector is just an alias for a dynamic vector of integers.
+const ExponentVector{T} = Vector{T} where {T <: Integer}
 
-# Checks whether PowerVector{T} provides a comparator function implementation
-# for the given monomial ordering of type `O`
-function is_supported_ordering(::Type{PowerVector{T}}, ::O) where {T, O}
-    O <: AbstractMonomialOrdering
+# Checks whether ExponentVector{T} provides an efficient comparator function
+# implementation for the given monomial ordering of type `O`
+function is_supported_ordering(::Type{ExponentVector{T}}, ::O) where {T, O}
+    # ExponentVector{T} supports efficient implementation of all monomial
+    # orderings
+    true
 end
 
-# Checks that there is no risk of exponent overflow for `e`.
-# If overflow if probable, throws a RecoverableException.
-function _overflow_check(e::PowerVector{T}) where {T}
-    _overflow_check(totaldeg(e), T)
+# Checks if there is a risk of exponent overflow. If overflow if possible,
+# throws a MonomialDegreeOverflow.
+function _monom_overflow_check(e::ExponentVector{T}) where {T}
+    # ExponentVector overflows if its total degree overflows
+    _monom_overflow_check(totaldeg(e), T)
 end
 
-# The maximum number of variables that a PowerVector can store.
-capacity(::Type{PowerVector{T}}) where {T} = 2^32
-capacity(p::PowerVector{T}) where {T} = capacity(typeof(p))
+# The maximum number of variables that this monomial implementation can
+# potentially store. 
+max_vars_in_monom(::Type{ExponentVector{T}}) where {T} = 2^32
+max_vars_in_monom(p::ExponentVector{T}) where {T} = max_vars_in_monom(typeof(p))
 
-# The total degree of an exponent vector
-totaldeg(pv::PowerVector) = @inbounds pv[1]
+# The total degree of a monomial
+totaldeg(pv::ExponentVector) = @inbounds pv[1]
 
-# The type of an entry of a PowerVector{T}. 
-# Note that this is not necessarily equal to T.
-# Change to entrytype?
-powertype(::Type{PowerVector{T}}) where {T} = MonomHash
-powertype(::PowerVector{T}) where {T} = MonomHash
+# The type of an entry of a ExponentVector{T}. Note that this is not necessarily
+# equal to T.
+# NOTE: this may be a bit awkward
+entrytype(::Type{ExponentVector{T}}) where {T} = MonomHash
+entrytype(p::ExponentVector{T}) where {T} = entrytype(typeof(p))
 
-make_zero_ev(::Type{PowerVector{T}}, n::Integer) where {T} = zeros(T, n + 1)
+# Constructs a constant monomial of type ExponentVector{T} with the max_vars_in_monom for
+# n variables.
+construct_const_monom(::Type{ExponentVector{T}}, n::Integer) where {T} = zeros(T, n + 1)
 
-function make_ev(::Type{PowerVector{T}}, ev::Vector{U}) where {T, U}
+# Constructs a monomial of type ExponentVector{T} with the partial degrees taken
+# from the vector `ev`
+function construct_monom(::Type{ExponentVector{T}}, ev::Vector{U}) where {T, U}
     v = Vector{T}(undef, length(ev) + 1)
     @inbounds v[1] = sum(ev)
     @inbounds v[2:end] .= ev
-    PowerVector{T}(v)
+    ExponentVector{T}(v)
 end
 
-function make_dense!(tmp::Vector{M}, pv::PowerVector{T}) where {M, T}
+# Returns a dense vector of partial degrees that correspond to the monomial `pv`.
+function monom_to_dense_vector!(tmp::Vector{M}, pv::ExponentVector{T}) where {M, T}
     @assert length(tmp) == length(pv) - 1
     @inbounds tmp[1:end] = pv[2:end]
     tmp
 end
 
-function make_hasher(::Type{PowerVector{T}}, n::Integer) where {T}
+# Returns a monomial that can be used to compute hashes of monomials of type
+# ExponentVector{T}
+function construct_hash_vector(::Type{ExponentVector{T}}, n::Integer) where {T}
     rand(MonomHash, n + 1)
 end
 
-function Base.hash(x::PowerVector{T}, b::PowerVector{MH}) where {T, MH}
+# Computes the hash of `x` with the given hash vector `b`
+function monom_hash(x::ExponentVector{T}, b::ExponentVector{MH}) where {T, MH}
     h = zero(MH)
     @inbounds for i in eachindex(x, b)
         h += MH(x[i]) * b[i]
@@ -60,20 +71,18 @@ function Base.hash(x::PowerVector{T}, b::PowerVector{MH}) where {T, MH}
     mod(h, MonomHash)
 end
 
-#------------------------------------------------------------------------------
-# Monomial orderings comparator functions implementations
-# for the `PowerVector` monomial implementation.
-# See monoms/orderings.jl for details.
+###
+# Monomial comparator functions. See monoms/orderings.jl for details.
 
-#####
-# DegRevLex exponent vector comparison
-function monom_isless(ea::PowerVector, eb::PowerVector, ::DegRevLex)
+# DegRevLex monomial comparison
+function monom_isless(ea::ExponentVector, eb::ExponentVector, ::DegRevLex)
+    @invariant length(ea) == length(eb)
+    @invariant length(ea) > 1
     if @inbounds ea[1] < eb[1]
         return true
     elseif @inbounds ea[1] != eb[1]
         return false
     end
-    # assuming length(ea) > 1
     i = length(ea)
     @inbounds while i > 2 && ea[i] == eb[i]
         i -= 1
@@ -84,17 +93,20 @@ function monom_isless(ea::PowerVector, eb::PowerVector, ::DegRevLex)
         return true
     end
 end
-# DegRevLex, but on a given range of variables [lo:hi].
-# The flag hasdegree indicates whether the total degree is stored 
-# in ea[lo] and eb[lo], respectively.
+
+# DegRevLex monomial comparison, but on a given range of variables [lo:hi]. The
+# flag `hasdegree` indicates whether the total degree is stored in ea[lo] and
+# eb[lo], respectively.
 function monom_isless(
-    ea::PowerVector,
-    eb::PowerVector,
+    ea::ExponentVector,
+    eb::ExponentVector,
     ::DegRevLex,
     lo::Int,
     hi::Int,
     hasdegree::Bool
 )
+    @invariant length(ea) == length(eb)
+    @invariant hi >= lo
     @inbounds da = hasdegree ? ea[lo] : sum(view(ea, lo:hi))
     @inbounds db = hasdegree ? eb[lo] : sum(view(eb, lo:hi))
     if da < db
@@ -115,9 +127,10 @@ function monom_isless(
     end
 end
 
-#####
 # DegLex exponent vector comparison
-function monom_isless(ea::PowerVector, eb::PowerVector, ::DegLex)
+function monom_isless(ea::ExponentVector, eb::ExponentVector, ::DegLex)
+    @invariant length(ea) == length(eb)
+    @invariant length(ea) > 1
     if @inbounds ea[1] < eb[1]
         return true
     elseif @inbounds ea[1] != eb[1]
@@ -129,17 +142,18 @@ function monom_isless(ea::PowerVector, eb::PowerVector, ::DegLex)
     end
     @inbounds return ea[i] < eb[i] ? true : false
 end
-# DegLex, but on a given range of variables [lo:hi].
-# The flag hasdegree indicates whether the total degree is stored 
-# in ea[lo] and eb[lo], respectively.
+
+# DegLex monomial comparison, but on a given range of variables [lo:hi]
 function monom_isless(
-    ea::PowerVector,
-    eb::PowerVector,
+    ea::ExponentVector,
+    eb::ExponentVector,
     ::DegLex,
     lo::Int,
     hi::Int,
     hasdegree::Bool
 )
+    @invariant length(ea) == length(eb)
+    @invariant hi >= lo
     @inbounds da = hasdegree ? ea[lo] : sum(view(ea, lo:hi))
     @inbounds db = hasdegree ? eb[lo] : sum(view(eb, lo:hi))
     if da < db
@@ -154,26 +168,28 @@ function monom_isless(
     @inbounds return ea[i] < eb[i] ? true : false
 end
 
-#####
-# Lex
-function monom_isless(ea::PowerVector, eb::PowerVector, ::Lex)
+# Lex monomial comparison
+function monom_isless(ea::ExponentVector, eb::ExponentVector, ::Lex)
+    @invariant length(ea) == length(eb)
+    @invariant length(ea) > 1
     i = 2
     @inbounds while i < length(ea) && ea[i] == eb[i]
         i += 1
     end
     @inbounds return ea[i] < eb[i] ? true : false
 end
-# Lex, but on a given range of variables [lo:hi].
-# The flag hasdegree indicates whether the total degree is stored 
-# in ea[lo] and eb[lo], respectively.
+
+# Lex monomial comparison, but on a given range of variables [lo:hi].
 function monom_isless(
-    ea::PowerVector,
-    eb::PowerVector,
+    ea::ExponentVector,
+    eb::ExponentVector,
     ::Lex,
     lo::Int,
     hi::Int,
     hasdegree::Bool
 )
+    @invariant length(ea) == length(eb)
+    @invariant hi >= lo
     i = lo + hasdegree
     @inbounds while i < hi && ea[i] == eb[i]
         i += 1
@@ -181,25 +197,28 @@ function monom_isless(
     @inbounds return ea[i] < eb[i] ? true : false
 end
 
-#####
-# Weighted exponent vector comparison.
-function monom_isless(ea::PowerVector, eb::PowerVector, w::WeightedOrdering)
+#
+# Weighted monomial comparison
+function monom_isless(ea::ExponentVector, eb::ExponentVector, w::WeightedOrdering)
     monom_isless(ea, eb, w, 1, length(ea), true)
 end
-# Weighted, but on a given range of variables [lo:hi].
+# Weighted monomial comparison, but on a given range of variables [lo:hi].
 function monom_isless(
-    ea::PowerVector,
-    eb::PowerVector,
+    ea::ExponentVector,
+    eb::ExponentVector,
     w::WeightedOrdering,
     lo::Int,
     hi::Int,
     hasdegree::Bool
 )
+    @invariant length(ea) == length(eb)
+    @invariant hi >= lo
     weights = w.weights
     common_type = promote_type(eltype(weights), eltype(ea))
     sa, sb = zero(common_type), zero(common_type)
     j = 1
     @inbounds for i in (lo + hasdegree):hi
+        # TODO: check for overflow!
         sa += weights[j] * ea[i]
         sb += weights[j] * eb[i]
         j += 1
@@ -213,15 +232,14 @@ function monom_isless(
     end
 end
 
-#####
 # Block exponent vector comparison.
-function monom_isless(ea::PowerVector, eb::PowerVector, b::BlockOrdering)
+function monom_isless(ea::ExponentVector, eb::ExponentVector, b::BlockOrdering)
     monom_isless(ea, eb, b, 1, length(ea), true)
 end
 # Block, but on a given range of variables [lo:hi].
 function monom_isless(
-    ea::PowerVector,
-    eb::PowerVector,
+    ea::ExponentVector,
+    eb::ExponentVector,
     b::BlockOrdering,
     lo::Int,
     hi::Int,
@@ -239,13 +257,13 @@ function monom_isless(
 end
 
 # Matrix exponent vector comparison.
-function monom_isless(ea::PowerVector, eb::PowerVector, m::MatrixOrdering)
+function monom_isless(ea::ExponentVector, eb::ExponentVector, m::MatrixOrdering)
     monom_isless(ea, eb, m, 1, length(ea), true)
 end
 # Matrix, but on a given range of variables [lo:hi].
 function monom_isless(
-    ea::PowerVector,
-    eb::PowerVector,
+    ea::ExponentVector,
+    eb::ExponentVector,
     m::MatrixOrdering,
     lo::Int,
     hi::Int,
@@ -270,13 +288,16 @@ function monom_isless(
     false
 end
 
-#------------------------------------------------------------------------------
-# Monomial-Monomial arithmetic.
+###
+# Monomial-Monomial arithmetic
 
-# Returns the lcm of monomials ea and eb.
-# Also writes the result to ec.
-function monom_lcm!(ec::PowerVector{T}, ea::PowerVector{T}, eb::PowerVector{T}) where {T}
-    # @assert length(ec) == length(ea) == length(eb)
+# Returns the lcm of monomials ea and eb. Also writes the result to ec.
+function monom_lcm!(
+    ec::ExponentVector{T},
+    ea::ExponentVector{T},
+    eb::ExponentVector{T}
+) where {T}
+    @invariant length(ec) == length(ea) == length(eb)
     @inbounds ec[1] = zero(T)
     @inbounds for i in 2:length(ec)
         ec[i] = max(ea[i], eb[i])
@@ -286,72 +307,74 @@ function monom_lcm!(ec::PowerVector{T}, ea::PowerVector{T}, eb::PowerVector{T}) 
 end
 
 # Checks if the gcd of monomials ea and eb is constant.
-function is_gcd_const(ea::PowerVector{T}, eb::PowerVector{T}) where {T}
-    # @assert length(ea) == length(eb)
+function is_gcd_const(ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
+    @invariant length(ea) == length(eb)
     @inbounds for i in 2:length(ea)
         if !iszero(ea[i]) && !iszero(eb[i])
             return false
         end
     end
-    return true
+    true
 end
 
-# Returns the product of monomials ea and eb.
-# Also writes the result to ec.
+# Returns the product of monomials ea and eb. Also writes the result to ec.
 function monom_product!(
-    ec::PowerVector{T},
-    ea::PowerVector{T},
-    eb::PowerVector{T}
+    ec::ExponentVector{T},
+    ea::ExponentVector{T},
+    eb::ExponentVector{T}
 ) where {T}
-    # @assert length(ec) == length(ea) == length(eb)
+    @invariant length(ec) == length(ea) == length(eb)
     @inbounds for j in 1:length(ec)
         ec[j] = ea[j] + eb[j]
     end
     ec
 end
 
-# Returns the result of monomial division ea / eb.
-# Also writes the result to ec.
+# Returns the result of monomial division ea / eb. Also writes the result to ec.
 function monom_division!(
-    ec::PowerVector{T},
-    ea::PowerVector{T},
-    eb::PowerVector{T}
+    ec::ExponentVector{T},
+    ea::ExponentVector{T},
+    eb::ExponentVector{T}
 ) where {T}
-    # @assert length(ec) == length(ea) == length(eb)
+    @invariant length(ec) == length(ea) == length(eb)
     @inbounds for j in 1:length(ec)
+        @invariant ea[j] >= eb[j]
         ec[j] = ea[j] - eb[j]
     end
     ec
 end
 
 # Checks if monomial eb divides monomial ea.
-function is_monom_divisible(ea::PowerVector{T}, eb::PowerVector{T}) where {T}
+function is_monom_divisible(ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
+    @invariant length(ea) == length(eb)
     @inbounds for j in 1:length(ea)
         if ea[j] < eb[j]
             return false
         end
     end
-    return true
+    true
 end
 
-# Checks if monomial eb divides monomial ea.
-# Also writes the resulting divisor to ec.
+# Checks if monomial eb divides monomial ea. Also writes the resulting divisor
+# to ec.
 function is_monom_divisible!(
-    ec::PowerVector{T},
-    ea::PowerVector{T},
-    eb::PowerVector{T}
+    ec::ExponentVector{T},
+    ea::ExponentVector{T},
+    eb::ExponentVector{T}
 ) where {T}
+    @invariant length(ec) == length(ea) == length(eb)
     @inbounds for j in 1:length(ec)
         if ea[j] < eb[j]
             return false, ec
         end
         ec[j] = ea[j] - eb[j]
     end
-    return true, ec
+    true, ec
 end
 
 # Checks monomials for elementwise equality
-function is_monom_elementwise_eq(ea::PowerVector{T}, eb::PowerVector{T}) where {T}
+function is_monom_elementwise_eq(ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
+    @invariant length(ea) == length(eb)
     @inbounds for i in 1:length(ea)
         if ea[i] != eb[i]
             return false
@@ -360,13 +383,13 @@ function is_monom_elementwise_eq(ea::PowerVector{T}, eb::PowerVector{T}) where {
     return true
 end
 
-#------------------------------------------------------------------------------
+###
 # Monomial division masks.
 # See f4/hashtable.jl for details.
 
-# Constructs and returns the division mask of the given monomial.
+# Constructs and returns the division mask of type Mask of the given monomial.
 function monom_divmask(
-    e::PowerVector{T},
+    e::ExponentVector{T},
     DM::Type{Mask},
     ndivvars,
     divmap,
@@ -375,14 +398,13 @@ function monom_divmask(
     ctr = one(Mask)
     res = zero(Mask)
     o = one(Mask)
-    for i in 1:ndivvars
-        for j in 1:ndivbits
-            @inbounds if e[i + 1] >= divmap[ctr]
+    @inbounds for i in 1:ndivvars
+        for _ in 1:ndivbits
+            if e[i + 1] >= divmap[ctr]
                 res |= o << (ctr - 1)
             end
             ctr += o
         end
     end
-
     res
 end

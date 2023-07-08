@@ -1,9 +1,9 @@
-# SparsePowerVector{T} is a sparse vector of integers {T}
+# SparseExponentVector{T} is a sparse vector of integers {T}
 # implementing exponent vector interface.
 
-# SparsePowerVector stores total degree in addition to partial degrees.
+# SparseExponentVector stores total degree in addition to partial degrees.
 
-struct SparsePowerVector{T <: Unsigned}
+struct SparseExponentVector{T <: Unsigned}
     #=
     x_1^3 x_20 x_43^2  
     <-->  
@@ -17,40 +17,40 @@ end
 
 # checks that there is no risk of overflow for `e`.
 # If overflow if probable, throws.
-function _overflow_check(e::SparsePowerVector{T}) where {T}
-    _overflow_check(totaldeg(e), T)
+function _monom_overflow_check(e::SparseExponentVector{T}) where {T}
+    _monom_overflow_check(totaldeg(e), T)
 end
 
-# an object of type T can store capacity(T) integers at max
-capacity(::Type{SparsePowerVector{T}}) where {T} = 2^32
-capacity(p::SparsePowerVector{T}) where {T} = capacity(typeof(p))
+# an object of type T can store max_vars_in_monom(T) integers at max
+max_vars_in_monom(::Type{SparseExponentVector{T}}) where {T} = 2^32
+max_vars_in_monom(p::SparseExponentVector{T}) where {T} = max_vars_in_monom(typeof(p))
 
 # total degree of exponent vector
-totaldeg(pv::PowerVector) = @inbounds pv[1]
+totaldeg(pv::ExponentVector) = @inbounds pv[1]
 
-powertype(::Type{PowerVector{T}}) where {T} = MonomHash
-powertype(::PowerVector{T}) where {T} = MonomHash
+entrytype(::Type{ExponentVector{T}}) where {T} = MonomHash
+entrytype(::ExponentVector{T}) where {T} = MonomHash
 
-make_zero_ev(::Type{PowerVector{T}}, n::Integer) where {T} = zeros(T, n + 1)
+construct_const_monom(::Type{ExponentVector{T}}, n::Integer) where {T} = zeros(T, n + 1)
 
-function make_ev(::Type{PowerVector{T}}, ev::Vector{U}) where {T, U}
+function construct_monom(::Type{ExponentVector{T}}, ev::Vector{U}) where {T, U}
     v = Vector{T}(undef, length(ev) + 1)
     @inbounds v[1] = sum(ev)
     @inbounds v[2:end] .= ev
-    PowerVector{T}(v)
+    ExponentVector{T}(v)
 end
 
-function make_dense!(tmp::Vector{M}, pv::PowerVector{T}) where {M, T}
+function monom_to_dense_vector!(tmp::Vector{M}, pv::ExponentVector{T}) where {M, T}
     @assert length(tmp) == length(pv) - 1
     @inbounds tmp[1:end] = pv[2:end]
     tmp
 end
 
-function make_hasher(::Type{PowerVector{T}}, n::Integer) where {T}
+function construct_hash_vector(::Type{ExponentVector{T}}, n::Integer) where {T}
     rand(MonomHash, n + 1)
 end
 
-function Base.hash(x::PowerVector{T}, b::PowerVector{MH}) where {T, MH}
+function monom_hash(x::ExponentVector{T}, b::ExponentVector{MH}) where {T, MH}
     h = zero(MH)
     @inbounds for i in eachindex(x, b)
         h += MH(x[i]) * b[i]
@@ -60,11 +60,11 @@ end
 
 #------------------------------------------------------------------------------
 # Monomial orderings implementations 
-# for the `PowerVector` monomial implementation.
+# for the `ExponentVector` monomial implementation.
 # See monoms/orderings.jl for details.
 
 # DegRevLex exponent vector comparison
-function monom_isless(ea::PowerVector, eb::PowerVector, ::DegRevLex)
+function monom_isless(ea::ExponentVector, eb::ExponentVector, ::DegRevLex)
     if @inbounds ea[1] < eb[1]
         return true
     elseif @inbounds ea[1] != eb[1]
@@ -86,7 +86,7 @@ function monom_isless(ea::PowerVector, eb::PowerVector, ::DegRevLex)
 end
 
 # DegLex exponent vector comparison
-function monom_isless(ea::PowerVector, eb::PowerVector, ::DegLex)
+function monom_isless(ea::ExponentVector, eb::ExponentVector, ::DegLex)
     if @inbounds ea[1] < eb[1]
         return true
     elseif @inbounds ea[1] != eb[1]
@@ -101,7 +101,7 @@ function monom_isless(ea::PowerVector, eb::PowerVector, ::DegLex)
 end
 
 # Lex exponent vector comparison
-function monom_isless(ea::PowerVector, eb::PowerVector, ::Lex)
+function monom_isless(ea::ExponentVector, eb::ExponentVector, ::Lex)
     i = 2
     @inbounds while i < length(ea) && ea[i] == eb[i]
         i += 1
@@ -111,7 +111,7 @@ end
 
 # Weighted Lex exponent vector comparison
 # (Currently not exported)
-function monom_isless(ea::PowerVector, eb::PowerVector, w::Weighted)
+function monom_isless(ea::ExponentVector, eb::ExponentVector, w::Weighted)
     i = 2
     weights = w.weights
     @inbounds while i < length(ea) && weights[i] * ea[i] == weights[i] * eb[i]
@@ -125,7 +125,7 @@ end
 
 # Returns the lcm of monomials ea and eb.
 # Also writes the result to ec.
-function monom_lcm!(ec::PowerVector{T}, ea::PowerVector{T}, eb::PowerVector{T}) where {T}
+function monom_lcm!(ec::ExponentVector{T}, ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
     @assert length(ec) == length(ea) == length(eb)
     @inbounds ec[1] = zero(T)
     @inbounds for i in 2:length(ec)
@@ -136,7 +136,7 @@ function monom_lcm!(ec::PowerVector{T}, ea::PowerVector{T}, eb::PowerVector{T}) 
 end
 
 # Checks if the gcd of monomials ea and eb is constant.
-function is_gcd_const(ea::PowerVector{T}, eb::PowerVector{T}) where {T}
+function is_gcd_const(ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
     @assert length(ea) == length(eb)
     @inbounds for i in 2:length(ea)
         if !iszero(ea[i]) && !iszero(eb[i])
@@ -149,9 +149,9 @@ end
 # Returns the product of monomials ea and eb.
 # Also writes the result to ec.
 function monom_product!(
-    ec::PowerVector{T},
-    ea::PowerVector{T},
-    eb::PowerVector{T}
+    ec::ExponentVector{T},
+    ea::ExponentVector{T},
+    eb::ExponentVector{T}
 ) where {T}
     @assert length(ec) == length(ea) == length(eb)
     @inbounds for j in 1:length(ec)
@@ -163,9 +163,9 @@ end
 # Returns the result of monomial division ea / eb.
 # Also writes the result to ec.
 function monom_division!(
-    ec::PowerVector{T},
-    ea::PowerVector{T},
-    eb::PowerVector{T}
+    ec::ExponentVector{T},
+    ea::ExponentVector{T},
+    eb::ExponentVector{T}
 ) where {T}
     @assert length(ec) == length(ea) == length(eb)
     @inbounds for j in 1:length(ec)
@@ -175,7 +175,7 @@ function monom_division!(
 end
 
 # Checks if monomial eb divides monomial ea.
-function is_monom_divisible(ea::PowerVector{T}, eb::PowerVector{T}) where {T}
+function is_monom_divisible(ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
     @inbounds for j in 1:length(ea)
         if ea[j] < eb[j]
             return false
@@ -187,9 +187,9 @@ end
 # Checks if monomial eb divides monomial ea.
 # Also writes the resulting divisor to ec.
 function is_monom_divisible!(
-    ec::PowerVector{T},
-    ea::PowerVector{T},
-    eb::PowerVector{T}
+    ec::ExponentVector{T},
+    ea::ExponentVector{T},
+    eb::ExponentVector{T}
 ) where {T}
     @inbounds for j in 1:length(ec)
         if ea[j] < eb[j]
@@ -201,7 +201,7 @@ function is_monom_divisible!(
 end
 
 # Checks monomials for elementwise equality
-function is_monom_elementwise_eq(ea::PowerVector{T}, eb::PowerVector{T}) where {T}
+function is_monom_elementwise_eq(ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
     @inbounds for i in 1:length(ea)
         if ea[i] != eb[i]
             return false
@@ -216,7 +216,7 @@ end
 
 # Constructs and returns the division mask of the given monomial.
 function monom_divmask(
-    e::PowerVector{T},
+    e::ExponentVector{T},
     DM::Type{Mask},
     ndivvars,
     divmap,

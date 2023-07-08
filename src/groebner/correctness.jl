@@ -109,7 +109,7 @@ end
 
 function randomized_correctness_check!(state, ring, input_zz, gb_ff, lucky, hashtable)
     prime = nextgoodprime!(lucky)  # random prime TODO
-    @log level=10 "Checking the correctness of reconstrcted basis modulo $prime"
+    @log level = 10 "Checking the correctness of reconstrcted basis modulo $prime"
     ring_ff, input_ff = reduce_modulo_p!(state.buffer, ring, input_zz, prime, deepcopy=true)
     gb_coeffs_zz = clear_denominators!(state.buffer, state.gb_coeffs_qq)
     gb_zz = copy_basis(gb_ff, gb_coeffs_zz, deepcopy=true)
@@ -117,7 +117,7 @@ function randomized_correctness_check!(state, ring, input_zz, gb_ff, lucky, hash
     # Check that initial ideal contains in the computed groebner basis modulo a
     # random prime
     normalize_basis!(ring_ff, gb_ff)   # TODO: WHY???
-    normal_form_f4!(ring_ff, gb_ff, hashtable, input_ff)
+    f4_normalform!(ring_ff, gb_ff, input_ff, hashtable)
     for i in 1:(input_ff.nprocessed)
         # meaning that something is not reduced
         if !iszero_coeffs(input_ff.coeffs[i])
@@ -126,7 +126,8 @@ function randomized_correctness_check!(state, ring, input_zz, gb_ff, lucky, hash
         end
     end
     # check that the basis is a groebner basis modulo goodprime
-    if !isgroebner_f4!(ring_ff, gb_ff, hashtable)
+    pairset = initialize_pairset(UInt64)  # TODO
+    if !f4_isgroebner!(ring_ff, gb_ff, pairset, hashtable)
         @log "Not all of S-polynomials reduce to zero modulo $prime"
         return false
     end

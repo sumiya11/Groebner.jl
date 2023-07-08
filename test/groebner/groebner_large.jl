@@ -1,4 +1,3 @@
-
 using AbstractAlgebra
 using Primes
 

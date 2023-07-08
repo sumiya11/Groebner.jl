@@ -32,7 +32,7 @@ mutable struct Pairset{Degree}
     load::Int
 end
 
-# Initializes and returns a pairset with capacity for `initial_size` pairs.
+# Initializes and returns a pairset with max_vars_in_monom for `initial_size` pairs.
 #
 # TODO: Parameter `initial_size` is currently fine-tuned across small and large
 # benchmark systems, which results in an okay "average case" solution. Maybe
@@ -247,7 +247,7 @@ function update_pairset!(
     update_ht::MonomialHashtable{M},
     idx::Int
 ) where {C <: Coeff, M <: Monom}
-    pr = powertype(M)
+    pr = entrytype(M)
     pl, bl = pairset.load, idx
     ps = pairset.pairs
     lcms = pairset.lcms
@@ -378,7 +378,7 @@ function is_redundant!(
     update_ht::MonomialHashtable{M},
     idx::Int
 ) where {M}
-    pt = powertype(M)
+    pt = entrytype(M)
     check_enlarge_hashtable!(update_ht, 0)
 
     # lead of new polynomial

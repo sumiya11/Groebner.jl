@@ -60,7 +60,7 @@ const CoeffModular = UInt64
 # Currently, this is implemented as a sequence of word-sized integers.
 # which pack a certain number of exponents together.
 # In 99% of cases, this representation is used
-const PackedExponentVector = Union{AbstractPackedPair}
+const PackedExponentVector = Union{AbstractPackedTuple}
 
 # Sparse monomial exponent vector type;
 # used for computations in very sparse problems
@@ -69,14 +69,14 @@ const SparseExponentVector = Union{Vector}
 
 # Standard monomial exponent vector type.
 # Used only as a last resort (in case packed representation fails)
-const ExponentVector = Union{PowerVector}
+const ExponentVector = Union{ExponentVector}
 
 # All supported monomial implementations in F4
 const Monom = Union{ExponentVector, SparseExponentVector, PackedExponentVector}
 
 # the type of entry in the monom
-powertype(m::Monom) = eltype(typeof(m))
-powertype(::Type{M}) where {M <: Monom} = eltype(M)
+entrytype(m::Monom) = eltype(typeof(m))
+entrytype(::Type{M}) where {M <: Monom} = eltype(M)
 
 #------------------------------------------------------------------------------
 
@@ -106,8 +106,8 @@ const ColumnIdx = Int32
 # - bad choce of a prime during rational computation (gb/groebner.jl),
 # - fail of randomized sparse linear algebra (f4/matrix.jl),
 #
-struct ExponentVectorOverflow <: Exception
+struct MonomialDegreeOverflow <: Exception
     msg::String
 end
 
-Base.showerror(io::IO, e::ExponentVectorOverflow) = print(io, e.msg)
+Base.showerror(io::IO, e::MonomialDegreeOverflow) = print(io, e.msg)

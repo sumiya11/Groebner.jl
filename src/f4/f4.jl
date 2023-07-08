@@ -45,7 +45,7 @@ function initialize_structs(
     # Pairset for storing critical pairs of basis elements,
     # Hashtable for hashing monomials stored in the basis
     basis = initialize_basis(ring, length(monoms), C)
-    pairset = initialize_pairset(powertype(M))
+    pairset = initialize_pairset(entrytype(M))
     hashtable = initialize_hashtable(ring, params.rng, M, tablesize)
 
     # Filling the basis and hashtable with the given inputs
@@ -149,31 +149,30 @@ end
 
 # Initializes Basis with the given hashtable,
 # fills input data from exponents and coeffs
-function initialize_structs_nf(
+function initialize_basis_using_existing_hashtable(
     ring::PolyRing,
     exponents::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
-    rng::Random.AbstractRNG,
-    tablesize::Int,
-    present_ht::MonomialHashtable
+    present_ht::MonomialHashtable;
+    sort_input=false,
+    normalize_input=false
 ) where {M, C <: Coeff}
-
-    # basis for storing basis elements,
-    # pairset for storing critical pairs of basis elements to assess,
-    # hashtable for hashing monomials occuring in the basis
     basis = initialize_basis(ring, length(exponents), C)
-
-    # filling the basis and hashtable with the given inputs
+    # fill the basis with the given inputs using the given hashtable as the
+    # reference
     fill_data!(basis, present_ht, exponents, coeffs)
-
-    # sort input, smaller leading terms first
-    # sort_polys_by_lead_increasing!(basis, present_ht)
-
-    # divide each polynomial by leading coefficient
-    # We do not need normalization for normal forms
-    # normalize_basis!(basis)
-
-    basis, present_ht
+    if sort_input
+        # sort input, smaller leading terms first
+        @log "Sorting input polynomials by the increasing leading term"
+        sort_polys_by_lead_increasing!(basis, present_ht)
+    end
+    if normalize_input
+        # divide each polynomial by leading coefficient
+        # We do not need normalization for normal forms
+        @log "Normalizing input polynomials"
+        normalize_basis!(ring, basis)
+    end
+    basis
 end
 
 # Initializes Basis with the given hashtable,
@@ -236,7 +235,7 @@ function reducegb_f4!(
     ht::MonomialHashtable{M},
     symbol_ht::MonomialHashtable{M}
 ) where {M}
-    etmp = make_zero_ev(M, ht.nvars)
+    etmp = construct_const_monom(M, ht.nvars)
     # etmp is now set to zero, and has zero hash
 
     reinitialize_matrix!(matrix, basis.ndivmasks)
@@ -319,7 +318,7 @@ function select_tobereduced!(
     reinitialize_matrix!(matrix, max(basis.ntotal, tobereduced.ntotal))
     resize!(matrix.lowrows, tobereduced.ntotal)
 
-    etmp = make_zero_ev(M, ht.nvars)
+    etmp = construct_const_monom(M, ht.nvars)
 
     @inbounds for i in 1:(tobereduced.ntotal)
         matrix.nrows += 1
@@ -687,7 +686,7 @@ function f4!(
     @log level = 5 "Entering F4."
     # TODO: decide on the number field arithmetic implementation
     normalize_basis!(ring, basis)
-    
+
     matrix = initialize_matrix(ring, C)
 
     # initialize hash tables for update and symbolic preprocessing steps
@@ -792,4 +791,51 @@ function f4!(
     # @invariant basis_well_formed(:output_f4!, ring, basis, hashtable)
 
     nothing
+end
+
+# Checks that all S-polynomials formed by the elements of the given basis reduce
+# to zero.
+function f4_isgroebner!(
+    ring,
+    basis::Basis{C},
+    pairset,
+    hashtable::MonomialHashtable{M}
+) where {M <: Monom, C <: Coeff}
+    matrix = initialize_matrix(ring, C)
+    symbol_ht = initialize_secondary_hashtable(hashtable)
+    update_ht = initialize_secondary_hashtable(hashtable)
+    @log "Forming S-polynomials"
+    update!(pairset, basis, hashtable, update_ht)
+    @log "All critical pairs are redundant, no S-polynomials were produced"
+    isempty(pairset) && return true
+    # Fill the F4 matrix
+    select_normal!(pairset, basis, matrix, hashtable, symbol_ht, selectall=true)
+    symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
+    # Rename the columns and sort the rows of the matrix
+    column_to_monom_mapping!(matrix, symbol_ht)
+    sort_matrix_upper_rows_decreasing!(matrix)
+    sort_matrix_lower_rows_increasing!(matrix)
+    # Reduce!
+    exact_sparse_rref_isgroebner!(ring, matrix, basis)
+end
+
+# Reduces each polynomial in the `tobereduced` by the polynomials from the `basis`.
+function f4_normalform!(
+    ring::PolyRing,
+    basis::Basis{C},
+    tobereduced::Basis{C},
+    ht::MonomialHashtable,
+) where {C <: Coeff}
+    matrix = initialize_matrix(ring, C)
+    symbol_ht = initialize_secondary_hashtable(ht)
+    # Fill the matrix
+    select_tobereduced!(basis, tobereduced, matrix, symbol_ht, ht)
+    symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
+    column_to_monom_mapping!(matrix, symbol_ht)
+    sort_matrix_upper_rows_decreasing!(matrix)
+    # Reduce the matrix
+    exact_sparse_rref_nf!(ring, matrix, tobereduced, basis)
+    # Export the rows of the matrix back to the basis elements
+    convert_rows_to_basis_elements_nf!(matrix, tobereduced, ht, symbol_ht)
+    tobereduced
 end

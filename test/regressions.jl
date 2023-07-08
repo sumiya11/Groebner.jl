@@ -1,5 +1,5 @@
 
-@testset "SI.jl cmp bug is fixed" begin
+@testset "SI.jl cmp bug" begin
     # this may crash if the comparator is invalid
     function bug(gens::Vector{Int}, exps::Vector{Vector{T}}) where {T}
         inds = collect(1:length(gens))
@@ -80,7 +80,7 @@
     ]
 
     exps =
-        Groebner.PowerVector{UInt64}[[0x0000, 0x0000], [0x0002, 0x0002], [0x0002, 0x0002]]
+        Groebner.ExponentVector{UInt64}[[0x0000, 0x0000], [0x0002, 0x0002], [0x0002, 0x0002]]
 
     bug(gens, exps)
 end

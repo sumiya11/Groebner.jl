@@ -41,7 +41,7 @@ The `groebner` routine takes the following options:
     construction. By default, this is not specified. 
     Tweak this option to lower the amount of RAM consumed.
 
-## Basic Example
+## Example
 
 Using `DynamicPolynomials`:
 
@@ -60,27 +60,44 @@ groebner([x*y^2 + x, y*x^2 + y])
 ```
 
 """
-function groebner(polynomials::AbstractVector; kws...)
+function groebner(polynomials::AbstractVector; options...)
     # `KeywordsHandler` does several useful things on initialization:
     #   - checks that the keyword arguments are valid,
-    #   - sets the global logging level for this module.
-    _groebner(polynomials, KeywordsHandler(:groebner, kws))
+    #   - sets the global logger for this module.
+    _groebner(polynomials, KeywordsHandler(:groebner, options))
 end
 
-# returns a graph
-function groebner_learn(polynomials::AbstractVector; kws...)
-    _groebner_learn(polynomials, KeywordsHandler(:groebner_learn, kws))
+"""
+    groebner_learn(polynomials; options...)
+
+Computes a Groebner basis of `polynomials` and emits the computation graph.
+The graph can be used to speed up the computation of subsequent Groebner bases.
+
+See also `groebner_apply`.
+
+## Example
+
+
+"""
+function groebner_learn(polynomials::AbstractVector; options...)
+    _groebner_learn(polynomials, KeywordsHandler(:groebner_learn, options))
 end
 
-# returns a basis
-function groebner_apply(graph, polynomials::AbstractVector; kws...)
-    _groebner_apply(graph, polynomials, KeywordsHandler(:groebner_apply, kws))
+"""
+    groebner_apply(graph, polynomials; options...)
+
+## Example
+
+
+"""
+function groebner_apply(graph, polynomials::AbstractVector; options...)
+    _groebner_apply(graph, polynomials, KeywordsHandler(:groebner_apply, options))
 end
 
 """
     isgroebner(polynomials; options...)
 
-Checks if array `polynomials` forms a Groebner basis.
+Checks if the given array `polynomials` forms a Groebner basis.
 
 ## Possible Options
 
@@ -102,7 +119,7 @@ The `isgroebner` routine takes the following options:
 - `loglevel`: Logging level. Default value is `Logging.Warn`, 
     so that only warnings are produced.
 
-## Basic Example
+## Example
 
 Using `DynamicPolynomials`:
 
@@ -121,8 +138,8 @@ isgroebner([x*y^2 + x, y*x^2 + y])
 ```
 
 """
-function isgroebner(polynomials::AbstractVector; kws...)
-    _isgroebner(polynomials, KeywordsHandler(:isgroebner, kws))
+function isgroebner(polynomials::AbstractVector; options...)
+    _isgroebner(polynomials, KeywordsHandler(:isgroebner, options))
 end
 
 """
@@ -153,7 +170,7 @@ The `isgroebner` routine takes the following options:
 - `loglevel`: Logging level. Default value is `Logging.Warn`, 
     so that only warnings are produced.
 
-## Basic Example
+## Example
 
 Using `DynamicPolynomials`:
 
@@ -186,9 +203,11 @@ julia> normalform([y^2 + x, x^2 + y], x^2 + y^2 + 1)
 ```
 
 """
-function normalform(basis::AbstractVector, tobereduced; kws...)
-    _normalform(basis, tobereduced, KeywordsHandler(:normalform, kws))
+function normalform(basis::AbstractVector, tobereduced::AbstractVector; options...)
+    _normalform(basis, tobereduced, KeywordsHandler(:normalform, options))
 end
+normalform(basis::AbstractVector, tobereduced; options...) =
+    first(normalform(basis, [tobereduced]; options...))
 
 """
     kbase(basis; options...)
@@ -209,6 +228,6 @@ julia> kbase([y^2 + x, x^2 + y], check=true)
 ```
 
 """
-function kbase(basis::AbstractVector; kws...) 
-    _kbase(basis, KeywordsHandler(:kbase, kws))
+function kbase(basis::AbstractVector; options...)
+    _kbase(basis, KeywordsHandler(:kbase, options))
 end

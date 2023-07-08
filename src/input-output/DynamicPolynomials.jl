@@ -62,7 +62,7 @@ function extract_monoms(
         exps[i] = Vector{M}(undef, multivariate_length(poly))
         @inbounds for (j, t) in enumerate(MultivariatePolynomials.monomials(poly))
             et = exponents_wrt_vars(t, var2idx)
-            exps[i][j] = make_ev(M, et)
+            exps[i][j] = construct_monom(M, et)
         end
     end
     exps
@@ -87,7 +87,7 @@ function convert_to_output(
     tmp = Vector{Int}(undef, length(origvars))
     for i in 1:length(gbexps)
         cfs::Vector{J} = convert_coeffs_to_output(gbcoeffs[i], J)
-        expvectors = [map(Int, make_dense!(tmp, gbexps[i][j])) for j in 1:length(gbexps[i])]
+        expvectors = [map(Int, monom_to_dense_vector!(tmp, gbexps[i][j])) for j in 1:length(gbexps[i])]
         expvars = map(t -> t[1] * prod(map(^, origvars, t[2])), zip(cfs, expvectors))
         exported[i] = sum(expvars)
     end
