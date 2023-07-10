@@ -47,7 +47,8 @@ function sort_polys_by_lead_increasing!(
     for a in abc
         a[1:(basis.ntotal)] = a[inds]
     end
-    nothing
+    
+    inds
 end
 
 #------------------------------------------------------------------------------

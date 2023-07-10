@@ -88,19 +88,36 @@ end
 function _groebner_learn(polynomials, kws)
     representation = select_polynomial_representation(polynomials, kws)
     ring, monoms, coeffs = convert_to_internal(representation, polynomials, kws)
+    if isempty(monoms)
+        @log "Input consisting of zero polynomials. Error will follow"
+        throw(DomainError("Input consisting of zero polynomials."))
+    end
     params = AlgorithmParameters(ring, kws)
     ring = change_ordering_if_needed!(ring, monoms, coeffs, params)
     graph, gb_monoms, gb_coeffs = _groebner_learn(ring, monoms, coeffs, params)
     graph, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, kws)
 end
 
-function _groebner_apply(graph, polynomials, kws)
+function _is_input_compatible(graph, ring, monoms, coeffs, params)
+    # TODO: Check that leading monomials coincide!
+    if graph.ring.ord != ring.ord || graph.ring.nvars != ring.nvars
+        return false
+    end
+    if length(monoms) != graph.input_basis.ntotal
+        return false
+    end
+    true
+end
+
+function _groebner_apply!(graph, polynomials, kws)
     representation = select_polynomial_representation(polynomials, kws)
-    ring, monoms, coeffs = convert_to_internal(representation, polynomials, kws)
+    ring = extract_coeffs_raw!(graph, representation, polynomials, kws)
+    # ring, monoms, coeffs = convert_to_internal(representation, polynomials, kws)
     params = AlgorithmParameters(ring, kws)
-    ring = change_ordering_if_needed!(ring, monoms, coeffs, params)
-    gb_monoms, gb_coeffs = _groebner_apply(graph, ring, monoms, coeffs, params)
-    convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, kws)
+    # ring = change_ordering_if_needed!(ring, monoms, coeffs, params)
+    # @assert _is_input_compatible(graph, ring, monoms, coeffs, params) "Input does not seem to be compatible with the learned graph."
+    flag, gb_monoms, gb_coeffs = _groebner_apply!(graph, params)
+    flag, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, kws)
 end
 
 function _groebner_learn_and_apply(
@@ -113,12 +130,17 @@ function _groebner_learn_and_apply(
     @log level = 1 "Backend: multi-modular learn & apply F4"
     graph = _groebner_learn(ring, monoms, coeffs, params)
     # TODO
-    gb_monoms, gb_coeffs = _groebner_apply(graph, ring, monoms, coeffs, params)
+    gb_monoms, gb_coeffs = _groebner_apply!(graph, ring, monoms, coeffs, params)
     gb_monoms, gb_coeffs
 end
 
-function _groebner_learn(ring, monoms, coeffs::Vector{Vector{C}}, params) where {C}
-    @log level = 2 "Groebner learn phase"
+function _groebner_learn(
+    ring,
+    monoms,
+    coeffs::Vector{Vector{C}},
+    params
+) where {C <: CoeffQQ}
+    @log level = 2 "Groebner learn phase over QQ"
     # Initialize supporting structs
     state = GroebnerState{BigInt, C}(params)
     # Initialize F4 structs
@@ -138,9 +160,8 @@ function _groebner_learn(ring, monoms, coeffs::Vector{Vector{C}}, params) where 
     # Perform reduction modulo prime and store result in basis_ff
     ring_ff, basis_ff = reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
     @log level = -6 "Reduced coefficients are" basis_ff.coeffs
-    #####
     @log level = 5 "Initializing computation graph"
-    graph = initialize_computation_graph_f4(deepcopy_basis(basis_ff), basis_ff, hashtable)
+    graph = initialize_computation_graph_f4(ring, deepcopy_basis(basis_ff), basis_ff, hashtable)
     @log level = -6 "Before F4:" basis_ff
     f4_learn!(graph, ring_ff, basis_ff, pairset, hashtable, params)
     @log level = -6 "After F4:" basis_ff
@@ -148,19 +169,33 @@ function _groebner_learn(ring, monoms, coeffs::Vector{Vector{C}}, params) where 
     graph, gb_monoms, gb_coeffs
 end
 
-function _groebner_apply(
-    graph,
+function _groebner_learn(
     ring,
     monoms,
     coeffs::Vector{Vector{C}},
     params
 ) where {C <: CoeffFF}
+    @log level = 2 "Groebner learn phase over Z_p"
+    # Initialize F4 structs
+    graph, basis, pairset, hashtable = initialize_structs_learn(ring, monoms, coeffs, params)
+    @log level = -6 "Before F4:" basis
+    f4_learn!(graph, ring, graph.gb_basis, pairset, hashtable, params)
+    @log level = -6 "After F4:" basis
+    gb_monoms, gb_coeffs = export_basis_data(graph.gb_basis, graph.hashtable)
+    graph, gb_monoms, gb_coeffs
+end
+
+function _groebner_apply!(
+    graph,
+    params
+) where {C <: CoeffFF}
     @log "Groebner Apply phase"
-    @log level = 5 "Applying modulo $(ring.ch)"
-    basis_ff = copy_basis(graph.input_basis, coeffs, deepcopy=true)
-    f4_apply!(graph, ring, basis_ff, params)
-    gb_monoms, gb_coeffs = export_basis_data(basis_ff, graph.hashtable)
-    gb_monoms, gb_coeffs
+    @log level = 5 "Applying modulo $(graph.ring.ch)"
+    # TODO!
+    # basis, _, _ = initialize_structs(ring, monoms, coeffs, params)
+    flag = f4_apply!(graph, graph.ring, graph.buf_basis, params)
+    gb_monoms, gb_coeffs = export_basis_data(graph.gb_basis, graph.hashtable)
+    flag, gb_monoms, gb_coeffs
 end
 
 function _groebner_classic_modular(

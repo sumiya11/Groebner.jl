@@ -1,6 +1,6 @@
 # Handling keyword arguments in the interface.
 
-const _default_loglevel = 10
+const _default_loglevel = 0
 
 #! format: off
 # Syntax formatting is disabled for the next several lines.
@@ -43,7 +43,7 @@ const _supported_kw_args = (
         monoms   = :default,
         loglevel = _default_loglevel
     ),
-    groebner_apply = (
+    groebner_apply! = (
         seed     = 42,
         monoms   = :default,
         loglevel = _default_loglevel

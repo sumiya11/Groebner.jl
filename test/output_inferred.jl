@@ -1,6 +1,5 @@
 
 @testset "Output type inferred" begin
-    using AbstractAlgebra
     R, (x, y) = QQ["x","y"]
     @inferred groebner([x, y])
     @inferred groebner([x, y], ordering=DegRevLex())

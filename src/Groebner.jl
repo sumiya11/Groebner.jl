@@ -20,7 +20,7 @@ invariants_enabled() = true
 Specifies if custom logging is enabled.
 If `false`, then all logging is disabled, and entails no runtime overhead.
 
-See also `@log` in `src/utils/logging.jl`.
+See also `@log` in `src/uti0-w2q3=-asqqw2q=[-edrfls/logging.jl`.
 """
 logging_enabled() = true
 
@@ -123,7 +123,7 @@ include("interface.jl")
 using SnoopPrecompile
 include("precompile.jl")
 
-export groebner, groebner_learn, groebner_apply
+export groebner, groebner_learn, groebner_apply!
 export isgroebner
 export normalform
 

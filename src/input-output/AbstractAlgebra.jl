@@ -4,7 +4,7 @@ const _AA_supported_orderings_symbols = (:lex, :deglex, :degrevlex)
 const _AA_exponent_type = UInt64
 
 function peek_at_polynomials(polynomials::Vector{T}) where {T}
-    @assert !isempty(polynomials) "Input must not be empty" 
+    @assert !isempty(polynomials) "Input must not be empty"
     p = first(polynomials)
     R = parent(p)
     nvars = AbstractAlgebra.nvars(R)
@@ -106,7 +106,34 @@ end
 function extract_coeffs_ff(representation, ring::PolyRing, poly)
     iszero(poly) && (return zero_coeffs_ff(ring))
     Ch = representation.coefftype
+    # TODO: Get rid of this composed function !
     map(Ch ∘ AbstractAlgebra.data, AbstractAlgebra.coefficients(poly))
+end
+
+function extract_coeffs_raw!(graph, representation, polys::Vector{T}, kws) where {T}
+    # write directly to graph.basis
+    # TODO: 2dim permutation to handle different orderings!
+    ring = extract_ring(polys)
+    basis = graph.buf_basis
+    perm = graph.input_permutation
+    Ch = representation.coefftype
+    _extract_coeffs_raw!(basis, perm, polys, Ch)
+    @log "Extracted coefficients from $(length(polys)) polynomials." basis perm
+    ring
+end
+
+function _extract_coeffs_raw!(basis, perm, polys, ::Type{CoeffsType}) where {CoeffsType}
+    @assert basis.ntotal == count(!iszero, polys)
+    polys = filter(!iszero, polys)
+    @inbounds for i in 1:length(polys)
+        poly = polys[perm[i]]
+        basis_cfs = basis.coeffs[i]
+        @assert length(poly) == length(basis_cfs)
+        for j in 1:length(poly)
+            basis_cfs[j] =
+                convert(CoeffsType, AbstractAlgebra.data(AbstractAlgebra.coeff(poly, j)))  # TODO: PERMUTE
+        end
+    end
 end
 
 # specialization for multivariate polynomials
@@ -122,8 +149,10 @@ function extract_monoms(
 ) where {M}
     exps = Vector{representation.monomtype}(undef, length(poly))
     @inbounds for j in 1:length(poly)
-        exps[j] =
-            construct_monom(representation.monomtype, AbstractAlgebra.exponent_vector(poly, j))
+        exps[j] = construct_monom(
+            representation.monomtype,
+            AbstractAlgebra.exponent_vector(poly, j)
+        )
     end
     exps
 end
@@ -135,7 +164,10 @@ function extract_monoms(
 ) where {P <: AbstractAlgebra.Generic.PolyElem}
     exps = Vector{representation.monomtype}(undef, 0)
     @inbounds while !iszero(poly)
-        push!(exps, construct_monom(representation.monomtype, [AbstractAlgebra.degree(poly)]))
+        push!(
+            exps,
+            construct_monom(representation.monomtype, [AbstractAlgebra.degree(poly)])
+        )
         poly = AbstractAlgebra.tail(poly)
     end
     exps
@@ -167,7 +199,8 @@ function extract_monoms(
         poly = orig_polys[i]
         exps[i] = Vector{representation.monomtype}(undef, length(poly))
         @inbounds for j in 1:length(poly)
-            exps[i][j] = construct_monom(representation.monomtype, poly.exps[(end - 1):-1:1, j])
+            exps[i][j] =
+                construct_monom(representation.monomtype, poly.exps[(end - 1):-1:1, j])
         end
     end
     exps
@@ -203,7 +236,8 @@ function extract_monoms(
         poly = orig_polys[i]
         exps[i] = Vector{representation.monomtype}(undef, length(poly))
         @inbounds for j in 1:length(poly)
-            exps[i][j] = construct_monom(representation.monomtype, poly.exps[1:(end - 1), j])
+            exps[i][j] =
+                construct_monom(representation.monomtype, poly.exps[1:(end - 1), j])
         end
     end
     exps
@@ -242,7 +276,8 @@ function convert_to_output(
     tmp      = Vector{Int}(undef, AbstractAlgebra.nvars(origring))
     @inbounds for i in 1:length(gbexps)
         cfs = map(ground, gbcoeffs[i])
-        exps = [Int.(monom_to_dense_vector!(tmp, gbexps[i][j])) for j in 1:length(gbexps[i])]
+        exps =
+            [Int.(monom_to_dense_vector!(tmp, gbexps[i][j])) for j in 1:length(gbexps[i])]
         exported[i] = origring(cfs, exps)
     end
     exported

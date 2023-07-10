@@ -66,6 +66,52 @@ function initialize_structs(
     basis, pairset, hashtable
 end
 
+function initialize_structs_learn(
+    ring::PolyRing,
+    monoms::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    params::AlgorithmParameters;
+    normalize=true
+) where {M <: Monom, C <: Coeff}
+    @log level = 3 "Initializing structs.."
+
+    tablesize = select_hashtable_size(ring, monoms)
+    @log level = 3 "Initial hashtable size is $tablesize"
+
+    # Basis for storing basis elements,
+    # Pairset for storing critical pairs of basis elements,
+    # Hashtable for hashing monomials stored in the basis
+    basis = initialize_basis(ring, length(monoms), C)
+    pairset = initialize_pairset(entrytype(M))
+    hashtable = initialize_hashtable(ring, params.rng, M, tablesize)
+
+    # Filling the basis and hashtable with the given inputs
+    fill_data!(basis, hashtable, monoms, coeffs)
+    fill_divmask!(hashtable)
+
+    @log level = 4 "Hashtable:"
+
+    @log level = 4 "Sorting input polynomials by their leading terms in non-decreasing order"
+    permutation = sort_polys_by_lead_increasing!(basis, hashtable)
+
+    # Divide each polynomial by the leading coefficient
+    if normalize
+        @log level = 4 "Normalizing input polynomials"
+        normalize_basis!(ring, basis)
+    end
+
+    @log level = 5 "Initializing computation graph"
+    graph = initialize_computation_graph_f4(
+        ring,
+        deepcopy_basis(basis),
+        basis,
+        hashtable,
+        permutation
+    )
+
+    graph, basis, pairset, hashtable
+end
+
 # Initializes Basis and MonomialHashtable structures,
 # fills input data from exponents and coeffs
 #
@@ -228,6 +274,7 @@ end
 
 # Given a `basis` object that stores some groebner basis
 # performs basis interreduction and writes the result to `basis` inplace
+# TODO: f4_reducegb!
 function reducegb_f4!(
     ring::PolyRing,
     basis::Basis,
@@ -235,13 +282,15 @@ function reducegb_f4!(
     ht::MonomialHashtable{M},
     symbol_ht::MonomialHashtable{M}
 ) where {M}
+    @log level = 100000 "Entering autoreduction" basis
+
     etmp = construct_const_monom(M, ht.nvars)
     # etmp is now set to zero, and has zero hash
 
     reinitialize_matrix!(matrix, basis.ndivmasks)
     uprows = matrix.uprows
 
-    # add all non redundant elements from basis
+    # add all non redundant elements from the basis
     # as matrix upper rows
     @inbounds for i in 1:(basis.ndivmasks) #
         matrix.nrows += 1
@@ -646,6 +695,29 @@ function basis_well_formed(key, ring, basis, hashtable)
     if key in (:input_f4!, :input_f4_learn!, :input_f4_apply!)
         (isempty(basis.monoms) || isempty(basis.coeffs)) && return false
         (basis.size == 0 || basis.ntotal == 0) && return false
+    elseif key in (:output_f4!, :output_f4_learn!, :output_f4_apply!)
+        # TODO: also check: 
+        #   are sorted: sort_polys_by_lead_increasing!(basis, ht, ord=ord)
+        basis.ndivmasks ==
+        length(basis.coeffs) ==
+        length(basis.monoms) ==
+        length(basis.divmasks) ==
+        length(basis.nonredundant) ==
+        length(basis.isredundant) || return false
+        basis.nonredundant == collect(1:(basis.ndivmasks)) || return false
+        any(!iszero, basis.isredundant) && return false
+        any(c -> !isone(c[1]), basis.coeffs) && return false
+    else
+        return false
+    end
+    for i in 1:length(basis.coeffs)
+        if !isassigned(basis.coeffs, i)
+            if isassigned(basis.monoms, i)
+                return false
+            end
+        else
+            length(basis.coeffs[i]) != length(basis.monoms[i]) && return false
+        end
     end
     true
 end
@@ -788,7 +860,7 @@ function f4!(
     standardize_basis!(ring, basis, hashtable, hashtable.ord)
 
     # @invariant hashtable_well_formed(:output_f4!, ring, hashtable)
-    # @invariant basis_well_formed(:output_f4!, ring, basis, hashtable)
+    @invariant basis_well_formed(:output_f4!, ring, basis, hashtable)
 
     nothing
 end
@@ -824,7 +896,7 @@ function f4_normalform!(
     ring::PolyRing,
     basis::Basis{C},
     tobereduced::Basis{C},
-    ht::MonomialHashtable,
+    ht::MonomialHashtable
 ) where {C <: Coeff}
     matrix = initialize_matrix(ring, C)
     symbol_ht = initialize_secondary_hashtable(ht)

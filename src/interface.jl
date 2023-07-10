@@ -73,7 +73,7 @@ end
 Computes a Groebner basis of `polynomials` and emits the computation graph.
 The graph can be used to speed up the computation of subsequent Groebner bases.
 
-See also `groebner_apply`.
+See also `groebner_apply!`.
 
 ## Example
 
@@ -84,14 +84,14 @@ function groebner_learn(polynomials::AbstractVector; options...)
 end
 
 """
-    groebner_apply(graph, polynomials; options...)
+    groebner_apply!(graph, polynomials; options...)
 
 ## Example
 
 
 """
-function groebner_apply(graph, polynomials::AbstractVector; options...)
-    _groebner_apply(graph, polynomials, KeywordsHandler(:groebner_apply, options))
+function groebner_apply!(graph, polynomials::AbstractVector; options...)
+    _groebner_apply!(graph, polynomials, KeywordsHandler(:groebner_apply!, options))
 end
 
 """
