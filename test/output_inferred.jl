@@ -1,6 +1,6 @@
 
 @testset "Output type inferred" begin
-    R, (x, y) = QQ["x","y"]
+    R, (x, y) = QQ["x", "y"]
     @inferred groebner([x, y])
     @inferred groebner([x, y], ordering=DegRevLex())
     @inferred normalform([x, y], x + 1)
@@ -9,7 +9,7 @@
     @inferred isgroebner([x, y])
     @inferred kbase([x^2, y])
 
-    R, (x, y) = GF(2^31-1)["x","y"]
+    R, (x, y) = GF(2^31 - 1)["x", "y"]
     @inferred groebner([x, y])
     @inferred groebner([x, y], ordering=DegRevLex())
     @inferred normalform([x, y], x + 1)

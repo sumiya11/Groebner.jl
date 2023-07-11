@@ -16,7 +16,10 @@
     @test Groebner.max_vars_in_monom(Groebner.PackedTuple1{UInt64, UInt16}) == 3
 
     y = [10, 20, 30, 40, 50]
-    @test_throws Groebner.MonomialDegreeOverflow Groebner.construct_monom(EV{UInt64, UInt8}, y)
+    @test_throws Groebner.MonomialDegreeOverflow Groebner.construct_monom(
+        EV{UInt64, UInt8},
+        y
+    )
 
     for B in (UInt8, UInt16)
         for T in (UInt64, UInt32)
@@ -64,7 +67,10 @@ end
     @test Groebner.totaldeg(ev) == UInt16(10)
 
     y = [10, 20, 30, 40, 50]
-    @test_throws Groebner.MonomialDegreeOverflow Groebner.construct_monom(EV{UInt64, UInt8}, y)
+    @test_throws Groebner.MonomialDegreeOverflow Groebner.construct_monom(
+        EV{UInt64, UInt8},
+        y
+    )
 
     for B in (UInt8, UInt16)
         for T in (UInt64, UInt32)
@@ -114,7 +120,10 @@ end
     @test Groebner.totaldeg(ev) == UInt16(10)
 
     y = [10, 20, 30, 40, 50]
-    @test_throws Groebner.MonomialDegreeOverflow Groebner.construct_monom(EV{UInt64, UInt8}, y)
+    @test_throws Groebner.MonomialDegreeOverflow Groebner.construct_monom(
+        EV{UInt64, UInt8},
+        y
+    )
 
     y = [1, 2, 3, 4, 5]
     ev = Groebner.construct_monom(EV{UInt64, UInt32}, y)

@@ -30,5 +30,4 @@ using Primes
             @test Base.unsafe_rational(num, den) == a
         end
     end
-
 end

@@ -17,8 +17,12 @@ end
     # R, (x, y) = AbstractAlgebra.GF(nextprime(BigInt(2)^100))["x","y"]
 
     aa_orderings_to_test = [:lex, :degrevlex, :deglex]
-    aa_grounds_to_test =
-        [AbstractAlgebra.GF(2^62 + 135), AbstractAlgebra.GF(2^31 - 1), AbstractAlgebra.GF(17), AbstractAlgebra.QQ]
+    aa_grounds_to_test = [
+        AbstractAlgebra.GF(2^62 + 135),
+        AbstractAlgebra.GF(2^31 - 1),
+        AbstractAlgebra.GF(17),
+        AbstractAlgebra.QQ
+    ]
 
     for ord in aa_orderings_to_test
         for ground in aa_grounds_to_test

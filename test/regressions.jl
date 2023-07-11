@@ -89,8 +89,11 @@ end
         2
     ]
 
-    exps =
-        Groebner.ExponentVector{UInt64}[[0x0000, 0x0000], [0x0002, 0x0002], [0x0002, 0x0002]]
+    exps = Groebner.ExponentVector{UInt64}[
+        [0x0000, 0x0000],
+        [0x0002, 0x0002],
+        [0x0002, 0x0002]
+    ]
 
     bug(gens, exps)
 end

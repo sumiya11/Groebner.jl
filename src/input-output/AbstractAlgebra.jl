@@ -48,9 +48,7 @@ function extract_ring(polynomials)
     @assert hasmethod(AbstractAlgebra.characteristic, Tuple{T})
     nv = AbstractAlgebra.nvars(R)
     # lex is the default ordering on univariate polynomials
-    ord =
-        hasmethod(AbstractAlgebra.ordering, Tuple{T}) ? AbstractAlgebra.ordering(R) :
-        :lex
+    ord = hasmethod(AbstractAlgebra.ordering, Tuple{T}) ? AbstractAlgebra.ordering(R) : :lex
     # type unstable:
     ordT = ordering_sym2typed(ord)
     ch   = AbstractAlgebra.characteristic(R)
@@ -125,7 +123,7 @@ function extract_coeffs_raw!(graph, representation, polys::Vector{T}, kws) where
     perm = graph.input_permutation
     Ch = representation.coefftype
     _extract_coeffs_raw!(basis, perm, polys, Ch)
-    @log level=-5 "Extracted coefficients from $(length(polys)) polynomials." basis perm
+    @log level = -5 "Extracted coefficients from $(length(polys)) polynomials." basis perm
     ring
 end
 
@@ -150,11 +148,7 @@ function extract_coeffs_qq(representation, ring::PolyRing, poly)
     map(Rational, AbstractAlgebra.coefficients(poly))
 end
 
-function extract_monoms(
-    representation::PolynomialRepresentation,
-    ring::PolyRing,
-    poly
-)
+function extract_monoms(representation::PolynomialRepresentation, ring::PolyRing, poly)
     exps = Vector{representation.monomtype}(undef, length(poly))
     @inbounds for j in 1:length(poly)
         exps[j] = construct_monom(

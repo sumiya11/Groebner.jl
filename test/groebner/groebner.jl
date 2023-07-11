@@ -256,9 +256,11 @@ end
         x10^2 - 71551 // 26396 * x10 + 45155 // 26396
     ]
 
-    system = [x1 + BigInt(10)^100 // BigInt(7)^50 * x2,
-    BigInt(90) * x1*x2 + BigInt(19)^50 + x10^3,
-    BigInt(2^31-1)*x1^2 + BigInt(2^30 + 2)^10 * x2^2]
+    system = [
+        x1 + BigInt(10)^100 // BigInt(7)^50 * x2,
+        BigInt(90) * x1 * x2 + BigInt(19)^50 + x10^3,
+        BigInt(2^31 - 1) * x1^2 + BigInt(2^30 + 2)^10 * x2^2
+    ]
     @test Groebner.groebner(system) == Groebner.groebner(system, certify=true)
 end
 
@@ -463,7 +465,8 @@ end
         R, (x, y, z) = PolynomialRing(field, ["x", "y", "z"], ordering=:lex)
 
         @test Groebner.normalform([R(0)], [R(0)]) == [R(0)]
-        @test Groebner.normalform([R(0), R(0), R(0)], [x + 2, x, x + 1]) == [x + 2, x, x + 1]
+        @test Groebner.normalform([R(0), R(0), R(0)], [x + 2, x, x + 1]) ==
+              [x + 2, x, x + 1]
         @test Groebner.normalform([R(0), R(0), R(0)], R(0)) == R(0)
 
         @test_throws AssertionError Groebner.normalform([], x)
@@ -497,7 +500,9 @@ end
               [y, x]
 
         fs = [x^2 + y, x * y]
-        @test Groebner.groebner(fs, linalg=linalg) == Groebner.groebner(fs) == [y^2, x * y, x^2 + y]
+        @test Groebner.groebner(fs, linalg=linalg) ==
+              Groebner.groebner(fs) ==
+              [y^2, x * y, x^2 + y]
 
         root = Groebner.rootn(3, ground=GF(2^31 - 1), ordering=:degrevlex)
         x1, x2, x3 = gens(parent(first(root)))
@@ -516,17 +521,19 @@ end
         gb1 = Groebner.groebner(ku)
         gb2 = Groebner.groebner(ku, linalg=linalg)
 
-        @test gb1 == gb2 == [
-            x9 + 1272065637 * x10 + 875418006,
-            x8 + 1529540685 * x10 + 617942964,
-            x7 + 1539832471 * x10 + 607651173,
-            x6 + 1314302432 * x10 + 833181218,
-            x5 + 1453635454 * x10 + 693848197,
-            x4 + 673118236 * x10 + 1474365406,
-            x3 + 269783061 * x10 + 1877700587,
-            x2 + 1042807874 * x10 + 1104675778,
-            x1 + 389079675 * x10 + 1758403970,
-            x10^2 + 1222705397 * x10 + 924778249
-        ]
+        @test gb1 ==
+              gb2 ==
+              [
+                  x9 + 1272065637 * x10 + 875418006,
+                  x8 + 1529540685 * x10 + 617942964,
+                  x7 + 1539832471 * x10 + 607651173,
+                  x6 + 1314302432 * x10 + 833181218,
+                  x5 + 1453635454 * x10 + 693848197,
+                  x4 + 673118236 * x10 + 1474365406,
+                  x3 + 269783061 * x10 + 1877700587,
+                  x2 + 1042807874 * x10 + 1104675778,
+                  x1 + 389079675 * x10 + 1758403970,
+                  x10^2 + 1222705397 * x10 + 924778249
+              ]
     end
 end

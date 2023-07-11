@@ -44,10 +44,7 @@ end
 
     @includetests ["isgroebner/isgroebner"]
 
-    @includetests [
-        "normalform/normalform",
-        "normalform/normalform_stress",
-    ]
+    @includetests ["normalform/normalform", "normalform/normalform_stress"]
     @includetests ["fglm/kbase"]
 
     # Groebner.jl is tested for different frontends: 
