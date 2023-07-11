@@ -17,7 +17,7 @@ function extract_coeffs_qq(
     poly::T
 ) where {T <: AbstractPolynomialLike{U}} where {U}
     iszero(poly) && (return zero_coeffs_ff(representation.coefftype, ring))
-    map(Rational, MultivariatePolynomials.coefficients(poly))
+    map(Rational, reverse(MultivariatePolynomials.coefficients(poly)))
 end
 
 function extract_coeffs_qq(
@@ -66,7 +66,7 @@ function extract_monoms(
         exps[i] = Vector{M}(undef, multivariate_length(poly))
         @inbounds for (j, t) in enumerate(MultivariatePolynomials.monomials(poly))
             et = exponents_wrt_vars(t, var2idx)
-            exps[i][j] = construct_monom(M, et)
+            exps[i][length(exps[i]) - j + 1] = construct_monom(M, et)
         end
     end
     exps
