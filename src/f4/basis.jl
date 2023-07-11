@@ -250,12 +250,12 @@ function update_pairset!(
            !is_gcd_const(ht.monoms[basis.monoms[i][1]], ht.monoms[new_lead])
             lcms[i] = get_lcm(basis.monoms[i][1], new_lead, ht, update_ht)
             deg = update_ht.hashdata[lcms[i]].deg
-            ps[newidx] = SPair(i, idx, lcms[i], pr(deg))
+            ps[newidx] = SPair(Int32(i), Int32(idx), lcms[i], pr(deg))
         else
             # lcm == 0 will mark redundancy of an S-pair
             lcms[i] = MonomIdx(0)
             # ps[newidx] = SPair(i, idx, MonomIdx(0), pr(deg))
-            ps[newidx] = SPair{pr}(i, idx, MonomIdx(0), typemax(pr))
+            ps[newidx] = SPair{pr}(Int32(i), Int32(idx), MonomIdx(0), typemax(pr))
         end
     end
 
@@ -385,7 +385,7 @@ function is_redundant!(
             # add new S-pair corresponding to Spoly(i, idx)
             lcm_new = get_lcm(lead_i, lead_new, ht, ht)
             psidx = pairset.load + 1
-            ps[psidx] = SPair{pt}(i, idx, lcm_new, pt(ht.hashdata[lcm_new].deg))
+            ps[psidx] = SPair{pt}(Int32(i), Int32(idx), lcm_new, pt(ht.hashdata[lcm_new].deg))
 
             # mark redundant
             basis.isredundant[idx] = true

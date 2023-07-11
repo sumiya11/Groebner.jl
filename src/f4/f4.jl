@@ -592,7 +592,7 @@ function select_normal!(
         end
     end
 
-    @info "Selected $(npairs) pairs"
+    @log level=-4 "Selected $(npairs) pairs in select_normal!"
 
     reinitialize_matrix!(matrix, npairs)
 

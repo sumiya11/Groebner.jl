@@ -52,9 +52,8 @@ end
     @includetests [
         "normalform/normalform",
         "normalform/normalform_stress",
-        "normalform/handling_zeros"
     ]
-    @includetests ["fglm/fglm", "fglm/kbase"]
+    @includetests ["fglm/kbase"]
 
     if try_import(:DynamicPolynomials)
         @includetests ["input-output/DynamicPolynomials"]

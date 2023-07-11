@@ -98,10 +98,10 @@ const DivisionMask = UInt32
 const ColumnIdx = Int32
 
 # TODO
-# f4 may fail in some cases and throw a RecoverableException.
-# If we catch a RecoverableException, there is a hope to recover the program.
+# f4 may fail in some cases and throw a MonomialDegreeOverflow.
+# If we catch a MonomialDegreeOverflow, there is a hope to recover the program.
 #
-# Currently, RecoverableException can be caused by one of the following:
+# Currently, MonomialDegreeOverflow can be caused by one of the following:
 # - overflow in monomial operations (monoms/packedpairs.jl),
 # - bad choce of a prime during rational computation (gb/groebner.jl),
 # - fail of randomized sparse linear algebra (f4/matrix.jl),

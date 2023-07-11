@@ -87,9 +87,9 @@ implementations_to_test = [
             @test !dl(a, b)
             @test !drl(a, b)
 
-            30 > Groebner.capacity(EV{T}) && continue
-            a = make_ev(EV{T}, ones(UInt, 30))
-            b = make_ev(EV{T}, ones(UInt, 30))
+            30 > Groebner.max_vars_in_monom(EV{T}) && continue
+            a = construct_monom(EV{T}, ones(UInt, 30))
+            b = construct_monom(EV{T}, ones(UInt, 30))
             @test !lex(a, b)
             @test !dl(a, b)
             @test !drl(a, b)
