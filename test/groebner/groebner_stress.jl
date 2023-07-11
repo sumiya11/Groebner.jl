@@ -55,7 +55,7 @@ function test_params(
 end
 
 @testset "groebner random stress tests" begin
-    rng = Random.Xoshiro(42)
+    rng = Random.MersenneTwister(42)
 
     nvariables = [2, 3]
     exps       = [1:2, 2:4]
