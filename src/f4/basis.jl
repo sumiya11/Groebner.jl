@@ -12,9 +12,9 @@
 # S-pair{Degree}, a pair of polynomials,
 struct SPair{Degree}
     # First polynomial given by its index in the basis array
-    poly1::Int
+    poly1::Int32
     # Second polynomial -//-
-    poly2::Int
+    poly2::Int32
     # Index of lcm(lead(poly1), lead(poly2)) in hashtable
     lcm::MonomIdx
     # Total degree of lcm
@@ -255,7 +255,7 @@ function update_pairset!(
             # lcm == 0 will mark redundancy of an S-pair
             lcms[i] = MonomIdx(0)
             # ps[newidx] = SPair(i, idx, MonomIdx(0), pr(deg))
-            ps[newidx] = SPair(i, idx, MonomIdx(0), typemax(pr))
+            ps[newidx] = SPair{pr}(i, idx, MonomIdx(0), typemax(pr))
         end
     end
 
@@ -273,7 +273,7 @@ function update_pairset!(
         # and has a greater degree than newly generated one then
         if ps[i].deg > m && is_monom_divisible(ps[i].lcm, new_lead, ht)
             # mark an existing pair redundant
-            ps[i] = SPair(ps[i].poly1, ps[i].poly2, MonomIdx(0), ps[i].deg)
+            ps[i] = SPair{pr}(ps[i].poly1, ps[i].poly2, MonomIdx(0), ps[i].deg)
         end
     end
 
@@ -385,7 +385,7 @@ function is_redundant!(
             # add new S-pair corresponding to Spoly(i, idx)
             lcm_new = get_lcm(lead_i, lead_new, ht, ht)
             psidx = pairset.load + 1
-            ps[psidx] = SPair(i, idx, lcm_new, pt(ht.hashdata[lcm_new].deg))
+            ps[psidx] = SPair{pt}(i, idx, lcm_new, pt(ht.hashdata[lcm_new].deg))
 
             # mark redundant
             basis.isredundant[idx] = true
@@ -591,7 +591,7 @@ function insert_lcms_in_basis_hash_table!(
                 continue
             end
 
-            ps[m] = SPair(ps[m].poly1, ps[m].poly2, hm, ps[m].deg)
+            ps[m] = SPair{typeof(ps[m].deg)}(ps[m].poly1, ps[m].poly2, hm, ps[m].deg)
             m += 1
             l += 1
             @goto Letsgo
@@ -604,7 +604,7 @@ function insert_lcms_in_basis_hash_table!(
         ht.hashdata[ht.load + 1] = Hashvalue(0, h, uhd[ll].divmask, uhd[ll].deg)
 
         ht.load += 1
-        ps[m] = SPair(ps[m].poly1, ps[m].poly2, MonomIdx(pos), ps[m].deg)
+        ps[m] = SPair{typeof(ps[m].deg)}(ps[m].poly1, ps[m].poly2, MonomIdx(pos), ps[m].deg)
         m += 1
         l += 1
     end

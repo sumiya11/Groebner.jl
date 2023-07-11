@@ -1,7 +1,23 @@
 using DynamicPolynomials
 using Groebner
-import Profile
 import Nemo
+
+function setup_memuse_tracker()
+    tracker = Ref(0)
+    function mem_use(tracker)
+        finalizer(mem_use, tracker)
+        out = Core.CoreSTDOUT()
+        Core.write(out, "Memory usage:\n")
+        Core.write(Core.CoreSTDOUT(), "GC live:  $(Base.gc_live_bytes() / 2^20) MiB\n")
+        Core.write(Core.CoreSTDOUT(), "Max. RSS:  $(Sys.maxrss() / 2^20) MiB\n")
+        nothing
+    end
+
+    finalizer(mem_use, tracker)
+    nothing
+end
+
+setup_memuse_tracker()
 
 macro pr(ex, args...)
     return quote
@@ -13,9 +29,15 @@ macro pr(ex, args...)
 end
 
 using Nemo
-include((@__DIR__) * "/aa-runge-kutta-8-7.jl");
+include((@__DIR__) * "/aa-runge-kutta-6-6.jl");
 
+n = Groebner.noonn(3)
+Groebner.groebner(n, ordering=Groebner.DegRevLex());
+
+@time gb = Groebner.groebner(system, ordering=Groebner.DegRevLex());
 @time gb = Groebner.groebner(system, ordering=Groebner.DegRevLex(), maxpairs=1000);
+
+GC.gc()
 
 vs = split(
     "a_21 a_31 a_32 a_41 a_42 a_43 a_51 a_52 a_53 a_54 a_61 a_62 a_63 a_64 a_65 a_71 a_72 a_73 a_74 a_75 a_76 a_81 a_82 a_83 a_84 a_85 a_86 a_87 b_1 b_2 b_3 b_4 b_5 b_6 b_7 b_8"
