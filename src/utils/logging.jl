@@ -5,8 +5,11 @@
 # 
 # Logging is disabled on all threads except the one with threadid() == 1.
 
-const _default_logger =
+const _default_logger = @static if VERSION >= v"1.8.0"
     Ref{Logging.ConsoleLogger}(Logging.ConsoleLogger(Logging.Info, show_limited=false))
+else
+    Ref{Logging.ConsoleLogger}(Logging.ConsoleLogger(Logging.Info))
+end
 const _default_message_loglevel = LogLevel(0)
 
 # Updates the global logging parameters in the Groebner module. 
@@ -18,16 +21,16 @@ function update_logger(; stream=nothing, loglevel=nothing)
         prev_logger = _default_logger[]
         _default_logger[] = Logging.ConsoleLogger(
             stream,
-            prev_logger.min_level,
-            show_limited=prev_logger.show_limited
+            prev_logger.min_level
+            # show_limited=prev_logger.show_limited
         )
     end
     if loglevel !== nothing
         prev_logger = _default_logger[]
         _default_logger[] = Logging.ConsoleLogger(
             prev_logger.stream,
-            loglevel,
-            show_limited=prev_logger.show_limited
+            loglevel
+            # show_limited=prev_logger.show_limited
         )
     end
     nothing
