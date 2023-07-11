@@ -16,7 +16,7 @@ using Primes
         M = prod(ms)
         nums = [rand(0:(M - 1)) for _ in 1:1000]
 
-        msinv = [invmod(ms[1], ms[2]), invmod(ms[2], ms[1])]
+        msinv = [gcdx(ms[1], ms[2])[2], gcdx(ms[1], ms[2])[3]]
         for a in nums
             rs = modular_images(a, ms)
 

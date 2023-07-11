@@ -20,17 +20,15 @@ invariants_enabled() = true
 Specifies if custom logging is enabled.
 If `false`, then all logging is disabled, and entails no runtime overhead.
 
-See also `@log` in `src/uti0-w2q3=-asqqw2q=[-edrfls/logging.jl`.
+See also `@log` in `src/utils/logging.jl`.
 """
 logging_enabled() = true
 
-# Groebner does not provide
-# a polynomial implementation of its own but relies on existing symbolic
-# computation packages in Julia for communicating with the user instead.
-# Groebner accepts as its input polynomials from the Julia packages
-# AbstractAlgebra.jl (Oscar.jl) and MultivariatePolynomials.jl. This list can be
-# extended; see `src/input-output.jl` for details. TODO: make the
-# AbstractAlgebra and MultivariatePolynomials dependencies optional!
+# Groebner does not provide a polynomial implementation of its own but relies on
+# existing symbolic computation packages in Julia for communicating with the
+# user instead. Groebner accepts as its input polynomials from the Julia
+# packages AbstractAlgebra.jl (Oscar.jl) and MultivariatePolynomials.jl. This
+# list can be extended; see `src/input-output/` for details.
 import AbstractAlgebra
 import AbstractAlgebra: base_ring, elem_type
 
@@ -78,7 +76,7 @@ include("utils/parameters.jl")
 # Input-output conversions for polynomials
 include("input-output/input-output.jl")
 include("input-output/AbstractAlgebra.jl")
-# include("input-output/DynamicPolynomials.jl")
+include("input-output/DynamicPolynomials.jl")
 
 #= generic f4 implementation =#
 #= the heart of this library =#

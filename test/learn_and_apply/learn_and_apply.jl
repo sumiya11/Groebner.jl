@@ -1,5 +1,5 @@
 
-const loglevel = 1000000
+const loglevel = 0
 
 @testset "Learn & apply" begin
     K = AbstractAlgebra.GF(2^31-1)
@@ -82,9 +82,22 @@ end
     # Cancellation of a trailing term:
     # s-poly of x + y + 1 and x*y + y is y^2
     # TODO: produce a warning here
-    # system_2 = [x + y + 1, x*y + y]
-    # flag, gb_2 = Groebner.groebner_apply!(graph, system_2, loglevel=loglevel)
-    # @test flag
-    # @test gb_1 == [x + y + 1, y^2 - 6y]
-    # @test gb_2 == [x + y + 1, y^2]
+    system_2 = [x + y + 1, x*y + y]
+    flag, gb_2 = Groebner.groebner_apply!(graph, system_2, loglevel=loglevel)
+    @test !flag
+
+    # Input is a Groebner basis already:
+    N = 3
+    for system in [
+        Groebner.noonn(4, ordering=:degrevlex, ground=K), 
+        Groebner.katsuran(5, ordering=:degrevlex, ground=K),
+        [x, x^2, y^2, x*y, x^3, y^4, x^10, y^10, x*y^10]
+    ]
+        gb = Groebner.groebner(system, loglevel=loglevel)
+        for i in 1:N
+            graph, gb_1 = Groebner.groebner_learn(gb, loglevel=loglevel)
+            flag, gb_2 = Groebner.groebner_apply!(graph, gb, loglevel=loglevel)
+            @test flag && gb_2 == gb_1 == gb
+        end
+    end 
 end

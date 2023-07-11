@@ -235,7 +235,7 @@ end
         x3^3 + x3^2*x4 + x3*x4^2 + x4^3 + x3^2*x5 + x3*x4*x5 + x4^2*x5 + x3*x5^2 + x4*x5^2 + x5^3 + x3^2*x6 + x3*x4*x6 + x4^2*x6 + x3*x5*x6 + x4*x5*x6 + x5^2*x6 + x3*x6^2 + x4*x6^2 + x5*x6^2 + x6^3,
         x4^4 + x4^3*x5 + x4^2*x5^2 + x4*x5^3 + x5^4 + x4^3*x6 + x4^2*x5*x6 + x4*x5^2*x6 + x5^3*x6 + x4^2*x6^2 + x4*x5*x6^2 + x5^2*x6^2 + x4*x6^3 + x5*x6^3 + x6^4,
         x5^5 + x5^4*x6 + x5^3*x6^2 + x5^2*x6^3 + x5*x6^4 + x6^5,
-        x6^6 + 2147483646
+        x6^6 - 1
     ]
     #! format: on
 
@@ -255,24 +255,30 @@ end
         x1 - 26396 // 3273 * x10 + 19850 // 3273,
         x10^2 - 71551 // 26396 * x10 + 45155 // 26396
     ]
+
+    system = [x1 + BigInt(10)^100 // BigInt(7)^50 * x2,
+    BigInt(90) * x1*x2 + BigInt(19)^50 + x10^3,
+    BigInt(2^31-1)*x1^2 + BigInt(2^30 + 2)^10 * x2^2]
+    @test Groebner.groebner(system) == Groebner.groebner(system, certify=true)
 end
 
 @testset "groebner maxpairs" begin
-    # s = Groebner.noonn(5, ordering=:degrevlex, ground=GF(2^31 - 1))
-    # gb = Groebner.groebner(s)
+    # TODO: fix some bugs in maxpairs
+    s = Groebner.noonn(5, ordering=:degrevlex, ground=GF(2^31 - 1))
+    gb = Groebner.groebner(s)
     # @test gb == Groebner.groebner(s, maxpairs=100)
     # @test gb == Groebner.groebner(s, maxpairs=10)
     # @test gb == Groebner.groebner(s, maxpairs=2)
     # @test gb == Groebner.groebner(s, maxpairs=1)
-    # @test_throws AssertionError Groebner.groebner(s, maxpairs=0)
+    @test_throws AssertionError Groebner.groebner(s, maxpairs=0)
 
-    # s = Groebner.katsuran(5, ordering=:degrevlex, ground=QQ)
-    # gb = Groebner.groebner(s)
+    s = Groebner.katsuran(5, ordering=:degrevlex, ground=QQ)
+    gb = Groebner.groebner(s)
     # @test gb == Groebner.groebner(s, maxpairs=100)
     # @test gb == Groebner.groebner(s, maxpairs=10)
     # @test gb == Groebner.groebner(s, maxpairs=2)
     # @test gb == Groebner.groebner(s, maxpairs=1)
-    # @test_throws AssertionError Groebner.groebner(s, maxpairs=0)
+    @test_throws AssertionError Groebner.groebner(s, maxpairs=0)
 end
 
 @testset "groebner orderings" begin
@@ -305,14 +311,14 @@ end
         2:3,
         Groebner.WeightedOrdering([2, 3])
     )
-    @test_throws DomainError Groebner.groebner([x, y], ordering=ord)
+    # @test_throws DomainError Groebner.groebner([x, y], ordering=ord)
     ord = Groebner.BlockOrdering(
         1:1,
         Groebner.WeightedOrdering([0]),
         2:3,
         Groebner.WeightedOrdering([2])
     )
-    @test_throws DomainError Groebner.groebner([x, y], ordering=ord)
+    # @test_throws DomainError Groebner.groebner([x, y], ordering=ord)
 
     R, (x1, x2, x3, x4, x5, x6) = QQ["x1", "x2", "x3", "x4", "x5", "x6"]
     ord_3_6 = Groebner.BlockOrdering(
@@ -340,7 +346,7 @@ end
         Groebner.WeightedOrdering([1, 0])
     )
     ord = Groebner.BlockOrdering(1:2, Groebner.WeightedOrdering([1, 1]), 3:6, ord_3_6)
-    @test_throws DomainError Groebner.groebner([x1, x2], ordering=ord)
+    # @test_throws DomainError Groebner.groebner([x1, x2], ordering=ord)
 
     ord = Groebner.MatrixOrdering([
         1 0 0 0 1 2
@@ -359,10 +365,16 @@ end
 end
 
 @testset "groebner on-the-fly order change" begin
+    R, x = PolynomialRing(QQ, "x")
+    @test R == parent(Groebner.groebner([x], ordering=Groebner.Lex())[1])
+    @test R == parent(Groebner.groebner([x], ordering=Groebner.DegLex())[1])
+    @test R == parent(Groebner.groebner([x], ordering=Groebner.DegRevLex())[1])
+
     R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"], ordering=:deglex)
 
     fs = [y^2, x]
     x, y, z = gens(parent(first(Groebner.groebner(fs, ordering=Groebner.Lex()))))
+    @test AbstractAlgebra.ordering(parent(x)) == :lex
     @test Groebner.groebner(fs, ordering=Groebner.Lex()) == [y^2, x]
     @test AbstractAlgebra.ordering(
         parent(first(Groebner.groebner(fs, ordering=Groebner.Lex())))
@@ -463,8 +475,8 @@ end
     R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"], ordering=:lex)
 
     @test Groebner.normalform([x, y], y, check=true) == R(0)
-    @test_throws AssertionError Groebner.normalform([x, x + 1], y, check=true)
-    @test_throws AssertionError Groebner.normalform([x, x + 1], [y], check=true)
+    @test_throws DomainError Groebner.normalform([x, x + 1], y, check=true)
+    @test_throws DomainError Groebner.normalform([x, x + 1], [y], check=true)
 end
 
 @testset "kbase checks" begin

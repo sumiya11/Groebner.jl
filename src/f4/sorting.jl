@@ -33,7 +33,7 @@ function sort_polys_by_lead_increasing!(
     gens = basis.monoms
     exps = ht.monoms
 
-    inds = collect(1:(basis.ntotal))
+    inds = collect(1:(basis.nfilled))
 
     cmps =
         (x, y) ->
@@ -42,13 +42,30 @@ function sort_polys_by_lead_increasing!(
     sort!(inds, lt=cmps, alg=_default_sorting_alg())
 
     # use array assignment insted of elemewise assignment
-    basis.monoms[1:(basis.ntotal)] = basis.monoms[inds]
-    basis.coeffs[1:(basis.ntotal)] = basis.coeffs[inds]
+    basis.monoms[1:(basis.nfilled)] = basis.monoms[inds]
+    basis.coeffs[1:(basis.nfilled)] = basis.coeffs[inds]
     for a in abc
-        a[1:(basis.ntotal)] = a[inds]
+        a[1:(basis.nfilled)] = a[inds]
     end
-    
+
     inds
+end
+
+function is_sorted_by_lead_increasing(
+    basis::Basis,
+    ht::MonomialHashtable,
+    ord::Ord=ht.ord
+) where {Ord <: AbstractMonomialOrdering}
+    gens = basis.monoms
+    exps = ht.monoms
+
+    inds = collect(1:(basis.nfilled))
+
+    cmps =
+        (x, y) ->
+            monom_isless(@inbounds(exps[gens[x][1]]), @inbounds(exps[gens[y][1]]), ord)
+
+    issorted(inds, lt=cmps)
 end
 
 #------------------------------------------------------------------------------

@@ -42,7 +42,7 @@ end
 end
 
 @testset "normalform of an array" begin
-    for field in [GF(17), GF(2^31 - 1), ZZ, QQ]
+    for field in [GF(17), GF(2^31 - 1), QQ]
         R, (x, y) = PolynomialRing(field, ["x", "y"])
         gb = [x, y]
         @test Groebner.normalform(gb, [x, y + 1]) == [R(0), R(1)]
@@ -63,5 +63,10 @@ end
             gb,
             [R(1), R(5), R(16), 3x, y, 4x * y + 2, y^2, x * y^2 - 8x + y]
         ) == [R(1), R(5), R(16), 3x, y, 4x * y + 2, y^2, x * y^2 - 8x + y]
+
+        gb = [x, R(0), y, R(0)]
+        @test Groebner.normalform(gb, [R(0)]) == [R(0)]
+        @test Groebner.normalform(gb, [R(0), R(1), R(0)]) == [R(0), R(1), R(0)]
+        @test Groebner.normalform([R(0), R(0)], [R(0), R(1), R(0)]) == [R(0), R(1), R(0)]
     end
 end

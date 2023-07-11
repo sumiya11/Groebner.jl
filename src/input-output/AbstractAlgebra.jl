@@ -1,14 +1,22 @@
 # Conversion from AbstractAlgebra.jl into internal representation.
 
+# This all is just not fantastic. 
+# We are practically dancing for rain around AbstractAlgebra.jl internals here.
+
 const _AA_supported_orderings_symbols = (:lex, :deglex, :degrevlex)
 const _AA_exponent_type = UInt64
 
 function peek_at_polynomials(polynomials::Vector{T}) where {T}
     @assert !isempty(polynomials) "Input must not be empty"
-    p = first(polynomials)
-    R = parent(p)
+    R = parent(first(polynomials))
     nvars = AbstractAlgebra.nvars(R)
-    ord = AbstractAlgebra.ordering(R)
+    ord = if hasmethod(AbstractAlgebra.ordering, Tuple{typeof(R)})
+        # if multivariate
+        AbstractAlgebra.ordering(R)
+    else
+        # if univariate, defaults to lex
+        :lex
+    end
     char = Int(AbstractAlgebra.characteristic(R))
     :abstractalgebra, length(polynomials), char, nvars, ord
 end
@@ -38,20 +46,14 @@ function extract_ring(polynomials)
     T = typeof(R)
     @assert hasmethod(AbstractAlgebra.nvars, Tuple{T})
     @assert hasmethod(AbstractAlgebra.characteristic, Tuple{T})
-
     nv = AbstractAlgebra.nvars(R)
-    # deglex is the default ordering on univariate polynomials
+    # lex is the default ordering on univariate polynomials
     ord =
         hasmethod(AbstractAlgebra.ordering, Tuple{T}) ? AbstractAlgebra.ordering(R) :
-        :deglex
+        :lex
     # type unstable:
     ordT = ordering_sym2typed(ord)
     ch   = AbstractAlgebra.characteristic(R)
-
-    # check_ground_domain(nv, ordT, ch)
-
-    # Char = determinechartype(ch)
-
     PolyRing{typeof(ordT)}(nv, ordT, Int(BigInt(ch)))
 end
 
@@ -79,14 +81,15 @@ end
 
 # specialization for univariate polynomials
 function extract_coeffs_ff(
-    representation,
-    ring::PolyRing{Ch},
+    representation::PolynomialRepresentation,
+    ring::PolyRing,
     poly::Union{AbstractAlgebra.Generic.Poly, AbstractAlgebra.PolyElem}
-) where {Ch}  # TODO
-    iszero(poly) && (return zero_coeffs_ff(ring))
+)
+    iszero(poly) && (return zero_coeffs_ff(representation.coefftype, ring))
     reverse(
         map(
-            Ch ∘ AbstractAlgebra.data,
+            # NOTE: type instable!
+            representation.coefftype ∘ AbstractAlgebra.data,
             filter(!iszero, collect(AbstractAlgebra.coefficients(poly)))
         )
     )
@@ -98,13 +101,17 @@ function extract_coeffs_qq(
     ring::PolyRing,
     poly::Union{AbstractAlgebra.Generic.Poly, AbstractAlgebra.PolyElem}
 )
-    iszero(poly) && (return zero_coeffs_qq(ring))
+    iszero(poly) && (return zero_coeffs_qq(representation.coefftype, ring))
     reverse(map(Rational, filter(!iszero, collect(AbstractAlgebra.coefficients(poly)))))
 end
 
 # specialization for multivariate polynomials
-function extract_coeffs_ff(representation, ring::PolyRing, poly)
-    iszero(poly) && (return zero_coeffs_ff(ring))
+function extract_coeffs_ff(
+    representation::PolynomialRepresentation,
+    ring::PolyRing{T},
+    poly
+) where {T}
+    iszero(poly) && (return zero_coeffs_ff(representation.coefftype, ring))
     Ch = representation.coefftype
     # TODO: Get rid of this composed function !
     map(Ch ∘ AbstractAlgebra.data, AbstractAlgebra.coefficients(poly))
@@ -118,12 +125,12 @@ function extract_coeffs_raw!(graph, representation, polys::Vector{T}, kws) where
     perm = graph.input_permutation
     Ch = representation.coefftype
     _extract_coeffs_raw!(basis, perm, polys, Ch)
-    @log "Extracted coefficients from $(length(polys)) polynomials." basis perm
+    @log level=-5 "Extracted coefficients from $(length(polys)) polynomials." basis perm
     ring
 end
 
 function _extract_coeffs_raw!(basis, perm, polys, ::Type{CoeffsType}) where {CoeffsType}
-    @assert basis.ntotal == count(!iszero, polys)
+    @assert basis.nfilled == count(!iszero, polys)
     polys = filter(!iszero, polys)
     @inbounds for i in 1:length(polys)
         poly = polys[perm[i]]
@@ -134,11 +141,12 @@ function _extract_coeffs_raw!(basis, perm, polys, ::Type{CoeffsType}) where {Coe
                 convert(CoeffsType, AbstractAlgebra.data(AbstractAlgebra.coeff(poly, j)))  # TODO: PERMUTE
         end
     end
+    nothing
 end
 
 # specialization for multivariate polynomials
 function extract_coeffs_qq(representation, ring::PolyRing, poly)
-    iszero(poly) && (return zero_coeffs_qq(ring))
+    iszero(poly) && (return zero_coeffs_qq(representation.coefftype, ring))
     map(Rational, AbstractAlgebra.coefficients(poly))
 end
 
@@ -146,7 +154,7 @@ function extract_monoms(
     representation::PolynomialRepresentation,
     ring::PolyRing,
     poly
-) where {M}
+)
     exps = Vector{representation.monomtype}(undef, length(poly))
     @inbounds for j in 1:length(poly)
         exps[j] = construct_monom(
@@ -177,7 +185,7 @@ function extract_monoms(
     representation::PolynomialRepresentation,
     ring::PolyRing,
     orig_polys::Vector{T}
-) where {M, T}
+) where {T}
     npolys = length(orig_polys)
     exps = Vector{Vector{representation.monomtype}}(undef, npolys)
     @inbounds for i in 1:npolys
@@ -192,7 +200,7 @@ function extract_monoms(
     ring::PolyRing,
     orig_polys::Vector{T},
     ::DegLex
-) where {M, T}
+) where {T}
     npolys = length(orig_polys)
     exps   = Vector{Vector{representation.monomtype}}(undef, npolys)
     for i in 1:npolys
@@ -211,7 +219,7 @@ function extract_monoms(
     ring::PolyRing,
     orig_polys::Vector{T},
     ::Lex
-) where {M, T}
+) where {T}
     npolys = length(orig_polys)
     exps   = Vector{Vector{representation.monomtype}}(undef, npolys)
     for i in 1:npolys
@@ -229,7 +237,7 @@ function extract_monoms(
     ring::PolyRing,
     orig_polys::Vector{T},
     ::DegRevLex
-) where {M, T}
+) where {T}
     npolys = length(orig_polys)
     exps   = Vector{Vector{representation.monomtype}}(undef, npolys)
     for i in 1:npolys
@@ -247,7 +255,7 @@ function convert_to_output(
     origring::R,
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{I}},
-    metainfo::KeywordsHandler
+    params::AlgorithmParameters
 ) where {
     R <: Union{AbstractAlgebra.Generic.PolyRing, AbstractAlgebra.PolyRing},
     M <: Monom,
@@ -269,7 +277,7 @@ function convert_to_output(
     origring::R,
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{I}},
-    metainfo::KeywordsHandler
+    params::AlgorithmParameters
 ) where {R, M <: Monom, I}
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
@@ -309,20 +317,16 @@ function create_polynomial(
     end
 end
 
-"""
-    `AbstractAlgebra.Generic.MPolyRing` conversion specialization
-"""
 function convert_to_output(
-    ring::PolyRing,
     origring::AbstractAlgebra.Generic.MPolyRing{T},
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{I}},
-    metainfo::KeywordsHandler
+    params::AlgorithmParameters
 ) where {M <: Monom, T, I}
     ord = AbstractAlgebra.ordering(origring)
     ordT = ordering_sym2typed(ord)
-    if metainfo.targetord != ordT
-        ordS = ordering_typed2sym(ord, metainfo.targetord)
+    if params.target_ord != ordT
+        ordS = ordering_typed2sym(ord, params.target_ord)
         origring, _ = AbstractAlgebra.PolynomialRing(
             base_ring(origring),
             AbstractAlgebra.symbols(origring),
@@ -331,10 +335,10 @@ function convert_to_output(
     end
 
     if elem_type(base_ring(origring)) <: Integer
-        coeffs_zz = scale_denominators(gbcoeffs)
-        convert_to_output(origring, gbexps, coeffs_zz, metainfo.targetord)
+        coeffs_zz = clear_denominators(gbcoeffs)
+        convert_to_output(origring, gbexps, coeffs_zz, params.target_ord)
     else
-        convert_to_output(origring, gbexps, gbcoeffs, metainfo.targetord)
+        convert_to_output(origring, gbexps, gbcoeffs, params.target_ord)
     end
 end
 
@@ -351,10 +355,10 @@ function convert_to_output(
     nv       = AbstractAlgebra.nvars(origring)
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
-    tmp      = Vector{_AA_exponenttype}(undef, nv)
+    tmp      = Vector{_AA_exponent_type}(undef, nv)
     for i in 1:length(gbexps)
         cfs  = map(ground, gbcoeffs[i])
-        exps = Matrix{_AA_exponenttype}(undef, nv + 1, length(gbcoeffs[i]))
+        exps = Matrix{_AA_exponent_type}(undef, nv + 1, length(gbcoeffs[i]))
         @inbounds for jt in 1:length(gbcoeffs[i])
             # for je in 1:nv
             #     exps[je, jt] = gbexps[i][jt][je]
@@ -382,10 +386,10 @@ function convert_to_output(
     nv       = AbstractAlgebra.nvars(origring)
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
-    tmp      = Vector{_AA_exponenttype}(undef, nv)
+    tmp      = Vector{_AA_exponent_type}(undef, nv)
     for i in 1:length(gbexps)
         cfs  = map(ground, gbcoeffs[i])
-        exps = Matrix{_AA_exponenttype}(undef, nv, length(gbcoeffs[i]))
+        exps = Matrix{_AA_exponent_type}(undef, nv, length(gbcoeffs[i]))
         @inbounds for jt in 1:length(gbcoeffs[i])
             # for je in 1:nv
             #     exps[je, jt] = gbexps[i][jt][nv - je + 1]
@@ -412,10 +416,10 @@ function convert_to_output(
     nv       = AbstractAlgebra.nvars(origring)
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
-    tmp      = Vector{_AA_exponenttype}(undef, nv)
+    tmp      = Vector{_AA_exponent_type}(undef, nv)
     for i in 1:length(gbexps)
         cfs  = map(ground, gbcoeffs[i])
-        exps = Matrix{_AA_exponenttype}(undef, nv + 1, length(gbcoeffs[i]))
+        exps = Matrix{_AA_exponent_type}(undef, nv + 1, length(gbcoeffs[i]))
         @inbounds for jt in 1:length(gbcoeffs[i])
             # for je in 1:nv
             #     exps[je, jt] = gbexps[i][jt][nv - je + 1]
@@ -443,7 +447,7 @@ function convert_to_output(
     nv       = AbstractAlgebra.nvars(origring)
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
-    tmp      = Vector{_AA_exponenttype}(undef, nv)
+    tmp      = Vector{_AA_exponent_type}(undef, nv)
     for i in 1:length(gbexps)
         cfs  = map(ground, gbcoeffs[i])
         exps = Vector{Vector{Int}}(undef, length(gbcoeffs[i]))

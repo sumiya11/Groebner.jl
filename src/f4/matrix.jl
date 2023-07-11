@@ -620,7 +620,7 @@ function interreduce_lower_part_learn!(
     end
 
     useful_reducers_sorted = sort(collect(useful_reducers))
-    @log level=10000 "" useful_reducers_sorted
+    @log level=-6 "" useful_reducers_sorted
     push!(graph.matrix_infos, (nup=matrix.nup, nlow=matrix.nlow, ncols=matrix.ncols))
     push!(graph.matrix_nonzeroed_rows, not_reduced_to_zero)
     # push!(graph.matrix_upper_rows, (matrix.up2coef, matrix.up2mult))
@@ -631,7 +631,7 @@ function interreduce_lower_part_learn!(
     push!(graph.matrix_lower_rows, (Int[], Int[]))
     # push!(graph.matrix_lower_rows, (matrix.low2coef[not_reduced_to_zero], matrix.low2mult[not_reduced_to_zero]))
     
-    # TODO: ^^^ we should learn and not reduce redundant elements in the first place!
+    # TODO: we should learn and not reduce redundant elements in the first place!
 
     # shrink matrix
     matrix.npivots = matrix.nrows = matrix.size = newpivs
@@ -722,7 +722,7 @@ function learn_sparse_rref!(
     # no copy
     # YES
     pivs, l2c_tmp = absolute_pivots!(matrix)
-    @log "absolute_pivots!" pivs l2c_tmp
+    @log level=-6 "absolute_pivots!" pivs l2c_tmp
 
     rowidx2coef = matrix.low2coef
     matrix.low2coef = l2c_tmp
@@ -735,7 +735,7 @@ function learn_sparse_rref!(
     not_reduced_to_zero = Int[]
     useful_reducers = Set{Any}()
 
-    @log "Low to coef" rowidx2coef matrix.low2mult
+    @log level=-6 "Low to coef" rowidx2coef matrix.low2mult
 
     @inbounds for i in 1:nlow
         # select next row to be reduced
@@ -746,7 +746,7 @@ function learn_sparse_rref!(
         # (no need to copy here)
         cfsref = basis.coeffs[rowidx2coef[i]]
 
-        @log "$i from $nlow" rowexps cfsref rowidx2coef
+        @log level=-7 "$i from $nlow" rowexps cfsref rowidx2coef
 
         # we load coefficients into dense array
         # into rowexps indices
@@ -777,7 +777,7 @@ function learn_sparse_rref!(
             push!(useful_reducers, rr)
         end
 
-        @log level=10 "Not zero" i rowidx2coef[i] matrix.low2mult[i]
+        @log level=-7 "Not zero" i rowidx2coef[i] matrix.low2mult[i]
 
         # matrix coeffs sparsely stores coefficients of new row
         matrix.coeffs[i] = newcfs
@@ -787,7 +787,6 @@ function learn_sparse_rref!(
         # set ref to coefficient to matrix
         # guaranteed to be from lower part
         matrix.low2coef[newrow[1]] = i
-        @log "end" i matrix.coeffs
 
         # normalize if needed
         normalize_sparse_row!(matrix.coeffs[i], arithmetic)
@@ -795,7 +794,7 @@ function learn_sparse_rref!(
     
     # TODO
     useful_reducers_sorted = sort(collect(useful_reducers))
-    @log level=10000 "" useful_reducers_sorted
+    @log level=-7 "" useful_reducers_sorted
     push!(graph.matrix_infos, (nup=matrix.nup, nlow=matrix.nlow, ncols=matrix.ncols))
     push!(graph.matrix_nonzeroed_rows, not_reduced_to_zero)
     # push!(graph.matrix_upper_rows, (matrix.up2coef, matrix.up2mult))
@@ -823,7 +822,7 @@ function apply_sparse_rref!(
     # no copy
     # YES
     pivs, l2c_tmp = absolute_pivots!(matrix)
-    @log "absolute_pivots!" pivs l2c_tmp
+    @log level=-7 "absolute_pivots!" pivs l2c_tmp
 
     rowidx2coef = matrix.low2coef
     matrix.low2coef = l2c_tmp
@@ -844,7 +843,7 @@ function apply_sparse_rref!(
         # (no need to copy here)
         cfsref = basis.coeffs[rowidx2coef[i]]
 
-        @log "$i from $nlow" rowexps cfsref rowidx2coef
+        @log level=-7 "$i from $nlow" rowexps cfsref rowidx2coef
 
         # we load coefficients into dense array
         # into rowexps indices
@@ -878,8 +877,6 @@ function apply_sparse_rref!(
         # set ref to coefficient to matrix
         # guaranteed to be from lower part
         matrix.low2coef[newrow[1]] = i
-
-        @log "end" matrix.coeffs matrix.low2coef pivs
 
         # normalize if needed
         normalize_sparse_row!(matrix.coeffs[i], arithmetic)
@@ -1244,7 +1241,7 @@ function convert_rows_to_basis_elements!(
         basis.monoms[crs + i] = matrix.lowrows[i]
     end
 
-    basis.ntotal += matrix.npivots
+    basis.nfilled += matrix.npivots
 end
 
 function convert_rows_to_basis_elements_nf!(
@@ -1257,8 +1254,8 @@ function convert_rows_to_basis_elements_nf!(
 
     @inbounds for i in 1:(matrix.npivots)
         basis.nprocessed += 1
-        basis.ndivmasks += 1
-        basis.nonredundant[basis.ndivmasks] = basis.nprocessed
+        basis.nnonredundant += 1
+        basis.nonredundant[basis.nnonredundant] = basis.nprocessed
         if isassigned(matrix.coeffs, i)
             row = matrix.lowrows[i]
             insert_in_basis_hash_table_pivots(row, ht, symbol_ht, matrix.col2hash)

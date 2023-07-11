@@ -226,7 +226,7 @@ function monom_isless(
     if sa < sb
         true
     elseif sa == sb
-        monom_isless(ea, eb, w.ord, lo + hasdegree, hi, false)
+        false
     else
         false
     end

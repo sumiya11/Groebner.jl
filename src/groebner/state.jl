@@ -1,5 +1,5 @@
 
-# Acts as a buffer when doing arithmetic with big rational numbers
+# Acts as a buffer when doing arithmetic with big rationals
 mutable struct CoefficientBuffer
     # Buffers for scaling coefficients
     scalebuf1::BigInt
@@ -41,17 +41,12 @@ mutable struct CoefficientBuffer
     end
 end
 
-"""
-    GroebnerState
-
-
-"""
+# The state of the modular GB 
 mutable struct GroebnerState{T1 <: CoeffZZ, T2 <: CoeffQQ}
     gb_coeffs_zz::Vector{Vector{T1}}
     prev_gb_coeffs_zz::Vector{Vector{T1}}
     gb_coeffs_qq::Vector{Vector{T2}}
     buffer::CoefficientBuffer
-
     function GroebnerState{T1, T2}(params) where {T1 <: CoeffZZ, T2 <: CoeffQQ}
         new(
             Vector{Vector{T1}}(undef, 0),
@@ -62,7 +57,7 @@ mutable struct GroebnerState{T1 <: CoeffZZ, T2 <: CoeffQQ}
     end
 end
 
-function majority_vote!(accumulator, basis_ff, tracer, params)
+function majority_vote!(state, basis_ff, tracer, params)
     true
 end
 
@@ -107,15 +102,14 @@ function clear_denominators!(
     clear_denominators!(buffer, coeffs_zz, coeffs_qq)
 end
 
-function clear_denominators(coeffs_qq::Vector{Vector{<:CoeffQQ}})
-    clear_denominators!(CoefficientBuffer(), coeffs_zz)
+function clear_denominators(coeffs_qq::Vector{Vector{T}}) where {T <: CoeffQQ}
+    clear_denominators!(CoefficientBuffer(), coeffs_qq)
 end
 
-"""
-    clear_denominators!
+function clear_denominators(coeffs_qq::Vector{T}) where {T <: CoeffQQ}
+    first(clear_denominators([coeffs_qq]))
+end
 
-
-"""
 function clear_denominators!(
     buffer::CoefficientBuffer,
     basis::Basis{T};
@@ -166,11 +160,6 @@ function reduce_modulo_p!(
     ring_ff, coeffs_ff
 end
 
-"""
-    reduce_modulo_p!
-
-
-"""
 function reduce_modulo_p!(
     buffer::CoefficientBuffer,
     ring::PolyRing,
@@ -178,14 +167,12 @@ function reduce_modulo_p!(
     prime;
     deepcopy=true
 )
-    # TODO: do copy_data
     ring_ff, coeffs_ff = reduce_modulo_p!(buffer, ring, basis.coeffs, prime)
     ring_ff, copy_basis(basis, coeffs_ff, deepcopy=deepcopy)
 end
 
-#------------------------------------------------------------------------------
-
-# Resizes coeffaccum so that it has enough space to store gb_coeffs 
+# Resizes the state so that it has enough space to store the GB coefficients
+# `gb_coeffs`
 function resize_state_if_needed!(
     state::GroebnerState,
     gb_coeffs::Vector{Vector{T}}
@@ -194,6 +181,7 @@ function resize_state_if_needed!(
     resize!(state.prev_gb_coeffs_zz, length(gb_coeffs))
     resize!(state.gb_coeffs_qq, length(gb_coeffs))
     @inbounds for i in 1:length(gb_coeffs)
+        # TODO: we are being too generous with memory here
         state.gb_coeffs_zz[i] = [BigInt(0) for _ in 1:length(gb_coeffs[i])]
         state.prev_gb_coeffs_zz[i] = [BigInt(0) for _ in 1:length(gb_coeffs[i])]
         state.gb_coeffs_qq[i] = [Rational{BigInt}(1) for _ in 1:length(gb_coeffs[i])]
@@ -201,18 +189,60 @@ function resize_state_if_needed!(
     nothing
 end
 
-# Check that the groebner basis modulo a prime has the same structure
-# as the groebner basis over rationals
-function assure_structure(state, gb_coeffs_ff)
-    if length(state.gb_coeffs_zz) != gb_coeffs_ff
-        return false
+# Reconstruct coefficients of the basis using CRT.
+#
+# state.gb_coeffs_zz -- coefficients of the basis modulo P1*P2*...*Pk.
+# basis_ff.coeffs -- coefficients of the basis modulo new prime P.
+# 
+# Writes the coefficients of the basis modulo P * P1*P2*...*Pk to
+# state.gb_coeffs_zz inplace
+function crt_reconstruct!(
+    state::GroebnerState,
+    ring::PolyRing,
+    lucky::LuckyPrimes,
+    basis_ff::Basis{T}
+) where {T <: CoeffFF}
+    if isempty(state.gb_coeffs_zz)
+        # If first time reconstruction
+        resize_state_if_needed!(state, basis_ff.coeffs)
+        crt_reconstruct_trivial!(state, basis_ff.coeffs)
+        Base.GMP.MPZ.mul_ui!(lucky.modulo, last(lucky.primes))
+        return nothing
     end
-    @inbounds for i in 1:length(gb_coeffs_ff)
-        if length(state.gb_coeffs_zz[i]) != gb_coeffs_ff[i]
-            return false
+    @invariant length(basis_ff.coeffs) == length(state.gb_coeffs_zz)
+    gb_coeffs_zz = state.gb_coeffs_zz
+    prev_gb_coeffs_zz = state.prev_gb_coeffs_zz
+    # Copy current basis coefficients to the previous array
+    @inbounds for i in 1:length(gb_coeffs_zz)
+        @invariant length(gb_coeffs_zz[i]) == length(prev_gb_coeffs_zz[i])
+        for j in 1:length(gb_coeffs_zz[i])
+            Base.GMP.MPZ.set!(prev_gb_coeffs_zz[i][j], gb_coeffs_zz[i][j])
         end
     end
-    return true
+    # Set the buffers for CRT and precompute some values
+    buffer = state.buffer
+    buf = buffer.reconstructbuf1
+    n1, n2 = buffer.reconstructbuf2, buffer.reconstructbuf3
+    M = buffer.reconstructbuf4
+    bigch = buffer.reconstructbuf5
+    invm1, invm2 = buffer.reconstructbuf6, buffer.reconstructbuf7
+    characteristic = ring.ch
+    Base.GMP.MPZ.set_ui!(bigch, characteristic)
+    Base.GMP.MPZ.mul_ui!(M, lucky.modulo, characteristic)
+    Base.GMP.MPZ.gcdext!(buf, invm1, invm2, lucky.modulo, bigch)
+    gb_coeffs_ff = basis_ff.coeffs
+    @invariant length(gb_coeffs_zz) == length(gb_coeffs_ff)
+    @inbounds for i in 1:length(gb_coeffs_zz)
+        @invariant length(gb_coeffs_zz[i]) == length(gb_coeffs_ff[i])
+        for j in 1:length(gb_coeffs_zz[i])
+            ca = gb_coeffs_zz[i][j]
+            cf = gb_coeffs_ff[i][j]
+            CRT!(M, buf, n1, n2, ca, invm1, cf, invm2, lucky.modulo, bigch)
+            Base.GMP.MPZ.set!(gb_coeffs_zz[i][j], buf)
+        end
+    end
+    Base.GMP.MPZ.mul_ui!(lucky.modulo, last(lucky.primes))
+    nothing
 end
 
 function crt_reconstruct_trivial!(
@@ -228,77 +258,31 @@ function crt_reconstruct_trivial!(
     nothing
 end
 
-# G == coeffaccum   mod P1*P2*...*Pk
-# G == gb_coeffs_ff mod P
+# Reconstruct coefficients of the basis using rational reconstrction.
 #
-# Finds G using CRT and writes it to coeffaccum
-function crt_reconstruct!(
-    state::GroebnerState,
-    ring::PolyRing,
-    lucky::LuckyPrimes,
-    basis_ff::Basis{T}
-) where {T <: CoeffFF}
-    if isempty(state.gb_coeffs_zz)
-        # If first time reconstruction
-        resize_state_if_needed!(state, basis_ff.coeffs)
-        crt_reconstruct_trivial!(state, basis_ff.coeffs)
-    else
-        gb_coeffs_zz = state.gb_coeffs_zz
-        prev_gb_coeffs_zz = state.prev_gb_coeffs_zz
-        # copy to previous gb coeffs
-        @inbounds for i in 1:length(basis_ff.coeffs)
-            for j in 1:length(basis_ff.coeffs[i])
-                Base.GMP.MPZ.set!(prev_gb_coeffs_zz[i][j], gb_coeffs_zz[i][j])
-            end
-        end
-        buffer = state.buffer
-        buf = buffer.reconstructbuf1
-        n1, n2 = buffer.reconstructbuf2, buffer.reconstructbuf3
-        M = buffer.reconstructbuf4
-        bigch = buffer.reconstructbuf5
-        invm1, invm2 = buffer.reconstructbuf6, buffer.reconstructbuf7
-        
-        ch = ring.ch
-
-        Base.GMP.MPZ.set_ui!(bigch, ch)
-        Base.GMP.MPZ.mul_ui!(M, lucky.modulo, ch)
-        Base.GMP.MPZ.gcdext!(buf, invm1, invm2, lucky.modulo, bigch)
-
-        gb_coeffs_ff = basis_ff.coeffs
-        
-        @inbounds for i in 1:length(gb_coeffs_zz)
-            for j in 1:length(gb_coeffs_zz[i])
-                ca = gb_coeffs_zz[i][j]
-                cf = gb_coeffs_ff[i][j]
-                CRT!(M, buf, n1, n2, ca, invm1, cf, invm2, lucky.modulo, bigch)
-                Base.GMP.MPZ.set!(gb_coeffs_zz[i][j], buf)
-            end
-        end
-    end
-    updatemodulo!(lucky)
-end
-
-# N//D == coeffaccum (mod primetracker.modulo)
-# Finds N and D using rational reconstruction
-# and writes it to coeffaccum
-function rational_reconstruct!(
-    state::GroebnerState,
-    lucky::LuckyPrimes
-)
+# state.gb_coeffs_zz -- coefficients of the basis modulo P
+# state.gb_coeffs_qq -- coefficients of the basis in the rationals
+# 
+# Writes the coefficients of the basis modulo P reconstructed to rational
+# numbers to state.gb_coeffs_qq inplace
+#
+# Returns true is the reconstrction is successfull, false otherwise.
+function rational_reconstruct!(state::GroebnerState, lucky::LuckyPrimes)
     modulo = lucky.modulo
-
-    buffer = state.buffer
+    buffer     = state.buffer
     bnd        = rational_reconstruction_bound(modulo)
     buf, buf1  = buffer.reconstructbuf1, buffer.reconstructbuf2
     buf2, buf3 = buffer.reconstructbuf3, buffer.reconstructbuf4
     u1, u2     = buffer.reconstructbuf5, buffer.reconstructbuf6
     u3, v1     = buffer.reconstructbuf7, buffer.reconstructbuf8
     v2, v3     = buffer.reconstructbuf9, buffer.reconstructbuf10
-
     gb_coeffs_zz = state.gb_coeffs_zz
     gb_coeffs_qq = state.gb_coeffs_qq
-
+    @invariant length(gb_coeffs_zz) == length(gb_coeffs_qq)
     @inbounds for i in 1:length(gb_coeffs_zz)
+        @invariant length(gb_coeffs_zz[i]) == length(gb_coeffs_qq[i])
+        # skip reconstrction of the first coefficient, it is equal to one in the
+        # reduced basis
         for j in 2:length(gb_coeffs_zz[i])
             cz = gb_coeffs_zz[i][j]
             cq = gb_coeffs_qq[i][j]
@@ -320,11 +304,9 @@ function rational_reconstruct!(
                 cz,
                 modulo
             )
-            if !success
-                return false
-            end
+            !success && return false
         end
+        @invariant isone(gb_coeffs_qq[i][1])
     end
-
-    return true
+    true
 end

@@ -64,14 +64,8 @@ end
 end
 
 
-# finite field arithmetic in case of UInt8, UInt16, UInt32, UInt64
 function select_arithmetic(coeffs::Vector{Vector{T}}, ch) where {T <: CoeffFF}
-    SpecializedBuiltinArithmeticZp(unsigned(ch))
-end
-
-# finite field arithmetic in case of UInt128
-function select_arithmetic(coeffs::Vector{Vector{UInt128}}, ch)
-    SpecializedBuiltinArithmeticZp(unsigned(ch))
+    SpecializedBuiltinArithmeticZp(convert(T, ch))
 end
 
 # arithmetic over rational numbers

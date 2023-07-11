@@ -1,163 +1,116 @@
 
-# If one of the primes in the modular computation 
-# was unlucky all along
-function _monte_carlo_error(msg)
-    # @warn msg
-    # TODO
-    # throw(RecoverableException(msg))
-end
+@noinline __not_a_basis_error(basis, msg) = throw(DomainError(basis, msg))
 
-function _not_a_basis_error(basis, msg)
-    throw(DomainError(basis, msg))
-end
-
-# Checks if basis is groebner basis with a randomized algorithm
-function _check_isgroebner(basis)
-    !isgroebner(basis, certify=false) &&
-        _not_a_basis_error(basis, "Input does not look like a groebner basis.")
-end
-
-# Checks that all computed bases are of the same shape,
-# if that is not the case, throws
-function basis_shape_control(gb_coeffs1::AbstractVector, gb_coeffs2::AbstractVector)
-    if length(gb_coeffs1) != length(gb_coeffs2)
-        _monte_carlo_error("Unlucky reduction to zero in probabilistic linear algebra.")
-    end
-    @inbounds for p in 1:length(gb_coeffs1)
-        if length(gb_coeffs1[p]) != length(gb_coeffs2[p])
-            _monte_carlo_error("Unlucky cancellation of basis coefficients modulo a prime.")
-        end
-    end
-    nothing
-end
-
-# Heuristic check for correctness of the reconstructed basis over rationals
-function rational_correctness_bound(modulo::BigInt)
-    setprecision(2 * Base.GMP.MPZ.sizeinbase(modulo, 2)) do
-        ceil(BigInt, BigFloat(modulo)^(1 / 10))
-    end
-end
-
-function basis_coeff_control(primetracker, coeffaccum)
-    modulo = primetracker.modulo
-    bound = rational_correctness_bound(modulo)
-    for c in coeffaccum.gb_coeffs_qq
-        for cc in c
-            if cc > bound
-                return nothing
-            end
-        end
-    end
-    _monte_carlo_error("Unlucky cancellation of basis coefficients modulo a prime.")
-    nothing
-end
-
-# Check that the basis is reconstructed correctly.
+# Checks if the basis is reconstructed correctly.
 # There are 3 levels of checks:
-#   - heuristic check (discards obviously bad cases),
-#   - randomized check,
-#   - certification.
+#   - heuristic check (dedicated to discard obviously bad cases),
+#   - randomized check (checks correctness modulo a prime),
+#   - certification (checks correctness directly over the rationals).
 #
-# By default, only the first two are active, which gives the correct basis
-# with a high probability
-function correctness_check!(state, lucky, ring, basis_zz, basis_ff, hashtable, params)
-    # TODO
-    # First we check coefficients with a heuristic check only
+# Usually, by default, only the first two are active, which gives the correct
+# basis with a high probability
+function correctness_check!(
+    state,
+    lucky,
+    ring,
+    basis_qq,
+    basis_zz,
+    basis_ff,
+    hashtable,
+    params
+)
+    # First we check the size of the coefficients with a heuristic
     if params.heuristic_check
         if !heuristic_correctness_check(state.gb_coeffs_qq, lucky.modulo)
-            @log level = 8 "Heuristic check failed."
+            @log level = -2 "Heuristic check failed."
             return false
         end
-        @log level = 8 "Heuristic check passed!"
+        @log level = -2 "Heuristic check passed!"
     end
-    # then check that a basis is also a basis modulo a prime
+    # Then check that a basis is also a basis modulo a prime
     if params.randomized_check
         if !randomized_correctness_check!(state, ring, basis_zz, basis_ff, lucky, hashtable)
-            @log level = 8 "Randomized check failed."
+            @log level = -2 "Randomized check failed."
             return false
         end
-        @log level = 8 "Randomized check passed!"
+        @log level = -2 "Randomized check passed!"
     end
-    if params.guaranteed_check
-        return guaranteed_correctness_check!(state, ring, basis_zz, basis_ff, ht)
+    if params.certify_check
+        return certify_correctness_check!(state, ring, basis_qq, basis_ff, hashtable)
     end
     true
 end
 
-threshold_in_heuristic(sznum, szden, szmod) = 1.30 * (sznum + sznum) >= szmod
+# Heuristic bound on the size of coefficients of the basis.
+# TODO: szden --> sznum
+threshold_in_heuristic_check(sznum, szden, szmod) = 1.30 * (sznum + sznum) >= szmod
 
 # Checks that 
-# ln(num) + ln(den) < c ln(modulo)
-# for all coefficients num/den
-function heuristic_correctness_check(gbcoeffs_qq, modulo)
+#   ln(num) + ln(den) < C ln(modulo)
+# for all coefficients of form num/den
+function heuristic_correctness_check(gb_coeffs_qq, modulo)
     lnm = Base.GMP.MPZ.sizeinbase(modulo, 2)
-    @inbounds for i in 1:length(gbcoeffs_qq)
-        for j in 1:length(gbcoeffs_qq[i])
-            n = numerator(gbcoeffs_qq[i][j])
-            d = denominator(gbcoeffs_qq[i][j])
-            if threshold_in_heuristic(
+    @inbounds for i in 1:length(gb_coeffs_qq)
+        for j in 1:length(gb_coeffs_qq[i])
+            n = numerator(gb_coeffs_qq[i][j])
+            d = denominator(gb_coeffs_qq[i][j])
+            if threshold_in_heuristic_check(
                 Base.GMP.MPZ.sizeinbase(n, 2),
                 Base.GMP.MPZ.sizeinbase(d, 2),
                 lnm
             )
+                @log level = -2 "Heuristic check failed for coefficient $n/$d and modulo $modulo"
                 return false
             end
         end
     end
-    return true
+    true
 end
 
 function randomized_correctness_check!(state, ring, input_zz, gb_ff, lucky, hashtable)
-    prime = nextgoodprime!(lucky)  # random prime TODO
-    @log level = 10 "Checking the correctness of reconstrcted basis modulo $prime"
+    prime = next_check_prime!(lucky)
+    @log level = -2 "Checking the correctness of reconstrcted basis modulo $prime"
     ring_ff, input_ff = reduce_modulo_p!(state.buffer, ring, input_zz, prime, deepcopy=true)
     gb_coeffs_zz = clear_denominators!(state.buffer, state.gb_coeffs_qq)
     gb_zz = copy_basis(gb_ff, gb_coeffs_zz, deepcopy=true)
     ring_ff, gb_ff = reduce_modulo_p!(state.buffer, ring, gb_zz, prime, deepcopy=false)
     # Check that initial ideal contains in the computed groebner basis modulo a
     # random prime
-    normalize_basis!(ring_ff, gb_ff)   # TODO: WHY???
+    normalize_basis!(ring_ff, gb_ff)   # TODO: WHY is this here???
     f4_normalform!(ring_ff, gb_ff, input_ff, hashtable)
     for i in 1:(input_ff.nprocessed)
         # meaning that something is not reduced
         if !iszero_coeffs(input_ff.coeffs[i])
-            @log "Some input generators are not in the ideal generated by the reconstructed basis modulo $prime"
+            @log level = -2 "Some input generators are not in the ideal generated by the reconstructed basis modulo $prime"
             return false
         end
     end
-    # check that the basis is a groebner basis modulo goodprime
-    pairset = initialize_pairset(UInt64)  # TODO
+    # Check that the basis is a groebner basis modulo a prime
+    pairset = initialize_pairset(UInt64)
     if !f4_isgroebner!(ring_ff, gb_ff, pairset, hashtable)
-        @log "Not all of S-polynomials reduce to zero modulo $prime"
+        @log level = -2 "Not all of S-polynomials reduce to zero modulo $prime"
         return false
     end
-    return true
+    true
 end
 
-function guaranteed_correctness_check!(state, ring, basis_zz, basis_ff, hashtable)
-    # @info "Setting parameter certify=true in groebner is not recommended."
-
-    # TODO
-    # gens_qq = 
-    # gens_qq, _ = initialize_structs(ring, gens_tmp_ff.monoms[1:(gens_tmp_ff.ntotal)], coeffs, ht)
-    # gb_qq, _   = initialize_structs(ring, gbexps, gb_coeffs_qq, ht)
-
-    # normalize_basis!(ring, gb_qq)
-    # normalize_basis!(ring, gens_qq)
-
-    # gens_qq_copy = deepcopy_basis(gens_qq)
-
-    # normal_form_f4!(ring, gb_qq, ht, gens_qq_copy)
-    # for i in 1:(gens_qq_copy.ndone)
-    #     # meaning that it is not reduced
-    #     if !iszero_coeffvector(gens_qq_copy.coeffs[i])
-    #         return false
-    #     end
-    # end
-
-    # if !isgroebner_f4!(ring, gb_qq, ht)
-    #     return false
-    # end
-
-    return true
+function certify_correctness_check!(state, ring, input_qq, gb_ff, hashtable)
+    @log level = -2 "Checking the correctness of reconstructed basis over the rationals"
+    gb_qq = copy_basis(gb_ff, state.gb_coeffs_qq, deepcopy=true)
+    input_qq = deepcopy_basis(input_qq)
+    f4_normalform!(ring, gb_qq, input_qq, hashtable)
+    for i in 1:(input_qq.nprocessed)
+        # Meaning that some polynomial is not reduced to zero
+        if !iszero_coeffs(input_qq.coeffs[i])
+            @log level = -2 "Some input generators are not in the ideal generated by the reconstructed basis"
+            return false
+        end
+    end
+    # Check that the basis is a groebner basis modulo a prime
+    pairset = initialize_pairset(UInt64)
+    if !f4_isgroebner!(ring, gb_qq, pairset, hashtable)
+        @log level = -2 "Not all of S-polynomials reduce to zero"
+        return false
+    end
+    true
 end

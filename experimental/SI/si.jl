@@ -3,12 +3,10 @@ using AbstractAlgebra, BenchmarkTools, JLD2
 import Nemo, Profile
 
 macro myprof(ex)
-    :(
-        (VSCodeServer.Profile).clear();
-        Profile.init(n=10^7, delay=0.0000001);
-        Profile.@profile $ex;
-        VSCodeServer.view_profile(;)
-    )
+    :((VSCodeServer.Profile).clear();
+    Profile.init(n=10^7, delay=0.0000001);
+    Profile.@profile $ex;
+    VSCodeServer.view_profile(;))
 end
 
 ode = @ODEmodel(
@@ -44,6 +42,14 @@ ode = @ODEmodel(
     y3(t) = a3 * pS6(t)
 )
 
+siwr = @ODEmodel(
+    S'(t) = mu - bi * S(t) * I(t) - bw * S(t) * W(t) - mu * S(t) + a * R(t),
+    I'(t) = bw * S(t) * W(t) + bi * S(t) * I(t) - (gam + mu) * I(t),
+    W'(t) = xi * (I(t) - W(t)),
+    R'(t) = gam * I(t) - (mu + a) * R(t),
+    y(t) = k * I(t)
+)
+
 G = StructuralIdentifiability.ideal_generators(ode);
 
 par = parent(G[1])
@@ -67,7 +73,7 @@ Groebner.logging_enabled() = false
 Groebner.invariants_enabled() = false
 
 gb = Groebner.groebner(G_zp);
-graph, gb_1 = Groebner.groebner_learn(G_zp);
+@time graph, gb_1 = Groebner.groebner_learn(G_zp);
 graph
 graph.matrix_infos
 flag, gb_2 = Groebner.groebner_apply!(graph, G_zp)
@@ -77,8 +83,7 @@ flag, gb_2 = Groebner.groebner_apply!(graph, G_zp)
 @btime Groebner.groebner_apply!($graph, $G_zp);
 
 @myprof begin
-    for i in 1:1000
+    for i in 1:100
         Groebner.groebner_apply!(graph, G_zp)
     end
 end
-

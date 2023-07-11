@@ -17,13 +17,13 @@ Computes the rational reconstruction of `a` mod `m`. Namely, a pair of numbers
 
     num//den ≡ a (mod m)
 
-Writes the answer to `num` and `den` inplace.
-
-Returns `true` if the reconstrction was successful and `false` otherwise. 
+Writes the answer to `num` and `den` inplace. Returns `true` if the
+reconstrction was successful and `false` otherwise. 
 
 ## Additional parameters:
-- `bnd`: stores the stopping criterion threshold 
-    (see `rational_reconstruction_bound`) 
+
+- `bnd`: stores the stopping criterion threshold (see
+    `rational_reconstruction_bound`) 
 - `buf`, `buf1`, `buf2`, `buf3`, `u1`, `u2`, `u3`,  `v1`, `v2`, `v3`: buffers
 """
 function rational_reconstruction!(
@@ -43,14 +43,15 @@ function rational_reconstruction!(
     a::BigInt,
     m::BigInt
 )
+    # Fast path for 0//1 if the input is 0
     if Base.GMP.MPZ.cmp_ui(a, 0) == 0
         Base.GMP.MPZ.set_ui!(num, 0)
         Base.GMP.MPZ.set_ui!(den, 1)
         return true
     end
 
-    # assumes the input is nonnegative
-    @assert Base.GMP.MPZ.cmp_ui(a, 0) > 0
+    # Assumes the input is nonnegative!
+    @invariant Base.GMP.MPZ.cmp_ui(a, 0) > 0
 
     # fast path for 1//1 if the input is 1
     if Base.GMP.MPZ.cmp_ui(a, 1) == 0
@@ -117,19 +118,19 @@ function rational_reconstruction!(
 end
 
 """
-Implements the Chinese remainder algorithm.
-Computes the unique `x` such that
+Implements the linear Chinese remainder lifting algorithm. Computes the unique
+`x` such that
         
     x ≡ a1 mod m1
     x ≡ a2 mod m2
 
 Writes the answer to `buf` inplace.
 
-## Additional params:
-- `M`: must be equal `m1 * m2`
+## Additional parameters:
+
+- `M`: must be equal to `m1 * m2`
 - `buf`, `n1`, `n2`: buffers
-- `minv1`: must be equal `m1^-1 mod M`
-- `minv2`: must be equal `m2^-1 mod M`
+- `minv1 m1 + minv2 m2 = 1`: the modular inverses of `m1` and `m2` respectively
 """
 function CRT!(
     M::BigInt,
@@ -143,6 +144,9 @@ function CRT!(
     m1::BigInt,
     m2::BigInt
 )
+    @invariant M == m1 * m2
+    @invariant minv1 == Base.GMP.MPZ.gcdext(m1, m2)[2]
+    @invariant minv2 == Base.GMP.MPZ.gcdext(m1, m2)[3]
     Base.GMP.MPZ.mul!(buf, m1, minv1)
     Base.GMP.MPZ.mul_ui!(n1, buf, a2)
 

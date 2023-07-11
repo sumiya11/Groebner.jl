@@ -4,10 +4,10 @@ using AbstractAlgebra
     R, x = PolynomialRing(GF(2^31 - 1), "x")
     @test Groebner.groebner([x^2 - 4, x + 2]) == [x + 2]
 
-    R, x = PolynomialRing(QQ, "x")
+    R, x = PolynomialRing(GF(2^62 + 135), "x")
     @test Groebner.groebner([x^2 - 4, x + 2]) == [x + 2]
 
-    R, x = PolynomialRing(ZZ, "x")
+    R, x = PolynomialRing(QQ, "x")
     @test Groebner.groebner([x^2 - 4, x + 2]) == [x + 2]
 end
 
@@ -15,9 +15,10 @@ end
     # TODO: gracefully error if the input is not supported
     # e.g., 
     # R, (x, y) = AbstractAlgebra.GF(nextprime(BigInt(2)^100))["x","y"]
-    
+
     aa_orderings_to_test = [:lex, :degrevlex, :deglex]
-    aa_grounds_to_test = [AbstractAlgebra.GF(2^31 - 1), AbstractAlgebra.QQ]
+    aa_grounds_to_test =
+        [AbstractAlgebra.GF(2^62 + 135), AbstractAlgebra.GF(2^31 - 1), AbstractAlgebra.GF(17), AbstractAlgebra.QQ]
 
     for ord in aa_orderings_to_test
         for ground in aa_grounds_to_test

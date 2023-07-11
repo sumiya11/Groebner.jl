@@ -7,7 +7,7 @@ using TestSetExtensions
 # - DynamicPolynomials.jl (DynamicPolynomials.Polynomial{true, T})
 
 using AbstractAlgebra
-using Groebner
+# using Groebner
 
 # Check invariants during testing
 Groebner.invariants_enabled() = true
@@ -22,15 +22,13 @@ function try_import(name::Symbol)
     end
 end
 
-# @test isempty(Test.detect_unbound_args(Groebner))
-# @test isempty(Test.detect_ambiguities(Groebner))
+@test isempty(Test.detect_unbound_args(Groebner))
+@test isempty(Test.detect_ambiguities(Groebner))
 
 ⊂(xs, ys) = all(in(ys), xs)
 ≂(xs, ys) = ⊂(xs, ys) && ⊂(ys, xs)
 
 @time @testset "All tests" verbose = true begin
-    @warn "Warnings from Groebner during testing are fine."
-
     # Different implementations of a monomial 
     @includetests ["monoms/exponentvector", "monoms/packedtuples"]
     # High-level monomial arithmetic and term orders

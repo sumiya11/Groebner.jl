@@ -49,12 +49,12 @@ R, (x, y) = QQ["x", "y"];
 
 # Lexicographical ordering with x > y
 groebner([x*y + x, x + y^2], ordering=Lex())
-
-# Lexicographical ordering with x < y
-groebner([x*y + x, x + y^2], ordering=Lex([x, y]))
 ```
 """
 struct Lex{T} <: AbstractMonomialOrdering
+    # TODO:
+    ##  Lexicographical ordering with x < y
+    ## groebner([x*y + x, x + y^2], ordering=Lex([x, y]))
     variables::Union{Vector{T}, Nothing}
     Lex() = new{Nothing}(nothing)
     function Lex(variables::Vector{T}) where {T}
@@ -84,12 +84,11 @@ R, (x, y) = QQ["x", "y"];
 
 # Degree lexicographical ordering with x > y
 groebner([x*y + x, x + y^2], ordering=DegLex())
-
-# Degree lexicographical ordering with x < y
-groebner([x*y + x, x + y^2], ordering=DegLex([x, y]))
 ```
 """
 struct DegLex{T} <: AbstractMonomialOrdering
+    ## Degree lexicographical ordering with x < y
+    ## groebner([x*y + x, x + y^2], ordering=DegLex([x, y]))
     variables::Union{Vector{T}, Nothing}
     DegLex() = new{Nothing}(nothing)
     function DegLex(variables::Vector{T}) where {T}
@@ -118,9 +117,6 @@ using Groebner, AbstractAlgebra
 R, (x, y) = QQ["x", "y"];
 
 # Degree reverse lexicographical ordering with x > y
-groebner([x*y + x, x + y^2], ordering=DegRevLex())
-
-# Degree reverse lexicographical ordering on x < y
 groebner([x*y + x, x + y^2], ordering=DegRevLex())
 ```
 """
@@ -165,12 +161,13 @@ struct WeightedOrdering{T} <: AbstractMonomialOrdering
     weights::Vector{UInt64}
     variables::Vector{T}
     function WeightedOrdering(
-        weights::Vector{T},
-        variables::Union{Vector{V}, Nothing}
-    ) where {T <: Integer, V}
+        weights::AbstractVector,
+        variables
+    )
         @assert !isempty(weights)
         @assert all(>=(0), weights) "Only nonnegative weights are supported."
         # @assert length(weights) == length(variables)
+        variables === nothing && (variables = [])
         new{eltype(variables)}(weights, variables)
     end
     function WeightedOrdering(weights::Vector{T}) where {T <: Integer}

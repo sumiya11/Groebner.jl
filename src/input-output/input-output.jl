@@ -40,11 +40,11 @@ function select_polynomial_representation(polynomials, kws; hint::Symbol=:none)
     monomtype = select_monomtype(char, npolys, nvars, kws, hint)
     coefftype = select_coefftype(char, npolys, nvars, kws, hint)
     basering = iszero(char) ? :qq : :zp
-    @log level = 1 "Frontend: $frontend"
-    @log level = 1 """
+    @log level = -1 "Frontend: $frontend"
+    @log level = -1 """
     Input: $npolys polynomials over $basering in $nvars variables
     Ordering: $ordering"""
-    @log level = 1 """
+    @log level = -1 """
     Internal representation: 
     monomials are $monomtype
     coefficients are $coefftype"""
@@ -52,9 +52,9 @@ function select_polynomial_representation(polynomials, kws; hint::Symbol=:none)
 end
 
 function select_monomtype(char, npolys, nvars, kws, hint)
-    @log "Selecting monomial representation. Given hint: $hint. Keyword argument: $(kws.monoms)"
+    @log level = -1 "Selecting monomial representation. Given hint: $hint. Keyword argument: $(kws.monoms)"
     if hint === :large_exponents
-        @log "As $hint was provided, using 64 bits per single exponent"
+        @log level = -1 "As $hint was provided, using 64 bits per single exponent"
         # use 64 bits if large exponents detected
         # @assert is_supported_ordering(ExponentVector{UInt64}, kws.ordering)
         return ExponentVector{UInt64}
@@ -87,7 +87,12 @@ end
 
 function select_coefftype(char, npolys, nvars, kws, hint)
     if !iszero(char)
-        UInt64
+        @assert char < typemax(UInt64)
+        if char > 2^32
+            UInt128
+        else
+            UInt64
+        end
     else
         Rational{BigInt}
     end
@@ -111,18 +116,18 @@ function convert_to_internal(
     # NOTE: internally, 0 polynomial is represented with an empty vector of
     # monomials and an empty vector of coefficients.
     # NOTE: Input polynomials must not be modified.
-    @log level = 3 "Converting input polynomials to internal representation.."
+    @log level = -2 "Converting input polynomials to internal representation.."
     ring = extract_ring(polynomials)
     # @assert is_representation_suitable(representation, ring)
     monoms, coeffs = extract_polys(representation, ring, polynomials)
-    @log level = 3 "Done converting input polynomials to internal representation."
-    @log level = -100 """
+    @log level = -2 "Done converting input polynomials to internal representation."
+    @log level = -5 """
     Polynomials in internal representation:
     Ring: $ring
     Monomials: $monoms
     Coefficients: $coeffs"""
     if dropzeros
-        @log "Removing zero polynomials"
+        @log level = -2 "Removing zero polynomials"
         remove_zeros_from_input!(ring, monoms, coeffs)
     end
     ring, monoms, coeffs
@@ -154,14 +159,16 @@ function convert_to_output(
     coeffs::Vector{C},
     params
 ) where {M, C}
-    @log "Converting polynomials from internal representation to output format"
+    @assert !isempty(polynomials)
+    @log level = -2 "Converting polynomials from internal representation to output format"
     # NOTE: Internal polynomials must not be modified.
     # TODO: throw warning if the output format is strange
     if isempty(monoms)
         push!(monoms, Vector{M}())
         push!(coeffs, Vector{C}())
     end
-    convert_to_output(parent(first(polynomials)), monoms, coeffs, params)
+    origring = parent(first(polynomials))
+    convert_to_output(origring, monoms, coeffs, params)
 end
 
 # checks that the coefficient `c` can be represented exactly in type `T`.
@@ -201,15 +208,15 @@ function convert_coeffs_to_output(
     coeffs::Vector{Q},
     ::Type{T}
 ) where {Q <: CoeffQQ, T <: Integer}
-    coeffs_zz = scale_denominators(coeffs)
+    coeffs_zz = clear_denominators(coeffs)
     check_and_convert_coeffs(coeffs_zz, T)
 end
 
 iszero_coeffs(v) = isempty(v)
 iszero_monoms(v) = isempty(v)
 
-zero_coeffs_ff(ring::PolyRing{Ch}) where {Ch} = Ch[]
-zero_coeffs_qq(ring::PolyRing{Ch}) where {Ch} = Rational{BigInt}[]
+zero_coeffs_ff(::Type{T}, ring::PolyRing) where {T} = T[]
+zero_coeffs_qq(::Type{T}, ring::PolyRing) where {T} = T[]
 
 function remove_zeros_from_input!(
     ring::PolyRing,
@@ -221,7 +228,7 @@ function remove_zeros_from_input!(
     filter!(!iszero_monoms, monoms)
     @assert length(monoms) == length(coeffs)
     iszerobasis = isempty(monoms)
-    @log level=-100 "After removing zero polynomials from input:" monoms coeffs
+    @log level = -5 "After removing zero polynomials from input:" monoms coeffs
     iszerobasis
 end
 
@@ -252,28 +259,22 @@ function check_ordering(e::M, o::Union{Lex, DegLex, DegRevLex}, lo, hi) where {M
     end
 end
 
-function check_ordering(
-    e::M,
-    wo::WeightedOrdering{O}
-) where {M <: Monom, O <: AbstractMonomialOrdering}
+function check_ordering(e::M, wo::WeightedOrdering) where {M <: Monom}
     false
 end
 function check_ordering(
     e::ExponentVector{T},
-    wo::WeightedOrdering{O},
+    wo::WeightedOrdering,
     lo::Int,
     hi::Int
-) where {T, O <: AbstractMonomialOrdering}
-    check_ordering(e, wo.ord, lo, hi)
+) where {T}
+    check_ordering(e, Lex(), lo, hi)
     if hi - lo + 1 != length(wo.weights)
         return false
     end
     true
 end
-function check_ordering(
-    e::ExponentVector{T},
-    wo::WeightedOrdering{O}
-) where {T, O <: AbstractMonomialOrdering}
+function check_ordering(e::ExponentVector{T}, wo::WeightedOrdering) where {T}
     check_ordering(e, wo, 2, length(e))
 end
 
@@ -327,16 +328,16 @@ function check_ordering(
     true
 end
 
-# Checks that the monomial orderings specified by the given `ring` and `target_ord` 
-# are consistent with the given input monomials `monoms`.
-# In case the target ordering differs from the `ring` ordering,  
+# Checks that the monomial orderings specified by the given `ring` and
+# `params.target_ord` are consistent with the given input monomials `monoms`. In
+# case the target ordering differs from the `ring` ordering,  
 # sorts the polynomials terms w.r.t. the target ordering.
 function change_ordering_if_needed!(ring, monoms, coeffs, params)
     @assert !isempty(monoms) && !isempty(monoms[1])
     !check_ordering(monoms[1][1], params.target_ord) &&
         __throw_monomial_ordering_inconsistent(monoms[1][1], params.target_ord)
     ring.ord == params.target_ord && return ring
-    @log level = 3 "Reordering polynomial terms from $(ring.ord) to $target_ord"
+    @log level = -2 "Reordering input polynomial terms from $(ring.ord) to $params.target_ord"
     ring = PolyRing(ring.nvars, params.target_ord, ring.ch)
     sort_input_to_change_ordering!(monoms, coeffs, params.target_ord)
     ring

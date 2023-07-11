@@ -1,6 +1,6 @@
 using DynamicPolynomials
 
-@testset "io consistency dynamicpolynomials" begin
+@testset "DynamicPolynomials.jl input-output" begin
     @polyvar x y
 
     fs = [x, y]
@@ -20,4 +20,6 @@ using DynamicPolynomials
 
     fs = [BigInt(34343343433)x * y^2 + 3431234567833, 3434343434x * y - 342343242342]
     @test Groebner.groebner(fs) isa Vector{Polynomial{true, BigInt}}
+    @test Groebner.isgroebner(Groebner.groebner(fs))
+    @test all(iszero, Groebner.normalform(Groebner.groebner(fs), fs))
 end

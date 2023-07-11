@@ -50,12 +50,9 @@ end
 function finalize_graph!(graph::ComputationGraphF4) 
     # TODO: trim sizes
     graph.buf_basis = deepcopy_basis(graph.gb_basis)
-    graph.buf_basis.ndivmasks = graph.input_basis.ndivmasks
+    graph.buf_basis.nnonredundant = graph.input_basis.nnonredundant
     graph.buf_basis.nprocessed = graph.input_basis.nprocessed
-    graph.buf_basis.ntotal = graph.input_basis.ntotal
-    # TODO: set size to the allocated size
-    # done.
-    # graph.buf_basis.size = graph.input_basis.size
+    graph.buf_basis.nfilled = graph.input_basis.nfilled
     nothing
 end
 

@@ -40,7 +40,7 @@ const _supported_kw_args = (
     ),
     groebner_learn = (
         seed     = 42,
-        monoms   = :default,
+        monoms   = :packed,
         loglevel = _default_loglevel
     ),
     groebner_apply! = (
@@ -92,7 +92,7 @@ struct KeywordsHandler{Ord}
         strategy = get(kws, :strategy, get(default_kw_args, :strategy, :classic_modular))
         @assert strategy in (:classic_modular, :learn_and_apply) "Not recognized strategy: $strategy"
         check = get(kws, :check, get(default_kw_args, :check, true))
-        @log level = 3 """
+        @log level = -1 """
           Using keywords: 
           reduced   = $reduced, 
           ordering  = $ordering, 

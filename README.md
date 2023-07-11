@@ -3,23 +3,24 @@
 [![Runtests](https://github.com/sumiya11/Groebner.jl/actions/workflows/Runtests.yml/badge.svg)](https://github.com/sumiya11/Groebner.jl/actions/workflows/Runtests.yml)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://sumiya11.github.io/Groebner.jl)
 
+Groebner.jl is a Julia package for computing Groebner bases over fields.
 
-The package provides Groebner bases computation interface in pure Julia with the performance comparable to Singular.
-`Groebner.jl` works over finite fields and over the rationals, and supports various monomial orderings.
-
-For documentation and more please check out https://sumiya11.github.io/Groebner.jl
-
-Groebner.jl can be extended : how the code is structured .
-
-# TODO: say how one can contribute.
+For documentation and more please check out https://sumiya11.github.io/Groebner.jl.
+For a simple example, see below.
 
 ## How to use Groebner.jl?
 
-Our package works with polynomials from `AbstractAlgebra.jl`, `DynamicPolynomials.jl`, and `Nemo.jl`. We will demonstrate the usage on a simple example. Lets first create a ring of polynomials in 3 variables
+You can install Groebner.jl using the Julia package manager. From the Julia REPL, type
+
+```julia
+import Pkg; Pkg.add("Groebner")
+```
+
+Our package works with polynomials from `AbstractAlgebra.jl`, `DynamicPolynomials.jl`, and `Nemo.jl`. Let's create a ring of polynomials in 3 variables
 
 ```julia
 using AbstractAlgebra
-R, (x1, x2, x3) = PolynomialRing(QQ, ["x1", "x2", "x3"]);
+R, (x1, x2, x3) = PolynomialRing(QQ, ["x1", "x2", "x3"])
 ```
 
 Then we can define a simple polynomial system
@@ -29,11 +30,10 @@ polys = [
   x1 + x2 + x3,
   x1*x2 + x1*x3 + x2*x3,
   x1*x2*x3 - 1
-];
+]
 ```
 
-And compute the Groebner basis passing the system to `groebner`
-
+And compute the Groebner basis by passing the system to `groebner`
 
 ```julia
 using Groebner

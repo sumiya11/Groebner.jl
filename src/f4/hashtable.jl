@@ -17,16 +17,15 @@
 # m3. That allows us to write more or less independently of the monomial
 # implementation.
 
-# Hashvalue of a single monomial.
-# Has fields: TODO: is this true?
-#   idx - index of the monomial in the F4 matrix (defaults to zero),
-#   hash - hash of the monomial,
-#   divmask - corresponding divmask to speed up divisibility checks,
-#   deg - total degree of the monomial
+# Hashvalue of a single monomial
 mutable struct Hashvalue
+    # index of the monomial in the F4 matrix (defaults to zero),
     idx::Int
+    # hash of the monomial,
     hash::MonomHash
+    # corresponding divmask to speed up divisibility checks,
     divmask::DivisionMask
+    # total degree of the monomial
     deg::MonomHash
 end
 
@@ -227,7 +226,7 @@ function next_lookup_index(h::MonomHash, j::MonomHash, mod::MonomHash)
     (h + j) & mod + MonomHash(1)
 end
 
-function check_enlarge_hashtable!(ht::MonomialHashtable, added::Integer)
+function resize_hashtable_if_needed!(ht::MonomialHashtable, added::Integer)
     newsize = ht.size
     while ht_needs_resize(newsize, ht.load, added)
         newsize *= 2
@@ -338,7 +337,7 @@ function fill_divmask!(ht::MonomialHashtable)
         max_exp[i] = e[i]
     end
 
-    @inbounds for i in (ht.offset):(ht.load) # TODO: offset
+    @inbounds for i in (ht.offset):(ht.load)
         monom_to_dense_vector!(e, ht.monoms[i])
         for j in 1:ndivvars
             if e[j] > max_exp[j]
@@ -546,7 +545,7 @@ function multiplied_poly_to_matrix_row!(
     poly::Vector{MonomIdx}
 ) where {M}
     row = similar(poly)
-    check_enlarge_hashtable!(symbolic_ht, length(poly))
+    resize_hashtable_if_needed!(symbolic_ht, length(poly))
 
     insert_multiplied_poly_in_hash_table!(row, htmp, etmp, poly, basis_ht, symbolic_ht)
 end
@@ -559,7 +558,7 @@ function insert_in_basis_hash_table_pivots(
     symbol_ht::MonomialHashtable{M},
     col2hash::Vector{MonomIdx}
 ) where {M}
-    check_enlarge_hashtable!(ht, length(row))
+    resize_hashtable_if_needed!(ht, length(row))
 
     sdata = symbol_ht.hashdata
     sexps = symbol_ht.monoms

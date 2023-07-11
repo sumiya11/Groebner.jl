@@ -36,10 +36,10 @@ function initialize_structs(
     params::AlgorithmParameters;
     normalize=true
 ) where {M <: Monom, C <: Coeff}
-    @log level = 3 "Initializing structs.."
+    @log level = -3 "Initializing structs.."
 
     tablesize = select_hashtable_size(ring, monoms)
-    @log level = 3 "Initial hashtable size is $tablesize"
+    @log level = -3 "Initial hashtable size is $tablesize"
 
     # Basis for storing basis elements,
     # Pairset for storing critical pairs of basis elements,
@@ -52,14 +52,12 @@ function initialize_structs(
     fill_data!(basis, hashtable, monoms, coeffs)
     fill_divmask!(hashtable)
 
-    @log level = 4 "Hashtable:"
-
-    @log level = 4 "Sorting input polynomials by their leading terms in non-decreasing order"
+    @log level = -4 "Sorting input polynomials by their leading terms in non-decreasing order"
     sort_polys_by_lead_increasing!(basis, hashtable)
 
     # Divide each polynomial by the leading coefficient
     if normalize
-        @log level = 4 "Normalizing input polynomials"
+        @log level = -4 "Normalizing input polynomials"
         normalize_basis!(ring, basis)
     end
 
@@ -73,10 +71,10 @@ function initialize_structs_learn(
     params::AlgorithmParameters;
     normalize=true
 ) where {M <: Monom, C <: Coeff}
-    @log level = 3 "Initializing structs.."
+    @log level = -3 "Initializing structs.."
 
     tablesize = select_hashtable_size(ring, monoms)
-    @log level = 3 "Initial hashtable size is $tablesize"
+    @log level = -3 "Initial hashtable size is $tablesize"
 
     # Basis for storing basis elements,
     # Pairset for storing critical pairs of basis elements,
@@ -89,18 +87,16 @@ function initialize_structs_learn(
     fill_data!(basis, hashtable, monoms, coeffs)
     fill_divmask!(hashtable)
 
-    @log level = 4 "Hashtable:"
-
-    @log level = 4 "Sorting input polynomials by their leading terms in non-decreasing order"
+    @log level = -4 "Sorting input polynomials by their leading terms in non-decreasing order"
     permutation = sort_polys_by_lead_increasing!(basis, hashtable)
 
     # Divide each polynomial by the leading coefficient
     if normalize
-        @log level = 4 "Normalizing input polynomials"
+        @log level = -4 "Normalizing input polynomials"
         normalize_basis!(ring, basis)
     end
 
-    @log level = 5 "Initializing computation graph"
+    @log level = -4 "Initializing computation graph"
     graph = initialize_computation_graph_f4(
         ring,
         deepcopy_basis(basis),
@@ -209,13 +205,13 @@ function initialize_basis_using_existing_hashtable(
     fill_data!(basis, present_ht, exponents, coeffs)
     if sort_input
         # sort input, smaller leading terms first
-        @log "Sorting input polynomials by the increasing leading term"
+        @log level = -2 "Sorting input polynomials by the increasing leading term"
         sort_polys_by_lead_increasing!(basis, present_ht)
     end
     if normalize_input
         # divide each polynomial by leading coefficient
         # We do not need normalization for normal forms
-        @log "Normalizing input polynomials"
+        @log level = -2 "Normalizing input polynomials"
         normalize_basis!(ring, basis)
     end
     basis
@@ -262,7 +258,7 @@ function initialize_structs(
     # pairset for storing critical pairs of basis elements to assess,
     # hashtable for hashing monomials occuring in the basis
     basis = initialize_basis(ring, hashedexps, coeffs)
-    basis.ntotal = length(hashedexps)
+    basis.nfilled = length(hashedexps)
 
     # sort input, smaller leading terms first
     sort_polys_by_lead_increasing!(basis, present_ht)
@@ -274,7 +270,6 @@ end
 
 # Given a `basis` object that stores some groebner basis
 # performs basis interreduction and writes the result to `basis` inplace
-# TODO: f4_reducegb!
 function reducegb_f4!(
     ring::PolyRing,
     basis::Basis,
@@ -282,17 +277,17 @@ function reducegb_f4!(
     ht::MonomialHashtable{M},
     symbol_ht::MonomialHashtable{M}
 ) where {M}
-    @log level = 100000 "Entering autoreduction" basis
+    @log level = -5 "Entering autoreduction" basis
 
     etmp = construct_const_monom(M, ht.nvars)
     # etmp is now set to zero, and has zero hash
 
-    reinitialize_matrix!(matrix, basis.ndivmasks)
+    reinitialize_matrix!(matrix, basis.nnonredundant)
     uprows = matrix.uprows
 
     # add all non redundant elements from the basis
     # as matrix upper rows
-    @inbounds for i in 1:(basis.ndivmasks) #
+    @inbounds for i in 1:(basis.nnonredundant) #
         matrix.nrows += 1
         uprows[matrix.nrows] = multiplied_poly_to_matrix_row!(
             symbol_ht,
@@ -327,7 +322,7 @@ function reducegb_f4!(
 
     convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 
-    basis.ntotal = matrix.npivots + basis.nprocessed
+    basis.nfilled = matrix.npivots + basis.nprocessed
     basis.nprocessed = matrix.npivots
 
     # we may have added some multiples of reduced basis polynomials
@@ -338,7 +333,7 @@ function reducegb_f4!(
     @inbounds while i <= basis.nprocessed
         @inbounds for j in 1:k
             if is_monom_divisible(
-                basis.monoms[basis.ntotal - i + 1][1],
+                basis.monoms[basis.nfilled - i + 1][1],
                 basis.monoms[basis.nonredundant[j]][1],
                 ht
             )
@@ -347,11 +342,11 @@ function reducegb_f4!(
             end
         end
         k += 1
-        basis.nonredundant[k] = basis.ntotal - i + 1
+        basis.nonredundant[k] = basis.nfilled - i + 1
         basis.divmasks[k] = ht.hashdata[basis.monoms[basis.nonredundant[k]][1]].divmask
         i += 1
     end
-    basis.ndivmasks = k
+    basis.nnonredundant = k
 end
 
 function select_tobereduced!(
@@ -364,12 +359,12 @@ function select_tobereduced!(
 
     # prepare to load all elems from tobereduced
     # to lower rows of the matrix
-    reinitialize_matrix!(matrix, max(basis.ntotal, tobereduced.ntotal))
-    resize!(matrix.lowrows, tobereduced.ntotal)
+    reinitialize_matrix!(matrix, max(basis.nfilled, tobereduced.nfilled))
+    resize!(matrix.lowrows, tobereduced.nfilled)
 
     etmp = construct_const_monom(M, ht.nvars)
 
-    @inbounds for i in 1:(tobereduced.ntotal)
+    @inbounds for i in 1:(tobereduced.nfilled)
         matrix.nrows += 1
         gen = tobereduced.monoms[i]
         h = MonomHash(0)
@@ -379,10 +374,10 @@ function select_tobereduced!(
         matrix.low2mult[matrix.nrows] = insert_in_hash_table!(ht, etmp)
     end
 
-    basis.ntotal
-    basis.ndivmasks = basis.nprocessed = basis.ntotal
+    basis.nfilled
+    basis.nnonredundant = basis.nprocessed = basis.nfilled
     basis.isredundant .= 0
-    @inbounds for i in 1:(basis.ndivmasks)
+    @inbounds for i in 1:(basis.nnonredundant)
         basis.nonredundant[i] = i
         basis.divmasks[i] = ht.hashdata[basis.monoms[i][1]].divmask
     end
@@ -414,13 +409,13 @@ function find_multiplied_reducer!(
     i = 1
     @label Letsgo
 
-    @inbounds while i <= basis.ndivmasks && (leaddiv[i] & ~divmask) != 0
+    @inbounds while i <= basis.nnonredundant && (leaddiv[i] & ~divmask) != 0
         i += 1
     end
 
     # here found polynomial from basis with leading monom
     # dividing symbol_ht.monoms[vidx]
-    if i <= basis.ndivmasks
+    if i <= basis.nnonredundant
         # reducers index and exponent in hash table
         @inbounds rpoly = basis.monoms[basis.nonredundant[i]]
         @inbounds rexp = ht.monoms[rpoly[1]]
@@ -438,8 +433,7 @@ function find_multiplied_reducer!(
         matrix.uprows[matrix.nup + 1] =
             multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, rpoly)
         @inbounds matrix.up2coef[matrix.nup + 1] = basis.nonredundant[i]
-        # TODO
-        # TODO: insert in basis hashtable
+        # TODO: isolate tracing?
         matrix.up2mult[matrix.nup + 1] = insert_in_hash_table!(ht, etmp)
 
         # up-size matrix
@@ -467,7 +461,6 @@ function symbolic_preprocessing!(
     nrr = matrix.ncols
     onrr = matrix.ncols
 
-    # TODO!
     while matrix.size <= nrr + symbol_load
         matrix.size *= 2
         resize!(matrix.uprows, matrix.size)
@@ -494,7 +487,6 @@ function symbolic_preprocessing!(
     @inbounds while i <= symbol_ht.load
         if matrix.size == matrix.nup
             matrix.size *= 2
-            # TODO::
             resize!(matrix.uprows, matrix.size)
             resize!(matrix.up2coef, matrix.size)
             resize!(matrix.up2mult, matrix.size)
@@ -631,7 +623,6 @@ function select_normal!(
         uprows[matrix.nup] = multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly)
         # map upper row to index in basis
         matrix.up2coef[matrix.nup] = prev
-        # TODO
         matrix.up2mult[matrix.nup] = insert_in_hash_table!(ht, etmp)
 
         # mark lcm column as reducer in symbolic hashtable
@@ -687,24 +678,24 @@ function select_normal!(
     end
     pairset.load -= npairs
 
-    @log "Selected $(npairs) pairs of degree $(deg) from pairset, $(pairset.load) pairs left"
+    @log level = -3 "Selected $(npairs) pairs of degree $(deg) from pairset, $(pairset.load) pairs left"
     nothing
 end
 
 function basis_well_formed(key, ring, basis, hashtable)
     if key in (:input_f4!, :input_f4_learn!, :input_f4_apply!)
         (isempty(basis.monoms) || isempty(basis.coeffs)) && return false
-        (basis.size == 0 || basis.ntotal == 0) && return false
+        (basis.size == 0 || basis.nfilled == 0) && return false
+        !is_sorted_by_lead_increasing(basis, hashtable) && return false
     elseif key in (:output_f4!, :output_f4_learn!, :output_f4_apply!)
-        # TODO: also check: 
-        #   are sorted: sort_polys_by_lead_increasing!(basis, ht, ord=ord)
-        basis.ndivmasks ==
+        !is_sorted_by_lead_increasing(basis, hashtable) && return false
+        basis.nnonredundant ==
         length(basis.coeffs) ==
         length(basis.monoms) ==
         length(basis.divmasks) ==
         length(basis.nonredundant) ==
         length(basis.isredundant) || return false
-        basis.nonredundant == collect(1:(basis.ndivmasks)) || return false
+        basis.nonredundant == collect(1:(basis.nnonredundant)) || return false
         any(!iszero, basis.isredundant) && return false
         any(c -> !isone(c[1]), basis.coeffs) && return false
     else
@@ -716,7 +707,14 @@ function basis_well_formed(key, ring, basis, hashtable)
                 return false
             end
         else
-            length(basis.coeffs[i]) != length(basis.monoms[i]) && return false
+            length(basis.coeffs[i]) == length(basis.monoms[i]) && continue
+            if key in (:input_f4_apply!, :output_f4_apply!)
+                @log level = 1 "Unlucky but probably not fatal cancellation at index $(i)" length(
+                    basis.monoms[i]
+                ) length(basis.coeffs[i])
+            else
+                return false
+            end
         end
     end
     true
@@ -733,13 +731,13 @@ end
 # Input ivariants:
 # - divmasks in the ht are set,
 # - basis is filled so that
-#     basis.ntotal is the actual number of set elements,
+#     basis.nfilled is the actual number of set elements,
 #     basis.nprocessed  = 0,
-#     basis.ndivmasks  = 0,
+#     basis.nnonredundant  = 0,
 # - basis contains no zero polynomials (!!!).
 #
 # Output invariants:
-# - basis.nprocessed == basis.ntotal == basis.ndivmasks
+# - basis.nprocessed == basis.nfilled == basis.nnonredundant
 # - basis.monoms and basis.coeffs are of size basis.nprocessed
 # - basis elements are sorted increasingly wrt the term ordering on lead elements
 # - divmasks in basis are filled and coincide with divmasks in hashtable
@@ -755,8 +753,8 @@ function f4!(
     @invariant basis_well_formed(:input_f4!, ring, basis, hashtable)
     # @invariant pairset_well_formed(:input_f4!, pairset, basis, ht)
 
-    @log level = 5 "Entering F4."
-    # TODO: decide on the number field arithmetic implementation
+    @log level = -2 "Entering F4."
+    # TODO: here, decide on the number field arithmetic implementation
     normalize_basis!(ring, basis)
 
     matrix = initialize_matrix(ring, C)
@@ -765,32 +763,21 @@ function f4!(
     update_ht = initialize_secondary_hashtable(hashtable)
     symbol_ht = initialize_secondary_hashtable(hashtable)
 
-    # makes basis fields valid,
-    # does not copy,
-    # checks for redundancy of new elems
-    # TODO: move to basis.jl
-    # plcm = Vector{MonomIdx}(undef, 0)
-    # if isready(tracer)
-    #     # TODO: `plcm` belongs into the pairset!!!
-    #     resize!(plcm, final_basis_size(tracer) + 1)
-    # end
-
     # add the first batch of critical pairs to the pairset
-    @log level = 6 "Processing initial polynomials, generating first critical pairs"
+    @log level = -3 "Processing initial polynomials, generating first critical pairs"
     pairset_size = update!(pairset, basis, hashtable, update_ht)
     update_tracer_pairset!(tracer, pairset_size)
-    @log level = 6 "Out of $(basis.ntotal) polynomials, $(basis.nprocessed) are non-redundant"
-    @log level = 6 "Generated $(pairset.load) critical pairs"
+    @log level = -3 "Out of $(basis.nfilled) polynomials, $(basis.nprocessed) are non-redundant"
+    @log level = -3 "Generated $(pairset.load) critical pairs"
 
     i = 0
     # While there are pairs to be reduced
     while !isempty(pairset)
         i += 1
-        @log "F4: iteration $i"
-        @log "F4: available $(pairset.load) pairs"
+        @log level = -3 "F4: iteration $i"
+        @log level = -3 "F4: available $(pairset.load) pairs"
 
         # if the iteration is redundant according to the previous modular run
-        # TODO: MOVE!
         if isready(tracer)
             if is_iteration_redundant(tracer, i)
                 discard_normal!(pairset, basis, matrix, hashtable, symbol_ht)
@@ -814,11 +801,11 @@ function f4!(
         # Color with [F4]
 
         symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
-        @log "Formed a matrix of size X, DISPLAY_MATRIX"
+        @log level = -100 "Formed a matrix of size X, DISPLAY_MATRIX"
 
         # reduces polys and obtains new potential basis elements
         reduction!(ring, basis, matrix, hashtable, symbol_ht, params.linalg, params.rng)
-        @log ""
+        @log level = -100 ""
 
         update_tracer_iteration!(tracer, matrix.npivots == 0)
 
@@ -827,8 +814,7 @@ function f4!(
         # checks for redundancy
         pairset_size = update!(pairset, basis, hashtable, update_ht)
         update_tracer_pairset!(tracer, pairset_size)
-        # TODO: move the above
-        @log "something something"
+        @log level = -100 "something something"
 
         # clear symbolic hashtable
         # clear matrix
@@ -837,7 +823,8 @@ function f4!(
 
         if i > 10_000
             # TODO: log useful info here
-            @log level = 100 "Something has probably gone wrong in F4. An exception will follow."
+            @log level = 1 "Something has gone wrong in F4. An error will follow."
+            # TODO: this error throwing function is not defined!
             __error_maximal_number_exceeded(
                 "Something has probably gone wrong in F4. Please submit a github issue."
             )
@@ -845,16 +832,16 @@ function f4!(
     end
 
     set_ready!(tracer)
-    set_final_basis!(tracer, basis.ntotal)
+    set_final_basis!(tracer, basis.nfilled)
 
     # remove redundant elements
     filter_redundant!(basis)
-    @log "Filtered elements marked redundant"
+    @log level = -2 "Filtered elements marked redundant"
 
     if params.reduced
-        @log "Autoreducing the final basis.."
+        @log level = -2 "Autoreducing the final basis.."
         reducegb_f4!(ring, basis, matrix, hashtable, symbol_ht)
-        @log "Autoreduced!"
+        @log level = -2 "Autoreduced!"
     end
 
     standardize_basis!(ring, basis, hashtable, hashtable.ord)
@@ -876,9 +863,8 @@ function f4_isgroebner!(
     matrix = initialize_matrix(ring, C)
     symbol_ht = initialize_secondary_hashtable(hashtable)
     update_ht = initialize_secondary_hashtable(hashtable)
-    @log "Forming S-polynomials"
+    @log level = -2 "Forming S-polynomials"
     update!(pairset, basis, hashtable, update_ht)
-    @log "All critical pairs are redundant, no S-polynomials were produced"
     isempty(pairset) && return true
     # Fill the F4 matrix
     select_normal!(pairset, basis, matrix, hashtable, symbol_ht, selectall=true)

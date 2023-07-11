@@ -15,7 +15,6 @@ struct SPair{Degree}
     poly1::Int
     # Second polynomial -//-
     poly2::Int
-    # TODO: remove this field
     # Index of lcm(lead(poly1), lead(poly2)) in hashtable
     lcm::MonomIdx
     # Total degree of lcm
@@ -33,10 +32,6 @@ mutable struct Pairset{Degree}
 end
 
 # Initializes and returns a pairset with max_vars_in_monom for `initial_size` pairs.
-#
-# TODO: Parameter `initial_size` is currently fine-tuned across small and large
-# benchmark systems, which results in an okay "average case" solution. Maybe
-# select different values for `initial_size` depending on the input system?
 function initialize_pairset(::Type{Degree}; initial_size=2^6) where {Degree}
     pairs = Vector{SPair{Degree}}(undef, initial_size)
     lcms = Vector{MonomIdx}(undef, 0)
@@ -47,7 +42,6 @@ Base.isempty(ps::Pairset) = ps.load == 0
 
 # Checks if it is possible to add `to_add` number of pairs to the pairset, and
 # resizes the pairset if not
-# TODO: Rename friends to resize_X_if_needed!
 function resize_pairset_if_needed!(ps::Pairset, to_add::Int)
     newsize = length(ps.pairs)
     while ps.load + to_add > newsize
@@ -57,9 +51,9 @@ function resize_pairset_if_needed!(ps::Pairset, to_add::Int)
     nothing
 end
 
-function resize_lcms_if_needed!(ps::Pairset, ntotal::Int)
-    if length(ps.lcms) < ntotal + 1
-        resize!(ps.lcms, floor(Int, ntotal * 1.1) + 1)
+function resize_lcms_if_needed!(ps::Pairset, nfilled::Int)
+    if length(ps.lcms) < nfilled + 1
+        resize!(ps.lcms, floor(Int, nfilled * 1.1) + 1)
     end
     nothing
 end
@@ -77,24 +71,23 @@ mutable struct Basis{C <: Coeff}
     # Number of processed polynomials, initially zero
     nprocessed::Int
     # Total number of polys filled, initially zero
-    ntotal::Int
+    nfilled::Int
 
     # If element of the basis at some index is redundant
     isredundant::Vector{Bool}
     # Positions of non-redundant elements in the basis
     nonredundant::Vector{Int}
     # Division masks of leading monomials of non-redundant basis elements
-    # TODO: remove this field?
     divmasks::Vector{DivisionMask}
-    # The number of filled elements in `divmasks`
-    ndivmasks::Int
+    # The number of non redundant elements in the basis
+    nnonredundant::Int
 end
 
 # Initialize basis for `ngens` elements with coefficient of type T
 function initialize_basis(ring::PolyRing, ngens::Int, ::Type{T}) where {T <: Coeff}
     sz = ngens # * 2
     ndone = 0
-    ntotal = 0
+    nfilled = 0
     nlead = 0
 
     monoms = Vector{Vector{MonomIdx}}(undef, sz)
@@ -103,11 +96,10 @@ function initialize_basis(ring::PolyRing, ngens::Int, ::Type{T}) where {T <: Coe
     nonred = Vector{Int}(undef, sz)
     lead = Vector{DivisionMask}(undef, sz)
 
-    Basis(monoms, coeffs, sz, ndone, ntotal, isred, nonred, lead, nlead)
+    Basis(monoms, coeffs, sz, ndone, nfilled, isred, nonred, lead, nlead)
 end
 
 # initialize basis with the given hashed monomials and coefficients.
-# TODO: to be removed
 function initialize_basis(
     ring::PolyRing,
     hashedexps::Vector{Vector{MonomIdx}},
@@ -115,14 +107,14 @@ function initialize_basis(
 ) where {T <: Coeff}
     sz = length(hashedexps)
     ndone = 0
-    ntotal = sz
+    nfilled = sz
     nlead = 0
 
     isred = zeros(Bool, sz)
     nonred = Vector{Int}(undef, sz)
     lead = Vector{DivisionMask}(undef, sz)
 
-    Basis(hashedexps, coeffs, sz, ndone, ntotal, isred, nonred, lead, nlead)
+    Basis(hashedexps, coeffs, sz, ndone, nfilled, isred, nonred, lead, nlead)
 end
 
 function copy_basis(
@@ -137,25 +129,23 @@ function copy_basis(
     coeffs = new_coeffs
     isred = basis.isredundant
     nonred = basis.nonredundant
-    lead = basis.divmasks
+    divmasks = basis.divmasks
     Basis(
         monoms,
         coeffs,
         basis.size,
         basis.nprocessed,
-        basis.ntotal,
+        basis.nfilled,
         isred,
         nonred,
-        lead,
-        basis.ndivmasks   # TODO: rename
+        divmasks,
+        basis.nnonredundant
     )
 end
 
 function _deepcopy_basis(basis::Basis{T}, new_coeffs::Vector{Vector{C}}) where {T, C}
-    # is trivially copyable
-    @assert T <: Integer
     monoms = Vector{Vector{MonomIdx}}(undef, basis.size)
-    @inbounds for i in 1:(basis.ntotal)
+    @inbounds for i in 1:(basis.nfilled)
         monoms[i] = Vector{MonomIdx}(undef, length(basis.monoms[i]))
         for j in 1:length(basis.monoms[i])
             monoms[i][j] = basis.monoms[i][j]
@@ -169,20 +159,20 @@ function _deepcopy_basis(basis::Basis{T}, new_coeffs::Vector{Vector{C}}) where {
         new_coeffs,
         basis.size,
         basis.nprocessed,
-        basis.ntotal,
+        basis.nfilled,
         isred,
         nonred,
         lead,
-        basis.ndivmasks
+        basis.nnonredundant
     )
 end
 
-function deepcopy_basis(basis::Basis{T}) where {T <: CoeffFF}
+function deepcopy_basis(basis::Basis{T}) where {T}
     new_coeffs = Vector{Vector{T}}(undef, basis.size)
-    @inbounds for i in 1:(basis.ntotal)
+    @inbounds for i in 1:(basis.nfilled)
         new_coeffs[i] = Vector{T}(undef, length(basis.coeffs[i]))
         for j in 1:length(basis.coeffs[i])
-            new_coeffs[i][j] = basis.coeffs[i][j]
+            new_coeffs[i][j] = copy(basis.coeffs[i][j])
         end
     end
     _deepcopy_basis(basis, new_coeffs)
@@ -190,7 +180,6 @@ end
 
 # 
 function resize_basis_if_needed!(basis::Basis{T}, to_add::Int) where {T}
-    # TODO: maybe resize basis in chunks of 2^k?
     while basis.nprocessed + to_add >= basis.size
         basis.size = max(basis.size * 2, basis.nprocessed + to_add)
         resize!(basis.monoms, basis.size)
@@ -208,7 +197,7 @@ end
 # by dividing it by leading coefficient
 function normalize_basis!(ring, basis::Basis{<:CoeffFF})
     cfs = basis.coeffs
-    @inbounds for i in 1:(basis.ntotal)
+    @inbounds for i in 1:(basis.nfilled)
         !isassigned(cfs, i) && continue   # TODO: this is kind of bad
         ch = ring.ch
         mul = invmod(cfs[i][1], ch) % ch
@@ -224,7 +213,7 @@ end
 # by dividing it by leading coefficient
 function normalize_basis!(ring, basis::Basis{<:CoeffQQ})
     cfs = basis.coeffs
-    @inbounds for i in 1:(basis.ntotal)
+    @inbounds for i in 1:(basis.nfilled)
         !isassigned(cfs, i) && continue
         mul = inv(cfs[i][1])
         for j in 2:length(cfs[i])
@@ -324,7 +313,7 @@ function update_pairset!(
     end
 
     # ensure that basis hashtable can store new lcms
-    check_enlarge_hashtable!(ht, pc)
+    resize_hashtable_if_needed!(ht, pc)
 
     # add new lcms to the basis hashtable,
     # including index j and not including index pc
@@ -332,7 +321,7 @@ function update_pairset!(
 
     # mark redundant polynomials in basis
     nonred = basis.nonredundant
-    lml = basis.ndivmasks
+    lml = basis.nnonredundant
     @inbounds for i in 1:lml
         if !basis.isredundant[nonred[i]]
             if is_monom_divisible(basis.monoms[nonred[i]][1], new_lead, ht)
@@ -349,16 +338,16 @@ function update_basis!(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom
     k = 1
     lead = basis.divmasks
     nonred = basis.nonredundant
-    @inbounds for i in 1:(basis.ndivmasks)
+    @inbounds for i in 1:(basis.nnonredundant)
         if !basis.isredundant[nonred[i]]
             basis.divmasks[k] = lead[i]
             basis.nonredundant[k] = nonred[i]
             k += 1
         end
     end
-    basis.ndivmasks = k - 1
+    basis.nnonredundant = k - 1
 
-    @inbounds for i in (basis.nprocessed + 1):(basis.ntotal)
+    @inbounds for i in (basis.nprocessed + 1):(basis.nfilled)
         if !basis.isredundant[i]
             lead[k] = ht.hashdata[basis.monoms[i][1]].divmask
             nonred[k] = i
@@ -366,8 +355,8 @@ function update_basis!(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom
         end
     end
 
-    basis.ndivmasks = k - 1
-    basis.nprocessed = basis.ntotal
+    basis.nnonredundant = k - 1
+    basis.nprocessed = basis.nfilled
 end
 
 # Checks if element of basis at position idx is redundant
@@ -379,13 +368,13 @@ function is_redundant!(
     idx::Int
 ) where {M}
     pt = entrytype(M)
-    check_enlarge_hashtable!(update_ht, 0)
+    resize_hashtable_if_needed!(update_ht, 0)
 
     # lead of new polynomial
     lead_new = basis.monoms[idx][1]
     ps = pairset.pairs
 
-    @inbounds for i in (idx + 1):(basis.ntotal)
+    @inbounds for i in (idx + 1):(basis.nfilled)
         i == idx && continue
         basis.isredundant[i] && continue
 
@@ -412,7 +401,7 @@ end
 # Updates basis and pairset.
 # 
 # New elements added to the basis from the f4 matrix 
-# (the ones with indices from basis.nprocessed+1 to basis.ntotal)
+# (the ones with indices from basis.nprocessed+1 to basis.nfilled)
 # are checked for being redundant.
 #
 # Then, pairset is updated with the new S-pairs formed
@@ -426,7 +415,7 @@ function update!(
     update_ht::MonomialHashtable{M}
 ) where {M <: Monom}
     # total number of elements in the basis (old + new)
-    npivs = basis.ntotal
+    npivs = basis.nfilled
     # number of potential critical pairs to add
     npairs = basis.nprocessed * npivs + div((npivs + 1) * npivs, 2)
 
@@ -438,10 +427,10 @@ function update!(
 
     # update pairset,
     # for each new element in basis
-    @inbounds for i in (basis.nprocessed + 1):(basis.ntotal)
+    @inbounds for i in (basis.nprocessed + 1):(basis.nfilled)
         # check redundancy of new polynomial
         is_redundant!(pairset, basis, ht, update_ht, i) && continue
-        resize_lcms_if_needed!(pairset, basis.ntotal)
+        resize_lcms_if_needed!(pairset, basis.nfilled)
         # if not redundant, then add new S-pairs to pairset
         update_pairset!(pairset, basis, ht, update_ht, i)
     end
@@ -463,7 +452,7 @@ function fill_data!(
 ) where {M, T}
     ngens = length(exponents)
     @inbounds for i in 1:ngens
-        check_enlarge_hashtable!(ht, length(exponents[i]))
+        resize_hashtable_if_needed!(ht, length(exponents[i]))
 
         nterms = length(coeffs[i])
         basis.coeffs[i] = coeffs[i]
@@ -477,22 +466,22 @@ function fill_data!(
         # beautifuly coefficients (not needed)
     end
 
-    basis.ntotal = ngens
+    basis.nfilled = ngens
 end
 
 # Remove redundant elements from the basis
 # by moving all non-redundant up front
 function filter_redundant!(basis::Basis)
     j = 1
-    @inbounds for i in 1:(basis.ndivmasks)
+    @inbounds for i in 1:(basis.nnonredundant)
         if !basis.isredundant[basis.nonredundant[i]]
             basis.divmasks[j] = basis.divmasks[i]
             basis.nonredundant[j] = basis.nonredundant[i]
             j += 1
         end
     end
-    basis.ndivmasks = j - 1
-    @assert basis.nprocessed == basis.ntotal
+    basis.nnonredundant = j - 1
+    @assert basis.nprocessed == basis.nfilled
     basis
 end
 
@@ -500,14 +489,14 @@ end
 # This functions standardizes the given basis so that conditions hold.
 # (see f4/f4.jl)
 function standardize_basis!(ring, basis::Basis, ht::MonomialHashtable, ord)
-    @inbounds for i in 1:(basis.ndivmasks)
+    @inbounds for i in 1:(basis.nnonredundant)
         idx = basis.nonredundant[i]
         basis.nonredundant[i] = i
         basis.isredundant[i] = false
         basis.coeffs[i] = basis.coeffs[idx]
         basis.monoms[i] = basis.monoms[idx]
     end
-    basis.size = basis.nprocessed = basis.ntotal = basis.ndivmasks
+    basis.size = basis.nprocessed = basis.nfilled = basis.nnonredundant
     resize!(basis.coeffs, basis.nprocessed)
     resize!(basis.monoms, basis.nprocessed)
     resize!(basis.divmasks, basis.nprocessed)
@@ -519,8 +508,8 @@ end
 
 # Returns the exponent vectors of polynomials in the basis
 function hash_to_exponents(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
-    exps = Vector{Vector{M}}(undef, basis.ndivmasks)
-    @inbounds for i in 1:(basis.ndivmasks)
+    exps = Vector{Vector{M}}(undef, basis.nnonredundant)
+    @inbounds for i in 1:(basis.nnonredundant)
         idx = basis.nonredundant[i]
         poly = basis.monoms[idx]
         exps[i] = Vector{M}(undef, length(poly))
@@ -537,8 +526,8 @@ function export_basis_data(
     ht::MonomialHashtable{M}
 ) where {M <: Monom, C <: Coeff}
     exps = hash_to_exponents(basis, ht)
-    coeffs = Vector{Vector{C}}(undef, basis.ndivmasks)
-    @inbounds for i in 1:(basis.ndivmasks)
+    coeffs = Vector{Vector{C}}(undef, basis.nnonredundant)
+    @inbounds for i in 1:(basis.nnonredundant)
         idx = basis.nonredundant[i]
         coeffs[i] = basis.coeffs[idx]
     end

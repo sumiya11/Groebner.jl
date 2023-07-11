@@ -9,7 +9,7 @@ struct AlgorithmParameters{Ord1, Ord2}
     # Basis correctness checks levels
     heuristic_check::Bool
     randomized_check::Bool
-    guaranteed_check::Bool
+    certify_check::Bool
 
     check::Bool
 
@@ -44,13 +44,15 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler)
     ordering = kwargs.ordering
     if kwargs.ordering === InputOrdering() || kwargs.ordering === nothing
         ordering = ring.ord
+    else
+        ordering = kwargs.ordering
     end
     target_ord = ordering
     computation_ord = ordering
 
     heuristic_check = true
     randomized_check = true
-    guaranteed_check = kwargs.certify
+    certify_check = kwargs.certify
 
     linalg = kwargs.linalg
 
@@ -75,13 +77,13 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler)
 
     useed = UInt64(seed)
 
-    @log level = 1 """
+    @log level = -1 """
     Selected parameters:
     target_ord = $target_ord
     computation_ord = $computation_ord
     heuristic_check = $heuristic_check
     randomized_check = $randomized_check
-    guaranteed_check = $guaranteed_check
+    certify_check = $certify_check
     check = $kwargs.check
     linalg = $linalg
     reduced = $reduced
@@ -99,7 +101,7 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler)
         computation_ord,
         heuristic_check,
         randomized_check,
-        guaranteed_check,
+        certify_check,
         kwargs.check,
         linalg,
         reduced,

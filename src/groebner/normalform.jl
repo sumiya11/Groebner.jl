@@ -4,45 +4,50 @@ function _normalform(polynomials, to_be_reduced, kws::KeywordsHandler)
         select_polynomial_representation(polynomials, kws, hint=:large_exponents)
     ring, monoms, coeffs = convert_to_internal(polynomial_repr, polynomials, kws)
     if isempty(monoms)
-        @log "Input basis consisting of zero polynomials."
+        @log level = -2 "Input basis consisting of zero polynomials only."
         return to_be_reduced
     end
     ring_to_be_reduced, monoms_to_be_reduced, coeffs_to_be_reduced =
-        convert_to_internal(polynomial_repr, to_be_reduced, kws)
-    nonzeroindices = findall(!iszero_coeffs, coeffs_to_be_reduced)
-    if isempty(nonzeroindices)
-        @log "Polynomials to be reduced are all zero."
+        convert_to_internal(polynomial_repr, to_be_reduced, kws, dropzeros=false)
+    nonzero_indices = findall(!iszero_coeffs, coeffs_to_be_reduced)
+    if isempty(nonzero_indices)
+        @log level = -2 "Polynomials to be reduced are all zero."
         return to_be_reduced
     end
-    monoms_to_be_reduced_nonzero = monoms_to_be_reduced[nonzeroindices]
-    coeffs_to_be_reduced_nonzero = coeffs_to_be_reduced[nonzeroindices]
+    monoms_to_be_reduced_nonzero = monoms_to_be_reduced[nonzero_indices]
+    coeffs_to_be_reduced_nonzero = coeffs_to_be_reduced[nonzero_indices]
     params = AlgorithmParameters(ring, kws)
     ring = change_ordering_if_needed!(ring, monoms, coeffs, params)
-    ring = change_ordering_if_needed!(
+    ring_ = change_ordering_if_needed!(
         ring_to_be_reduced,
         monoms_to_be_reduced_nonzero,
         coeffs_to_be_reduced_nonzero,
         params
     )
+    @assert ring.nvars == ring_.nvars && ring.ch == ring_.ch && ring.ord == ring_.ord
     if kws.check
-        @log "Checking that the given input is a Groebner basis"
-        @assert _isgroebner(ring, monoms, coeffs, params) "The given set of polynomials is not a Groebner basis"
+        @log level = -2 "As `check=true` was provided, checking that the given input is indeed a Groebner basis"
+        if !_isgroebner(ring, monoms, coeffs, params)
+            __not_a_basis_error(
+                polynomials,
+                "Input polynomials do not look like a Groebner basis."
+            )
+        end
     end
-    # TODO: check that ring and ring_to_be_reduced agree!
     monoms_reduced, coeffs_reduced = _normalform(
         ring,
         monoms,
         coeffs,
-        monoms_to_be_reduced,
-        coeffs_to_be_reduced,
+        monoms_to_be_reduced_nonzero,
+        coeffs_to_be_reduced_nonzero,
         params
     )
-    monoms_to_be_reduced[nonzeroindices] .= monoms_reduced
-    coeffs_to_be_reduced[nonzeroindices] .= coeffs_reduced
+    monoms_to_be_reduced[nonzero_indices] .= monoms_reduced
+    coeffs_to_be_reduced[nonzero_indices] .= coeffs_reduced
     monoms_reduced = monoms_to_be_reduced
     coeffs_reduced = coeffs_to_be_reduced
-    # TODO: remove `tobereduced` from here
-    convert_to_output(ring, to_be_reduced, monoms_reduced, coeffs_reduced, kws)
+    # TODO: remove `to_be_reduced` from arguments here
+    convert_to_output(ring, to_be_reduced, monoms_reduced, coeffs_reduced, params)
 end
 
 function _normalform(
@@ -53,7 +58,7 @@ function _normalform(
     coeffs_to_be_reduced::Vector{Vector{C}},
     params
 ) where {M <: Monom, C <: Coeff}
-    @log "Initializing structs for F4"
+    @log level = -3 "Initializing structs for F4"
     basis, _, hashtable = initialize_structs(ring, monoms, coeffs, params)
     tobereduced = initialize_basis_using_existing_hashtable(
         ring,
