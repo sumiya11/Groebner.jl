@@ -6,6 +6,7 @@ using Groebner
 
 # Check invariants during testing
 Groebner.invariants_enabled() = true
+Groebner.update_logger(stream=stdout, loglevel=0)
 
 # Taken from JuMP/test/solvers.jl
 function try_import(name::Symbol)

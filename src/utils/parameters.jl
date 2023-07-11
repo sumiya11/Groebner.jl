@@ -1,5 +1,11 @@
 # Select parameters for Groebner basis computation
 
+const _default_rng_type = @static if VERSION >= v"1.8.0"
+    Random.Xoshiro
+else
+    Random.MersenneTwister
+end
+
 struct AlgorithmParameters{Ord1, Ord2}
     # Output polynomials monomial ordering
     target_ord::Ord1
@@ -37,7 +43,7 @@ struct AlgorithmParameters{Ord1, Ord2}
 
     # Random number generator seed
     seed::UInt64
-    rng::Random.Xoshiro
+    rng::_default_rng_type
 end
 
 function AlgorithmParameters(ring, kwargs::KeywordsHandler)
@@ -73,7 +79,7 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler)
 
     emit_computation_graph = false
 
-    rng = Random.Xoshiro(seed)
+    rng = _default_rng_type(seed)
 
     useed = UInt64(seed)
 
