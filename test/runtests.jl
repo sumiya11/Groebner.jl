@@ -1,13 +1,8 @@
 using Test
 using TestSetExtensions
 
-# Groebner.jl is tested for different frontends: 
-# - AbstractAlgebra.jl  (AbstractAlgebra.Generic.MPoly{T})
-# - Nemo.jl  (Nemo.fmpq_mpoly, Nemo.gfp_mpoly, ...)
-# - DynamicPolynomials.jl (DynamicPolynomials.Polynomial{true, T})
-
 using AbstractAlgebra
-# using Groebner
+using Groebner
 
 # Check invariants during testing
 Groebner.invariants_enabled() = true
@@ -55,6 +50,10 @@ end
     ]
     @includetests ["fglm/kbase"]
 
+    # Groebner.jl is tested for different frontends: 
+    # - AbstractAlgebra.jl  (AbstractAlgebra.Generic.MPoly{T})
+    # - Nemo.jl  (Nemo.fmpq_mpoly, Nemo.gfp_mpoly, ...)
+    # - DynamicPolynomials.jl (DynamicPolynomials.Polynomial{true, T})
     if try_import(:DynamicPolynomials)
         @includetests ["input-output/DynamicPolynomials"]
     end
