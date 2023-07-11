@@ -8,7 +8,7 @@
 const _default_logger = @static if VERSION >= v"1.8.0"
     Ref{Logging.ConsoleLogger}(Logging.ConsoleLogger(Logging.Info, show_limited=false))
 else
-    Ref{Logging.ConsoleLogger}(Logging.ConsoleLogger(Logging.Info))
+    Ref{Logging.ConsoleLogger}(Logging.ConsoleLogger())
 end
 const _default_message_loglevel = LogLevel(0)
 
