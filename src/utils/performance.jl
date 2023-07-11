@@ -2,7 +2,6 @@
 # TODO: description,
 # TODO: this is not thread-safe
 
-
 """
     enable_performance_counters(flag)
 

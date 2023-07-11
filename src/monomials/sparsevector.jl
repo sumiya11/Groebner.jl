@@ -125,7 +125,11 @@ end
 
 # Returns the lcm of monomials ea and eb.
 # Also writes the result to ec.
-function monom_lcm!(ec::ExponentVector{T}, ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
+function monom_lcm!(
+    ec::ExponentVector{T},
+    ea::ExponentVector{T},
+    eb::ExponentVector{T}
+) where {T}
     @assert length(ec) == length(ea) == length(eb)
     @inbounds ec[1] = zero(T)
     @inbounds for i in 2:length(ec)

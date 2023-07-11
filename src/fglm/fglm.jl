@@ -203,7 +203,7 @@ function _kbase(polynomials, kws)
     ring, monoms, coeffs = convert_to_internal(representation, polynomials, kws)
     params = AlgorithmParameters(ring, kws)
     if isempty(monoms)
-        @log level=-2 "Input consisting of zero polynomials."
+        @log level = -2 "Input consisting of zero polynomials."
         throw(DomainError("Input consisting of zero polynomials to Groebner.kbase."))
         return convert_to_output(ring, polynomials, monoms, coeffs, params)
     end

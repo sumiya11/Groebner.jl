@@ -27,7 +27,13 @@ mutable struct ComputationGraphF4{C, M, Ord}
     # matrix_columns::Vector{Vector{Int}}
 end
 
-function initialize_computation_graph_f4(ring, input_basis, gb_basis, hashtable, permutation)
+function initialize_computation_graph_f4(
+    ring,
+    input_basis,
+    gb_basis,
+    hashtable,
+    permutation
+)
     ComputationGraphF4(
         ring,
         input_basis,
@@ -41,13 +47,13 @@ function initialize_computation_graph_f4(ring, input_basis, gb_basis, hashtable,
         Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}(),
         Vector{Int}(),
         Vector{Int}(),
-        Vector{Int}(),
+        Vector{Int}()
         # Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}(),
         # Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}(),
     )
 end
 
-function finalize_graph!(graph::ComputationGraphF4) 
+function finalize_graph!(graph::ComputationGraphF4)
     # TODO: trim sizes
     graph.buf_basis = deepcopy_basis(graph.gb_basis)
     graph.buf_basis.nnonredundant = graph.input_basis.nnonredundant
@@ -66,8 +72,11 @@ function Base.show(io::IO, ::MIME"text/plain", graph::ComputationGraphF4)
     # TODO
     total_matrix_up_rows_useful = sum(length ∘ first, graph.matrix_upper_rows)
     total_matrix_low_rows_useful = sum(length ∘ first, graph.matrix_lower_rows)
-    println(io, """
-    Total iterations: $(total_iterations)
-    Total upper matrix rows: $(total_matrix_up_rows) ($(round(total_matrix_up_rows_useful / total_matrix_up_rows * 100, digits=2)) % are useful)
-    Total lower matrix rows: $(total_matrix_low_rows) ($(round(total_matrix_low_rows_useful / total_matrix_low_rows * 100, digits=2)) % are useful)""")
+    println(
+        io,
+        """
+Total iterations: $(total_iterations)
+Total upper matrix rows: $(total_matrix_up_rows) ($(round(total_matrix_up_rows_useful / total_matrix_up_rows * 100, digits=2)) % are useful)
+Total lower matrix rows: $(total_matrix_low_rows) ($(round(total_matrix_low_rows_useful / total_matrix_low_rows * 100, digits=2)) % are useful)"""
+    )
 end

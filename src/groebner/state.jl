@@ -269,13 +269,13 @@ end
 # Returns true is the reconstrction is successfull, false otherwise.
 function rational_reconstruct!(state::GroebnerState, lucky::LuckyPrimes)
     modulo = lucky.modulo
-    buffer     = state.buffer
-    bnd        = rational_reconstruction_bound(modulo)
-    buf, buf1  = buffer.reconstructbuf1, buffer.reconstructbuf2
+    buffer = state.buffer
+    bnd = rational_reconstruction_bound(modulo)
+    buf, buf1 = buffer.reconstructbuf1, buffer.reconstructbuf2
     buf2, buf3 = buffer.reconstructbuf3, buffer.reconstructbuf4
-    u1, u2     = buffer.reconstructbuf5, buffer.reconstructbuf6
-    u3, v1     = buffer.reconstructbuf7, buffer.reconstructbuf8
-    v2, v3     = buffer.reconstructbuf9, buffer.reconstructbuf10
+    u1, u2 = buffer.reconstructbuf5, buffer.reconstructbuf6
+    u3, v1 = buffer.reconstructbuf7, buffer.reconstructbuf8
+    v2, v3 = buffer.reconstructbuf9, buffer.reconstructbuf10
     gb_coeffs_zz = state.gb_coeffs_zz
     gb_coeffs_qq = state.gb_coeffs_qq
     @invariant length(gb_coeffs_zz) == length(gb_coeffs_qq)

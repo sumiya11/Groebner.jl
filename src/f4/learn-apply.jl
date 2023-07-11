@@ -451,8 +451,8 @@ function f4_learn!(
     # While there are pairs to be reduced
     while !isempty(pairset)
         i += 1
-        @log level=-3 "F4: iteration $i"
-        @log level=-3 "F4: available $(pairset.load) pairs"
+        @log level = -3 "F4: iteration $i"
+        @log level = -3 "F4: available $(pairset.load) pairs"
 
         # selects pairs for reduction from pairset following normal strategy
         # (minimal lcm degrees are selected),

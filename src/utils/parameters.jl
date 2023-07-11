@@ -95,7 +95,7 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler)
     threading = $threading
     seed = $seed
     rng = $rng"""
-    
+
     AlgorithmParameters(
         target_ord,
         computation_ord,

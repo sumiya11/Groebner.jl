@@ -44,7 +44,7 @@ end
 # Check if the prime is lucky w.r.t. input basis coefficients -- does not divide
 # any of the leading coefficients
 function isluckyprime(lucky::LuckyPrimes, prime::UInt64)
-    @log level=-3 "Checking if $prime is lucky.."
+    @log level = -3 "Checking if $prime is lucky.."
     buf = lucky.buf
     p   = BigInt(prime)
     for poly in lucky.coeffs

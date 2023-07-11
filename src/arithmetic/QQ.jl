@@ -4,5 +4,4 @@
 abstract type AbstractArithmeticQQ end
 
 struct BuiltinArithmeticQQ <: AbstractArithmeticQQ
-
 end

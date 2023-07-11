@@ -16,7 +16,7 @@ Check that expr evaluates to `true` at runtime. If not, throw an
 @invariant 1 > 2  # throws!
 ```
 """
-macro invariant(arg) 
+macro invariant(arg)
     esc(:(
         if $(@__MODULE__).invariants_enabled()
             @assert $arg

@@ -160,10 +160,7 @@ groebner([x*y + x, x + y^2], ordering=ord)
 struct WeightedOrdering{T} <: AbstractMonomialOrdering
     weights::Vector{UInt64}
     variables::Vector{T}
-    function WeightedOrdering(
-        weights::AbstractVector,
-        variables
-    )
+    function WeightedOrdering(weights::AbstractVector, variables)
         @assert !isempty(weights)
         @assert all(>=(0), weights) "Only nonnegative weights are supported."
         # @assert length(weights) == length(variables)

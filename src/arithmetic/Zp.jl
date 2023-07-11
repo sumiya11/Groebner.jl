@@ -63,7 +63,6 @@ end
     a - (x >>> mod.shift) * mod.divisor
 end
 
-
 function select_arithmetic(coeffs::Vector{Vector{T}}, ch) where {T <: CoeffFF}
     SpecializedBuiltinArithmeticZp(convert(T, ch))
 end

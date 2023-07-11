@@ -59,7 +59,8 @@ for (op, n) in _defined_packed_pairs
 
     # define `max_vars_in_monom`
     @eval begin
-        max_vars_in_monom(::Type{$op{T, B}}) where {T, B} = $n * div(sizeof(T), sizeof(B)) - 1
+        max_vars_in_monom(::Type{$op{T, B}}) where {T, B} =
+            $n * div(sizeof(T), sizeof(B)) - 1
     end
 
     # define `totaldeg`
@@ -222,7 +223,8 @@ function monom_to_dense_vector!(tmp::Vector{I}, pv::PackedTuple2{T, B}) where {I
 end
 function monom_to_dense_vector!(tmp::Vector{I}, pv::PackedTuple3{T, B}) where {I, T, B}
     epc = elperchunk(T, B)
-    (length(tmp) < 2 * epc) && return monom_to_dense_vector!(tmp, PackedTuple2{T, B}(pv.a1, pv.a2))
+    (length(tmp) < 2 * epc) &&
+        return monom_to_dense_vector!(tmp, PackedTuple2{T, B}(pv.a1, pv.a2))
     indent = 0
     packedunpack!(tmp, pv.a3, B, indent)
     indent = 0
@@ -527,13 +529,22 @@ function is_monom_divisible!(
     ans, e
 end
 
-function is_monom_elementwise_eq(ea::PackedTuple1{T, B}, eb::PackedTuple1{T, B}) where {T, B}
+function is_monom_elementwise_eq(
+    ea::PackedTuple1{T, B},
+    eb::PackedTuple1{T, B}
+) where {T, B}
     ea.a1 == eb.a1
 end
-function is_monom_elementwise_eq(ea::PackedTuple2{T, B}, eb::PackedTuple2{T, B}) where {T, B}
+function is_monom_elementwise_eq(
+    ea::PackedTuple2{T, B},
+    eb::PackedTuple2{T, B}
+) where {T, B}
     ea.a1 == eb.a1 && ea.a2 == eb.a2
 end
-function is_monom_elementwise_eq(ea::PackedTuple3{T, B}, eb::PackedTuple3{T, B}) where {T, B}
+function is_monom_elementwise_eq(
+    ea::PackedTuple3{T, B},
+    eb::PackedTuple3{T, B}
+) where {T, B}
     ea.a1 == eb.a1 && ea.a2 == eb.a2 && ea.a3 == eb.a3
 end
 

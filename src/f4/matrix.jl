@@ -620,17 +620,20 @@ function interreduce_lower_part_learn!(
     end
 
     useful_reducers_sorted = sort(collect(useful_reducers))
-    @log level=-6 "" useful_reducers_sorted
+    @log level = -6 "" useful_reducers_sorted
     push!(graph.matrix_infos, (nup=matrix.nup, nlow=matrix.nlow, ncols=matrix.ncols))
     push!(graph.matrix_nonzeroed_rows, not_reduced_to_zero)
     # push!(graph.matrix_upper_rows, (matrix.up2coef, matrix.up2mult))
     # push!(graph.matrix_lower_rows, (matrix.low2coef, matrix.low2mult))
-    push!(graph.matrix_upper_rows, (matrix.up2coef[1:matrix.nup], matrix.up2mult[1:matrix.nup]))
+    push!(
+        graph.matrix_upper_rows,
+        (matrix.up2coef[1:(matrix.nup)], matrix.up2mult[1:(matrix.nup)])
+    )
     # push!(graph.matrix_lower_rows, (rowidx2coef, matrix.low2mult))
     # push!(graph.matrix_upper_rows, (map(first, useful_reducers_sorted), map(last, useful_reducers_sorted)))
     push!(graph.matrix_lower_rows, (Int[], Int[]))
     # push!(graph.matrix_lower_rows, (matrix.low2coef[not_reduced_to_zero], matrix.low2mult[not_reduced_to_zero]))
-    
+
     # TODO: we should learn and not reduce redundant elements in the first place!
 
     # shrink matrix
@@ -722,7 +725,7 @@ function learn_sparse_rref!(
     # no copy
     # YES
     pivs, l2c_tmp = absolute_pivots!(matrix)
-    @log level=-6 "absolute_pivots!" pivs l2c_tmp
+    @log level = -6 "absolute_pivots!" pivs l2c_tmp
 
     rowidx2coef = matrix.low2coef
     matrix.low2coef = l2c_tmp
@@ -735,7 +738,7 @@ function learn_sparse_rref!(
     not_reduced_to_zero = Int[]
     useful_reducers = Set{Any}()
 
-    @log level=-6 "Low to coef" rowidx2coef matrix.low2mult
+    @log level = -6 "Low to coef" rowidx2coef matrix.low2mult
 
     @inbounds for i in 1:nlow
         # select next row to be reduced
@@ -746,7 +749,7 @@ function learn_sparse_rref!(
         # (no need to copy here)
         cfsref = basis.coeffs[rowidx2coef[i]]
 
-        @log level=-7 "$i from $nlow" rowexps cfsref rowidx2coef
+        @log level = -7 "$i from $nlow" rowexps cfsref rowidx2coef
 
         # we load coefficients into dense array
         # into rowexps indices
@@ -777,7 +780,7 @@ function learn_sparse_rref!(
             push!(useful_reducers, rr)
         end
 
-        @log level=-7 "Not zero" i rowidx2coef[i] matrix.low2mult[i]
+        @log level = -7 "Not zero" i rowidx2coef[i] matrix.low2mult[i]
 
         # matrix coeffs sparsely stores coefficients of new row
         matrix.coeffs[i] = newcfs
@@ -791,16 +794,22 @@ function learn_sparse_rref!(
         # normalize if needed
         normalize_sparse_row!(matrix.coeffs[i], arithmetic)
     end
-    
+
     # TODO
     useful_reducers_sorted = sort(collect(useful_reducers))
-    @log level=-7 "" useful_reducers_sorted
+    @log level = -7 "" useful_reducers_sorted
     push!(graph.matrix_infos, (nup=matrix.nup, nlow=matrix.nlow, ncols=matrix.ncols))
     push!(graph.matrix_nonzeroed_rows, not_reduced_to_zero)
     # push!(graph.matrix_upper_rows, (matrix.up2coef, matrix.up2mult))
     # push!(graph.matrix_lower_rows, (rowidx2coef, matrix.low2mult))
-    push!(graph.matrix_upper_rows, (map(first, useful_reducers_sorted), map(last, useful_reducers_sorted)))
-    push!(graph.matrix_lower_rows, (rowidx2coef[not_reduced_to_zero], matrix.low2mult[not_reduced_to_zero]))
+    push!(
+        graph.matrix_upper_rows,
+        (map(first, useful_reducers_sorted), map(last, useful_reducers_sorted))
+    )
+    push!(
+        graph.matrix_lower_rows,
+        (rowidx2coef[not_reduced_to_zero], matrix.low2mult[not_reduced_to_zero])
+    )
 
     interreduce_lower_part!(matrix, basis, pivs, arithmetic)
     true
@@ -822,7 +831,7 @@ function apply_sparse_rref!(
     # no copy
     # YES
     pivs, l2c_tmp = absolute_pivots!(matrix)
-    @log level=-7 "absolute_pivots!" pivs l2c_tmp
+    @log level = -7 "absolute_pivots!" pivs l2c_tmp
 
     rowidx2coef = matrix.low2coef
     matrix.low2coef = l2c_tmp
@@ -843,7 +852,7 @@ function apply_sparse_rref!(
         # (no need to copy here)
         cfsref = basis.coeffs[rowidx2coef[i]]
 
-        @log level=-7 "$i from $nlow" rowexps cfsref rowidx2coef
+        @log level = -7 "$i from $nlow" rowexps cfsref rowidx2coef
 
         # we load coefficients into dense array
         # into rowexps indices
@@ -866,7 +875,7 @@ function apply_sparse_rref!(
             # then something has gone wrong in tracing 
             return false
         end
-        
+
         push!(not_reduced_to_zero, i)
 
         # matrix coeffs sparsely stores coefficients of new row

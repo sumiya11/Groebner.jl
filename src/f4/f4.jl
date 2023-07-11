@@ -592,7 +592,7 @@ function select_normal!(
         end
     end
 
-    @log level=-4 "Selected $(npairs) pairs in select_normal!"
+    @log level = -4 "Selected $(npairs) pairs in select_normal!"
 
     reinitialize_matrix!(matrix, npairs)
 
@@ -808,7 +808,14 @@ function f4!(
         # if the iteration is redundant according to the previous modular run
         if isready(tracer)
             if is_iteration_redundant(tracer, i)
-                discard_normal!(pairset, basis, matrix, hashtable, symbol_ht, maxpairs=params.maxpairs)
+                discard_normal!(
+                    pairset,
+                    basis,
+                    matrix,
+                    hashtable,
+                    symbol_ht,
+                    maxpairs=params.maxpairs
+                )
                 matrix    = initialize_matrix(ring, C)
                 symbol_ht = initialize_secondary_hashtable(hashtable)
                 continue
