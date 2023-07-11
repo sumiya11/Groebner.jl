@@ -18,7 +18,7 @@ systems_over_ff = Dict(
     "eco-11" => Groebner.eco11(ground=K, ordering=:degrevlex)
 )
 
-run_system(system; kwargs...) = Groebner.groebner(system, linalg=:prob, kwargs...)
+run_system(system; kwargs...) = Groebner.groebner(system, linalg=:randomized, kwargs...)
 
 SUITE["groebner"] = BenchmarkGroup()
 SUITE["groebner"]["finite-field"] = BenchmarkGroup()

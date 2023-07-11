@@ -19,7 +19,7 @@ struct PackedVector{T <: Unsigned, B <: Unsigned}
     data::Vector{T}
 end
 
-@noinline function _overflow_check(e::PackedVector{T, B}) where {T, B}
+@noinline function _monom_overflow_check(e::PackedVector{T, B}) where {T, B}
     totaldeg(e) >= div(typemax(B), 2) && throw("Overflow is probable.")
 end
 
@@ -27,8 +27,8 @@ Base.eltype(::Type{PackedVector{T, B}}) where {T, B} = B
 Base.eltype(::PackedVector{T, B}) where {T, B} = B
 Base.copy(pv::PackedVector{T, B}) where {T, B} = PackedVector{T, B}(copy(pv.data))
 
-capacity(::Type{PackedVector{T, B}}) where {T, B} = 2^32
-capacity(::PackedVector{T, B}) where {T, B} = capacity(PackedVector{T, B})
+max_vars_in_monom(::Type{PackedVector{T, B}}) where {T, B} = 2^32
+max_vars_in_monom(::PackedVector{T, B}) where {T, B} = max_vars_in_monom(PackedVector{T, B})
 
 PackedVector(ev) = PackedVector{UInt64}(ev)
 PackedVector{T}(ev) where {T <: Unsigned} = PackedVector{T, UInt8}(ev)
@@ -37,7 +37,7 @@ function totaldeg(pv::PackedVector{T, B}) where {T, B}
     B(@inbounds(pv.data[1]) >> (8 * (sizeof(T) - sizeof(B))))
 end
 
-function make_ev(::Type{PackedVector{T, B}}, ev::Vector{U}) where {T, B, U}
+function construct_monom(::Type{PackedVector{T, B}}, ev::Vector{U}) where {T, B, U}
     ts, bs = sizeof(T), sizeof(B)
     epc = div(ts, bs)
     @assert epc * bs == ts
@@ -107,15 +107,15 @@ end
 
 function exponent_isless_lex(ea::PackedVector{T, B}, eb::PackedVector{T, B}) where {T, B}
     s = div(sizeof(T), sizeof(B)) * length(ea.data)
-    a = make_ev(PowerVector{T}, make_dense(ea, s))
-    b = make_ev(PowerVector{T}, make_dense(eb, s))
+    a = construct_monom(ExponentVector{T}, make_dense(ea, s))
+    b = construct_monom(ExponentVector{T}, make_dense(eb, s))
     exponent_isless_lex(a, b)
 end
 
 function exponent_isless_dl(ea::PackedVector{T, B}, eb::PackedVector{T, B}) where {T, B}
     s = div(sizeof(T), sizeof(B)) * length(ea.data)
-    a = make_ev(PowerVector{T}, make_dense(ea, s))
-    b = make_ev(PowerVector{T}, make_dense(eb, s))
+    a = construct_monom(ExponentVector{T}, make_dense(ea, s))
+    b = construct_monom(ExponentVector{T}, make_dense(eb, s))
     exponent_isless_dl(a, b)
 end
 
@@ -150,7 +150,7 @@ function monom_lcm!(
         ec.data[i], si = packedmax(a, b, B, Val(isone(i)))
         ec.data[1] += si << ((sizeof(T) - sizeof(B)) * 8)
     end
-    _overflow_check(ec)
+    _monom_overflow_check(ec)
     ec
 end
 
@@ -172,7 +172,7 @@ function monom_product!(
     for i in 1:length(ec.data)
         ec.data[i] = ea.data[i] + eb.data[i]
     end
-    _overflow_check(ec)
+    _monom_overflow_check(ec)
     ec
 end
 

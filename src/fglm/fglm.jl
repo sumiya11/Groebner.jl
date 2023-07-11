@@ -11,7 +11,7 @@ end
 Base.isempty(m::NextMonomials) = m.load == 0
 
 function initialize_nextmonomials(ht::MonomialHashtable{M}, ord) where {M}
-    zz = make_zero_ev(M, ht.nvars)
+    zz = construct_const_monom(M, ht.nvars)
     vidx = insert_in_hash_table!(ht, zz)
     monoms = Vector{MonomIdx}(undef, 2^3)
     monoms[1] = vidx
@@ -24,13 +24,13 @@ function insertnexts!(m::NextMonomials, ht::MonomialHashtable{M}, monom::MonomId
         resize!(m.monoms, length(m.monoms) * 2)
     end
 
-    emonom = ht.exponents[monom]
+    emonom = ht.monoms[monom]
     for i in 1:(ht.nvars)
         eprod = copy(emonom)
         tmp = Vector{UInt}(undef, ht.nvars)
-        edense = make_dense!(tmp, eprod)
+        edense = monom_to_dense_vector!(tmp, eprod)
         edense[i] += 1
-        eprod = make_ev(M, edense)
+        eprod = construct_monom(M, edense)
         vidx = insert_in_hash_table!(ht, eprod)
 
         if !haskey(m.done, vidx)
@@ -53,11 +53,11 @@ end
 function add_generator!(basis::Basis{C}, matrix, relation, ht, ord) where {C <: Coeff}
     rexps, rcoeffs, _ = extract_sparse_row(relation)
 
-    if debug()
-        @warn "add generator"
-        println(relation)
-        println(rexps, " ", rcoeffs)
-    end
+    # if debug()
+    #     # @warn "add generator"
+    #     println(relation)
+    #     println(rexps, " ", rcoeffs)
+    # end
 
     for i in 1:length(rexps)
         rexps[i] = matrix.rightcol2hash[rexps[i]]
@@ -65,26 +65,26 @@ function add_generator!(basis::Basis{C}, matrix, relation, ht, ord) where {C <: 
 
     sort_term_indices_decreasing!(rexps, rcoeffs, ht, ord)
 
-    if debug()
-        @warn "extracted"
-        println(rexps)
-        println(rcoeffs)
-    end
+    # if debug()
+    #     # @warn "extracted"
+    #     println(rexps)
+    #     println(rcoeffs)
+    # end
 
-    check_enlarge_basis!(basis, 1)
-    basis.ndone += 1
-    basis.nlead += 1
-    basis.nonred[basis.nlead] = basis.nlead
-    basis.monoms[basis.ndone] = rexps
-    basis.coeffs[basis.ndone] = rcoeffs
+    resize_basis_if_needed!(basis, 1)
+    basis.nprocessed += 1
+    basis.nnonredundant += 1
+    basis.nonredundant[basis.nnonredundant] = basis.nnonredundant
+    basis.monoms[basis.nprocessed] = rexps
+    basis.coeffs[basis.nprocessed] = rcoeffs
 end
 
 function divides_staircase(monom, staircase, ht)
     for m in staircase
-        if debug()
-            @warn "uwu"
-            println("is $(ht.exponents[m]) divisible by $(ht.exponents[monom])")
-        end
+        # if debug()
+        #     # @warn "uwu"
+        #     println("is $(ht.monoms[m]) divisible by $(ht.monoms[monom])")
+        # end
         if is_monom_divisible(monom, m, ht)
             return true
         end
@@ -100,7 +100,7 @@ function fglm_f4!(
     ht::MonomialHashtable,
     ord::AbstractMonomialOrdering
 ) where {C <: Coeff}
-    newbasis = initialize_basis(ring, basis.ntotal, C)
+    newbasis = initialize_basis(ring, basis.nfilled, C)
     nextmonoms = initialize_nextmonomials(ht, ord)
     matrix = initialize_double_matrix(basis)
     staircase = MonomIdx[]
@@ -108,45 +108,45 @@ function fglm_f4!(
     while !isempty(nextmonoms)
         monom = nextmonomial!(nextmonoms)
 
-        if debug()
-            @warn "new iteration" ht.exponents[monom]
-            @warn "" ht
-            println("#############")
-            println(nextmonoms)
-            println(newbasis.monoms, " ", newbasis.coeffs)
-        end
+        # if debug()
+        #     # @warn "new iteration" ht.monoms[monom]
+        #     # @warn "" ht
+        #     println("#############")
+        #     println(nextmonoms)
+        #     println(newbasis.monoms, " ", newbasis.coeffs)
+        # end
 
         if divides_staircase(monom, staircase, ht)
             continue
         end
 
         tobereduced = initialize_basis(ring, [[monom]], [C[1]])
-        tobereduced.ntotal = 1
+        tobereduced.nfilled = 1
 
         # compute normal form
-        normal_form_f4!(ring, basis, ht, tobereduced)
+        f4_normalform!(ring, basis, tobereduced, ht)
 
-        if debug()
-            println("Normal form ", tobereduced.monoms[1], " ", tobereduced.coeffs[1])
-        end
+        # if debug()
+        #     println("Normal form ", tobereduced.monoms[1], " ", tobereduced.coeffs[1])
+        # end
 
         # matrix left rows can express tobereduced?
         # reduces monom and tobereduced
         exists, relation = linear_relation!(ring, matrix, monom, tobereduced, ht)
 
-        if debug()
-            @warn "dump"
-            dump(matrix, maxdepth=2)
-            println(exists)
-        end
+        # if debug()
+        #     # @warn "dump"
+        #     dump(matrix, maxdepth=2)
+        #     println(exists)
+        # end
 
         # if linear relation between basis elements exists
         if exists
-            lead = ht.exponents[monom]
+            lead = ht.monoms[monom]
 
-            if debug()
-                @error "produced element" lead
-            end
+            # if debug()
+            #     # @error "produced element" lead
+            # end
 
             add_generator!(newbasis, matrix, relation, ht, ord)
             push!(staircase, monom)
@@ -168,11 +168,9 @@ function fglm_f4(
     basiscoeffs::Vector{Vector{C}},
     metainfo
 ) where {M, C <: Coeff}
-    tablesize = select_tablesize(ring, basisexps)
+    basis, pairset, ht = initialize_structs(ring, basisexps, basiscoeffs, metainfo)
 
-    basis, ht = initialize_structures(ring, basisexps, basiscoeffs, metainfo.rng, tablesize)
-
-    basis, linbasis, ht = fglm_f4!(ring, basis, ht, metainfo.computeord)
+    basis, linbasis, ht = fglm_f4!(ring, basis, ht, metainfo.computation_ord)
 
     export_basis_data(basis, ht)
 end
@@ -193,24 +191,72 @@ function extract_linear_basis(ring, matrix::DoubleMacaulayMatrix{C}) where {C}
 
     linbasis = initialize_basis(ring, exps, coeffs)
 
-    linbasis.ndone = length(exps)
-    linbasis.nlead = length(exps)
-    linbasis.nonred = collect(1:(linbasis.ndone))
+    linbasis.nprocessed = length(exps)
+    linbasis.nnonredundant = length(exps)
+    linbasis.nonredundant = collect(1:(linbasis.nprocessed))
 
     linbasis
+end
+
+function _kbase(polynomials, kws)
+    representation = select_polynomial_representation(polynomials, kws)
+    ring, monoms, coeffs = convert_to_internal(representation, polynomials, kws)
+    params = AlgorithmParameters(ring, kws)
+    if isempty(monoms)
+        @log level = -2 "Input consisting of zero polynomials."
+        throw(DomainError("Input consisting of zero polynomials to Groebner.kbase."))
+        return convert_to_output(ring, polynomials, monoms, coeffs, params)
+    end
+    if kws.check
+        @log level = -2 "Checking if a Grobner basis"
+        if !isgroebner(polynomials)
+            throw(DomainError("Input is not a Groebner basis."))
+        end
+    end
+    m, c = kbase_f4(ring, monoms, coeffs, params, representation)
+    convert_to_output(ring, polynomials, m, c, params)
 end
 
 function kbase_f4(
     ring::PolyRing,
     basisexps::Vector{Vector{M}},
     basiscoeffs::Vector{Vector{C}},
-    metainfo
+    metainfo,
+    representation
 ) where {M, C <: Coeff}
-    tablesize = select_tablesize(ring, basisexps)
+    # tablesize = select_tablesize(ring, basisexps)
 
-    basis, ht = initialize_structures(ring, basisexps, basiscoeffs, metainfo.rng, tablesize)
+    basis, pairset, ht = initialize_structs(ring, basisexps, basiscoeffs, metainfo)
 
-    basis, linbasis, ht = fglm_f4!(ring, basis, ht, metainfo.computeord)
+    basis, linbasis, ht = fglm_f4!(ring, basis, ht, metainfo.computation_ord)
 
     export_basis_data(linbasis, ht)
+
+    # #= set the logger =#
+    # # prev_logger = Logging.global_logger(ConsoleLogger(stderr, loglevel))
+
+    # # check && _check_isgroebner(basis)
+
+    # #= extract ring information, exponents and coefficients
+    #    from input polynomials =#
+    # # Copies input, so that polynomials would not be changed itself.
+    # ring, exps, coeffs =
+    #     convert_to_internal(representation, basis, InputOrdering())
+
+    # # metainfo = set_metaparameters(ring, InputOrdering(), false, :exact, rng)
+
+    # iszerobasis = remove_zeros_from_input!(ring, exps, coeffs)
+    # iszerobasis &&
+    #     (throw(DomainError(basis, "Groebner.kbase does not work with such ideals, sorry")))
+
+    # bexps, bcoeffs = kbase_f4(ring, exps, coeffs, metainfo)
+
+    # # ordering in bexps here matches target ordering in metainfo
+
+    # #= revert logger =#
+    # # Logging.global_logger(prev_logger)
+
+    # # ring contains ordering of computation, it is the requested ordering
+    # #= convert result back to representation of input =#
+    # convert_to_output(ring, basis, bexps, bcoeffs, metainfo)
 end

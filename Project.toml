@@ -1,7 +1,7 @@
 name = "Groebner"
 uuid = "0b43b601-686d-58a3-8a1c-6623616c7cd4"
 authors = ["sumiya11"]
-version = "0.3.6"
+version = "0.4.0"
 
 [deps]
 AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
@@ -16,7 +16,7 @@ SnoopPrecompile = "66db9d55-30c0-4569-8b51-7e840670fc0c"
 AbstractAlgebra = "0.23, 0.24, 0.25, 0.26, 0.27, 0.28, 0.29, 0.30"
 BenchmarkTools = "1"
 Combinatorics = "1"
-MultivariatePolynomials = "0.4.3, 0.5"
+MultivariatePolynomials = "0.5"
 Primes = "0.5"
 SnoopPrecompile = "1"
 TestSetExtensions = "2"

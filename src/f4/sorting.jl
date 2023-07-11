@@ -24,16 +24,16 @@ end
 # by their leading monomial in the non-decreasing way
 # by the given term ordering.
 # Also sorts any arrays passed in `abc` in the same order as basis.
-function sort_gens_by_lead_increasing!(
+function sort_polys_by_lead_increasing!(
     basis::Basis,
     ht::MonomialHashtable,
     abc...;
     ord::Ord=ht.ord
 ) where {Ord <: AbstractMonomialOrdering}
     gens = basis.monoms
-    exps = ht.exponents
+    exps = ht.monoms
 
-    inds = collect(1:(basis.ntotal))
+    inds = collect(1:(basis.nfilled))
 
     cmps =
         (x, y) ->
@@ -42,12 +42,30 @@ function sort_gens_by_lead_increasing!(
     sort!(inds, lt=cmps, alg=_default_sorting_alg())
 
     # use array assignment insted of elemewise assignment
-    basis.monoms[1:(basis.ntotal)] = basis.monoms[inds]
-    basis.coeffs[1:(basis.ntotal)] = basis.coeffs[inds]
+    basis.monoms[1:(basis.nfilled)] = basis.monoms[inds]
+    basis.coeffs[1:(basis.nfilled)] = basis.coeffs[inds]
     for a in abc
-        a[1:(basis.ntotal)] = a[inds]
+        a[1:(basis.nfilled)] = a[inds]
     end
-    nothing
+
+    inds
+end
+
+function is_sorted_by_lead_increasing(
+    basis::Basis,
+    ht::MonomialHashtable,
+    ord::Ord=ht.ord
+) where {Ord <: AbstractMonomialOrdering}
+    gens = basis.monoms
+    exps = ht.monoms
+
+    inds = collect(1:(basis.nfilled))
+
+    cmps =
+        (x, y) ->
+            monom_isless(@inbounds(exps[gens[x][1]]), @inbounds(exps[gens[y][1]]), ord)
+
+    issorted(inds, lt=cmps)
 end
 
 #------------------------------------------------------------------------------
@@ -66,7 +84,7 @@ end
 # Sorts the first `npairs` pairs from `pairset` by non-decreasing order of
 # the exponent vector of the lcm wrt. the given monomial ordering
 function sort_pairset_by_lcm!(pairset::Pairset, npairs::Int, ht::MonomialHashtable)
-    exps = ht.exponents
+    exps = ht.monoms
 
     cmps = (x, y) -> monom_isless(@inbounds(exps[x.lcm]), @inbounds(exps[y.lcm]), ht.ord)
 
@@ -162,7 +180,10 @@ function sort_matrix_upper_rows_decreasing!(matrix)
 
     matrix.uprows[1:(matrix.nup)] = matrix.uprows[inds]
     matrix.up2coef[1:(matrix.nup)] = matrix.up2coef[inds]
-
+    # TODO
+    if !isempty(matrix.up2mult)
+        matrix.up2mult[1:(matrix.nup)] = matrix.up2mult[inds]
+    end
     matrix
 end
 
@@ -181,7 +202,9 @@ function sort_matrix_lower_rows_increasing!(matrix)
 
     matrix.lowrows[1:(matrix.nlow)] = matrix.lowrows[inds]
     matrix.low2coef[1:(matrix.nlow)] = matrix.low2coef[inds]
-
+    if !isempty(matrix.low2mult)
+        matrix.low2mult[1:(matrix.nlow)] = matrix.low2mult[inds]
+    end
     matrix
 end
 
@@ -192,7 +215,7 @@ end
 # See f4/matrix.jl for details
 function sort_columns_by_hash!(col2hash::Vector{T}, symbol_ht::MonomialHashtable) where {T}
     hd = symbol_ht.hashdata
-    es = symbol_ht.exponents
+    es = symbol_ht.monoms
 
     function cmp(a, b, ord)
         @inbounds ha = hd[a]
@@ -245,7 +268,7 @@ function sort_monom_indices_decreasing!(
     ht::MonomialHashtable,
     ord::AbstractMonomialOrdering
 )
-    exps = ht.exponents
+    exps = ht.monoms
 
     cmps = (x, y) -> monom_isless(@inbounds(exps[y]), @inbounds(exps[x]), ord)
 
@@ -258,7 +281,7 @@ function sort_term_indices_decreasing!(
     ht::MonomialHashtable,
     ord::AbstractMonomialOrdering
 ) where {C <: Coeff}
-    exps = ht.exponents
+    exps = ht.monoms
 
     cmps =
         (x, y) -> monom_isless(@inbounds(exps[monoms[y]]), @inbounds(exps[monoms[x]]), ord)
