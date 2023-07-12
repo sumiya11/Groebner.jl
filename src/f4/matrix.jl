@@ -215,15 +215,16 @@ function reduce_by_pivot!(
     row::Vector{T},
     indices::Vector{ColumnIdx},
     cfs::Vector{T},
-    ch
+    arithmetic::BuiltinArithmeticQQ
 ) where {T <: CoeffQQ}
     @inbounds mul = -row[indices[1]]
-
+    buf2 = arithmetic.buf2
     @inbounds for j in 1:length(indices)
         idx = indices[j]
         row[idx] = row[idx] + mul * cfs[j]
+        # Base.GMP.MPQ.mul!(buf2, cfs[j], mul)
+        # row[idx] = row[idx] + buf2
     end
-
     nothing
 end
 

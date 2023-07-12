@@ -66,8 +66,3 @@ end
 function select_arithmetic(coeffs::Vector{Vector{T}}, ch) where {T <: CoeffFF}
     SpecializedBuiltinArithmeticZp(convert(T, ch))
 end
-
-# arithmetic over rational numbers
-function select_arithmetic(coeffs::Vector{Vector{T}}, ch) where {T <: CoeffQQ}
-    ch
-end
