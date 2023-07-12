@@ -6,9 +6,6 @@ mutable struct ComputationGraphF4{C, M, Ord}
     gb_basis::Basis{C}
     hashtable::MonomialHashtable{M, Ord}
     input_permutation::Vector{Int}
-    # The number of columns,
-    # The number of upper rows,
-    # The number of lower rows
     matrix_infos::Vector{NamedTuple{(:nup, :nlow, :ncols), Tuple{Int64, Int64, Int64}}}
     matrix_nonzeroed_rows::Vector{Vector{Int}}
     matrix_upper_rows::Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}
@@ -16,15 +13,8 @@ mutable struct ComputationGraphF4{C, M, Ord}
     output_nonredundant_indices::Vector{Int}
     nonredundant_indices_before_reduce::Vector{Int}
     output_sort_indices::Vector{Int}
-    # matrix_autored_lower_rows::Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}
-    # matrix_autored_upper_rows::Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}
-    # F4 iteration number --> index in the basis
-    # matrix_tobereduced_rows::Vector{Vector{Int}}
-    # matrix_tobereduced_mult::Vector{Vector{MonomIdx}}
-    # # F4 iteration number --> index in the basis
-    # matrix_reducers_rows::Vector{Vector{Int}}
-    # matrix_reducers_mult::Vector{Vector{MonomIdx}}
-    # matrix_columns::Vector{Vector{Int}}
+    # hashtables_symbolic::Vector{MonomialHashtable{M, Ord}}
+    matrix_sorted_columns::Vector{Vector{Int}}
 end
 
 function initialize_computation_graph_f4(
@@ -47,7 +37,8 @@ function initialize_computation_graph_f4(
         Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}(),
         Vector{Int}(),
         Vector{Int}(),
-        Vector{Int}()
+        Vector{Int}(),
+        Vector{Vector{Int}}()
         # Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}(),
         # Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}(),
     )

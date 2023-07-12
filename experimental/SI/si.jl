@@ -87,3 +87,31 @@ flag, gb_2 = Groebner.groebner_apply!(graph, G_zp)
         Groebner.groebner_apply!(graph, G_zp)
     end
 end
+
+R, x = PolynomialRing(Nemo.GF(2^31 - 1), ["x$i" for i in 1:15], ordering=:degrevlex)
+
+f = [a^rand(1:3) * b^rand(1:3) + c^rand(1:2) for a in x for b in x for c in x];
+
+graph, gb = Groebner.groebner_learn(f);
+
+@benchmark flag, gb_2 = Groebner.groebner_apply!($graph, $f)
+@benchmark Groebner.groebner($f)
+
+@myprof begin
+    for i in 1:100
+        Groebner.groebner_apply!(graph, f)
+    end
+end
+
+c = Groebner.rootn(9, ground=Nemo.GF(2^31 - 1), ordering=:degrevlex)
+graph, gb_1 = Groebner.groebner_learn(c);
+flag, gb_2 = Groebner.groebner_apply!(graph, c);
+
+@myprof begin
+    for i in 1:100
+        Groebner.groebner_apply!(graph, c)
+    end
+end
+
+c = Groebner.rootn(9, ground=Nemo.GF(2^31 - 1), ordering=:degrevlex)
+

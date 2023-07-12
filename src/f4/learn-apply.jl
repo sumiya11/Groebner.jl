@@ -1,4 +1,52 @@
 
+# NOTE: in some problems, a lot of time is spent in sorting the matrix columns,
+# hence we cache them as well
+
+function column_to_monom_mapping!(graph, matrix, symbol_ht)
+    # monoms from symbolic table represent one column in the matrix
+    hdata = symbol_ht.hashdata
+    load = symbol_ht.load
+
+    # number of pivotal cols
+    k = 0
+    @inbounds for i in (symbol_ht.offset):load
+        if hdata[i].idx == 2
+            k += 1
+        end
+    end
+
+    col2hash = matrix.col2hash
+
+    matrix.nleft = k  # CHECK!
+    # -1 as long as hashtable load is always 1 more than actual
+    matrix.nright = load - matrix.nleft - 1
+
+    # store the other direction of mapping,
+    # hash -> column
+    @inbounds for k in 1:length(col2hash)
+        hdata[col2hash[k]].idx = k
+    end
+
+    @inbounds for k in 1:(matrix.nup)
+        row = matrix.uprows[k]
+        for j in 1:length(row)
+            row[j] = hdata[row[j]].idx
+        end
+    end
+
+    @inbounds for k in 1:(matrix.nlow)
+        row = matrix.lowrows[k]
+        for j in 1:length(row)
+            row[j] = hdata[row[j]].idx
+        end
+    end
+
+    matrix.ncols = matrix.nleft + matrix.nright
+
+    @assert matrix.nleft + matrix.nright == symbol_ht.load - 1 == matrix.ncols
+    @assert matrix.nlow + matrix.nup == matrix.nrows
+end
+
 function reduction_apply!(
     graph::ComputationGraphF4,
     ring,
@@ -6,9 +54,16 @@ function reduction_apply!(
     matrix,
     ht,
     rng,
-    symbol_ht
+    symbol_ht,
+    iter
 )
-    column_to_monom_mapping!(matrix, symbol_ht)
+    if length(graph.matrix_sorted_columns) < iter
+        column_to_monom_mapping!(matrix, symbol_ht)
+        push!(graph.matrix_sorted_columns, matrix.col2hash)
+    else
+        matrix.col2hash = graph.matrix_sorted_columns[iter]
+        column_to_monom_mapping!(graph, matrix, symbol_ht)
+    end
 
     sort_matrix_upper_rows_decreasing!(matrix) # for pivots,  AB part
     sort_matrix_lower_rows_increasing!(matrix) # for reduced, CD part
@@ -101,7 +156,8 @@ function reducegb_f4_apply!(
     basis::Basis,
     matrix::MacaulayMatrix,
     hashtable::MonomialHashtable{M},
-    symbol_ht::MonomialHashtable{M}
+    symbol_ht::MonomialHashtable{M},
+    iter
 ) where {M}
     @log level = -5 "Entering apply autoreduction" basis
 
@@ -168,7 +224,14 @@ function reducegb_f4_apply!(
     matrix.nup = nup
     matrix.size = matrix.nrows
 
-    column_to_monom_mapping!(matrix, symbol_ht)
+    @log level = -2 length(graph.matrix_sorted_columns) iter
+    if length(graph.matrix_sorted_columns) < iter
+        column_to_monom_mapping!(matrix, symbol_ht)
+        push!(graph.matrix_sorted_columns, matrix.col2hash)
+    else
+        matrix.col2hash = graph.matrix_sorted_columns[iter]
+        column_to_monom_mapping!(graph, matrix, symbol_ht)
+    end
     matrix.ncols = matrix.nleft + matrix.nright
 
     sort_matrix_upper_rows_decreasing!(matrix)
@@ -258,8 +321,16 @@ function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
         symbolic_preprocessing!(graph, iters, basis, matrix, hashtable, symbol_ht)
         @log level = -5 "After symbolic preprocessing:" matrix
 
-        flag =
-            reduction_apply!(graph, ring, basis, matrix, hashtable, params.rng, symbol_ht)
+        flag = reduction_apply!(
+            graph,
+            ring,
+            basis,
+            matrix,
+            hashtable,
+            params.rng,
+            symbol_ht,
+            iters
+        )
         if !flag
             # Unlucky cancellation of basis coefficients happened
             return false
@@ -281,7 +352,15 @@ function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
     if params.reduced
         @log level = -6 "Autoreducing the final basis.."
         symbol_ht = initialize_secondary_hashtable(hashtable)
-        flag = reducegb_f4_apply!(graph, ring, basis, matrix, hashtable, symbol_ht)
+        flag = reducegb_f4_apply!(
+            graph,
+            ring,
+            basis,
+            matrix,
+            hashtable,
+            symbol_ht,
+            iters_total + 1
+        )
         if !flag
             return false
         end

@@ -415,6 +415,7 @@ function reduce_dense_row_by_known_pivots_sparse!(
     # where k - number of structural nonzeros in new reduced row, k > 0
     @assert k > 0
     j = 1
+    # TODO: Unroll by a factor of 4
     @inbounds for i in np:ncols # starting from new pivot
         if densecoeffs[i] != uzero
             newrow[j] = i
