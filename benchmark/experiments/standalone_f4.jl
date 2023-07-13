@@ -11,7 +11,10 @@ using Logging
 global_logger(ConsoleLogger(stderr, Logging.Error))
 
 # BenchmarkTools.DEFAULT_PARAMETERS.seconds = 6
-BenchmarkTools.DEFAULT_PARAMETERS.samples = 4
+BenchmarkTools.DEFAULT_PARAMETERS.samples = 3
+
+Groebner.logging_enabled() = false
+Groebner.invariants_enabled() = false
 
 function benchmark_system_my(system)
     system = Groebner.change_ordering(system, :degrevlex)
@@ -21,7 +24,7 @@ function benchmark_system_my(system)
     # println("length = $(length(gb))")
     # println("degree = $(maximum(AbstractAlgebra.total_degree, gb))")
 
-    @btime Groebner.groebner($system, reduced=false, linalg=:prob)
+    @btime Groebner.groebner($system, loglevel=2^20)
 end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
@@ -33,7 +36,7 @@ function run_f4_ff_degrevlex_benchmarks(ground)
         ("katsura 11", reverse(Groebner.katsuran(11, ground=ground))),
         ("noon 7", Groebner.noonn(7, ground=ground)),
         ("noon 8", Groebner.noonn(8, ground=ground)),
-        ("noon 9", Groebner.noonn(9, ground=ground)),
+        # ("noon 9", Groebner.noonn(9, ground=ground)),
         ("eco 10", Groebner.eco10(ground=ground)),
         ("eco 11", Groebner.eco11(ground=ground))
     ]
@@ -45,35 +48,8 @@ function run_f4_ff_degrevlex_benchmarks(ground)
 end
 
 println()
-ground = AbstractAlgebra.GF(2^50 + 55)
+ground = AbstractAlgebra.GF(2^31 - 1)
 run_f4_ff_degrevlex_benchmarks(ground)
-
-#=
-
-qq:
-
-cyclic 6
-  16.083 ms (41950 allocations: 7.84 MiB)
-cyclic 7
-  4.348 s (3224917 allocations: 778.54 MiB)
-katsura 7
-  300.875 ms (395295 allocations: 67.01 MiB)
-katsura 8
-  2.269 s (2073004 allocations: 384.21 MiB)
-katsura 9
-  10.807 s (6798833 allocations: 1.07 GiB)
-noon 6
-  99.882 ms (293406 allocations: 42.26 MiB)
-noon 7
-  683.802 ms (1502368 allocations: 199.92 MiB)
-noon 8
-  7.004 s (9184113 allocations: 1.24 GiB)
-eco 10
-  651.303 ms (1018972 allocations: 208.98 MiB)
-eco 11
-  7.053 s (6136001 allocations: 1.22 GiB)
-
-=#
 
 #=
 
@@ -93,8 +69,6 @@ noon 7
   194.497 ms (209483 allocations: 74.25 MiB)
 noon 8
   1.327 s (950722 allocations: 378.90 MiB)
-noon 9
-  12.392 s (4306578 allocations: 1.98 GiB)
 eco 10
   66.734 ms (72768 allocations: 38.28 MiB)
 eco 11

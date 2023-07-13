@@ -869,8 +869,13 @@ function f4!(
     set_ready!(tracer)
     set_final_basis!(tracer, basis.nfilled)
 
-    # remove redundant elements
-    filter_redundant!(basis)
+    if params.sweep
+        @log level = -3 "Sweeping redundant elements in the basis"
+        sweep_redundant!(basis, hashtable)
+    end
+
+    # mark redundant elements
+    mark_redundant!(basis)
     @log level = -2 "Filtered elements marked redundant"
 
     if params.reduced

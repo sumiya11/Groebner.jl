@@ -470,9 +470,27 @@ function fill_data!(
     basis.nfilled = ngens
 end
 
+function sweep_redundant!(basis::Basis, hashtable)
+    # here -- assert that basis is in fact a Groebner basis.
+    # NOTE: maybe sort generators for more effective sweeping?
+    @inbounds for i in 1:(basis.nprocessed)
+        for j in (i + 1):(basis.nprocessed)
+            basis.isredundant[i] && continue
+            basis.isredundant[j] && continue
+            lead_i = basis.monoms[i][1]
+            lead_j = basis.monoms[j][1]
+            if is_monom_divisible(lead_i, lead_j, hashtable)
+                # mark redundant
+                basis.isredundant[i] = true
+            end
+        end
+    end
+    nothing
+end
+
 # Remove redundant elements from the basis
 # by moving all non-redundant up front
-function filter_redundant!(basis::Basis)
+function mark_redundant!(basis::Basis)
     j = 1
     @inbounds for i in 1:(basis.nnonredundant)
         if !basis.isredundant[basis.nonredundant[i]]

@@ -17,7 +17,8 @@ const _supported_kw_args = (
         seed     = 42,
         loglevel = _default_loglevel,
         maxpairs = typemax(Int),   # TODO,
-        strategy = :classic_modular
+        strategy = :classic_modular,
+        sweep    = false,
     ),
     normalform = (
         check    = true,
@@ -41,12 +42,14 @@ const _supported_kw_args = (
     groebner_learn = (
         seed     = 42,
         monoms   = :packed,
-        loglevel = _default_loglevel
+        loglevel = _default_loglevel,
+        sweep    = false,
     ),
     groebner_apply! = (
         seed     = 42,
         monoms   = :packed,
-        loglevel = _default_loglevel
+        loglevel = _default_loglevel,
+        sweep    = false,
     )
 )
 #! format: on
@@ -70,6 +73,7 @@ struct KeywordsHandler{Ord}
     maxpairs::Int
     strategy::Symbol
     check::Bool
+    sweep::Bool
 
     function KeywordsHandler(function_key, kws)
         @assert haskey(_supported_kw_args, function_key)
@@ -92,6 +96,7 @@ struct KeywordsHandler{Ord}
         strategy = get(kws, :strategy, get(default_kw_args, :strategy, :classic_modular))
         @assert strategy in (:classic_modular, :learn_and_apply) "Not recognized strategy: $strategy"
         check = get(kws, :check, get(default_kw_args, :check, true))
+        sweep = get(kws, :sweep, get(default_kw_args, :sweep, false))
         @log level = -1 """
           Using keywords: 
           reduced   = $reduced, 
@@ -103,7 +108,8 @@ struct KeywordsHandler{Ord}
           loglevel  = $loglevel, 
           maxpairs  = $maxpairs,
           strategy  = $strategy,
-          check     = $check"""
+          check     = $check,
+          sweep     = $sweep"""
         new{typeof(ordering)}(
             reduced,
             ordering,
@@ -114,7 +120,8 @@ struct KeywordsHandler{Ord}
             loglevel,
             maxpairs,
             strategy,
-            check
+            check,
+            sweep
         )
     end
 end

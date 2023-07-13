@@ -44,6 +44,8 @@ struct AlgorithmParameters{Ord1, Ord2}
     # Random number generator seed
     seed::UInt64
     rng::_default_rng_type
+
+    sweep::Bool
 end
 
 function AlgorithmParameters(ring, kwargs::KeywordsHandler)
@@ -83,6 +85,8 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler)
 
     useed = UInt64(seed)
 
+    sweep = kwargs.sweep
+
     @log level = -1 """
     Selected parameters:
     target_ord = $target_ord
@@ -100,7 +104,8 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler)
     emit_computation_graph = $emit_computation_graph
     threading = $threading
     seed = $seed
-    rng = $rng"""
+    rng = $rng
+    sweep = $sweep"""
 
     AlgorithmParameters(
         target_ord,
@@ -118,6 +123,7 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler)
         emit_computation_graph,
         threading,
         useed,
-        rng
+        rng,
+        sweep
     )
 end

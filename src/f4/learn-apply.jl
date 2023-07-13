@@ -347,7 +347,7 @@ function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
 
     @log level = -6 "Before reduction" basis
 
-    # filter_redundant!(basis)
+    # mark_redundant!(basis)
 
     if params.reduced
         @log level = -6 "Autoreducing the final basis.."
@@ -586,11 +586,32 @@ function f4_learn!(
         end
     end
 
-    # remove redundant elements
-    filter_redundant!(basis)
+    @log level = -6 "Before filter redundant" basis
+
+    # TODOTODO
+    for i in 1:(basis.nfilled)
+        for j in (i + 1):(basis.nfilled)
+            basis.isredundant[i] && continue
+            basis.isredundant[j] && continue
+            lead_i = basis.monoms[i][1]
+            lead_j = basis.monoms[j][1]
+            if is_monom_divisible(lead_j, lead_i, hashtable)
+                # mark redundant
+                basis.isredundant[j] = true
+            end
+        end
+    end
+
+    if params.sweep
+        @log level = -3 "Sweeping redundant elements in the basis"
+        sweep_redundant!(basis, hashtable)
+    end
+
+    # mark redundant elements
+    mark_redundant!(basis)
     @log level = -3 "Filtered elements marked redundant"
 
-    @log level = -6 "Before reduction" basis
+    @log level = -6 "Before autoreduction" basis
 
     if params.reduced
         @log level = -3 "Autoreducing the final basis.."

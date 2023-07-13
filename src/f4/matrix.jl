@@ -636,7 +636,6 @@ function interreduce_lower_part_learn!(
     end
 
     useful_reducers_sorted = sort(collect(useful_reducers))
-    @log level = 0 "" length(useful_reducers_sorted) matrix.nup newpivs matrix.nright
     push!(graph.matrix_infos, (nup=matrix.nup, nlow=matrix.nlow, ncols=matrix.ncols))
     push!(graph.matrix_nonzeroed_rows, not_reduced_to_zero)
     # push!(graph.matrix_upper_rows, (matrix.up2coef, matrix.up2mult))

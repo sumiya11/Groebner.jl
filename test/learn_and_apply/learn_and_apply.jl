@@ -1,12 +1,13 @@
 
 const loglevel = 0
+params = (loglevel=0, sweep=true)
 
 @testset "Learn & apply" begin
     K = AbstractAlgebra.GF(2^31 - 1)
     R, (x, y) = PolynomialRing(K, ["x", "y"], ordering=:degrevlex)
     R2, xs = PolynomialRing(K, ["x$i" for i in 1:30], ordering=:degrevlex)
 
-    @test_throws DomainError Groebner.groebner_learn([R(0), R(0)], loglevel=loglevel)
+    @test_throws DomainError Groebner.groebner_learn([R(0), R(0)]; params...)
     cases = [
         (system=[x, R(0)],),
         (system=[R(1)],),
@@ -36,9 +37,9 @@ const loglevel = 0
     for case in cases
         # Learn and apply on the same system
         system = case.system
-        true_gb = Groebner.groebner(system, loglevel=loglevel)
-        graph, gb_1 = Groebner.groebner_learn(system, loglevel=loglevel)
-        flag, gb_2 = Groebner.groebner_apply!(graph, system, loglevel=loglevel)
+        true_gb = Groebner.groebner(system; params...)
+        graph, gb_1 = Groebner.groebner_learn(system; params...)
+        flag, gb_2 = Groebner.groebner_apply!(graph, system; params...)
         @test flag && gb_2 == true_gb
 
         # Apply on a different system N times!
@@ -47,8 +48,8 @@ const loglevel = 0
         for _ in 1:N
             point = map(t -> iszero(t) ? t + 1 : t, rand(K, length(X))) .* X
             system_ = map(f -> evaluate(f, point), system)
-            true_gb = Groebner.groebner(system_, loglevel=loglevel)
-            flag, gb_2 = Groebner.groebner_apply!(graph, system_, loglevel=loglevel)
+            true_gb = Groebner.groebner(system_; params...)
+            flag, gb_2 = Groebner.groebner_apply!(graph, system_; params...)
             @test flag && gb_2 == true_gb
         end
     end
@@ -59,49 +60,51 @@ end
     R, (x, y) = PolynomialRing(K, ["x", "y"], ordering=:degrevlex)
 
     s = [x^100 * y + y^100, x * y^100 + y]
-    graph, gb_1 = Groebner.groebner_learn(s, loglevel=loglevel)
-    flag, gb_2 = Groebner.groebner_apply!(graph, s, loglevel=loglevel)
+    graph, gb_1 = Groebner.groebner_learn(s; params...)
+    flag, gb_2 = Groebner.groebner_apply!(graph, s; params...)
     @test gb_1 == gb_2 == [x * y^100 + y, x^100 * y + y^100, y^199 + 2147483646 * x^99 * y]
 
     s = [x^200 * y + y^200, x * y^200 + y]
-    graph, gb_1 = Groebner.groebner_learn(s, loglevel=loglevel)
-    flag, gb_2 = Groebner.groebner_apply!(graph, s, loglevel=loglevel)
+    graph, gb_1 = Groebner.groebner_learn(s; params...)
+    flag, gb_2 = Groebner.groebner_apply!(graph, s; params...)
     @test gb_1 == gb_2 == [x * y^200 + y, x^200 * y + y^200, y^399 + 2147483646 * x^199 * y]
 
     s = [x^1000 * y + y^1000, x * y^1000 + y]
-    graph, gb_1 = Groebner.groebner_learn(s, loglevel=loglevel)
-    flag, gb_2 = Groebner.groebner_apply!(graph, s, loglevel=loglevel)
-    @test gb_1 == gb_2 == [x * y^1000 + y, x^1000 * y + y^1000, y^1999 + 2147483646 * x^999 * y]
+    graph, gb_1 = Groebner.groebner_learn(s; params...)
+    flag, gb_2 = Groebner.groebner_apply!(graph, s; params...)
+    @test gb_1 ==
+          gb_2 ==
+          [x * y^1000 + y, x^1000 * y + y^1000, y^1999 + 2147483646 * x^999 * y]
 
     K = AbstractAlgebra.GF(2^31 - 1)
     R, (x, y) = PolynomialRing(K, ["x", "y"], ordering=:degrevlex)
 
     # s-poly of x + 1 and x*y + 7y is y - 7y.
     system_1 = [x + 1, x * y + 7y]
-    graph, gb_1 = Groebner.groebner_learn(system_1, loglevel=loglevel)
-    flag, gb_2 = Groebner.groebner_apply!(graph, system_1, loglevel=loglevel)
+    graph, gb_1 = Groebner.groebner_learn(system_1; params...)
+    flag, gb_2 = Groebner.groebner_apply!(graph, system_1; params...)
     @test flag && gb_2 == gb_1
 
     # TODO: Think about something here
-    # @test_throws AssertionError Groebner.groebner_apply!(graph, [x, y], loglevel=loglevel)
+    # @test_throws AssertionError Groebner.groebner_apply!(graph, [x, y]; params...)
 
     # Cancellation of a leading term:
     # s-poly of x + 1 and x*y + y is 0 = y - y.
     system_2 = [x + 1, x * y + y]
-    flag, gb_2 = Groebner.groebner_apply!(graph, system_2, loglevel=loglevel)
+    flag, gb_2 = Groebner.groebner_apply!(graph, system_2; params...)
     @test !flag
 
     # s-poly of x + y + 1 and x*y + 7y is y^2 - 7y
     system_1 = [x + y + 1, x * y + 7y]
-    graph, gb_1 = Groebner.groebner_learn(system_1, loglevel=loglevel)
-    flag, gb_2 = Groebner.groebner_apply!(graph, system_1, loglevel=loglevel)
+    graph, gb_1 = Groebner.groebner_learn(system_1; params...)
+    flag, gb_2 = Groebner.groebner_apply!(graph, system_1; params...)
     @test flag && gb_2 == gb_1
 
     # Cancellation of a trailing term:
     # s-poly of x + y + 1 and x*y + y is y^2
     # TODO: produce a warning here
     system_2 = [x + y + 1, x * y + y]
-    flag, gb_2 = Groebner.groebner_apply!(graph, system_2, loglevel=loglevel)
+    flag, gb_2 = Groebner.groebner_apply!(graph, system_2; params...)
     @test !flag
 
     # Input is a Groebner basis already:
@@ -111,10 +114,10 @@ end
         Groebner.katsuran(5, ordering=:degrevlex, ground=K),
         [x, x^2, y^2, x * y, x^3, y^4, x^10, y^10, x * y^10]
     ]
-        gb = Groebner.groebner(system, loglevel=loglevel)
+        gb = Groebner.groebner(system; params...)
         for i in 1:N
-            graph, gb_1 = Groebner.groebner_learn(gb, loglevel=loglevel)
-            flag, gb_2 = Groebner.groebner_apply!(graph, gb, loglevel=loglevel)
+            graph, gb_1 = Groebner.groebner_learn(gb; params...)
+            flag, gb_2 = Groebner.groebner_apply!(graph, gb; params...)
             @test flag && gb_2 == gb_1 == gb
         end
     end

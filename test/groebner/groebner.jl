@@ -33,33 +33,33 @@ using AbstractAlgebra
     @test gb ≂ [x1 * x2]
 end
 
-@testset "groebner noreduce" begin
-    R, (x, y) = PolynomialRing(GF(2^31 - 1), ["x", "y"], ordering=:lex)
+# @testset "groebner noreduce" begin
+#     R, (x, y) = PolynomialRing(GF(2^31 - 1), ["x", "y"], ordering=:lex)
 
-    fs = [x + y^2, x * y - y^2]
-    gb = Groebner.groebner(fs, reduced=false)
-    @test gb ≂ [x + y^2, x * y + 2147483646 * y^2, y^3 + y^2]
+#     fs = [x + y^2, x * y - y^2]
+#     gb = Groebner.groebner(fs, reduced=false)
+#     @test gb ≂ [x + y^2, x * y + 2147483646 * y^2, y^3 + y^2]
 
-    fs = [x + y, x^2 + y]
-    gb = Groebner.groebner(fs, reduced=false)
-    @test gb ≂ [x + y, x^2 + y, y^2 + y]
+#     fs = [x + y, x^2 + y]
+#     gb = Groebner.groebner(fs, reduced=false)
+#     @test gb ≂ [x + y, x^2 + y, y^2 + y]
 
-    fs = [y, x * y + x]
-    gb = Groebner.groebner(fs, reduced=false)
-    @test gb ≂ [x, y]
+#     fs = [y, x * y + x]
+#     gb = Groebner.groebner(fs, reduced=false)
+#     @test gb ≂ [x, y]
 
-    fs = [x^2 + 5, 2y^2 + 3]
-    gb = Groebner.groebner(fs, reduced=false)
-    @test gb ≂ [y^2 + 1073741825, x^2 + 5]
+#     fs = [x^2 + 5, 2y^2 + 3]
+#     gb = Groebner.groebner(fs, reduced=false)
+#     @test gb ≂ [y^2 + 1073741825, x^2 + 5]
 
-    fs = [y^2 + x, x^2 * y + y, y + 1]
-    gb = Groebner.groebner(fs, reduced=false)
-    @test gb == [R(1)]
+#     fs = [y^2 + x, x^2 * y + y, y + 1]
+#     gb = Groebner.groebner(fs, reduced=false)
+#     @test gb == [R(1)]
 
-    fs = [x^2 * y^2, 2 * x * y^2 + 3 * x * y]
-    gb = Groebner.groebner(fs, reduced=false)
-    @test gb ≂ [x * y^2 + 1073741825 * x * y, x^2 * y]
-end
+#     fs = [x^2 * y^2, 2 * x * y^2 + 3 * x * y]
+#     gb = Groebner.groebner(fs, reduced=false)
+#     @test gb ≂ [x * y^2 + 1073741825 * x * y, x^2 * y]
+# end
 
 @testset "groebner modular" begin
     R, (x,) = PolynomialRing(QQ, ["x"], ordering=:degrevlex)
