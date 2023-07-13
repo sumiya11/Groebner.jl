@@ -58,6 +58,24 @@ end
     K = AbstractAlgebra.GF(2^31 - 1)
     R, (x, y) = PolynomialRing(K, ["x", "y"], ordering=:degrevlex)
 
+    s = [x^100 * y + y^100, x * y^100 + y]
+    graph, gb_1 = Groebner.groebner_learn(s, loglevel=loglevel)
+    flag, gb_2 = Groebner.groebner_apply!(graph, s, loglevel=loglevel)
+    @test gb_1 == gb_2 == [x * y^100 + y, x^100 * y + y^100, y^199 + 2147483646 * x^99 * y]
+
+    s = [x^200 * y + y^200, x * y^200 + y]
+    graph, gb_1 = Groebner.groebner_learn(s, loglevel=loglevel)
+    flag, gb_2 = Groebner.groebner_apply!(graph, s, loglevel=loglevel)
+    @test gb_1 == gb_2 == [x * y^200 + y, x^200 * y + y^200, y^399 + 2147483646 * x^199 * y]
+
+    s = [x^1000 * y + y^1000, x * y^1000 + y]
+    graph, gb_1 = Groebner.groebner_learn(s, loglevel=loglevel)
+    flag, gb_2 = Groebner.groebner_apply!(graph, s, loglevel=loglevel)
+    @test gb_1 == gb_2 == [x * y^1000 + y, x^1000 * y + y^1000, y^1999 + 2147483646 * x^999 * y]
+
+    K = AbstractAlgebra.GF(2^31 - 1)
+    R, (x, y) = PolynomialRing(K, ["x", "y"], ordering=:degrevlex)
+
     # s-poly of x + 1 and x*y + 7y is y - 7y.
     system_1 = [x + 1, x * y + 7y]
     graph, gb_1 = Groebner.groebner_learn(system_1, loglevel=loglevel)

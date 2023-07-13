@@ -303,6 +303,7 @@ function monom_lcm!(
         ec[i] = max(ea[i], eb[i])
         ec[1] += ec[i]
     end
+    @invariant _monom_overflow_check(ec)
     ec
 end
 
@@ -327,6 +328,7 @@ function monom_product!(
     @inbounds for j in 1:length(ec)
         ec[j] = ea[j] + eb[j]
     end
+    @invariant _monom_overflow_check(ec)
     ec
 end
 

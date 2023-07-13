@@ -230,7 +230,8 @@ end
 
 # zero entries of densecoeffs and load coefficients cfsref to indices rowexps
 #
-# Finite field specialization
+# Finite field specialization.
+# TODO: do not add the row in tracing if it remains unchanged
 function load_indexed_coefficients!(
     densecoeffs::Vector{T},
     rowexps,
@@ -258,7 +259,37 @@ function load_indexed_coefficients!(
     end
 end
 
-#------------------------------------------------------------------------------
+# 
+function extract_sparse_row!(inds, vals, dense::Vector{T}, from, to) where {T}
+    z = zero(T)
+    j = 1
+    # TODO: Unroll by a factor of 4
+    @inbounds for i in from:to # starting from new pivot
+        if dense[i] != z
+            inds[j] = i
+            vals[j] = dense[i]
+            j += 1
+        end
+    end
+    nothing
+end
+
+function extract_sparse_row_2!(vals::Vector{UInt}, dense::Vector{UInt})
+    j = 1
+    z = Vec{4, UInt}((0, 0, 0, 0))
+    @inbounds for i in 1:8:length(dense)
+        v1 = SIMD.vload(Vec{4, UInt}, dense, i)
+        v2 = SIMD.vload(Vec{4, UInt}, dense, i + 4)
+        mask1 = !iszero(v1)
+        mask2 = !iszero(v2)
+        j1 = sum(mask1)
+        j2 = sum(mask2)
+        vstorec(v1, vals, j, mask1)
+        vstorec(v2, vals, j + j1, mask2)
+        j += j1 + j2
+    end
+    nothing
+end
 
 function reduce_dense_row_by_known_pivots_sparse!(
     densecoeffs::Vector{C},
@@ -343,15 +374,7 @@ function reduce_dense_row_by_known_pivots_sparse!(
     # store new row in sparse format
     # where k - number of structural nonzeros in new reduced row, k > 0
     @assert k > 0
-    j = 1
-    @inbounds for i in np:ncols # starting from new pivot
-        if densecoeffs[i] != uzero
-            newrow[j] = i
-            newcfs[j] = densecoeffs[i]
-            j += 1
-        end
-    end
-
+    extract_sparse_row!(newrow, newcfs, densecoeffs, startcol, ncols)
     return false, newrow, newcfs
 end
 
@@ -414,16 +437,7 @@ function reduce_dense_row_by_known_pivots_sparse!(
     # store new row in sparse format
     # where k - number of structural nonzeros in new reduced row, k > 0
     @assert k > 0
-    j = 1
-    # TODO: Unroll by a factor of 4
-    @inbounds for i in np:ncols # starting from new pivot
-        if densecoeffs[i] != uzero
-            newrow[j] = i
-            newcfs[j] = densecoeffs[i]
-            j += 1
-        end
-    end
-
+    extract_sparse_row!(newrow, newcfs, densecoeffs, startcol, ncols)
     return false, newrow, newcfs
 end
 
@@ -622,7 +636,7 @@ function interreduce_lower_part_learn!(
     end
 
     useful_reducers_sorted = sort(collect(useful_reducers))
-    @log level = -6 "" useful_reducers_sorted
+    @log level = 0 "" length(useful_reducers_sorted) matrix.nup newpivs matrix.nright
     push!(graph.matrix_infos, (nup=matrix.nup, nlow=matrix.nlow, ncols=matrix.ncols))
     push!(graph.matrix_nonzeroed_rows, not_reduced_to_zero)
     # push!(graph.matrix_upper_rows, (matrix.up2coef, matrix.up2mult))

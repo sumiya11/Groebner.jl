@@ -32,6 +32,9 @@ logging_enabled() = true
 import AbstractAlgebra
 import AbstractAlgebra: base_ring, elem_type
 
+import Base.Threads: Atomic, threadid, atomic_xchg!
+import Base.MultiplicativeInverses: UnsignedMultiplicativeInverse
+
 import Combinatorics
 
 using Logging
@@ -44,8 +47,7 @@ import Primes: nextprime
 
 import Random
 
-import Base.Threads: Atomic, threadid, atomic_xchg!
-import Base.MultiplicativeInverses: UnsignedMultiplicativeInverse
+using SIMD
 
 include("utils/logging.jl")
 include("utils/invariants.jl")

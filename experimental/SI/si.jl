@@ -114,4 +114,3 @@ flag, gb_2 = Groebner.groebner_apply!(graph, c);
 end
 
 c = Groebner.rootn(9, ground=Nemo.GF(2^31 - 1), ordering=:degrevlex)
-

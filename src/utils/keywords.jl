@@ -45,7 +45,7 @@ const _supported_kw_args = (
     ),
     groebner_apply! = (
         seed     = 42,
-        monoms   = :default,
+        monoms   = :packed,
         loglevel = _default_loglevel
     )
 )
