@@ -480,8 +480,9 @@ function sweep_redundant!(basis::Basis, hashtable)
             lead_i = basis.monoms[i][1]
             lead_j = basis.monoms[j][1]
             if is_monom_divisible(lead_i, lead_j, hashtable)
-                # mark redundant
                 basis.isredundant[i] = true
+            elseif is_monom_divisible(lead_j, lead_i, hashtable)
+                basis.isredundant[j] = true
             end
         end
     end

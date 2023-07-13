@@ -588,20 +588,6 @@ function f4_learn!(
 
     @log level = -6 "Before filter redundant" basis
 
-    # TODOTODO
-    for i in 1:(basis.nfilled)
-        for j in (i + 1):(basis.nfilled)
-            basis.isredundant[i] && continue
-            basis.isredundant[j] && continue
-            lead_i = basis.monoms[i][1]
-            lead_j = basis.monoms[j][1]
-            if is_monom_divisible(lead_j, lead_i, hashtable)
-                # mark redundant
-                basis.isredundant[j] = true
-            end
-        end
-    end
-
     if params.sweep
         @log level = -3 "Sweeping redundant elements in the basis"
         sweep_redundant!(basis, hashtable)
