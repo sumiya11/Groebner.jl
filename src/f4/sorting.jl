@@ -38,7 +38,8 @@ function sort_polys_by_lead_increasing!(
             @inbounds(h_monoms[b_monoms[y][1]]),
             ord
         )
-    sort!(permutation, lt=cmps, alg=_default_sorting_alg())
+    # NOTE: stable sort to preserve the order of polynomials with the same lead
+    sort!(permutation, lt=cmps, alg=Base.Sort.DEFAULT_STABLE)
     # use array assignment insted of elemewise assignment
     # (seems to compile to faster code)
     basis.monoms[1:(basis.nfilled)] = basis.monoms[permutation]
@@ -280,7 +281,7 @@ function sort_term_indices_decreasing!(
 
     inds = collect(1:length(monoms))
 
-    sort!(inds, lt=cmps, alg=Base.Sort.DEFAULT_UNSTABLE)
+    sort!(inds, lt=cmps, alg=_default_sorting_alg())
 
     monoms[1:end] = monoms[inds]
     coeffs[1:end] = coeffs[inds]
