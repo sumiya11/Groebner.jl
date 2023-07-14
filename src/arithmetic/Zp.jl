@@ -1,9 +1,9 @@
 # Arithmetic in Zp.
 
-# All implementations of arithmetic in Zp are a subtype of it. 
+# All implementations of arithmetic in Zp are a subtype of this
 abstract type AbstractArithmeticZp end
 
-# Modular arithmetic implemented based on the Julia builtin classes in
+# Modular arithmetic based on the Julia builtin classes in
 # `Base.MultiplicativeInverses`. Used for primes smaller than 2^32.
 struct BuiltinArithmeticZp{T <: Unsigned} <: AbstractArithmeticZp
     # magic contains is a precomputed multiplicative inverse of the divisor

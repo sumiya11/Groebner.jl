@@ -1,5 +1,5 @@
-# Helper functions for performance 
-# TODO: description,
+# Helper functions for performance measurements 
+
 # TODO: this is not thread-safe
 
 """

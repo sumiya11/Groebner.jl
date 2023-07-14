@@ -1,7 +1,4 @@
 
-# NOTE: in some problems, a lot of time is spent in sorting the matrix columns,
-# hence we cache them as well
-
 function column_to_monom_mapping!(graph, matrix, symbol_ht)
     # monoms from symbolic table represent one column in the matrix
     hdata = symbol_ht.hashdata

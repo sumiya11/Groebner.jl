@@ -1,8 +1,3 @@
-# MacaulayMatrix
-
-#
-#
-#
 
 mutable struct MacaulayMatrix{T <: Coeff}
     #=

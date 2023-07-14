@@ -1,7 +1,7 @@
 # Some common utilities for monomial implementations.
 #
-# Additionaly, this file provides a description of functions that a monomial
-# must implement
+# This file also provides a description of functions that a monomial type must
+# implement
 
 ###
 # Monomial interface
@@ -48,12 +48,17 @@ function is_supported_ordering end
 """
     construct_hash_vector(::Type{Monom}, n)
 
+Returns a vector of type Vector{MonomHash}. 
+
+See also the function `monom_hash`.
 """
 function construct_hash_vector end
 
 """
-    monom_hash(monom::Monom, hash_vector::Monom)
+    monom_hash(monom::Monom, hash_vector::Vector)
 
+Retuns a constant of type `MonomHash` that is used for hashing the given
+monomial.
 """
 function monom_hash end
 

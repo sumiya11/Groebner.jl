@@ -87,8 +87,34 @@ function _groebner(
     end
 end
 
-function _groebner_learn(polynomials, kws)
-    representation = select_polynomial_representation(polynomials, kws)
+# Proxy function for handling exceptions.
+# NOTE: probably at some point we'd want to merge this with error handling in
+# _groebner. But for now, we keep it simple.
+function _groebner_learn(polynomials, kws::KeywordsHandler)
+    # We try to select an efficient internal polynomial representation, i.e., a
+    # suitable representation of monomials and coefficients.
+    polynomial_repr = select_polynomial_representation(polynomials, kws)
+    try
+        # The backend is wrapped in a try/catch to catch exceptions that one can
+        # hope to recover from (and, perhaps, restart the computation with safer
+        # parameters).
+        return _groebner_learn(polynomials, kws, polynomial_repr)
+    catch err
+        if isa(err, MonomialDegreeOverflow)
+            @log level = 1 """
+            Possible overflow of exponent vector detected. 
+            Restarting with at least $(32) bits per exponent."""
+            polynomial_repr =
+                select_polynomial_representation(polynomials, kws, hint=:large_exponents)
+            return _groebner_learn(polynomials, kws, polynomial_repr)
+        else
+            # Something bad happened.
+            rethrow(err)
+        end
+    end
+end
+
+function _groebner_learn(polynomials, kws, representation)
     ring, monoms, coeffs = convert_to_internal(representation, polynomials, kws)
     if isempty(monoms)
         @log level = -2 "Input consisting of zero polynomials. Error will follow"
@@ -97,32 +123,33 @@ function _groebner_learn(polynomials, kws)
     params = AlgorithmParameters(ring, kws)
     ring = change_ordering_if_needed!(ring, monoms, coeffs, params)
     graph, gb_monoms, gb_coeffs = _groebner_learn(ring, monoms, coeffs, params)
+    graph.representation = representation
     graph, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
 end
 
-function _is_input_compatible(graph, ring, monoms, coeffs, params)
-    # TODO: Check that leading monomials coincide!
-    if graph.ring.ord != ring.ord || graph.ring.nvars != ring.nvars
-        return false
-    end
-    if length(monoms) != graph.input_basis.nfilled
-        return false
-    end
-    true
-end
-
 function _groebner_apply!(graph, polynomials, kws)
-    representation = select_polynomial_representation(polynomials, kws)
-    ring = extract_coeffs_raw!(graph, representation, polynomials, kws)
-    # ring, monoms, coeffs = convert_to_internal(representation, polynomials, kws)
+    # representation = select_polynomial_representation(polynomials, kws)
+    ring = extract_coeffs_raw!(graph, graph.representation, polynomials, kws)
+    @assert _is_input_compatible(graph, ring, kws) "Input does not seem to be compatible with the learned graph."
     params = AlgorithmParameters(ring, kws)
-    # ring = change_ordering_if_needed!(ring, monoms, coeffs, params)
-    # @assert _is_input_compatible(graph, ring, monoms, coeffs, params) "Input does not seem to be compatible with the learned graph."
     flag, gb_monoms, gb_coeffs = _groebner_apply!(graph, params)
     !flag && return (flag, polynomials)
     flag, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
 end
 
+function _is_input_compatible(graph, ring, kws)
+    # TODO: Check that leading monomials coincide!
+    if graph.ring.ord != ring.ord
+        @log level = 1 "Input ordering is different from the one used to learn the graph."
+        return false
+    end
+    if graph.sweep_output != kws.sweep
+        @log level = 1 "Input sweep option is different ($(kws.sweep)) from the one used to learn the graph ($(graph.sweep_output))."
+        return false
+    end
+    @log level = -1 "In groebner_apply! the argument monom=$(kws.monoms) was ignored"
+    true
+end
 function _groebner_learn_and_apply(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
@@ -131,9 +158,9 @@ function _groebner_learn_and_apply(
 ) where {M <: Monom, C <: CoeffQQ}
     # NOTE: we can mutate ring, monoms, and coeffs here.
     @log level = -1 "Backend: multi-modular learn & apply F4"
-    graph = _groebner_learn(ring, monoms, coeffs, params)
+    graph, _ = _groebner_learn(ring, monoms, coeffs, params)
     # TODO
-    gb_monoms, gb_coeffs = _groebner_apply!(graph, ring, monoms, coeffs, params)
+    # gb_monoms, gb_coeffs = _groebner_apply!(graph, ring, monoms, coeffs, params)
     gb_monoms, gb_coeffs
 end
 
@@ -143,6 +170,7 @@ function _groebner_learn(
     coeffs::Vector{Vector{C}},
     params
 ) where {C <: CoeffQQ}
+    # TODO
     @log level = -2 "Groebner learn phase over QQ"
     # Initialize supporting structs
     state = GroebnerState{BigInt, C}(params)

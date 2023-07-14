@@ -1,5 +1,4 @@
 
-const loglevel = 0
 params = (loglevel=0, sweep=true)
 
 @testset "Learn & apply" begin
@@ -56,25 +55,28 @@ params = (loglevel=0, sweep=true)
 end
 
 @testset "Learn & apply tricky" begin
-    K = AbstractAlgebra.GF(2^31 - 1)
-    R, (x, y) = PolynomialRing(K, ["x", "y"], ordering=:degrevlex)
+    for K in [GF(2^31 - 1), GF(2^62 + 135)]
+        R, (x, y) = PolynomialRing(K, ["x", "y"], ordering=:degrevlex)
 
-    s = [x^100 * y + y^100, x * y^100 + y]
-    graph, gb_1 = Groebner.groebner_learn(s; params...)
-    flag, gb_2 = Groebner.groebner_apply!(graph, s; params...)
-    @test gb_1 == gb_2 == [x * y^100 + y, x^100 * y + y^100, y^199 + 2147483646 * x^99 * y]
+        s = [x^100 * y + y^100, x * y^100 + y]
+        graph, gb_1 = Groebner.groebner_learn(s; params...)
+        flag, gb_2 = Groebner.groebner_apply!(graph, s; params...)
+        @test gb_1 == gb_2 == [x * y^100 + y, x^100 * y + y^100, y^199 - x^99 * y]
 
-    s = [x^200 * y + y^200, x * y^200 + y]
-    graph, gb_1 = Groebner.groebner_learn(s; params...)
-    flag, gb_2 = Groebner.groebner_apply!(graph, s; params...)
-    @test gb_1 == gb_2 == [x * y^200 + y, x^200 * y + y^200, y^399 + 2147483646 * x^199 * y]
+        s = [x^200 * y + y^200, x * y^200 + y]
+        graph, gb_1 = Groebner.groebner_learn(s; params...)
+        flag, gb_2 = Groebner.groebner_apply!(graph, s; params...)
+        @test gb_1 == gb_2 == [x * y^200 + y, x^200 * y + y^200, y^399 - x^199 * y]
 
-    s = [x^1000 * y + y^1000, x * y^1000 + y]
-    graph, gb_1 = Groebner.groebner_learn(s; params...)
-    flag, gb_2 = Groebner.groebner_apply!(graph, s; params...)
-    @test gb_1 ==
-          gb_2 ==
-          [x * y^1000 + y, x^1000 * y + y^1000, y^1999 + 2147483646 * x^999 * y]
+        s = [x^1000 * y + y^1000, x * y^1000 + y]
+        graph, gb_1 = Groebner.groebner_learn(s; params...)
+        for _ in 1:5
+            flag, gb_2 = Groebner.groebner_apply!(graph, s; params...)
+            @test gb_1 == gb_2 == [x * y^1000 + y, x^1000 * y + y^1000, y^1999 - x^999 * y]
+        end
+
+        @test_throws AssertionError Groebner.groebner_apply!(graph, s; sweep=!params.sweep)
+    end
 
     K = AbstractAlgebra.GF(2^31 - 1)
     R, (x, y) = PolynomialRing(K, ["x", "y"], ordering=:degrevlex)

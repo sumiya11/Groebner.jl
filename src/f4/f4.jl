@@ -102,7 +102,8 @@ function initialize_structs_learn(
         deepcopy_basis(basis),
         basis,
         hashtable,
-        permutation
+        permutation,
+        params
     )
 
     graph, basis, pairset, hashtable
@@ -266,8 +267,6 @@ function initialize_structs(
     basis, present_ht
 end
 
-#------------------------------------------------------------------------------
-
 # Given a `basis` object that stores some groebner basis
 # performs basis interreduction and writes the result to `basis` inplace
 function reducegb_f4!(
@@ -385,8 +384,6 @@ function select_tobereduced!(
     nothing
 end
 
-#------------------------------------------------------------------------------
-
 # Finds a polynomial from the `basis` 
 # with leading term that divides monomial `vidx`. 
 # If such polynomial was found, 
@@ -444,8 +441,6 @@ function find_multiplied_reducer!(
 
     nothing
 end
-
-#------------------------------------------------------------------------------
 
 # Recursively finds all polynomials from `basis` with the leading term
 # that divides any of the monomials stored in hashtable `symbol_ht`,
@@ -505,8 +500,6 @@ function symbolic_preprocessing!(
     matrix.nlow = matrix.nrows - matrix.nup
     matrix.size = matrix.nrows
 end
-
-#------------------------------------------------------------------------------
 
 # Returns the number of critical pairs of the smallest degree of lcm
 function lowest_degree_pairs!(pairset::Pairset)

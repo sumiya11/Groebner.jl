@@ -44,8 +44,13 @@ construct_const_monom(::Type{ExponentVector{T}}, n::Integer) where {T} = zeros(T
 # from the vector `ev`
 function construct_monom(::Type{ExponentVector{T}}, ev::Vector{U}) where {T, U}
     v = Vector{T}(undef, length(ev) + 1)
-    @inbounds v[1] = sum(ev)
-    @inbounds v[2:end] .= ev
+    s = zero(T)
+    @inbounds for i in 1:length(ev)
+        _monom_overflow_check(ev[i], T)
+        s += ev[i]
+        v[i + 1] = T(ev[i])
+    end
+    @inbounds v[1] = s
     ExponentVector{T}(v)
 end
 

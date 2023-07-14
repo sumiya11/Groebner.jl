@@ -1,5 +1,7 @@
 # Sorting monomials, polynomials, and other things.
 
+# TODO: use a different sorting algorithm for julia v1.9+.
+#
 # Unstable algorithm should be a bit faster for large arrays
 # (basically, quicksort vs. mergesort)
 _default_sorting_alg() = Base.Sort.DEFAULT_UNSTABLE
