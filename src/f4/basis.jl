@@ -23,8 +23,7 @@ end
 # Stores S-Pairs and some additional info.
 mutable struct Pairset{Degree}
     pairs::Vector{SPair{Degree}}
-    # For each pair (poly1, poly2) in array `pairs`, stores the lcm monomial of
-    # lcm(lead(poly1), lead(poly2)) as its index in hashtable
+    # A buffer of monomials represented with indices to a hashtable
     lcms::Vector{MonomIdx}
     # Number of filled pairs, initially zero
     load::Int

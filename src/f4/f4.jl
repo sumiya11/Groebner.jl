@@ -798,6 +798,8 @@ function f4!(
         @log level = -3 "F4: iteration $i"
         @log level = -3 "F4: available $(pairset.load) pairs"
 
+        @show_locals basis pairset hashtable update_ht symbol_ht
+
         # if the iteration is redundant according to the previous modular run
         if isready(tracer)
             if is_iteration_redundant(tracer, i)
@@ -869,12 +871,12 @@ function f4!(
 
     # mark redundant elements
     mark_redundant!(basis)
-    @log level = -2 "Filtered elements marked redundant"
+    @log level = -3 "Filtered elements marked redundant"
 
     if params.reduced
         @log level = -2 "Autoreducing the final basis.."
         reducegb_f4!(ring, basis, matrix, hashtable, symbol_ht)
-        @log level = -2 "Autoreduced!"
+        @log level = -3 "Autoreduced!"
     end
 
     standardize_basis!(ring, basis, hashtable, hashtable.ord)
@@ -896,7 +898,7 @@ function f4_isgroebner!(
     matrix = initialize_matrix(ring, C)
     symbol_ht = initialize_secondary_hashtable(hashtable)
     update_ht = initialize_secondary_hashtable(hashtable)
-    @log level = -2 "Forming S-polynomials"
+    @log level = -3 "Forming S-polynomials"
     update!(pairset, basis, hashtable, update_ht)
     isempty(pairset) && return true
     # Fill the F4 matrix

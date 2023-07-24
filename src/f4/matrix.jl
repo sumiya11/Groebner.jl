@@ -851,8 +851,6 @@ function apply_sparse_rref!(
     upivs = matrix.lowrows
     densecoeffs = zeros(C, ncols)
 
-    not_reduced_to_zero = Int[]
-
     @inbounds for i in 1:nlow
         # select next row to be reduced
         # npiv ~ exponents
@@ -885,8 +883,6 @@ function apply_sparse_rref!(
             # then something has gone wrong in tracing 
             return false
         end
-
-        push!(not_reduced_to_zero, i)
 
         # matrix coeffs sparsely stores coefficients of new row
         matrix.coeffs[i] = newcfs

@@ -94,7 +94,7 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler)
     heuristic_check = $heuristic_check
     randomized_check = $randomized_check
     certify_check = $certify_check
-    check = $kwargs.check
+    check = $(kwargs.check)
     linalg = $linalg
     reduced = $reduced
     maxpairs = $maxpairs

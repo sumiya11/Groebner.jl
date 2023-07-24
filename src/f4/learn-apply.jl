@@ -337,6 +337,8 @@ function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
 
         update_basis!(basis, hashtable)
 
+        @show_locals
+
         @log level = -6 "After update apply" basis
 
         matrix = initialize_matrix(ring, C)
@@ -597,7 +599,7 @@ function f4_learn!(
     @log level = -6 "Before autoreduction" basis
 
     if params.reduced
-        @log level = -3 "Autoreducing the final basis.."
+        @log level = -2 "Autoreducing the final basis.."
         f4_reducegb_learn!(graph, ring, basis, matrix, hashtable, symbol_ht)
         @log level = -3 "Autoreduced!"
     end

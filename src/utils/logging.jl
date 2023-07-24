@@ -1,16 +1,49 @@
 # Logging for Groebner
 #
-# Provides the macro @log, which can be used as @log message to log a record
-# with the given message. @log wraps the standard Logging.@logmsg.
+# Provides the macro @log, which can be used to log a record with the given
+# message. The macro @log wraps the standard Logging.@logmsg.
 # 
 # Logging is disabled on all threads except the one with threadid() == 1.
 
+function meta_formatter_groebner end
+
+const _default_message_loglevel = LogLevel(0)
 const _default_logger = @static if VERSION >= v"1.7.0"
-    Ref{Logging.ConsoleLogger}(Logging.ConsoleLogger(Logging.Info, show_limited=false))
+    Ref{Logging.ConsoleLogger}(
+        Logging.ConsoleLogger(
+            Logging.Info,
+            show_limited=false,
+            meta_formatter=meta_formatter_groebner
+        )
+    )
 else
     Ref{Logging.ConsoleLogger}(Logging.ConsoleLogger())
 end
-const _default_message_loglevel = LogLevel(0)
+
+function meta_formatter_groebner(level::LogLevel, _module, group, id, file, line)
+    @nospecialize
+    color = Logging.default_logcolor(level)
+    prefix = if level >= Logging.Warn
+        "Warning"
+    elseif level < Logging.Warn && level >= Logging.Info
+        "Info"
+    else
+        "Debug"
+    end
+    prefix = string(prefix, ":")
+    suffix::String = ""
+    Logging.Info <= level < Logging.Warn && return color, prefix, suffix
+    _module !== nothing && (suffix *= string(_module)::String)
+    if file !== nothing
+        _module !== nothing && (suffix *= " ")
+        suffix *= contractuser(file)::String
+        if line !== nothing
+            suffix *= ":$(isa(line, UnitRange) ? "$(first(line))-$(last(line))" : line)"
+        end
+    end
+    !isempty(suffix) && (suffix = "@ " * suffix)
+    return color, prefix, suffix
+end
 
 # Updates the global logging parameters in the Groebner module. 
 function update_logger(; stream=nothing, loglevel=nothing)
@@ -21,7 +54,9 @@ function update_logger(; stream=nothing, loglevel=nothing)
         prev_logger = _default_logger[]
         _default_logger[] = Logging.ConsoleLogger(
             stream,
-            prev_logger.min_level
+            prev_logger.min_level,
+            meta_formatter=meta_formatter_groebner
+            # NOTE: this fails on Julia v1.6
             # show_limited=prev_logger.show_limited
         )
     end
@@ -29,7 +64,8 @@ function update_logger(; stream=nothing, loglevel=nothing)
         prev_logger = _default_logger[]
         _default_logger[] = Logging.ConsoleLogger(
             prev_logger.stream,
-            loglevel
+            loglevel,
+            meta_formatter=meta_formatter_groebner
             # show_limited=prev_logger.show_limited
         )
     end
@@ -73,10 +109,18 @@ end
 macro log(args...)
     file, line = String(__source__.file), Int(__source__.line)
     level, msgs = pruneargs(file, line, args)
+    # if !logging_enabled()
+    #     return nothing
+    # end
+    # esc(:(
+    #     with_logger($(@__MODULE__)._default_logger[]) do
+    #         @logmsg LogLevel($level) $(msgs...)
+    #     end
+    # ))
     esc(:(
         if $(@__MODULE__).logging_enabled()
             if threadid() == 1
-                with_logger(_default_logger[]) do
+                with_logger($(@__MODULE__)._default_logger[]) do
                     @logmsg LogLevel($level) $(msgs...)
                 end
             end
@@ -86,10 +130,49 @@ macro log(args...)
     ))
 end
 
-function _log(level, msgs...)
-    if threadid() == 1
-        with_logger(_default_logger[]) do
-            # @logmsg(LogLevel(level), msgs...)
+"""
+    memory_logging_enabled() -> Bool
+
+Specifies if the total allocated memory is logged in F4. If `false`, then all
+memory logging is disabled, and entails no runtime overhead.
+
+See also `@show_locals` in `src/utils/logging.jl`.
+"""
+memory_logging_enabled() = false
+
+# Adapted from https://discourse.julialang.org/t/is-there-a-package-to-list-memory-consumption-of-selected-data-objects/85019/12
+"""
+    @show_locals
+    @show_locals names...
+    @show_locals level=N names...
+
+Logs the total allocated sizes of local variables. This does nothing when
+Groebner is not in the debug mode. Also see `memory_logging_enabled`.
+
+This may have a *significant runtime overhead*.
+
+## Options
+
+- If `names` argument is provided, only shows variables present in `names`.
+- If `level=N` argument is provided, then logging level `N` is used.
+"""
+macro show_locals(names...)
+    quote
+        if $(@__MODULE__).logging_enabled() && $(@__MODULE__).memory_logging_enabled()
+            locals = Base.@locals
+            message = """
+            Individual sizes (does not account for overlap):
+            """
+            for (name, refval) in locals
+                if isempty($names) || (name in $names)
+                    message *= "\t$name: $(Base.format_bytes(Base.summarysize(refval)))\n"
+                end
+            end
+            message *=
+                "Joint size: " * "$(Base.format_bytes(Base.summarysize(values(locals))))"
+            @log level = -1 message
+        else
+            nothing
         end
     end
 end
