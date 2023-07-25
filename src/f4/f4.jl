@@ -8,6 +8,11 @@
 # hashtable - a hashtable that stores monomials. (each monomial in the basis
 #        points to a bucket in the hashtable)
 
+@noinline __throw_maximum_iterations_exceeded(iters) =
+    throw("""Something probably went wrong in Groebner.jl/F4. 
+          The number of F4 iterations exceeded $iters. 
+          Please consider submitting a GitHub issue.""")
+
 # Performs gaussian row reduction of rows in the `matrix`
 # and writes any nonzero results to `basis`
 function reduction!(
@@ -102,7 +107,8 @@ function initialize_structs_learn(
         deepcopy_basis(basis),
         basis,
         hashtable,
-        permutation
+        permutation,
+        params
     )
 
     graph, basis, pairset, hashtable
@@ -266,8 +272,6 @@ function initialize_structs(
     basis, present_ht
 end
 
-#------------------------------------------------------------------------------
-
 # Given a `basis` object that stores some groebner basis
 # performs basis interreduction and writes the result to `basis` inplace
 function reducegb_f4!(
@@ -385,8 +389,6 @@ function select_tobereduced!(
     nothing
 end
 
-#------------------------------------------------------------------------------
-
 # Finds a polynomial from the `basis` 
 # with leading term that divides monomial `vidx`. 
 # If such polynomial was found, 
@@ -401,15 +403,23 @@ function find_multiplied_reducer!(
     e = symbol_ht.monoms[vidx]
     etmp = ht.monoms[1]
     divmask = symbol_ht.hashdata[vidx].divmask
-
     leaddiv = basis.divmasks
 
-    # searching for a poly from basis whose leading monom
-    # divides the given exponent e
+    # Searching for a poly from basis whose leading monom divides the given
+    # exponent e
     i = 1
     @label Letsgo
 
-    @inbounds while i <= basis.nnonredundant && (leaddiv[i] & ~divmask) != 0
+    @inbounds while i <= basis.nnonredundant
+        # TODO: rethink division masks to support more variables
+        if ht.use_divmask && is_divmask_divisible(divmask, leaddiv[i])
+            break
+        else
+            e2 = ht.monoms[basis.monoms[basis.nonredundant[i]][1]]
+            if is_monom_divisible(e, e2)
+                break
+            end
+        end
         i += 1
     end
 
@@ -433,10 +443,10 @@ function find_multiplied_reducer!(
         matrix.uprows[matrix.nup + 1] =
             multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, rpoly)
         @inbounds matrix.up2coef[matrix.nup + 1] = basis.nonredundant[i]
-        # TODO: isolate tracing?
+        # TODO: this line is here with the sole purpose -- to support tracing.
+        # Probably want to factor it out.
         matrix.up2mult[matrix.nup + 1] = insert_in_hash_table!(ht, etmp)
 
-        # up-size matrix
         symbol_ht.hashdata[vidx].idx = 2
         matrix.nup += 1
         i += 1
@@ -444,8 +454,6 @@ function find_multiplied_reducer!(
 
     nothing
 end
-
-#------------------------------------------------------------------------------
 
 # Recursively finds all polynomials from `basis` with the leading term
 # that divides any of the monomials stored in hashtable `symbol_ht`,
@@ -505,8 +513,6 @@ function symbolic_preprocessing!(
     matrix.nlow = matrix.nrows - matrix.nup
     matrix.size = matrix.nrows
 end
-
-#------------------------------------------------------------------------------
 
 # Returns the number of critical pairs of the smallest degree of lcm
 function lowest_degree_pairs!(pairset::Pairset)
@@ -805,6 +811,8 @@ function f4!(
         @log level = -3 "F4: iteration $i"
         @log level = -3 "F4: available $(pairset.load) pairs"
 
+        @show_locals basis pairset hashtable update_ht symbol_ht
+
         # if the iteration is redundant according to the previous modular run
         if isready(tracer)
             if is_iteration_redundant(tracer, i)
@@ -857,12 +865,9 @@ function f4!(
         symbol_ht = initialize_secondary_hashtable(hashtable)
 
         if i > 10_000
-            # TODO: log useful info here
-            @log level = 1 "Something has gone wrong in F4. An error will follow."
-            # TODO: this error throwing function is not defined!
-            __error_maximal_number_exceeded(
-                "Something has probably gone wrong in F4. Please submit a github issue."
-            )
+            @log level = 1 "Something has gone wrong in F4. Error will follow."
+            @show_locals
+            __throw_maximum_iterations_exceeded(i)
         end
     end
 
@@ -876,12 +881,12 @@ function f4!(
 
     # mark redundant elements
     mark_redundant!(basis)
-    @log level = -2 "Filtered elements marked redundant"
+    @log level = -3 "Filtered elements marked redundant"
 
     if params.reduced
         @log level = -2 "Autoreducing the final basis.."
         reducegb_f4!(ring, basis, matrix, hashtable, symbol_ht)
-        @log level = -2 "Autoreduced!"
+        @log level = -3 "Autoreduced!"
     end
 
     standardize_basis!(ring, basis, hashtable, hashtable.ord)
@@ -903,7 +908,7 @@ function f4_isgroebner!(
     matrix = initialize_matrix(ring, C)
     symbol_ht = initialize_secondary_hashtable(hashtable)
     update_ht = initialize_secondary_hashtable(hashtable)
-    @log level = -2 "Forming S-polynomials"
+    @log level = -3 "Forming S-polynomials"
     update!(pairset, basis, hashtable, update_ht)
     isempty(pairset) && return true
     # Fill the F4 matrix

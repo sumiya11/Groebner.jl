@@ -1,5 +1,8 @@
 
+# Information about F4 execution flow that can be later used for speeding up
+# subsequent analogous computations.
 mutable struct ComputationGraphF4{C, M, Ord}
+    time_spent::UInt64
     ring::PolyRing{Ord}
     input_basis::Basis{C}
     buf_basis::Basis{C}
@@ -13,8 +16,9 @@ mutable struct ComputationGraphF4{C, M, Ord}
     output_nonredundant_indices::Vector{Int}
     nonredundant_indices_before_reduce::Vector{Int}
     output_sort_indices::Vector{Int}
-    # hashtables_symbolic::Vector{MonomialHashtable{M, Ord}}
     matrix_sorted_columns::Vector{Vector{Int}}
+    sweep_output::Bool
+    representation::PolynomialRepresentation
 end
 
 function initialize_computation_graph_f4(
@@ -22,9 +26,11 @@ function initialize_computation_graph_f4(
     input_basis,
     gb_basis,
     hashtable,
-    permutation
+    permutation,
+    params
 )
     ComputationGraphF4(
+        time_ns(),
         ring,
         input_basis,
         deepcopy_basis(gb_basis),
@@ -38,9 +44,9 @@ function initialize_computation_graph_f4(
         Vector{Int}(),
         Vector{Int}(),
         Vector{Int}(),
-        Vector{Vector{Int}}()
-        # Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}(),
-        # Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}(),
+        Vector{Vector{Int}}(),
+        params.sweep,
+        PolynomialRepresentation(ExponentVector{UInt64}, UInt64)
     )
 end
 
@@ -50,24 +56,37 @@ function finalize_graph!(graph::ComputationGraphF4)
     graph.buf_basis.nnonredundant = graph.input_basis.nnonredundant
     graph.buf_basis.nprocessed = graph.input_basis.nprocessed
     graph.buf_basis.nfilled = graph.input_basis.nfilled
+    graph.time_spent = time_ns() - graph.time_spent
     nothing
 end
 
 function Base.show(io::IO, ::MIME"text/plain", graph::ComputationGraphF4)
-    sz = Base.summarysize(graph) >> 10
-    println(io, "Computation graph of F4 ($sz KiB)")
-    println(io, "Recorded in TODO with parameters: TODO")
+    sz = round((Base.summarysize(graph) / 2^20), digits=2)
+    println(
+        io,
+        "Computation graph of F4 ($sz MiB) recorded in $(round(graph.time_spent / 10^9, digits=3)) s."
+    )
+    println(
+        io,
+        """
+
+        Ordering: $(graph.ring.ord)
+        Monom. representation: $(graph.representation.monomtype)
+        Coeff. representation: $(graph.representation.coefftype)
+        Sweep output: $(graph.sweep_output)"""
+    )
     total_iterations = length(graph.matrix_infos)
     total_matrix_low_rows = sum(x -> x.nlow, graph.matrix_infos)
     total_matrix_up_rows = sum(x -> x.nup, graph.matrix_infos)
-    # TODO
     total_matrix_up_rows_useful = sum(length ∘ first, graph.matrix_upper_rows)
     total_matrix_low_rows_useful = sum(length ∘ first, graph.matrix_lower_rows)
     println(
         io,
         """
-Total iterations: $(total_iterations)
-Total upper matrix rows: $(total_matrix_up_rows) ($(round(total_matrix_up_rows_useful / total_matrix_up_rows * 100, digits=2)) % are useful)
-Total lower matrix rows: $(total_matrix_low_rows) ($(round(total_matrix_low_rows_useful / total_matrix_low_rows * 100, digits=2)) % are useful)"""
+
+        Iterations of F4: $(total_iterations)
+        Hashtable: $(graph.hashtable.load) / $(graph.hashtable.size) monomials filled
+        Total upper matrix rows: $(total_matrix_up_rows) ($(round(total_matrix_up_rows_useful / total_matrix_up_rows * 100, digits=2)) % are useful)
+        Total lower matrix rows: $(total_matrix_low_rows) ($(round(total_matrix_low_rows_useful / total_matrix_low_rows * 100, digits=2)) % are useful)"""
     )
 end

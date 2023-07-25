@@ -1,7 +1,4 @@
 
-# NOTE: in some problems, a lot of time is spent in sorting the matrix columns,
-# hence we cache them as well
-
 function column_to_monom_mapping!(graph, matrix, symbol_ht)
     # monoms from symbolic table represent one column in the matrix
     hdata = symbol_ht.hashdata
@@ -340,6 +337,8 @@ function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
 
         update_basis!(basis, hashtable)
 
+        @show_locals
+
         @log level = -6 "After update apply" basis
 
         matrix = initialize_matrix(ring, C)
@@ -562,14 +561,12 @@ function f4_learn!(
             params.rng
         )
 
-        # TODO: insert monoms from symbol_ht into the main hashtable
         @log level = -6 "After reduction_learn:" matrix basis
 
         # update the current basis with polynomials produced from reduction,
         # does not copy,
         # checks for redundancy
         pairset_size = update!(graph, pairset, basis, hashtable, update_ht)
-        # TODO: move the above
 
         @log level = -6 "After update learn" basis
         # clear symbolic hashtable
@@ -578,11 +575,9 @@ function f4_learn!(
         symbol_ht = initialize_secondary_hashtable(hashtable)
 
         if i > 10_000
-            # TODO: log useful info here
-            @log level = 1 "Something has probably gone wrong in F4. An exception will follow."
-            __error_maximal_number_exceeded(
-                "Something has probably gone wrong in F4. Please submit a github issue."
-            )
+            @log level = 1 "Something has gone wrong in F4. Error will follow."
+            @show_locals
+            __throw_maximum_iterations_exceeded(i)
         end
     end
 
@@ -600,7 +595,7 @@ function f4_learn!(
     @log level = -6 "Before autoreduction" basis
 
     if params.reduced
-        @log level = -3 "Autoreducing the final basis.."
+        @log level = -2 "Autoreducing the final basis.."
         f4_reducegb_learn!(graph, ring, basis, matrix, hashtable, symbol_ht)
         @log level = -3 "Autoreduced!"
     end

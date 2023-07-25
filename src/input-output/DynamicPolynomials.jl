@@ -2,13 +2,13 @@
 function peek_at_polynomials(polynomials::Vector{<:AbstractPolynomialLike{T}}) where {T}
     @assert !isempty(polynomials) "Input must not be empty"
     nv = Groebner.MultivariatePolynomials.nvariables(polynomials)
-    :dynamicpolynomials, length(polynomials), 0, nv, :deglex
+    :dynamicpolynomials, length(polynomials), UInt(0), nv, :deglex
 end
 
 function extract_ring(orig_polys::Vector{<:AbstractPolynomialLike{T}}) where {T}
     nv = Groebner.MultivariatePolynomials.nvariables(orig_polys)
     ord = DegLex()
-    PolyRing{typeof(ord)}(nv, ord, 0)
+    PolyRing{typeof(ord)}(nv, ord, UInt(0))
 end
 
 function extract_coeffs_qq(
@@ -83,11 +83,10 @@ function convert_to_output(
         push!(gbexps, Vector{M}())
         push!(gbcoeffs, Vector{I}())
     end
-    # TODO: hardcoded
     if params.target_ord != DegLex()
         @log level = 1 """
-        Input polynomial type does not support ordering $(metainfo.targetord).
-        Computed basis is correct in $(metainfo.targetord), but terms are ordered in $(DegLex()) in output"""
+        Input polynomial type does not support ordering $(params.target_ord).
+        Computed basis is correct in $(params.target_ord), but terms are ordered in DegLex in output"""
     end
 
     origvars = MultivariatePolynomials.variables(origpolys)

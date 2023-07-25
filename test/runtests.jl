@@ -26,7 +26,7 @@ end
 
 @time @testset "All tests" verbose = true begin
     # Different implementations of a monomial 
-    @includetests ["monoms/exponentvector", "monoms/packedtuples"]
+    @includetests ["monoms/exponentvector", "monoms/packedtuples", "monoms/sparsevector"]
     # High-level monomial arithmetic and term orders
     @includetests ["monoms/monom_arithmetic", "monoms/monom_orders"]
 

@@ -1,9 +1,9 @@
 # Arithmetic in Zp.
 
-# All implementations of arithmetic in Zp are a subtype of it. 
+# All implementations of arithmetic in Zp are a subtype of this
 abstract type AbstractArithmeticZp end
 
-# Modular arithmetic implemented based on the Julia builtin classes in
+# Modular arithmetic based on the Julia builtin classes in
 # `Base.MultiplicativeInverses`. Used for primes smaller than 2^32.
 struct BuiltinArithmeticZp{T <: Unsigned} <: AbstractArithmeticZp
     # magic contains is a precomputed multiplicative inverse of the divisor
@@ -15,9 +15,9 @@ end
 
 divisor(arithm::BuiltinArithmeticZp) = arithm.magic.divisor
 
-# Same as the built-in implementation, by specializes on the type of the prime
-# number being used and stores the fields inline. This implementation is
-# preferred for primes up to 128 bit.
+# Same as the built-in one, by specializes on the type of the prime number and
+# stores the fields inline. This implementation is preferred for primes up to
+# 64 bits.
 struct SpecializedBuiltinArithmeticZp{T <: Unsigned, Add} <: AbstractArithmeticZp
     multiplier::T
     shift::UInt8

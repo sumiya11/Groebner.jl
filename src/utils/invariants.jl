@@ -6,7 +6,7 @@
 """
     @invariant expr
 
-Check that expr evaluates to `true` at runtime. If not, throw an
+Check that `expr` evaluates to `true` at runtime. If not, throw an
 `AssertionError`.
 
 ## Examples
@@ -24,4 +24,10 @@ macro invariant(arg)
             nothing
         end
     ))
+    # NOTE: This formulation of @invariant does not propagate the error source
+    # path out of the macro
+    # if !invariants_enabled()
+    #     return nothing
+    # end
+    # esc(:(@assert $arg))
 end

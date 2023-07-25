@@ -1,5 +1,5 @@
 # For Lex, DegLex, and DegRevLex, we can guarantee correctness up to total
-# degrees of 2^32-1 / 2
+# degrees of 2^31
 
 @testset "handling large exponents" begin
     R, (x, y) = PolynomialRing(QQ, ["x", "y"], ordering=:degrevlex)
@@ -38,7 +38,11 @@
         @test gb == [x^v + y^u, y^(v + u) + x^(v - u), x^u * y^v - 1]
     end
 
-    # 2^30
+    # total degree 2^30
     f = [x^1073741824 + y]
+    @test f == Groebner.groebner(f)
+
+    # total degree 2^31
+    f = [x^1073741824 * y^1073741824 + y]
     @test f == Groebner.groebner(f)
 end

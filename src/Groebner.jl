@@ -12,7 +12,7 @@ If `false`, then all checks are disabled, and entail no runtime overhead.
 
 See also `@invariant` in `src/utils/invariants.jl`.
 """
-invariants_enabled() = true
+invariants_enabled() = false
 
 """
     logging_enabled() -> Bool
@@ -63,6 +63,7 @@ include("monomials/common.jl")
 include("monomials/packedutils.jl")
 include("monomials/packedtuples.jl")
 include("monomials/exponentvector.jl")
+include("monomials/sparsevector.jl")
 
 # Defines some type aliases for Groebner
 include("utils/types.jl")

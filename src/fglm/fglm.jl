@@ -26,7 +26,7 @@ function insertnexts!(m::NextMonomials, ht::MonomialHashtable{M}, monom::MonomId
 
     emonom = ht.monoms[monom]
     for i in 1:(ht.nvars)
-        eprod = copy(emonom)
+        eprod = copy_monom(emonom)
         tmp = Vector{UInt}(undef, ht.nvars)
         edense = monom_to_dense_vector!(tmp, eprod)
         edense[i] += 1

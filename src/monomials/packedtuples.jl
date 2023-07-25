@@ -79,9 +79,9 @@ for (op, n) in _defined_packed_pairs
     end
 end
 
-Base.copy(pv::PackedTuple1{T, B}) where {T, B} = PackedTuple1{T, B}(pv.a1)
-Base.copy(pv::PackedTuple2{T, B}) where {T, B} = PackedTuple2{T, B}(pv.a1, pv.a2)
-Base.copy(pv::PackedTuple3{T, B}) where {T, B} = PackedTuple3{T, B}(pv.a1, pv.a2, pv.a3)
+copy_monom(pv::PackedTuple1{T, B}) where {T, B} = PackedTuple1{T, B}(pv.a1)
+copy_monom(pv::PackedTuple2{T, B}) where {T, B} = PackedTuple2{T, B}(pv.a1, pv.a2)
+copy_monom(pv::PackedTuple3{T, B}) where {T, B} = PackedTuple3{T, B}(pv.a1, pv.a2, pv.a3)
 
 # Creates an exponent vector of the given type from regular vector `ev`
 function construct_monom(::Type{PackedTuple1{T, B}}, ev::Vector{U}) where {T, B, U}

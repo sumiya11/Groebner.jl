@@ -1,21 +1,20 @@
 # Pairset and Basis
 
-# Basis is a structure that stores a list of polynomials in F4. Each polynomial
-# is represented as a sorted vector of monomials and a sorted vector of
-# coefficients. Monomials and coefficients are stored in the basis separately.
-# Each monomial is represented with an integer --- an index to a bucket in the
-# hashtable (see f4/hashtable.jl).
+# Basis is a structure that stores a list of polynomials. Each polynomial is
+# represented with a sorted vector of monomials and a vector of coefficients.
+# Monomials and coefficients are stored in the basis separately. Each monomial
+# is represented with an integer --- an index to a bucket in the hashtable (see
+# f4/hashtable.jl).
 
-# Pairset is a list of SPairs.
-# An SPair is a critical pair in F4.
+# Pairset is a list of critical pairs (SPairs).
 
-# S-pair{Degree}, a pair of polynomials,
+# S-pair{Degree}, or a pair of polynomials,
 struct SPair{Degree}
     # First polynomial given by its index in the basis array
     poly1::Int32
     # Second polynomial -//-
     poly2::Int32
-    # Index of lcm(lead(poly1), lead(poly2)) in hashtable
+    # Index of lcm(lead(poly1), lead(poly2)) in the hashtable
     lcm::MonomIdx
     # Total degree of lcm
     deg::Degree
@@ -24,8 +23,7 @@ end
 # Stores S-Pairs and some additional info.
 mutable struct Pairset{Degree}
     pairs::Vector{SPair{Degree}}
-    # For each pair (poly1, poly2) in array `pairs`, stores the lcm monomial of
-    # lcm(lead(poly1), lead(poly2)) as its index in hashtable
+    # A buffer of monomials represented with indices to a hashtable
     lcms::Vector{MonomIdx}
     # Number of filled pairs, initially zero
     load::Int
@@ -223,8 +221,6 @@ function normalize_basis!(ring, basis::Basis{<:CoeffQQ})
     end
     basis
 end
-
-#------------------------------------------------------------------------------
 
 # Generate new S-pairs from pairs of polynomials
 #   (basis[idx], basis[i])
@@ -441,8 +437,6 @@ function update!(
     pairset_size
 end
 
-#------------------------------------------------------------------------------
-
 # given input exponent and coefficient vectors hashes exponents into `ht`
 # and then constructs hashed polynomials for `basis`
 function fill_data!(
@@ -554,8 +548,6 @@ function export_basis_data(
     exps, coeffs
 end
 
-#------------------------------------------------------------------------------
-
 # For a given list of S-pairs and a list of indices `plcm`
 # adds indices from plcm[ifirst:ilast]
 # to the hashtable ht
@@ -594,7 +586,7 @@ function insert_lcms_in_basis_hash_table!(
         ps[m] = ps[off + l]
 
         h = update_ht.hashdata[plcm[l]].hash
-        ht.monoms[ht.load + 1] = copy(update_ht.monoms[plcm[l]])
+        ht.monoms[ht.load + 1] = copy_monom(update_ht.monoms[plcm[l]])
         n = ht.monoms[ht.load + 1]
 
         k = h

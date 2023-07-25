@@ -33,33 +33,33 @@ using AbstractAlgebra
     @test gb ≂ [x1 * x2]
 end
 
-# @testset "groebner noreduce" begin
-#     R, (x, y) = PolynomialRing(GF(2^31 - 1), ["x", "y"], ordering=:lex)
+@testset "groebner noreduce" begin
+    R, (x, y) = PolynomialRing(GF(2^31 - 1), ["x", "y"], ordering=:lex)
 
-#     fs = [x + y^2, x * y - y^2]
-#     gb = Groebner.groebner(fs, reduced=false)
-#     @test gb ≂ [x + y^2, x * y + 2147483646 * y^2, y^3 + y^2]
+    fs = [x + y^2, x * y - y^2]
+    gb = Groebner.groebner(fs, reduced=false)
+    @test gb ≂ [x + y^2, x * y + 2147483646 * y^2, y^3 + y^2]
 
-#     fs = [x + y, x^2 + y]
-#     gb = Groebner.groebner(fs, reduced=false)
-#     @test gb ≂ [x + y, x^2 + y, y^2 + y]
+    fs = [x + y, x^2 + y]
+    gb = Groebner.groebner(fs, reduced=false)
+    @test gb ≂ [x + y, x^2 + y, y^2 + y]
 
-#     fs = [y, x * y + x]
-#     gb = Groebner.groebner(fs, reduced=false)
-#     @test gb ≂ [x, y]
+    fs = [y, x * y + x]
+    gb = Groebner.groebner(fs, reduced=false)
+    @test gb ≂ [x, y]
 
-#     fs = [x^2 + 5, 2y^2 + 3]
-#     gb = Groebner.groebner(fs, reduced=false)
-#     @test gb ≂ [y^2 + 1073741825, x^2 + 5]
+    fs = [x^2 + 5, 2y^2 + 3]
+    gb = Groebner.groebner(fs, reduced=false)
+    @test gb ≂ [y^2 + 1073741825, x^2 + 5]
 
-#     fs = [y^2 + x, x^2 * y + y, y + 1]
-#     gb = Groebner.groebner(fs, reduced=false)
-#     @test gb == [R(1)]
+    fs = [y^2 + x, x^2 * y + y, y + 1]
+    gb = Groebner.groebner(fs, reduced=false)
+    @test gb == [R(1)]
 
-#     fs = [x^2 * y^2, 2 * x * y^2 + 3 * x * y]
-#     gb = Groebner.groebner(fs, reduced=false)
-#     @test gb ≂ [x * y^2 + 1073741825 * x * y, x^2 * y]
-# end
+    fs = [x^2 * y^2, 2 * x * y^2 + 3 * x * y]
+    gb = Groebner.groebner(fs, reduced=false)
+    @test gb ≂ [x * y^2 + 1073741825 * x * y, x^2 * y]
+end
 
 @testset "groebner modular" begin
     R, (x,) = PolynomialRing(QQ, ["x"], ordering=:degrevlex)
@@ -174,6 +174,32 @@ end
         end
 
         @test Groebner.groebner([3x + 2, 5y]) == [y, x + K(2) // K(3)]
+    end
+end
+
+@testset "monomial overflow" begin
+    R, (x, y, z) = PolynomialRing(GF(2^31 - 1), ["x", "y", "z"], ordering=:degrevlex)
+    for monoms in [:auto, :dense, :packed, :sparse]
+        gb_1 = [x * y^100 + y, x^100 * y + y^100, y^199 + 2147483646 * x^99 * y]
+        gb_2 = [x * y^200 + y, x^200 * y + y^200, y^399 + 2147483646 * x^199 * y]
+        gb_3 = [x * y^1000 + y, x^1000 * y + y^1000, y^1999 + 2147483646 * x^999 * y]
+        @test Groebner.groebner([x^100 * y + y^100, x * y^100 + y], monoms=monoms) == gb_1
+        @test Groebner.groebner([x^200 * y + y^200, x * y^200 + y], monoms=monoms) == gb_2
+        @test Groebner.groebner([x^1000 * y + y^1000, x * y^1000 + y], monoms=monoms) ==
+              gb_3
+
+        @test Groebner.isgroebner(gb_1)
+        @test Groebner.isgroebner(gb_2)
+        @test Groebner.isgroebner(gb_3)
+
+        @test Groebner.normalform(gb_1, [x, y, R(1), R(0), x^1000]) ==
+              [x, y, R(1), R(0), x^1000]
+        @test Groebner.normalform(gb_2, [x, y, R(1), R(0), x^1000]) ==
+              [x, y, R(1), R(0), x^1000]
+        @test Groebner.normalform(gb_3, [x, y, R(1), R(0), x^10]) ==
+              [x, y, R(1), R(0), x^10]
+        @test Groebner.normalform(gb_3, [x, y, R(1), R(0), x^1000]) ==
+              [x, y, R(1), R(0), x^1000]
     end
 end
 
@@ -424,17 +450,20 @@ end
 end
 
 @testset "groebner monoms" begin
-    for hint in [:default, :packed, :sparse]
-        for domain in (GF(2^31 - 1), QQ)
-            for system in [
-                Groebner.cyclicn(2, ground=domain),
-                Groebner.noonn(4, ground=domain, ordering=:degrevlex),
-                Groebner.katsuran(5, ground=domain, ordering=:degrevlex),
-                Groebner.kinema(ground=domain, ordering=:degrevlex)
-            ]
-                gb = Groebner.groebner(system, monoms=hint)
+    for domain in (GF(2^31 - 1), QQ)
+        for system in [
+            Groebner.cyclicn(2, ground=domain),
+            Groebner.noonn(4, ground=domain, ordering=:degrevlex),
+            Groebner.katsuran(5, ground=domain, ordering=:degrevlex),
+            Groebner.kinema(ground=domain, ordering=:degrevlex)
+        ]
+            results = []
+            for monoms in [:dense, :packed]
+                gb = Groebner.groebner(system, monoms=monoms)
+                push!(results, gb)
                 @test Groebner.isgroebner(gb)
             end
+            @test length(unique(results)) == 1
         end
     end
 end
@@ -481,7 +510,9 @@ end
 @testset "normalform checks" begin
     R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"], ordering=:lex)
 
-    @test Groebner.normalform([x, y], y, check=true) == R(0)
+    for check in [false, true]
+        @test Groebner.normalform([x, y], y, check=check) == R(0)
+    end
     @test_throws DomainError Groebner.normalform([x, x + 1], y, check=true)
     @test_throws DomainError Groebner.normalform([x, x + 1], [y], check=true)
 end
@@ -489,8 +520,10 @@ end
 @testset "kbase checks" begin
     R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"], ordering=:lex)
 
-    b = Groebner.kbase([x, y, z], check=true)
-    @test b == [R(1)]
+    for check in [false, true]
+        b = Groebner.kbase([x, y, z], check=check)
+        @test b == [R(1)]
+    end
     @test_throws DomainError Groebner.kbase([x, x + 1], check=true)
     @test_throws DomainError Groebner.kbase([x, x + 1], check=true)
 end

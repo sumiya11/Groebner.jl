@@ -8,7 +8,8 @@ implementations_to_test = [
     Groebner.ExponentVector{T} where {T},
     Groebner.PackedTuple1{T, UInt8} where {T},
     Groebner.PackedTuple2{T, UInt8} where {T},
-    Groebner.PackedTuple3{T, UInt8} where {T}
+    Groebner.PackedTuple3{T, UInt8} where {T},
+    Groebner.SparseExponentVector{T} where {T}
 ]
 
 @testset "monom orders: Lex, DegLex, DegRevLex" begin
@@ -96,7 +97,7 @@ implementations_to_test = [
         end
 
         # test that different implementations agree
-        for n in 1:2
+        for n in 1:10
             k = rand(1:100)
 
             implementations_to_test_local = filter(

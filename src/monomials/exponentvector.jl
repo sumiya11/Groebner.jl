@@ -7,14 +7,6 @@
 # ExponentVector is just an alias for a dynamic vector of integers.
 const ExponentVector{T} = Vector{T} where {T <: Integer}
 
-# Checks whether ExponentVector{T} provides an efficient comparator function
-# implementation for the given monomial ordering of type `O`
-function is_supported_ordering(::Type{ExponentVector{T}}, ::O) where {T, O}
-    # ExponentVector{T} supports efficient implementation of all monomial
-    # orderings
-    true
-end
-
 # Checks if there is a risk of exponent overflow. If overflow if possible,
 # throws a MonomialDegreeOverflow.
 function _monom_overflow_check(e::ExponentVector{T}) where {T}
@@ -36,6 +28,8 @@ totaldeg(pv::ExponentVector) = @inbounds pv[1]
 entrytype(::Type{ExponentVector{T}}) where {T} = MonomHash
 entrytype(p::ExponentVector{T}) where {T} = entrytype(typeof(p))
 
+copy_monom(pv::ExponentVector) = Base.copy(pv)
+
 # Constructs a constant monomial of type ExponentVector{T} with the max_vars_in_monom for
 # n variables.
 construct_const_monom(::Type{ExponentVector{T}}, n::Integer) where {T} = zeros(T, n + 1)
@@ -44,8 +38,13 @@ construct_const_monom(::Type{ExponentVector{T}}, n::Integer) where {T} = zeros(T
 # from the vector `ev`
 function construct_monom(::Type{ExponentVector{T}}, ev::Vector{U}) where {T, U}
     v = Vector{T}(undef, length(ev) + 1)
-    @inbounds v[1] = sum(ev)
-    @inbounds v[2:end] .= ev
+    s = zero(T)
+    @inbounds for i in 1:length(ev)
+        _monom_overflow_check(ev[i], T)
+        s += ev[i]
+        v[i + 1] = T(ev[i])
+    end
+    @inbounds v[1] = s
     ExponentVector{T}(v)
 end
 
@@ -63,7 +62,7 @@ function construct_hash_vector(::Type{ExponentVector{T}}, n::Integer) where {T}
 end
 
 # Computes the hash of `x` with the given hash vector `b`
-function monom_hash(x::ExponentVector{T}, b::ExponentVector{MH}) where {T, MH}
+function monom_hash(x::ExponentVector{T}, b::Vector{MH}) where {T, MH}
     h = zero(MH)
     @inbounds for i in eachindex(x, b)
         h += MH(x[i]) * b[i]
@@ -73,6 +72,14 @@ end
 
 ###
 # Monomial comparator functions. See monoms/orderings.jl for details.
+
+# Checks whether ExponentVector{T} provides an efficient comparator function
+# implementation for the given monomial ordering of type `O`
+function is_supported_ordering(::Type{ExponentVector{T}}, ::O) where {T, O}
+    # ExponentVector{T} supports efficient implementation of all monomial
+    # orderings
+    true
+end
 
 # DegRevLex monomial comparison
 function monom_isless(ea::ExponentVector, eb::ExponentVector, ::DegRevLex)

@@ -43,7 +43,7 @@ end
 
 # Heuristic bound on the size of coefficients of the basis.
 # TODO: szden --> sznum
-threshold_in_heuristic_check(sznum, szden, szmod) = 1.30 * (sznum + sznum) >= szmod
+threshold_in_heuristic_check(sznum, szden, szmod) = 1.30 * (sznum + szden) >= szmod
 
 # Checks that 
 #   ln(num) + ln(den) < C ln(modulo)
@@ -76,7 +76,9 @@ function randomized_correctness_check!(state, ring, input_zz, gb_ff, lucky, hash
     ring_ff, gb_ff = reduce_modulo_p!(state.buffer, ring, gb_zz, prime, deepcopy=false)
     # Check that initial ideal contains in the computed groebner basis modulo a
     # random prime
-    normalize_basis!(ring_ff, gb_ff)   # TODO: WHY is this here???
+    # TODO: Why is this here?
+    # F4 normalizes the basis on entry
+    normalize_basis!(ring_ff, gb_ff)
     f4_normalform!(ring_ff, gb_ff, input_ff, hashtable)
     for i in 1:(input_ff.nprocessed)
         # meaning that something is not reduced

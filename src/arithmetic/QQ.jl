@@ -1,8 +1,9 @@
 # Arithmetic in the rationals.
 
-# All implementations of arithmetic in QQ are a subtype of it. 
+# All implementations of arithmetic in Q are a subtype of this 
 abstract type AbstractArithmeticQQ end
 
+# Standard arithmetic that uses Base.GMP.MPQ
 struct BuiltinArithmeticQQ <: AbstractArithmeticQQ
     buf1::BigInt
     buf2::Rational{BigInt}
@@ -11,7 +12,6 @@ struct BuiltinArithmeticQQ <: AbstractArithmeticQQ
     end
 end
 
-# arithmetic over rational numbers
 function select_arithmetic(coeffs::Vector{Vector{T}}, ch) where {T <: CoeffQQ}
     BuiltinArithmeticQQ()
 end

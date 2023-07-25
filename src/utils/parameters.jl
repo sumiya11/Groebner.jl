@@ -34,7 +34,7 @@ struct AlgorithmParameters{Ord1, Ord2}
     # - :zp for integers modulo a prime.
     ground::Symbol
 
-    # TODO
+    # TODO: introduce two strategies: :classic_modular and :learn_and_apply
     strategy::Symbol
     majority_threshold::Int
     emit_computation_graph::Bool
@@ -94,7 +94,7 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler)
     heuristic_check = $heuristic_check
     randomized_check = $randomized_check
     certify_check = $certify_check
-    check = $kwargs.check
+    check = $(kwargs.check)
     linalg = $linalg
     reduced = $reduced
     maxpairs = $maxpairs

@@ -228,7 +228,7 @@ function reduce_double_dense_row_by_known_pivots_sparse!(
             continue
         end
 
-        # TODO: check this first?
+        # TODO: check this before checking leftrow[i] == uzero?
         if !isassigned(leftrows, i)
             if np == -1
                 np = i

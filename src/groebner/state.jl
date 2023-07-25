@@ -72,7 +72,7 @@ function common_denominator(coeffs::Vector{T}) where {T <: CoeffQQ}
     common_denominator!(BigInt(), coeffs)
 end
 
-# TODO: scale numerators inplace!
+# TODO: scale numerators inplace and do not allocate new GMP instances
 function clear_denominators!(
     buffer::CoefficientBuffer,
     coeffs_zz::Vector{Vector{C1}},
@@ -145,7 +145,7 @@ function reduce_modulo_p!(
             coeffs_ff[i][j] = CoeffModular(buf)
         end
     end
-    ring_ff = PolyRing(ring.nvars, ring.ord, Int(prime))
+    ring_ff = PolyRing(ring.nvars, ring.ord, UInt(prime))
     ring_ff, coeffs_ff
 end
 

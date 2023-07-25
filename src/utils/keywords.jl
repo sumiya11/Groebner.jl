@@ -9,47 +9,47 @@ const _default_loglevel = 0
 # arguments with their corresponding default values.
 const _supported_kw_args = (
     groebner = (
-        reduced  = true, 
+        reduced  = true,
         ordering = InputOrdering(),
         certify  = false,
         linalg   = :randomized,
-        monoms   = :packed,
+        monoms   = :auto,
         seed     = 42,
         loglevel = _default_loglevel,
-        maxpairs = typemax(Int),   # TODO,
+        maxpairs = typemax(Int),   # NOTE: maybe use Inf?
         strategy = :classic_modular,
         sweep    = false,
     ),
     normalform = (
-        check    = true,
+        check    = false,
         ordering = InputOrdering(),
-        monoms   = :default,
+        monoms   = :dense,
         loglevel = _default_loglevel
     ),
     isgroebner = (
         ordering = InputOrdering(),
         certify  = true,
         seed     = 42,
-        monoms   = :default,
+        monoms   = :dense,
         loglevel = _default_loglevel
     ),
     kbase = (
-        check    = true,
+        check    = false,
         ordering = InputOrdering(),
-        monoms   = :default,
+        monoms   = :dense,
         loglevel = _default_loglevel
     ),
     groebner_learn = (
         seed     = 42,
-        monoms   = :packed,
+        monoms   = :auto,
         loglevel = _default_loglevel,
-        sweep    = false,
+        sweep    = true,
     ),
     groebner_apply! = (
         seed     = 42,
-        monoms   = :packed,
+        monoms   = :auto,
         loglevel = _default_loglevel,
-        sweep    = false,
+        sweep    = true,
     )
 )
 #! format: on
@@ -87,7 +87,7 @@ struct KeywordsHandler{Ord}
         linalg = get(kws, :linalg, get(default_kw_args, :linalg, :randomized))
         @assert linalg in (:randomized, :deterministic) "Not recognized linear algebra option: $linalg"
         monoms = get(kws, :monoms, get(default_kw_args, :monoms, :packed))
-        @assert monoms in (:default, :packed, :sparse) "Not recognized monomial representation: $monoms"
+        @assert monoms in (:auto, :dense, :packed, :sparse) "Not recognized monomial representation: $monoms"
         seed = get(kws, :seed, get(default_kw_args, :seed, 42))
         loglevel = get(kws, :loglevel, get(default_kw_args, :loglevel, 0))
         update_logger(loglevel=loglevel)
