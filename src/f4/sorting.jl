@@ -123,10 +123,6 @@ function matrix_row_decreasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: Colum
     if va < vb
         return false
     end
-    # Hmm, equal rows?
-    # This should never happen!
-    # TODO!!!: add some kind of assertion here
-    # @invariant false
     false
 end
 
@@ -152,9 +148,6 @@ function matrix_row_increasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: Colum
     if va < vb
         return true
     end
-    # Hmm, equal rows?
-    # This should never happen!
-    # @invariant false
     return false
 end
 

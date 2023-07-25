@@ -1,4 +1,6 @@
 
+const ColumnIdx = Int32
+
 mutable struct MacaulayMatrix{T <: Coeff}
     #=
         Matrix of the structure
@@ -226,7 +228,6 @@ end
 # zero entries of densecoeffs and load coefficients cfsref to indices rowexps
 #
 # Finite field specialization.
-# TODO: do not add the row in tracing if it remains unchanged
 function load_indexed_coefficients!(
     densecoeffs::Vector{T},
     rowexps,
@@ -258,7 +259,6 @@ end
 function extract_sparse_row!(inds, vals, dense::Vector{T}, from, to) where {T}
     z = zero(T)
     j = 1
-    # TODO: Unroll by a factor of 4
     @inbounds for i in from:to # starting from new pivot
         if dense[i] != z
             inds[j] = i
@@ -269,22 +269,22 @@ function extract_sparse_row!(inds, vals, dense::Vector{T}, from, to) where {T}
     nothing
 end
 
-function extract_sparse_row_2!(vals::Vector{UInt}, dense::Vector{UInt})
-    j = 1
-    z = Vec{4, UInt}((0, 0, 0, 0))
-    @inbounds for i in 1:8:length(dense)
-        v1 = SIMD.vload(Vec{4, UInt}, dense, i)
-        v2 = SIMD.vload(Vec{4, UInt}, dense, i + 4)
-        mask1 = !iszero(v1)
-        mask2 = !iszero(v2)
-        j1 = sum(mask1)
-        j2 = sum(mask2)
-        vstorec(v1, vals, j, mask1)
-        vstorec(v2, vals, j + j1, mask2)
-        j += j1 + j2
-    end
-    nothing
-end
+# function extract_sparse_row_2!(vals::Vector{UInt}, dense::Vector{UInt})
+#     j = 1
+#     z = Vec{4, UInt}((0, 0, 0, 0))
+#     @inbounds for i in 1:8:length(dense)
+#         v1 = SIMD.vload(Vec{4, UInt}, dense, i)
+#         v2 = SIMD.vload(Vec{4, UInt}, dense, i + 4)
+#         mask1 = !iszero(v1)
+#         mask2 = !iszero(v2)
+#         j1 = sum(mask1)
+#         j2 = sum(mask2)
+#         vstorec(v1, vals, j, mask1)
+#         vstorec(v2, vals, j + j1, mask2)
+#         j += j1 + j2
+#     end
+#     nothing
+# end
 
 function reduce_dense_row_by_known_pivots_sparse!(
     densecoeffs::Vector{C},
@@ -582,7 +582,6 @@ function interreduce_lower_part_learn!(
     resize!(matrix.lowrows, matrix.nright)
 
     not_reduced_to_zero = Int[]
-    useful_reducers = Set{Any}()
 
     # interreduce new pivots..
     # .. for each right (non-pivotal) column
@@ -600,9 +599,7 @@ function interreduce_lower_part_learn!(
         startcol = pivs[k][1]
         load_indexed_coefficients!(densecoeffs, pivs[k], cfsref)
 
-        reducers = []
         _, newrow, newcfs = reduce_dense_row_by_known_pivots_sparse!(
-            reducers,
             densecoeffs,
             matrix,
             basis,
@@ -614,9 +611,6 @@ function interreduce_lower_part_learn!(
         newpivs += 1
 
         push!(not_reduced_to_zero, k)
-        for rr in reducers
-            push!(useful_reducers, rr)
-        end
 
         # update row and coeffs
         if !reversed
@@ -630,21 +624,13 @@ function interreduce_lower_part_learn!(
         end
     end
 
-    useful_reducers_sorted = sort(collect(useful_reducers))
     push!(graph.matrix_infos, (nup=matrix.nup, nlow=matrix.nlow, ncols=matrix.ncols))
     push!(graph.matrix_nonzeroed_rows, not_reduced_to_zero)
-    # push!(graph.matrix_upper_rows, (matrix.up2coef, matrix.up2mult))
-    # push!(graph.matrix_lower_rows, (matrix.low2coef, matrix.low2mult))
     push!(
         graph.matrix_upper_rows,
         (matrix.up2coef[1:(matrix.nup)], matrix.up2mult[1:(matrix.nup)])
     )
-    # push!(graph.matrix_lower_rows, (rowidx2coef, matrix.low2mult))
-    # push!(graph.matrix_upper_rows, (map(first, useful_reducers_sorted), map(last, useful_reducers_sorted)))
     push!(graph.matrix_lower_rows, (Int[], Int[]))
-    # push!(graph.matrix_lower_rows, (matrix.low2coef[not_reduced_to_zero], matrix.low2mult[not_reduced_to_zero]))
-
-    # TODO: we should learn and not reduce redundant elements in the first place!
 
     # shrink matrix
     matrix.npivots = matrix.nrows = matrix.size = newpivs
@@ -733,7 +719,6 @@ function learn_sparse_rref!(
 
     # move known matrix pivots,
     # no copy
-    # YES
     pivs, l2c_tmp = absolute_pivots!(matrix)
     @log level = -6 "absolute_pivots!" pivs l2c_tmp
 
@@ -746,7 +731,7 @@ function learn_sparse_rref!(
     densecoeffs = zeros(C, ncols)
 
     not_reduced_to_zero = Int[]
-    useful_reducers = Set{Any}()
+    useful_reducers = Set{Int}()
 
     @log level = -6 "Low to coef" rowidx2coef matrix.low2mult
 
@@ -784,7 +769,6 @@ function learn_sparse_rref!(
 
         # NOTE: we are not adding reducers from lowrows!
 
-        # TODO!
         push!(not_reduced_to_zero, i)
         for rr in reducers
             push!(useful_reducers, rr)
@@ -805,13 +789,10 @@ function learn_sparse_rref!(
         normalize_sparse_row!(matrix.coeffs[i], arithmetic)
     end
 
-    # TODO
     useful_reducers_sorted = sort(collect(useful_reducers))
     @log level = -7 "" useful_reducers_sorted
     push!(graph.matrix_infos, (nup=matrix.nup, nlow=matrix.nlow, ncols=matrix.ncols))
     push!(graph.matrix_nonzeroed_rows, not_reduced_to_zero)
-    # push!(graph.matrix_upper_rows, (matrix.up2coef, matrix.up2mult))
-    # push!(graph.matrix_lower_rows, (rowidx2coef, matrix.low2mult))
     push!(
         graph.matrix_upper_rows,
         (map(first, useful_reducers_sorted), map(last, useful_reducers_sorted))
@@ -1280,6 +1261,64 @@ function convert_rows_to_basis_elements_nf!(
             empty!(basis.coeffs[basis.nprocessed])
             empty!(basis.monoms[basis.nprocessed])
         end
+    end
+
+    nothing
+end
+
+function insert_in_basis_hash_table_pivots(
+    row::Vector{ColumnIdx},
+    ht::MonomialHashtable{M},
+    symbol_ht::MonomialHashtable{M},
+    col2hash::Vector{MonomIdx}
+) where {M}
+    resize_hashtable_if_needed!(ht, length(row))
+
+    sdata = symbol_ht.hashdata
+    sexps = symbol_ht.monoms
+
+    mod = MonomHash(ht.size - 1)
+    bdata = ht.hashdata
+    bexps = ht.monoms
+    bhash = ht.hashtable
+
+    l = 1
+    @label Letsgo
+    @inbounds while l <= length(row)
+        hidx = col2hash[row[l]]
+
+        # symbolic hash
+        h = sdata[hidx].hash
+
+        lastidx = ht.load + 1
+        bexps[lastidx] = sexps[hidx]
+        e = bexps[lastidx]
+
+        k = h
+        i = MonomHash(1)
+        @inbounds while i <= ht.size
+            k = next_lookup_index(h, i, mod)
+            hm = bhash[k]
+
+            iszero(hm) && break
+
+            if ishashcollision(ht, hm, e, h)
+                i += MonomHash(1)
+                continue
+            end
+
+            row[l] = hm
+            l += 1
+            @goto Letsgo
+        end
+
+        bhash[k] = pos = lastidx
+        row[l] = pos
+        l += 1
+
+        bdata[pos] = Hashvalue(sdata[hidx].idx, h, sdata[hidx].divmask, sdata[hidx].deg)
+
+        ht.load += 1
     end
 
     nothing

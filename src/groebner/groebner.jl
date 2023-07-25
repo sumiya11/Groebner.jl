@@ -60,8 +60,8 @@ function _groebner(
 ) where {M <: Monom, C <: CoeffFF}
     # NOTE: we can mutate ring, monoms, and coeffs here.
     @log level = -1 "Backend: F4 over Z_$(ring.ch)"
-    # TODO: the order of input polynomials is not deterministic when sorting
-    # only w.r.t. the leading term
+    # NOTE: the sorting of input polynomials is not deterministic across
+    # different Julia versions when sorting only w.r.t. the leading term
     basis, pairset, hashtable = initialize_structs(ring, monoms, coeffs, params)
     tracer = Tracer()
     f4!(ring, basis, pairset, hashtable, tracer, params)
@@ -150,56 +150,6 @@ function _is_input_compatible(graph, ring, kws)
     @log level = -1 "In groebner_apply! the argument monom=$(kws.monoms) was ignored"
     true
 end
-function _groebner_learn_and_apply(
-    ring::PolyRing,
-    monoms::Vector{Vector{M}},
-    coeffs::Vector{Vector{C}},
-    params::AlgorithmParameters
-) where {M <: Monom, C <: CoeffQQ}
-    # NOTE: we can mutate ring, monoms, and coeffs here.
-    @log level = -1 "Backend: multi-modular learn & apply F4"
-    graph, _ = _groebner_learn(ring, monoms, coeffs, params)
-    # TODO
-    # gb_monoms, gb_coeffs = _groebner_apply!(graph, ring, monoms, coeffs, params)
-    gb_monoms, gb_coeffs
-end
-
-function _groebner_learn(
-    ring,
-    monoms,
-    coeffs::Vector{Vector{C}},
-    params
-) where {C <: CoeffQQ}
-    # TODO
-    @log level = -2 "Groebner learn phase over QQ"
-    # Initialize supporting structs
-    state = GroebnerState{BigInt, C}(params)
-    # Initialize F4 structs
-    basis, pairset, hashtable =
-        initialize_structs(ring, monoms, coeffs, params, normalize=false)
-    # Scale the input coefficients to integers to speed up the subsequent search
-    # for lucky primes
-    @log level = -5 "Input polynomials" basis
-    @log level = -2 "Clearing the denominators of the input polynomials"
-    basis_zz = clear_denominators!(state.buffer, basis, deepcopy=false)
-    @log level = -5 "Integer coefficients are" basis_zz.coeffs
-    # Handler for lucky primes
-    luckyprimes = LuckyPrimes(basis_zz.coeffs)
-    prime = next_lucky_prime!(luckyprimes)
-    @log level = -3 "The first lucky prime is $prime"
-    @log level = -3 "Reducing input generators modulo $prime"
-    # Perform reduction modulo prime and store result in basis_ff
-    ring_ff, basis_ff = reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
-    @log level = -5 "Reduced coefficients are" basis_ff.coeffs
-    @log level = -2 "Initializing computation graph"
-    graph =
-        initialize_computation_graph_f4(ring, deepcopy_basis(basis_ff), basis_ff, hashtable)
-    @log level = -5 "Before F4:" basis_ff
-    f4_learn!(graph, ring_ff, basis_ff, pairset, hashtable, params)
-    @log level = -5 "After F4:" basis_ff
-    gb_monoms, gb_coeffs = export_basis_data(basis_ff, graph.hashtable)
-    graph, gb_monoms, gb_coeffs
-end
 
 function _groebner_learn(
     ring,
@@ -221,8 +171,6 @@ end
 function _groebner_apply!(graph, params)
     @log level = -1 "Groebner Apply phase"
     @log level = -2 "Applying modulo $(graph.ring.ch)"
-    # TODO!
-    # basis, _, _ = initialize_structs(ring, monoms, coeffs, params)
     flag = f4_apply!(graph, graph.ring, graph.buf_basis, params)
     gb_monoms, gb_coeffs = export_basis_data(graph.gb_basis, graph.hashtable)
     @inbounds for i in 1:length(gb_monoms)

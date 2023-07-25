@@ -119,13 +119,14 @@ function extract_coeffs_ff(
 ) where {T}
     iszero(poly) && (return zero_coeffs_ff(representation.coefftype, ring))
     Ch = representation.coefftype
-    # TODO: Get rid of this composed function !
+    # TODO: Get rid of this composed function
     map(Ch ∘ AbstractAlgebra.data, AbstractAlgebra.coefficients(poly))
 end
 
 function extract_coeffs_raw!(graph, representation, polys::Vector{T}, kws) where {T}
     # write directly to graph.basis
-    # TODO: 2dim permutation to handle different orderings!
+    # TODO: we do not currently support monomial orderings other than the one
+    # recorded in graph
     ring = extract_ring(polys)
     basis = graph.buf_basis
     perm = graph.input_permutation
@@ -144,7 +145,7 @@ function _extract_coeffs_raw!(basis, perm, polys, ::Type{CoeffsType}) where {Coe
         @assert length(poly) == length(basis_cfs)
         for j in 1:length(poly)
             basis_cfs[j] =
-                convert(CoeffsType, AbstractAlgebra.data(AbstractAlgebra.coeff(poly, j)))  # TODO: PERMUTE
+                convert(CoeffsType, AbstractAlgebra.data(AbstractAlgebra.coeff(poly, j)))
         end
     end
     nothing

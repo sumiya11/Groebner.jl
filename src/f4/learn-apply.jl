@@ -561,14 +561,12 @@ function f4_learn!(
             params.rng
         )
 
-        # TODO: insert monoms from symbol_ht into the main hashtable
         @log level = -6 "After reduction_learn:" matrix basis
 
         # update the current basis with polynomials produced from reduction,
         # does not copy,
         # checks for redundancy
         pairset_size = update!(graph, pairset, basis, hashtable, update_ht)
-        # TODO: move the above
 
         @log level = -6 "After update learn" basis
         # clear symbolic hashtable
@@ -577,11 +575,9 @@ function f4_learn!(
         symbol_ht = initialize_secondary_hashtable(hashtable)
 
         if i > 10_000
-            # TODO: log useful info here
-            @log level = 1 "Something has probably gone wrong in F4. An exception will follow."
-            __error_maximal_number_exceeded(
-                "Something has probably gone wrong in F4. Please submit a github issue."
-            )
+            @log level = 1 "Something has gone wrong in F4. Error will follow."
+            @show_locals
+            __throw_maximum_iterations_exceeded(i)
         end
     end
 

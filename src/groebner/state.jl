@@ -72,7 +72,7 @@ function common_denominator(coeffs::Vector{T}) where {T <: CoeffQQ}
     common_denominator!(BigInt(), coeffs)
 end
 
-# TODO: scale numerators inplace!
+# TODO: scale numerators inplace and do not allocate new GMP instances
 function clear_denominators!(
     buffer::CoefficientBuffer,
     coeffs_zz::Vector{Vector{C1}},

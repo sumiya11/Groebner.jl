@@ -185,7 +185,6 @@ function convert_to_output(
     @assert !isempty(polynomials)
     @log level = -2 "Converting polynomials from internal representation to output format"
     # NOTE: Internal polynomials must not be modified.
-    # TODO: throw warning if the output format is strange
     if isempty(monoms)
         push!(monoms, Vector{M}())
         push!(coeffs, Vector{C}())

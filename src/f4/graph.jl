@@ -78,7 +78,6 @@ function Base.show(io::IO, ::MIME"text/plain", graph::ComputationGraphF4)
     total_iterations = length(graph.matrix_infos)
     total_matrix_low_rows = sum(x -> x.nlow, graph.matrix_infos)
     total_matrix_up_rows = sum(x -> x.nup, graph.matrix_infos)
-    # TODO
     total_matrix_up_rows_useful = sum(length ∘ first, graph.matrix_upper_rows)
     total_matrix_low_rows_useful = sum(length ∘ first, graph.matrix_lower_rows)
     println(

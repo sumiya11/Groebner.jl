@@ -15,9 +15,9 @@ end
 
 divisor(arithm::BuiltinArithmeticZp) = arithm.magic.divisor
 
-# Same as the built-in implementation, by specializes on the type of the prime
-# number being used and stores the fields inline. This implementation is
-# preferred for primes up to 128 bit.
+# Same as the built-in one, by specializes on the type of the prime number and
+# stores the fields inline. This implementation is preferred for primes up to
+# 64 bits.
 struct SpecializedBuiltinArithmeticZp{T <: Unsigned, Add} <: AbstractArithmeticZp
     multiplier::T
     shift::UInt8

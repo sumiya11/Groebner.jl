@@ -12,7 +12,7 @@ If `false`, then all checks are disabled, and entail no runtime overhead.
 
 See also `@invariant` in `src/utils/invariants.jl`.
 """
-invariants_enabled() = true
+invariants_enabled() = false
 
 """
     logging_enabled() -> Bool

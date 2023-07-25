@@ -1,6 +1,6 @@
 # Arithmetic in the rationals.
 
-# All implementations of arithmetic in QQ are a subtype of this 
+# All implementations of arithmetic in Q are a subtype of this 
 abstract type AbstractArithmeticQQ end
 
 # Standard arithmetic that uses Base.GMP.MPQ

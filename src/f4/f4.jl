@@ -8,6 +8,11 @@
 # hashtable - a hashtable that stores monomials. (each monomial in the basis
 #        points to a bucket in the hashtable)
 
+@noinline __throw_maximum_iterations_exceeded(iters) =
+    throw("""Something probably went wrong in Groebner.jl/F4. 
+          The number of F4 iterations exceeded $iters. 
+          Please consider submitting a GitHub issue.""")
+
 # Performs gaussian row reduction of rows in the `matrix`
 # and writes any nonzero results to `basis`
 function reduction!(
@@ -438,10 +443,10 @@ function find_multiplied_reducer!(
         matrix.uprows[matrix.nup + 1] =
             multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, rpoly)
         @inbounds matrix.up2coef[matrix.nup + 1] = basis.nonredundant[i]
-        # TODO: isolate tracing?
+        # TODO: this line is here with the sole purpose -- to support tracing.
+        # Probably want to factor it out.
         matrix.up2mult[matrix.nup + 1] = insert_in_hash_table!(ht, etmp)
 
-        # up-size matrix
         symbol_ht.hashdata[vidx].idx = 2
         matrix.nup += 1
         i += 1
@@ -860,12 +865,9 @@ function f4!(
         symbol_ht = initialize_secondary_hashtable(hashtable)
 
         if i > 10_000
-            # TODO: log useful info here
-            @log level = 1 "Something has gone wrong in F4. An error will follow."
-            # TODO: this error throwing function is not defined!
-            __error_maximal_number_exceeded(
-                "Something has probably gone wrong in F4. Please submit a github issue."
-            )
+            @log level = 1 "Something has gone wrong in F4. Error will follow."
+            @show_locals
+            __throw_maximum_iterations_exceeded(i)
         end
     end
 

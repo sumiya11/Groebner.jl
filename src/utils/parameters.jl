@@ -34,7 +34,7 @@ struct AlgorithmParameters{Ord1, Ord2}
     # - :zp for integers modulo a prime.
     ground::Symbol
 
-    # TODO
+    # TODO: introduce two strategies: :classic_modular and :learn_and_apply
     strategy::Symbol
     majority_threshold::Int
     emit_computation_graph::Bool

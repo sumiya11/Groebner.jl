@@ -17,6 +17,16 @@
 # m3. That allows us to write more or less independently of the monomial
 # implementation.
 
+# Hash of a monomial in the hashtable
+# NOTE: Changing the type to one of different size will cause errors in hashing
+const MonomHash = UInt32
+
+# Index of a monomial in the hashtable
+const MonomIdx = Int32
+
+# Division mask of a monomial
+const DivisionMask = UInt32
+
 # Hashvalue of a single monomial
 mutable struct Hashvalue
     # index of the monomial in the F4 matrix (defaults to zero),
@@ -557,64 +567,4 @@ function multiplied_poly_to_matrix_row!(
     resize_hashtable_if_needed!(symbolic_ht, length(poly))
 
     insert_multiplied_poly_in_hash_table!(row, htmp, etmp, poly, basis_ht, symbolic_ht)
-end
-
-#------------------------------------------------------------------------------
-
-function insert_in_basis_hash_table_pivots(
-    row::Vector{ColumnIdx},
-    ht::MonomialHashtable{M},
-    symbol_ht::MonomialHashtable{M},
-    col2hash::Vector{MonomIdx}
-) where {M}
-    resize_hashtable_if_needed!(ht, length(row))
-
-    sdata = symbol_ht.hashdata
-    sexps = symbol_ht.monoms
-
-    mod = MonomHash(ht.size - 1)
-    bdata = ht.hashdata
-    bexps = ht.monoms
-    bhash = ht.hashtable
-
-    l = 1
-    @label Letsgo
-    @inbounds while l <= length(row)
-        hidx = col2hash[row[l]]
-
-        # symbolic hash
-        h = sdata[hidx].hash
-
-        lastidx = ht.load + 1
-        bexps[lastidx] = sexps[hidx]
-        e = bexps[lastidx]
-
-        k = h
-        i = MonomHash(1)
-        @inbounds while i <= ht.size
-            k = next_lookup_index(h, i, mod)
-            hm = bhash[k]
-
-            iszero(hm) && break
-
-            if ishashcollision(ht, hm, e, h)
-                i += MonomHash(1)
-                continue
-            end
-
-            row[l] = hm
-            l += 1
-            @goto Letsgo
-        end
-
-        bhash[k] = pos = lastidx
-        row[l] = pos
-        l += 1
-
-        bdata[pos] = Hashvalue(sdata[hidx].idx, h, sdata[hidx].divmask, sdata[hidx].deg)
-
-        ht.load += 1
-    end
-
-    nothing
 end

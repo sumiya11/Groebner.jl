@@ -61,9 +61,8 @@ function construct_hash_vector(::Type{ExponentVector{T}}, n::Integer) where {T}
     rand(MonomHash, n + 1)
 end
 
-# TODO: ExponentVector --> Vector
 # Computes the hash of `x` with the given hash vector `b`
-function monom_hash(x::ExponentVector{T}, b::ExponentVector{MH}) where {T, MH}
+function monom_hash(x::ExponentVector{T}, b::Vector{MH}) where {T, MH}
     h = zero(MH)
     @inbounds for i in eachindex(x, b)
         h += MH(x[i]) * b[i]
