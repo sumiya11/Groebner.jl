@@ -134,9 +134,9 @@ function monom_isless(ea::SparseExponentVector, eb::SparseExponentVector, ::DegR
         elseif ainds[i] > binds[j]
             return true
         else
-            if avals[i] <= bvals[j]
+            if avals[i] < bvals[j]
                 return false
-            else
+            elseif avals[i] > bvals[j]
                 return true
             end
         end

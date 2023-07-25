@@ -97,7 +97,7 @@ implementations_to_test = [
         end
 
         # test that different implementations agree
-        for n in 1:5
+        for n in 1:10
             k = rand(1:100)
 
             implementations_to_test_local = filter(
