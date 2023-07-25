@@ -1,4 +1,5 @@
 using AbstractAlgebra
+import Primes
 
 @testset "AbstractAlgebra.jl, univariate" begin
     R, x = PolynomialRing(GF(2^31 - 1), "x")
@@ -12,9 +13,8 @@ using AbstractAlgebra
 end
 
 @testset "AbstractAlgebra.jl, input-output" begin
-    # TODO: gracefully error if the input is not supported
-    # e.g., 
-    # R, (x, y) = AbstractAlgebra.GF(nextprime(BigInt(2)^100))["x","y"]
+    R, (x, y) = AbstractAlgebra.GF(Primes.nextprime(BigInt(2)^100))["x", "y"]
+    @test_throws DomainError Groebner.groebner([x, y])
 
     aa_orderings_to_test = [:lex, :degrevlex, :deglex]
     aa_grounds_to_test = [

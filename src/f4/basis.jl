@@ -586,7 +586,7 @@ function insert_lcms_in_basis_hash_table!(
         ps[m] = ps[off + l]
 
         h = update_ht.hashdata[plcm[l]].hash
-        ht.monoms[ht.load + 1] = copy(update_ht.monoms[plcm[l]])
+        ht.monoms[ht.load + 1] = copy_monom(update_ht.monoms[plcm[l]])
         n = ht.monoms[ht.load + 1]
 
         k = h

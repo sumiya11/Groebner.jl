@@ -145,7 +145,7 @@ function reduce_modulo_p!(
             coeffs_ff[i][j] = CoeffModular(buf)
         end
     end
-    ring_ff = PolyRing(ring.nvars, ring.ord, Int(prime))
+    ring_ff = PolyRing(ring.nvars, ring.ord, UInt(prime))
     ring_ff, coeffs_ff
 end
 

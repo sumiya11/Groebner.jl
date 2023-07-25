@@ -52,6 +52,7 @@ mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractMonomialOrdering}
     ord::Ord
 
     #= Monom divisibility =#
+    use_divmask::Bool
     # Divisor map to check divisibility faster
     divmap::Vector{UInt32}
     ndivvars::Int
@@ -74,9 +75,9 @@ ht_needs_resize(size, load, added) = (load + added) / size > ht_resize_threshold
 function initialize_hashtable(
     ring::PolyRing{Ord},
     rng,
-    MonomT,
+    MonomT::T,
     initial_size
-) where {Ord <: AbstractMonomialOrdering}
+) where {Ord <: AbstractMonomialOrdering, T}
     exponents = Vector{MonomT}(undef, initial_size)
     hashdata = Vector{Hashvalue}(undef, initial_size)
     hashtable = zeros(MonomIdx, initial_size)
@@ -97,6 +98,8 @@ function initialize_hashtable(
     offset = 2
 
     # initialize fast divisibility params
+    use_divmask = nvars <= 32
+    @log level = -2 "Using division masks: $use_divmask"
     charbit = 8
     int32bits = charbit * sizeof(Int32)
     int32bits != 32 && error("Strange story with Ints")
@@ -118,6 +121,7 @@ function initialize_hashtable(
         hasher,
         nvars,
         ord,
+        use_divmask,
         divmap,
         ndivvars,
         ndivbits,
@@ -134,7 +138,7 @@ function copy_hashtable(ht::MonomialHashtable{M, O}) where {M, O}
     exps[1] = construct_const_monom(M, ht.nvars)
 
     @inbounds for i in 2:(ht.load)
-        exps[i] = copy(ht.monoms[i])
+        exps[i] = copy_monom(ht.monoms[i])
         table[i] = ht.hashtable[i]
         data[i] = copy_hashvalue(ht.hashdata[i])
     end
@@ -146,6 +150,7 @@ function copy_hashtable(ht::MonomialHashtable{M, O}) where {M, O}
         ht.hasher,
         ht.nvars,
         ht.ord,
+        ht.use_divmask,
         ht.divmap,
         ht.ndivvars,
         ht.ndivbits,
@@ -191,6 +196,7 @@ function initialize_secondary_hashtable(basis_ht::MonomialHashtable{M}) where {M
         hasher,
         nvars,
         ord,
+        basis_ht.use_divmask,
         divmap,
         ndivvars,
         ndivbits,
@@ -305,7 +311,7 @@ function insert_in_hash_table!(ht::MonomialHashtable{M}, e::M) where {M}
     # add its position to hashtable, and insert exponent to that position
     vidx = MonomIdx(ht.load + 1)
     @inbounds ht.hashtable[hidx] = vidx
-    @inbounds ht.monoms[vidx] = copy(e)
+    @inbounds ht.monoms[vidx] = copy_monom(e)
     divmask = monom_divmask(e, DivisionMask, ht.ndivvars, ht.divmap, ht.ndivbits)
     @inbounds ht.hashdata[vidx] = Hashvalue(0, he, divmask, totaldeg(e))
 
@@ -376,8 +382,10 @@ end
 
 # h1 divisible by h2
 function is_monom_divisible(h1::MonomIdx, h2::MonomIdx, ht::MonomialHashtable)
-    @inbounds if !is_divmask_divisible(ht.hashdata[h1].divmask, ht.hashdata[h2].divmask)
-        return false
+    @inbounds if ht.use_divmask
+        if !is_divmask_divisible(ht.hashdata[h1].divmask, ht.hashdata[h2].divmask)
+            return false
+        end
     end
     @inbounds e1 = ht.monoms[h1]
     @inbounds e2 = ht.monoms[h2]
@@ -432,7 +440,7 @@ function check_monomial_division_in_update(
             continue
         end
         # fast division check
-        if !is_divmask_divisible(ht.hashdata[a[j]].divmask, divmask)
+        if ht.use_divmask && !is_divmask_divisible(ht.hashdata[a[j]].divmask, divmask)
             j += 1
             continue
         end
@@ -518,7 +526,7 @@ function insert_multiplied_poly_in_hash_table!(
         # miss
 
         # add multiplied exponent to hash table        
-        sexps[lastidx] = copy(enew)
+        sexps[lastidx] = copy_monom(enew)
         symbol_ht.hashtable[k] = lastidx
 
         divmask = monom_divmask(

@@ -36,14 +36,14 @@ function _groebner(
     ring, monoms, coeffs = convert_to_internal(representation, polynomials, kws)
     # Check and set parameters
     params = AlgorithmParameters(ring, kws)
+    # NOTE: at this point, we already know the computation method we are going to use,
+    # and the parameters are set.
+    ring = change_ordering_if_needed!(ring, monoms, coeffs, params)
     # Fast path for the input of zeros
     if isempty(monoms)
         @log level = -2 "Input consisting of zero polynomials. Returning zero."
         return convert_to_output(ring, polynomials, monoms, coeffs, params)
     end
-    # NOTE: at this point, we already know the computation method we are going to use,
-    # and the parameters are set.
-    ring = change_ordering_if_needed!(ring, monoms, coeffs, params)
     # Compute a groebner basis!
     gbmonoms, gbcoeffs = _groebner(ring, monoms, coeffs, params)
     # Convert result back to the representation of input

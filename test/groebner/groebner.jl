@@ -179,7 +179,7 @@ end
 
 @testset "monomial overflow" begin
     R, (x, y, z) = PolynomialRing(GF(2^31 - 1), ["x", "y", "z"], ordering=:degrevlex)
-    for monoms in [:default, :packed, :sparse]
+    for monoms in [:auto, :dense, :packed, :sparse]
         gb_1 = [x * y^100 + y, x^100 * y + y^100, y^199 + 2147483646 * x^99 * y]
         gb_2 = [x * y^200 + y, x^200 * y + y^200, y^399 + 2147483646 * x^199 * y]
         gb_3 = [x * y^1000 + y, x^1000 * y + y^1000, y^1999 + 2147483646 * x^999 * y]
@@ -450,17 +450,20 @@ end
 end
 
 @testset "groebner monoms" begin
-    for hint in [:default, :packed, :sparse]
-        for domain in (GF(2^31 - 1), QQ)
-            for system in [
-                Groebner.cyclicn(2, ground=domain),
-                Groebner.noonn(4, ground=domain, ordering=:degrevlex),
-                Groebner.katsuran(5, ground=domain, ordering=:degrevlex),
-                Groebner.kinema(ground=domain, ordering=:degrevlex)
-            ]
-                gb = Groebner.groebner(system, monoms=hint)
+    for domain in (GF(2^31 - 1), QQ)
+        for system in [
+            Groebner.cyclicn(2, ground=domain),
+            Groebner.noonn(4, ground=domain, ordering=:degrevlex),
+            Groebner.katsuran(5, ground=domain, ordering=:degrevlex),
+            Groebner.kinema(ground=domain, ordering=:degrevlex)
+        ]
+            results = []
+            for monoms in [:dense, :packed]
+                gb = Groebner.groebner(system, monoms=monoms)
+                push!(results, gb)
                 @test Groebner.isgroebner(gb)
             end
+            @test length(unique(results)) == 1
         end
     end
 end
@@ -507,7 +510,9 @@ end
 @testset "normalform checks" begin
     R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"], ordering=:lex)
 
-    @test Groebner.normalform([x, y], y, check=true) == R(0)
+    for check in [false, true]
+        @test Groebner.normalform([x, y], y, check=check) == R(0)
+    end
     @test_throws DomainError Groebner.normalform([x, x + 1], y, check=true)
     @test_throws DomainError Groebner.normalform([x, x + 1], [y], check=true)
 end
@@ -515,8 +520,10 @@ end
 @testset "kbase checks" begin
     R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"], ordering=:lex)
 
-    b = Groebner.kbase([x, y, z], check=true)
-    @test b == [R(1)]
+    for check in [false, true]
+        b = Groebner.kbase([x, y, z], check=check)
+        @test b == [R(1)]
+    end
     @test_throws DomainError Groebner.kbase([x, x + 1], check=true)
     @test_throws DomainError Groebner.kbase([x, x + 1], check=true)
 end

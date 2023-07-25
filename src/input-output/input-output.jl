@@ -22,7 +22,7 @@ mutable struct PolyRing{Ord <: AbstractMonomialOrdering}
     # Monomial ordering
     ord::Ord
     # Characteristic of the coefficient ring
-    ch::Int
+    ch::UInt
 end
 
 """
@@ -52,32 +52,55 @@ function select_polynomial_representation(polynomials, kws; hint::Symbol=:none)
 end
 
 function select_monomtype(char, npolys, nvars, kws, hint)
-    @log level = -1 "Selecting monomial representation. Given hint: $hint. Keyword argument: $(kws.monoms)"
+    @log level = -1 "Selecting monomial representation.\nGiven hint hint=$hint. Keyword argument monoms=$(kws.monoms)"
     if hint === :large_exponents
-        @log level = -1 "As $hint was provided, using 64 bits per single exponent"
+        @log level = -1 "As hint=$hint was provided, using 64 bits per single exponent"
         # use 64 bits if large exponents detected
-        # @assert is_supported_ordering(ExponentVector{UInt64}, kws.ordering)
+        @assert is_supported_ordering(ExponentVector{UInt64}, kws.ordering)
         return ExponentVector{UInt64}
     end
     E = UInt8
-    elements_per_word = div(sizeof(UInt), sizeof(E))
-    # if there are many variables
-    if nvars > 3 * elements_per_word
-        # @assert is_supported_ordering(ExponentVector{E}, kws.ordering)
+    variables_per_word = div(sizeof(UInt), sizeof(E))
+    # if dense representation is requested
+    if kws.monoms === :dense
+        @assert is_supported_ordering(ExponentVector{E}, kws.ordering)
         return ExponentVector{E}
     end
-    # if we want a packed representation
+    # if sparse representation is requested
+    if kws.monoms === :sparse
+        if is_supported_ordering(SparseExponentVector{E, nvars, Int}, kws.ordering)
+            return SparseExponentVector{E, nvars, Int}
+        end
+        @log level = 1 """
+        The given monomial ordering $(kws.ordering) is not implemented for $(kws.monoms) monomials, sorry.
+        Falling back to dense representation."""
+    end
+    # if packed representation is requested
     if kws.monoms === :packed
-        if nvars < elements_per_word
-            if is_supported_ordering(PackedTuple1{UInt64, E}, kws.ordering)
+        if is_supported_ordering(PackedTuple1{UInt64, E}, kws.ordering)
+            if nvars < variables_per_word
                 return PackedTuple1{UInt64, E}
-            end
-        elseif nvars < 2 * elements_per_word
-            if is_supported_ordering(PackedTuple2{UInt64, E}, kws.ordering)
+            elseif nvars < 2 * variables_per_word
                 return PackedTuple2{UInt64, E}
+            elseif nvars < 3 * variables_per_word
+                return PackedTuple3{UInt64, E}
             end
-        elseif nvars < 3 * elements_per_word
-            if is_supported_ordering(PackedTuple3{UInt64, E}, kws.ordering)
+            @log level = 1 """
+            Unable to use $(kws.monoms) monomials, too many variables ($nvars), sorry.
+            Falling back to dense monomial representation."""
+        else
+            @log level = 1 """
+            The given monomial ordering $(kws.ordering) is not implemented for $(kws.monoms) monomials, sorry.
+            Falling back to dense representation."""
+        end
+    end
+    if kws.monoms === :auto
+        if is_supported_ordering(PackedTuple1{UInt64, E}, kws.ordering)
+            if nvars < variables_per_word
+                return PackedTuple1{UInt64, E}
+            elseif nvars < 2 * variables_per_word
+                return PackedTuple2{UInt64, E}
+            elseif nvars < 3 * variables_per_word
                 return PackedTuple3{UInt64, E}
             end
         end
@@ -232,6 +255,7 @@ function remove_zeros_from_input!(
     iszerobasis
 end
 
+###
 # Check the consistency of the given monomial ordering
 # with respect to the monomial implementation and the length of exponent vector
 
@@ -333,9 +357,10 @@ end
 # case the target ordering differs from the `ring` ordering,  
 # sorts the polynomials terms w.r.t. the target ordering.
 function change_ordering_if_needed!(ring, monoms, coeffs, params)
-    @assert !isempty(monoms) && !isempty(monoms[1])
-    !check_ordering(monoms[1][1], params.target_ord) &&
-        __throw_monomial_ordering_inconsistent(monoms[1][1], params.target_ord)
+    if !isempty(monoms) && !isempty(monoms[1])
+        !check_ordering(monoms[1][1], params.target_ord) &&
+            __throw_monomial_ordering_inconsistent(monoms[1][1], params.target_ord)
+    end
     ring.ord == params.target_ord && return ring
     @log level = -2 "Reordering input polynomial terms from $(ring.ord) to $params.target_ord"
     ring = PolyRing(ring.nvars, params.target_ord, ring.ch)

@@ -10,7 +10,8 @@ function test_params(
     grounds,
     coeffssize,
     orderings,
-    linalgs
+    linalgs,
+    monoms
 )
     for n in nvariables
         for e in exps
@@ -20,29 +21,35 @@ function test_params(
                         for ord in orderings
                             for csz in coeffssize
                                 for linalg in linalgs
-                                    set = Groebner.generate_set(
-                                        n,
-                                        e,
-                                        nt,
-                                        np,
-                                        csz,
-                                        rng,
-                                        gr,
-                                        ord
-                                    )
-                                    filter!(!iszero, set)
-                                    isempty(set) && continue
+                                    for monom in monoms
+                                        set = Groebner.generate_set(
+                                            n,
+                                            e,
+                                            nt,
+                                            np,
+                                            csz,
+                                            rng,
+                                            gr,
+                                            ord
+                                        )
+                                        filter!(!iszero, set)
+                                        isempty(set) && continue
 
-                                    try
-                                        gb = Groebner.groebner(set, linalg=linalg)
-                                        @test Groebner.isgroebner(gb)
-                                    catch err
-                                        @error "Beda!" n e nt np gr ord
-                                        println(err)
-                                        println("Rng:\n", rng)
-                                        println("Set:\n", set)
-                                        println("Gb:\n", gb)
-                                        rethrow(err)
+                                        try
+                                            gb = Groebner.groebner(
+                                                set,
+                                                linalg=linalg,
+                                                monoms=monom
+                                            )
+                                            @test Groebner.isgroebner(gb)
+                                        catch err
+                                            @error "Beda!" n e nt np gr ord monom
+                                            println(err)
+                                            println("Rng:\n", rng)
+                                            println("Set:\n", set)
+                                            println("Gb:\n", gb)
+                                            rethrow(err)
+                                        end
                                     end
                                 end
                             end
@@ -65,7 +72,8 @@ end
     coeffssize = [3, 1000, 2^31 - 1]
     orderings  = [:degrevlex, :lex, :deglex]
     linalgs    = [:deterministic, :randomized]
-    p          = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize, linalgs)))
+    monoms     = [:auto, :dense, :packed]
+    p          = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize, linalgs, monoms)))
     @info "Producing $p random small tests for groebner"
     test_params(
         rng,
@@ -76,6 +84,7 @@ end
         grounds,
         coeffssize,
         orderings,
-        linalgs
+        linalgs,
+        monoms
     )
 end

@@ -1,4 +1,5 @@
 import Nemo
+import Primes
 
 @testset "Nemo.jl, univariate" begin
     R, x = PolynomialRing(GF(2^31 - 1), "x")
@@ -9,6 +10,9 @@ import Nemo
 end
 
 @testset "Nemo.jl, input-output" begin
+    R, (x, y) = AbstractAlgebra.GF(Primes.nextprime(BigInt(2)^100))["x", "y"]
+    @test_throws DomainError Groebner.groebner([x, y])
+
     nemo_orderings_to_test = [:lex, :deglex, :degrevlex]
     nemo_grounds_to_test = [Nemo.GF(2^62 + 135), Nemo.GF(2^31 - 1), Nemo.GF(17), Nemo.QQ]
 

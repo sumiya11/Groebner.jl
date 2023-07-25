@@ -3,6 +3,8 @@
 # This all is just not fantastic. 
 # We are practically dancing for rain around AbstractAlgebra.jl internals here.
 
+@noinline __throw_input_not_supported(val, msg) = throw(DomainError(val, msg))
+
 const _AA_supported_orderings_symbols = (:lex, :deglex, :degrevlex)
 const _AA_exponent_type = UInt64
 
@@ -17,8 +19,14 @@ function peek_at_polynomials(polynomials::Vector{T}) where {T}
         # if univariate, defaults to lex
         :lex
     end
-    char = Int(AbstractAlgebra.characteristic(R))
-    :abstractalgebra, length(polynomials), char, nvars, ord
+    char = AbstractAlgebra.characteristic(R)
+    if char > typemax(UInt)
+        __throw_input_not_supported(
+            char,
+            "The characteristic of the field of input is too large and is not supported, sorry"
+        )
+    end
+    :abstractalgebra, length(polynomials), UInt(BigInt(char)), nvars, ord
 end
 
 # Determines the monomial ordering of the output,
@@ -52,7 +60,7 @@ function extract_ring(polynomials)
     # type unstable:
     ordT = ordering_sym2typed(ord)
     ch   = AbstractAlgebra.characteristic(R)
-    PolyRing{typeof(ordT)}(nv, ordT, Int(BigInt(ch)))
+    PolyRing{typeof(ordT)}(nv, ordT, UInt(BigInt(ch)))
 end
 
 function extract_coeffs(

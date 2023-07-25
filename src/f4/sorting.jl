@@ -11,11 +11,12 @@ function sort_part!(
     to::Integer;
     lt=isless,
     alg=_default_sorting_alg(),
-    by=identity,
-    rev=false
+    by=identity
 )
-    ordr = Base.Sort.ord(lt, by, rev, Base.Sort.Forward)
+    # NOTE: this is perhaps type unstable
+    ordr = Base.Sort.ord(lt, by, nothing)
     sort!(arr, from, to, alg, ordr)
+    nothing
 end
 
 # Sorts polynomials from the basis by their leading monomial in the

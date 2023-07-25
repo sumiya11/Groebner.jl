@@ -398,15 +398,23 @@ function find_multiplied_reducer!(
     e = symbol_ht.monoms[vidx]
     etmp = ht.monoms[1]
     divmask = symbol_ht.hashdata[vidx].divmask
-
     leaddiv = basis.divmasks
 
-    # searching for a poly from basis whose leading monom
-    # divides the given exponent e
+    # Searching for a poly from basis whose leading monom divides the given
+    # exponent e
     i = 1
     @label Letsgo
 
-    @inbounds while i <= basis.nnonredundant && (leaddiv[i] & ~divmask) != 0
+    @inbounds while i <= basis.nnonredundant
+        # TODO: rethink division masks to support more variables
+        if ht.use_divmask && is_divmask_divisible(divmask, leaddiv[i])
+            break
+        else
+            e2 = ht.monoms[basis.monoms[basis.nonredundant[i]][1]]
+            if is_monom_divisible(e, e2)
+                break
+            end
+        end
         i += 1
     end
 

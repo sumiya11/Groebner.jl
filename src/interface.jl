@@ -21,13 +21,14 @@ The `groebner` routine takes the following options:
 - `certify`: Certify the obtained basis. When this option is `false`, the
     algorithm is randomized, and the result is correct with high probability
     (default is `false`).
-- `linalg`: Linear algebra backend. Available options are: `:deterministic` for
-    deterministic sparse linear algebra, `:randomized` for probabilistic sparse linear
-    algebra (default is `:randomized`).
+- `linalg`: Linear algebra backend. Available options are: 
+    - `:deterministic` for deterministic sparse linear algebra, 
+    - `:randomized` for probabilistic sparse linear algebra (default is `:randomized`).
 - `monoms`: Monomial representation used in the computations. The algorithm
     tries to automatically choose the most suitable monomial representation.
     Otherwise, set `monoms` to one of the following: 
-    - `:default` for the automatic choice (which is default), 
+    - `:auto` for the automatic choice (default), 
+    - `:dense` for classic dense exponent vectors,
     - `:packed` for packed representation, 
     - `:sparse` for sparse representation.
 - `seed`: The seed for randomization. Default value is `42`. Groebner uses
@@ -56,22 +57,26 @@ using Groebner, AbstractAlgebra
 R, (x, y) = QQ["x", "y"]
 groebner([x*y^2 + x, y*x^2 + y])
 ```
-
 """
 function groebner(polynomials::AbstractVector; options...)
     # `KeywordsHandler` does several useful things on initialization:
     #   - checks that the keyword arguments are valid,
     #   - sets the global logger for this module.
-    _groebner(polynomials, KeywordsHandler(:groebner, options))
+    #
+    # NOTE: Type assertion *is needed* for type stability
+    _groebner(polynomials, KeywordsHandler(:groebner, options))::typeof(polynomials)
 end
 
 """
     groebner_learn(polynomials; options...)
 
-Computes a Groebner basis of `polynomials` and emits the computation graph.
-The graph can be used to speed up the computation of subsequent Groebner bases.
+Computes a Groebner basis of `polynomials` and emits the computation context.
 
-**At the moment, only input over integers modulo a prime is supported.**
+The context can be used to speed up the computation of subsequent Groebner
+bases, which should be the specializations of the same basis as the one
+`groebner_learn` had been applied to.
+
+*At the moment, only input over integers modulo a prime is supported.*
 
 See also `groebner_apply!`.
 
@@ -82,23 +87,24 @@ using Groebner, AbstractAlgebra
 R, (x, y) = GF(2^31-1)["x", "y"]
 
 # Learn
-graph, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
+context, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
 
 # Apply
-flag, gb_2 = groebner_apply!(graph, [2x*y^2 + 3x, 4y*x^2 + 5y])
-```
+flag, gb_2 = groebner_apply!(context, [2x*y^2 + 3x, 4y*x^2 + 5y])
 
+@assert flag
+```
 """
 function groebner_learn(polynomials::AbstractVector; options...)
     _groebner_learn(polynomials, KeywordsHandler(:groebner_learn, options))
 end
 
 """
-    groebner_apply!(graph, polynomials; options...)
+    groebner_apply!(context, polynomials; options...)
 
-Computes a Groebner basis of `polynomials` using the given computation `graph`.
+Computes a Groebner basis of `polynomials` using the given computation `context`.
 
-**At the moment, only input over integers modulo a prime is supported.**
+*At the moment, only input over integers modulo a prime is supported.*
 
 See also `groebner_learn`.
 
@@ -109,15 +115,18 @@ using Groebner, AbstractAlgebra
 R, (x, y) = GF(2^31-1)["x", "y"]
 
 # Learn
-graph, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
+context, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
 
 # Apply
-flag, gb_2 = groebner_apply!(graph, [2x*y^2 + 3x, 4y*x^2 + 5y])
+flag, gb_2 = groebner_apply!(context, [2x*y^2 + 3x, 4y*x^2 + 5y])
 ```
-
 """
-function groebner_apply!(graph, polynomials::AbstractVector; options...)
-    _groebner_apply!(graph, polynomials, KeywordsHandler(:groebner_apply!, options))
+function groebner_apply!(context, polynomials::AbstractVector; options...)
+    _groebner_apply!(
+        context,
+        polynomials,
+        KeywordsHandler(:groebner_apply!, options)
+    )::Tuple{Bool, typeof(polynomials)}
 end
 
 """
@@ -162,10 +171,9 @@ using Groebner, AbstractAlgebra
 R, (x, y) = QQ["x", "y"]
 isgroebner([x*y^2 + x, y*x^2 + y])
 ```
-
 """
 function isgroebner(polynomials::AbstractVector; options...)
-    _isgroebner(polynomials, KeywordsHandler(:isgroebner, options))
+    _isgroebner(polynomials, KeywordsHandler(:isgroebner, options))::Bool
 end
 
 """
@@ -199,11 +207,15 @@ julia> using Groebner, DynamicPolynomials
 julia> @polyvar x y;
 julia> normalform([y^2 + x, x^2 + y], x^2 + y^2 + 1)
 ```
-
 """
 function normalform(basis::AbstractVector, tobereduced::AbstractVector; options...)
-    _normalform(basis, tobereduced, KeywordsHandler(:normalform, options))
+    _normalform(
+        basis,
+        tobereduced,
+        KeywordsHandler(:normalform, options)
+    )::typeof(tobereduced)
 end
+
 normalform(basis::AbstractVector, tobereduced; options...) =
     first(normalform(basis, [tobereduced]; options...))
 
@@ -227,8 +239,7 @@ julia> using Groebner, DynamicPolynomials
 julia> @polyvar x y;
 julia> kbase([y^2 + x, x^2 + y], check=true)
 ```
-
 """
 function kbase(basis::AbstractVector; options...)
-    _kbase(basis, KeywordsHandler(:kbase, options))
+    _kbase(basis, KeywordsHandler(:kbase, options))::typeof(basis)
 end
