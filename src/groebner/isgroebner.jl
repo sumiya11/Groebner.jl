@@ -18,7 +18,7 @@ function _isgroebner(
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     params
-) where {M, C <: CoeffFF}
+) where {M <: Monom, C <: CoeffFF}
     basis, pairset, hashtable = initialize_structs(ring, monoms, coeffs, params)
     f4_isgroebner!(ring, basis, pairset, hashtable)
 end
@@ -29,7 +29,7 @@ function _isgroebner(
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     params
-) where {M, C <: CoeffQQ}
+) where {M <: Monom, C <: CoeffQQ}
     buffer = CoefficientBuffer()
     basis, pairset, hashtable = initialize_structs(ring, monoms, coeffs, params)
     # If an honest computation over the rationals is needed

@@ -15,12 +15,12 @@ end
     ord = Groebner.DegRevLex()
     gb1 = Groebner.groebner([x, y], ordering=ord)
     gb2 = Groebner.groebner([R(0)], ordering=ord)
-    @test ordering(parent(first(gb1))) === :degrevlex
-    @test ordering(parent(first(gb2))) === :degrevlex
+    @test AbstractAlgebra.ordering(parent(first(gb1))) === :degrevlex
+    @test AbstractAlgebra.ordering(parent(first(gb2))) === :degrevlex
     nf1 = Groebner.normalform([x, y], x, ordering=ord)
     nf2 = Groebner.normalform([x, y], R(0), ordering=ord)
-    @test ordering(parent(nf1)) === :degrevlex
-    @test_broken ordering(parent(nf2)) === :degrevlex
+    @test AbstractAlgebra.ordering(parent(nf1)) === :degrevlex
+    @test_broken AbstractAlgebra.ordering(parent(nf2)) === :degrevlex
 end
 
 @testset "regression, SI.jl cmp" begin
