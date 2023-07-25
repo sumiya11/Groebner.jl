@@ -165,7 +165,15 @@ end
 
 function extract_polys(representation, ring::PolyRing, polynomials::Vector{T}) where {T}
     coeffs = extract_coeffs(representation, ring, polynomials)
-    monoms = extract_monoms(representation, ring, polynomials)
+    reversed_order, monoms = extract_monoms(representation, ring, polynomials)
+    @assert length(coeffs) == length(monoms)
+    if reversed_order
+        for i in 1:length(coeffs)
+            @assert length(coeffs[i]) == length(monoms[i])
+            reverse!(coeffs[i])
+            reverse!(monoms[i])
+        end
+    end
     monoms, coeffs
 end
 

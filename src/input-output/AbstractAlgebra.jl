@@ -195,7 +195,7 @@ function extract_monoms(
         poly = orig_polys[i]
         exps[i] = extract_monoms(representation, ring, poly)
     end
-    exps
+    false, exps
 end
 
 function extract_monoms(
@@ -214,7 +214,7 @@ function extract_monoms(
                 construct_monom(representation.monomtype, poly.exps[(end - 1):-1:1, j])
         end
     end
-    exps
+    false, exps
 end
 
 function extract_monoms(
@@ -232,7 +232,7 @@ function extract_monoms(
             exps[i][j] = construct_monom(representation.monomtype, poly.exps[end:-1:1, j])
         end
     end
-    exps
+    false, exps
 end
 
 function extract_monoms(
@@ -251,7 +251,7 @@ function extract_monoms(
                 construct_monom(representation.monomtype, poly.exps[1:(end - 1), j])
         end
     end
-    exps
+    false, exps
 end
 
 function convert_to_output(
