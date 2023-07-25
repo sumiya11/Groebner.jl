@@ -1,3 +1,7 @@
+## Groebner v0.4.1 Release notes
+
+Reinstate support for MultivariatePolynomials.jl version 0.4.
+
 ## Groebner v0.4.0 Release notes 
 
 Minor bug fixes and improvements.
