@@ -36,7 +36,7 @@ function meta_formatter_groebner(level::LogLevel, _module, group, id, file, line
     _module !== nothing && (suffix *= string(_module)::String)
     if file !== nothing
         _module !== nothing && (suffix *= " ")
-        suffix *= contractuser(file)::String
+        suffix *= Base.contractuser(file)::String
         if line !== nothing
             suffix *= ":$(isa(line, UnitRange) ? "$(first(line))-$(last(line))" : line)"
         end
