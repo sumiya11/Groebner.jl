@@ -79,12 +79,13 @@ function _groebner(
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
     # NOTE: we can mutate ring, monoms, and coeffs here.
-    if params.strategy === :learn_and_apply
-        _groebner_learn_and_apply(ring, monoms, coeffs, params)
-    else
-        @assert params.strategy === :classic_modular
-        _groebner_classic_modular(ring, monoms, coeffs, params)
-    end
+    # if params.strategy === :learn_and_apply
+    #     _groebner_learn_and_apply(ring, monoms, coeffs, params)
+    # else
+    #     @assert params.strategy === :classic_modular
+    #     _groebner_classic_modular(ring, monoms, coeffs, params)
+    # end
+    _groebner_classic_modular(ring, monoms, coeffs, params)
 end
 
 # Proxy function for handling exceptions.
@@ -127,12 +128,12 @@ function _groebner_learn(polynomials, kws, representation)
     graph, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
 end
 
-function _groebner_apply!(graph, polynomials, kws)
+function _groebner_apply!(graph::ComputationGraphF4, polynomials, kws::KeywordsHandler)
     # representation = select_polynomial_representation(polynomials, kws)
     ring = extract_coeffs_raw!(graph, graph.representation, polynomials, kws)
     @assert _is_input_compatible(graph, ring, kws) "Input does not seem to be compatible with the learned graph."
     params = AlgorithmParameters(ring, kws)
-    flag, gb_monoms, gb_coeffs = _groebner_apply!(graph, params)
+    flag, gb_monoms, gb_coeffs = _groebner_apply!(ring, graph, params)
     !flag && return (flag, polynomials)
     flag, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
 end
@@ -168,11 +169,13 @@ function _groebner_learn(
     graph, gb_monoms, gb_coeffs
 end
 
-function _groebner_apply!(graph, params)
+function _groebner_apply!(ring, graph, params)
     @log level = -1 "Groebner Apply phase"
-    @log level = -2 "Applying modulo $(graph.ring.ch)"
-    flag = f4_apply!(graph, graph.ring, graph.buf_basis, params)
+    @log level = -2 "Applying modulo $(ring.ch)"
+    flag = f4_apply!(graph, ring, graph.buf_basis, params)
     gb_monoms, gb_coeffs = export_basis_data(graph.gb_basis, graph.hashtable)
+    # Check once again that the sizes coincide
+    length(gb_monoms) != length(gb_coeffs) && return false, gb_monoms, gb_coeffs
     @inbounds for i in 1:length(gb_monoms)
         if length(gb_monoms[i]) != length(gb_coeffs[i])
             return false, gb_monoms, gb_coeffs

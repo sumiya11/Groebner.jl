@@ -42,7 +42,6 @@ function correctness_check!(
 end
 
 # Heuristic bound on the size of coefficients of the basis.
-# TODO: szden --> sznum
 threshold_in_heuristic_check(sznum, szden, szmod) = 1.30 * (sznum + szden) >= szmod
 
 # Checks that 

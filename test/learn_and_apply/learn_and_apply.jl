@@ -1,9 +1,13 @@
 
-params = (loglevel=0, sweep=true)
+params = (loglevel=100, sweep=true)
+Groebner.invariants_enabled() = true
 
 @testset "Learn & apply" begin
     K = AbstractAlgebra.GF(2^31 - 1)
+    K2 = AbstractAlgebra.GF(2^30 + 3)
+
     R, (x, y) = PolynomialRing(K, ["x", "y"], ordering=:degrevlex)
+    R2, (x2, y2) = PolynomialRing(K2, ["x", "y"], ordering=:degrevlex)
     R2, xs = PolynomialRing(K, ["x$i" for i in 1:30], ordering=:degrevlex)
 
     @test_throws DomainError Groebner.groebner_learn([R(0), R(0)]; params...)
@@ -41,7 +45,7 @@ params = (loglevel=0, sweep=true)
         flag, gb_2 = Groebner.groebner_apply!(graph, system; params...)
         @test flag && gb_2 == true_gb
 
-        # Apply on a different system N times!
+        # Apply on a different system N times
         N = 5
         X = gens(parent(first(system)))
         for _ in 1:N
@@ -50,6 +54,19 @@ params = (loglevel=0, sweep=true)
             true_gb = Groebner.groebner(system_; params...)
             flag, gb_2 = Groebner.groebner_apply!(graph, system_; params...)
             @test flag && gb_2 == true_gb
+        end
+
+        # Apply on the same system but modulo a different prime 
+        system_2 = map(f -> map_coefficients(c -> K2(data(c)), f), system)
+        try
+            flag, gb_2 = Groebner.groebner_apply!(graph, system_2; params...)
+            @test flag && gb_2 == Groebner.groebner(system_2)
+        catch error
+            if error isa AssertionError
+                @test_broken false
+            else
+                rethrow(error)
+            end
         end
     end
 end

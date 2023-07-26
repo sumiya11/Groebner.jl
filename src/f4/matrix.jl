@@ -123,6 +123,24 @@ function reinitialize_matrix!(matrix::MacaulayMatrix{T}, npairs::Int) where {T}
     matrix
 end
 
+function matrix_well_formed(key, matrix)
+    if key in (:in_reduction_apply!, :in_reduction!, :in_reduction_learn!)
+        for i in 1:length(matrix.uprows)
+            !isassigned(matrix.uprows, i) && continue
+            if isempty(matrix.uprows[i])
+                return false
+            end
+        end
+        for i in 1:length(matrix.lowrows)
+            !isassigned(matrix.lowrows, i) && continue
+            if isempty(matrix.lowrows[i])
+                return false
+            end
+        end
+    end
+    true
+end
+
 function linear_algebra!(
     graph,
     ring::PolyRing,
@@ -193,10 +211,11 @@ function reduce_by_pivot!(
     cfs::Vector{T},
     arithmetic
 ) where {T <: CoeffFF}
+    @invariant isone(cfs[1])
     @inbounds mul = divisor(arithmetic) - row[indices[1]]
 
     # on our benchmarks usually
-    # length(row) / length(indices) varies from 10 to 100
+    # length(row) / length(indices) roughly varies from 10 to 100
     @inbounds for j in 1:length(indices)
         idx = indices[j]
         row[idx] = mod_x(row[idx] + mul * cfs[j], arithmetic)
@@ -419,6 +438,7 @@ function reduce_dense_row_by_known_pivots_sparse!(
         end
 
         reduce_by_pivot!(densecoeffs, reducerexps, cfs, arithmetic)
+        @invariant iszero(densecoeffs[i])
     end
 
     newrow = Vector{ColumnIdx}(undef, k)
@@ -432,6 +452,7 @@ function reduce_dense_row_by_known_pivots_sparse!(
     # store new row in sparse format
     # where k - number of structural nonzeros in new reduced row, k > 0
     @assert k > 0
+
     extract_sparse_row!(newrow, newcfs, densecoeffs, startcol, ncols)
     return false, newrow, newcfs
 end
@@ -439,15 +460,16 @@ end
 #------------------------------------------------------------------------------
 
 function absolute_pivots!(matrix::MacaulayMatrix)
-    pivs = Vector{Vector{ColumnIdx}}(undef, matrix.ncols)
+    pivots = Vector{Vector{ColumnIdx}}(undef, matrix.ncols)
     @inbounds for i in 1:(matrix.nup)
-        pivs[i] = matrix.uprows[i]
+        pivots[i] = matrix.uprows[i]
+        @invariant pivots[i][1] == i
     end
     l2c_tmp = Vector{ColumnIdx}(undef, max(matrix.ncols, matrix.nlow))
     @inbounds for i in 1:(matrix.nlow)
         l2c_tmp[matrix.lowrows[i][1]] = matrix.low2coef[i]
     end
-    pivs, l2c_tmp
+    pivots, l2c_tmp
 end
 
 function interreduce_lower_part!(
@@ -731,7 +753,7 @@ function learn_sparse_rref!(
     densecoeffs = zeros(C, ncols)
 
     not_reduced_to_zero = Int[]
-    useful_reducers = Set{Int}()
+    useful_reducers = Set{Tuple{Int, MonomIdx}}()
 
     @log level = -6 "Low to coef" rowidx2coef matrix.low2mult
 
@@ -820,7 +842,6 @@ function apply_sparse_rref!(
 
     # move known matrix pivots,
     # no copy
-    # YES
     pivs, l2c_tmp = absolute_pivots!(matrix)
     @log level = -7 "absolute_pivots!" pivs l2c_tmp
 
@@ -840,8 +861,6 @@ function apply_sparse_rref!(
         # corresponding coefficients from basis
         # (no need to copy here)
         cfsref = basis.coeffs[rowidx2coef[i]]
-
-        @log level = -7 "$i from $nlow" rowexps cfsref rowidx2coef
 
         # we load coefficients into dense array
         # into rowexps indices
