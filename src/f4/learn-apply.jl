@@ -65,6 +65,8 @@ function reduction_apply!(
     sort_matrix_upper_rows_decreasing!(matrix) # for pivots,  AB part
     sort_matrix_lower_rows_increasing!(matrix) # for reduced, CD part
 
+    @invariant matrix_well_formed(:in_reduction_apply!, matrix)
+
     @log level = -6 "Apply: after mapping and sorting" matrix
     flag = linear_algebra!(graph, ring, matrix, basis, :apply, rng)
     if !flag
@@ -294,7 +296,7 @@ end
 
 function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
     @invariant basis_well_formed(:input_f4_apply!, ring, basis, graph.hashtable)
-    @assert params.reduced === true
+    @assert params.reduced == true
 
     normalize_basis!(ring, basis)
 

@@ -43,6 +43,8 @@ end
         "groebner/large_exponents"
     ]
 
+    @includetests ["learn_and_apply/learn_and_apply"]
+
     @includetests ["isgroebner/isgroebner"]
 
     @includetests ["normalform/normalform", "normalform/normalform_stress"]
