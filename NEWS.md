@@ -1,3 +1,7 @@
+## Groebner v0.4.2 Release notes
+
+Fixed the bug with `groebner_apply!`, which crashed when called on a system over a finite field different from the one used in `groebner_learn`.
+
 ## Groebner v0.4.1 Release notes
 
 Reinstate support for MultivariatePolynomials.jl version 0.4.
