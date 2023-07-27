@@ -2,7 +2,7 @@ using Test
 using TestSetExtensions
 
 using AbstractAlgebra
-using Groebner
+# using Groebner
 
 # Check invariants during testing
 Groebner.invariants_enabled() = true

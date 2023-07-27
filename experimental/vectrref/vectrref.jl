@@ -8,8 +8,8 @@ pivs = load((@__DIR__) * "/$name.jld2", "pivs")
 matrix = load((@__DIR__) * "/$name.jld2", "matrix")
 basis = load((@__DIR__) * "/$name.jld2", "basis")
 
-matrix.nlow, matrix.nup, matrix.ncols
-lengths = map(length, pivs[1:(matrix.nup)])
+matrix.nlower, matrix.nupper, matrix.ncolumns
+lengths = map(length, pivs[1:(matrix.nupper)])
 histogram(lengths, bins=100)
 sum(lengths), median(lengths), std(lengths), mean(lengths), length(lengths)
 quantile(lengths, 0.40),
@@ -37,27 +37,27 @@ function rref_1!(heat, row, pivs, coeffs, startcol, n)
 end
 
 begin
-    heat = zeros(Int, matrix.ncols)
+    heat = zeros(Int, matrix.ncolumns)
     for i in 1:1
         i = 1
-        row = zeros(UInt, matrix.ncols)
+        row = zeros(UInt, matrix.ncolumns)
         Groebner.load_indexed_coefficients!(
             row,
-            matrix.lowrows[i],
-            basis.coeffs[matrix.low2coef[i]]
+            matrix.lower_rows[i],
+            basis.coeffs[matrix.lower_to_coeffs[i]]
         )
-        coeffs = Vector{Vector{UInt}}(undef, matrix.ncols)
+        coeffs = Vector{Vector{UInt}}(undef, matrix.ncolumns)
         for j in 1:length(pivs)
             !isassigned(pivs, j) && continue
-            coeffs[j] = basis.coeffs[matrix.up2coef[j]]
+            coeffs[j] = basis.coeffs[matrix.upper_to_coeffs[j]]
         end
-        called = rref_1!(heat, row, pivs, coeffs, 1, matrix.ncols)
+        called = rref_1!(heat, row, pivs, coeffs, 1, matrix.ncolumns)
     end
 end
 plot(heat)
 
 similarity(a, b) = length(intersect(a, b))
-long_ones = filter(x -> length(x) > quantile(lengths, 0.80), pivs[1:(matrix.nup - 1)])
+long_ones = filter(x -> length(x) > quantile(lengths, 0.80), pivs[1:(matrix.nupper - 1)])
 begin
     similarities = []
     for i in 1:(length(long_ones) - 1)
@@ -82,12 +82,12 @@ end
 
 C = UInt64
 arithmetic = Groebner.SpecializedBuiltinModularArithmetic(p)
-densecoeffs = zeros(C, matrix.ncols)
+densecoeffs = zeros(C, matrix.ncolumns)
 
 function reduction(matrix, basis, densecoeffs, magic, pivs)
-    @inbounds for i in 1:length(matrix.nlow)
-        rowexps = matrix.lowrows[i]
-        cfsref = basis.coeffs[matrix.low2coef[i]]
+    @inbounds for i in 1:length(matrix.nlower)
+        rowexps = matrix.lower_rows[i]
+        cfsref = basis.coeffs[matrix.lower_to_coeffs[i]]
         Groebner.load_indexed_coefficients!(densecoeffs, rowexps, cfsref)
         startcol = rowexps[1]
 
@@ -100,7 +100,7 @@ function reduction(matrix, basis, densecoeffs, magic, pivs)
             -1,
             magic
         )
-        # zeroed = Groebner.reduce_dense_row_by_known_pivots_sparse!(densecoeffs, matrix, basis, pivs, Groebner.ColumnIdx(startcol), Groebner.ColumnIdx(-1), magic)
+        # zeroed = Groebner.reduce_dense_row_by_known_pivots_sparse!(densecoeffs, matrix, basis, pivs, Groebner.ColumnLabel(startcol), Groebner.ColumnLabel(-1), magic)
         zeroed && continue
 
         # matrix.coeffs[i] = newcfs

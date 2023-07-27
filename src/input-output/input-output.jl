@@ -144,7 +144,7 @@ function convert_to_internal(
     # @assert is_representation_suitable(representation, ring)
     monoms, coeffs = extract_polys(representation, ring, polynomials)
     @log level = -2 "Done converting input polynomials to internal representation."
-    @log level = -5 """
+    @log level = -6 """
     Polynomials in internal representation:
     Ring: $ring
     Monomials: $monoms
@@ -258,7 +258,7 @@ function remove_zeros_from_input!(
     filter!(!iszero_monoms, monoms)
     @assert length(monoms) == length(coeffs)
     iszerobasis = isempty(monoms)
-    @log level = -5 "After removing zero polynomials from input:" monoms coeffs
+    @log level = -7 "After removing zero polynomials from input:" monoms coeffs
     iszerobasis
 end
 

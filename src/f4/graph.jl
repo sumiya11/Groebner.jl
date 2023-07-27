@@ -1,7 +1,7 @@
 
 # Information about F4 execution flow that can be later used for speeding up
 # subsequent analogous computations.
-mutable struct ComputationGraphF4{C, M, Ord}
+mutable struct ComputationContextF4{C, M, Ord}
     time_spent::UInt64
     ring::PolyRing{Ord}
     input_basis::Basis{C}
@@ -29,7 +29,7 @@ function initialize_computation_graph_f4(
     permutation,
     params
 )
-    ComputationGraphF4(
+    ComputationContextF4(
         time_ns(),
         ring,
         input_basis,
@@ -50,7 +50,7 @@ function initialize_computation_graph_f4(
     )
 end
 
-function finalize_graph!(graph::ComputationGraphF4)
+function finalize_graph!(graph::ComputationContextF4)
     # TODO: trim sizes
     graph.buf_basis = deepcopy_basis(graph.gb_basis)
     graph.buf_basis.nnonredundant = graph.input_basis.nnonredundant
@@ -60,7 +60,7 @@ function finalize_graph!(graph::ComputationGraphF4)
     nothing
 end
 
-function Base.show(io::IO, ::MIME"text/plain", graph::ComputationGraphF4)
+function Base.show(io::IO, ::MIME"text/plain", graph::ComputationContextF4)
     sz = round((Base.summarysize(graph) / 2^20), digits=2)
     println(
         io,

@@ -13,10 +13,10 @@ mutable struct DoubleMacaulayMatrix{C}
 
     #
     lefthash2col::Dict{Int, Int}
-    leftcol2hash::Vector{Int}
+    leftcolumn_to_monom::Vector{Int}
 
     righthash2col::Dict{Int, Int}
-    rightcol2hash::Vector{Int}
+    rightcolumn_to_monom::Vector{Int}
 
     # size of leftpivs
     nlsize::Int
@@ -45,11 +45,11 @@ function initialize_double_matrix(basis::Basis{C}) where {C <: Coeff}
 
     lsz = n
     lefthash2col = Dict{Int, Int}()
-    leftcol2hash = Vector{Int}(undef, lsz)
+    leftcolumn_to_monom = Vector{Int}(undef, lsz)
 
     rsz = m
     righthash2col = Dict{Int, Int}()
-    rightcol2hash = Vector{Int}(undef, rsz)
+    rightcolumn_to_monom = Vector{Int}(undef, rsz)
 
     DoubleMacaulayMatrix(
         leftrows,
@@ -58,9 +58,9 @@ function initialize_double_matrix(basis::Basis{C}) where {C <: Coeff}
         rightcoeffs,
         pivot2idx,
         lefthash2col,
-        leftcol2hash,
+        leftcolumn_to_monom,
         righthash2col,
-        rightcol2hash,
+        rightcolumn_to_monom,
         n,
         0,
         m,
@@ -70,11 +70,11 @@ function initialize_double_matrix(basis::Basis{C}) where {C <: Coeff}
 end
 
 function convert_to_double_dense_row(matrix, monom, vector::Basis{C}, ht) where {C <: Coeff}
-    if matrix.nrcols >= length(matrix.rightcol2hash)
-        resize!(matrix.rightcol2hash, 2 * length(matrix.rightcol2hash))
+    if matrix.nrcols >= length(matrix.rightcolumn_to_monom)
+        resize!(matrix.rightcolumn_to_monom, 2 * length(matrix.rightcolumn_to_monom))
     end
     matrix.nrcols += 1
-    matrix.rightcol2hash[matrix.nrcols] = monom
+    matrix.rightcolumn_to_monom[matrix.nrcols] = monom
     matrix.righthash2col[monom] = matrix.nrcols
 
     rightrow = zeros(C, matrix.nrcols)
@@ -83,12 +83,12 @@ function convert_to_double_dense_row(matrix, monom, vector::Basis{C}, ht) where 
     exps, coeffs = vector.monoms[1], vector.coeffs[1]
     for i in 1:length(exps)
         if !haskey(matrix.lefthash2col, exps[i])
-            if matrix.nlcols >= length(matrix.leftcol2hash)
-                resize!(matrix.leftcol2hash, 2 * length(matrix.leftcol2hash))
+            if matrix.nlcols >= length(matrix.leftcolumn_to_monom)
+                resize!(matrix.leftcolumn_to_monom, 2 * length(matrix.leftcolumn_to_monom))
             end
             matrix.nlcols += 1
             matrix.lefthash2col[exps[i]] = matrix.nlcols
-            matrix.leftcol2hash[matrix.nlcols] = exps[i]
+            matrix.leftcolumn_to_monom[matrix.nlcols] = exps[i]
         end
     end
 

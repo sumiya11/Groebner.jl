@@ -1,7 +1,10 @@
 # Arithmetic in Zp.
 
+# All implementations of arithmetic are a subtype of this
+abstract type AbstractArithmetic end
+
 # All implementations of arithmetic in Zp are a subtype of this
-abstract type AbstractArithmeticZp end
+abstract type AbstractArithmeticZp <: AbstractArithmetic end
 
 # Modular arithmetic based on the Julia builtin classes in
 # `Base.MultiplicativeInverses`. Used for primes smaller than 2^32.

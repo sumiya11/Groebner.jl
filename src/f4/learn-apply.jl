@@ -12,7 +12,7 @@ function column_to_monom_mapping!(graph, matrix, symbol_ht)
         end
     end
 
-    col2hash = matrix.col2hash
+    column_to_monom = matrix.column_to_monom
 
     matrix.nleft = k  # CHECK!
     # -1 as long as hashtable load is always 1 more than actual
@@ -20,32 +20,32 @@ function column_to_monom_mapping!(graph, matrix, symbol_ht)
 
     # store the other direction of mapping,
     # hash -> column
-    @inbounds for k in 1:length(col2hash)
-        hdata[col2hash[k]].idx = k
+    @inbounds for k in 1:length(column_to_monom)
+        hdata[column_to_monom[k]].idx = k
     end
 
-    @inbounds for k in 1:(matrix.nup)
-        row = matrix.uprows[k]
+    @inbounds for k in 1:(matrix.nupper)
+        row = matrix.upper_rows[k]
         for j in 1:length(row)
             row[j] = hdata[row[j]].idx
         end
     end
 
-    @inbounds for k in 1:(matrix.nlow)
-        row = matrix.lowrows[k]
+    @inbounds for k in 1:(matrix.nlower)
+        row = matrix.lower_rows[k]
         for j in 1:length(row)
             row[j] = hdata[row[j]].idx
         end
     end
 
-    matrix.ncols = matrix.nleft + matrix.nright
+    matrix.ncolumns = matrix.nleft + matrix.nright
 
-    @assert matrix.nleft + matrix.nright == symbol_ht.load - 1 == matrix.ncols
-    @assert matrix.nlow + matrix.nup == matrix.nrows
+    @assert matrix.nleft + matrix.nright == symbol_ht.load - 1 == matrix.ncolumns
+    @assert matrix.nlower + matrix.nupper == matrix.nrows
 end
 
 function reduction_apply!(
-    graph::ComputationGraphF4,
+    graph::ComputationContextF4,
     ring,
     basis,
     matrix,
@@ -56,16 +56,16 @@ function reduction_apply!(
 )
     if length(graph.matrix_sorted_columns) < iter
         column_to_monom_mapping!(matrix, symbol_ht)
-        push!(graph.matrix_sorted_columns, matrix.col2hash)
+        push!(graph.matrix_sorted_columns, matrix.column_to_monom)
     else
-        matrix.col2hash = graph.matrix_sorted_columns[iter]
+        matrix.column_to_monom = graph.matrix_sorted_columns[iter]
         column_to_monom_mapping!(graph, matrix, symbol_ht)
     end
 
     sort_matrix_upper_rows_decreasing!(matrix) # for pivots,  AB part
     sort_matrix_lower_rows_increasing!(matrix) # for reduced, CD part
 
-    @invariant matrix_well_formed(:in_reduction_apply!, matrix)
+    # @invariant matrix_well_formed(:in_reduction_apply!, matrix)
 
     @log level = -6 "Apply: after mapping and sorting" matrix
     flag = linear_algebra!(graph, ring, matrix, basis, :apply, rng)
@@ -79,7 +79,7 @@ function reduction_apply!(
 end
 
 function symbolic_preprocessing!(
-    graph::ComputationGraphF4,
+    graph::ComputationContextF4,
     iters::Int,
     basis,
     matrix,
@@ -93,10 +93,10 @@ function symbolic_preprocessing!(
     nlow = length(nonzeroed_rows) # matrix_info.nlow # length(nonzeroed_rows)
     nup = length(uprows) # matrix_info.nup # length(uprows)
 
-    matrix.uprows = Vector{Vector{ColumnIdx}}(undef, nup)
-    matrix.lowrows = Vector{Vector{ColumnIdx}}(undef, nlow)
-    matrix.low2coef = Vector{Int}(undef, nlow)
-    matrix.up2coef = Vector{Int}(undef, nup)
+    matrix.upper_rows = Vector{Vector{ColumnLabel}}(undef, nup)
+    matrix.lower_rows = Vector{Vector{ColumnLabel}}(undef, nlow)
+    matrix.lower_to_coeffs = Vector{Int}(undef, nlow)
+    matrix.upper_to_coeffs = Vector{Int}(undef, nup)
 
     resize_hashtable_if_needed!(symbol_ht, nlow + nup + 2)
     for i in 1:nlow
@@ -109,11 +109,11 @@ function symbolic_preprocessing!(
 
         # vidx = insert_in_hash_table!(symbol_ht, etmp)
 
-        matrix.lowrows[i] =
+        matrix.lower_rows[i] =
             multiplied_poly_to_matrix_row!(symbol_ht, hashtable, h, etmp, rpoly)
-        symbol_ht.hashdata[matrix.lowrows[i][1]].idx = 2  # TODO: give labels to these constants
+        symbol_ht.hashdata[matrix.lower_rows[i][1]].idx = 2  # TODO: give labels to these constants
 
-        matrix.low2coef[i] = poly_idx
+        matrix.lower_to_coeffs[i] = poly_idx
     end
 
     for i in 1:nup
@@ -125,11 +125,11 @@ function symbolic_preprocessing!(
         rpoly = basis.monoms[poly_idx]
         # vidx = insert_in_hash_table!(symbol_ht, etmp)
 
-        matrix.uprows[i] =
+        matrix.upper_rows[i] =
             multiplied_poly_to_matrix_row!(symbol_ht, hashtable, h, etmp, rpoly)
-        symbol_ht.hashdata[matrix.uprows[i][1]].idx = 2
+        symbol_ht.hashdata[matrix.upper_rows[i][1]].idx = 2
 
-        matrix.up2coef[i] = poly_idx
+        matrix.upper_to_coeffs[i] = poly_idx
     end
 
     i = MonomIdx(symbol_ht.offset)
@@ -144,8 +144,8 @@ function symbolic_preprocessing!(
     @log level = -6 "Symbol ht:" symbol_ht
 
     matrix.nrows = nlow + nup
-    matrix.nlow = nlow
-    matrix.nup = nup
+    matrix.nlower = nlow
+    matrix.nupper = nup
     matrix.size = matrix.nrows
 end
 
@@ -169,17 +169,17 @@ function reducegb_f4_apply!(
     # ncols = matrix_info.ncols
     nonred = graph.nonredundant_indices_before_reduce
 
-    matrix.uprows = Vector{Vector{ColumnIdx}}(undef, nup)
-    matrix.lowrows = Vector{Vector{ColumnIdx}}(undef, nlow)
-    matrix.low2coef = Vector{Int}(undef, nlow)
-    matrix.up2coef = Vector{Int}(undef, nup)
+    matrix.upper_rows = Vector{Vector{ColumnLabel}}(undef, nup)
+    matrix.lower_rows = Vector{Vector{ColumnLabel}}(undef, nlow)
+    matrix.lower_to_coeffs = Vector{Int}(undef, nlow)
+    matrix.upper_to_coeffs = Vector{Int}(undef, nup)
 
     matrix.nrows = 0
-    matrix.ncols = 0
+    matrix.ncolumns = 0
     matrix.nleft = 0
     matrix.nright = 0
-    matrix.nup = nup
-    matrix.nlow = nlow
+    matrix.nupper = nup
+    matrix.nlower = nlow
 
     etmp = construct_const_monom(M, hashtable.nvars)
     # etmp is now set to zero, and has zero hash
@@ -187,8 +187,8 @@ function reducegb_f4_apply!(
     resize_hashtable_if_needed!(symbol_ht, nlow + nup + 2)
 
     # needed for correct column count in symbol hashtable
-    matrix.ncols = matrix.nrows
-    matrix.nup = matrix.nrows
+    matrix.ncolumns = matrix.nrows
+    matrix.nupper = matrix.nrows
 
     @log level = -5 "Before autoreduce apply" basis uprows upmults lowmults matrix_info
 
@@ -206,38 +206,38 @@ function reducegb_f4_apply!(
         # iszero(h) && continue
 
         # vidx = insert_in_hash_table!(symbol_ht, etmp)
-        matrix.uprows[i] =
+        matrix.upper_rows[i] =
             multiplied_poly_to_matrix_row!(symbol_ht, hashtable, h, etmp, rpoly)
 
-        matrix.up2coef[i] = poly_idx
+        matrix.upper_to_coeffs[i] = poly_idx
     end
 
     # set all pivots to unknown
     @inbounds for i in (symbol_ht.offset):(symbol_ht.load)
         symbol_ht.hashdata[i].idx = 1
     end
-    # matrix.ncols = ncols
+    # matrix.ncolumns = ncols
 
     matrix.nrows = nlow + nup
-    matrix.nlow = nlow
-    matrix.nup = nup
+    matrix.nlower = nlow
+    matrix.nupper = nup
     matrix.size = matrix.nrows
 
     @log level = -2 length(graph.matrix_sorted_columns) iter
     if length(graph.matrix_sorted_columns) < iter
         column_to_monom_mapping!(matrix, symbol_ht)
-        push!(graph.matrix_sorted_columns, matrix.col2hash)
+        push!(graph.matrix_sorted_columns, matrix.column_to_monom)
     else
-        matrix.col2hash = graph.matrix_sorted_columns[iter]
+        matrix.column_to_monom = graph.matrix_sorted_columns[iter]
         column_to_monom_mapping!(graph, matrix, symbol_ht)
     end
-    matrix.ncols = matrix.nleft + matrix.nright
+    matrix.ncolumns = matrix.nleft + matrix.nright
 
     sort_matrix_upper_rows_decreasing!(matrix)
 
     @log level = -6 "In autoreduction apply" basis matrix
 
-    flag = exact_sparse_rref_interreduce_apply!(ring, matrix, basis)
+    flag = deterministic_sparse_rref_interreduce!(ring, matrix, basis)
     if !flag
         return false
     end
@@ -420,7 +420,7 @@ function f4_reducegb_learn!(
     # etmp is now set to zero, and has zero hash
 
     reinitialize_matrix!(matrix, basis.nnonredundant)
-    uprows = matrix.uprows
+    uprows = matrix.upper_rows
 
     @log level = -6 "Before autoreduce learn" basis
 
@@ -436,16 +436,16 @@ function f4_reducegb_learn!(
             basis.monoms[basis.nonredundant[i]]
         )
 
-        matrix.up2coef[matrix.nrows] = basis.nonredundant[i]
-        matrix.up2mult[matrix.nrows] = insert_in_hash_table!(ht, etmp)
+        matrix.upper_to_coeffs[matrix.nrows] = basis.nonredundant[i]
+        matrix.upper_to_mult[matrix.nrows] = insert_in_hash_table!(ht, etmp)
         # set lead index as 1
         symbol_ht.hashdata[uprows[matrix.nrows][1]].idx = 1
     end
     graph.nonredundant_indices_before_reduce = basis.nonredundant[1:(basis.nnonredundant)]
 
     # needed for correct column count in symbol hashtable
-    matrix.ncols = matrix.nrows
-    matrix.nup = matrix.nrows
+    matrix.ncolumns = matrix.nrows
+    matrix.nupper = matrix.nrows
 
     symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
     # set all pivots to unknown
@@ -454,13 +454,13 @@ function f4_reducegb_learn!(
     end
 
     column_to_monom_mapping!(matrix, symbol_ht)
-    matrix.ncols = matrix.nleft + matrix.nright
+    matrix.ncolumns = matrix.nleft + matrix.nright
 
     sort_matrix_upper_rows_decreasing!(matrix)
 
     @log level = -6 "In autoreduction learn" basis matrix
 
-    exact_sparse_rref_interreduce_learn!(graph, ring, matrix, basis)
+    deterministic_sparse_rref_interreduce_learn!(graph, ring, matrix, basis)
 
     convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 

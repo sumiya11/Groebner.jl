@@ -1,7 +1,7 @@
 # Arithmetic in the rationals.
 
 # All implementations of arithmetic in Q are a subtype of this 
-abstract type AbstractArithmeticQQ end
+abstract type AbstractArithmeticQQ <: AbstractArithmetic end
 
 # Standard arithmetic that uses Base.GMP.MPQ
 struct BuiltinArithmeticQQ <: AbstractArithmeticQQ

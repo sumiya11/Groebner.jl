@@ -103,7 +103,7 @@ end
 
 # Compare sparse matrix rows a and b.
 # A row is an array of integers, which are the indices of nonzero elements
-function matrix_row_decreasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: ColumnIdx}
+function matrix_row_decreasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: ColumnLabel}
     #= a, b - rows as arrays of nonzero indices =#
     # va and vb are the leading columns
     @inbounds va = a[1]
@@ -128,7 +128,7 @@ end
 
 # Compare sparse matrix rows a and b.
 # A row is an array of integers, which are the indices of nonzero elements
-function matrix_row_increasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: ColumnIdx}
+function matrix_row_increasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: ColumnLabel}
     #= a, b - rows as arrays of nonzero indices =#
     # va and vb are the leading columns
     @inbounds va = a[1]
@@ -159,18 +159,18 @@ end
 function sort_matrix_upper_rows_decreasing!(matrix::MacaulayMatrix)
     #= smaller means pivot being more left  =#
     #= and density being smaller            =#
-    permutation = collect(1:(matrix.nup))
+    permutation = collect(1:(matrix.nupper))
     cmp =
         (x, y) -> matrix_row_decreasing_cmp(
-            @inbounds(matrix.uprows[x]),
-            @inbounds(matrix.uprows[y])
+            @inbounds(matrix.upper_rows[x]),
+            @inbounds(matrix.upper_rows[y])
         )
     sort!(permutation, lt=cmp, alg=_default_sorting_alg())
-    matrix.uprows[1:(matrix.nup)] = matrix.uprows[permutation]
-    matrix.up2coef[1:(matrix.nup)] = matrix.up2coef[permutation]
+    matrix.upper_rows[1:(matrix.nupper)] = matrix.upper_rows[permutation]
+    matrix.upper_to_coeffs[1:(matrix.nupper)] = matrix.upper_to_coeffs[permutation]
     # TODO: this is a bit hacky
-    if !isempty(matrix.up2mult)
-        matrix.up2mult[1:(matrix.nup)] = matrix.up2mult[permutation]
+    if !isempty(matrix.upper_to_mult)
+        matrix.upper_to_mult[1:(matrix.nupper)] = matrix.upper_to_mult[permutation]
     end
     matrix
 end
@@ -183,28 +183,31 @@ end
 function sort_matrix_lower_rows_increasing!(matrix::MacaulayMatrix)
     #= smaller means pivot being more right =#
     #= and density being larger             =#
-    permutation = collect(1:(matrix.nlow))
+    permutation = collect(1:(matrix.nlower))
     cmp =
         (x, y) -> matrix_row_increasing_cmp(
-            @inbounds(matrix.lowrows[x]),
-            @inbounds(matrix.lowrows[y])
+            @inbounds(matrix.lower_rows[x]),
+            @inbounds(matrix.lower_rows[y])
         )
     sort!(permutation, lt=cmp, alg=_default_sorting_alg())
-    matrix.lowrows[1:(matrix.nlow)] = matrix.lowrows[permutation]
-    matrix.low2coef[1:(matrix.nlow)] = matrix.low2coef[permutation]
+    matrix.lower_rows[1:(matrix.nlower)] = matrix.lower_rows[permutation]
+    matrix.lower_to_coeffs[1:(matrix.nlower)] = matrix.lower_to_coeffs[permutation]
     # TODO: this is a bit hacky
-    if !isempty(matrix.low2mult)
-        matrix.low2mult[1:(matrix.nlow)] = matrix.low2mult[permutation]
+    if !isempty(matrix.lower_to_mult)
+        matrix.lower_to_mult[1:(matrix.nlower)] = matrix.lower_to_mult[permutation]
     end
     matrix
 end
 
-# Sorts the columns of the matrix (encoded in `col2hash` vector) by the role of
+# Sorts the columns of the matrix (encoded in `column_to_monom` vector) by the role of
 # the corresponding monomial in the matrix, and then by the current monomial
 # ordering decreasingly.
 #
 # See f4/matrix.jl for details
-function sort_columns_by_hash!(col2hash::Vector{T}, symbol_ht::MonomialHashtable) where {T}
+function sort_columns_by_labels!(
+    column_to_monom::Vector{T},
+    symbol_ht::MonomialHashtable
+) where {T}
     hd = symbol_ht.hashdata
     es = symbol_ht.monoms
 
@@ -221,7 +224,7 @@ function sort_columns_by_hash!(col2hash::Vector{T}, symbol_ht::MonomialHashtable
 
     ordcmp = (x, y) -> cmp(x, y, symbol_ht.ord)
 
-    sort!(col2hash, lt=ordcmp, alg=_default_sorting_alg())
+    sort!(column_to_monom, lt=ordcmp, alg=_default_sorting_alg())
 end
 
 # Given a vector of vectors of exponent vectors and coefficients,

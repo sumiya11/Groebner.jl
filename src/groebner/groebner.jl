@@ -128,7 +128,7 @@ function _groebner_learn(polynomials, kws, representation)
     graph, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
 end
 
-function _groebner_apply!(graph::ComputationGraphF4, polynomials, kws::KeywordsHandler)
+function _groebner_apply!(graph::ComputationContextF4, polynomials, kws::KeywordsHandler)
     # representation = select_polynomial_representation(polynomials, kws)
     ring = extract_coeffs_raw!(graph, graph.representation, polynomials, kws)
     @assert _is_input_compatible(graph, ring, kws) "Input does not seem to be compatible with the learned graph."

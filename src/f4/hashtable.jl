@@ -1,4 +1,4 @@
-# This file implements monomial hashtable.
+# Monomial hashtable.
 
 # This hashtable implementation assumes that
 # the hash function is linear. (each monomial implementation must implement

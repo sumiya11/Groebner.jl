@@ -29,6 +29,8 @@ function reduction!(
     sort_matrix_upper_rows_decreasing!(matrix) # for pivots,  AB part
     sort_matrix_lower_rows_increasing!(matrix) # for reduced, CD part
 
+    @log level = -3 repr_matrix(matrix)
+
     linear_algebra!(ring, matrix, basis, linalg, rng)
 
     convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
@@ -281,13 +283,13 @@ function reducegb_f4!(
     ht::MonomialHashtable{M},
     symbol_ht::MonomialHashtable{M}
 ) where {M}
-    @log level = -5 "Entering autoreduction" basis
+    @log level = -7 "Entering autoreduction" basis
 
     etmp = construct_const_monom(M, ht.nvars)
     # etmp is now set to zero, and has zero hash
 
     reinitialize_matrix!(matrix, basis.nnonredundant)
-    uprows = matrix.uprows
+    uprows = matrix.upper_rows
 
     # add all non redundant elements from the basis
     # as matrix upper rows
@@ -301,15 +303,15 @@ function reducegb_f4!(
             basis.monoms[basis.nonredundant[i]]
         )
 
-        matrix.up2coef[matrix.nrows] = basis.nonredundant[i]
-        matrix.up2mult[matrix.nrows] = insert_in_hash_table!(ht, etmp)
+        matrix.upper_to_coeffs[matrix.nrows] = basis.nonredundant[i]
+        matrix.upper_to_mult[matrix.nrows] = insert_in_hash_table!(ht, etmp)
         # set lead index as 1
         symbol_ht.hashdata[uprows[matrix.nrows][1]].idx = 1
     end
 
     # needed for correct column count in symbol hashtable
-    matrix.ncols = matrix.nrows
-    matrix.nup = matrix.nrows
+    matrix.ncolumns = matrix.nrows
+    matrix.nupper = matrix.nrows
 
     symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
     # set all pivots to unknown
@@ -318,11 +320,11 @@ function reducegb_f4!(
     end
 
     column_to_monom_mapping!(matrix, symbol_ht)
-    matrix.ncols = matrix.nleft + matrix.nright
+    matrix.ncolumns = matrix.nleft + matrix.nright
 
     sort_matrix_upper_rows_decreasing!(matrix)
 
-    exact_sparse_rref_interreduce!(ring, matrix, basis)
+    deterministic_sparse_rref_interreduce!(ring, matrix, basis)
 
     convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 
@@ -364,7 +366,7 @@ function select_tobereduced!(
     # prepare to load all elems from tobereduced
     # to lower rows of the matrix
     reinitialize_matrix!(matrix, max(basis.nfilled, tobereduced.nfilled))
-    resize!(matrix.lowrows, tobereduced.nfilled)
+    resize!(matrix.lower_rows, tobereduced.nfilled)
 
     etmp = construct_const_monom(M, ht.nvars)
 
@@ -372,10 +374,10 @@ function select_tobereduced!(
         matrix.nrows += 1
         gen = tobereduced.monoms[i]
         h = MonomHash(0)
-        matrix.lowrows[matrix.nrows] =
+        matrix.lower_rows[matrix.nrows] =
             multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, gen)
-        matrix.low2coef[matrix.nrows] = i
-        matrix.low2mult[matrix.nrows] = insert_in_hash_table!(ht, etmp)
+        matrix.lower_to_coeffs[matrix.nrows] = i
+        matrix.lower_to_mult[matrix.nrows] = insert_in_hash_table!(ht, etmp)
     end
 
     basis.nfilled
@@ -440,15 +442,15 @@ function find_multiplied_reducer!(
         # (!) hash is linear
         @inbounds h = symbol_ht.hashdata[vidx].hash - ht.hashdata[rpoly[1]].hash
 
-        matrix.uprows[matrix.nup + 1] =
+        matrix.upper_rows[matrix.nupper + 1] =
             multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, rpoly)
-        @inbounds matrix.up2coef[matrix.nup + 1] = basis.nonredundant[i]
+        @inbounds matrix.upper_to_coeffs[matrix.nupper + 1] = basis.nonredundant[i]
         # TODO: this line is here with the sole purpose -- to support tracing.
         # Probably want to factor it out.
-        matrix.up2mult[matrix.nup + 1] = insert_in_hash_table!(ht, etmp)
+        matrix.upper_to_mult[matrix.nupper + 1] = insert_in_hash_table!(ht, etmp)
 
         symbol_ht.hashdata[vidx].idx = 2
-        matrix.nup += 1
+        matrix.nupper += 1
         i += 1
     end
 
@@ -466,14 +468,14 @@ function symbolic_preprocessing!(
 )
     symbol_load = symbol_ht.load
 
-    nrr = matrix.ncols
-    onrr = matrix.ncols
+    nrr = matrix.ncolumns
+    onrr = matrix.ncolumns
 
     while matrix.size <= nrr + symbol_load
         matrix.size *= 2
-        resize!(matrix.uprows, matrix.size)
-        resize!(matrix.up2coef, matrix.size)
-        resize!(matrix.up2mult, matrix.size)
+        resize!(matrix.upper_rows, matrix.size)
+        resize!(matrix.upper_to_coeffs, matrix.size)
+        resize!(matrix.upper_to_mult, matrix.size)
     end
 
     # for each lcm present in symbolic_ht set on select stage
@@ -484,7 +486,7 @@ function symbolic_preprocessing!(
         # not a reducer
         if iszero(symbol_ht.hashdata[i].idx)
             symbol_ht.hashdata[i].idx = 1
-            matrix.ncols += 1
+            matrix.ncolumns += 1
             find_multiplied_reducer!(basis, matrix, ht, symbol_ht, i)
         end
         i += MonomIdx(1)
@@ -493,24 +495,24 @@ function symbolic_preprocessing!(
     #= Second round, we add multiplied polynomials that divide  =#
     #= lcm added on previous for loop                            =#
     @inbounds while i <= symbol_ht.load
-        if matrix.size == matrix.nup
+        if matrix.size == matrix.nupper
             matrix.size *= 2
-            resize!(matrix.uprows, matrix.size)
-            resize!(matrix.up2coef, matrix.size)
-            resize!(matrix.up2mult, matrix.size)
+            resize!(matrix.upper_rows, matrix.size)
+            resize!(matrix.upper_to_coeffs, matrix.size)
+            resize!(matrix.upper_to_mult, matrix.size)
         end
 
         symbol_ht.hashdata[i].idx = 1
-        matrix.ncols += 1
+        matrix.ncolumns += 1
         find_multiplied_reducer!(basis, matrix, ht, symbol_ht, i)
         i += MonomIdx(1)
     end
 
     # shrink matrix sizes, set constants
-    resize!(matrix.uprows, matrix.nup)
+    resize!(matrix.upper_rows, matrix.nupper)
 
-    matrix.nrows += matrix.nup - onrr
-    matrix.nlow = matrix.nrows - matrix.nup
+    matrix.nrows += matrix.nupper - onrr
+    matrix.nlower = matrix.nrows - matrix.nupper
     matrix.size = matrix.nrows
 end
 
@@ -602,8 +604,8 @@ function select_normal!(
 
     reinitialize_matrix!(matrix, npairs)
 
-    uprows = matrix.uprows
-    lowrows = matrix.lowrows
+    uprows = matrix.upper_rows
+    lowrows = matrix.lower_rows
 
     # polynomials from pairs in order (p11, p12)(p21, p21)
     # (future rows of the matrix)
@@ -615,7 +617,7 @@ function select_normal!(
     etmp = ht.monoms[1]
     i = 1
     @inbounds while i <= npairs
-        matrix.ncols += 1
+        matrix.ncolumns += 1
         load = 1
         lcm = ps[i].lcm
         j = i
@@ -653,14 +655,15 @@ function select_normal!(
         htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
 
         # add row as a reducer
-        matrix.nup += 1
-        uprows[matrix.nup] = multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly)
+        matrix.nupper += 1
+        uprows[matrix.nupper] =
+            multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly)
         # map upper row to index in basis
-        matrix.up2coef[matrix.nup] = prev
-        matrix.up2mult[matrix.nup] = insert_in_hash_table!(ht, etmp)
+        matrix.upper_to_coeffs[matrix.nupper] = prev
+        matrix.upper_to_mult[matrix.nupper] = insert_in_hash_table!(ht, etmp)
 
         # mark lcm column as reducer in symbolic hashtable
-        symbol_ht.hashdata[uprows[matrix.nup][1]].idx = 2
+        symbol_ht.hashdata[uprows[matrix.nupper][1]].idx = 2
         # increase number of rows set
         matrix.nrows += 1
 
@@ -689,14 +692,14 @@ function select_normal!(
             htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
 
             # add row to be reduced
-            matrix.nlow += 1
-            lowrows[matrix.nlow] =
+            matrix.nlower += 1
+            lowrows[matrix.nlower] =
                 multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly)
             # map lower row to index in basis
-            matrix.low2coef[matrix.nlow] = prev
-            matrix.low2mult[matrix.nlow] = insert_in_hash_table!(ht, etmp)
+            matrix.lower_to_coeffs[matrix.nlower] = prev
+            matrix.lower_to_mult[matrix.nlower] = insert_in_hash_table!(ht, etmp)
 
-            symbol_ht.hashdata[lowrows[matrix.nlow][1]].idx = 2
+            symbol_ht.hashdata[lowrows[matrix.nlower][1]].idx = 2
 
             matrix.nrows += 1
         end
@@ -704,7 +707,7 @@ function select_normal!(
         i = j
     end
 
-    resize!(matrix.lowrows, matrix.nrows - matrix.ncols)
+    resize!(matrix.lower_rows, matrix.nrows - matrix.ncolumns)
 
     # remove selected parirs from pairset
     @inbounds for i in 1:(pairset.load - npairs)
@@ -842,13 +845,13 @@ function f4!(
             maxpairs=params.maxpairs
         )
         # Color with [F4]
+        @log level = -3 "After normal selection: available $(pairset.load) pairs"
+        @log level = -3 repr_basis(basis)
 
         symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
-        @log level = -100 "Formed a matrix of size X, DISPLAY_MATRIX"
 
         # reduces polys and obtains new potential basis elements
         reduction!(ring, basis, matrix, hashtable, symbol_ht, params.linalg, params.rng)
-        @log level = -100 ""
 
         update_tracer_iteration!(tracer, matrix.npivots == 0)
 
@@ -857,7 +860,6 @@ function f4!(
         # checks for redundancy
         pairset_size = update!(pairset, basis, hashtable, update_ht)
         update_tracer_pairset!(tracer, pairset_size)
-        @log level = -100 "something something"
 
         # clear symbolic hashtable
         # clear matrix
@@ -919,7 +921,7 @@ function f4_isgroebner!(
     sort_matrix_upper_rows_decreasing!(matrix)
     sort_matrix_lower_rows_increasing!(matrix)
     # Reduce!
-    exact_sparse_rref_isgroebner!(ring, matrix, basis)
+    deterministic_sparse_rref_isgroebner!(ring, matrix, basis)
 end
 
 # Reduces each polynomial in the `tobereduced` by the polynomials from the `basis`.
@@ -937,7 +939,7 @@ function f4_normalform!(
     column_to_monom_mapping!(matrix, symbol_ht)
     sort_matrix_upper_rows_decreasing!(matrix)
     # Reduce the matrix
-    exact_sparse_rref_nf!(ring, matrix, tobereduced, basis)
+    deterministic_sparse_rref_nf!(ring, matrix, tobereduced, basis)
     # Export the rows of the matrix back to the basis elements
     convert_rows_to_basis_elements_nf!(matrix, tobereduced, ht, symbol_ht)
     tobereduced

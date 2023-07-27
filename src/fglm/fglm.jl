@@ -60,7 +60,7 @@ function add_generator!(basis::Basis{C}, matrix, relation, ht, ord) where {C <: 
     # end
 
     for i in 1:length(rexps)
-        rexps[i] = matrix.rightcol2hash[rexps[i]]
+        rexps[i] = matrix.rightcolumn_to_monom[rexps[i]]
     end
 
     sort_term_indices_decreasing!(rexps, rcoeffs, ht, ord)
@@ -185,7 +185,7 @@ function extract_linear_basis(ring, matrix::DoubleMacaulayMatrix{C}) where {C}
         exps[i] = matrix.rightrows[i]
         coeffs[i] = matrix.rightcoeffs[i]
         for j in 1:length(exps[i])
-            exps[i][j] = matrix.rightcol2hash[exps[i][j]]
+            exps[i][j] = matrix.rightcolumn_to_monom[exps[i][j]]
         end
     end
 
