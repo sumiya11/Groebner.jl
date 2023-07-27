@@ -112,14 +112,20 @@ function repr_matrix(matrix::MacaulayMatrix{T}) where {T}
     m_C, n_C = matrix.nlower, matrix.nleft
     m_D, n_D = matrix.nlower, matrix.nright
     nnz_A, nnz_B, nnz_C, nnz_D = 0, 0, 0, 0
-    A_rref = true
+    A_ref, A_rref = true, true
+    AB_sparse = zeros(UInt64, m_A, n)
+    CD_sparse = zeros(UInt64, m_C, n)
     for i in 1:(matrix.nupper)
         row = matrix.upper_rows[i]
-        for i in 1:length(row)
-            if row[i] <= matrix.nleft
-                if length(row) > 1
-                    A_rref = false
-                end
+        if length(row) > 1
+            A_rref = false
+        end
+        if row[1] < i
+            A_ref = true
+        end
+        for j in 1:length(row)
+            AB_sparse[i, row[j]] = 1
+            if row[j] <= matrix.nleft
                 nnz_A += 1
             else
                 nnz_B += 1
@@ -128,8 +134,9 @@ function repr_matrix(matrix::MacaulayMatrix{T}) where {T}
     end
     for i in 1:(matrix.nlower)
         row = matrix.lower_rows[i]
-        for i in 1:length(row)
-            if row[i] <= matrix.nleft
+        for j in 1:length(row)
+            CD_sparse[i, row[j]] = 1
+            if row[j] <= matrix.nleft
                 nnz_C += 1
             else
                 nnz_D += 1
@@ -138,6 +145,7 @@ function repr_matrix(matrix::MacaulayMatrix{T}) where {T}
     end
     nnz = nnz_A + nnz_B + nnz_C + nnz_D
     percent(x) = round(100 * x, digits=2)
+    canvas_width = 40
     s = """
     $(typeof(matrix))
     $m x $n with $nnz nonzeros ($(percent(nnz / (m * n))) %)
@@ -149,7 +157,14 @@ function repr_matrix(matrix::MacaulayMatrix{T}) where {T}
     C: $(m_C) x $(n_C) with $(nnz_C) nonzeros
     D: $(m_D) x $(n_D) with $(nnz_D) nonzeros
 
-    A is in RREF: $(A_rref)"""
+    A is in REF / RREF : $(A_ref) / $(A_rref)
+
+    Sparsity pattern, AB:
+    $(spy(AB_sparse, width=canvas_width))
+
+    Sparsity pattern, CD:
+    $(spy(CD_sparse, width=canvas_width))
+    """
     s
 end
 

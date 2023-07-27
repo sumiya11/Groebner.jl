@@ -51,6 +51,8 @@ using SIMD
 
 include("utils/logging.jl")
 include("utils/invariants.jl")
+# Minimalistic plotting with Unicode
+include("utils/plots.jl")
 include("utils/testsystems.jl")
 
 # Supported monomial orderings
