@@ -12,6 +12,10 @@
 
 const ColumnLabel = Int32
 
+const NON_PIVOT_COLUMN = 0
+const UNKNOWN_PIVOT_COLUMN = 1
+const PIVOT_COLUMN = 2
+
 mutable struct MacaulayMatrix{T <: Coeff}
     # A row in the matrix is represented sparsely with a vector of indices of
     # nonzero columns.

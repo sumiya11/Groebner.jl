@@ -111,7 +111,7 @@ function symbolic_preprocessing!(
 
         matrix.lower_rows[i] =
             multiplied_poly_to_matrix_row!(symbol_ht, hashtable, h, etmp, rpoly)
-        symbol_ht.hashdata[matrix.lower_rows[i][1]].idx = 2  # TODO: give labels to these constants
+        symbol_ht.hashdata[matrix.lower_rows[i][1]].idx = PIVOT_COLUMN
 
         matrix.lower_to_coeffs[i] = poly_idx
     end
@@ -127,7 +127,7 @@ function symbolic_preprocessing!(
 
         matrix.upper_rows[i] =
             multiplied_poly_to_matrix_row!(symbol_ht, hashtable, h, etmp, rpoly)
-        symbol_ht.hashdata[matrix.upper_rows[i][1]].idx = 2
+        symbol_ht.hashdata[matrix.upper_rows[i][1]].idx = PIVOT_COLUMN
 
         matrix.upper_to_coeffs[i] = poly_idx
     end
@@ -136,7 +136,7 @@ function symbolic_preprocessing!(
     @inbounds while i <= symbol_ht.load
         # not a reducer
         if iszero(symbol_ht.hashdata[i].idx)
-            symbol_ht.hashdata[i].idx = 1
+            symbol_ht.hashdata[i].idx = UNKNOWN_PIVOT_COLUMN
         end
         i += MonomIdx(1)
     end
@@ -214,7 +214,7 @@ function reducegb_f4_apply!(
 
     # set all pivots to unknown
     @inbounds for i in (symbol_ht.offset):(symbol_ht.load)
-        symbol_ht.hashdata[i].idx = 1
+        symbol_ht.hashdata[i].idx = UNKNOWN_PIVOT_COLUMN
     end
     # matrix.ncolumns = ncols
 
@@ -441,7 +441,7 @@ function f4_reducegb_learn!(
         matrix.upper_to_coeffs[matrix.nrows] = basis.nonredundant[i]
         matrix.upper_to_mult[matrix.nrows] = insert_in_hash_table!(ht, etmp)
         # set lead index as 1
-        symbol_ht.hashdata[uprows[matrix.nrows][1]].idx = 1
+        symbol_ht.hashdata[uprows[matrix.nrows][1]].idx = UNKNOWN_PIVOT_COLUMN
     end
     graph.nonredundant_indices_before_reduce = basis.nonredundant[1:(basis.nnonredundant)]
 
@@ -452,7 +452,7 @@ function f4_reducegb_learn!(
     symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
     # set all pivots to unknown
     @inbounds for i in (symbol_ht.offset):(symbol_ht.load)
-        symbol_ht.hashdata[i].idx = 1
+        symbol_ht.hashdata[i].idx = UNKNOWN_PIVOT_COLUMN
     end
 
     column_to_monom_mapping!(matrix, symbol_ht)

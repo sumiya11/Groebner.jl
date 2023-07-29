@@ -306,7 +306,7 @@ function reducegb_f4!(
         matrix.upper_to_coeffs[matrix.nrows] = basis.nonredundant[i]
         matrix.upper_to_mult[matrix.nrows] = insert_in_hash_table!(ht, etmp)
         # set lead index as 1
-        symbol_ht.hashdata[uprows[matrix.nrows][1]].idx = 1
+        symbol_ht.hashdata[uprows[matrix.nrows][1]].idx = UNKNOWN_PIVOT_COLUMN
     end
 
     # needed for correct column count in symbol hashtable
@@ -316,7 +316,7 @@ function reducegb_f4!(
     symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
     # set all pivots to unknown
     @inbounds for i in (symbol_ht.offset):(symbol_ht.load)
-        symbol_ht.hashdata[i].idx = 1
+        symbol_ht.hashdata[i].idx = UNKNOWN_PIVOT_COLUMN
     end
 
     column_to_monom_mapping!(matrix, symbol_ht)
@@ -449,7 +449,7 @@ function find_multiplied_reducer!(
         # Probably want to factor it out.
         matrix.upper_to_mult[matrix.nupper + 1] = insert_in_hash_table!(ht, etmp)
 
-        symbol_ht.hashdata[vidx].idx = 2
+        symbol_ht.hashdata[vidx].idx = PIVOT_COLUMN
         matrix.nupper += 1
         i += 1
     end
@@ -485,7 +485,7 @@ function symbolic_preprocessing!(
     @inbounds while i <= symbol_load
         # not a reducer
         if iszero(symbol_ht.hashdata[i].idx)
-            symbol_ht.hashdata[i].idx = 1
+            symbol_ht.hashdata[i].idx = UNKNOWN_PIVOT_COLUMN
             matrix.ncolumns += 1
             find_multiplied_reducer!(basis, matrix, ht, symbol_ht, i)
         end
@@ -502,7 +502,7 @@ function symbolic_preprocessing!(
             resize!(matrix.upper_to_mult, matrix.size)
         end
 
-        symbol_ht.hashdata[i].idx = 1
+        symbol_ht.hashdata[i].idx = UNKNOWN_PIVOT_COLUMN
         matrix.ncolumns += 1
         find_multiplied_reducer!(basis, matrix, ht, symbol_ht, i)
         i += MonomIdx(1)
@@ -663,7 +663,7 @@ function select_normal!(
         matrix.upper_to_mult[matrix.nupper] = insert_in_hash_table!(ht, etmp)
 
         # mark lcm column as reducer in symbolic hashtable
-        symbol_ht.hashdata[uprows[matrix.nupper][1]].idx = 2
+        symbol_ht.hashdata[uprows[matrix.nupper][1]].idx = PIVOT_COLUMN
         # increase number of rows set
         matrix.nrows += 1
 
@@ -699,7 +699,7 @@ function select_normal!(
             matrix.lower_to_coeffs[matrix.nlower] = prev
             matrix.lower_to_mult[matrix.nlower] = insert_in_hash_table!(ht, etmp)
 
-            symbol_ht.hashdata[lowrows[matrix.nlower][1]].idx = 2
+            symbol_ht.hashdata[lowrows[matrix.nlower][1]].idx = PIVOT_COLUMN
 
             matrix.nrows += 1
         end
