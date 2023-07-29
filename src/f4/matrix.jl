@@ -10,8 +10,6 @@
 # The primary operation is linear reduction of the lower part of the matrix (the
 # block CD) with respect to the upper part (the block AB).
 
-# 
-
 const ColumnLabel = Int32
 
 mutable struct MacaulayMatrix{T <: Coeff}
