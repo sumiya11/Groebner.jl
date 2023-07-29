@@ -157,7 +157,19 @@ function extract_coeffs_qq(representation, ring::PolyRing, poly)
     map(Rational, AbstractAlgebra.coefficients(poly))
 end
 
-function extract_monoms(representation::PolynomialRepresentation, ring::PolyRing, poly)
+function get_var_to_index(
+    aa_ring::Union{AbstractAlgebra.MPolyRing{T}, AbstractAlgebra.PolyRing{T}}
+) where {T}
+    Dict{elem_type(aa_ring), Int}(
+        AbstractAlgebra.gens(aa_ring) .=> 1:AbstractAlgebra.nvars(aa_ring)
+    )
+end
+
+function extract_monoms(
+    representation::PolynomialRepresentation,
+    ring::PolyRing,
+    poly::T
+) where {T}
     exps = Vector{representation.monomtype}(undef, length(poly))
     @inbounds for j in 1:length(poly)
         exps[j] = construct_monom(
@@ -190,12 +202,13 @@ function extract_monoms(
     orig_polys::Vector{T}
 ) where {T}
     npolys = length(orig_polys)
+    var_to_index = get_var_to_index(AbstractAlgebra.parent(orig_polys[1]))
     exps = Vector{Vector{representation.monomtype}}(undef, npolys)
     @inbounds for i in 1:npolys
         poly = orig_polys[i]
         exps[i] = extract_monoms(representation, ring, poly)
     end
-    false, exps
+    false, var_to_index, exps
 end
 
 function extract_monoms(
@@ -205,7 +218,8 @@ function extract_monoms(
     ::DegLex
 ) where {T}
     npolys = length(orig_polys)
-    exps   = Vector{Vector{representation.monomtype}}(undef, npolys)
+    var_to_index = get_var_to_index(AbstractAlgebra.parent(orig_polys[1]))
+    exps = Vector{Vector{representation.monomtype}}(undef, npolys)
     for i in 1:npolys
         poly = orig_polys[i]
         exps[i] = Vector{representation.monomtype}(undef, length(poly))
@@ -214,7 +228,7 @@ function extract_monoms(
                 construct_monom(representation.monomtype, poly.exps[(end - 1):-1:1, j])
         end
     end
-    false, exps
+    false, var_to_index, exps
 end
 
 function extract_monoms(
@@ -224,7 +238,8 @@ function extract_monoms(
     ::Lex
 ) where {T}
     npolys = length(orig_polys)
-    exps   = Vector{Vector{representation.monomtype}}(undef, npolys)
+    var_to_index = get_var_to_index(AbstractAlgebra.parent(orig_polys[1]))
+    exps = Vector{Vector{representation.monomtype}}(undef, npolys)
     for i in 1:npolys
         poly = orig_polys[i]
         exps[i] = Vector{representation.monomtype}(undef, length(poly))
@@ -232,7 +247,7 @@ function extract_monoms(
             exps[i][j] = construct_monom(representation.monomtype, poly.exps[end:-1:1, j])
         end
     end
-    false, exps
+    false, var_to_index, exps
 end
 
 function extract_monoms(
@@ -242,7 +257,8 @@ function extract_monoms(
     ::DegRevLex
 ) where {T}
     npolys = length(orig_polys)
-    exps   = Vector{Vector{representation.monomtype}}(undef, npolys)
+    var_to_index = get_var_to_index(AbstractAlgebra.parent(orig_polys[1]))
+    exps = Vector{Vector{representation.monomtype}}(undef, npolys)
     for i in 1:npolys
         poly = orig_polys[i]
         exps[i] = Vector{representation.monomtype}(undef, length(poly))
@@ -251,7 +267,7 @@ function extract_monoms(
                 construct_monom(representation.monomtype, poly.exps[1:(end - 1), j])
         end
     end
-    false, exps
+    false, var_to_index, exps
 end
 
 function convert_to_output(
@@ -345,10 +361,6 @@ function convert_to_output(
     end
 end
 
-"""
-    Rational, Integer, and Finite field degrevlex
-    `AbstractAlgebra.Generic.MPolyRing` conversion specialization
-"""
 function convert_to_output(
     origring::AbstractAlgebra.Generic.MPolyRing{U},
     gbexps::Vector{Vector{M}},
@@ -376,10 +388,6 @@ function convert_to_output(
     exported
 end
 
-"""
-    Rational, Integer, and Finite field lex
-    `AbstractAlgebra.Generic.MPolyRing` conversion specialization
-"""
 function convert_to_output(
     origring::AbstractAlgebra.Generic.MPolyRing{U},
     gbexps::Vector{Vector{M}},
@@ -406,10 +414,6 @@ function convert_to_output(
     exported
 end
 
-"""
-    Rational, Integer, and Finite field deglex
-    `AbstractAlgebra.Generic.MPolyRing` conversion specialization
-"""
 function convert_to_output(
     origring::AbstractAlgebra.Generic.MPolyRing{U},
     gbexps::Vector{Vector{M}},
@@ -437,10 +441,6 @@ function convert_to_output(
     exported
 end
 
-"""
-    Rational, Integer, and Finite field, *any other ordering*
-    `AbstractAlgebra.Generic.MPolyRing` conversion specialization
-"""
 function convert_to_output(
     origring::AbstractAlgebra.Generic.MPolyRing{U},
     gbexps::Vector{Vector{M}},

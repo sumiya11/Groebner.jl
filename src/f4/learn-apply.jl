@@ -45,7 +45,7 @@ function column_to_monom_mapping!(graph, matrix, symbol_ht)
 end
 
 function reduction_apply!(
-    graph::ComputationContextF4,
+    graph::ComputationGraphF4,
     ring,
     basis,
     matrix,
@@ -65,7 +65,7 @@ function reduction_apply!(
     sort_matrix_upper_rows_decreasing!(matrix) # for pivots,  AB part
     sort_matrix_lower_rows_increasing!(matrix) # for reduced, CD part
 
-    # @invariant matrix_well_formed(:in_reduction_apply!, matrix)
+    @log level = -3 repr_matrix(matrix)
 
     @log level = -6 "Apply: after mapping and sorting" matrix
     flag = linear_algebra!(graph, ring, matrix, basis, :apply, rng)
@@ -79,7 +79,7 @@ function reduction_apply!(
 end
 
 function symbolic_preprocessing!(
-    graph::ComputationContextF4,
+    graph::ComputationGraphF4,
     iters::Int,
     basis,
     matrix,
@@ -394,6 +394,8 @@ function reduction_learn!(graph, ring, basis, matrix, hashtable, symbol_ht, lina
     sort_matrix_lower_rows_increasing!(matrix) # for reduced, CD part
 
     @log level = -6 "Learn: after mapping and sorting" matrix
+
+    @log level = -3 repr_matrix(matrix)
 
     linear_algebra!(graph, ring, matrix, basis, :learn, rng)
 

@@ -314,71 +314,44 @@ end
 end
 
 @testset "groebner orderings" begin
-    R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"], ordering=:deglex)
+    R, (x, y, z, w) = PolynomialRing(QQ, ["x", "y", "z", "w"], ordering=:deglex)
 
     Groebner.groebner([x, y], ordering=Groebner.Lex())
     Groebner.groebner([x, y], ordering=Groebner.DegLex())
     Groebner.groebner([x, y], ordering=Groebner.DegRevLex())
 
-    Groebner.groebner([x, y], ordering=Groebner.WeightedOrdering([1, 2, 3]))
+    # Test that the order of output polynomials is correct
+    for i in 1:10
+        xs = shuffle([x, y, z, w])
+        polys = [x + 1, y + 2, z + 3, w - 4]
+
+        gb = Groebner.groebner(shuffle(polys), ordering=Groebner.Lex(xs))
+        @test map(string ∘ leading_term, gb) == map(string, reverse(xs))
+
+        gb = Groebner.groebner(shuffle(polys), ordering=Groebner.DegLex(xs))
+        @test map(string ∘ leading_term, gb) == map(string, reverse(xs))
+
+        gb = Groebner.groebner(shuffle(polys), ordering=Groebner.DegRevLex(xs))
+        @test map(string ∘ leading_term, gb) == map(string, reverse(xs))
+    end
+
     @test_throws DomainError Groebner.groebner(
         [x, y],
         ordering=Groebner.WeightedOrdering([1, 0])
     )
     @test_throws DomainError Groebner.groebner(
         [x, y],
-        ordering=Groebner.WeightedOrdering([1, 0, 1, 9])
+        ordering=Groebner.WeightedOrdering([1, 0, 1, 9, 10])
     )
-
-    ord = Groebner.BlockOrdering(
-        1:1,
-        Groebner.WeightedOrdering([0]),
-        2:3,
-        Groebner.WeightedOrdering([2, 3])
-    )
-    Groebner.groebner([x, y], ordering=ord)
-    ord = Groebner.BlockOrdering(
-        1:1,
-        Groebner.WeightedOrdering([0, 0]),
-        2:3,
-        Groebner.WeightedOrdering([2, 3])
-    )
-    # @test_throws DomainError Groebner.groebner([x, y], ordering=ord)
-    ord = Groebner.BlockOrdering(
-        1:1,
-        Groebner.WeightedOrdering([0]),
-        2:3,
-        Groebner.WeightedOrdering([2])
-    )
-    # @test_throws DomainError Groebner.groebner([x, y], ordering=ord)
 
     R, (x1, x2, x3, x4, x5, x6) = QQ["x1", "x2", "x3", "x4", "x5", "x6"]
-    ord_3_6 = Groebner.BlockOrdering(
-        3:4,
-        Groebner.DegRevLex(),
-        5:6,
-        Groebner.WeightedOrdering([0, 3])
+    @test_throws AssertionError Groebner.groebner(
+        [x1],
+        ordering=Groebner.WeightedOrdering([-1, 0, 0, 0, 0, 0])
     )
-    ord = Groebner.BlockOrdering(1:2, Groebner.Lex(), 3:6, ord_3_6)
-    Groebner.groebner([x1, x2], ordering=ord)
-
-    ord_3_6 = Groebner.BlockOrdering(
-        3:3,
-        Groebner.WeightedOrdering([0]),
-        4:6,
-        Groebner.WeightedOrdering([1, 0, 3])
-    )
-    ord = Groebner.BlockOrdering(1:2, Groebner.WeightedOrdering([1, 1]), 3:6, ord_3_6)
-    Groebner.groebner([x1, x2], ordering=ord)
-
-    ord_3_6 = Groebner.BlockOrdering(
-        3:4,
-        Groebner.WeightedOrdering([0, 1, 2]),
-        5:6,
-        Groebner.WeightedOrdering([1, 0])
-    )
-    ord = Groebner.BlockOrdering(1:2, Groebner.WeightedOrdering([1, 1]), 3:6, ord_3_6)
-    # @test_throws DomainError Groebner.groebner([x1, x2], ordering=ord)
+    ord = Groebner.Lex(x6, x2, x5) * Groebner.Lex(x4, x1, x3)
+    @test [x3, x1, x4, x5, x2, x6] ==
+          Groebner.groebner([x1, x2, x3, x4, x5, x6], ordering=ord)
 
     ord = Groebner.MatrixOrdering([
         1 0 0 0 1 2
@@ -393,7 +366,7 @@ end
         0 1 0 0
         0 0 1 0
     ])
-    @test_throws DomainError Groebner.groebner([x1, x2], ordering=ord)
+    @test_throws AssertionError Groebner.groebner([x1, x2], ordering=ord)
 end
 
 @testset "groebner on-the-fly order change" begin

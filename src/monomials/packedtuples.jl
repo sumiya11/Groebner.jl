@@ -11,12 +11,6 @@
 
 abstract type AbstractPackedTuple{T <: Unsigned, B <: Unsigned} end
 
-# Checks whether AbstractPackedTuple{T, B} provides a comparator function implementation
-# for the given monomial ordering of type `O`
-function is_supported_ordering(::Type{APP}, ::O) where {APP <: AbstractPackedTuple, O}
-    O <: Union{Lex, DegLex, DegRevLex, InputOrdering}
-end
-
 struct PackedTuple1{T <: Unsigned, B <: Unsigned} <: AbstractPackedTuple{T, B}
     a1::T
 end
@@ -234,16 +228,22 @@ function monom_to_dense_vector!(tmp::Vector{I}, pv::PackedTuple3{T, B}) where {I
     tmp
 end
 
-#------------------------------------------------------------------------------
+###
 # Monomial orderings implementations 
 # for the `PackedTupleI` monomial implementation.
 # See monoms/orderings.jl for details.
+
+# Checks whether AbstractPackedTuple{T, B} provides a comparator function implementation
+# for the given monomial ordering of type `O`
+function is_supported_ordering(::Type{APP}, ::O) where {APP <: AbstractPackedTuple, O}
+    O <: Union{DegRevLex, InputOrdering}
+end
 
 function monom_isless(
     ea::PackedTuple1{T, B},
     eb::PackedTuple1{T, B},
     ord::Ord
-) where {T, B, Ord <: AbstractMonomialOrdering}
+) where {T, B, Ord <: AbstractInternalOrdering}
     s = div(sizeof(T), sizeof(B)) - 1
     tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
     a = construct_monom(ExponentVector{T}, monom_to_dense_vector!(tmp1, ea))
@@ -254,7 +254,7 @@ function monom_isless(
     ea::PackedTuple2{T, B},
     eb::PackedTuple2{T, B},
     ord::Ord
-) where {T, B, Ord <: AbstractMonomialOrdering}
+) where {T, B, Ord <: AbstractInternalOrdering}
     s = 2 * div(sizeof(T), sizeof(B)) - 1
     tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
     a = construct_monom(ExponentVector{T}, monom_to_dense_vector!(tmp1, ea))
@@ -265,7 +265,7 @@ function monom_isless(
     ea::PackedTuple3{T, B},
     eb::PackedTuple3{T, B},
     ord::Ord
-) where {T, B, Ord <: AbstractMonomialOrdering}
+) where {T, B, Ord <: AbstractInternalOrdering}
     s = 3 * div(sizeof(T), sizeof(B)) - 1
     tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
     a = construct_monom(ExponentVector{T}, monom_to_dense_vector!(tmp1, ea))
@@ -276,7 +276,7 @@ end
 function monom_isless(
     ea::PackedTuple1{T, B},
     eb::PackedTuple1{T, B},
-    ::DegRevLex
+    ::_DegRevLex{true}
 ) where {T, B}
     da, db = totaldeg(ea), totaldeg(eb)
     if da < db
@@ -296,7 +296,7 @@ end
 function monom_isless(
     ea::PackedTuple2{T, B},
     eb::PackedTuple2{T, B},
-    ::DegRevLex
+    ::_DegRevLex{true}
 ) where {T, B}
     da, db = totaldeg(ea), totaldeg(eb)
     if da < db
@@ -316,7 +316,7 @@ end
 function monom_isless(
     ea::PackedTuple3{T, B},
     eb::PackedTuple3{T, B},
-    ::DegRevLex
+    ::_DegRevLex{true}
 ) where {T, B}
     da, db = totaldeg(ea), totaldeg(eb)
     if da < db
@@ -337,7 +337,7 @@ function monom_isless(
     end
 end
 
-#------------------------------------------------------------------------------
+###
 # Monomial-Monomial arithmetic.
 
 function monom_lcm!(
@@ -548,7 +548,7 @@ function is_monom_elementwise_eq(
     ea.a1 == eb.a1 && ea.a2 == eb.a2 && ea.a3 == eb.a3
 end
 
-#------------------------------------------------------------------------------
+###
 # Monomial division masks.
 # See f4/hashtable.jl for details.
 

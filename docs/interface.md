@@ -19,18 +19,17 @@ using Groebner # hide
 
 {{doc normalform normalform fn}}
 
-{{doc fglm fglm fn}}
+<!-- {{doc fglm fglm fn}} -->
 
 {{doc kbase kbase fn}}
 
 ## Monomial orderings
 
-A list of supported monomial orderings.
-An ordering can be set by passing it as the keyword argument `ordering`.
+A list of all supported monomial orderings.
+An ordering can be set by passing the keyword argument `ordering`.
 See below for some examples.
 
-*Note that some frontends (e.g. `AbstractAlgebra.jl`) do not support weighted/block/matrix orderings. In such cases, the polynomial terms in the output may be ordered w.r.t. some other ordering.
-Still, the output is a correct Groebner basis in the requested ordering.*
+*Note that some frontends, for example, `AbstractAlgebra.jl`, may not support weighted/product/matrix orderings. In such cases, the polynomial terms in the output are ordered w.r.t. some other supported ordering.*
 
 {{doc Lex}}
 
@@ -42,6 +41,6 @@ Still, the output is a correct Groebner basis in the requested ordering.*
 
 {{doc WeightedOrdering WeightedOrdering st}}
 
-{{doc BlockOrdering BlockOrdering str}}
+{{doc ProductOrdering ProductOrdering str}}
 
 {{doc MatrixOrdering MatrixOrdering st}}

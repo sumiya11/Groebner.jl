@@ -226,7 +226,7 @@ end
 # Do linear reduction of the lower part of the matrix.
 # Returns true if the reduction is successful
 function linear_algebra!(
-    graph::ComputationContextF4,
+    graph::ComputationGraphF4,
     ring::PolyRing,
     matrix::MacaulayMatrix,
     basis::Basis,
@@ -565,7 +565,7 @@ function interreduce_lower_part!(
 end
 
 function interreduce_lower_part_learn!(
-    context::ComputationContextF4,
+    context::ComputationGraphF4,
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
     pivots::Vector{Vector{ColumnLabel}},
@@ -713,7 +713,7 @@ function deterministic_sparse_rref!(
 end
 
 function learn_sparse_rref!(
-    graph::ComputationContextF4,
+    graph::ComputationGraphF4,
     ring,
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
@@ -817,7 +817,7 @@ function learn_sparse_rref!(
 end
 
 function apply_sparse_rref!(
-    graph::ComputationContextF4,
+    graph::ComputationGraphF4,
     ring,
     matrix::MacaulayMatrix{C},
     basis::Basis{C},

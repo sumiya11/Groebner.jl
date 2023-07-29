@@ -15,7 +15,7 @@ The `groebner` routine takes the following options:
     - `DegLex()` for degree lexicographic, 
     - `DegRevLex()` for degree reverse lexicographic, 
     - `WeightedOrdering(weights)` for weighted ordering, 
-    - `BlockOrdering(args...)` for block ordering, 
+    - `ProductOrdering(args...)` for block ordering, 
     - `MatrixOrdering(matrix)` for matrix ordering. 
   For details and examples see the corresponding documentation page.
 - `certify`: Certify the obtained basis. When this option is `false`, the
@@ -144,7 +144,7 @@ The `isgroebner` routine takes the following options:
     - `DegLex()` for degree lexicographic, 
     - `DegRevLex()` for degree reverse lexicographic, 
     - `WeightedOrdering(weights)` for weighted ordering, 
-    - `BlockOrdering(args...)` for block ordering, 
+    - `ProductOrdering(args...)` for block ordering, 
     - `MatrixOrdering(matrix)` for matrix ordering. 
   For details and examples see the corresponding documentation page.
 - `certify`: Use deterministic algorithm (default is `false`).
@@ -193,7 +193,7 @@ The `normalform` routine takes the following options:
     - `DegLex()` for degree lexicographic, 
     - `DegRevLex()` for degree reverse lexicographic, 
     - `WeightedOrdering(weights)` for weighted ordering, 
-    - `BlockOrdering(args...)` for block ordering, 
+    - `ProductOrdering(args...)` for block ordering, 
     - `MatrixOrdering(matrix)` for matrix ordering. 
   For details and examples see the corresponding documentation page.
 - `loglevel`: Logging level, an integer. Higher values mean less logging.

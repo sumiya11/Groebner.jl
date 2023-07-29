@@ -1,11 +1,18 @@
 # Select parameters for Groebner basis computation
 
+# It seems there is no Xoshiro rng in Julia v < 1.8.
+# Use Random.Xoshiro, if available, as it is a bit faster.
 const _default_rng_type = @static if VERSION >= v"1.8.0"
     Random.Xoshiro
 else
     Random.MersenneTwister
 end
 
+"""
+    AlgorithmParameters
+
+Stores all parameters for a single GB computation.
+"""
 struct AlgorithmParameters{Ord1, Ord2}
     # Output polynomials monomial ordering
     target_ord::Ord1
@@ -37,7 +44,6 @@ struct AlgorithmParameters{Ord1, Ord2}
     # TODO: introduce two strategies: :classic_modular and :learn_and_apply
     strategy::Symbol
     majority_threshold::Int
-    emit_computation_graph::Bool
 
     threading::Bool
 
@@ -49,7 +55,6 @@ struct AlgorithmParameters{Ord1, Ord2}
 end
 
 function AlgorithmParameters(ring, kwargs::KeywordsHandler)
-    ordering = kwargs.ordering
     if kwargs.ordering === InputOrdering() || kwargs.ordering === nothing
         ordering = ring.ord
     else
@@ -79,8 +84,6 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler)
 
     seed = kwargs.seed
 
-    emit_computation_graph = false
-
     rng = _default_rng_type(seed)
 
     useed = UInt64(seed)
@@ -101,7 +104,6 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler)
     ground = $ground
     strategy = $strategy
     majority_threshold = $majority_threshold
-    emit_computation_graph = $emit_computation_graph
     threading = $threading
     seed = $seed
     rng = $rng
@@ -120,7 +122,6 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler)
         ground,
         strategy,
         majority_threshold,
-        emit_computation_graph,
         threading,
         useed,
         rng,

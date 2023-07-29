@@ -242,9 +242,9 @@ mutable struct CanvasMatrix2x2
             out_stream,
             fix_ar
         )
-        width_A = floor(Int, width * nleft / ncols)
+        width_A = floor(Int, width * nleft / max(ncols, 1.0))
         width_B = width - width_A
-        height_A = floor(Int, height * nupper / nrows)
+        height_A = floor(Int, height * nupper / max(nrows, 1.0))
         height_C = height - height_A
         A = Canvas(nupper, nleft, height=height_A, width=width_A)
         B = Canvas(nupper, nright, height=height_A, width=width_B)

@@ -29,7 +29,7 @@ function sort_polys_by_lead_increasing!(
     hashtable::MonomialHashtable,
     abc...;
     ord::Ord=hashtable.ord
-) where {Ord <: AbstractMonomialOrdering}
+) where {Ord <: AbstractInternalOrdering}
     b_monoms = basis.monoms
     h_monoms = hashtable.monoms
     permutation = collect(1:(basis.nfilled))
@@ -56,7 +56,7 @@ function is_sorted_by_lead_increasing(
     basis::Basis,
     hashtable::MonomialHashtable,
     ord::Ord=hashtable.ord
-) where {Ord <: AbstractMonomialOrdering}
+) where {Ord <: AbstractInternalOrdering}
     b_monoms = basis.monoms
     h_monoms = hashtable.monoms
     permutation = collect(1:(basis.nfilled))
@@ -237,7 +237,7 @@ end
 function sort_input_to_change_ordering!(
     exps::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
-    ord::AbstractMonomialOrdering
+    ord::AbstractInternalOrdering
 ) where {M <: Monom, C <: Coeff}
     # for each polynomial encoded as 
     # two vectors exps[polyidx] and coeffs[polyidx]..
@@ -260,7 +260,7 @@ function sort_monom_indices_decreasing!(
     monoms::Vector{MonomIdx},
     cnt::Integer,
     hashtable::MonomialHashtable,
-    ord::AbstractMonomialOrdering
+    ord::AbstractInternalOrdering
 )
     exps = hashtable.monoms
 
@@ -273,7 +273,7 @@ function sort_term_indices_decreasing!(
     monoms::Vector{MonomIdx},
     coeffs::Vector{C},
     hashtable::MonomialHashtable,
-    ord::AbstractMonomialOrdering
+    ord::AbstractInternalOrdering
 ) where {C <: Coeff}
     exps = hashtable.monoms
 
