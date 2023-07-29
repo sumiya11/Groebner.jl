@@ -114,6 +114,10 @@ function matrix_row_decreasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: Colum
     if va < vb
         return true
     end
+    # Unreachable.
+    # If there are two rows in the upper part of the matrix with the same
+    # leading term, something went wrong
+    @invariant false
     # If the same leading column => compare the density of rows
     va = length(a)
     vb = length(b)

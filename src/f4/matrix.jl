@@ -1,6 +1,4 @@
 # Macaulay matrix
-#
-# This file defines MacaulayMatrix and linear algebra for F4.
 
 # MacaulayMatrix is a sparse matrix with columns labeled by distinct monomials.
 # MacaulayMatrix represents a block matrix of the following structure:
@@ -8,13 +6,11 @@
 #   | A  B |
 #   | C  D | 
 # 
-# The primary operation is the linear reduction of the lower rows of the matrix
-# (the block CD) with respect to the upper rows (the block AB).
-#
-# Additional features:
-# - The columns of the matrix are sorted w.r.t. the monomial ordering on their
-#   corresponding labels, the first column is the largest.
-# - The block A is in the row reduced echelon form.
+# The block A is in row echelon form.
+# The primary operation is linear reduction of the lower part of the matrix (the
+# block CD) with respect to the upper part (the block AB).
+
+# 
 
 const ColumnLabel = Int32
 
@@ -113,8 +109,8 @@ function repr_matrix(matrix::MacaulayMatrix{T}) where {T}
     m_D, n_D = matrix.nlower, matrix.nright
     nnz_A, nnz_B, nnz_C, nnz_D = 0, 0, 0, 0
     A_ref, A_rref = true, true
-    AB_sparse = zeros(UInt64, m_A, n)
-    CD_sparse = zeros(UInt64, m_C, n)
+    max_canvas_width = 40
+    canvas = CanvasMatrix2x2(m_A, m_C, n_A, n_B, max_width=max_canvas_width)
     for i in 1:(matrix.nupper)
         row = matrix.upper_rows[i]
         if length(row) > 1
@@ -124,7 +120,7 @@ function repr_matrix(matrix::MacaulayMatrix{T}) where {T}
             A_ref = true
         end
         for j in 1:length(row)
-            AB_sparse[i, row[j]] = 1
+            point!(canvas, i, row[j])
             if row[j] <= matrix.nleft
                 nnz_A += 1
             else
@@ -135,7 +131,7 @@ function repr_matrix(matrix::MacaulayMatrix{T}) where {T}
     for i in 1:(matrix.nlower)
         row = matrix.lower_rows[i]
         for j in 1:length(row)
-            CD_sparse[i, row[j]] = 1
+            point!(canvas, matrix.nupper + i, row[j])
             if row[j] <= matrix.nleft
                 nnz_C += 1
             else
@@ -145,25 +141,17 @@ function repr_matrix(matrix::MacaulayMatrix{T}) where {T}
     end
     nnz = nnz_A + nnz_B + nnz_C + nnz_D
     percent(x) = round(100 * x, digits=2)
-    canvas_width = 40
     s = """
     $(typeof(matrix))
     $m x $n with $nnz nonzeros ($(percent(nnz / (m * n))) %)
-        A | B
-        -----
-        C | D
-    A: $(m_A) x $(n_A) with $(nnz_A) nonzeros
+    A: $(m_A) x $(n_A) with $(nnz_A) nonzeros (REF: $(A_ref), RREF: $(A_rref))
     B: $(m_B) x $(n_B) with $(nnz_B) nonzeros
     C: $(m_C) x $(n_C) with $(nnz_C) nonzeros
     D: $(m_D) x $(n_D) with $(nnz_D) nonzeros
 
-    A is in REF / RREF : $(A_ref) / $(A_rref)
+    Sparsity pattern:
 
-    Sparsity pattern, AB:
-    $(spy(AB_sparse, width=canvas_width))
-
-    Sparsity pattern, CD:
-    $(spy(CD_sparse, width=canvas_width))
+    $(canvas)
     """
     s
 end
@@ -395,7 +383,9 @@ function reduce_dense_row_by_pivots_sparse!(
     # The index of the first nonzero elemen in the reduced row
     new_pivot = -1
 
+    # TODO
     @inbounds for i in start_column:ncolumns
+        # @inbounds for i in start_column:nleft
         # if the element is zero - no reduction is needed
         if iszero(row[i])
             continue
@@ -421,6 +411,7 @@ function reduce_dense_row_by_pivots_sparse!(
             coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
         else
             # if reducer is from the lower part of the matrix
+            @log level = -777 "Lower part" i
             coeffs = matrix.coeffs[matrix.lower_to_coeffs[i]]
         end
 
@@ -671,6 +662,10 @@ function deterministic_sparse_rref!(
     upivs = matrix.lower_rows
     densecoeffs = zeros(C, ncols)
 
+    @log level = -777 "" matrix.nupper matrix.nlower matrix.nleft matrix.nright
+    @log level = -777 "" matrix.ncolumns matrix.nrows matrix.size
+    @log level = -777 "" map(first, pivs[1:(matrix.nupper)]) == collect(1:(matrix.nupper))
+
     @inbounds for i in 1:nlow
         # select next row to be reduced
         # npiv ~ exponents
@@ -698,6 +693,8 @@ function deterministic_sparse_rref!(
         )
         # if fully reduced
         zeroed && continue
+
+        @log level = -777 "" newrow[1]
 
         # matrix coeffs sparsely stores coefficients of new row
         matrix.coeffs[i] = newcfs

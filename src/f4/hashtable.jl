@@ -30,7 +30,6 @@ const DivisionMask = UInt32
 # Hashvalue of a single monomial
 mutable struct Hashvalue
     # index of the monomial in the F4 matrix (defaults to zero),
-    # idx::Int
     idx::Int
     # hash of the monomial,
     hash::MonomHash
