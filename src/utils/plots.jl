@@ -249,7 +249,7 @@ mutable struct CanvasMatrix2x2
         A = Canvas(nupper, nleft, height=height_A, width=width_A)
         B = Canvas(nupper, nright, height=height_A, width=width_B)
         C = Canvas(nlower, nleft, height=height_C, width=width_A)
-        D = Canvas(nlower, nright, height=height_A, width=width_B)
+        D = Canvas(nlower, nright, height=height_C, width=width_B)
         new(A, B, C, D, nupper, nlower, nleft, nright)
     end
 end
@@ -275,6 +275,9 @@ Base.show(io::IO, c::CanvasMatrix2x2) = _show(io, c)
 function _show(io::IO, c::CanvasMatrix2x2)
     m1, m2, n1, n2 =
         size(c.A.grid, 1), size(c.C.grid, 1), size(c.A.grid, 2), size(c.B.grid, 2)
+    if size(c.C.grid, 1) != size(c.D.grid, 1) || size(c.A.grid, 1) != size(c.B.grid, 1)
+        @log level = 1000 "Canvas dimensions do not agree!"
+    end
     for i in 1:m1
         printrow(io, c.A.grid[i, :])
         print(io, BORDER_SOLID.l)

@@ -116,6 +116,8 @@ include("groebner/state.jl")
 include("groebner/correctness.jl")
 # `groebner` backend
 include("groebner/groebner.jl")
+# `groebner_learn` and `groebner_apply` backend
+include("groebner/learn-apply.jl")
 # `isgroebner` backend
 include("groebner/isgroebner.jl")
 # `normalform` backend

@@ -231,29 +231,30 @@ function sort_columns_by_labels!(
     sort!(column_to_monom, lt=ordcmp, alg=_default_sorting_alg())
 end
 
-# Given a vector of vectors of exponent vectors and coefficients,
-# sort each vector wrt. the given monomial ordering `ord`.
-# 
-function sort_input_to_change_ordering!(
+# Given a vector of vectors of exponent vectors and coefficients, sort each
+# vector wrt. the given monomial ordering `ord`.
+#
+# Returns the array of sorting permutations
+function sort_input_terms_to_change_ordering!(
     exps::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     ord::AbstractInternalOrdering
 ) where {M <: Monom, C <: Coeff}
-    # for each polynomial encoded as 
-    # two vectors exps[polyidx] and coeffs[polyidx]..
+    permutations = Vector{Vector{Int}}(undef, length(exps))
     @inbounds for polyidx in 1:length(exps)
-        cmps =
+        comparator =
             (x, y) ->
                 monom_isless(@inbounds(exps[polyidx][y]), @inbounds(exps[polyidx][x]), ord)
 
-        inds = collect(1:length(exps[polyidx]))
+        permutation = collect(1:length(exps[polyidx]))
+        sort!(permutation, lt=comparator, alg=_default_sorting_alg())
 
-        sort!(inds, lt=cmps, alg=_default_sorting_alg())
+        exps[polyidx][1:end] = exps[polyidx][permutation]
+        coeffs[polyidx][1:end] = coeffs[polyidx][permutation]
 
-        exps[polyidx][1:end] = exps[polyidx][inds]
-        coeffs[polyidx][1:end] = coeffs[polyidx][inds]
+        permutations[polyidx] = permutation
     end
-    nothing
+    permutations
 end
 
 function sort_monom_indices_decreasing!(

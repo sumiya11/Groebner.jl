@@ -168,7 +168,7 @@ function _kbase(polynomials, kws)
             throw(DomainError("Input is not a Groebner basis."))
         end
     end
-    ring = set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
+    ring, _ = set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
     m, c = kbase_f4(ring, monoms, coeffs, params)
     convert_to_output(ring, polynomials, m, c, params)
 end

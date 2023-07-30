@@ -123,29 +123,70 @@ function extract_coeffs_ff(
     map(Ch ∘ AbstractAlgebra.data, AbstractAlgebra.coefficients(poly))
 end
 
-function extract_coeffs_raw!(graph, representation, polys::Vector{T}, kws) where {T}
-    # write directly to graph.basis
-    # TODO: we do not currently support monomial orderings other than the one
-    # recorded in graph
+function _is_input_compatible_in_apply(graph, ring, kws)
+    # TODO: Check that leading monomials coincide!
+    @log level = -7 "" graph.original_ord ring.ord
+    if graph.original_ord != ring.ord
+        @log level = 1 "Input ordering $(ring.ord) is different from the one used to learn the graph ($(graph.original_ord))"
+        return false
+    end
+    if graph.sweep_output != kws.sweep
+        @log level = 1 "Input sweep option ($(kws.sweep)) is different from the one used to learn the graph ($(graph.sweep_output))."
+        return false
+    end
+    @log level = -1 "In groebner_apply! the argument monom=$(kws.monoms) was ignored"
+    true
+end
+
+function extract_coeffs_raw!(
+    graph,
+    representation::PolynomialRepresentation,
+    polys::Vector{T},
+    kws::KeywordsHandler
+) where {T}
+    # write new coefficients directly to graph.basis
     ring = extract_ring(polys)
+    @assert _is_input_compatible_in_apply(graph, ring, kws) "Input does not seem to be compatible with the learned graph."
     basis = graph.buf_basis
-    perm = graph.input_permutation
-    Ch = representation.coefftype
-    _extract_coeffs_raw!(basis, perm, polys, Ch)
-    @log level = -5 "Extracted coefficients from $(length(polys)) polynomials." basis perm
+    input_polys_perm = graph.input_permutation
+    term_perms = graph.term_sorting_permutations
+    CoeffType = representation.coefftype
+    _extract_coeffs_raw!(basis, input_polys_perm, term_perms, polys, CoeffType)
+    @log level = -6 "Extracted coefficients from $(length(polys)) polynomials." basis
     ring
 end
 
-function _extract_coeffs_raw!(basis, perm, polys, ::Type{CoeffsType}) where {CoeffsType}
+function _extract_coeffs_raw!(
+    basis,
+    input_polys_perm::Vector{Int},
+    term_perms::Vector{Vector{Int}},
+    polys,
+    ::Type{CoeffsType}
+) where {CoeffsType}
     @assert basis.nfilled == count(!iszero, polys)
     polys = filter(!iszero, polys)
+    permute_input_terms = !isempty(term_perms)
+    @log level = -7 "Permuting input terms: $permute_input_terms"
     @inbounds for i in 1:length(polys)
-        poly = polys[perm[i]]
+        poly = polys[input_polys_perm[i]]
         basis_cfs = basis.coeffs[i]
         @assert length(poly) == length(basis_cfs)
-        for j in 1:length(poly)
-            basis_cfs[j] =
-                convert(CoeffsType, AbstractAlgebra.data(AbstractAlgebra.coeff(poly, j)))
+        if permute_input_terms
+            for j in 1:length(poly)
+                basis_cfs[j] = convert(
+                    CoeffsType,
+                    AbstractAlgebra.data(
+                        AbstractAlgebra.coeff(poly, term_perms[input_polys_perm[i]][j])
+                    )
+                )
+            end
+        else
+            for j in 1:length(poly)
+                basis_cfs[j] = convert(
+                    CoeffsType,
+                    AbstractAlgebra.data(AbstractAlgebra.coeff(poly, j))
+                )
+            end
         end
     end
     nothing

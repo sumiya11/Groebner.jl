@@ -9,7 +9,7 @@ function _isgroebner(polynomials, kws::KeywordsHandler)
         return true
     end
     params = AlgorithmParameters(ring, kws)
-    ring = set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
+    ring, _ = set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
     _isgroebner(ring, monoms, coeffs, params)
 end
 
