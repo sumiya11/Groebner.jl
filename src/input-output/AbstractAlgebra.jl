@@ -324,7 +324,7 @@ function convert_to_output(
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     @inbounds for i in 1:length(gbexps)
-        if isempty(gbexps)
+        if isempty(gbexps[i])
             exported[i] = origring()
             continue
         end

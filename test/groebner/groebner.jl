@@ -335,6 +335,11 @@ end
         @test map(string ∘ leading_term, gb) == map(string, reverse(xs))
     end
 
+    # for aa_ord in [:lex, :deglex, :degrevlex]
+    #     R, (x1, x2, x3, x4) = PolynomialRing(QQ, ["x1", "x2", "x3", "x4"], ordering=aa_ord)
+    #     cases = []
+    # end
+
     @test_throws DomainError Groebner.groebner(
         [x, y],
         ordering=Groebner.WeightedOrdering([1, 0])
