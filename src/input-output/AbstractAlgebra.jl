@@ -324,6 +324,10 @@ function convert_to_output(
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     @inbounds for i in 1:length(gbexps)
+        if isempty(gbexps)
+            exported[i] = origring()
+            continue
+        end
         cfs = zeros(ground, Int(totaldeg(gbexps[i][1]) + 1))
         for (idx, j) in enumerate(gbexps[i])
             cfs[totaldeg(j) + 1] = ground(gbcoeffs[i][idx])

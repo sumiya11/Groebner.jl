@@ -196,6 +196,7 @@ function convert_to_output(
     @log level = -2 "Converting polynomials from internal representation to output format"
     # NOTE: Internal polynomials must not be modified.
     if isempty(monoms)
+        @log level = -7 "Output is empty, appending an empty placeholder polynomial"
         push!(monoms, Vector{M}())
         push!(coeffs, Vector{C}())
     end
