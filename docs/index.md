@@ -1,4 +1,4 @@
-@def title = "Groebner.jl — Fast Groebner basis computation in Julia"
+@def title = "Groebner.jl — Fast Groebner bases in Julia"
 @def hasmath = true
 @def hascode = true
 <!-- Note: by default hasmath == true and hascode == false. You can change this in
@@ -8,21 +8,18 @@ where appropriate -->
 
 # Groebner.jl
 
-
 `Groebner.jl` is a package for fast and generic Gröbner bases computations
 based on Faugère's F4 algorithm [[1]](https://www-polsys.lip6.fr/~jcf/Papers/F99a.pdf) written in pure Julia.
 
 ## Installation
 
-To install `Groebner.jl`, use the Julia package manager:
+To install `Groebner.jl`, execute the following in Julia:
 
 ```julia:install
-using Pkg
-Pkg.add("Groebner")
+using Pkg; Pkg.add("Groebner")
 ```
 
-See **Interface** for a description of all exported functions. 
-Find a quick introduction to Groebner bases and a couple of interesting use cases in **Tutorials**. Meanwhile, below are simple examples.
+See **Interface** for a description of all exported functions. Find a quick introduction to Groebner bases and a couple of interesting use cases in **Tutorials**. Meanwhile, below are simple examples.
 
 ## Examples
 
@@ -44,7 +41,7 @@ R, (x, y) = PolynomialRing(GF(2^31 - 1), ["x", "y"])
 polys = [x^3 + y^2, x*y + x^2];
 ```
 
-and compute *the* Groebner basis
+and compute the Groebner basis
 ```julia:aagb
 using Groebner
 
@@ -64,7 +61,7 @@ normalform(basis, x^2*y^2 + 2x^3*y - x*y^2)
 
 ### with `DynamicPolynomials`
 
-We will compute the basis for the `noon-2` system, arising from cellular network dynamics analysis [[2]](https://www.jstor.org/stable/2101937):
+We will compute the basis of the `noon-2` system [[2]](https://www.jstor.org/stable/2101937):
 
 ```julia:install_dynamic
 Pkg.add("DynamicPolynomials") # hide
@@ -79,14 +76,6 @@ system = [10*x1*x2^2 - 11*x1 + 10,
 
 groebner(system)
 ```
-
-<!-- ## Note on the Implementation
-
-Computing Groebner bases largely depends on a single iterative algorithm, known as **Buchbergers algorithm**. Modified and optimized versions of this algorithm are crucial for many Computer Algebra Systems (*e.g., Singular, Maple, Mathematica, Sage*).
-
-The Buchbergers algorithm is exponential by its nature, so any implementation is tricky.
-
-Our package implements **F4 algorithm** introduced by Jean-Charles Faugère. -->
 
 ## Contacts
 

@@ -104,19 +104,23 @@ end
 function is_supported_ordering(
     ::Type{SparseExponentVector{T, N, I}},
     ::O
-) where {T, N, I, O <: Union{Lex, DegLex, DegRevLex, InputOrdering}}
+) where {T, N, I, O <: Union{_Lex, _DegLex, _DegRevLex}}
     true
 end
 
 function is_supported_ordering(
     ::Type{SparseExponentVector{T, N, I}},
     ::O
-) where {T, N, I, O <: AbstractMonomialOrdering}
+) where {T, N, I, O}
     false
 end
 
 # DegRevLex exponent vector comparison
-function monom_isless(ea::SparseExponentVector, eb::SparseExponentVector, ::DegRevLex)
+function monom_isless(
+    ea::SparseExponentVector,
+    eb::SparseExponentVector,
+    ::_DegRevLex{true}
+)
     tda, tdb = totaldeg(ea), totaldeg(eb)
     if tda < tdb
         return true
@@ -147,18 +151,18 @@ function monom_isless(ea::SparseExponentVector, eb::SparseExponentVector, ::DegR
 end
 
 # DegLex exponent vector comparison
-function monom_isless(ea::SparseExponentVector, eb::SparseExponentVector, ::DegLex)
+function monom_isless(ea::SparseExponentVector, eb::SparseExponentVector, ::_DegLex{true})
     tda, tdb = totaldeg(ea), totaldeg(eb)
     if tda < tdb
         return true
     elseif tda != tdb
         return false
     end
-    monom_isless(ea, eb, Lex())
+    monom_isless(ea, eb, _Lex{true}(Int[]))
 end
 
 # Lex exponent vector comparison
-function monom_isless(ea::SparseExponentVector, eb::SparseExponentVector, ::Lex)
+function monom_isless(ea::SparseExponentVector, eb::SparseExponentVector, ::_Lex{true})
     ainds, binds = ea.inds, eb.inds
     avals, bvals = ea.vals, eb.vals
     i = 1
@@ -177,6 +181,17 @@ function monom_isless(ea::SparseExponentVector, eb::SparseExponentVector, ::Lex)
         i += 1
     end
     length(ainds) < length(binds)
+end
+
+function monom_isless(
+    ea::SparseExponentVector{T, N},
+    eb::SparseExponentVector{T, N},
+    ord
+) where {T, N}
+    tmp1, tmp2 = Vector{T}(undef, N), Vector{T}(undef, N)
+    a = construct_monom(ExponentVector{T}, monom_to_dense_vector!(tmp1, ea))
+    b = construct_monom(ExponentVector{T}, monom_to_dense_vector!(tmp2, eb))
+    monom_isless(a, b, ord)
 end
 
 ###

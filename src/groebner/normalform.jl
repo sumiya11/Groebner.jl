@@ -2,13 +2,15 @@
 function _normalform(polynomials, to_be_reduced, kws::KeywordsHandler)
     polynomial_repr =
         select_polynomial_representation(polynomials, kws, hint=:large_exponents)
-    ring, monoms, coeffs = convert_to_internal(polynomial_repr, polynomials, kws)
+    ring, var_to_index1, monoms, coeffs =
+        convert_to_internal(polynomial_repr, polynomials, kws)
     if isempty(monoms)
         @log level = -2 "Input basis consisting of zero polynomials only."
         return to_be_reduced
     end
-    ring_to_be_reduced, monoms_to_be_reduced, coeffs_to_be_reduced =
+    ring_to_be_reduced, var_to_index2, monoms_to_be_reduced, coeffs_to_be_reduced =
         convert_to_internal(polynomial_repr, to_be_reduced, kws, dropzeros=false)
+    var_to_index = merge(var_to_index1, var_to_index2)
     nonzero_indices = findall(!iszero_coeffs, coeffs_to_be_reduced)
     if isempty(nonzero_indices)
         @log level = -2 "Polynomials to be reduced are all zero."
@@ -17,14 +19,15 @@ function _normalform(polynomials, to_be_reduced, kws::KeywordsHandler)
     monoms_to_be_reduced_nonzero = monoms_to_be_reduced[nonzero_indices]
     coeffs_to_be_reduced_nonzero = coeffs_to_be_reduced[nonzero_indices]
     params = AlgorithmParameters(ring, kws)
-    ring = change_ordering_if_needed!(ring, monoms, coeffs, params)
-    ring_ = change_ordering_if_needed!(
+    ring = set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
+    ring_ = set_monomial_ordering!(
         ring_to_be_reduced,
+        var_to_index,
         monoms_to_be_reduced_nonzero,
         coeffs_to_be_reduced_nonzero,
         params
     )
-    @assert ring.nvars == ring_.nvars && ring.ch == ring_.ch && ring.ord == ring_.ord
+    @assert ring.nvars == ring_to_be_reduced.nvars && ring.ch == ring_to_be_reduced.ch
     if kws.check
         @log level = -2 "As `check=true` was provided, checking that the given input is indeed a Groebner basis"
         if !_isgroebner(ring, monoms, coeffs, params)

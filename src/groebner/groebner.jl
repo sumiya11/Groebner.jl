@@ -30,15 +30,17 @@ function _groebner(
     kws::KeywordsHandler,
     representation::PolynomialRepresentation
 )
-    # Extract ring information, exponents, and ыcoefficients from the input ыpolynomials.
-    # Convert these to an internal polynomial representation.
-    # This must copy the input, so that `polynomials` itself is not modified.
-    ring, monoms, coeffs = convert_to_internal(representation, polynomials, kws)
-    # Check and set parameters
+    # Extract ring information, exponents, and coefficients from the input
+    # polynomials. Convert these to an internal polynomial representation. 
+    # NOTE: This must copy the input, so that input `polynomials` is never
+    # modified.
+    ring, var_to_index, monoms, coeffs =
+        convert_to_internal(representation, polynomials, kws)
+    # Check and set parameters and monomial ordering
     params = AlgorithmParameters(ring, kws)
     # NOTE: at this point, we already know the computation method we are going to use,
     # and the parameters are set.
-    ring = change_ordering_if_needed!(ring, monoms, coeffs, params)
+    ring = set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
     # Fast path for the input of zeros
     if isempty(monoms)
         @log level = -2 "Input consisting of zero polynomials. Returning zero."
@@ -116,13 +118,14 @@ function _groebner_learn(polynomials, kws::KeywordsHandler)
 end
 
 function _groebner_learn(polynomials, kws, representation)
-    ring, monoms, coeffs = convert_to_internal(representation, polynomials, kws)
+    ring, var_to_index, monoms, coeffs =
+        convert_to_internal(representation, polynomials, kws)
     if isempty(monoms)
         @log level = -2 "Input consisting of zero polynomials. Error will follow"
         throw(DomainError("Input consisting of zero polynomials."))
     end
     params = AlgorithmParameters(ring, kws)
-    ring = change_ordering_if_needed!(ring, monoms, coeffs, params)
+    ring = set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
     graph, gb_monoms, gb_coeffs = _groebner_learn(ring, monoms, coeffs, params)
     graph.representation = representation
     graph, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
@@ -141,8 +144,10 @@ end
 function _is_input_compatible(graph, ring, kws)
     # TODO: Check that leading monomials coincide!
     if graph.ring.ord != ring.ord
-        @log level = 1 "Input ordering is different from the one used to learn the graph."
-        return false
+        @log level = -1 "Input ordering is different from the one used to learn the graph."
+        # TODO
+        # return false
+        return true
     end
     if graph.sweep_output != kws.sweep
         @log level = 1 "Input sweep option is different ($(kws.sweep)) from the one used to learn the graph ($(graph.sweep_output))."

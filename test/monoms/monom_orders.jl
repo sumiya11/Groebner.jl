@@ -1,8 +1,8 @@
 
 construct_monom = Groebner.construct_monom
-lex = (x, y) -> Groebner.monom_isless(x, y, Groebner.Lex())
-dl = (x, y) -> Groebner.monom_isless(x, y, Groebner.DegLex())
-drl = (x, y) -> Groebner.monom_isless(x, y, Groebner.DegRevLex())
+lex = (x, y) -> Groebner.monom_isless(x, y, Groebner._Lex{true}([]))
+dl = (x, y) -> Groebner.monom_isless(x, y, Groebner._DegLex{true}([]))
+drl = (x, y) -> Groebner.monom_isless(x, y, Groebner._DegRevLex{true}([]))
 
 implementations_to_test = [
     Groebner.ExponentVector{T} where {T},
@@ -137,201 +137,216 @@ implementations_to_test = [
     end
 end
 
-function test_orderings(v1, v2, ords_to_test)
-    for wo in ords_to_test
-        ord = wo.ord
-        ans = wo.ans
-        @test Groebner.monom_isless(v1, v2, ord) == ans[1]
-        @test Groebner.monom_isless(v2, v1, ord) == ans[2]
-        @test Groebner.monom_isless(v2, v2, ord) == false
-        @test Groebner.monom_isless(v1, v1, ord) == false
+function test_circular_shift(a, b, n, Ord, answers)
+    R, x = AbstractAlgebra.QQ[["x$i" for i in 1:n]...]
+    vars_to_index = Dict(x .=> 1:n)
+    orders = map(
+        i -> Groebner.convert_to_internal_monomial_ordering(
+            vars_to_index,
+            Ord(circshift(x, -i))
+        ),
+        0:(n - 1)
+    )
+    cmps = map(ord -> ((x, y) -> Groebner.monom_isless(x, y, ord)), orders)
+
+    for (cmp, answer) in zip(cmps, answers)
+        @test answer == cmp(a, b) && !answer == cmp(b, a)
     end
 end
 
-if false
-    @testset "monom orders: WeightedOrdering" begin
-        pv = Groebner.ExponentVector{T} where {T}
+@testset "variable permutation: Lex, DegLex, DegRevLex" begin
+    for T in (UInt64, UInt32, UInt16)
+        for EV in implementations_to_test
+            if EV{T} <: Groebner.PackedTuple2 || EV{T} <: Groebner.PackedTuple3
+                continue
+            end
 
-        v1 = Groebner.construct_monom(pv{UInt64}, [1, 2, 3])
-        v2 = Groebner.construct_monom(pv{UInt64}, [3, 2, 1])
+            n = 3
+            n >= Groebner.max_vars_in_monom(EV{T}) && continue
 
-        @test_throws AssertionError Groebner.WeightedOrdering([-1, 0, 0])
+            a = construct_monom(EV{T}, [5, 5, 3])
+            b = construct_monom(EV{T}, [1, 1, 10])
 
-        ords_to_test = [
-            (ord=Groebner.WeightedOrdering([1, 1, 1]), ans=[true, false]),
-            (ord=Groebner.WeightedOrdering([0, 0, 1]), ans=[false, true]),
-            (ord=Groebner.WeightedOrdering([0, 1, 0]), ans=[true, false]),
-            (ord=Groebner.WeightedOrdering([1, 0, 0]), ans=[true, false]),
-            (ord=Groebner.WeightedOrdering([1, 1, 5]), ans=[false, true]),
-            (ord=Groebner.WeightedOrdering([1, 0, 0]), ans=[true, false])
-        ]
+            test_circular_shift(a, b, n, Groebner.Lex, [false, false, true])
+            test_circular_shift(a, b, n, Groebner.DegLex, [false, false, false])
+            test_circular_shift(a, b, n, Groebner.DegRevLex, [false, false, false])
 
-        test_orderings(v1, v2, ords_to_test)
+            n = 5
+            n >= Groebner.max_vars_in_monom(EV{T}) && continue
 
-        v1 = Groebner.construct_monom(pv{UInt64}, [1, 2, 3])
-        v2 = Groebner.construct_monom(pv{UInt64}, [1, 2, 3])
+            a = construct_monom(EV{T}, [1, 2, 3, 4, 5])
+            b = construct_monom(EV{T}, [4, 3, 2, 1, 5])
 
-        ords_to_test = [
-            (ord=Groebner.WeightedOrdering([1, 1, 1]), ans=[false, false]),
-            (ord=Groebner.WeightedOrdering([0, 0, 1]), ans=[false, false]),
-            (ord=Groebner.WeightedOrdering([0, 1, 0]), ans=[false, false]),
-            (ord=Groebner.WeightedOrdering([1, 0, 0]), ans=[false, false]),
-            (ord=Groebner.WeightedOrdering([1, 1, 5]), ans=[false, false]),
-            (ord=Groebner.WeightedOrdering([1, 0, 0]), ans=[false, false])
-        ]
-
-        test_orderings(v1, v2, ords_to_test)
-
-        v1 = Groebner.construct_monom(pv{UInt64}, [1, 2, 3, 0, 0, 7])
-        v2 = Groebner.construct_monom(pv{UInt64}, [4, 5, 0, 0, 1, 4])
-
-        ords_to_test = [
-            (ord=Groebner.WeightedOrdering([1, 1, 1, 1, 1, 1]), ans=[true, false]),
-            (ord=Groebner.WeightedOrdering([0, 0, 0, 0, 0, 4]), ans=[false, true]),
-            (ord=Groebner.WeightedOrdering([0, 2, 5, 0, 0, 0]), ans=[false, true]),
-            (ord=Groebner.WeightedOrdering([0, 2, 2, 0, 0, 0]), ans=[true, false])
-        ]
-
-        test_orderings(v1, v2, ords_to_test)
-    end
-
-    @testset "monom orders: BlockOrdering" begin
-        pv = Groebner.ExponentVector{T} where {T}
-
-        @test_throws AssertionError Groebner.BlockOrdering(
-            1:1,
-            Groebner.Lex(),
-            3:5,
-            Groebner.DegLex()
-        )
-        @test_throws AssertionError Groebner.BlockOrdering(
-            1:2,
-            Groebner.Lex(),
-            2:3,
-            Groebner.DegLex()
-        )
-
-        # should we disallow this ?
-        Groebner.BlockOrdering(
-            1:2,
-            Groebner.BlockOrdering(0:1, Groebner.Lex(), 2:2, Groebner.Lex()),
-            3:3,
-            Groebner.DegLex()
-        )
-
-        v1 = Groebner.construct_monom(pv{UInt64}, [1, 2, 3])
-        v2 = Groebner.construct_monom(pv{UInt64}, [3, 2, 1])
-
-        bo_to_test = [
-            (
-                ord=Groebner.BlockOrdering(1:1, Groebner.Lex(), 2:3, Groebner.DegLex()),
-                ans=[true, false]
-            ),
-            (
-                ord=Groebner.BlockOrdering(1:2, Groebner.DegRevLex(), 3:3, Groebner.Lex()),
-                ans=[true, false]
-            ),
-            (
-                ord=Groebner.BlockOrdering(
-                    1:2,
-                    Groebner.WeightedOrdering([0, 1]),
-                    3:3,
-                    Groebner.WeightedOrdering([0])
-                ),
-                ans=[true, false]
-            ),
-            (
-                ord=Groebner.BlockOrdering(
-                    1:2,
-                    Groebner.WeightedOrdering([1, 1]),
-                    3:3,
-                    Groebner.WeightedOrdering([0])
-                ),
-                ans=[true, false]
+            test_circular_shift(a, b, n, Groebner.Lex, [true, true, false, false, true])
+            test_circular_shift(a, b, n, Groebner.DegLex, [true, true, false, false, true])
+            test_circular_shift(
+                a,
+                b,
+                n,
+                Groebner.DegRevLex,
+                [true, false, false, true, true]
             )
-        ]
-
-        test_orderings(v1, v2, bo_to_test)
-
-        v1 = Groebner.construct_monom(pv{UInt64}, [4, 1, 7, 0, 9, 8])
-        v2 = Groebner.construct_monom(pv{UInt64}, [1, 6, 3, 5, 9, 100])
-
-        bo_to_test = [
-            (
-                ord=Groebner.BlockOrdering(1:1, Groebner.DegLex(), 2:6, Groebner.DegLex()),
-                ans=[false, true]
-            ),
-            (
-                ord=Groebner.BlockOrdering(1:2, Groebner.DegLex(), 3:6, Groebner.DegLex()),
-                ans=[true, false]
-            ),
-            (
-                ord=Groebner.BlockOrdering(1:3, Groebner.DegLex(), 4:6, Groebner.DegLex()),
-                ans=[false, true]
-            ),
-            (
-                ord=Groebner.BlockOrdering(1:4, Groebner.DegLex(), 5:6, Groebner.DegLex()),
-                ans=[true, false]
-            ),
-            (
-                ord=Groebner.BlockOrdering(
-                    1:4,
-                    Groebner.BlockOrdering(1:2, Groebner.DegLex(), 3:4, Groebner.DegLex()),
-                    5:6,
-                    Groebner.DegLex()
-                ),
-                ans=[true, false]
-            ),
-            (
-                ord=Groebner.BlockOrdering(
-                    1:4,
-                    Groebner.BlockOrdering(1:3, Groebner.DegLex(), 4:4, Groebner.DegLex()),
-                    5:6,
-                    Groebner.DegLex()
-                ),
-                ans=[true, false]
-            )
-        ]
-
-        test_orderings(v1, v2, bo_to_test)
+        end
     end
+end
 
-    @testset "monom orders: MatrixOrdering" begin
-        pv = Groebner.ExponentVector{T} where {T}
-
-        # @test_throws AssertionError Groebner.MatrixOrdering([-1 0 0; 0 1 0;])
-
-        v1 = Groebner.construct_monom(pv{UInt64}, [1, 2, 3])
-        v2 = Groebner.construct_monom(pv{UInt64}, [3, 2, 1])
-
-        ord1 = Groebner.MatrixOrdering([
-            1 0 0
-            0 1 0
-            0 0 1
-        ])
-        ord2 = Groebner.MatrixOrdering([
-            1 0 2;
-        ])
-        ord3 = Groebner.MatrixOrdering([
-            0 0 0
-            0 1 0
-            1 1 1
-        ])
-        ord4 = Groebner.MatrixOrdering([
-            -1 0 0;
-        ])
-        ord5 = Groebner.MatrixOrdering([
-            1 -8 1
-            2 0 3
-        ])
-
-        mo_to_test = [
-            (ord=ord1, ans=[true, false]),
-            (ord=ord2, ans=[false, true]),
-            (ord=ord3, ans=[false, false]),
-            (ord=ord4, ans=[false, true]),
-            (ord=ord5, ans=[false, true])
-        ]
-        test_orderings(v1, v2, mo_to_test)
+function test_orderings(n, v1, v2, ords_to_test)
+    R, x = QQ[["x$i" for i in 1:n]...]
+    var_to_index = Dict(x .=> 1:n)
+    for wo in ords_to_test
+        ord = wo.ord
+        ans = wo.ans
+        internal_ord = Groebner.convert_to_internal_monomial_ordering(var_to_index, ord)
+        @test Groebner.monom_isless(v1, v2, internal_ord) == ans[1]
+        @test Groebner.monom_isless(v2, v1, internal_ord) == ans[2]
+        @test Groebner.monom_isless(v2, v2, internal_ord) == false
+        @test Groebner.monom_isless(v1, v1, internal_ord) == false
     end
+end
+
+@testset "monom orders: WeightedOrdering" begin
+    pv = Groebner.ExponentVector{T} where {T}
+
+    v1 = Groebner.construct_monom(pv{UInt64}, [1, 2, 3])
+    v2 = Groebner.construct_monom(pv{UInt64}, [3, 2, 1])
+
+    @test_throws AssertionError Groebner.WeightedOrdering([-1, 0, 0])
+
+    ords_to_test = [
+        (ord=Groebner.WeightedOrdering([1, 1, 1]), ans=[true, false]),
+        (ord=Groebner.WeightedOrdering([0, 0, 1]), ans=[false, true]),
+        (ord=Groebner.WeightedOrdering([0, 1, 0]), ans=[true, false]),
+        (ord=Groebner.WeightedOrdering([1, 0, 0]), ans=[true, false]),
+        (ord=Groebner.WeightedOrdering([1, 1, 5]), ans=[false, true]),
+        (ord=Groebner.WeightedOrdering([1, 0, 0]), ans=[true, false])
+    ]
+
+    test_orderings(3, v1, v2, ords_to_test)
+
+    v1 = Groebner.construct_monom(pv{UInt64}, [1, 2, 3])
+    v2 = Groebner.construct_monom(pv{UInt64}, [1, 2, 3])
+
+    ords_to_test = [
+        (ord=Groebner.WeightedOrdering([1, 1, 1]), ans=[false, false]),
+        (ord=Groebner.WeightedOrdering([0, 0, 1]), ans=[false, false]),
+        (ord=Groebner.WeightedOrdering([0, 1, 0]), ans=[false, false]),
+        (ord=Groebner.WeightedOrdering([1, 0, 0]), ans=[false, false]),
+        (ord=Groebner.WeightedOrdering([1, 1, 5]), ans=[false, false]),
+        (ord=Groebner.WeightedOrdering([1, 0, 0]), ans=[false, false])
+    ]
+
+    test_orderings(3, v1, v2, ords_to_test)
+
+    v1 = Groebner.construct_monom(pv{UInt64}, [1, 2, 3, 0, 0, 7])
+    v2 = Groebner.construct_monom(pv{UInt64}, [4, 5, 0, 0, 1, 4])
+
+    ords_to_test = [
+        (ord=Groebner.WeightedOrdering([1, 1, 1, 1, 1, 1]), ans=[true, false]),
+        (ord=Groebner.WeightedOrdering([0, 0, 0, 0, 0, 4]), ans=[false, true]),
+        (ord=Groebner.WeightedOrdering([0, 2, 5, 0, 0, 0]), ans=[false, true]),
+        (ord=Groebner.WeightedOrdering([0, 2, 2, 0, 0, 0]), ans=[true, false])
+    ]
+
+    test_orderings(6, v1, v2, ords_to_test)
+end
+
+@testset "monom orders: ProductOrdering" begin
+    pv = Groebner.ExponentVector{T} where {T}
+
+    R, x = QQ[["x$i" for i in 1:3]...]
+    v1 = Groebner.construct_monom(pv{UInt64}, [1, 2, 3])
+    v2 = Groebner.construct_monom(pv{UInt64}, [3, 2, 1])
+
+    ords_to_test = [
+        (
+            ord=Groebner.ProductOrdering(Groebner.Lex(x[1]), Groebner.DegLex(x[2], x[3])),
+            ans=[true, false]
+        ),
+        (
+            ord=Groebner.ProductOrdering(Groebner.DegRevLex(x[1:2]), Groebner.Lex(x[3])),
+            ans=[true, false]
+        )
+    ]
+
+    test_orderings(3, v1, v2, ords_to_test)
+
+    R, x = QQ[["x$i" for i in 1:6]...]
+    v1 = Groebner.construct_monom(pv{UInt64}, [4, 1, 7, 0, 9, 8])
+    v2 = Groebner.construct_monom(pv{UInt64}, [1, 6, 3, 5, 9, 100])
+
+    ords_to_test = [
+        (
+            ord=Groebner.ProductOrdering(Groebner.DegLex(x[1]), Groebner.DegLex(x[2:6])),
+            ans=[false, true]
+        ),
+        (
+            ord=Groebner.ProductOrdering(Groebner.DegLex(x[1:2]), Groebner.DegLex(x[3:6])),
+            ans=[true, false]
+        ),
+        (
+            ord=Groebner.ProductOrdering(Groebner.DegLex(x[1:3]), Groebner.DegLex(x[4:6])),
+            ans=[false, true]
+        ),
+        (
+            ord=Groebner.ProductOrdering(Groebner.DegLex(x[1:4]), Groebner.DegLex(x[5:6])),
+            ans=[true, false]
+        ),
+        (
+            ord=Groebner.ProductOrdering(
+                Groebner.ProductOrdering(Groebner.DegLex(x[1:2]), Groebner.DegLex(x[3:4])),
+                Groebner.DegLex(x[5:6])
+            ),
+            ans=[true, false]
+        ),
+        (
+            ord=Groebner.ProductOrdering(
+                Groebner.ProductOrdering(Groebner.DegLex(x[1:3]), Groebner.DegLex(x[4])),
+                Groebner.DegLex(x[5:6])
+            ),
+            ans=[false, true]
+        ),
+        (
+            ord=Groebner.DegLex(x[1:3]) * Groebner.DegLex(x[4]) * Groebner.DegLex(x[5:6]),
+            ans=[false, true]
+        )
+    ]
+
+    test_orderings(6, v1, v2, ords_to_test)
+end
+
+@testset "monom orders: MatrixOrdering" begin
+    pv = Groebner.ExponentVector{T} where {T}
+
+    v1 = Groebner.construct_monom(pv{UInt64}, [1, 2, 3])
+    v2 = Groebner.construct_monom(pv{UInt64}, [3, 2, 1])
+
+    ord1 = Groebner.MatrixOrdering([
+        1 0 0
+        0 1 0
+        0 0 1
+    ])
+    ord2 = Groebner.MatrixOrdering([
+        1 0 2;
+    ])
+    ord3 = Groebner.MatrixOrdering([
+        0 0 0
+        0 1 0
+        1 1 1
+    ])
+    ord4 = Groebner.MatrixOrdering([
+        -1 0 0;
+    ])
+    ord5 = Groebner.MatrixOrdering([
+        1 -8 1
+        2 0 3
+    ])
+
+    mo_to_test = [
+        (ord=ord1, ans=[true, false]),
+        (ord=ord2, ans=[false, true]),
+        (ord=ord3, ans=[false, false]),
+        (ord=ord4, ans=[false, true]),
+        (ord=ord5, ans=[false, true])
+    ]
+    test_orderings(3, v1, v2, mo_to_test)
 end

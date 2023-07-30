@@ -2,6 +2,7 @@ using Test
 using TestSetExtensions
 
 using AbstractAlgebra
+using Random
 using Groebner
 
 # Check invariants during testing

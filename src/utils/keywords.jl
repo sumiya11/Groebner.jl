@@ -97,7 +97,7 @@ struct KeywordsHandler{Ord}
         @assert strategy in (:classic_modular, :learn_and_apply) "Not recognized strategy: $strategy"
         check = get(kws, :check, get(default_kw_args, :check, true))
         sweep = get(kws, :sweep, get(default_kw_args, :sweep, false))
-        @log level = -1 """
+        @log level = -3 """
           Using keywords: 
           reduced   = $reduced, 
           ordering  = $ordering, 

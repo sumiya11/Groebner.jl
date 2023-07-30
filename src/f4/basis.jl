@@ -115,6 +115,14 @@ function initialize_basis(
     Basis(hashedexps, coeffs, sz, ndone, nfilled, isred, nonred, lead, nlead)
 end
 
+function repr_basis(basis::Basis{T}) where {T}
+    s = """
+    $(typeof(basis))
+    Filled / Processed / Non-redundant : $(basis.nfilled) / $(basis.nprocessed) / $(basis.nnonredundant)
+    Size allocated: $(basis.size)"""
+    s
+end
+
 function copy_basis(
     basis::Basis{C},
     new_coeffs::Vector{Vector{T}};

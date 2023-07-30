@@ -32,6 +32,7 @@ logging_enabled() = true
 import AbstractAlgebra
 import AbstractAlgebra: base_ring, elem_type
 
+import Base: *
 import Base.Threads: Atomic, threadid, atomic_xchg!
 import Base.MultiplicativeInverses: UnsignedMultiplicativeInverse
 
@@ -51,10 +52,16 @@ using SIMD
 
 include("utils/logging.jl")
 include("utils/invariants.jl")
+# Minimalistic plotting with Unicode
+include("utils/plots.jl")
 include("utils/testsystems.jl")
 
-# Supported monomial orderings
+# Monomial orderings.
+# The file orderings.jl exports monomial orderings for communicating with the
+# user, and the file internal-orderings.jl actually implements monomial
+# orderings
 include("monomials/orderings.jl")
+include("monomials/internal-orderings.jl")
 
 include("utils/keywords.jl")
 
@@ -131,7 +138,7 @@ export normalform
 export kbase
 
 export Lex,
-    DegLex, DegRevLex, InputOrdering, WeightedOrdering, BlockOrdering, MatrixOrdering
+    DegLex, DegRevLex, InputOrdering, WeightedOrdering, ProductOrdering, MatrixOrdering
 
 @doc read(joinpath(dirname(@__DIR__), "README.md"), String) Groebner
 

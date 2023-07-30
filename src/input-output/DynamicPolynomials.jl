@@ -76,7 +76,7 @@ function extract_monoms(
             exps[i][j] = construct_monom(M, et)
         end
     end
-    reversed_order, exps
+    reversed_order, var2idx, exps
 end
 
 function convert_to_output(

@@ -16,7 +16,7 @@
 
 Polynomial ring of computation.
 """
-mutable struct PolyRing{Ord <: AbstractMonomialOrdering}
+mutable struct PolyRing{Ord <: Union{AbstractMonomialOrdering, AbstractInternalOrdering}}
     # Number of variables
     nvars::Int
     # Monomial ordering
@@ -52,6 +52,7 @@ function select_polynomial_representation(polynomials, kws; hint::Symbol=:none)
 end
 
 function select_monomtype(char, npolys, nvars, kws, hint)
+    # TODO: also dispatch on the type of monomial ordering    
     @log level = -1 "Selecting monomial representation.\nGiven hint hint=$hint. Keyword argument monoms=$(kws.monoms)"
     if hint === :large_exponents
         @log level = -1 "As hint=$hint was provided, using 64 bits per single exponent"
@@ -142,18 +143,19 @@ function convert_to_internal(
     @log level = -2 "Converting input polynomials to internal representation.."
     ring = extract_ring(polynomials)
     # @assert is_representation_suitable(representation, ring)
-    monoms, coeffs = extract_polys(representation, ring, polynomials)
+    var_to_index, monoms, coeffs = extract_polys(representation, ring, polynomials)
     @log level = -2 "Done converting input polynomials to internal representation."
-    @log level = -5 """
+    @log level = -6 """
     Polynomials in internal representation:
     Ring: $ring
+    Variable to index map: $var_to_index
     Monomials: $monoms
     Coefficients: $coeffs"""
     if dropzeros
         @log level = -2 "Removing zero polynomials"
         remove_zeros_from_input!(ring, monoms, coeffs)
     end
-    ring, monoms, coeffs
+    ring, var_to_index, monoms, coeffs
 end
 
 function check_input(polynomials)
@@ -165,7 +167,7 @@ end
 
 function extract_polys(representation, ring::PolyRing, polynomials::Vector{T}) where {T}
     coeffs = extract_coeffs(representation, ring, polynomials)
-    reversed_order, monoms = extract_monoms(representation, ring, polynomials)
+    reversed_order, var_to_index, monoms = extract_monoms(representation, ring, polynomials)
     @assert length(coeffs) == length(monoms)
     if reversed_order
         for i in 1:length(coeffs)
@@ -174,7 +176,7 @@ function extract_polys(representation, ring::PolyRing, polynomials::Vector{T}) w
             reverse!(monoms[i])
         end
     end
-    monoms, coeffs
+    var_to_index, monoms, coeffs
 end
 
 """
@@ -258,119 +260,26 @@ function remove_zeros_from_input!(
     filter!(!iszero_monoms, monoms)
     @assert length(monoms) == length(coeffs)
     iszerobasis = isempty(monoms)
-    @log level = -5 "After removing zero polynomials from input:" monoms coeffs
+    @log level = -7 "After removing zero polynomials from input:" monoms coeffs
     iszerobasis
-end
-
-###
-# Check the consistency of the given monomial ordering
-# with respect to the monomial implementation and the length of exponent vector
-
-# Should this be moved to src/monoms ?
-@noinline function __throw_monomial_ordering_inconsistent(e, o)
-    throw(
-        DomainError(
-            o,
-            """The given monomial ordering is inconsistent with the input.
-            Monomial: $e
-            Ordering: $o
-            Possible cause is that the number of variables in the ordering is set incorrectly."""
-        )
-    )
-end
-
-check_ordering(e::M, o::Lex) where {M <: Monom} = true
-check_ordering(e::M, o::DegLex) where {M <: Monom} = true
-check_ordering(e::M, o::DegRevLex) where {M <: Monom} = true
-function check_ordering(e::M, o::Union{Lex, DegLex, DegRevLex}, lo, hi) where {M <: Monom}
-    if lo <= hi
-        true
-    else
-        false
-    end
-end
-
-function check_ordering(e::M, wo::WeightedOrdering) where {M <: Monom}
-    false
-end
-function check_ordering(
-    e::ExponentVector{T},
-    wo::WeightedOrdering,
-    lo::Int,
-    hi::Int
-) where {T}
-    check_ordering(e, Lex(), lo, hi)
-    if hi - lo + 1 != length(wo.weights)
-        return false
-    end
-    true
-end
-function check_ordering(e::ExponentVector{T}, wo::WeightedOrdering) where {T}
-    check_ordering(e, wo, 2, length(e))
-end
-
-function check_ordering(
-    e::M,
-    bo::BlockOrdering{R1, R2, O1, O2}
-) where {M <: Monom, R1, R2, O1 <: AbstractMonomialOrdering, O2 <: AbstractMonomialOrdering}
-    false
-end
-function check_ordering(
-    e::ExponentVector{T},
-    bo::BlockOrdering{R1, R2, O1, O2},
-    lo::Int,
-    hi::Int
-) where {T, R1, R2, O1 <: AbstractMonomialOrdering, O2 <: AbstractMonomialOrdering}
-    r1 = (first(bo.r1) + 1):(last(bo.r1) + 1)
-    r2 = (first(bo.r2) + 1):(last(bo.r2) + 1)
-    if first(r1) != lo || last(r2) != hi
-        return false
-    end
-    check_ordering(e, bo.ord1, first(r1), last(r1))
-    check_ordering(e, bo.ord2, first(r2), last(r2))
-    true
-end
-function check_ordering(
-    e::ExponentVector{T},
-    bo::BlockOrdering{R1, R2, O1, O2}
-) where {T, R1, R2, O1 <: AbstractMonomialOrdering, O2 <: AbstractMonomialOrdering}
-    check_ordering(e, bo, 2, length(e))
-end
-
-function check_ordering(e::M, mo::MatrixOrdering) where {M <: Monom}
-    false
-end
-function check_ordering(e::ExponentVector{T}, mo::MatrixOrdering) where {T}
-    check_ordering(e, mo, 2, length(e))
-end
-function check_ordering(
-    e::ExponentVector{T},
-    mo::MatrixOrdering,
-    lo::Int,
-    hi::Int
-) where {T}
-    rows = mo.rows
-    n = hi - lo + 1
-    for i in 1:length(rows)
-        if length(rows[i]) != n
-            return false
-        end
-    end
-    true
 end
 
 # Checks that the monomial orderings specified by the given `ring` and
 # `params.target_ord` are consistent with the given input monomials `monoms`. In
 # case the target ordering differs from the `ring` ordering,  
 # sorts the polynomials terms w.r.t. the target ordering.
-function change_ordering_if_needed!(ring, monoms, coeffs, params)
-    if !isempty(monoms) && !isempty(monoms[1])
-        !check_ordering(monoms[1][1], params.target_ord) &&
-            __throw_monomial_ordering_inconsistent(monoms[1][1], params.target_ord)
+function set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
+    current_ord = ring.ord
+    target_ord = params.target_ord
+    internal_ord = convert_to_internal_monomial_ordering(var_to_index, target_ord)
+    @log level = -2 "Internal ordering:\n$internal_ord"
+    ring = PolyRing(ring.nvars, internal_ord, ring.ch)
+    if current_ord == target_ord
+        # No reordering of terms needed, they are already ordered according to
+        # the requested ordering
+        return ring
     end
-    ring.ord == params.target_ord && return ring
-    @log level = -2 "Reordering input polynomial terms from $(ring.ord) to $params.target_ord"
-    ring = PolyRing(ring.nvars, params.target_ord, ring.ch)
-    sort_input_to_change_ordering!(monoms, coeffs, params.target_ord)
+    @log level = -2 "Reordering input polynomial terms from $(current_ord) to $(target_ord)"
+    sort_input_to_change_ordering!(monoms, coeffs, internal_ord)
     ring
 end

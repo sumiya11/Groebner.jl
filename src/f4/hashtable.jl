@@ -1,4 +1,4 @@
-# This file implements monomial hashtable.
+# Monomial hashtable.
 
 # This hashtable implementation assumes that
 # the hash function is linear. (each monomial implementation must implement
@@ -28,10 +28,9 @@ const MonomIdx = Int32
 const DivisionMask = UInt32
 
 # Hashvalue of a single monomial
-mutable struct Hashvalue
+struct Hashvalue
     # index of the monomial in the F4 matrix (defaults to zero),
-    # idx::Int
-    idx::Int
+    idx::Int32
     # hash of the monomial,
     hash::MonomHash
     # corresponding divmask to speed up divisibility checks,
@@ -40,10 +39,8 @@ mutable struct Hashvalue
     deg::MonomHash
 end
 
-copy_hashvalue(x::Hashvalue) = Hashvalue(x.idx, x.hash, x.divmask, x.deg)
-
 # Open addressing, linear scan, hashtable.
-mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractMonomialOrdering}
+mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractInternalOrdering}
     #= Data =#
     monoms::Vector{M}
     # Maps monomial hash to its position in the `monoms` array
@@ -87,7 +84,7 @@ function initialize_hashtable(
     rng,
     MonomT::T,
     initial_size
-) where {Ord <: AbstractMonomialOrdering, T}
+) where {Ord <: AbstractInternalOrdering, T}
     exponents = Vector{MonomT}(undef, initial_size)
     hashdata = Vector{Hashvalue}(undef, initial_size)
     hashtable = zeros(MonomIdx, initial_size)
@@ -150,7 +147,7 @@ function copy_hashtable(ht::MonomialHashtable{M, O}) where {M, O}
     @inbounds for i in 2:(ht.load)
         exps[i] = copy_monom(ht.monoms[i])
         table[i] = ht.hashtable[i]
-        data[i] = copy_hashvalue(ht.hashdata[i])
+        data[i] = ht.hashdata[i]
     end
 
     MonomialHashtable(

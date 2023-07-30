@@ -1,3 +1,4 @@
+# NOTE: fglm is not exported
 
 using AbstractAlgebra
 

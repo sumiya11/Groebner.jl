@@ -73,8 +73,8 @@ end
 ###
 # Monomial comparator functions. See monoms/orderings.jl for details.
 
-# Checks whether ExponentVector{T} provides an efficient comparator function
-# implementation for the given monomial ordering of type `O`
+# Checks whether ExponentVector{T} provides an efficient comparator function for
+# the given monomial ordering of type `O`
 function is_supported_ordering(::Type{ExponentVector{T}}, ::O) where {T, O}
     # ExponentVector{T} supports efficient implementation of all monomial
     # orderings
@@ -82,12 +82,12 @@ function is_supported_ordering(::Type{ExponentVector{T}}, ::O) where {T, O}
 end
 
 # DegRevLex monomial comparison
-function monom_isless(ea::ExponentVector, eb::ExponentVector, ::DegRevLex)
+function monom_isless(ea::ExponentVector, eb::ExponentVector, ::_DegRevLex{true})
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
-    if @inbounds ea[1] < eb[1]
+    if @inbounds totaldeg(ea) < totaldeg(eb)
         return true
-    elseif @inbounds ea[1] != eb[1]
+    elseif @inbounds totaldeg(ea) != totaldeg(eb)
         return false
     end
     i = length(ea)
@@ -101,33 +101,21 @@ function monom_isless(ea::ExponentVector, eb::ExponentVector, ::DegRevLex)
     end
 end
 
-# DegRevLex monomial comparison, but on a given range of variables [lo:hi]. The
-# flag `hasdegree` indicates whether the total degree is stored in ea[lo] and
-# eb[lo], respectively.
-function monom_isless(
-    ea::ExponentVector,
-    eb::ExponentVector,
-    ::DegRevLex,
-    lo::Int,
-    hi::Int,
-    hasdegree::Bool
-)
+function monom_isless(ea::ExponentVector, eb::ExponentVector, ord::_DegRevLex{false})
+    indices = variable_indices(ord)
     @invariant length(ea) == length(eb)
-    @invariant hi >= lo
-    @inbounds da = hasdegree ? ea[lo] : sum(view(ea, lo:hi))
-    @inbounds db = hasdegree ? eb[lo] : sum(view(eb, lo:hi))
-    if da < db
+    @invariant length(ea) > 1
+    tda, tdb = sum(ea[indices .+ 1]), sum(eb[indices .+ 1])
+    if @inbounds tda < tdb
         return true
-    elseif da != db
+    elseif @inbounds tda != tdb
         return false
     end
-    # after the while loop terminates, 
-    # i is guaranteed to be in [lo + 1, hi]
-    i = hi
-    @inbounds while i > lo && ea[i] == eb[i]
+    i = length(indices)
+    @inbounds while i > 1 && ea[indices[i] + 1] == eb[indices[i] + 1]
         i -= 1
     end
-    @inbounds if ea[lo] <= eb[lo]
+    @inbounds if ea[indices[i] + 1] <= eb[indices[i] + 1]
         return false
     else
         return true
@@ -135,7 +123,7 @@ function monom_isless(
 end
 
 # DegLex exponent vector comparison
-function monom_isless(ea::ExponentVector, eb::ExponentVector, ::DegLex)
+function monom_isless(ea::ExponentVector, eb::ExponentVector, ::_DegLex{true})
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
     if @inbounds ea[1] < eb[1]
@@ -150,33 +138,25 @@ function monom_isless(ea::ExponentVector, eb::ExponentVector, ::DegLex)
     @inbounds return ea[i] < eb[i] ? true : false
 end
 
-# DegLex monomial comparison, but on a given range of variables [lo:hi]
-function monom_isless(
-    ea::ExponentVector,
-    eb::ExponentVector,
-    ::DegLex,
-    lo::Int,
-    hi::Int,
-    hasdegree::Bool
-)
+function monom_isless(ea::ExponentVector, eb::ExponentVector, ord::_DegLex{false})
+    indices = variable_indices(ord)
     @invariant length(ea) == length(eb)
-    @invariant hi >= lo
-    @inbounds da = hasdegree ? ea[lo] : sum(view(ea, lo:hi))
-    @inbounds db = hasdegree ? eb[lo] : sum(view(eb, lo:hi))
-    if da < db
+    @invariant length(ea) > 1
+    tda, tdb = sum(ea[indices .+ 1]), sum(eb[indices .+ 1])
+    if @inbounds tda < tdb
         return true
-    elseif da != db
+    elseif @inbounds tda != tdb
         return false
     end
-    i = lo + hasdegree
-    @inbounds while i < hi && ea[i] == eb[i]
+    i = 1
+    @inbounds while i < length(indices) && ea[indices[i] + 1] == eb[indices[i] + 1]
         i += 1
     end
-    @inbounds return ea[i] < eb[i] ? true : false
+    @inbounds return ea[indices[i] + 1] < eb[indices[i] + 1] ? true : false
 end
 
 # Lex monomial comparison
-function monom_isless(ea::ExponentVector, eb::ExponentVector, ::Lex)
+function monom_isless(ea::ExponentVector, eb::ExponentVector, ::_Lex{true})
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
     i = 2
@@ -186,105 +166,61 @@ function monom_isless(ea::ExponentVector, eb::ExponentVector, ::Lex)
     @inbounds return ea[i] < eb[i] ? true : false
 end
 
-# Lex monomial comparison, but on a given range of variables [lo:hi].
-function monom_isless(
-    ea::ExponentVector,
-    eb::ExponentVector,
-    ::Lex,
-    lo::Int,
-    hi::Int,
-    hasdegree::Bool
-)
+# Lex monomial comparison
+function monom_isless(ea::ExponentVector, eb::ExponentVector, ord::_Lex{false})
+    indices = variable_indices(ord)
     @invariant length(ea) == length(eb)
-    @invariant hi >= lo
-    i = lo + hasdegree
-    @inbounds while i < hi && ea[i] == eb[i]
+    @invariant length(ea) > 1
+    i = 1
+    @inbounds while i < length(indices) && ea[indices[i] + 1] == eb[indices[i] + 1]
         i += 1
     end
-    @inbounds return ea[i] < eb[i] ? true : false
+    @inbounds return ea[indices[i] + 1] < eb[indices[i] + 1] ? true : false
 end
 
-#
 # Weighted monomial comparison
-function monom_isless(ea::ExponentVector, eb::ExponentVector, w::WeightedOrdering)
-    monom_isless(ea, eb, w, 1, length(ea), true)
-end
-# Weighted monomial comparison, but on a given range of variables [lo:hi].
 function monom_isless(
-    ea::ExponentVector,
-    eb::ExponentVector,
-    w::WeightedOrdering,
-    lo::Int,
-    hi::Int,
-    hasdegree::Bool
-)
+    ea::ExponentVector{T},
+    eb::ExponentVector{T},
+    ord::_WeightedOrdering{U}
+) where {U, T}
+    weights = ord.weights
+    @invariant length(weights) == length(ea) - 1
     @invariant length(ea) == length(eb)
-    @invariant hi >= lo
-    weights = w.weights
-    common_type = promote_type(eltype(weights), eltype(ea))
-    sa, sb = zero(common_type), zero(common_type)
-    j = 1
-    @inbounds for i in (lo + hasdegree):hi
-        # TODO: check for overflow!
-        sa += weights[j] * ea[i]
-        sb += weights[j] * eb[i]
-        j += 1
+    @invariant length(ea) > 1
+    sa, sb = zero(U), zero(U)
+    for i in 1:length(weights)
+        sa += ea[i + 1] * weights[i]
+        sb += eb[i + 1] * weights[i]
     end
     if sa < sb
-        true
-    elseif sa == sb
-        false
-    else
-        false
+        return true
+    elseif sa != sb
+        return false
     end
+    monom_isless(ea, eb, _Lex{true}(collect(1:length(weights))))
 end
 
-# Block exponent vector comparison.
-function monom_isless(ea::ExponentVector, eb::ExponentVector, b::BlockOrdering)
-    monom_isless(ea, eb, b, 1, length(ea), true)
-end
-# Block, but on a given range of variables [lo:hi].
-function monom_isless(
-    ea::ExponentVector,
-    eb::ExponentVector,
-    b::BlockOrdering,
-    lo::Int,
-    hi::Int,
-    hasdegree::Bool
-)
-    # here, it is assumed that lo:hi equals the union of r1 and r2
-    r1, r2 = b.r1, b.r2
-    if monom_isless(ea, eb, b.ord1, first(r1) + hasdegree, last(r1) + hasdegree, false)
-        true
-    elseif monom_isless(eb, ea, b.ord1, first(r1) + hasdegree, last(r1) + hasdegree, false)
-        false
-    else
-        monom_isless(ea, eb, b.ord2, first(r2) + hasdegree, last(r2) + hasdegree, false)
+# Product ordering exponent vector comparison.
+function monom_isless(ea::ExponentVector, eb::ExponentVector, b::_ProductOrdering)
+    if monom_isless(ea, eb, b.ord1)
+        return true
     end
+    if monom_isless(eb, ea, b.ord1)
+        return false
+    end
+    monom_isless(ea, eb, b.ord2)
 end
 
-# Matrix exponent vector comparison.
-function monom_isless(ea::ExponentVector, eb::ExponentVector, m::MatrixOrdering)
-    monom_isless(ea, eb, m, 1, length(ea), true)
-end
-# Matrix, but on a given range of variables [lo:hi].
-function monom_isless(
-    ea::ExponentVector,
-    eb::ExponentVector,
-    m::MatrixOrdering,
-    lo::Int,
-    hi::Int,
-    hasdegree::Bool
-)
+# Matrix ordering exponent vector comparison
+function monom_isless(ea::ExponentVector, eb::ExponentVector, m::_MatrixOrdering)
     rows = m.rows
     @inbounds common_type = promote_type(eltype(rows[1]), eltype(ea))
     @inbounds for i in 1:length(rows)
         sa, sb = zero(common_type), zero(common_type)
-        k = 1
-        for j in (lo + hasdegree):hi
-            sa += rows[i][k] * common_type(ea[j])
-            sb += rows[i][k] * common_type(eb[j])
-            k += 1
+        for j in 1:length(rows[i])
+            sa += rows[i][j] * common_type(ea[j + 1])
+            sb += rows[i][j] * common_type(eb[j + 1])
         end
         if sa < sb
             return true
