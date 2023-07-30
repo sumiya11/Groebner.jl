@@ -97,7 +97,7 @@ for (Ord, InternalOrd) in ((Lex, _Lex), (DegLex, _DegLex), (DegRevLex, _DegRevLe
                 )
             end
             for var in ord.variables
-                if !in(var, available_vars)
+                if !in(repr(var), map(repr, available_vars))
                     __throw_monomial_ordering_inconsistent(
                         "The variable $var does not seem to belong to the ring: $available_vars.",
                         var_to_index,
@@ -105,8 +105,9 @@ for (Ord, InternalOrd) in ((Lex, _Lex), (DegLex, _DegLex), (DegRevLex, _DegRevLe
                     )
                 end
             end
-            indices = [var_to_index[v] for v in ord.variables]
-            if indices == collect(1:length(var_to_index))
+            var_to_index_str = Dict([repr(v) => i for (v, i) in var_to_index])
+            indices = [var_to_index_str[repr(v)] for v in ord.variables]
+            if indices == collect(1:length(var_to_index_str))
                 $InternalOrd{true}(indices)
             else
                 $InternalOrd{false}(indices)

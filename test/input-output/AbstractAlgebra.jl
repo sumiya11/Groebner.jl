@@ -71,7 +71,7 @@ end
             end
         end
 
-        R, (x, y) = PolynomialRing(ground, ["x", "y"], ordering=ord)
+        R, (x, y) = PolynomialRing(ground, ["x", "y"], ordering=aa_ord)
         fs = [x^2 + 3, y - 1]
         for case in [
             (gb_ord=Groebner.Lex(), same_parent=true),
