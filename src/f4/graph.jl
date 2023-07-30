@@ -1,7 +1,7 @@
 
 # Information about F4 execution flow that can be later used for speeding up
 # subsequent analogous computations.
-mutable struct ComputationGraphF4{C, M, Ord}
+mutable struct ComputationGraphF4{C, M, Ord, Ord2}
     time_spent::UInt64
     ring::PolyRing{Ord}
     input_basis::Basis{C}
@@ -17,8 +17,11 @@ mutable struct ComputationGraphF4{C, M, Ord}
     nonredundant_indices_before_reduce::Vector{Int}
     output_sort_indices::Vector{Int}
     matrix_sorted_columns::Vector{Vector{Int}}
+    params::AlgorithmParameters
     sweep_output::Bool
     representation::PolynomialRepresentation
+    original_ord::Ord2
+    term_sorting_permutations::Vector{Vector{Int}}
 end
 
 function initialize_computation_graph_f4(
@@ -45,8 +48,11 @@ function initialize_computation_graph_f4(
         Vector{Int}(),
         Vector{Int}(),
         Vector{Vector{Int}}(),
+        params,
         params.sweep,
-        PolynomialRepresentation(ExponentVector{UInt64}, UInt64)
+        PolynomialRepresentation(ExponentVector{UInt64}, UInt64),
+        params.original_ord,
+        Vector{Vector{Int}}()
     )
 end
 

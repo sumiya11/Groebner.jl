@@ -13,11 +13,13 @@ end
 
 Stores all parameters for a single GB computation.
 """
-struct AlgorithmParameters{Ord1, Ord2}
+struct AlgorithmParameters{Ord1, Ord2, Ord3}
     # Output polynomials monomial ordering
     target_ord::Ord1
     # Monomial ordering for computation
     computation_ord::Ord2
+    # Original ordering
+    original_ord::Ord3
 
     # Basis correctness checks levels
     heuristic_check::Bool
@@ -54,14 +56,21 @@ struct AlgorithmParameters{Ord1, Ord2}
     sweep::Bool
 end
 
-function AlgorithmParameters(ring, kwargs::KeywordsHandler)
-    if kwargs.ordering === InputOrdering() || kwargs.ordering === nothing
-        ordering = ring.ord
+function AlgorithmParameters(ring, kwargs::KeywordsHandler; orderings=nothing)
+    if orderings !== nothing
+        target_ord = orderings[2]
+        computation_ord = orderings[2]
+        original_ord = orderings[1]
     else
-        ordering = kwargs.ordering
+        if kwargs.ordering === InputOrdering() || kwargs.ordering === nothing
+            ordering = ring.ord
+        else
+            ordering = kwargs.ordering
+        end
+        target_ord = ordering
+        computation_ord = ordering
+        original_ord = ring.ord
     end
-    target_ord = ordering
-    computation_ord = ordering
 
     heuristic_check = true
     randomized_check = true
@@ -94,6 +103,7 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler)
     Selected parameters:
     target_ord = $target_ord
     computation_ord = $computation_ord
+    original_ord = $original_ord
     heuristic_check = $heuristic_check
     randomized_check = $randomized_check
     certify_check = $certify_check
@@ -112,6 +122,7 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler)
     AlgorithmParameters(
         target_ord,
         computation_ord,
+        original_ord,
         heuristic_check,
         randomized_check,
         certify_check,

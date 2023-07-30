@@ -268,6 +268,8 @@ end
 # `params.target_ord` are consistent with the given input monomials `monoms`. In
 # case the target ordering differs from the `ring` ordering,  
 # sorts the polynomials terms w.r.t. the target ordering.
+#
+# Also returns the sorting permutations for polynomial terms
 function set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
     current_ord = ring.ord
     target_ord = params.target_ord
@@ -277,9 +279,10 @@ function set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
     if current_ord == target_ord
         # No reordering of terms needed, they are already ordered according to
         # the requested ordering
-        return ring
+        return ring, Vector{Vector{Int}}()
     end
     @log level = -2 "Reordering input polynomial terms from $(current_ord) to $(target_ord)"
-    sort_input_to_change_ordering!(monoms, coeffs, internal_ord)
-    ring
+    permutations = sort_input_terms_to_change_ordering!(monoms, coeffs, internal_ord)
+    @log level = -7 "Reordered terms:" monoms coeffs
+    ring, permutations
 end

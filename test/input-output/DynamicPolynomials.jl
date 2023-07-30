@@ -62,4 +62,33 @@ using DynamicPolynomials
         1 // 2 * x1 * x3 +
         1 // 2 * x2 * x3
     ]
+
+    # Test for different Groebner.jl orderings
+    @polyvar x
+    for gb_ord in [
+        Groebner.Lex(),
+        Groebner.DegLex(),
+        Groebner.DegRevLex(),
+        Groebner.Lex(x),
+        Groebner.DegRevLex(x)
+    ]
+        gb = Groebner.groebner([x^2 + 1], ordering=gb_ord)
+        @test gb == [x^2 + 1]
+    end
+
+    @polyvar x y
+    fs = [x^2 + 3, y - 1]
+    gb = Groebner.groebner(fs)
+    for case in [
+        (gb_ord=Groebner.Lex(), result=[y - 1, x^2 + 3]),
+        (gb_ord=Groebner.DegLex(y, x), result=[y - 1, x^2 + 3]),
+        (gb_ord=Groebner.DegRevLex(y, x), result=[y - 1, x^2 + 3]),
+        (gb_ord=Groebner.Lex(x, y), result=[y - 1, x^2 + 3]),
+        (gb_ord=Groebner.Lex(y, x), result=[x^2 + 3, y - 1])
+    ]
+        gb_ord = case.gb_ord
+        result = case.result
+        gb = Groebner.groebner(fs, ordering=gb_ord)
+        @test gb == result
+    end
 end

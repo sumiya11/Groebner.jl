@@ -1,5 +1,6 @@
+import Random
 
-params = (loglevel=100, sweep=true)
+params = (loglevel=0, sweep=true)
 # TODO: do not turn this off 
 Groebner.invariants_enabled() = true
 
@@ -72,7 +73,55 @@ Groebner.invariants_enabled() = true
     end
 end
 
-@testset "Learn & apply tricky" begin
+@testset "Learn & apply, orderings" begin
+    K = GF(2^31 - 1)
+    R, (x, y) = PolynomialRing(K, ["x", "y"], ordering=:lex)
+
+    ord_1 = Groebner.Lex()
+    graph_1, gb_1 = Groebner.groebner_learn([x + 2y + 3, y], ordering=ord_1)
+    @test gb_1 == [y, x + 3]
+
+    flag, gb_1_apply = Groebner.groebner_apply!(graph_1, [x + y + 3, y])
+    @test flag && gb_1 == gb_1_apply
+
+    ord_2 = Groebner.Lex(y, x)
+    graph_2, gb_2 = Groebner.groebner_learn([y, x + 2y^2 + 3], ordering=ord_2)
+    @test gb_2 == [x + 3, y]
+
+    flag, gb_2_apply = Groebner.groebner_apply!(graph_2, [y, x + 2y^2 + 3])
+    @test flag && gb_2 == gb_2_apply
+
+    K = GF(2^31 - 1)
+    n = 10
+    R, x = PolynomialRing(K, [["x$i" for i in 1:n]...], ordering=:degrevlex)
+    F = (x .+ (1:n) .* circshift(x, 1)) .^ 2
+    # F = [(x1 + xn)^2, (x2 + 2 x1)^2, ..., (xn + n x_{n-1})^2]
+    for i in 0:(2n)
+        if i < n
+            xi = circshift(x, -i)
+        else
+            xi = Random.shuffle(x)
+        end
+
+        ord = Groebner.Lex(xi)
+        input = Random.shuffle(F)
+        gb = Groebner.groebner(input, ordering=ord)
+        graph, gb_1 = Groebner.groebner_learn(input, ordering=ord)
+        flag, gb_2 = Groebner.groebner_apply!(graph, input)
+        @test gb == gb_1
+        @test flag && gb == gb_2
+
+        ord = Groebner.DegRevLex(xi)
+        input = Random.shuffle(F)
+        gb = Groebner.groebner(input, ordering=ord)
+        graph, gb_1 = Groebner.groebner_learn(input, ordering=ord)
+        flag, gb_2 = Groebner.groebner_apply!(graph, input)
+        @test gb == gb_1
+        @test flag && gb == gb_2
+    end
+end
+
+@testset "Learn & apply, tricky" begin
     for K in [GF(2^31 - 1), GF(2^62 + 135)]
         R, (x, y) = PolynomialRing(K, ["x", "y"], ordering=:degrevlex)
 

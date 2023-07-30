@@ -93,7 +93,7 @@ function convert_to_output(
     if params.target_ord != DegLex()
         @log level = 1 """
         Input polynomial type does not support ordering $(params.target_ord).
-        Computed basis is correct in $(params.target_ord), but terms are ordered in DegLex in output"""
+        Computed basis is correct in ordering $(params.target_ord), but terms are ordered in DegLex in output"""
     end
 
     origvars = MultivariatePolynomials.variables(origpolys)
