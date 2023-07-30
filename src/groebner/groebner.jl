@@ -144,7 +144,7 @@ end
 function _is_input_compatible(graph, ring, kws)
     # TODO: Check that leading monomials coincide!
     if graph.ring.ord != ring.ord
-        @log level = 1 "Input ordering is different from the one used to learn the graph."
+        @log level = -1 "Input ordering is different from the one used to learn the graph."
         # TODO
         # return false
         return true

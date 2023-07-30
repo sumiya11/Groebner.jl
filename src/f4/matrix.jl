@@ -1205,7 +1205,8 @@ function column_to_monom_mapping!(matrix::MacaulayMatrix, symbol_ht::MonomialHas
     # store the other direction of mapping,
     # hash -> column
     @inbounds for k in 1:length(column_to_monom)
-        hdata[column_to_monom[k]].idx = k
+        hv = hdata[column_to_monom[k]]
+        hdata[column_to_monom[k]] = Hashvalue(k, hv.hash, hv.divmask, hv.deg)
     end
 
     @inbounds for k in 1:(matrix.nupper)

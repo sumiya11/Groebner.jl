@@ -28,9 +28,9 @@ const MonomIdx = Int32
 const DivisionMask = UInt32
 
 # Hashvalue of a single monomial
-mutable struct Hashvalue
+struct Hashvalue
     # index of the monomial in the F4 matrix (defaults to zero),
-    idx::Int
+    idx::Int32
     # hash of the monomial,
     hash::MonomHash
     # corresponding divmask to speed up divisibility checks,
@@ -38,8 +38,6 @@ mutable struct Hashvalue
     # total degree of the monomial
     deg::MonomHash
 end
-
-copy_hashvalue(x::Hashvalue) = Hashvalue(x.idx, x.hash, x.divmask, x.deg)
 
 # Open addressing, linear scan, hashtable.
 mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractInternalOrdering}
@@ -149,7 +147,7 @@ function copy_hashtable(ht::MonomialHashtable{M, O}) where {M, O}
     @inbounds for i in 2:(ht.load)
         exps[i] = copy_monom(ht.monoms[i])
         table[i] = ht.hashtable[i]
-        data[i] = copy_hashvalue(ht.hashdata[i])
+        data[i] = ht.hashdata[i]
     end
 
     MonomialHashtable(
