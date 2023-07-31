@@ -98,10 +98,10 @@ end
     noon3 = Groebner.noonn(3)
     R = parent(first(noon3))
     gb = Groebner.groebner(noon3, ordering=Groebner.DegRevLex())
-    @test length(Groebner.kbase(gb)) == 21
+    @test length(Groebner.kbase(gb, ordering=Groebner.DegRevLex())) == 21
 
     noon3 = Groebner.noonn(7)
     R = parent(first(noon3))
     gb = Groebner.groebner(noon3, ordering=Groebner.DegRevLex())
-    @test length(Groebner.kbase(gb)) == 2173
+    @test length(Groebner.kbase(gb, ordering=Groebner.DegRevLex())) == 2173
 end
