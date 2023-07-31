@@ -354,6 +354,22 @@ end
         end
     end
 
+    # Normalization is correct
+    R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"])
+    f = [7x + 3, 11y + 5z + 7]
+    @test Groebner.groebner(f) == [y + (5 // 11) * z + 7 // 11, x + 3 // 7]
+    @test Groebner.groebner(f, ordering=Groebner.Lex(y, x, z)) ==
+          [x + 3 // 7, y + (5 // 11) * z + 7 // 11]
+    @test Groebner.groebner(f, ordering=Groebner.Lex(z, x, y)) ==
+          [x + 3 // 7, z + (11 // 5) * y + 7 // 5]
+
+    f = [7x + 3y + 5z + 11]
+    @test Groebner.groebner(f) == [x + (3 // 7) * y + (5 // 7) * z + 11 // 7]
+    @test Groebner.groebner(f, ordering=Groebner.Lex(y, x, z)) ==
+          [(7 // 3) * x + y + (5 // 3) * z + 11 // 3]
+    @test Groebner.groebner(f, ordering=Groebner.Lex(z, x, y)) ==
+          [(7 // 5) * x + (3 // 5) * y + z + 11 // 5]
+
     # The order of output polynomials is correct
     for i in 1:10
         xs = Random.shuffle([x, y, z, w])
