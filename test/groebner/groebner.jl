@@ -371,6 +371,7 @@ end
           [(7 // 5) * x + (3 // 5) * y + z + 11 // 5]
 
     # The order of output polynomials is correct
+    R, (x, y, z, w) = PolynomialRing(QQ, ["x", "y", "z", "w"], ordering=:deglex)
     for i in 1:10
         xs = Random.shuffle([x, y, z, w])
         polys = [x + 1, y + 2, z + 3, w - 4]
