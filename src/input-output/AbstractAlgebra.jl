@@ -3,13 +3,16 @@
 # This all is just not fantastic. 
 # We are practically dancing for rain around AbstractAlgebra.jl internals here.
 
-@noinline __throw_input_not_supported(val, msg) = throw(DomainError(val, msg))
-
 const _AA_supported_orderings_symbols = (:lex, :deglex, :degrevlex)
 const _AA_exponent_type = UInt64
 
+###
+# Converting from AbstractAlgebra to internal representation
+
 function peek_at_polynomials(polynomials::Vector{T}) where {T}
-    @assert !isempty(polynomials) "Input must not be empty"
+    if isempty(polynomials)
+        __throw_input_not_supported(polynomials, "Input must not be empty")
+    end
     R = parent(first(polynomials))
     nvars = AbstractAlgebra.nvars(R)
     ord = if hasmethod(AbstractAlgebra.ordering, Tuple{typeof(R)})
@@ -38,8 +41,9 @@ ordering_typed2sym(origord) = origord
 ordering_typed2sym(origord, targetord::AbstractMonomialOrdering) = origord
 
 function ordering_sym2typed(ord::Symbol)
-    ord in _AA_supported_orderings_symbols ||
-        throw(DomainError(ord, "Not a supported ordering."))
+    if !(ord in _AA_supported_orderings_symbols)
+        __throw_input_not_supported(ord, "Not a supported ordering.")
+    end
     if ord === :lex
         Lex()
     elseif ord === :deglex
@@ -56,7 +60,11 @@ function extract_ring(polynomials)
     @assert hasmethod(AbstractAlgebra.characteristic, Tuple{T})
     nv = AbstractAlgebra.nvars(R)
     # lex is the default ordering on univariate polynomials
-    ord = hasmethod(AbstractAlgebra.ordering, Tuple{T}) ? AbstractAlgebra.ordering(R) : :lex
+    ord = if hasmethod(AbstractAlgebra.ordering, Tuple{T})
+        AbstractAlgebra.ordering(R)
+    else
+        :lex
+    end
     # type unstable:
     ordT = ordering_sym2typed(ord)
     ch   = AbstractAlgebra.characteristic(R)
@@ -91,7 +99,7 @@ function extract_coeffs_ff(
     ring::PolyRing,
     poly::Union{AbstractAlgebra.Generic.Poly, AbstractAlgebra.PolyElem}
 )
-    iszero(poly) && (return zero_coeffs_ff(representation.coefftype, ring))
+    iszero(poly) && (return zero_coeffs(representation.coefftype, ring))
     reverse(
         map(
             # NOTE: type instable!
@@ -107,7 +115,7 @@ function extract_coeffs_qq(
     ring::PolyRing,
     poly::Union{AbstractAlgebra.Generic.Poly, AbstractAlgebra.PolyElem}
 )
-    iszero(poly) && (return zero_coeffs_qq(representation.coefftype, ring))
+    iszero(poly) && (return zero_coeffs(representation.coefftype, ring))
     reverse(map(Rational, filter(!iszero, collect(AbstractAlgebra.coefficients(poly)))))
 end
 
@@ -117,7 +125,7 @@ function extract_coeffs_ff(
     ring::PolyRing{T},
     poly
 ) where {T}
-    iszero(poly) && (return zero_coeffs_ff(representation.coefftype, ring))
+    iszero(poly) && (return zero_coeffs(representation.coefftype, ring))
     Ch = representation.coefftype
     # TODO: Get rid of this composed function
     map(Ch ∘ AbstractAlgebra.data, AbstractAlgebra.coefficients(poly))
@@ -146,7 +154,12 @@ function extract_coeffs_raw!(
 ) where {T}
     # write new coefficients directly to graph.basis
     ring = extract_ring(polys)
-    @assert _is_input_compatible_in_apply(graph, ring, kws) "Input does not seem to be compatible with the learned graph."
+    if !_is_input_compatible_in_apply(graph, ring, kws)
+        __throw_input_not_supported(
+            ring,
+            "Input does not seem to be compatible with the learned graph."
+        )
+    end
     basis = graph.buf_basis
     input_polys_perm = graph.input_permutation
     term_perms = graph.term_sorting_permutations
@@ -194,7 +207,7 @@ end
 
 # specialization for multivariate polynomials
 function extract_coeffs_qq(representation, ring::PolyRing, poly)
-    iszero(poly) && (return zero_coeffs_qq(representation.coefftype, ring))
+    iszero(poly) && (return zero_coeffs(representation.coefftype, ring))
     map(Rational, AbstractAlgebra.coefficients(poly))
 end
 
@@ -311,20 +324,35 @@ function extract_monoms(
     false, var_to_index, exps
 end
 
-function convert_to_output(
+###
+# Converting from internal representation to AbstractAlgebra.jl
+
+function _convert_to_output(
+    ring::PolyRing,
+    polynomials,
+    monoms::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    params::AlgorithmParameters
+) where {M <: Monom, C <: Coeff}
+    origring = parent(first(polynomials))
+    _convert_to_output(origring, monoms, coeffs, params)
+end
+
+# Specialization for univariate polynomials
+function _convert_to_output(
     origring::R,
     gbexps::Vector{Vector{M}},
-    gbcoeffs::Vector{Vector{I}},
+    gbcoeffs::Vector{Vector{C}},
     params::AlgorithmParameters
 ) where {
     R <: Union{AbstractAlgebra.Generic.PolyRing, AbstractAlgebra.PolyRing},
     M <: Monom,
-    I
+    C <: Coeff
 }
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     @inbounds for i in 1:length(gbexps)
-        if isempty(gbexps[i])
+        if iszero_monoms(gbexps[i])
             exported[i] = origring()
             continue
         end
@@ -337,12 +365,13 @@ function convert_to_output(
     exported
 end
 
-function convert_to_output(
+# The most generic specialization
+function _convert_to_output(
     origring::R,
     gbexps::Vector{Vector{M}},
-    gbcoeffs::Vector{Vector{I}},
+    gbcoeffs::Vector{Vector{C}},
     params::AlgorithmParameters
-) where {R, M <: Monom, I}
+) where {R, M <: Monom, C <: Coeff}
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     tmp      = Vector{Int}(undef, AbstractAlgebra.nvars(origring))
@@ -355,7 +384,7 @@ function convert_to_output(
     exported
 end
 
-function create_polynomial(
+function create_aa_polynomial(
     origring::AbstractAlgebra.Generic.MPolyRing{T},
     coeffs::Vector{T},
     exps::Matrix{U}
@@ -368,7 +397,7 @@ function create_polynomial(
     end
 end
 
-function create_polynomial(
+function create_aa_polynomial(
     origring::AbstractAlgebra.Generic.MPolyRing{T},
     coeffs::Vector{T},
     exps::Vector{Vector{U}}
@@ -381,37 +410,39 @@ function create_polynomial(
     end
 end
 
-function convert_to_output(
+# Dispatch between monomial orderings
+function _convert_to_output(
     origring::AbstractAlgebra.Generic.MPolyRing{T},
     gbexps::Vector{Vector{M}},
-    gbcoeffs::Vector{Vector{I}},
+    gbcoeffs::Vector{Vector{C}},
     params::AlgorithmParameters
-) where {M <: Monom, T, I}
-    ord = AbstractAlgebra.ordering(origring)
-    ordT = ordering_sym2typed(ord)
-    if params.target_ord != ordT
-        ordS = ordering_typed2sym(ord, params.target_ord)
-        origring, _ = AbstractAlgebra.PolynomialRing(
-            base_ring(origring),
-            AbstractAlgebra.symbols(origring),
-            ordering=ordS
-        )
+) where {T, M <: Monom, C <: Coeff}
+    ord_aa = AbstractAlgebra.ordering(origring)
+    _ord_aa = ordering_sym2typed(ord_aa)
+    input_ordering_matches_output = true
+    if params.target_ord != _ord_aa
+        input_ordering_matches_output = false
+        @log level = -1 """
+          Basis is computed in $(params.target_ord).
+          Terms in the output are in $(ord_aa)"""
     end
-
-    if elem_type(base_ring(origring)) <: Integer
-        coeffs_zz = clear_denominators(gbcoeffs)
-        convert_to_output(origring, gbexps, coeffs_zz, params.target_ord)
-    else
-        convert_to_output(origring, gbexps, gbcoeffs, params.target_ord)
-    end
+    _convert_to_output(
+        origring,
+        gbexps,
+        gbcoeffs,
+        params.target_ord,
+        Val{input_ordering_matches_output}()
+    )
 end
 
-function convert_to_output(
-    origring::AbstractAlgebra.Generic.MPolyRing{U},
+# Specialization for degrevlex for matching orderings
+function _convert_to_output(
+    origring::AbstractAlgebra.Generic.MPolyRing{T},
     gbexps::Vector{Vector{M}},
-    gbcoeffs::Vector{Vector{T}},
-    ::DegRevLex
-) where {M, T <: Coeff, U}
+    gbcoeffs::Vector{Vector{C}},
+    ::DegRevLex,
+    input_ordering_matches_output::Val{true}
+) where {T, M <: Monom, C <: Coeff}
     nv       = AbstractAlgebra.nvars(origring)
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
@@ -428,17 +459,19 @@ function convert_to_output(
             exps[1:(end - 1), jt] .= tmp
             exps[end, jt] = sum(tmp)
         end
-        exported[i] = create_polynomial(origring, cfs, exps)
+        exported[i] = create_aa_polynomial(origring, cfs, exps)
     end
     exported
 end
 
-function convert_to_output(
-    origring::AbstractAlgebra.Generic.MPolyRing{U},
+# Specialization for lex for matching orderings
+function _convert_to_output(
+    origring::AbstractAlgebra.Generic.MPolyRing{T},
     gbexps::Vector{Vector{M}},
-    gbcoeffs::Vector{Vector{T}},
-    ::Lex
-) where {M, T <: Coeff, U}
+    gbcoeffs::Vector{Vector{C}},
+    ::Lex,
+    input_ordering_matches_output::Val{true}
+) where {T, M <: Monom, C <: Coeff}
     nv       = AbstractAlgebra.nvars(origring)
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
@@ -454,17 +487,19 @@ function convert_to_output(
             exps[end:-1:1, jt] .= tmp
         end
         # exps   = UInt64.(hcat(map(x -> x[end-1:-1:1], gbexps[i])...))
-        exported[i] = create_polynomial(origring, cfs, exps)
+        exported[i] = create_aa_polynomial(origring, cfs, exps)
     end
     exported
 end
 
-function convert_to_output(
-    origring::AbstractAlgebra.Generic.MPolyRing{U},
+# Specialization for deglex for matching orderings
+function _convert_to_output(
+    origring::AbstractAlgebra.Generic.MPolyRing{T},
     gbexps::Vector{Vector{M}},
-    gbcoeffs::Vector{Vector{T}},
-    ::DegLex
-) where {M, T <: Coeff, U}
+    gbcoeffs::Vector{Vector{C}},
+    ::DegLex,
+    input_ordering_matches_output::Val{true}
+) where {T, M <: Monom, C <: Coeff}
     nv       = AbstractAlgebra.nvars(origring)
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
@@ -481,17 +516,19 @@ function convert_to_output(
             exps[(end - 1):-1:1, jt] .= tmp
             exps[end, jt] = sum(tmp)
         end
-        exported[i] = create_polynomial(origring, cfs, exps)
+        exported[i] = create_aa_polynomial(origring, cfs, exps)
     end
     exported
 end
 
-function convert_to_output(
-    origring::AbstractAlgebra.Generic.MPolyRing{U},
+# All other orderings
+function _convert_to_output(
+    origring::AbstractAlgebra.Generic.MPolyRing{T},
     gbexps::Vector{Vector{M}},
-    gbcoeffs::Vector{Vector{T}},
-    ord::O
-) where {M, T <: Coeff, U, O <: AbstractMonomialOrdering}
+    gbcoeffs::Vector{Vector{C}},
+    ord::Ord,
+    input_ordering_matches_output
+) where {T, M <: Monom, C <: Coeff, Ord <: AbstractMonomialOrdering}
     nv       = AbstractAlgebra.nvars(origring)
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
@@ -503,7 +540,7 @@ function convert_to_output(
             monom_to_dense_vector!(tmp, gbexps[i][jt])
             exps[jt] = tmp
         end
-        exported[i] = create_polynomial(origring, cfs, exps)
+        exported[i] = create_aa_polynomial(origring, cfs, exps)
     end
     exported
 end

@@ -1,6 +1,11 @@
 using AbstractAlgebra
 
 @testset "isgroebner" begin
+    R, x = PolynomialRing(GF(2^31 - 1), "x")
+    @test Groebner.isgroebner([x])
+    @test Groebner.isgroebner([x, x, x, x])
+    @test !Groebner.isgroebner([x^2, x^2 + 1])
+
     R, (x, y, z) = PolynomialRing(GF(2^31 - 1), ["x", "y", "z"], ordering=:degrevlex)
 
     @test Groebner.isgroebner([R(1)])
@@ -33,6 +38,17 @@ using AbstractAlgebra
     fs = Groebner.change_ordering(Groebner.noonn(6, ground=GF(2^31 - 1)), :degrevlex)
     @test !Groebner.isgroebner(fs)
     @test Groebner.isgroebner(Groebner.groebner(fs))
+end
+
+@testset "isgroebner orderings" begin
+    R, (x, y, z) = PolynomialRing(GF(2^31 - 1), ["x", "y", "z"])
+
+    @test Groebner.isgroebner([x^2 + y, y])
+    @test Groebner.isgroebner([x^2 + y, y], ordering=Groebner.Lex(x, y, z))
+    @test !Groebner.isgroebner([x^2 + y, y], ordering=Groebner.Lex(y, x, z))
+
+    @test Groebner.isgroebner([x^2 + y, y], ordering=Groebner.DegLex())
+    @test Groebner.isgroebner([x^2 + y, y], ordering=Groebner.DegLex(y, x, z))
 end
 
 @testset "isgroebner certify" begin

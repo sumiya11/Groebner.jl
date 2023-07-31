@@ -5,11 +5,29 @@
 # - The Groebner basis of [0] is [0].
 # - The Groebner basis of [f1,...,fn, 0] is the Groebner basis of [f1...fn]
 
-# Polynomials from frontend packages, such as AbstractAlgebra.jl and
+# NOTE: Polynomials from frontend packages, such as AbstractAlgebra.jl and
 # DynamicPolynomials.jl, may not support some of the orderings supported by
-# Groebner.jl, e.g., matrix orderings. We compute the basis in the requested
-# ordering in Groebner.jl, and then order the terms in the output according to
-# some ordering that is supported by the frontend
+# Groebner.jl. We compute the basis in the requested ordering in Groebner.jl,
+# and then order the terms in the output according to the ordering of the input
+# polynomials
+
+# NOTE: internally, 0 polynomial is represented with an empty vector of
+# monomials and an empty vector of coefficients
+
+@noinline function __throw_inexact_coeff_conversion(c, T)
+    throw(
+        DomainError(
+            c,
+            """
+            Coefficient $c in the output basis cannot be converted exactly to $T. 
+            Using big arithmetic in the input should fix this."""
+        )
+    )
+end
+
+@noinline function __throw_input_not_supported(msg, val)
+    throw(DomainError(val, "This type of input is not supported, sorry.\n$msg"))
+end
 
 """
     PolyRing
@@ -35,7 +53,24 @@ struct PolynomialRepresentation
     coefftype::Type
 end
 
-function select_polynomial_representation(polynomials, kws; hint::Symbol=:none)
+"""
+    select_polynomial_representation(polynomials, keywords; hint=:none)
+
+Given an array of input polynomials tries to select a suitable representation
+for coefficients and exponent vectors.
+
+Additionally, `hint` can be specified to one of the following:
+
+- `:large_exponents`: use at least 32 bits per exponent.
+"""
+function select_polynomial_representation(
+    polynomials,
+    kws::KeywordsHandler;
+    hint::Symbol=:none
+)
+    if !(hint in (:none, :large_exponents))
+        @log level = 1000 "The given hint=$hint was discarded"
+    end
     frontend, npolys, char, nvars, ordering = peek_at_polynomials(polynomials)
     monomtype = select_monomtype(char, npolys, nvars, kws, hint)
     coefftype = select_coefftype(char, npolys, nvars, kws, hint)
@@ -52,7 +87,6 @@ function select_polynomial_representation(polynomials, kws; hint::Symbol=:none)
 end
 
 function select_monomtype(char, npolys, nvars, kws, hint)
-    # TODO: also dispatch on the type of monomial ordering    
     @log level = -1 "Selecting monomial representation.\nGiven hint hint=$hint. Keyword argument monoms=$(kws.monoms)"
     if hint === :large_exponents
         @log level = -1 "As hint=$hint was provided, using 64 bits per single exponent"
@@ -73,7 +107,7 @@ function select_monomtype(char, npolys, nvars, kws, hint)
             return SparseExponentVector{E, nvars, Int}
         end
         @log level = 1 """
-        The given monomial ordering $(kws.ordering) is not implemented for $(kws.monoms) monomials, sorry.
+        The given monomial ordering $(kws.ordering) is not implemented for $(kws.monoms) monomials.
         Falling back to dense representation."""
     end
     # if packed representation is requested
@@ -87,15 +121,16 @@ function select_monomtype(char, npolys, nvars, kws, hint)
                 return PackedTuple3{UInt64, E}
             end
             @log level = 1 """
-            Unable to use $(kws.monoms) monomials, too many variables ($nvars), sorry.
+            Unable to use $(kws.monoms) monomials, too many variables ($nvars).
             Falling back to dense monomial representation."""
         else
             @log level = 1 """
-            The given monomial ordering $(kws.ordering) is not implemented for $(kws.monoms) monomials, sorry.
+            The given monomial ordering $(kws.ordering) is not implemented for $(kws.monoms) monomials.
             Falling back to dense representation."""
         end
     end
     if kws.monoms === :auto
+        # TODO: also check that ring.ord is supported
         if is_supported_ordering(PackedTuple1{UInt64, E}, kws.ordering)
             if nvars < variables_per_word
                 return PackedTuple1{UInt64, E}
@@ -111,7 +146,9 @@ end
 
 function select_coefftype(char, npolys, nvars, kws, hint)
     if !iszero(char)
-        @assert char < typemax(UInt64)
+        if char >= typemax(UInt64)
+            __throw_input_not_supported(char, "The coefficient field order is too large.")
+        end
         if char > 2^32
             UInt128
         else
@@ -123,12 +160,12 @@ function select_coefftype(char, npolys, nvars, kws, hint)
 end
 
 """
-    convert_to_internal(polynomials, kws, representation)
+    convert_to_internal(representation, polynomials, kws)
 
 Converts elements of the given array `polynomials` into an internal polynomial
 representation specified by `representation`.
 
-Returns a tuple (`ring`, `monoms`, `coeffs`).
+Returns a tuple (`ring`, `var_to_index`, `monoms`, `coeffs`).
 """
 function convert_to_internal(
     representation::PolynomialRepresentation,
@@ -137,12 +174,9 @@ function convert_to_internal(
     dropzeros=true
 )
     check_input(polynomials)
-    # NOTE: internally, 0 polynomial is represented with an empty vector of
-    # monomials and an empty vector of coefficients.
     # NOTE: Input polynomials must not be modified.
     @log level = -2 "Converting input polynomials to internal representation.."
     ring = extract_ring(polynomials)
-    # @assert is_representation_suitable(representation, ring)
     var_to_index, monoms, coeffs = extract_polys(representation, ring, polynomials)
     @log level = -2 "Done converting input polynomials to internal representation."
     @log level = -6 """
@@ -159,13 +193,19 @@ function convert_to_internal(
 end
 
 function check_input(polynomials)
-    !isempty(polynomials) && "Empty input polynomials"
+    if isempty(polynomials)
+        __throw_input_not_supported(polynomials, "Empty input polynomials")
+    end
     # TODO: check that there are no parameters
     # TODO: check that the ground field is Z_p or QQ
     nothing
 end
 
-function extract_polys(representation, ring::PolyRing, polynomials::Vector{T}) where {T}
+function extract_polys(
+    representation::PolynomialRepresentation,
+    ring::PolyRing,
+    polynomials::Vector{T}
+) where {T}
     coeffs = extract_coeffs(representation, ring, polynomials)
     reversed_order, var_to_index, monoms = extract_monoms(representation, ring, polynomials)
     @assert length(coeffs) == length(monoms)
@@ -179,77 +219,36 @@ function extract_polys(representation, ring::PolyRing, polynomials::Vector{T}) w
     var_to_index, monoms, coeffs
 end
 
+iszero_coeffs(v) = isempty(v)
+iszero_monoms(v) = isempty(v)
+
+zero_coeffs(::Type{T}, ring::PolyRing) where {T} = Vector{T}()
+zero_monoms(::Type{T}, ring::PolyRing) where {T} = Vector{T}()
+
 """
     convert_to_output(ring, polynomials, monoms, coeffs, params)
 
-Converts internal polynomials given by arrays `monoms` and `coeffs` into
-polynomials in the output format.
+Converts polynomials in internal representation given by arrays `monoms` and
+`coeffs` into polynomials in the output format (using `polynomials` as a
+reference).
 """
 function convert_to_output(
-    ring,
+    ring::PolyRing,
     polynomials,
-    monoms::Vector{M},
-    coeffs::Vector{C},
-    params
-) where {M, C}
+    monoms::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    params::AlgorithmParameters
+) where {M <: Monom, C <: Coeff}
     @assert !isempty(polynomials)
     @log level = -2 "Converting polynomials from internal representation to output format"
     # NOTE: Internal polynomials must not be modified.
     if isempty(monoms)
         @log level = -7 "Output is empty, appending an empty placeholder polynomial"
-        push!(monoms, Vector{M}())
-        push!(coeffs, Vector{C}())
+        push!(monoms, zero_monoms(M, ring))
+        push!(coeffs, zero_coeffs(C, ring))
     end
-    origring = parent(first(polynomials))
-    convert_to_output(origring, monoms, coeffs, params)
+    _convert_to_output(ring, polynomials, monoms, coeffs, params)
 end
-
-# checks that the coefficient `c` can be represented exactly in type `T`.
-checkexact(c, T::Type{BigInt}) = true
-checkexact(c, T::Type{Rational{U}}) where {U} =
-    checkexact(numerator(c), U) && checkexact(denominator(c), U)
-checkexact(c, T) = typemin(T) <= c <= typemax(T)
-
-@noinline function __throw_inexact_coeff_conversion(c, T)
-    throw(
-        DomainError(
-            c,
-            """
-            Coefficient $c in the output basis cannot be converted exactly to $T. 
-            Using big arithmetic in the input should fix this."""
-        )
-    )
-end
-
-function check_and_convert_coeffs(coeffs_zz, T)
-    cfs = Vector{T}(undef, length(coeffs_zz))
-    for i in 1:length(coeffs_zz)
-        !checkexact(coeffs_zz[i], T) && __throw_inexact_coeff_conversion(coeffs_zz[i], T)
-        cfs[i] = coeffs_zz[i]
-    end
-    cfs
-end
-
-function convert_coeffs_to_output(
-    coeffs::Vector{Q},
-    ::Type{T}
-) where {Q <: CoeffQQ, T <: Rational}
-    check_and_convert_coeffs(coeffs, T)
-end
-
-function convert_coeffs_to_output(
-    coeffs::Vector{Q},
-    ::Type{T}
-) where {Q <: CoeffQQ, T <: Integer}
-    coeffs_zz = clear_denominators(coeffs)
-    check_and_convert_coeffs(coeffs_zz, T)
-end
-
-iszero_coeffs(v) = isempty(v)
-iszero_monoms(v) = isempty(v)
-
-zero_coeffs_ff(::Type{T}, ring::PolyRing) where {T} = T[]
-zero_coeffs_qq(::Type{T}, ring::PolyRing) where {T} = T[]
 
 function remove_zeros_from_input!(
     ring::PolyRing,

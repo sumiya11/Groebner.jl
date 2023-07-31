@@ -154,7 +154,7 @@ function test_circular_shift(a, b, n, Ord, answers)
     end
 end
 
-@testset "variable permutation: Lex, DegLex, DegRevLex" begin
+@testset "monoms, variable permutation" begin
     for T in (UInt64, UInt32, UInt16)
         for EV in implementations_to_test
             if EV{T} <: Groebner.PackedTuple2 || EV{T} <: Groebner.PackedTuple3

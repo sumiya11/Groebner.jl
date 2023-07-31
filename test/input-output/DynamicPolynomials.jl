@@ -3,6 +3,15 @@ using DynamicPolynomials
 @testset "DynamicPolynomials.jl input-output" begin
     @polyvar x y
 
+    fs = [zero(x)]
+    @test Groebner.groebner(fs) == [zero(x)]
+
+    fs = [zero(x), zero(x), zero(x)]
+    @test Groebner.groebner(fs) == [zero(x)]
+
+    fs = [zero(x), 3 * one(x), zero(x)]
+    @test Groebner.groebner(fs) == [one(x)]
+
     fs = [2x + 3, 4y + 5]
     @test Groebner.groebner(fs) == [4y + 5, 2x + 3]
 

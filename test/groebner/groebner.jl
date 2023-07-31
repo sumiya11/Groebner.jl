@@ -1,7 +1,12 @@
 using AbstractAlgebra
+using Combinatorics
+import Random
 
 @testset "groebner simple" begin
     R, (x, y) = PolynomialRing(GF(2^31 - 1), ["x", "y"], ordering=:degrevlex)
+
+    @test_throws DomainError Groebner.groebner([])
+    @test_throws DomainError Groebner.groebner(Vector{elem_type(R)}())
 
     fs = [x, x, x]
     @test Groebner.groebner(fs) ≂ [x]
@@ -33,7 +38,7 @@ using AbstractAlgebra
     @test gb ≂ [x1 * x2]
 end
 
-@testset "groebner noreduce" begin
+@testset "groebner no autoreduce" begin
     R, (x, y) = PolynomialRing(GF(2^31 - 1), ["x", "y"], ordering=:lex)
 
     fs = [x + y^2, x * y - y^2]
@@ -203,7 +208,7 @@ end
     end
 end
 
-@testset "groebner reduced basis" begin
+@testset "groebner autoreduce" begin
     root = Groebner.rootn(3, ground=GF(2^31 - 1), ordering=:degrevlex)
     x1, x2, x3 = gens(parent(first(root)))
     gb = Groebner.groebner(root, reduced=true)
@@ -316,30 +321,96 @@ end
 @testset "groebner orderings" begin
     R, (x, y, z, w) = PolynomialRing(QQ, ["x", "y", "z", "w"], ordering=:deglex)
 
-    Groebner.groebner([x, y], ordering=Groebner.Lex())
-    Groebner.groebner([x, y], ordering=Groebner.DegLex())
-    Groebner.groebner([x, y], ordering=Groebner.DegRevLex())
+    gb = Groebner.groebner([x, y, z, w], ordering=Groebner.Lex(y, x, w, z))
+    @test gb == [z, w, x, y]
 
-    # Test that the order of output polynomials is correct
-    for i in 1:10
-        xs = shuffle([x, y, z, w])
-        polys = [x + 1, y + 2, z + 3, w - 4]
+    # Parent ring persists
+    for aa_ord in [:lex, :deglex, :degrevlex]
+        R, (x, y, z, w) = PolynomialRing(QQ, ["x", "y", "z", "w"], ordering=aa_ord)
 
-        gb = Groebner.groebner(shuffle(polys), ordering=Groebner.Lex(xs))
-        @test map(string ∘ leading_term, gb) == map(string, reverse(xs))
+        @test_throws DomainError Groebner.groebner([x, y, z, w], ordering=Groebner.Lex(x))
+        @test_throws DomainError Groebner.groebner([x, y], ordering=Groebner.DegLex(x, y))
+        @test_throws DomainError Groebner.groebner(
+            [x, y],
+            ordering=Groebner.DegRevLex(x, y)
+        )
 
-        gb = Groebner.groebner(shuffle(polys), ordering=Groebner.DegLex(xs))
-        @test map(string ∘ leading_term, gb) == map(string, reverse(xs))
-
-        gb = Groebner.groebner(shuffle(polys), ordering=Groebner.DegRevLex(xs))
-        @test map(string ∘ leading_term, gb) == map(string, reverse(xs))
+        for gb_ord in [
+            Groebner.Lex(),
+            Groebner.DegLex(),
+            Groebner.DegRevLex(),
+            Groebner.Lex(y, w, z, x),
+            Groebner.DegRevLex(y, w, z, x),
+            Groebner.DegRevLex(y, w, z, x),
+            Groebner.WeightedOrdering([1, 1, 1, 1]),
+            Groebner.Lex(x, y) * Groebner.DegLex(z, w),
+            Groebner.Lex(x) * Groebner.DegLex(y) * Groebner.DegRevLex(z, w),
+            Groebner.MatrixOrdering([1 2 3 4; 5 6 7 8])
+        ]
+            gb0 = Groebner.groebner([R(0), R(0)], ordering=gb_ord)
+            gb1 = Groebner.groebner([R(5)], ordering=gb_ord)
+            gb2 = Groebner.groebner([x + y + z], ordering=gb_ord)
+            @test R == parent(gb0[1]) == parent(gb1[1]) == parent(gb2[1])
+        end
     end
 
-    # for aa_ord in [:lex, :deglex, :degrevlex]
-    #     R, (x1, x2, x3, x4) = PolynomialRing(QQ, ["x1", "x2", "x3", "x4"], ordering=aa_ord)
-    #     cases = []
-    # end
+    # The order of output polynomials is correct
+    for i in 1:10
+        xs = Random.shuffle([x, y, z, w])
+        polys = [x + 1, y + 2, z + 3, w - 4]
 
+        gb = Groebner.groebner(Random.shuffle(polys), ordering=Groebner.Lex(xs))
+        @test map(leading_term, gb) == reverse(xs)
+
+        gb = Groebner.groebner(Random.shuffle(polys), ordering=Groebner.DegLex(xs))
+        @test map(leading_term, gb) == reverse(xs)
+
+        gb = Groebner.groebner(Random.shuffle(polys), ordering=Groebner.DegRevLex(xs))
+        @test map(leading_term, gb) == reverse(xs)
+    end
+
+    # Correctness of Lex, DegLex, DegRevLex comparing with AbstractAlgebra
+    for aa_ord in [:lex, :deglex, :degrevlex]
+        R, (x1, x2, x3, x4) = PolynomialRing(QQ, ["x1", "x2", "x3", "x4"], ordering=aa_ord)
+        cases = [
+            [x1, x2, x3, x4],
+            [x2 * x3 + 2x4, x1 * x2 + 3x3],
+            [x1 + 2x2 + 3x3 + 4x4, x1, x2, (x1 + x2 + x3 + x4)^3, x3, x4],
+            Groebner.rootn(5)
+        ]
+        for case in cases
+            xs = gens(parent(case[1]))
+            for vars in Combinatorics.permutations(xs)
+                for (gb_ord, _quot_aa_ord) in [
+                    (Groebner.Lex(vars), Meta.quot(:lex)),
+                    (Groebner.DegLex(vars), Meta.quot(:deglex)),
+                    (Groebner.DegRevLex(vars), Meta.quot(:degrevlex))
+                ]
+                    gb = Groebner.groebner(Random.shuffle(case), ordering=gb_ord)
+
+                    # A hack to get the same ranking of variables as in Groebner
+                    eval(
+                        :(
+                            (__R, _) = PolynomialRing(
+                                QQ,
+                                map(repr, $(vars)),
+                                ordering=$_quot_aa_ord
+                            )
+                        )
+                    )
+                    _xs = sort(gens(__R), by=repr)
+
+                    _case = map(poly -> evaluate(poly, _xs), case)
+                    _gb = Groebner.groebner(_case)
+                    gb = map(poly -> evaluate(poly, _xs), gb)
+
+                    @test gb == _gb
+                end
+            end
+        end
+    end
+
+    # WeightedOrdering
     @test_throws DomainError Groebner.groebner(
         [x, y],
         ordering=Groebner.WeightedOrdering([1, 0])
@@ -354,10 +425,20 @@ end
         [x1],
         ordering=Groebner.WeightedOrdering([-1, 0, 0, 0, 0, 0])
     )
+
+    # ProductOrdering
+    ord = Groebner.Lex(x6, x2) * Groebner.Lex(x4, x1, x3)
+    @test_throws DomainError Groebner.groebner([x], ordering=ord)
+
     ord = Groebner.Lex(x6, x2, x5) * Groebner.Lex(x4, x1, x3)
     @test [x3, x1, x4, x5, x2, x6] ==
           Groebner.groebner([x1, x2, x3, x4, x5, x6], ordering=ord)
 
+    ord = Groebner.Lex(x6, x2, x1, x5) * Groebner.Lex(x4, x1, x3)
+    @test [x3, x4, x5, x1, x2, x6] ==
+          Groebner.groebner([x1, x2, x3, x4, x5, x6], ordering=ord)
+
+    # MatrixOrdering
     ord = Groebner.MatrixOrdering([
         1 0 0 0 1 2
         0 1 0 0 -2 -1
@@ -371,47 +452,40 @@ end
         0 1 0 0
         0 0 1 0
     ])
-    @test_throws AssertionError Groebner.groebner([x1, x2], ordering=ord)
+    @test_throws DomainError Groebner.groebner([x1, x2], ordering=ord)
 end
 
-@testset "groebner on-the-fly order change" begin
+@testset "groebner parent rings" begin
     R, x = PolynomialRing(QQ, "x")
-    @test R == parent(Groebner.groebner([x], ordering=Groebner.Lex())[1])
-    @test R == parent(Groebner.groebner([x], ordering=Groebner.DegLex())[1])
-    @test R == parent(Groebner.groebner([x], ordering=Groebner.DegRevLex())[1])
+    @test R == parent(first(Groebner.groebner([x], ordering=Groebner.Lex())))
+    @test R == parent(first(Groebner.groebner([x], ordering=Groebner.DegLex())))
+    @test R == parent(first(Groebner.groebner([x], ordering=Groebner.DegRevLex())))
 
     R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"], ordering=:deglex)
 
     fs = [y^2, x]
-    x, y, z = gens(parent(first(Groebner.groebner(fs, ordering=Groebner.Lex()))))
-    @test AbstractAlgebra.ordering(parent(x)) == :lex
+    gb = Groebner.groebner(fs, ordering=Groebner.Lex())
+    @test parent(gb[1]) == R
     @test Groebner.groebner(fs, ordering=Groebner.Lex()) == [y^2, x]
-    @test AbstractAlgebra.ordering(
-        parent(first(Groebner.groebner(fs, ordering=Groebner.Lex())))
-    ) === :lex
 
-    x, y, z = gens(parent(first(Groebner.groebner(fs, ordering=Groebner.DegRevLex()))))
-    @test Groebner.groebner(fs, ordering=Groebner.DegRevLex()) == [x, y^2]
-    @test AbstractAlgebra.ordering(
-        parent(first(Groebner.groebner(fs, ordering=Groebner.DegRevLex())))
-    ) === :degrevlex
+    gb = Groebner.groebner(fs, ordering=Groebner.DegRevLex())
+    @test parent(gb[1]) == R
+    @test gb == [x, y^2]
 
-    x, y, z = gens(parent(first(fs)))
-    @test Groebner.groebner(fs, ordering=Groebner.DegLex()) == [x, y^2]
-    @test AbstractAlgebra.ordering(
-        parent(first(Groebner.groebner(fs, ordering=Groebner.DegLex())))
-    ) === :deglex
+    gb = Groebner.groebner(fs, ordering=Groebner.DegLex())
+    @test parent(gb[1]) == R
+    @test gb == [x, y^2]
 
-    noon = Groebner.change_ordering(Groebner.noonn(2), :lex)
+    noon = Groebner.noonn(2, ordering=:lex)
     gb = Groebner.groebner(noon, ordering=Groebner.Lex())
-    x1, x2 = gens(parent(first(gb)))
+    x1, x2 = gens(parent(first(noon)))
     @test gb == [
         x2^5 - 10 // 11 * x2^4 - 11 // 5 * x2^3 + 2 * x2^2 + 331 // 1100 * x2 - 11 // 10,
         x1 + x2^4 - 10 // 11 * x2^3 - 11 // 10 * x2^2 + x2 - 10 // 11
     ]
 
     gb = Groebner.groebner(noon, ordering=Groebner.DegRevLex())
-    x1, x2 = gens(parent(first(gb)))
+    x1, x2 = gens(parent(first(noon)))
     @test gb == [
         x1^2 - x2^2 - 10 // 11 * x1 + 10 // 11 * x2,
         x2^3 + 10 // 11 * x1 * x2 - 10 // 11 * x2^2 - 11 // 10 * x2 + 1,
@@ -419,7 +493,7 @@ end
     ]
 
     gb = Groebner.groebner(noon, ordering=Groebner.DegLex())
-    x1, x2 = gens(parent(first(gb)))
+    x1, x2 = gens(parent(first(noon)))
     @test gb == [
         x1^2 - x2^2 - 10 // 11 * x1 + 10 // 11 * x2,
         x2^3 + 10 // 11 * x1 * x2 - 10 // 11 * x2^2 - 11 // 10 * x2 + 1,
@@ -454,7 +528,7 @@ end
         @test Groebner.groebner([R(0), R(0), R(0)]) == Groebner.groebner([R(0)]) == [R(0)]
         @test Groebner.groebner([x, R(0), y, R(0)]) == [y, x]
 
-        @test_throws AssertionError Groebner.groebner([])
+        @test_throws DomainError Groebner.groebner([])
     end
 end
 
@@ -467,7 +541,7 @@ end
         @test Groebner.isgroebner([R(0), R(0), R(1)])
         @test Groebner.isgroebner([x, R(0), y, R(0)])
 
-        @test_throws AssertionError Groebner.isgroebner([])
+        @test_throws DomainError Groebner.isgroebner([])
     end
 end
 
@@ -480,8 +554,8 @@ end
               [x + 2, x, x + 1]
         @test Groebner.normalform([R(0), R(0), R(0)], R(0)) == R(0)
 
-        @test_throws AssertionError Groebner.normalform([], x)
-        @test_throws AssertionError Groebner.normalform([], [x])
+        @test_throws DomainError Groebner.normalform([], x)
+        @test_throws DomainError Groebner.normalform([], [x])
     end
 end
 

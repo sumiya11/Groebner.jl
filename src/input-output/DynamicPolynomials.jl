@@ -16,7 +16,7 @@ function extract_coeffs_qq(
     ring::PolyRing,
     poly::T
 ) where {T <: AbstractPolynomialLike{U}} where {U}
-    iszero(poly) && (return zero_coeffs_ff(representation.coefftype, ring))
+    iszero(poly) && (return zero_coeffs(representation.coefftype, ring))
     map(Rational, MultivariatePolynomials.coefficients(poly))
 end
 
@@ -79,21 +79,47 @@ function extract_monoms(
     reversed_order, var2idx, exps
 end
 
-function convert_to_output(
+# checks that the coefficient `c` can be represented exactly in type `T`.
+checkexact(c, T::Type{BigInt}) = true
+checkexact(c, T::Type{Rational{U}}) where {U} =
+    checkexact(numerator(c), U) && checkexact(denominator(c), U)
+checkexact(c, T) = typemin(T) <= c <= typemax(T)
+
+function check_and_convert_coeffs(coeffs_zz, T)
+    cfs = Vector{T}(undef, length(coeffs_zz))
+    for i in 1:length(coeffs_zz)
+        !checkexact(coeffs_zz[i], T) && __throw_inexact_coeff_conversion(coeffs_zz[i], T)
+        cfs[i] = coeffs_zz[i]
+    end
+    cfs
+end
+
+function convert_coeffs_to_output(
+    coeffs::Vector{Q},
+    ::Type{T}
+) where {Q <: CoeffQQ, T <: Rational}
+    check_and_convert_coeffs(coeffs, T)
+end
+
+function convert_coeffs_to_output(
+    coeffs::Vector{Q},
+    ::Type{T}
+) where {Q <: CoeffQQ, T <: Integer}
+    coeffs_zz = clear_denominators(coeffs)
+    check_and_convert_coeffs(coeffs_zz, T)
+end
+
+function _convert_to_output(
     ring::PolyRing,
     origpolys::Vector{P},
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{I}},
     params::AlgorithmParameters
 ) where {M <: Monom, P <: AbstractPolynomialLike{J}, I <: Coeff} where {J}
-    if isempty(gbexps)
-        push!(gbexps, Vector{M}())
-        push!(gbcoeffs, Vector{I}())
-    end
     if params.target_ord != DegLex()
-        @log level = 1 """
-        Input polynomial type does not support ordering $(params.target_ord).
-        Computed basis is correct in ordering $(params.target_ord), but terms are ordered in DegLex in output"""
+        @log level = -1 """
+          Basis is computed in $(params.target_ord).
+          Terms in the output are in $(DegLex())"""
     end
 
     origvars = MultivariatePolynomials.variables(origpolys)
@@ -102,6 +128,10 @@ function convert_to_output(
     exported = Vector{T}(undef, length(gbexps))
     tmp = Vector{Int}(undef, length(origvars))
     for i in 1:length(gbexps)
+        if iszero_monoms(gbexps[i])
+            exported[i] = zero(origpolys[1])
+            continue
+        end
         cfs::Vector{J} = convert_coeffs_to_output(gbcoeffs[i], J)
         expvectors = [
             map(Int, monom_to_dense_vector!(tmp, gbexps[i][j])) for j in 1:length(gbexps[i])

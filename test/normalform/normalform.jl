@@ -1,5 +1,7 @@
 
 @testset "normalform" begin
+    R, x = PolynomialRing(GF(2^31 - 1), "x")
+
     R, (x, y, z) = PolynomialRing(GF(2^31 - 1), ["x", "y", "z"])
 
     # Regression test, Structural Identifiability
@@ -29,16 +31,28 @@ end
 
 @testset "normalform many variables" begin
     R, xs = PolynomialRing(QQ, ["x$i" for i in 1:63])
-
     GB = Groebner.groebner(xs)
     @test GB == reverse(xs)
     @test Groebner.normalform(GB, xs[1]) == R(0)
 
     R, xs = PolynomialRing(QQ, ["x$i" for i in 1:220])
-
     GB = Groebner.groebner(xs)
     @test GB == reverse(xs)
     @test Groebner.normalform(GB, xs[1]) == R(0)
+
+    R, xs = PolynomialRing(QQ, ["x$i" for i in 1:1025])
+    GB = Groebner.groebner(xs)
+    @test GB == reverse(xs)
+    @test Groebner.normalform(GB, xs) == zeros(R, length(xs))
+end
+
+@testset "normalform orderings" begin
+    R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"])
+
+    @test Groebner.normalform([x + y], [x, y]) == [-y, y]
+    @test Groebner.normalform([x + y^2], [x, y], ordering=Groebner.DegLex()) == [x, y]
+    @test Groebner.normalform([x + y^2], [x, y], ordering=Groebner.DegRevLex()) == [x, y]
+    @test Groebner.normalform([x + y], [x, y], ordering=Groebner.Lex(y, x, z)) == [x, -x]
 end
 
 @testset "normalform of an array" begin

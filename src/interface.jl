@@ -7,7 +7,8 @@ Computes a Groebner basis of `polynomials`.
 ## Possible Options
 
 The `groebner` routine takes the following options:
-- `reduced`: If the returned basis must be reduced and unique (default is `true`).
+- `reduced`: If the returned basis must be autoreduced and unique (default is
+  `true`).
 - `ordering`: Specifies the monomial ordering. Available monomial orderings are: 
     - `InputOrdering()` for inferring the ordering from the given `polynomials`
       (default), 
@@ -33,12 +34,12 @@ The `groebner` routine takes the following options:
     - `:sparse` for sparse representation.
 - `seed`: The seed for randomization. Default value is `42`. Groebner uses
     `Random.Xoshiro` and `Random.MersenneTwister` for random number generation.
-- `loglevel`: Logging level, an integer. Higher values mean less logging.
-    Default value is `0`, which means that only warnings are printed. Set
-    `loglevel` to negative values, e.g., `-1`, for debugging.
-- `maxpairs`: The maximum number of critical pairs used at once in matrix 
-    construction. By default, this is not specified. 
-    Tweak this option to try to lower the amount of RAM consumed.
+- `loglevel`: Logging level, an integer. Higher values mean less verbose.
+    Default value is `0`, which means that only info and warnings are printed.
+    Set `loglevel` to negative values, e.g., `-1`, for debugging.
+- `maxpairs`: The maximum number of critical pairs used at once in matrix
+    construction. By default, this is not specified. Tweak this option to try to
+    lower the amount of RAM consumed.
 
 ## Example
 
@@ -46,7 +47,7 @@ Using `DynamicPolynomials`:
 
 ```jldoctest
 using Groebner, DynamicPolynomials
-@polyvar x y;
+@polyvar x y
 groebner([x*y^2 + x, y*x^2 + y])
 ```
 
@@ -70,9 +71,9 @@ end
 """
     groebner_learn(polynomials; options...)
 
-Computes a Groebner basis of `polynomials` and emits the computation context.
+Computes a Groebner basis of `polynomials` and emits the computation graph.
 
-The context can be used to speed up the computation of subsequent Groebner
+The graph can be used to speed up the computation of subsequent Groebner
 bases, which should be the specializations of the same basis as the one
 `groebner_learn` had been applied to.
 
@@ -87,10 +88,10 @@ using Groebner, AbstractAlgebra
 R, (x, y) = GF(2^31-1)["x", "y"]
 
 # Learn
-context, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
+graph, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
 
 # Apply
-flag, gb_2 = groebner_apply!(context, [2x*y^2 + 3x, 4y*x^2 + 5y])
+flag, gb_2 = groebner_apply!(graph, [2x*y^2 + 3x, 4y*x^2 + 5y])
 
 @assert flag
 ```
@@ -100,9 +101,9 @@ function groebner_learn(polynomials::AbstractVector; options...)
 end
 
 """
-    groebner_apply!(context, polynomials; options...)
+    groebner_apply!(graph, polynomials; options...)
 
-Computes a Groebner basis of `polynomials` using the given computation `context`.
+Computes a Groebner basis of `polynomials` using the given computation `graph`.
 
 *At the moment, only input over integers modulo a prime is supported.*
 
@@ -115,15 +116,17 @@ using Groebner, AbstractAlgebra
 R, (x, y) = GF(2^31-1)["x", "y"]
 
 # Learn
-context, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
+graph, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
 
 # Apply
-flag, gb_2 = groebner_apply!(context, [2x*y^2 + 3x, 4y*x^2 + 5y])
+flag, gb_2 = groebner_apply!(graph, [2x*y^2 + 3x, 4y*x^2 + 5y])
+
+@assert flag
 ```
 """
-function groebner_apply!(context, polynomials::AbstractVector; options...)
+function groebner_apply!(graph, polynomials::AbstractVector; options...)
     _groebner_apply!(
-        context,
+        graph,
         polynomials,
         KeywordsHandler(:groebner_apply!, options)
     )::Tuple{Bool, typeof(polynomials)}
@@ -150,7 +153,7 @@ The `isgroebner` routine takes the following options:
 - `certify`: Use deterministic algorithm (default is `false`).
 - `seed`: The seed for randomization. Default value is `42`. Groebner uses
     `Random.Xoshiro` and `Random.MersenneTwister` for random number generation.
-- `loglevel`: Logging level, an integer. Higher values mean less logging.
+- `loglevel`: Logging level, an integer. Higher values mean less verbose.
     Default value is `0`, which means that only warnings are printed. Set
     `loglevel` to negative values, e.g., `-1`, for debugging.
 
@@ -196,16 +199,16 @@ The `normalform` routine takes the following options:
     - `ProductOrdering(args...)` for block ordering, 
     - `MatrixOrdering(matrix)` for matrix ordering. 
   For details and examples see the corresponding documentation page.
-- `loglevel`: Logging level, an integer. Higher values mean less logging.
+- `loglevel`: Logging level, an integer. Higher values mean less verbose.
   Default value is `0`, which means that only warnings are printed. Set
   `loglevel` to negative values, e.g., `-1`, for debugging.
 
 ## Example
 
 ```jldoctest
-julia> using Groebner, DynamicPolynomials
-julia> @polyvar x y;
-julia> normalform([y^2 + x, x^2 + y], x^2 + y^2 + 1)
+using Groebner, DynamicPolynomials
+@polyvar x y;
+normalform([y^2 + x, x^2 + y], x^2 + y^2 + 1)
 ```
 """
 function normalform(basis::AbstractVector, tobereduced::AbstractVector; options...)
@@ -228,16 +231,16 @@ Computes the basis of the quotient ideal as a vector space.
 
 The `kbase` routine takes the following options:
 - `check`: Check if the given array `basis` forms a Groebner basis (default is `true`).
-- `loglevel`: Logging level, an integer. Higher values mean less logging.
+- `loglevel`: Logging level, an integer. Higher values mean less verbose.
     Default value is `0`, which means that only warnings are printed. Set
     `loglevel` to negative values, e.g., `-1`, for debugging.
 
 ## Example
 
 ```jldoctest
-julia> using Groebner, DynamicPolynomials
-julia> @polyvar x y;
-julia> kbase([y^2 + x, x^2 + y], check=true)
+using Groebner, DynamicPolynomials
+@polyvar x y;
+kbase([y^2 + x, x^2 + y])
 ```
 """
 function kbase(basis::AbstractVector; options...)

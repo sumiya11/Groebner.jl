@@ -16,7 +16,7 @@ abstract type AbstractMonomialOrdering end
 # Tell the algorithm to preserve the monomial ordering defined on the
 # given input polynomials, if any.
 """
-    InputOrdering
+    InputOrdering()
 
 Preserves the monomial ordering defined on the input polynomials.
 This is the default option.
@@ -80,7 +80,7 @@ struct Lex{T} <: AbstractMonomialOrdering
 end
 
 """
-    DegLex
+    DegLex()
     DegLex(variables)
     DegLex(variables...)
 
@@ -120,7 +120,7 @@ struct DegLex{T} <: AbstractMonomialOrdering
 end
 
 """
-    DegRevLex
+    DegRevLex()
     DegRevLex(variables)
     DegRevLex(variables...)
 

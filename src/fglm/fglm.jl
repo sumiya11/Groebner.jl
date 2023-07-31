@@ -1,4 +1,3 @@
-# FGLM implementation is correct, but is still WIP
 
 mutable struct NextMonomials{Ord}
     # monomials to check
@@ -153,7 +152,8 @@ function extract_linear_basis(ring, matrix::DoubleMacaulayMatrix{C}) where {C}
 end
 
 function _kbase(polynomials, kws)
-    representation = select_polynomial_representation(polynomials, kws)
+    representation =
+        select_polynomial_representation(polynomials, kws, hint=:large_exponents)
     ring, var_to_index, monoms, coeffs =
         convert_to_internal(representation, polynomials, kws)
     params = AlgorithmParameters(ring, kws)

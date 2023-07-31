@@ -88,7 +88,7 @@ struct KeywordsHandler{Ord}
         certify = get(kws, :certify, get(default_kw_args, :certify, false))
         linalg = get(kws, :linalg, get(default_kw_args, :linalg, :randomized))
         @assert linalg in (:randomized, :deterministic) "Not recognized linear algebra option: $linalg"
-        monoms = get(kws, :monoms, get(default_kw_args, :monoms, :packed))
+        monoms = get(kws, :monoms, get(default_kw_args, :monoms, :dense))
         @assert monoms in (:auto, :dense, :packed, :sparse) "Not recognized monomial representation: $monoms"
         seed = get(kws, :seed, get(default_kw_args, :seed, 42))
         loglevel = get(kws, :loglevel, get(default_kw_args, :loglevel, 0))
