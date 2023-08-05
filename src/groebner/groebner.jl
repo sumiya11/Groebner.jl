@@ -44,6 +44,7 @@ function _groebner(polynomials, kws::KeywordsHandler, representation)
     end
     # Compute a groebner basis!
     gbmonoms, gbcoeffs = _groebner(ring, monoms, coeffs, params)
+    @log_performance_counters
     # Convert result back to the representation of input
     convert_to_output(ring, polynomials, gbmonoms, gbcoeffs, params)
 end

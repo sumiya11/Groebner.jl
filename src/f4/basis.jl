@@ -413,7 +413,7 @@ end
 # from the added elements
 #
 # Always checks new elements redundancy.
-function update!(
+@timed_block function update!(
     pairset::Pairset,
     basis::Basis,
     ht::MonomialHashtable{M},

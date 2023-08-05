@@ -15,7 +15,7 @@
 
 # Performs gaussian row reduction of rows in the `matrix`
 # and writes any nonzero results to `basis`
-function reduction!(
+@timed_block function reduction!(
     ring::PolyRing,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -459,7 +459,7 @@ end
 # Recursively finds all polynomials from `basis` with the leading term
 # that divides any of the monomials stored in hashtable `symbol_ht`,
 # and writes all found polynomials to the `matrix`
-function symbolic_preprocessing!(
+@timed_block function symbolic_preprocessing!(
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
@@ -572,7 +572,7 @@ end
 # Select all S-pairs of the lowest degree of lcm
 # from the pairset and write the corresponding polynomials
 # to the matrix
-function select_normal!(
+@timed_block function select_normal!(
     pairset::Pairset,
     basis::Basis,
     matrix::MacaulayMatrix,

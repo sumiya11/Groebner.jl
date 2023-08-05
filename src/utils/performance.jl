@@ -71,16 +71,19 @@ end
 """
     @log_performance_counters
 
-Prints performance counters to the current logging stream.
+Logs performance counters to the current logging stream.
 """
 macro log_performance_counters()
-    esc(quote
-        if $(@__MODULE__).performance_counters_enabled()
-            _log_performance_counters()
-        else
-            nothing
+    esc(
+        quote
+            if $(@__MODULE__).logging_enabled() &&
+               $(@__MODULE__).performance_counters_enabled()
+                _log_performance_counters()
+            else
+                nothing
+            end
         end
-    end)
+    )
 end
 
 mutable struct PerfCounterRecord
@@ -125,13 +128,12 @@ function accumulate_counter(id, file, line, index, cycles)
 end
 
 function _log_performance_counters()
-    io = _default_logger[].stream
-    println(io, "\t\t\thits\tcycles/hit")
+    msg = "Performance counters collected (does not account for overlap)\n"
+    msg *= "\t\t\thits\tcycles/hit\n"
     for i in 1:length(_perf_counters)
         record = _perf_counters[i]
-        println(
-            io,
-            "$(last(split(record.file, "/"))):$(record.line)/$(record.id)\t\t$(record.hits)\t$(record.cycles/record.hits)"
-        )
+        msg *= "$(last(split(record.file, "/"))):$(record.line)/$(record.id)\t\t$(record.hits)\t$(record.cycles/record.hits)\n"
     end
+    @log level = -1 msg
+    nothing
 end
