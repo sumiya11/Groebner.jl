@@ -289,10 +289,9 @@ function linear_relation!(
     matrix::DoubleMacaulayMatrix,
     monom::MonomIdx,
     vector::Basis{C},
-    ht
+    ht,
+    arithmetic
 ) where {C <: Coeff}
-    arithmetic = select_arithmetic(vector.coeffs, ring.ch)
-
     leftrow, rightrow = convert_to_double_dense_row(matrix, monom, vector, ht)
 
     # if debug()

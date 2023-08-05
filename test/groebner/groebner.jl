@@ -127,7 +127,7 @@ end
     @test Groebner.isgroebner(gb)
 end
 
-@testset "groebner corners cases" begin
+@testset "groebner corner cases" begin
     R, (x, y, z, w) = PolynomialRing(QQ, ["x", "y", "z", "w"], ordering=:degrevlex)
 
     fs = [(12345678 // 12347)x, (222222221111123 // 2131232232097)y + z]

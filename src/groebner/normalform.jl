@@ -18,7 +18,7 @@ function _normalform(polynomials, to_be_reduced, kws::KeywordsHandler)
     end
     monoms_to_be_reduced_nonzero = monoms_to_be_reduced[nonzero_indices]
     coeffs_to_be_reduced_nonzero = coeffs_to_be_reduced[nonzero_indices]
-    params = AlgorithmParameters(ring, kws)
+    params = AlgorithmParameters(ring, polynomial_repr, kws)
     ring, _ = set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
     ring_, _ = set_monomial_ordering!(
         ring_to_be_reduced,
@@ -69,6 +69,6 @@ function _normalform(
         coeffs_to_be_reduced,
         hashtable
     )
-    f4_normalform!(ring, basis, tobereduced, hashtable)
+    f4_normalform!(ring, basis, tobereduced, hashtable, params.arithmetic)
     export_basis_data(tobereduced, hashtable)
 end

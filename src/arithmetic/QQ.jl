@@ -12,6 +12,8 @@ struct BuiltinArithmeticQQ <: AbstractArithmeticQQ
     end
 end
 
-function select_arithmetic(coeffs::Vector{Vector{T}}, ch) where {T <: CoeffQQ}
+default_arithmetic_qq() = BuiltinArithmeticQQ()
+
+function select_arithmetic(characteristic, ::Type{CoeffType}) where {CoeffType <: CoeffQQ}
     BuiltinArithmeticQQ()
 end

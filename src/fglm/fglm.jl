@@ -79,7 +79,8 @@ function fglm_f4!(
     ring::PolyRing,
     basis::Basis{C},
     ht::MonomialHashtable,
-    ord::AbstractInternalOrdering
+    ord::AbstractInternalOrdering,
+    params
 ) where {C <: Coeff}
     newbasis = initialize_basis(ring, basis.nfilled, C)
     nextmonoms = initialize_nextmonomials(ht, ord)
@@ -97,11 +98,12 @@ function fglm_f4!(
         tobereduced.nfilled = 1
 
         # compute normal form
-        f4_normalform!(ring, basis, tobereduced, ht)
+        f4_normalform!(ring, basis, tobereduced, ht, params.arithmetic)
 
         # matrix left rows can express tobereduced?
         # reduces monom and tobereduced
-        exists, relation = linear_relation!(ring, matrix, monom, tobereduced, ht)
+        exists, relation =
+            linear_relation!(ring, matrix, monom, tobereduced, ht, params.arithmetic)
 
         # if linear relation between basis elements exists
         if exists
@@ -126,7 +128,7 @@ function fglm_f4(
     params
 ) where {M, C <: Coeff}
     basis, pairset, ht = initialize_structs(ring, basisexps, basiscoeffs, params)
-    basis, linbasis, ht = fglm_f4!(ring, basis, ht, ring.ord)
+    basis, linbasis, ht = fglm_f4!(ring, basis, ht, ring.ord, params)
     export_basis_data(basis, ht)
 end
 
@@ -156,7 +158,7 @@ function _kbase(polynomials, kws)
         select_polynomial_representation(polynomials, kws, hint=:large_exponents)
     ring, var_to_index, monoms, coeffs =
         convert_to_internal(representation, polynomials, kws)
-    params = AlgorithmParameters(ring, kws)
+    params = AlgorithmParameters(ring, representation, kws)
     if isempty(monoms)
         @log level = -2 "Input consisting of zero polynomials."
         throw(DomainError("Input consisting of zero polynomials to Groebner.kbase."))
@@ -180,6 +182,6 @@ function kbase_f4(
     params
 ) where {M, C <: Coeff}
     basis, pairset, ht = initialize_structs(ring, basisexps, basiscoeffs, params)
-    basis, linbasis, ht = fglm_f4!(ring, basis, ht, ring.ord)
+    basis, linbasis, ht = fglm_f4!(ring, basis, ht, ring.ord, params)
     export_basis_data(linbasis, ht)
 end

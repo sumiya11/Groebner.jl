@@ -47,13 +47,12 @@ end
 
 function reduction_apply!(
     graph::ComputationGraphF4,
-    ring,
     basis,
     matrix,
     ht,
-    rng,
     symbol_ht,
-    iter
+    iter,
+    params
 )
     if length(graph.matrix_sorted_columns) < iter
         column_to_monom_mapping!(matrix, symbol_ht)
@@ -63,13 +62,7 @@ function reduction_apply!(
         column_to_monom_mapping!(graph, matrix, symbol_ht)
     end
 
-    sort_matrix_upper_rows_decreasing!(matrix) # for pivots,  AB part
-    sort_matrix_lower_rows_increasing!(matrix) # for reduced, CD part
-
-    @log level = -3 repr_matrix(matrix)
-
-    @log level = -6 "Apply: after mapping and sorting" matrix
-    flag = linear_algebra!(graph, ring, matrix, basis, :apply, rng)
+    flag = linear_algebra!(matrix, basis, params, graph, linalg=:apply)
     if !flag
         return false
     end
@@ -160,12 +153,12 @@ end
 
 function reducegb_f4_apply!(
     graph,
-    ring::PolyRing,
     basis::Basis,
     matrix::MacaulayMatrix,
     hashtable::MonomialHashtable{M},
     symbol_ht::MonomialHashtable{M},
-    iter
+    iter,
+    params
 ) where {M}
     @log level = -5 "Entering apply autoreduction" basis
 
@@ -243,11 +236,9 @@ function reducegb_f4_apply!(
     end
     matrix.ncolumns = matrix.nleft + matrix.nright
 
-    sort_matrix_upper_rows_decreasing!(matrix)
-
     @log level = -6 "In autoreduction apply" basis matrix
 
-    flag = deterministic_sparse_rref_interreduce!(ring, matrix, basis)
+    flag = linear_algebra_reducegb!(matrix, basis, params, linalg=:apply)
     if !flag
         return false
     end
@@ -330,16 +321,7 @@ function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
         symbolic_preprocessing!(graph, iters, basis, matrix, hashtable, symbol_ht)
         @log level = -5 "After symbolic preprocessing:" matrix
 
-        flag = reduction_apply!(
-            graph,
-            ring,
-            basis,
-            matrix,
-            hashtable,
-            params.rng,
-            symbol_ht,
-            iters
-        )
+        flag = reduction_apply!(graph, basis, matrix, hashtable, symbol_ht, iters, params)
         if !flag
             # Unlucky cancellation of basis coefficients happened
             return false
@@ -365,12 +347,12 @@ function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
         symbol_ht = initialize_secondary_hashtable(hashtable)
         flag = reducegb_f4_apply!(
             graph,
-            ring,
             basis,
             matrix,
             hashtable,
             symbol_ht,
-            iters_total + 1
+            iters_total + 1,
+            params
         )
         if !flag
             return false
@@ -397,20 +379,11 @@ function symbolic_preprocessing!(graph, basis, matrix, hashtable, symbol_ht)
     @log level = -6 "Symbol ht:" symbol_ht
 end
 
-function reduction_learn!(graph, ring, basis, matrix, hashtable, symbol_ht, linalg, rng)
+function reduction_learn!(graph, basis, matrix, hashtable, symbol_ht, params)
     column_to_monom_mapping!(matrix, symbol_ht)
-
-    sort_matrix_upper_rows_decreasing!(matrix) # for pivots,  AB part
-    sort_matrix_lower_rows_increasing!(matrix) # for reduced, CD part
-
-    @log level = -6 "Learn: after mapping and sorting" matrix
-
     @log level = -3 repr_matrix(matrix)
-
-    linear_algebra!(graph, ring, matrix, basis, :learn, rng)
-
+    linear_algebra!(matrix, basis, params, graph, linalg=:learn)
     @log level = -6 "After linear algebra" matrix
-
     convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht)
 end
 
@@ -420,13 +393,10 @@ function f4_reducegb_learn!(
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable{M},
-    symbol_ht::MonomialHashtable{M}
+    symbol_ht::MonomialHashtable{M},
+    params
 ) where {M}
     @log level = -6 "Entering learn autoreduction" basis
-
-    #=
-
-    =#
 
     etmp = construct_const_monom(M, ht.nvars)
     # etmp is now set to zero, and has zero hash
@@ -471,11 +441,9 @@ function f4_reducegb_learn!(
     column_to_monom_mapping!(matrix, symbol_ht)
     matrix.ncolumns = matrix.nleft + matrix.nright
 
-    sort_matrix_upper_rows_decreasing!(matrix)
-
     @log level = -6 "In autoreduction learn" basis matrix
 
-    deterministic_sparse_rref_interreduce_learn!(graph, ring, matrix, basis)
+    linear_algebra_reducegb!(matrix, basis, params, graph, linalg=:learn)
 
     convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 
@@ -567,16 +535,7 @@ function f4_learn!(
         @log level = -6 "After symbolic preprocessing:" matrix
 
         # reduces polys and obtains new potential basis elements
-        reduction_learn!(
-            graph,
-            ring,
-            basis,
-            matrix,
-            hashtable,
-            symbol_ht,
-            params.linalg,
-            params.rng
-        )
+        reduction_learn!(graph, basis, matrix, hashtable, symbol_ht, params)
 
         @log level = -6 "After reduction_learn:" matrix basis
 
@@ -613,7 +572,7 @@ function f4_learn!(
 
     if params.reduced
         @log level = -2 "Autoreducing the final basis.."
-        f4_reducegb_learn!(graph, ring, basis, matrix, hashtable, symbol_ht)
+        f4_reducegb_learn!(graph, ring, basis, matrix, hashtable, symbol_ht, params)
         @log level = -3 "Autoreduced!"
     end
 

@@ -38,6 +38,10 @@ end
 
 divisor(arithm::SpecializedBuiltinArithmeticZp) = arithm.divisor
 
+function select_arithmetic(characteristic, ::Type{CoeffType}) where {CoeffType <: CoeffFF}
+    SpecializedBuiltinArithmeticZp(convert(CoeffType, characteristic))
+end
+
 # Returns the higher half of the product a*b
 function _mul_high(a::T, b::T) where {T <: Union{Signed, Unsigned}}
     ((widen(a) * b) >>> (sizeof(a) * 8)) % T
@@ -64,8 +68,4 @@ end
 @inline function mod_x(a::T, mod::SpecializedBuiltinArithmeticZp{T, false}) where {T}
     x = _mul_high(a, mod.multiplier)
     a - (x >>> mod.shift) * mod.divisor
-end
-
-function select_arithmetic(coeffs::Vector{Vector{T}}, ch) where {T <: CoeffFF}
-    SpecializedBuiltinArithmeticZp(convert(T, ch))
 end

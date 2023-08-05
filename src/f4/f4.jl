@@ -21,17 +21,11 @@ function reduction!(
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable,
-    linalg::Symbol,
-    rng
+    params::AlgorithmParameters
 )
     column_to_monom_mapping!(matrix, symbol_ht)
 
-    sort_matrix_upper_rows_decreasing!(matrix) # for pivots,  AB part
-    sort_matrix_lower_rows_increasing!(matrix) # for reduced, CD part
-
-    @log level = -3 repr_matrix(matrix)
-
-    linear_algebra!(ring, matrix, basis, linalg, rng)
+    linear_algebra!(matrix, basis, params)
 
     convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 end
@@ -281,7 +275,8 @@ function reducegb_f4!(
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable{M},
-    symbol_ht::MonomialHashtable{M}
+    symbol_ht::MonomialHashtable{M},
+    params
 ) where {M}
     @log level = -7 "Entering autoreduction" basis
 
@@ -305,7 +300,6 @@ function reducegb_f4!(
 
         matrix.upper_to_coeffs[matrix.nrows] = basis.nonredundant[i]
         matrix.upper_to_mult[matrix.nrows] = insert_in_hash_table!(ht, etmp)
-        # set lead index as 1
         hv = symbol_ht.hashdata[uprows[matrix.nrows][1]]
         symbol_ht.hashdata[uprows[matrix.nrows][1]] =
             Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
@@ -325,9 +319,7 @@ function reducegb_f4!(
     column_to_monom_mapping!(matrix, symbol_ht)
     matrix.ncolumns = matrix.nleft + matrix.nright
 
-    sort_matrix_upper_rows_decreasing!(matrix)
-
-    deterministic_sparse_rref_interreduce!(ring, matrix, basis)
+    linear_algebra_reducegb!(matrix, basis, params)
 
     convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 
@@ -370,6 +362,7 @@ function select_tobereduced!(
     # to lower rows of the matrix
     reinitialize_matrix!(matrix, max(basis.nfilled, tobereduced.nfilled))
     resize!(matrix.lower_rows, tobereduced.nfilled)
+    resize!(matrix.coeffs, tobereduced.nfilled)
 
     etmp = construct_const_monom(M, ht.nvars)
 
@@ -381,6 +374,7 @@ function select_tobereduced!(
             multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, gen)
         matrix.lower_to_coeffs[matrix.nrows] = i
         matrix.lower_to_mult[matrix.nrows] = insert_in_hash_table!(ht, etmp)
+        matrix.coeffs[matrix.nrows] = tobereduced.coeffs[i]
     end
 
     basis.nfilled
@@ -805,7 +799,6 @@ function f4!(
     # @invariant pairset_well_formed(:input_f4!, pairset, basis, ht)
 
     @log level = -2 "Entering F4."
-    # TODO: here, decide on the number field arithmetic implementation
     normalize_basis!(ring, basis)
 
     matrix = initialize_matrix(ring, C)
@@ -858,14 +851,13 @@ function f4!(
             symbol_ht,
             maxpairs=params.maxpairs
         )
-        # Color with [F4]
         @log level = -3 "After normal selection: available $(pairset.load) pairs"
         @log level = -3 repr_basis(basis)
 
         symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
 
         # reduces polys and obtains new potential basis elements
-        reduction!(ring, basis, matrix, hashtable, symbol_ht, params.linalg, params.rng)
+        reduction!(ring, basis, matrix, hashtable, symbol_ht, params)
 
         update_tracer_iteration!(tracer, matrix.npivots == 0)
 
@@ -901,7 +893,7 @@ function f4!(
 
     if params.reduced
         @log level = -2 "Autoreducing the final basis.."
-        reducegb_f4!(ring, basis, matrix, hashtable, symbol_ht)
+        reducegb_f4!(ring, basis, matrix, hashtable, symbol_ht, params)
         @log level = -3 "Autoreduced!"
     end
 
@@ -919,8 +911,9 @@ function f4_isgroebner!(
     ring,
     basis::Basis{C},
     pairset,
-    hashtable::MonomialHashtable{M}
-) where {M <: Monom, C <: Coeff}
+    hashtable::MonomialHashtable{M},
+    arithmetic::A
+) where {M <: Monom, C <: Coeff, A <: AbstractArithmetic}
     matrix = initialize_matrix(ring, C)
     symbol_ht = initialize_secondary_hashtable(hashtable)
     update_ht = initialize_secondary_hashtable(hashtable)
@@ -932,10 +925,8 @@ function f4_isgroebner!(
     symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
     # Rename the columns and sort the rows of the matrix
     column_to_monom_mapping!(matrix, symbol_ht)
-    sort_matrix_upper_rows_decreasing!(matrix)
-    sort_matrix_lower_rows_increasing!(matrix)
     # Reduce!
-    deterministic_sparse_rref_isgroebner!(ring, matrix, basis)
+    linear_algebra_isgroebner!(matrix, basis, arithmetic)
 end
 
 # Reduces each polynomial in the `tobereduced` by the polynomials from the `basis`.
@@ -943,17 +934,17 @@ function f4_normalform!(
     ring::PolyRing,
     basis::Basis{C},
     tobereduced::Basis{C},
-    ht::MonomialHashtable
-) where {C <: Coeff}
+    ht::MonomialHashtable,
+    arithmetic::A
+) where {C <: Coeff, A <: AbstractArithmetic}
     matrix = initialize_matrix(ring, C)
     symbol_ht = initialize_secondary_hashtable(ht)
     # Fill the matrix
     select_tobereduced!(basis, tobereduced, matrix, symbol_ht, ht)
     symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
     column_to_monom_mapping!(matrix, symbol_ht)
-    sort_matrix_upper_rows_decreasing!(matrix)
     # Reduce the matrix
-    deterministic_sparse_rref_nf!(ring, matrix, tobereduced, basis)
+    linear_algebra_normalform!(matrix, basis, arithmetic)
     # Export the rows of the matrix back to the basis elements
     convert_rows_to_basis_elements_nf!(matrix, tobereduced, ht, symbol_ht)
     tobereduced

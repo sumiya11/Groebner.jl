@@ -29,14 +29,29 @@ function correctness_check!(
     end
     # Then check that a basis is also a basis modulo a prime
     if params.randomized_check
-        if !randomized_correctness_check!(state, ring, basis_zz, basis_ff, lucky, hashtable)
+        if !randomized_correctness_check!(
+            state,
+            ring,
+            basis_zz,
+            basis_ff,
+            lucky,
+            hashtable,
+            params
+        )
             @log level = -2 "Randomized check failed."
             return false
         end
         @log level = -2 "Randomized check passed!"
     end
     if params.certify_check
-        return certify_correctness_check!(state, ring, basis_qq, basis_ff, hashtable)
+        return certify_correctness_check!(
+            state,
+            ring,
+            basis_qq,
+            basis_ff,
+            hashtable,
+            params
+        )
     end
     true
 end
@@ -66,7 +81,15 @@ function heuristic_correctness_check(gb_coeffs_qq, modulo)
     true
 end
 
-function randomized_correctness_check!(state, ring, input_zz, gb_ff, lucky, hashtable)
+function randomized_correctness_check!(
+    state,
+    ring,
+    input_zz,
+    gb_ff,
+    lucky,
+    hashtable,
+    params
+)
     prime = next_check_prime!(lucky)
     @log level = -2 "Checking the correctness of reconstrcted basis modulo $prime"
     ring_ff, input_ff = reduce_modulo_p!(state.buffer, ring, input_zz, prime, deepcopy=true)
@@ -75,10 +98,11 @@ function randomized_correctness_check!(state, ring, input_zz, gb_ff, lucky, hash
     ring_ff, gb_ff = reduce_modulo_p!(state.buffer, ring, gb_zz, prime, deepcopy=false)
     # Check that initial ideal contains in the computed groebner basis modulo a
     # random prime
+    arithmetic = select_arithmetic(prime, CoeffModular)
     # TODO: Why is this here?
     # F4 normalizes the basis on entry
     normalize_basis!(ring_ff, gb_ff)
-    f4_normalform!(ring_ff, gb_ff, input_ff, hashtable)
+    f4_normalform!(ring_ff, gb_ff, input_ff, hashtable, arithmetic)
     for i in 1:(input_ff.nprocessed)
         # meaning that something is not reduced
         if !iszero_coeffs(input_ff.coeffs[i])
@@ -88,18 +112,18 @@ function randomized_correctness_check!(state, ring, input_zz, gb_ff, lucky, hash
     end
     # Check that the basis is a groebner basis modulo a prime
     pairset = initialize_pairset(UInt64)
-    if !f4_isgroebner!(ring_ff, gb_ff, pairset, hashtable)
+    if !f4_isgroebner!(ring_ff, gb_ff, pairset, hashtable, arithmetic)
         @log level = -2 "Not all of S-polynomials reduce to zero modulo $prime"
         return false
     end
     true
 end
 
-function certify_correctness_check!(state, ring, input_qq, gb_ff, hashtable)
+function certify_correctness_check!(state, ring, input_qq, gb_ff, hashtable, params)
     @log level = -2 "Checking the correctness of reconstructed basis over the rationals"
     gb_qq = copy_basis(gb_ff, state.gb_coeffs_qq, deepcopy=true)
     input_qq = deepcopy_basis(input_qq)
-    f4_normalform!(ring, gb_qq, input_qq, hashtable)
+    f4_normalform!(ring, gb_qq, input_qq, hashtable, params.arithmetic)
     for i in 1:(input_qq.nprocessed)
         # Meaning that some polynomial is not reduced to zero
         if !iszero_coeffs(input_qq.coeffs[i])
@@ -109,7 +133,7 @@ function certify_correctness_check!(state, ring, input_qq, gb_ff, hashtable)
     end
     # Check that the basis is a groebner basis modulo a prime
     pairset = initialize_pairset(UInt64)
-    if !f4_isgroebner!(ring, gb_qq, pairset, hashtable)
+    if !f4_isgroebner!(ring, gb_qq, pairset, hashtable, params.arithmetic)
         @log level = -2 "Not all of S-polynomials reduce to zero"
         return false
     end

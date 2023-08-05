@@ -8,7 +8,7 @@ function _isgroebner(polynomials, kws::KeywordsHandler)
         @log level = -2 "Input consisting of zero polynomials, which is a Groebner basis by our convention"
         return true
     end
-    params = AlgorithmParameters(ring, kws)
+    params = AlgorithmParameters(ring, polynomial_repr, kws)
     ring, _ = set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
     _isgroebner(ring, monoms, coeffs, params)
 end
@@ -21,7 +21,7 @@ function _isgroebner(
     params
 ) where {M <: Monom, C <: CoeffFF}
     basis, pairset, hashtable = initialize_structs(ring, monoms, coeffs, params)
-    f4_isgroebner!(ring, basis, pairset, hashtable)
+    f4_isgroebner!(ring, basis, pairset, hashtable, params.arithmetic)
 end
 
 # isgroebner for Rational numbers
@@ -38,7 +38,7 @@ function _isgroebner(
         @log level = -2 """
         Keyword argument `certify=true` was provided. 
         Checking that the given input is a Groebner basis directly over the rationals"""
-        return f4_isgroebner!(ring, basis, pairset, hashtable)
+        return f4_isgroebner!(ring, basis, pairset, hashtable, params.arithmetic)
     end
     # Otherwise, check modulo a prime
     @log level = -2 "Checking if a Grobner basis modulo a prime"
@@ -49,5 +49,6 @@ function _isgroebner(
     prime = next_check_prime!(luckyprimes)
     @log level = -2 "Reducing input generators modulo $prime"
     ring_ff, basis_ff = reduce_modulo_p!(buffer, ring, basis_zz, prime, deepcopy=true)
-    f4_isgroebner!(ring_ff, basis_ff, pairset, hashtable)
+    arithmetic = select_arithmetic(prime, CoeffModular)
+    f4_isgroebner!(ring_ff, basis_ff, pairset, hashtable, arithmetic)
 end

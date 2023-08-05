@@ -33,7 +33,7 @@ function _groebner_learn(polynomials, kws, representation)
         @log level = -2 "Input consisting of zero polynomials. Error will follow"
         throw(DomainError("Input consisting of zero polynomials."))
     end
-    params = AlgorithmParameters(ring, kws)
+    params = AlgorithmParameters(ring, representation, kws)
     ring, term_sorting_permutations =
         set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
     graph, gb_monoms, gb_coeffs = _groebner_learn(ring, monoms, coeffs, params)
@@ -48,6 +48,7 @@ function _groebner_apply!(graph::ComputationGraphF4, polynomials, kws::KeywordsH
     # TODO: this is a bit hacky
     params = AlgorithmParameters(
         ring,
+        graph.representation,
         kws,
         orderings=(graph.params.original_ord, graph.params.target_ord)
     )

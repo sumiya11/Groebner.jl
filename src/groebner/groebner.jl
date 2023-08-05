@@ -25,11 +25,7 @@ function _groebner(polynomials, kws::KeywordsHandler)
     end
 end
 
-function _groebner(
-    polynomials,
-    kws::KeywordsHandler,
-    representation::PolynomialRepresentation
-)
+function _groebner(polynomials, kws::KeywordsHandler, representation)
     # Extract ring information, exponents, and coefficients from the input
     # polynomials. Convert these to an internal polynomial representation. 
     # NOTE: This must copy the input, so that input `polynomials` is never
@@ -37,7 +33,7 @@ function _groebner(
     ring, var_to_index, monoms, coeffs =
         convert_to_internal(representation, polynomials, kws)
     # Check and set parameters and monomial ordering
-    params = AlgorithmParameters(ring, kws)
+    params = AlgorithmParameters(ring, representation, kws)
     # NOTE: at this point, we already know the computation method we are going to use,
     # and the parameters are set.
     ring, _ = set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
@@ -120,7 +116,8 @@ function _groebner_classic_modular(
     @log level = -5 "Reduced coefficients are" basis_ff.coeffs
     #####
     @log level = -5 "Before F4" basis_ff
-    f4!(ring_ff, basis_ff, pairset, hashtable, tracer, params)
+    params_zp = params_mod_p(params, prime)
+    f4!(ring_ff, basis_ff, pairset, hashtable, tracer, params_zp)
     @log level = -5 "After F4:" basis_ff
     # Reconstruct coefficients and write results to the accumulator.
     # CRT reconstrction is trivial here.
@@ -184,7 +181,8 @@ function _groebner_classic_modular(
             # Perform reduction modulo prime and store result in basis_ff
             ring_ff, basis_ff =
                 reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
-            f4!(ring_ff, basis_ff, pairset, hashtable, tracer, params)
+            params_zp = params_mod_p(params, prime)
+            f4!(ring_ff, basis_ff, pairset, hashtable, tracer, params_zp)
             if !majority_vote!(state, basis_ff, tracer, params)
                 @log level = -2 "Majority vote is not conclusive, aborting reconstruction!"
                 continue

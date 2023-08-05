@@ -1,8 +1,8 @@
 # Logging for Groebner
-#
+
 # Provides the macro @log, which can be used to log a record with the given
 # message. The macro @log wraps the standard Logging.@logmsg.
-# 
+
 # Logging is disabled on all threads except the one with threadid() == 1.
 
 function meta_formatter_groebner end
@@ -129,6 +129,9 @@ macro log(args...)
         end
     ))
 end
+
+###
+# Logging info about memory usage
 
 """
     memory_logging_enabled() -> Bool

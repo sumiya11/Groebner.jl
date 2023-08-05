@@ -1,69 +1,54 @@
-# Helper functions for performance measurements 
+# Measuring performance
 
-# TODO: this is not thread-safe
-
-"""
-    enable_performance_counters(flag)
-
-Enable debugging globally.
-"""
-function enable_performance_counters(flag::Bool)
-    if !getfield(@__MODULE__, :performance_counters_enabled)()
-        Core.eval(@__MODULE__, :(performance_counters_enabled() = $flag))
-    end
-end
-
-"""
-    CounterRecord
-
-"""
-mutable struct CounterRecord
-    file::String
-    line::Int
-    hits::Int
-    cycles::Int
-    PerformanceRecord() = new("", 0, 0, 0)
-end
-
-# NOTE: be careful about moving these around!
-const __counter_value = Ref{Int}(0)
-const __counters = [CounterRecord() for _ in 1:((@__COUNTER__) - 1)]
-
-"""
-    @__COUNTER__ -> Int
-
-Expand to an integer that starts at 1. 
-The value is incremented by 1 every time it is used in a source file.
-"""
-macro __COUNTER__()
-    __counter_value[] += 1
-end
-
-function accumulate_counter(file, line, index, cycles)
-    __counters[index].file = file
-    __counters[index].line = line
-    __counters[index].hits += 1
-    __counters[index].cycles += cycles
-    if cycles > 5000
-        _display_performance_counters()
-    end
-    nothing
-end
+# Provides the macro @timed_block, which can be used to track the performance of
+# a code block / function
 
 """
     rdtsc() -> Int
 
-Returns rdtsc.
-
-**Note:** the overhead is platform dependent, 
-with the average of 10-40 cycles and a high variance.
+Returns the Read Time Stamp Counter.
 """
 rdtsc() = ccall("llvm.x86.rdtsc", llvmcall, Int, ())
 
 """
-    @timed_block
+    performance_counters_enabled() -> Bool
 
-The runtime overhead is very small: roughly 20-30 cycles. 
+Specifies if performance should be tracked in Groebner. If `false`, then all
+performance counters are disabled, and entail no runtime overhead.
+
+See also `@timed_block`.
+"""
+performance_counters_enabled() = true
+
+"""
+    @timed_block begin ... end
+    @timed_block function ... end
+
+Wraps the expression in a timed block.
+
+Timed block tracks some runtime performance information, if performance counters
+are enabled in Groebner (see `performance_counters_enabled`).
+
+## Example
+
+```jldoctest
+@timed_block function dot_product(x, y)
+    sum(x .* y)
+end
+
+for i in 1:100
+    dot_product([1, 2, 3], [4, 5, 6])
+end
+
+@log_performance_counters
+# prints the following (or something similar)
+
+                            hits    cycles/hit
+REPL[1]:1/dot_product       100     91.8
+```
+
+*Note that this macro measures performance correctly only for the code that is
+defined in the Groebner module. In that sense, the example may be misleading.*
 """
 macro timed_block(expr)
     @assert expr.head === :block ||
@@ -71,43 +56,82 @@ macro timed_block(expr)
             (expr.head === :(=) && expr.args[1] === :call)
     file, line = String(__source__.file), Int(__source__.line)
     if expr.head === :block
-        _timed_block(file, line, expr)
-    else # if function
+        # if begin ... end
+        id = (file, line)
+        esc(_timed_block(file, line, id, expr))
+    else
+        # if function
         fdef = splitdef(expr)
-        fdef[:body] = _timed_block(file, line, fdef[:body])
+        id = fdef[:name]
+        fdef[:body] = _timed_block(file, line, id, fdef[:body])
         esc(combinedef(fdef))
     end
 end
 
-function _timed_block(file, line, expr)
-    beginstamp = gensym()
-    endstamp = gensym()
-    esc(:(
-        if $(@__MODULE__).enable_performance_counters()
-            $beginstamp = rdtsc()
-            $expr
-            $endstamp = rdtsc() - $beginstamp
-            record_counter($file, $line, @__COUNTER__, $endstamp)
+"""
+    @log_performance_counters
+
+Prints performance counters to the current logging stream.
+"""
+macro log_performance_counters()
+    esc(quote
+        if $(@__MODULE__).performance_counters_enabled()
+            _log_performance_counters()
         else
-            $expr
+            nothing
         end
-    ))
+    end)
 end
 
-macro display_performance_counters()
-    esc(:(
-        if $(@__MODULE__).enable_performance_counters()
-            _display_performance_counters()
-        else
-        end
-    ))
+mutable struct PerfCounterRecord
+    id::Any
+    file::String
+    line::Int
+    hits::Int
+    cycles::Int
+    PerfCounterRecord() = new(nothing, "", 0, 0, 0)
 end
-function _display_performance_counters()
-    println("\t\t\thits\tcycles/hit")
-    for i in 1:length(__counters)
-        record = __counters[i]
+
+const _perf_counters = Vector{PerfCounterRecord}()
+const _perf_id_to_index = Dict{Any, Int}()
+
+function _timed_block(file, line, id, expr)
+    push!(_perf_counters, PerfCounterRecord())
+    _perf_id_to_index[id] = length(_perf_counters)
+    index = length(_perf_id_to_index)
+    _perf_counters[index].id = id
+    _perf_counters[index].file = file
+    _perf_counters[index].line = line
+    beginstamp = gensym()
+    counter = gensym()
+    result = gensym()
+    quote
+        if $(@__MODULE__).performance_counters_enabled()
+            $beginstamp = rdtsc()
+            $result = $expr
+            $counter = rdtsc() - $beginstamp
+            accumulate_counter($id, $file, $line, $index, $counter)
+            $result
+        else
+            $expr
+        end
+    end
+end
+
+function accumulate_counter(id, file, line, index, cycles)
+    @inbounds _perf_counters[index].hits += 1
+    @inbounds _perf_counters[index].cycles += cycles
+    nothing
+end
+
+function _log_performance_counters()
+    io = _default_logger[].stream
+    println(io, "\t\t\thits\tcycles/hit")
+    for i in 1:length(_perf_counters)
+        record = _perf_counters[i]
         println(
-            "$(last(split(record.file, "/"))):$(record.line)\t\t$(record.hits)\t$(record.cycles/record.hits)"
+            io,
+            "$(last(split(record.file, "/"))):$(record.line)/$(record.id)\t\t$(record.hits)\t$(record.cycles/record.hits)"
         )
     end
 end

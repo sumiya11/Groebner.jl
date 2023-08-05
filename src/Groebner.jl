@@ -38,6 +38,8 @@ import Base.MultiplicativeInverses: UnsignedMultiplicativeInverse
 
 import Combinatorics
 
+using ExprTools
+
 using Logging
 
 import MultivariatePolynomials
@@ -52,14 +54,17 @@ using SIMD
 
 include("utils/logging.jl")
 include("utils/invariants.jl")
+include("utils/performance.jl")
+
 # Minimalistic plotting with Unicode
 include("utils/plots.jl")
-include("utils/testsystems.jl")
+
+# Test systems, such as katsura, cyclic, etc
+include("utils/test_systems.jl")
 
 # Monomial orderings.
-# The file orderings.jl exports monomial orderings for communicating with the
-# user, and the file internal-orderings.jl actually implements monomial
-# orderings
+# The file orderings.jl is the interface for communicating with the user, and
+# the file internal-orderings.jl actually implements monomial orderings
 include("monomials/orderings.jl")
 include("monomials/internal-orderings.jl")
 
@@ -67,21 +72,21 @@ include("utils/keywords.jl")
 
 # Monomial implementations
 include("monomials/common.jl")
+include("monomials/exponentvector.jl")
 include("monomials/packedutils.jl")
 include("monomials/packedtuples.jl")
-include("monomials/exponentvector.jl")
 include("monomials/sparsevector.jl")
 
 # Defines some type aliases for Groebner
 include("utils/types.jl")
 
-# Fast arithmetic in Z_p
+# Fast arithmetic modulo a prime
 include("arithmetic/Zp.jl")
 # Not so fast arithmetic in the rationals
 include("arithmetic/QQ.jl")
 
 # Selecting algorithm parameters
-include("utils/parameters.jl")
+include("groebner/parameters.jl")
 
 # Input-output conversions for polynomials
 include("input-output/input-output.jl")
@@ -94,14 +99,14 @@ include("input-output/DynamicPolynomials.jl")
 include("f4/hashtable.jl")
 # `Pairset` and `Basis` implementations
 include("f4/basis.jl")
-# Computation graph for F4
+# Computation graph for F4 (tracing)
 include("f4/graph.jl")
 # `MacaulayMatrix` implementation
 include("f4/matrix.jl")
 include("f4/sorting.jl")
-# Some tracing
+# Some very shallow tracing
 include("f4/tracer.jl")
-# All together combined in F4 algorithm
+# All together combined in the F4 algorithm
 include("f4/f4.jl")
 include("f4/learn-apply.jl")
 

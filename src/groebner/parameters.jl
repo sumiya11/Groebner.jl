@@ -13,7 +13,7 @@ end
 
 Stores all parameters for a single GB computation.
 """
-struct AlgorithmParameters{Ord1, Ord2, Ord3}
+struct AlgorithmParameters{Ord1, Ord2, Ord3, Arithm}
     # Output polynomials monomial ordering
     target_ord::Ord1
     # Monomial ordering for computation
@@ -32,6 +32,8 @@ struct AlgorithmParameters{Ord1, Ord2, Ord3}
     # - :deterministic for exact deterministic algebra,
     # - :randomized for probabilistic linear algebra
     linalg::Symbol
+
+    arithmetic::Arithm
 
     # Reduced Groebner basis is needed
     reduced::Bool
@@ -56,7 +58,12 @@ struct AlgorithmParameters{Ord1, Ord2, Ord3}
     sweep::Bool
 end
 
-function AlgorithmParameters(ring, kwargs::KeywordsHandler; orderings=nothing)
+function AlgorithmParameters(
+    ring,
+    representation,
+    kwargs::KeywordsHandler;
+    orderings=nothing
+)
     if orderings !== nothing
         target_ord = orderings[2]
         computation_ord = orderings[2]
@@ -77,6 +84,8 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler; orderings=nothing)
     certify_check = kwargs.certify
 
     linalg = kwargs.linalg
+
+    arithmetic = select_arithmetic(ring.ch, representation.coefftype)
 
     ground = :zp
     if iszero(ring.ch)
@@ -109,6 +118,7 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler; orderings=nothing)
     certify_check = $certify_check
     check = $(kwargs.check)
     linalg = $linalg
+    arithmetic = $arithmetic
     reduced = $reduced
     maxpairs = $maxpairs
     ground = $ground
@@ -128,6 +138,7 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler; orderings=nothing)
         certify_check,
         kwargs.check,
         linalg,
+        arithmetic,
         reduced,
         maxpairs,
         ground,
@@ -137,5 +148,28 @@ function AlgorithmParameters(ring, kwargs::KeywordsHandler; orderings=nothing)
         useed,
         rng,
         sweep
+    )
+end
+
+function params_mod_p(params::AlgorithmParameters, prime::Integer)
+    AlgorithmParameters(
+        params.target_ord,
+        params.computation_ord,
+        params.original_ord,
+        params.heuristic_check,
+        params.randomized_check,
+        params.certify_check,
+        params.check,
+        params.linalg,
+        select_arithmetic(prime, CoeffModular),
+        params.reduced,
+        params.maxpairs,
+        params.ground,
+        params.strategy,
+        params.majority_threshold,
+        params.threading,
+        params.seed,
+        params.rng,
+        params.sweep
     )
 end
