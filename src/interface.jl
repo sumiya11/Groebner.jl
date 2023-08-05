@@ -62,8 +62,9 @@ groebner([x*y^2 + x, y*x^2 + y])
 function groebner(polynomials::AbstractVector; options...)
     # `KeywordsHandler` does several useful things on initialization:
     #   - checks that the keyword arguments are valid,
-    #   - sets the global logger for this module.
-    #
+    #   - sets the global logger for this module,
+    #   - refereshes performance counters.
+
     # NOTE: Type assertion *is needed* for type stability
     _groebner(polynomials, KeywordsHandler(:groebner, options))::typeof(polynomials)
 end

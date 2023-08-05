@@ -93,6 +93,9 @@ struct KeywordsHandler{Ord}
         seed = get(kws, :seed, get(default_kw_args, :seed, 42))
         loglevel = get(kws, :loglevel, get(default_kw_args, :loglevel, 0))
         update_logger(loglevel=loglevel)
+        if loglevel <= -1
+            refresh_performance_counters!()
+        end
         maxpairs = get(kws, :maxpairs, get(default_kw_args, :maxpairs, typemax(Int)))
         @assert maxpairs > 0 "The limit on the number of critical pairs must be positive"
         strategy = get(kws, :strategy, get(default_kw_args, :strategy, :classic_modular))

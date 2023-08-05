@@ -285,7 +285,7 @@ function ishashcollision(ht::MonomialHashtable, vidx, e, he)
     false
 end
 
-@timed_block function insert_in_hash_table!(ht::MonomialHashtable{M}, e::M) where {M}
+function insert_in_hash_table!(ht::MonomialHashtable{M}, e::M) where {M}
     # generate hash
     he = monom_hash(e, ht.hasher)
 

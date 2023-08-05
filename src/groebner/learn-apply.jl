@@ -40,6 +40,7 @@ function _groebner_learn(polynomials, kws, representation)
     graph.representation = representation
     graph.term_sorting_permutations = term_sorting_permutations
     @log level = -7 "Sorting permutations\nTerms: $term_sorting_permutations\nPolynomials: $(graph.input_permutation)"
+    @log_performance_counters
     graph, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
 end
 
@@ -54,6 +55,7 @@ function _groebner_apply!(graph::ComputationGraphF4, polynomials, kws::KeywordsH
     )
     ring = PolyRing(ring.nvars, graph.ring.ord, ring.ch)
     flag, gb_monoms, gb_coeffs = _groebner_apply!(ring, graph, params)
+    @log_performance_counters
     !flag && return (flag, polynomials)
     flag, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
 end
