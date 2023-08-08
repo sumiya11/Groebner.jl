@@ -40,10 +40,6 @@ The `groebner` routine takes the following options:
 - `maxpairs`: The maximum number of critical pairs used at once in matrix
     construction. By default, this is not specified. Tweak this option to try to
     lower the amount of RAM consumed.
-- `selection`: Selection strategy for critical pairs. Available options are:
-    - `:auto` for automatic choice (default),
-    - `:normal` for degree normal selection strategy,
-    - `:sugar` for sugar selection strategy.
 
 ## Example
 
@@ -72,6 +68,11 @@ function groebner(polynomials::AbstractVector; options...)
     # NOTE: Type assertion *is needed* for type stability
     _groebner(polynomials, KeywordsHandler(:groebner, options))::typeof(polynomials)
 end
+
+# - `selection`: Selection strategy for critical pairs. Available options are:
+#     - `:auto` for automatic choice (default),
+#     - `:normal` for degree normal selection strategy,
+#     - `:sugar` for sugar selection strategy.
 
 """
     groebner_learn(polynomials; options...)

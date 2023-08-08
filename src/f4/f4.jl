@@ -20,13 +20,15 @@
 #   - hashtable: a MonomialHashtable instance that stores monomials.
 #   - permutation: a sorting permutation for input polynomials.
 #
-# If `normalize_input=true` is provided, normalizes the output basis.
+# If `normalize_input=true` is provided, normalizes the basis.
+# If `sort_input=true` is provided, sorts the basis.
 function initialize_structs(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters;
-    normalize_input=true
+    normalize_input=true,
+    sort_input=true
 ) where {M <: Monom, C <: Coeff}
     @log level = -3 "Initializing structs.."
 
@@ -44,12 +46,16 @@ function initialize_structs(
     fill_data!(basis, hashtable, monoms, coeffs)
     fill_divmask!(hashtable)
 
-    @log level = -4 "Sorting input polynomials by their leading terms in non-decreasing order"
-    permutation = sort_polys_by_lead_increasing!(basis, hashtable)
+    if sort_input
+        permutation = sort_polys_by_lead_increasing!(basis, hashtable)
+    else
+        permutation = collect(1:(basis.nfilled))
+    end
 
-    # Divide each polynomial by the leading coefficient
+    # Divide each polynomial by the leading coefficient.
+    # We do not need normalization in some cases, e.g., when computing the
+    # normal forms
     if normalize_input
-        @log level = -4 "Normalizing input polynomials"
         normalize_basis!(ring, basis)
     end
 
@@ -62,12 +68,18 @@ function initialize_structs_learn(
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters;
-    normalize=true
+    normalize_input=true,
+    sort_input=true
 ) where {M <: Monom, C <: Coeff}
-    basis, pairset, hashtable, permutation =
-        initialize_structs(ring, monoms, coeffs, params, normalize=normalize)
+    basis, pairset, hashtable, permutation = initialize_structs(
+        ring,
+        monoms,
+        coeffs,
+        params,
+        normalize_input=normalize_input,
+        sort_input=sort_input
+    )
 
-    @log level = -4 "Initializing computation graph"
     graph = initialize_computation_graph_f4(
         ring,
         deepcopy_basis(basis),
@@ -80,134 +92,16 @@ function initialize_structs_learn(
     graph, basis, pairset, hashtable, permutation
 end
 
-# Initializes Basis and MonomialHashtable structures,
-# fills input data from exponents and coeffs
-#
-# Hashtable initial size is set to tablesize
-function initialize_structs_no_normalize(
+# Same as initialize_structs, but uses an existing hashtable
+function initialize_basis_using_existing_hashtable(
     ring::PolyRing,
-    exponents::Vector{Vector{M}},
-    coeffs_qq,
-    coeffs_ff::Vector{Vector{C}},
-    rng::Random.AbstractRNG,
-    tablesize::Int
-) where {M <: Monom, C <: Coeff}
-
-    # basis for storing basis elements,
-    # pairset for storing critical pairs of basis elements to assess,
-    # hashtable for hashing monomials occuring in the basis
-    basis = initialize_basis(ring, length(exponents), C)
-    basis_ht = initialize_basis_hash_table(ring, rng, M, initial_size=tablesize)
-
-    # filling the basis and hashtable with the given inputs
-    fill_data!(basis, basis_ht, exponents, coeffs_ff)
-
-    # every monomial in hashtable is associated with its divmask
-    # to perform divisions faster. Filling those
-    fill_divmask!(basis_ht)
-
-    # sort input, smaller leading terms first
-    sort_polys_by_lead_increasing!(basis, basis_ht, coeffs_qq)
-
-    basis, basis_ht
-end
-
-# Initializes Basis and MonomialHashtable structures,
-# fills input data from exponents and coeffs
-#
-# Hashtable initial size is set to tablesize
-function initialize_structs_ff(
-    ring::PolyRing{Ch},
-    exponents::Vector{Vector{M}},
+    monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
-    rng::Random.AbstractRNG,
-    tablesize::Int
-) where {Ch, M, C <: Coeff}
-    coeffs_ff = [Vector{Ch}(undef, length(c)) for c in coeffs]
-    initialize_structs_no_normalize(ring, exponents, coeffs, coeffs_ff, rng, tablesize)
-end
-
-# Initializes Basis and MonomialHashtable structures,
-# fills input data from exponents and coeffs
-function initialize_structs(
-    ring::PolyRing,
-    exponents::Vector{Vector{M}},
-    coeffs_qq::Vector{Vector{T1}},
-    coeffs_zz::Vector{Vector{T2}},
-    coeffs::Vector{Vector{C}},
-    rng::Random.AbstractRNG,
-    tablesize::Int
-) where {M, C <: Coeff, T1 <: CoeffQQ, T2 <: CoeffZZ}
-
-    # basis for storing basis elements,
-    # pairset for storing critical pairs of basis elements to assess,
-    # hashtable for hashing monomials occuring in the basis
-    basis = initialize_basis(ring, length(exponents), C)
-    basis_ht = initialize_basis_hash_table(ring, rng, M, initial_size=tablesize)
-
-    # filling the basis and hashtable with the given inputs
-    fill_data!(basis, basis_ht, exponents, coeffs)
-
-    # every monomial in hashtable is associated with its divmask
-    # to perform divisions faster. Filling those
-    fill_divmask!(basis_ht)
-
-    # sort input, smaller leading terms first
-    sort_polys_by_lead_increasing!(basis, basis_ht, coeffs_zz, coeffs_qq)
-
-    # divide each polynomial by leading coefficient
-    normalize_basis!(ring, basis)
-
-    basis, basis_ht
-end
-
-# Initializes Basis with the given hashtable,
-# fills input data from exponents and coeffs
-function initialize_structs(
-    ring::PolyRing,
-    exponents::Vector{Vector{M}},
-    coeffs::Vector{Vector{C}},
-    rng::Random.AbstractRNG,
-    tablesize::Int,
-    present_ht::MonomialHashtable
+    present_ht::MonomialHashtable;
 ) where {M, C <: Coeff}
-
-    # basis for storing basis elements,
-    # pairset for storing critical pairs of basis elements to assess,
-    # hashtable for hashing monomials occuring in the basis
-    basis = initialize_basis(ring, length(exponents), C)
-
-    # filling the basis and hashtable with the given inputs
-    fill_data!(basis, present_ht, exponents, coeffs)
-
-    # sort input, smaller leading terms first
-    sort_polys_by_lead_increasing!(basis, present_ht)
-
-    # divide each polynomial by leading coefficient
-    # We do not need normalization for normal forms
-    # normalize_basis!(basis)
-
-    basis, present_ht
-end
-
-# Initializes Basis with the given hashed exponents and coefficients
-function initialize_structs(
-    ring::PolyRing,
-    hashedexps::Vector{Vector{MonomIdx}},
-    coeffs::Vector{Vector{C}},
-    present_ht::MonomialHashtable
-) where {C <: Coeff}
-
-    # basis for storing basis elements,
-    # pairset for storing critical pairs of basis elements to assess,
-    # hashtable for hashing monomials occuring in the basis
-    basis = initialize_basis(ring, hashedexps, coeffs)
-    basis.nfilled = length(hashedexps)
-
-    # sort input, smaller leading terms first
-    sort_polys_by_lead_increasing!(basis, present_ht)
-
-    basis, present_ht
+    basis = initialize_basis(ring, length(monoms), C)
+    fill_data!(basis, present_ht, monoms, coeffs)
+    basis
 end
 
 # F4 reduction
@@ -219,12 +113,55 @@ end
     symbol_ht::MonomialHashtable,
     params::AlgorithmParameters
 )
-    # Construct a mapping from monomials to columns and re-enumerate matrix
-    # columns
+    # Construct a mapping from monomials to matrix columns and re-enumerate
+    # matrix columns
     column_to_monom_mapping!(matrix, symbol_ht)
     linear_algebra!(matrix, basis, params)
     # Extract nonzero rows from the matrix into the basis
     convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
+end
+
+# F4 symbolic preprocessing
+@timed_block function symbolic_preprocessing!(
+    basis::Basis,
+    matrix::MacaulayMatrix,
+    ht::MonomialHashtable,
+    symbol_ht::MonomialHashtable
+)
+    # 1. The matrix already has rows added on the critical pair selection stage.
+    #    Here, we find and add polynomial reducers to the matrix.
+    # 2. Monomials that represent the columns of the matrix are stored in the
+    #    symbol_ht hashtable.
+    symbol_load = symbol_ht.load
+    ncols = matrix.ncolumns
+
+    resize_matrix_upper_part_if_needed!(matrix, ncols + symbol_load)
+
+    # 3. Traverse all monomials in symbol_ht and search for a polynomial reducer
+    #    for each monomial.
+    # NOTE: note that the size of hashtable grows as polynomials with new
+    # monomials are added to the matrix, and the loop accounts for that
+    i = MonomIdx(symbol_ht.offset)
+    @inbounds while i <= symbol_ht.load
+        if symbol_ht.hashdata[i].idx != NON_PIVOT_COLUMN
+            i += MonomIdx(1)
+            continue
+        end
+        resize_matrix_upper_part_if_needed!(matrix, matrix.nupper + 1)
+
+        hashval = symbol_ht.hashdata[i]
+        symbol_ht.hashdata[i] =
+            Hashvalue(UNKNOWN_PIVOT_COLUMN, hashval.hash, hashval.divmask, hashval.deg)
+        matrix.ncolumns += 1
+        find_multiplied_reducer!(basis, matrix, ht, symbol_ht, i)
+        i += MonomIdx(1)
+    end
+
+    # Shrink the matrix, set the dimensions
+    resize!(matrix.upper_rows, matrix.nupper)
+    matrix.nrows += matrix.nupper - ncols
+    matrix.nlower = matrix.nrows - matrix.nupper
+    matrix.size = matrix.nrows
 end
 
 # Given a `basis` object that stores some groebner basis
@@ -423,69 +360,6 @@ function find_multiplied_reducer!(
     nothing
 end
 
-# Recursively finds all polynomials from `basis` with the leading term
-# that divides any of the monomials stored in hashtable `symbol_ht`,
-# and writes all found polynomials to the `matrix`
-@timed_block function symbolic_preprocessing!(
-    basis::Basis,
-    matrix::MacaulayMatrix,
-    ht::MonomialHashtable,
-    symbol_ht::MonomialHashtable
-)
-    symbol_load = symbol_ht.load
-
-    nrr = matrix.ncolumns
-    onrr = matrix.ncolumns
-
-    while matrix.size <= nrr + symbol_load
-        matrix.size *= 2
-        resize!(matrix.upper_rows, matrix.size)
-        resize!(matrix.upper_to_coeffs, matrix.size)
-        resize!(matrix.upper_to_mult, matrix.size)
-    end
-
-    # for each lcm present in symbolic_ht set on select stage
-    i = MonomIdx(symbol_ht.offset)
-    #= First round, we add multiplied polynomials which divide =#
-    #= a monomial exponent from selected spairs  =#
-    @inbounds while i <= symbol_load
-        # not a reducer
-        if iszero(symbol_ht.hashdata[i].idx)
-            hv = symbol_ht.hashdata[i]
-            symbol_ht.hashdata[i] =
-                Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
-            matrix.ncolumns += 1
-            find_multiplied_reducer!(basis, matrix, ht, symbol_ht, i)
-        end
-        i += MonomIdx(1)
-    end
-
-    #= Second round, we add multiplied polynomials that divide  =#
-    #= lcm added on previous for loop                            =#
-    @inbounds while i <= symbol_ht.load
-        if matrix.size == matrix.nupper
-            matrix.size *= 2
-            resize!(matrix.upper_rows, matrix.size)
-            resize!(matrix.upper_to_coeffs, matrix.size)
-            resize!(matrix.upper_to_mult, matrix.size)
-        end
-
-        hv = symbol_ht.hashdata[i]
-        symbol_ht.hashdata[i] = Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
-
-        matrix.ncolumns += 1
-        find_multiplied_reducer!(basis, matrix, ht, symbol_ht, i)
-        i += MonomIdx(1)
-    end
-
-    # shrink matrix sizes, set constants
-    resize!(matrix.upper_rows, matrix.nupper)
-
-    matrix.nrows += matrix.nupper - onrr
-    matrix.nlower = matrix.nrows - matrix.nupper
-    matrix.size = matrix.nrows
-end
-
 # Returns N, the number of critical pairs of the smallest degree.
 # Sorts the critical pairs so that the first N pairs are the smallest.
 function lowest_degree_pairs!(pairset::Pairset)
@@ -551,9 +425,14 @@ function discard_normal!(
     pairset.load -= npairs
 end
 
-# Select all S-pairs of the lowest degree of lcm
-# from the pairset and write the corresponding polynomials
+# F4 critical pair selection.
+#
+# Selects critical pairs from the pairset and adds the corresponding polynomials
 # to the matrix
+#
+# If `maxpairs=N` is provided, the number of critical pairs is limited by `N`
+# (modulo some technical details).
+# If `select_all=true` is provided, selects all critical pairs.
 @timed_block function select_critical_pairs!(
     pairset::Pairset,
     basis::Basis,
@@ -562,23 +441,32 @@ end
     symbol_ht::MonomialHashtable,
     selection_strategy::Symbol;
     maxpairs::Int=typemax(Int),
-    selectall::Bool=false
+    select_all::Bool=false
 )
-    # number of selected pairs
+    # Here, the following happens.
+    # 1. The pairset is sorted according to the given selection strategy and the
+    #    number of selected critical pairs is decided.
+
     npairs = pairset.load
-    if !selectall
+    if !select_all
         if selection_strategy === :normal
             npairs = lowest_degree_pairs!(pairset)
         else
+            @assert selection_strategy === :sugar
             npairs = lowest_sugar_pairs!(pairset, basis.sugar_cubes)
         end
     end
-    ps = pairset.pairs
-
     npairs = min(npairs, maxpairs)
+    @assert npairs > 0
+    ps = pairset.pairs
+    deg = ps[1].deg
 
+    # 2. Selected pairs in the pairset are sorted once again, now with respect
+    #    to a monomial ordering on the LCMs
     sort_pairset_by_lcm!(pairset, npairs, ht)
 
+    # NOTE: when `maxpairs` limits the number of selected pairs, we still add
+    # some additional pairs which have the same lcm as the selected ones 
     if npairs > maxpairs
         navailable = npairs
         npairs = maxpairs
@@ -588,49 +476,69 @@ end
         end
     end
 
+    # 3. At this stage, we know that the first `npairs` pairs in the pairset are 
+    #    selected. We add these pairs to the matrix
     @log level = -4 "Selected $(npairs) critical pairs"
+    add_critical_pairs_to_matrix!(pairset, npairs, basis, matrix, ht, symbol_ht)
 
+    # 4. Remove selected parirs from the pairset
+    @inbounds for i in 1:(pairset.load - npairs)
+        ps[i] = ps[i + npairs]
+    end
+    pairset.load -= npairs
+
+    @log level = -3 "Selected $(npairs) pairs of degree $(deg) from pairset, $(pairset.load) pairs left"
+    nothing
+end
+
+# Adds the first `npairs` pairs from the pairset to the matrix
+function add_critical_pairs_to_matrix!(
+    pairset::Pairset,
+    npairs::Int,
+    basis::Basis,
+    matrix::MacaulayMatrix,
+    ht::MonomialHashtable,
+    symbol_ht::MonomialHashtable
+)
+    # 
+    #
+    #
+    #
     reinitialize_matrix!(matrix, npairs)
-
+    pairs = pairset.pairs
     uprows = matrix.upper_rows
     lowrows = matrix.lower_rows
 
-    # polynomials from pairs in order (p11, p12)(p21, p21)
-    # (future rows of the matrix)
-    gens = Vector{Int}(undef, 2 * npairs)
-
-    deg = ps[1].deg
-
+    polys = Vector{Int}(undef, 2 * npairs)
     # monomial buffer
     etmp = ht.monoms[1]
     i = 1
     @inbounds while i <= npairs
         matrix.ncolumns += 1
-        load = 1
-        lcm = ps[i].lcm
+        npolys = 1
+        lcm = pairs[i].lcm
         j = i
 
-        # we collect all generators with same lcm into gens
-        while j <= npairs && ps[j].lcm == lcm
-            gens[load] = ps[j].poly1
-            load += 1
-            gens[load] = ps[j].poly2
-            load += 1
+        while j <= npairs && pairs[j].lcm == lcm
+            polys[npolys] = pairs[j].poly1
+            npolys += 1
+            polys[npolys] = pairs[j].poly2
+            npolys += 1
             j += 1
         end
-        load -= 1
+        npolys -= 1
 
         # sort by the index in the basis (by=identity)
-        sort_generators_by_position!(gens, load)
+        sort_generators_by_position!(polys, npolys)
 
         # now we collect reducers and to-be-reduced polynomials
 
         # first generator index in groebner basis
-        prev = gens[1]
+        prev = polys[1]
         # first generator in hash table
-        poly = basis.monoms[prev]
+        poly_monoms = basis.monoms[prev]
         # first generator lead monomial index in hash data
-        vidx = poly[1]
+        vidx = poly_monoms[1]
 
         # first generator exponent
         eidx = ht.monoms[vidx]
@@ -645,7 +553,7 @@ end
         # add row as a reducer
         matrix.nupper += 1
         uprows[matrix.nupper] =
-            multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly)
+            multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly_monoms)
         # map upper row to index in basis
         matrix.upper_to_coeffs[matrix.nupper] = prev
         matrix.upper_to_mult[matrix.nupper] = insert_in_hash_table!(ht, etmp)
@@ -660,10 +568,10 @@ end
 
         # over all polys with same lcm,
         # add them to the lower part of matrix
-        @inbounds for k in 1:load
+        for k in 1:npolys
             # duplicate generator,
             # we can do so as long as generators are sorted
-            if gens[k] == prev
+            if polys[k] == prev
                 continue
             end
 
@@ -671,10 +579,10 @@ end
             elcm = ht.monoms[lcm]
 
             # index in gb
-            prev = gens[k]
+            prev = polys[k]
             # poly of indices of monoms in hash table
-            poly = basis.monoms[prev]
-            vidx = poly[1]
+            poly_monoms = basis.monoms[prev]
+            vidx = poly_monoms[1]
             # leading monom idx
             eidx = ht.monoms[vidx]
 
@@ -685,7 +593,7 @@ end
             # add row to be reduced
             matrix.nlower += 1
             lowrows[matrix.nlower] =
-                multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly)
+                multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly_monoms)
             # map lower row to index in basis
             matrix.lower_to_coeffs[matrix.nlower] = prev
             matrix.lower_to_mult[matrix.nlower] = insert_in_hash_table!(ht, etmp)
@@ -701,15 +609,6 @@ end
     end
 
     resize!(matrix.lower_rows, matrix.nrows - matrix.ncolumns)
-
-    # remove selected parirs from pairset
-    @inbounds for i in 1:(pairset.load - npairs)
-        ps[i] = ps[i + npairs]
-    end
-    pairset.load -= npairs
-
-    @log level = -3 "Selected $(npairs) pairs of degree $(deg) from pairset, $(pairset.load) pairs left"
-    nothing
 end
 
 function basis_well_formed(key, ring, basis, hashtable)
@@ -914,7 +813,7 @@ function f4_isgroebner!(
         hashtable,
         symbol_ht,
         :normal,
-        selectall=true
+        select_all=true
     )
     symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
     # Rename the columns and sort the rows of the matrix

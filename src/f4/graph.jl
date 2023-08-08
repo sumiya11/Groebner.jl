@@ -32,6 +32,7 @@ function initialize_computation_graph_f4(
     permutation,
     params
 )
+    @log level = -4 "Initializing computation graph"
     ComputationGraphF4(
         time_ns(),
         ring,

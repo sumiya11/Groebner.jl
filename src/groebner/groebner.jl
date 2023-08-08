@@ -99,7 +99,7 @@ function _groebner_classic_modular(
     state = GroebnerState{BigInt, C}(params)
     # Initialize F4 structs
     basis, pairset, hashtable =
-        initialize_structs(ring, monoms, coeffs, params, normalize=false)
+        initialize_structs(ring, monoms, coeffs, params, normalize_input=false)
     tracer = Tracer(params)
     # Scale the input coefficients to integers to speed up the subsequent search
     # for lucky primes

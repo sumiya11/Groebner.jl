@@ -30,6 +30,7 @@ function sort_polys_by_lead_increasing!(
     abc...;
     ord::Ord=hashtable.ord
 ) where {Ord <: AbstractInternalOrdering}
+    @log level = -4 "Sorting polynomials by their leading terms in non-decreasing order"
     b_monoms = basis.monoms
     h_monoms = hashtable.monoms
     permutation = collect(1:(basis.nfilled))
@@ -113,10 +114,9 @@ function sort_pairset_by_lcm!(pairset::Pairset, npairs::Int, hashtable::Monomial
     sort_part!(pairset.pairs, 1, npairs, lt=cmps)
 end
 
-# Sorts generators selected in normal selection strategy by their position in
-# the current basis (identity sort)
-function sort_generators_by_position!(gens::Vector{Int}, load::Int)
-    sort_part!(gens, 1, load)
+# Sorts polynomials by their position in the current basis (identity sort)
+function sort_generators_by_position!(polys::Vector{Int}, load::Int)
+    sort_part!(polys, 1, load)
 end
 
 ###

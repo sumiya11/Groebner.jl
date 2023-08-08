@@ -258,6 +258,18 @@ function reinitialize_matrix!(matrix::MacaulayMatrix{T}, size::Int) where {T}
     matrix
 end
 
+function resize_matrix_upper_part_if_needed!(matrix::MacaulayMatrix, to_add::Int)
+    if matrix.size <= to_add
+        while matrix.size <= to_add
+            matrix.size *= 2
+        end
+        resize!(matrix.upper_rows, matrix.size)
+        resize!(matrix.upper_to_coeffs, matrix.size)
+        resize!(matrix.upper_to_mult, matrix.size)
+    end
+    nothing
+end
+
 ###
 # MacaulayMatrix linear algebra, high level
 
