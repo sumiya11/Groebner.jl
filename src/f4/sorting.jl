@@ -78,6 +78,28 @@ function sort_pairset_by_degree!(ps::Pairset, from::Int, sz::Int)
     sort_part!(ps.pairs, from, from + sz, by=pair -> pair.deg)
 end
 
+# Sorts critical pairs from the pairset in the range from..from+sz by their
+# sugar in increasing order
+function sort_pairset_by_sugar!(
+    ps::Pairset,
+    from::Int,
+    sz::Int,
+    sugar_cubes::Vector{SugarCube}
+)
+    sort_part!(
+        ps.pairs,
+        from,
+        from + sz,
+        by=pair -> sugar_cubes[pair.poly1] + sugar_cubes[pair.poly2]
+    )
+    sugar = Vector{SugarCube}(undef, from + sz)
+    @inbounds for i in 1:(from + sz)
+        pair = ps.pairs[from + i - 1]
+        sugar[i] = sugar_cubes[pair.poly1] + sugar_cubes[pair.poly2]
+    end
+    sugar
+end
+
 # Sorts the first `npairs` pairs from `pairset` in the non-decreasing order of
 # their lcms by the given monomial ordering
 function sort_pairset_by_lcm!(pairset::Pairset, npairs::Int, hashtable::MonomialHashtable)

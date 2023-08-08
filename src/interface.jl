@@ -28,7 +28,7 @@ The `groebner` routine takes the following options:
 - `monoms`: Monomial representation used in the computations. The algorithm
     tries to automatically choose the most suitable monomial representation.
     Otherwise, set `monoms` to one of the following: 
-    - `:auto` for the automatic choice (default), 
+    - `:auto` for automatic choice (default), 
     - `:dense` for classic dense exponent vectors,
     - `:packed` for packed representation, 
     - `:sparse` for sparse representation.
@@ -40,6 +40,10 @@ The `groebner` routine takes the following options:
 - `maxpairs`: The maximum number of critical pairs used at once in matrix
     construction. By default, this is not specified. Tweak this option to try to
     lower the amount of RAM consumed.
+- `selection`: Selection strategy for critical pairs. Available options are:
+    - `:auto` for automatic choice (default),
+    - `:normal` for degree normal selection strategy,
+    - `:sugar` for sugar selection strategy.
 
 ## Example
 

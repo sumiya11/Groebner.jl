@@ -1,6 +1,6 @@
 # Main file that defines the f4! function.
 
-# Functions in this file mostly accept a subset of these arguments:
+# Functions here mostly accept or output a subset of these objects:
 # ring - current polynomial ring,
 # basis - a struct that stores polynomials,
 # matrix - a struct that stores coefficients of polynomials to compute normal
@@ -13,64 +13,20 @@
           The number of F4 iterations exceeded $iters. 
           Please consider submitting a GitHub issue.""")
 
-# Performs gaussian row reduction of rows in the `matrix`
-# and writes any nonzero results to `basis`
-@timed_block function reduction!(
-    ring::PolyRing,
-    basis::Basis,
-    matrix::MacaulayMatrix,
-    ht::MonomialHashtable,
-    symbol_ht::MonomialHashtable,
-    params::AlgorithmParameters
-)
-    column_to_monom_mapping!(matrix, symbol_ht)
-
-    linear_algebra!(matrix, basis, params)
-
-    convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
-end
-
+# Given the polynomial ring and the arrays of monomials and coefficients,
+# initializes and returns the following structures:
+#   - basis: a Basis instance that stores polynomials,
+#   - pairset: a Pairset instance that stores critical pairs,
+#   - hashtable: a MonomialHashtable instance that stores monomials.
+#   - permutation: a sorting permutation for input polynomials.
+#
+# If `normalize_input=true` is provided, normalizes the output basis.
 function initialize_structs(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters;
-    normalize=true
-) where {M <: Monom, C <: Coeff}
-    @log level = -3 "Initializing structs.."
-
-    tablesize = select_hashtable_size(ring, monoms)
-    @log level = -3 "Initial hashtable size is $tablesize"
-
-    # Basis for storing basis elements,
-    # Pairset for storing critical pairs of basis elements,
-    # Hashtable for hashing monomials stored in the basis
-    basis = initialize_basis(ring, length(monoms), C)
-    pairset = initialize_pairset(entrytype(M))
-    hashtable = initialize_hashtable(ring, params.rng, M, tablesize)
-
-    # Filling the basis and hashtable with the given inputs
-    fill_data!(basis, hashtable, monoms, coeffs)
-    fill_divmask!(hashtable)
-
-    @log level = -4 "Sorting input polynomials by their leading terms in non-decreasing order"
-    sort_polys_by_lead_increasing!(basis, hashtable)
-
-    # Divide each polynomial by the leading coefficient
-    if normalize
-        @log level = -4 "Normalizing input polynomials"
-        normalize_basis!(ring, basis)
-    end
-
-    basis, pairset, hashtable
-end
-
-function initialize_structs_learn(
-    ring::PolyRing,
-    monoms::Vector{Vector{M}},
-    coeffs::Vector{Vector{C}},
-    params::AlgorithmParameters;
-    normalize=true
+    normalize_input=true
 ) where {M <: Monom, C <: Coeff}
     @log level = -3 "Initializing structs.."
 
@@ -92,10 +48,24 @@ function initialize_structs_learn(
     permutation = sort_polys_by_lead_increasing!(basis, hashtable)
 
     # Divide each polynomial by the leading coefficient
-    if normalize
+    if normalize_input
         @log level = -4 "Normalizing input polynomials"
         normalize_basis!(ring, basis)
     end
+
+    basis, pairset, hashtable, permutation
+end
+
+# Same as initialize_structs, but also initializes a computation graph
+function initialize_structs_learn(
+    ring::PolyRing,
+    monoms::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    params::AlgorithmParameters;
+    normalize=true
+) where {M <: Monom, C <: Coeff}
+    basis, pairset, hashtable, permutation =
+        initialize_structs(ring, monoms, coeffs, params, normalize=normalize)
 
     @log level = -4 "Initializing computation graph"
     graph = initialize_computation_graph_f4(
@@ -107,7 +77,7 @@ function initialize_structs_learn(
         params
     )
 
-    graph, basis, pairset, hashtable
+    graph, basis, pairset, hashtable, permutation
 end
 
 # Initializes Basis and MonomialHashtable structures,
@@ -193,34 +163,6 @@ end
 
 # Initializes Basis with the given hashtable,
 # fills input data from exponents and coeffs
-function initialize_basis_using_existing_hashtable(
-    ring::PolyRing,
-    exponents::Vector{Vector{M}},
-    coeffs::Vector{Vector{C}},
-    present_ht::MonomialHashtable;
-    sort_input=false,
-    normalize_input=false
-) where {M, C <: Coeff}
-    basis = initialize_basis(ring, length(exponents), C)
-    # fill the basis with the given inputs using the given hashtable as the
-    # reference
-    fill_data!(basis, present_ht, exponents, coeffs)
-    if sort_input
-        # sort input, smaller leading terms first
-        @log level = -2 "Sorting input polynomials by the increasing leading term"
-        sort_polys_by_lead_increasing!(basis, present_ht)
-    end
-    if normalize_input
-        # divide each polynomial by leading coefficient
-        # We do not need normalization for normal forms
-        @log level = -2 "Normalizing input polynomials"
-        normalize_basis!(ring, basis)
-    end
-    basis
-end
-
-# Initializes Basis with the given hashtable,
-# fills input data from exponents and coeffs
 function initialize_structs(
     ring::PolyRing,
     exponents::Vector{Vector{M}},
@@ -266,6 +208,23 @@ function initialize_structs(
     sort_polys_by_lead_increasing!(basis, present_ht)
 
     basis, present_ht
+end
+
+# F4 reduction
+@timed_block function reduction!(
+    ring::PolyRing,
+    basis::Basis,
+    matrix::MacaulayMatrix,
+    ht::MonomialHashtable,
+    symbol_ht::MonomialHashtable,
+    params::AlgorithmParameters
+)
+    # Construct a mapping from monomials to columns and re-enumerate matrix
+    # columns
+    column_to_monom_mapping!(matrix, symbol_ht)
+    linear_algebra!(matrix, basis, params)
+    # Extract nonzero rows from the matrix into the basis
+    convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 end
 
 # Given a `basis` object that stores some groebner basis
@@ -373,6 +332,7 @@ function select_tobereduced!(
         matrix.lower_rows[matrix.nrows] =
             multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, gen)
         matrix.lower_to_coeffs[matrix.nrows] = i
+        # TODO: not really needed here
         matrix.lower_to_mult[matrix.nrows] = insert_in_hash_table!(ht, etmp)
         matrix.coeffs[matrix.nrows] = tobereduced.coeffs[i]
     end
@@ -397,7 +357,8 @@ function find_multiplied_reducer!(
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable,
-    vidx::MonomIdx
+    vidx::MonomIdx;
+    sugar::Bool=false
 )
     e = symbol_ht.monoms[vidx]
     etmp = ht.monoms[1]
@@ -445,6 +406,12 @@ function find_multiplied_reducer!(
         # TODO: this line is here with the sole purpose -- to support tracing.
         # Probably want to factor it out.
         matrix.upper_to_mult[matrix.nupper + 1] = insert_in_hash_table!(ht, etmp)
+        # if sugar
+        #     # updates sugar
+        #     poly = basis.nonredundant[i]
+        #     new_poly_sugar = totaldeg(etmp) + basis.sugar_cubes[poly]
+        #     matrix.upper_to_sugar[matrix.nupper + 1] = new_poly_sugar
+        # end
 
         hv = symbol_ht.hashdata[vidx]
         symbol_ht.hashdata[vidx] = Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
@@ -519,15 +486,30 @@ end
     matrix.size = matrix.nrows
 end
 
-# Returns the number of critical pairs of the smallest degree of lcm
+# Returns N, the number of critical pairs of the smallest degree.
+# Sorts the critical pairs so that the first N pairs are the smallest.
 function lowest_degree_pairs!(pairset::Pairset)
     sort_pairset_by_degree!(pairset, 1, pairset.load - 1)
     ps = pairset.pairs
     @inbounds min_deg = ps[1].deg
     min_idx = 1
-    @inbounds while min_idx < (pairset.load - 1) && ps[min_idx + 1].deg == min_deg
+    @inbounds while min_idx < pairset.load && ps[min_idx + 1].deg == min_deg
         min_idx += 1
     end
+    min_idx
+end
+
+# Returns N, the number of critical pairs of the smallest sugar.
+# Sorts the critical pairs so that the first N pairs are the smallest.
+function lowest_sugar_pairs!(pairset::Pairset, sugar_cubes::Vector{SugarCube})
+    @log level = -1 "Sugar cubes" sugar_cubes
+    sugar = sort_pairset_by_sugar!(pairset, 1, pairset.load - 1, sugar_cubes)
+    @inbounds min_sugar = sugar[1]
+    min_idx = 1
+    @inbounds while min_idx < pairset.load && sugar[min_idx + 1] == min_sugar
+        min_idx += 1
+    end
+    @log level = -1 "Selected pairs sugar" sugar min_idx min_sugar
     min_idx
 end
 
@@ -572,25 +554,28 @@ end
 # Select all S-pairs of the lowest degree of lcm
 # from the pairset and write the corresponding polynomials
 # to the matrix
-@timed_block function select_normal!(
+@timed_block function select_critical_pairs!(
     pairset::Pairset,
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
-    symbol_ht::MonomialHashtable;
+    symbol_ht::MonomialHashtable,
+    selection_strategy::Symbol;
     maxpairs::Int=typemax(Int),
     selectall::Bool=false
 )
-
     # number of selected pairs
     npairs = pairset.load
     if !selectall
-        npairs = lowest_degree_pairs!(pairset)
+        if selection_strategy === :normal
+            npairs = lowest_degree_pairs!(pairset)
+        else
+            npairs = lowest_sugar_pairs!(pairset, basis.sugar_cubes)
+        end
     end
     ps = pairset.pairs
 
     npairs = min(npairs, maxpairs)
-    # @info "Selected $(npairs) pairs"
 
     sort_pairset_by_lcm!(pairset, npairs, ht)
 
@@ -603,7 +588,7 @@ end
         end
     end
 
-    @log level = -4 "Selected $(npairs) pairs in select_normal!"
+    @log level = -4 "Selected $(npairs) critical pairs"
 
     reinitialize_matrix!(matrix, npairs)
 
@@ -843,12 +828,13 @@ function f4!(
         # selects pairs for reduction from pairset following normal strategy
         # (minimal lcm degrees are selected),
         # and puts these into the matrix rows
-        select_normal!(
+        select_critical_pairs!(
             pairset,
             basis,
             matrix,
             hashtable,
             symbol_ht,
+            params.selection_strategy,
             maxpairs=params.maxpairs
         )
         @log level = -3 "After normal selection: available $(pairset.load) pairs"
@@ -921,7 +907,15 @@ function f4_isgroebner!(
     update!(pairset, basis, hashtable, update_ht)
     isempty(pairset) && return true
     # Fill the F4 matrix
-    select_normal!(pairset, basis, matrix, hashtable, symbol_ht, selectall=true)
+    select_critical_pairs!(
+        pairset,
+        basis,
+        matrix,
+        hashtable,
+        symbol_ht,
+        :normal,
+        selectall=true
+    )
     symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
     # Rename the columns and sort the rows of the matrix
     column_to_monom_mapping!(matrix, symbol_ht)

@@ -517,15 +517,13 @@ function f4_learn!(
         @log level = -3 "F4: iteration $i"
         @log level = -3 "F4: available $(pairset.load) pairs"
 
-        # selects pairs for reduction from pairset following normal strategy
-        # (minimal lcm degrees are selected),
-        # and puts these into the matrix rows
-        select_normal!(
+        select_critical_pairs!(
             pairset,
             basis,
             matrix,
             hashtable,
             symbol_ht,
+            params.selection_strategy,
             maxpairs=params.maxpairs
         )
         # Color with [F4]

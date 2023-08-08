@@ -40,6 +40,8 @@ struct AlgorithmParameters{Ord1, Ord2, Ord3, Arithm}
 
     maxpairs::Int
 
+    selection_strategy::Symbol
+
     # Ground field of computation. Currently options are
     # - :qq for rationals,
     # - :zp for integers modulo a prime.
@@ -95,6 +97,14 @@ function AlgorithmParameters(
     reduced = kwargs.reduced
     maxpairs = kwargs.maxpairs
 
+    selection_strategy = kwargs.selection
+    if selection_strategy === :auto
+        if target_ord isa Union{Lex, ProductOrdering}
+            selection_strategy = :normal # :sugar
+        else
+            selection_strategy = :normal
+        end
+    end
     threading = false
 
     strategy = kwargs.strategy
@@ -121,6 +131,7 @@ function AlgorithmParameters(
     arithmetic = $arithmetic
     reduced = $reduced
     maxpairs = $maxpairs
+    selection_strategy = $selection_strategy
     ground = $ground
     strategy = $strategy
     majority_threshold = $majority_threshold
@@ -141,6 +152,7 @@ function AlgorithmParameters(
         arithmetic,
         reduced,
         maxpairs,
+        selection_strategy,
         ground,
         strategy,
         majority_threshold,
@@ -164,6 +176,7 @@ function params_mod_p(params::AlgorithmParameters, prime::Integer)
         select_arithmetic(prime, CoeffModular),
         params.reduced,
         params.maxpairs,
+        params.selection_strategy,
         params.ground,
         params.strategy,
         params.majority_threshold,

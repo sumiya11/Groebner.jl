@@ -56,6 +56,9 @@ function resize_lcms_if_needed!(ps::Pairset, nfilled::Int)
     nothing
 end
 
+# The type of the sugar degree
+const SugarCube = Int
+
 # Stores basis generators and some additional info
 mutable struct Basis{C <: Coeff}
     # Vector of polynomials, each polynomial is a vector of monomials,
@@ -79,6 +82,9 @@ mutable struct Basis{C <: Coeff}
     divmasks::Vector{DivisionMask}
     # The number of non redundant elements in the basis
     nnonredundant::Int
+
+    # Sugar degrees of basis polynomials
+    sugar_cubes::Vector{SugarCube}
 end
 
 # Initialize basis for `ngens` elements with coefficient of type T
@@ -93,8 +99,9 @@ function initialize_basis(ring::PolyRing, ngens::Int, ::Type{T}) where {T <: Coe
     isred = zeros(Bool, sz)
     nonred = Vector{Int}(undef, sz)
     lead = Vector{DivisionMask}(undef, sz)
+    sugar_cubes = Vector{Int}(undef, sz)
 
-    Basis(monoms, coeffs, sz, ndone, nfilled, isred, nonred, lead, nlead)
+    Basis(monoms, coeffs, sz, ndone, nfilled, isred, nonred, lead, nlead, sugar_cubes)
 end
 
 # initialize basis with the given hashed monomials and coefficients.
@@ -111,8 +118,9 @@ function initialize_basis(
     isred = zeros(Bool, sz)
     nonred = Vector{Int}(undef, sz)
     lead = Vector{DivisionMask}(undef, sz)
+    sugar_cubes = Vector{Int}(undef, sz)
 
-    Basis(hashedexps, coeffs, sz, ndone, nfilled, isred, nonred, lead, nlead)
+    Basis(hashedexps, coeffs, sz, ndone, nfilled, isred, nonred, lead, nlead, sugar_cubes)
 end
 
 function repr_basis(basis::Basis{T}) where {T}
@@ -136,6 +144,7 @@ function copy_basis(
     isred = basis.isredundant
     nonred = basis.nonredundant
     divmasks = basis.divmasks
+    sugar_cubes = basis.sugar_cubes
     Basis(
         monoms,
         coeffs,
@@ -145,7 +154,8 @@ function copy_basis(
         isred,
         nonred,
         divmasks,
-        basis.nnonredundant
+        basis.nnonredundant,
+        sugar_cubes
     )
 end
 
@@ -160,6 +170,7 @@ function _deepcopy_basis(basis::Basis{T}, new_coeffs::Vector{Vector{C}}) where {
     isred = copy(basis.isredundant)
     nonred = copy(basis.nonredundant)
     lead = copy(basis.divmasks)
+    sugar_cubes = copy(basis.sugar_cubes)
     Basis(
         monoms,
         new_coeffs,
@@ -169,7 +180,8 @@ function _deepcopy_basis(basis::Basis{T}, new_coeffs::Vector{Vector{C}}) where {
         isred,
         nonred,
         lead,
-        basis.nnonredundant
+        basis.nnonredundant,
+        sugar_cubes
     )
 end
 
@@ -194,6 +206,7 @@ function resize_basis_if_needed!(basis::Basis{T}, to_add::Int) where {T}
         @inbounds basis.isredundant[(basis.nprocessed + 1):end] .= false
         resize!(basis.nonredundant, basis.size)
         resize!(basis.divmasks, basis.size)
+        resize!(basis.sugar_cubes, basis.size)
     end
     @invariant basis.size >= basis.nprocessed + to_add
     nothing
@@ -233,6 +246,9 @@ end
 # Generate new S-pairs from pairs of polynomials
 #   (basis[idx], basis[i])
 # for every i < idx
+#
+# NOTE: discarding redundant critical pairs is unaffected by the current
+# selection strategy
 function update_pairset!(
     pairset::Pairset,
     basis::Basis{C},
@@ -524,6 +540,7 @@ function standardize_basis!(ring, basis::Basis, ht::MonomialHashtable, ord)
     resize!(basis.divmasks, basis.nprocessed)
     resize!(basis.nonredundant, basis.nprocessed)
     resize!(basis.isredundant, basis.nprocessed)
+    resize!(basis.sugar_cubes, basis.nprocessed)
     sort_polys_by_lead_increasing!(basis, ht, ord=ord)
     normalize_basis!(ring, basis)
 end

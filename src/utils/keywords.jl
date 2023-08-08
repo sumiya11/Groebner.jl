@@ -9,16 +9,17 @@ const _default_loglevel = 0
 # arguments with their corresponding default values.
 const _supported_kw_args = (
     groebner = (
-        reduced  = true,
-        ordering = InputOrdering(),
-        certify  = false,
-        linalg   = :randomized,
-        monoms   = :auto,
-        seed     = 42,
-        loglevel = _default_loglevel,
-        maxpairs = typemax(Int),   # NOTE: maybe use Inf?
-        strategy = :classic_modular,
-        sweep    = false,
+        reduced     = true,
+        ordering    = InputOrdering(),
+        certify     = false,
+        linalg      = :randomized,
+        monoms      = :auto,
+        seed        = 42,
+        loglevel    = _default_loglevel,
+        maxpairs    = typemax(Int),   # NOTE: maybe use Inf?
+        selection   = :auto,
+        strategy    = :classic_modular,
+        sweep       = false,
     ),
     normalform = (
         check    = false,
@@ -73,6 +74,7 @@ struct KeywordsHandler{Ord}
     seed::Int
     loglevel::Int
     maxpairs::Int
+    selection::Symbol
     strategy::Symbol
     check::Bool
     sweep::Bool
@@ -100,6 +102,8 @@ struct KeywordsHandler{Ord}
         @assert maxpairs > 0 "The limit on the number of critical pairs must be positive"
         strategy = get(kws, :strategy, get(default_kw_args, :strategy, :classic_modular))
         @assert strategy in (:classic_modular, :learn_and_apply) "Not recognized strategy: $strategy"
+        selection = get(kws, :selection, get(default_kw_args, :selection, :auto))
+        @assert selection in (:auto, :normal, :sugar, :be_divided_and_perish)
         check = get(kws, :check, get(default_kw_args, :check, true))
         sweep = get(kws, :sweep, get(default_kw_args, :sweep, false))
         @log level = -3 """
@@ -112,6 +116,7 @@ struct KeywordsHandler{Ord}
           seed      = $seed, 
           loglevel  = $loglevel, 
           maxpairs  = $maxpairs,
+          selection = $selection,
           strategy  = $strategy,
           check     = $check,
           sweep     = $sweep"""
@@ -124,6 +129,7 @@ struct KeywordsHandler{Ord}
             seed,
             loglevel,
             maxpairs,
+            selection,
             strategy,
             check,
             sweep
