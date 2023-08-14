@@ -43,19 +43,12 @@ function rational_reconstruction!(
     a::BigInt,
     m::BigInt
 )
-    # Fast path for 0//1 if the input is 0
-    if Base.GMP.MPZ.cmp_ui(a, 0) == 0
-        Base.GMP.MPZ.set_ui!(num, 0)
-        Base.GMP.MPZ.set_ui!(den, 1)
-        return true
-    end
-
     # Assumes the input is nonnegative!
-    @invariant Base.GMP.MPZ.cmp_ui(a, 0) > 0
+    @invariant Base.GMP.MPZ.cmp_ui(a, 0) >= 0
 
-    # fast path for 1//1 if the input is 1
-    if Base.GMP.MPZ.cmp_ui(a, 1) == 0
-        Base.GMP.MPZ.set_ui!(num, 1)
+    # fast path for numbers smaller than O(sqrt(modulo))
+    if Base.GMP.MPZ.cmp(a, bnd) < 0
+        Base.GMP.MPZ.set!(num, a)
         Base.GMP.MPZ.set_ui!(den, 1)
         return true
     end

@@ -3,7 +3,7 @@ using TestSetExtensions
 
 using AbstractAlgebra
 using Random
-# using Groebner
+using Groebner
 
 # Check invariants during testing
 Groebner.invariants_enabled() = true
@@ -34,7 +34,7 @@ end
     # Consistency of input-output
     @includetests ["input-output/AbstractAlgebra"]
     # Crt and rational reconstructions
-    @includetests ["groebner/crt_reconstruction", "groebner/mod_reconstruction"]
+    @includetests ["groebner/crt_reconstruction", "groebner/rational_reconstruction"]
 
     @includetests [
         "groebner/groebner",
