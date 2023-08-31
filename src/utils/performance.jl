@@ -28,27 +28,6 @@ Wraps the expression in a timed block.
 
 Timed block tracks some runtime performance information, if performance counters
 are enabled in Groebner (see `performance_counters_enabled`).
-
-## Example
-
-```jldoctest
-@timed_block function dot_product(x, y)
-    sum(x .* y)
-end
-
-for i in 1:100
-    dot_product([1, 2, 3], [4, 5, 6])
-end
-
-@log_performance_counters
-# prints the following (or something similar)
-
-                            hits    cycles/hit
-REPL[1]:1/dot_product       100     91.8
-```
-
-*Note that this macro measures performance correctly only for the code that is
-defined in the Groebner module. In that sense, the example may be misleading.*
 """
 macro timed_block(expr)
     @assert expr.head === :block ||

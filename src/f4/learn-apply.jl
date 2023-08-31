@@ -331,7 +331,7 @@ function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
 
         update_basis!(basis, hashtable)
 
-        @show_locals
+        @log_memory_locals
 
         @log level = -6 "After update apply" basis
 
@@ -550,7 +550,7 @@ function f4_learn!(
 
         if i > 10_000
             @log level = 1 "Something has gone wrong in F4. Error will follow."
-            @show_locals
+            @log_memory_locals
             __throw_maximum_iterations_exceeded(i)
         end
     end

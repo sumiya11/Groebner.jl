@@ -65,7 +65,7 @@ function groebner(polynomials::AbstractVector; options...)
     #   - sets the global logger for this module,
     #   - refereshes performance counters.
 
-    # NOTE: Type assertion *is needed* for type stability
+    # NOTE: Type assertion is needed for type stability
     _groebner(polynomials, KeywordsHandler(:groebner, options))::typeof(polynomials)
 end
 

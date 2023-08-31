@@ -320,42 +320,46 @@ function find_multiplied_reducer!(
         i += 1
     end
 
-    # here found polynomial from basis with leading monom
+    # Reducer is not found, yield
+    i > basis.nnonredundant && return nothing
+
+    # Here, found polynomial from basis with leading monom
     # dividing symbol_ht.monoms[vidx]
-    if i <= basis.nnonredundant
-        # reducers index and exponent in hash table
-        @inbounds rpoly = basis.monoms[basis.nonredundant[i]]
-        @inbounds rexp = ht.monoms[rpoly[1]]
 
-        # precisely, etmp = e .- rexp 
-        flag, etmp = is_monom_divisible!(etmp, e, rexp)
-        if !flag
-            i += 1
-            @goto Letsgo
-        end
-        # now etmp = e // rexp in terms of monomias,
-        # (!) hash is linear
-        @inbounds h = symbol_ht.hashdata[vidx].hash - ht.hashdata[rpoly[1]].hash
+    # reducers index and exponent in hash table
+    @inbounds rpoly = basis.monoms[basis.nonredundant[i]]
+    resize_hashtable_if_needed!(ht, length(rpoly))
 
-        matrix.upper_rows[matrix.nupper + 1] =
-            multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, rpoly)
-        @inbounds matrix.upper_to_coeffs[matrix.nupper + 1] = basis.nonredundant[i]
-        # TODO: this line is here with the sole purpose -- to support tracing.
-        # Probably want to factor it out.
-        matrix.upper_to_mult[matrix.nupper + 1] = insert_in_hash_table!(ht, etmp)
-        # if sugar
-        #     # updates sugar
-        #     poly = basis.nonredundant[i]
-        #     new_poly_sugar = totaldeg(etmp) + basis.sugar_cubes[poly]
-        #     matrix.upper_to_sugar[matrix.nupper + 1] = new_poly_sugar
-        # end
+    @inbounds rexp = ht.monoms[rpoly[1]]
 
-        hv = symbol_ht.hashdata[vidx]
-        symbol_ht.hashdata[vidx] = Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
-
-        matrix.nupper += 1
+    # precisely, etmp = e .- rexp 
+    flag, etmp = is_monom_divisible!(etmp, e, rexp)
+    if !flag
         i += 1
+        @goto Letsgo
     end
+    # now etmp = e // rexp in terms of monomias,
+    # (!) hash is linear
+    @inbounds h = symbol_ht.hashdata[vidx].hash - ht.hashdata[rpoly[1]].hash
+
+    matrix.upper_rows[matrix.nupper + 1] =
+        multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, rpoly)
+    @inbounds matrix.upper_to_coeffs[matrix.nupper + 1] = basis.nonredundant[i]
+    # TODO: this line is here with the sole purpose -- to support tracing.
+    # Probably want to factor it out.
+    matrix.upper_to_mult[matrix.nupper + 1] = insert_in_hash_table!(ht, etmp)
+    # if sugar
+    #     # updates sugar
+    #     poly = basis.nonredundant[i]
+    #     new_poly_sugar = totaldeg(etmp) + basis.sugar_cubes[poly]
+    #     matrix.upper_to_sugar[matrix.nupper + 1] = new_poly_sugar
+    # end
+
+    hv = symbol_ht.hashdata[vidx]
+    symbol_ht.hashdata[vidx] = Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
+
+    matrix.nupper += 1
+    i += 1
 
     nothing
 end
@@ -705,7 +709,7 @@ function f4!(
         @log level = -3 "F4: iteration $i"
         @log level = -3 "F4: available $(pairset.load) pairs"
 
-        @show_locals basis pairset hashtable update_ht symbol_ht
+        @log_memory_locals basis pairset hashtable update_ht symbol_ht
 
         # if the iteration is redundant according to the previous modular run
         if isready(tracer)
@@ -759,7 +763,7 @@ function f4!(
 
         if i > 10_000
             @log level = 1 "Something has gone wrong in F4. Error will follow."
-            @show_locals
+            @log_memory_locals
             __throw_maximum_iterations_exceeded(i)
         end
     end

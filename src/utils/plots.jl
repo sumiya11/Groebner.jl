@@ -1,4 +1,4 @@
-# Automatic plotting of the sparsity pattern in F4 matrices
+# Automatic plotting of the sparsity pattern of F4 matrices
 #
 # Adapted from and entirely inspired by UnicodePlots.jl 
 

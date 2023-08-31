@@ -51,10 +51,10 @@ end
     @includetests ["normalform/normalform", "normalform/normalform_stress"]
     @includetests ["fglm/kbase"]
 
-    # Groebner.jl is tested for different frontends: 
+    # Test for different frontends: 
     # - AbstractAlgebra.jl  (AbstractAlgebra.Generic.MPoly{T})
-    # - Nemo.jl  (Nemo.fmpq_mpoly, Nemo.gfp_mpoly, ...)
-    # - DynamicPolynomials.jl (DynamicPolynomials.Polynomial{true, T})
+    # - Nemo.jl  (Nemo.fmpq_mpoly, Nemo.gfp_mpoly)
+    # - DynamicPolynomials.jl  (DynamicPolynomials.Polynomial{true, T})
     if try_import(:DynamicPolynomials)
         @includetests ["input-output/DynamicPolynomials"]
     end

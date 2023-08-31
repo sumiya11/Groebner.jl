@@ -1,6 +1,6 @@
 import AbstractAlgebra
 
-@testset "Output type inferred" begin
+@testset "output type inferred" begin
     R, (x, y) = AbstractAlgebra.QQ["x", "y"]
     @test @inferred Groebner.groebner([x, y]) == [y, x]
     @test @inferred Groebner.normalform([x, y], x + 1) == R(1)

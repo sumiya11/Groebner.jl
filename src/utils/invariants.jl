@@ -1,7 +1,6 @@
 # Custom assertions for Groebner
 #
-# Provides the @invariant macro that can be turned off to have no runtime
-# overhead.
+# Provides the @invariant macro
 
 """
     @invariant expr
@@ -17,6 +16,8 @@ Check that `expr` evaluates to `true` at runtime. If not, throw an
 ```
 """
 macro invariant(arg)
+    # NOTE: This formulation of @invariant does not propagate the error source
+    # path out of the macro
     esc(:(
         if $(@__MODULE__).invariants_enabled()
             @assert $arg
@@ -24,8 +25,6 @@ macro invariant(arg)
             nothing
         end
     ))
-    # NOTE: This formulation of @invariant does not propagate the error source
-    # path out of the macro
     # if !invariants_enabled()
     #     return nothing
     # end

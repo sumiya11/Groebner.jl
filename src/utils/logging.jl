@@ -5,7 +5,26 @@
 
 # Logging is disabled on all threads except the one with threadid() == 1.
 
+"""
+    @log expr
+    @log level=N expr
+
+Logs a record with `expr` as a message.
+Allows to specify the logging level with `level=N`.
+
+## Examples
+
+```jldoctest
+@log "Hello, world!"
+@log level=1 "Hello, world!"
+```
+"""
+macro log end
+
 function meta_formatter_groebner end
+
+@noinline __throw_log_macro_error(file, line, error) =
+    throw(LoadError(file, line, "Invalid syntax for @log macro. $error"))
 
 const _default_message_loglevel = LogLevel(0)
 const _default_logger = @static if VERSION >= v"1.7.0"
@@ -56,7 +75,7 @@ function update_logger(; stream=nothing, loglevel=nothing)
             stream,
             prev_logger.min_level,
             meta_formatter=meta_formatter_groebner
-            # NOTE: this fails on Julia v1.6
+            # NOTE: usage of this keyword argument fails on Julia v1.6
             # show_limited=prev_logger.show_limited
         )
     end
@@ -71,25 +90,6 @@ function update_logger(; stream=nothing, loglevel=nothing)
     end
     nothing
 end
-
-"""
-    @log expr
-    @log level=N expr
-
-Logs a record with `expr` as a message.
-Allows to specify the logging level with `level=N`.
-
-## Examples
-
-```jldoctest
-@log "Hello, world!"
-@log level=1 "Hello, world!"
-```
-"""
-macro log end
-
-@noinline __throw_log_macro_error(file, line, error) =
-    throw(LoadError(file, line, "Invalid syntax for @log macro. $error"))
 
 # Parses the arguments to the @log macro and returns a tuple of expressions that
 # would evaluate to (loglevel, msg1, msg2, ...).
@@ -131,35 +131,36 @@ macro log(args...)
 end
 
 ###
-# Logging info about memory usage
+# Logging memory usage
 
 """
     memory_logging_enabled() -> Bool
 
-Specifies if the total allocated memory is logged in F4. If `false`, then all
-memory logging is disabled, and entails no runtime overhead.
+Specifies if the allocated memory information is logged in F4. If `false`, then
+all memory logging is disabled, and entails no runtime overhead.
 
-See also `@show_locals` in `src/utils/logging.jl`.
+See also `@log_memory_locals`.
 """
 memory_logging_enabled() = false
 
-# Adapted from https://discourse.julialang.org/t/is-there-a-package-to-list-memory-consumption-of-selected-data-objects/85019/12
+# Adapted from
+# https://discourse.julialang.org/t/is-there-a-package-to-list-memory-consumption-of-selected-data-objects/85019/12
 """
-    @show_locals
-    @show_locals names...
-    @show_locals level=N names...
+    @log_memory_locals
+    @log_memory_locals names...
+    @log_memory_locals level=N names...
 
 Logs the total allocated sizes of local variables. This does nothing when
-Groebner is not in the debug mode. Also see `memory_logging_enabled`.
+logging is disabled in Groebner.
 
 This may have a *significant runtime overhead*.
 
 ## Options
 
-- If `names` argument is provided, only shows variables present in `names`.
+- If `names` argument is provided, only shows the variables present in `names`.
 - If `level=N` argument is provided, then logging level `N` is used.
 """
-macro show_locals(names...)
+macro log_memory_locals(names...)
     quote
         if $(@__MODULE__).logging_enabled() && $(@__MODULE__).memory_logging_enabled()
             locals = Base.@locals
