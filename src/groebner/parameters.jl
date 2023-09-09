@@ -26,6 +26,8 @@ struct AlgorithmParameters{Ord1, Ord2, Ord3, Arithm}
     randomized_check::Bool
     certify_check::Bool
 
+    homogenize::Bool
+
     check::Bool
 
     # Linear algebra backend to be used. Currently available are
@@ -85,6 +87,12 @@ function AlgorithmParameters(
     randomized_check = true
     certify_check = kwargs.certify
 
+    homogenize = if kwargs.homogenize === :yes
+        true
+    else
+        false
+    end
+
     linalg = kwargs.linalg
 
     arithmetic = select_arithmetic(ring.ch, representation.coefftype)
@@ -130,6 +138,7 @@ function AlgorithmParameters(
     linalg = $linalg
     arithmetic = $arithmetic
     reduced = $reduced
+    homogenize = $homogenize
     maxpairs = $maxpairs
     selection_strategy = $selection_strategy
     ground = $ground
@@ -147,6 +156,7 @@ function AlgorithmParameters(
         heuristic_check,
         randomized_check,
         certify_check,
+        homogenize,
         kwargs.check,
         linalg,
         arithmetic,
@@ -171,6 +181,7 @@ function params_mod_p(params::AlgorithmParameters, prime::Integer)
         params.heuristic_check,
         params.randomized_check,
         params.certify_check,
+        params.homogenize,
         params.check,
         params.linalg,
         select_arithmetic(prime, CoeffModular),

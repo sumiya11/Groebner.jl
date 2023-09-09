@@ -127,6 +127,8 @@ include("groebner/learn-apply.jl")
 include("groebner/isgroebner.jl")
 # `normalform` backend
 include("groebner/normalform.jl")
+#
+include("groebner/homogeneous.jl")
 
 #= generic fglm implementation =#
 include("fglm/linear.jl")

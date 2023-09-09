@@ -20,6 +20,7 @@ const _supported_kw_args = (
         selection   = :auto,
         strategy    = :classic_modular,
         sweep       = false,
+        homogenize  = :auto
     ),
     normalform = (
         check    = false,
@@ -78,6 +79,7 @@ struct KeywordsHandler{Ord}
     strategy::Symbol
     check::Bool
     sweep::Bool
+    homogenize::Symbol
 
     function KeywordsHandler(function_key, kws)
         @assert haskey(_supported_kw_args, function_key)
@@ -106,20 +108,22 @@ struct KeywordsHandler{Ord}
         @assert selection in (:auto, :normal, :sugar, :be_divided_and_perish)
         check = get(kws, :check, get(default_kw_args, :check, true))
         sweep = get(kws, :sweep, get(default_kw_args, :sweep, false))
-        @log level = -3 """
+        homogenize = get(kws, :homogenize, get(default_kw_args, :homogenize, :auto))
+        @log level = -1 """
           Using keywords: 
-          reduced   = $reduced, 
-          ordering  = $ordering, 
-          certify   = $certify, 
-          linalg    = $linalg, 
-          monoms    = $monoms, 
-          seed      = $seed, 
-          loglevel  = $loglevel, 
-          maxpairs  = $maxpairs,
-          selection = $selection,
-          strategy  = $strategy,
-          check     = $check,
-          sweep     = $sweep"""
+          reduced    = $reduced, 
+          ordering   = $ordering, 
+          certify    = $certify, 
+          linalg     = $linalg, 
+          monoms     = $monoms, 
+          seed       = $seed, 
+          loglevel   = $loglevel, 
+          maxpairs   = $maxpairs,
+          selection  = $selection,
+          strategy   = $strategy,
+          check      = $check,
+          sweep      = $sweep
+          homogenize = $homogenize"""
         new{typeof(ordering)}(
             reduced,
             ordering,
@@ -132,7 +136,8 @@ struct KeywordsHandler{Ord}
             selection,
             strategy,
             check,
-            sweep
+            sweep,
+            homogenize
         )
     end
 end
