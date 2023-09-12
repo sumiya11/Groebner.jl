@@ -312,6 +312,7 @@ Used for assessing if all S-polynomials reduce to zero modulo a basis.
 function linear_algebra_isgroebner! end
 
 function linear_algebra!(matrix, basis, params, graph=nothing; linalg::Symbol=:auto)
+    # TODO: is this sort an identity permutation? 
     sort_matrix_upper_rows_decreasing!(matrix) # for the AB part
     sort_matrix_lower_rows_increasing!(matrix) # for the CD part
     @log level = -3 repr_matrix(matrix)
