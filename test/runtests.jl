@@ -42,7 +42,8 @@ end
         "groebner/groebner_stress",
         "groebner/groebner_large",
         "groebner/many_variables",
-        "groebner/large_exponents"
+        "groebner/large_exponents",
+        "groebner/homogenization"
     ]
 
     @includetests ["learn_and_apply/learn_and_apply"]

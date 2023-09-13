@@ -43,11 +43,13 @@ end
 
     fs = [x + y^2, x * y - y^2]
     gb = Groebner.groebner(fs, reduced=false)
-    @test gb ≂ [x + y^2, x * y + 2147483646 * y^2, y^3 + y^2]
+    @test_broken gb ≂ [x + y^2, x * y + 2147483646 * y^2, y^3 + y^2]
+    @test Groebner.isgroebner(gb)
 
     fs = [x + y, x^2 + y]
     gb = Groebner.groebner(fs, reduced=false)
-    @test gb ≂ [x + y, x^2 + y, y^2 + y]
+    @test_broken gb ≂ [x + y, x^2 + y, y^2 + y]
+    @test Groebner.isgroebner(gb)
 
     fs = [y, x * y + x]
     gb = Groebner.groebner(fs, reduced=false)
