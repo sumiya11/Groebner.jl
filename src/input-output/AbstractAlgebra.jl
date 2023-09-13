@@ -366,19 +366,23 @@ function _convert_to_output(
 end
 
 # The most generic specialization
+# (Nemo.jl opts this specialization)
 function _convert_to_output(
     origring::R,
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{C}},
     params::AlgorithmParameters
 ) where {R, M <: Monom, C <: Coeff}
+    nv       = AbstractAlgebra.nvars(origring)
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
-    tmp      = Vector{Int}(undef, AbstractAlgebra.nvars(origring))
     @inbounds for i in 1:length(gbexps)
         cfs = map(ground, gbcoeffs[i])
-        exps =
-            [Int.(monom_to_dense_vector!(tmp, gbexps[i][j])) for j in 1:length(gbexps[i])]
+        exps = Vector{Vector{Int}}(undef, length(gbcoeffs[i]))
+        for jt in 1:length(gbcoeffs[i])
+            exps[jt] = Vector{Int}(undef, nv)
+            monom_to_dense_vector!(exps[jt], gbexps[i][jt])
+        end
         exported[i] = origring(cfs, exps)
     end
     exported
@@ -447,16 +451,18 @@ function _convert_to_output(
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     tmp      = Vector{_AA_exponent_type}(undef, nv)
-    for i in 1:length(gbexps)
+    @inbounds for i in 1:length(gbexps)
         cfs  = map(ground, gbcoeffs[i])
         exps = Matrix{_AA_exponent_type}(undef, nv + 1, length(gbcoeffs[i]))
-        @inbounds for jt in 1:length(gbcoeffs[i])
+        for jt in 1:length(gbcoeffs[i])
             # for je in 1:nv
             #     exps[je, jt] = gbexps[i][jt][je]
             # end
             # exps[nv + 1, jt] = gbexps[i][jt][end]
             monom_to_dense_vector!(tmp, gbexps[i][jt])
-            exps[1:(end - 1), jt] .= tmp
+            for k in 1:length(tmp)
+                exps[k, jt] = tmp[k]
+            end
             exps[end, jt] = sum(tmp)
         end
         exported[i] = create_aa_polynomial(origring, cfs, exps)
@@ -476,10 +482,10 @@ function _convert_to_output(
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     tmp      = Vector{_AA_exponent_type}(undef, nv)
-    for i in 1:length(gbexps)
+    @inbounds for i in 1:length(gbexps)
         cfs  = map(ground, gbcoeffs[i])
         exps = Matrix{_AA_exponent_type}(undef, nv, length(gbcoeffs[i]))
-        @inbounds for jt in 1:length(gbcoeffs[i])
+        for jt in 1:length(gbcoeffs[i])
             # for je in 1:nv
             #     exps[je, jt] = gbexps[i][jt][nv - je + 1]
             # end
@@ -504,10 +510,10 @@ function _convert_to_output(
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     tmp      = Vector{_AA_exponent_type}(undef, nv)
-    for i in 1:length(gbexps)
+    @inbounds for i in 1:length(gbexps)
         cfs  = map(ground, gbcoeffs[i])
         exps = Matrix{_AA_exponent_type}(undef, nv + 1, length(gbcoeffs[i]))
-        @inbounds for jt in 1:length(gbcoeffs[i])
+        for jt in 1:length(gbcoeffs[i])
             # for je in 1:nv
             #     exps[je, jt] = gbexps[i][jt][nv - je + 1]
             # end
@@ -533,10 +539,10 @@ function _convert_to_output(
     ground   = base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     tmp      = Vector{_AA_exponent_type}(undef, nv)
-    for i in 1:length(gbexps)
+    @inbounds for i in 1:length(gbexps)
         cfs  = map(ground, gbcoeffs[i])
         exps = Vector{Vector{Int}}(undef, length(gbcoeffs[i]))
-        @inbounds for jt in 1:length(gbcoeffs[i])
+        for jt in 1:length(gbcoeffs[i])
             monom_to_dense_vector!(tmp, gbexps[i][jt])
             exps[jt] = tmp
         end

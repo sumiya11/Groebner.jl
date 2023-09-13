@@ -13,7 +13,7 @@ end
 
 Stores all parameters for a single GB computation.
 """
-struct AlgorithmParameters{Ord1, Ord2, Ord3, Arithm}
+mutable struct AlgorithmParameters{Ord1, Ord2, Ord3, Arithm}
     # Output polynomials monomial ordering
     target_ord::Ord1
     # Monomial ordering for computation

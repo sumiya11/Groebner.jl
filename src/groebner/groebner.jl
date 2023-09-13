@@ -37,18 +37,20 @@ function _groebner(polynomials, kws::KeywordsHandler, representation)
     # NOTE: at this point, we already know the computation method we are going to use,
     # and the parameters are set.
     ring, _ = set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
-    if params.homogenize
-        ring, monoms, coeffs = homogenize_generators(ring, monoms, coeffs, params)
-    end
     # Fast path for the input of zeros
     if isempty(monoms)
         @log level = -2 "Input consisting of zero polynomials. Returning zero."
         return convert_to_output(ring, polynomials, monoms, coeffs, params)
     end
+    if params.homogenize
+        # this also performs saturation by the homogenizing variable
+        ring, monoms, coeffs = homogenize_generators!(ring, monoms, coeffs, params)
+    end
     # Compute a groebner basis!
     gbmonoms, gbcoeffs = _groebner(ring, monoms, coeffs, params)
     if params.homogenize
-        ring, gbmonoms, gbcoeffs = dehomogenize_generators(ring, gbmonoms, gbcoeffs, params)
+        ring, gbmonoms, gbcoeffs =
+            dehomogenize_generators!(ring, gbmonoms, gbcoeffs, params)
     end
     @log_performance_counters
     # Convert result back to the representation of input

@@ -91,8 +91,15 @@ function select_monomtype(char, npolys, nvars, kws, hint)
     if hint === :large_exponents
         @log level = -1 "As hint=$hint was provided, using 64 bits per single exponent"
         # use 64 bits if large exponents detected
-        @assert is_supported_ordering(ExponentVector{UInt64}, kws.ordering)
-        return ExponentVector{UInt64}
+        desired_monom_type = ExponentVector{UInt64}
+        @assert is_supported_ordering(desired_monom_type, kws.ordering)
+        return desired_monom_type
+    end
+    if kws.homogenize === :yes
+        @log level = -1 "As homogenize=:yes was provided, representing monomials as exponent vectors"
+        desired_monom_type = ExponentVector{UInt32}
+        @assert is_supported_ordering(desired_monom_type, kws.ordering)
+        return desired_monom_type
     end
     E = UInt8
     variables_per_word = div(sizeof(UInt), sizeof(E))
@@ -277,8 +284,8 @@ function set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
     @log level = -2 "Internal ordering:\n$internal_ord"
     ring = PolyRing(ring.nvars, internal_ord, ring.ch)
     if current_ord == target_ord
-        # No reordering of terms needed, they are already ordered according to
-        # the requested ordering
+        # No reordering of terms needed, the terms are already ordered according
+        # to the requested monomial ordering
         return ring, Vector{Vector{Int}}()
     end
     @log level = -2 "Reordering input polynomial terms from $(current_ord) to $(target_ord)"
