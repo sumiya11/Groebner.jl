@@ -21,7 +21,7 @@ end
 function extend_ordering_in_homogenization(
     ord::Ord,
     homogenizing_vairable=:last
-) where {Ord <: Union{_DegRevLex, _DegLex, _Lex}}
+) where {Ord <: Union{_DegRevLex, _DegLex, _Lex, _ProductOrdering}}
     @assert homogenizing_vairable === :last
     current_vars = variable_indices(ord)
     lex_part = _Lex{false}([length(current_vars) + 1])
