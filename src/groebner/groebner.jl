@@ -26,7 +26,7 @@ function _groebner(polynomials, kws::KeywordsHandler)
 end
 
 function _groebner(polynomials, kws::KeywordsHandler, representation)
-    # Extract ring information, exponents, and coefficients from the input
+    # Extract ring information, exponents, and coefficients from input
     # polynomials. Convert these to an internal polynomial representation. 
     # NOTE: This must copy the input, so that input `polynomials` is never
     # modified.
@@ -34,8 +34,6 @@ function _groebner(polynomials, kws::KeywordsHandler, representation)
         convert_to_internal(representation, polynomials, kws)
     # Check and set parameters and monomial ordering
     params = AlgorithmParameters(ring, representation, kws)
-    # NOTE: at this point, we already know the computation method we are going to use,
-    # and the parameters are set.
     ring, _ = set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
     # Fast path for the input of zeros
     if isempty(monoms)
@@ -43,7 +41,7 @@ function _groebner(polynomials, kws::KeywordsHandler, representation)
         return convert_to_output(ring, polynomials, monoms, coeffs, params)
     end
     if params.homogenize
-        # this also performs saturation by the homogenizing variable
+        # this also performs saturation w.r.t. the homogenizing variable
         ring, monoms, coeffs = homogenize_generators!(ring, monoms, coeffs, params)
     end
     # Compute a groebner basis!
@@ -51,6 +49,7 @@ function _groebner(polynomials, kws::KeywordsHandler, representation)
     if params.homogenize
         ring, gbmonoms, gbcoeffs =
             dehomogenize_generators!(ring, gbmonoms, gbcoeffs, params)
+        gbmonoms, gbcoeffs = _autoreduce(ring, gbmonoms, gbcoeffs, params)
     end
     @log_performance_counters
     # Convert result back to the representation of input
