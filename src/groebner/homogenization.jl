@@ -8,6 +8,46 @@ function maximum_totaldeg(ring::PolyRing, monoms::Vector{Vector{T}}) where {T}
     D
 end
 
+# function extend_ordering_in_homogenization(
+#     ord::_Lex{Trivial},
+#     homogenizing_vairable=:last
+# ) where {Trivial}
+#     @assert homogenizing_vairable === :last
+#     current_vars = variable_indices(ord)
+#     new_ord = _Lex{Trivial}(vcat(current_vars, length(current_vars) + 1))
+#     new_ord
+# end
+
+function extend_ordering_in_homogenization(
+    ord::Ord,
+    homogenizing_vairable=:last
+) where {Ord <: Union{_DegRevLex, _DegLex, _Lex}}
+    @assert homogenizing_vairable === :last
+    current_vars = variable_indices(ord)
+    lex_part = _Lex{false}([length(current_vars) + 1])
+    new_ord = _ProductOrdering(nontrivialization(ord), lex_part)
+    new_ord
+end
+
+function restrict_ordering_in_dehomogenization(ord, homogenizing_vairable=:last)
+    ord.ord1
+end
+
+function extend_ordering_in_saturation(
+    ord::Ord,
+    saturating_vairable=:last
+) where {Ord <: Union{_DegRevLex, _DegLex, _Lex, _ProductOrdering}}
+    @assert saturating_vairable === :last
+    current_vars = variable_indices(ord)
+    lex_part = _Lex{false}([length(current_vars) + 1])
+    new_ord = _ProductOrdering(lex_part, nontrivialization(ord))
+    new_ord
+end
+
+function restrict_ordering_in_desaturation(ord, saturating_vairable=:last)
+    ord.ord2
+end
+
 function homogenize_generators!(
     ring::PolyRing{Ord},
     monoms::Vector{Vector{Vector{T}}},
@@ -35,13 +75,9 @@ function homogenize_generators!(
         end
     end
     # TODO: clarify the order of variables
-    # (ideally it should be weighted)
-    new_ord = _ProductOrdering(
-        _Lex{false}(variable_indices(ring.ord)),
-        _Lex{false}(Int[new_nvars])
-    )
+    new_ord = extend_ordering_in_homogenization(ring.ord)
     new_ring = PolyRing(new_nvars, new_ord, ring.ch)
-    # sort_input_terms_to_change_ordering!(new_monoms, coeffs, new_ord)
+    sort_input_terms_to_change_ordering!(new_monoms, coeffs, new_ord)
     @log level = -2 """
     Original polynomial ring: 
     $ring
@@ -93,9 +129,9 @@ function dehomogenize_generators!(
     end
     deleteat!(new_monoms, reduced_to_zero)
     deleteat!(coeffs, reduced_to_zero)
-    new_ord = ring_desat.ord.ord1
+    new_ord = restrict_ordering_in_dehomogenization(ring_desat.ord)
     new_ring = PolyRing(new_nvars, new_ord, ring_desat.ch)
-    # sort_input_terms_to_change_ordering!(new_monoms, coeffs, new_ord)
+    sort_input_terms_to_change_ordering!(new_monoms, coeffs, new_ord)
     @log level = -2 """
     Original polynomial ring: 
     $ring_desat
@@ -149,7 +185,7 @@ function desaturate_generators!(
     @assert new_size > 0
     resize!(new_coeffs, new_size)
     resize!(new_monoms, new_size)
-    new_ord = ring.ord.ord2
+    new_ord = restrict_ordering_in_desaturation(ring.ord)
     new_ring = PolyRing(new_nvars, new_ord, ring.ch)
     @log level = -2 """
     Original polynomial ring: 
@@ -194,6 +230,7 @@ function saturate_generators_by_variable!(
     lead_monom = zeros(T, new_nvars + 1)
     lead_monom[sat_var_index + 1] = one(T)
     lead_monom[end] = one(T)
+    lead_monom[1] = one(T) + one(T)
     new_poly_monoms[1] = lead_monom
     new_poly_monoms[2] = const_monom
     new_poly_coeffs = Vector{C}(undef, 2)
@@ -202,7 +239,7 @@ function saturate_generators_by_variable!(
     new_poly_coeffs[2] = iszero(ring.ch) ? -one(C) : (ring.ch - one(ring.ch))
     push!(new_monoms, new_poly_monoms)
     push!(coeffs, new_poly_coeffs)
-    new_ord = _ProductOrdering(_Lex{false}(Int[new_nvars]), ring.ord)
+    new_ord = extend_ordering_in_saturation(ring.ord)
     new_ring = PolyRing(new_nvars, new_ord, ring.ch)
     @log level = -2 """
     Original polynomial ring: 

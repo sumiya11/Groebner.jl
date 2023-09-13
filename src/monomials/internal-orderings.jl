@@ -10,6 +10,7 @@ abstract type AbstractInternalOrdering end
         ord,
         """The given monomial ordering is inconsistent with the input.
         $msg
+
         Variable mapping: $var_to_index
         Ordering: $ord"""
     ))
@@ -27,9 +28,11 @@ struct _DegRevLex{Trivial} <: AbstractInternalOrdering
     indices::Vector{Int}
 end
 
-variable_indices(o::_Lex) = o.indices
-variable_indices(o::_DegLex) = o.indices
-variable_indices(o::_DegRevLex) = o.indices
+variable_indices(o::T) where {T <: Union{_Lex, _DegLex, _DegRevLex}} = o.indices
+nontrivialization(o::_Lex) = _Lex{false}(o.indices)
+nontrivialization(o::_DegLex) = _DegLex{false}(o.indices)
+nontrivialization(o::_DegRevLex) = _DegRevLex{false}(o.indices)
+nontrivialization(o) = o
 
 struct _WeightedOrdering{T} <: AbstractInternalOrdering
     indices::Vector{Int}
@@ -57,7 +60,7 @@ struct _ProductOrdering{O1 <: AbstractInternalOrdering, O2 <: AbstractInternalOr
 end
 
 variable_indices(o::_ProductOrdering) =
-    union(variable_indices(o.ord1), variable_indices(o.ord1))
+    union(variable_indices(o.ord1), variable_indices(o.ord2))
 
 struct _MatrixOrdering{T} <: AbstractInternalOrdering
     indices::Vector{Int}
