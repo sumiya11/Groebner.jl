@@ -72,8 +72,8 @@ function select_polynomial_representation(
         @log level = 1000 "The given hint=$hint was discarded"
     end
     frontend, npolys, char, nvars, ordering = peek_at_polynomials(polynomials)
-    monomtype = select_monomtype(char, npolys, nvars, kws, hint)
-    coefftype = select_coefftype(char, npolys, nvars, kws, hint)
+    monomtype = select_monomtype(char, npolys, nvars, ordering, kws, hint)
+    coefftype = select_coefftype(char, npolys, nvars, ordering, kws, hint)
     basering = iszero(char) ? :qq : :zp
     @log level = -1 "Frontend: $frontend"
     @log level = -1 """
@@ -86,7 +86,7 @@ function select_polynomial_representation(
     PolynomialRepresentation(monomtype, coefftype)
 end
 
-function select_monomtype(char, npolys, nvars, kws, hint)
+function select_monomtype(char, npolys, nvars, ordering, kws, hint)
     @log level = -1 "Selecting monomial representation.\nGiven hint hint=$hint. Keyword argument monoms=$(kws.monoms)"
     if hint === :large_exponents
         @log level = -1 "As hint=$hint was provided, using 64 bits per single exponent"
@@ -95,8 +95,15 @@ function select_monomtype(char, npolys, nvars, kws, hint)
         @assert is_supported_ordering(desired_monom_type, kws.ordering)
         return desired_monom_type
     end
-    if kws.homogenize === :yes
-        @log level = -1 "As homogenize=:yes was provided, representing monomials as exponent vectors"
+    # TODO: explain this condition
+    if kws.homogenize === :yes || (
+        kws.homogenize === :auto && (
+            kws.ordering isa Lex ||
+            kws.ordering isa ProductOrdering ||
+            (ordering == :lex && kws.ordering isa InputOrdering)
+        )
+    )
+        @log level = -1 "As homogenize=:yes/:auto was provided, representing monomials as exponent vectors"
         desired_monom_type = ExponentVector{UInt32}
         @assert is_supported_ordering(desired_monom_type, kws.ordering)
         return desired_monom_type
@@ -151,7 +158,7 @@ function select_monomtype(char, npolys, nvars, kws, hint)
     ExponentVector{E}
 end
 
-function select_coefftype(char, npolys, nvars, kws, hint)
+function select_coefftype(char, npolys, nvars, ordering, kws, hint)
     if !iszero(char)
         if char >= typemax(UInt64)
             __throw_input_not_supported(char, "The coefficient field order is too large.")

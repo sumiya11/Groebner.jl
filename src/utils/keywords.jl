@@ -42,15 +42,15 @@ const _supported_kw_args = (
         loglevel = _default_loglevel
     ),
     groebner_learn = (
-        seed     = 42,
-        ordering = InputOrdering(),
-        monoms   = :auto,
-        loglevel = _default_loglevel,
-        sweep    = true,
+        seed        = 42,
+        ordering    = InputOrdering(),
+        monoms      = :auto,
+        loglevel    = _default_loglevel,
+        homogenize  = :auto,
+        sweep       = true,
     ),
     groebner_apply! = (
         seed     = 42,
-        # ordering = InputOrdering(),
         monoms   = :auto,
         loglevel = _default_loglevel,
         sweep    = true,

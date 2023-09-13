@@ -42,14 +42,13 @@ function _groebner(polynomials, kws::KeywordsHandler, representation)
     end
     if params.homogenize
         # this also performs saturation w.r.t. the homogenizing variable
-        ring, monoms, coeffs = homogenize_generators!(ring, monoms, coeffs, params)
+        _, ring, monoms, coeffs = homogenize_generators!(ring, monoms, coeffs, params)
     end
     # Compute a groebner basis!
     gbmonoms, gbcoeffs = _groebner(ring, monoms, coeffs, params)
     if params.homogenize
         ring, gbmonoms, gbcoeffs =
             dehomogenize_generators!(ring, gbmonoms, gbcoeffs, params)
-        gbmonoms, gbcoeffs = _autoreduce(ring, gbmonoms, gbcoeffs, params)
     end
     @log_performance_counters
     # Convert result back to the representation of input

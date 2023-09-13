@@ -77,7 +77,7 @@ function homogenize_generators!(
     # TODO: clarify the order of variables
     new_ord = extend_ordering_in_homogenization(ring.ord)
     new_ring = PolyRing(new_nvars, new_ord, ring.ch)
-    sort_input_terms_to_change_ordering!(new_monoms, coeffs, new_ord)
+    term_permutation = sort_input_terms_to_change_ordering!(new_monoms, coeffs, new_ord)
     @log level = -2 """
     Original polynomial ring: 
     $ring
@@ -97,7 +97,7 @@ function homogenize_generators!(
         params,
         sat_var_index
     )
-    new_ring_sat, new_monoms, coeffs
+    term_permutation, new_ring_sat, new_monoms, coeffs
 end
 
 function dehomogenize_generators!(
@@ -109,6 +109,7 @@ function dehomogenize_generators!(
     ring_desat, monoms, coeffs = desaturate_generators!(ring, monoms, coeffs, params)
     @assert length(monoms) == length(coeffs)
     @log level = -1 "De-homogenizing generators.."
+    @log level = -2 "Polynomial ring:\n$ring_desat"
     nvars = ring_desat.nvars
     @assert nvars > 1
     new_nvars = nvars - 1
@@ -143,6 +144,7 @@ function dehomogenize_generators!(
     De-homogenized monomials: 
     $new_monoms
     """
+    new_monoms, coeffs = _autoreduce(new_ring, new_monoms, coeffs, params)
     new_ring, new_monoms, coeffs
 end
 

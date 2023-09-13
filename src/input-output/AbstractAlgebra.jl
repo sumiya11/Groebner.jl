@@ -163,8 +163,23 @@ function extract_coeffs_raw!(
     basis = graph.buf_basis
     input_polys_perm = graph.input_permutation
     term_perms = graph.term_sorting_permutations
+    homog_term_perm = graph.term_homogenizing_permutations
     CoeffType = representation.coefftype
-    _extract_coeffs_raw!(basis, input_polys_perm, term_perms, polys, CoeffType)
+    _extract_coeffs_raw!(
+        basis,
+        input_polys_perm,
+        term_perms,
+        homog_term_perm,
+        polys,
+        CoeffType
+    )
+    if graph.homogenize
+        @assert length(basis.coeffs[length(polys) + 1]) == 2
+        C = eltype(basis.coeffs[length(polys) + 1][1])
+        basis.coeffs[length(polys) + 1][1] = one(C)
+        basis.coeffs[length(polys) + 1][2] =
+            iszero(ring.ch) ? -one(C) : (ring.ch - one(ring.ch))
+    end
     @log level = -6 "Extracted coefficients from $(length(polys)) polynomials." basis
     ring
 end
@@ -173,33 +188,36 @@ function _extract_coeffs_raw!(
     basis,
     input_polys_perm::Vector{Int},
     term_perms::Vector{Vector{Int}},
+    homog_term_perms::Vector{Vector{Int}},
     polys,
     ::Type{CoeffsType}
 ) where {CoeffsType}
-    @assert basis.nfilled == count(!iszero, polys)
-    polys = filter(!iszero, polys)
     permute_input_terms = !isempty(term_perms)
-    @log level = -7 "Permuting input terms: $permute_input_terms"
-    @inbounds for i in 1:length(polys)
-        poly = polys[input_polys_perm[i]]
+    permute_homogenizing_terms = !isempty(homog_term_perms)
+    @assert basis.nfilled == count(!iszero, polys) + permute_homogenizing_terms
+    polys = filter(!iszero, polys)
+    @log level = -2 """
+    Permuting input terms: $permute_input_terms
+    Permuting for homogenization: $permute_homogenizing_terms"""
+    @log level = -7 """Permutations:
+      Of polynomials: $input_polys_perm
+      Of terms (change of ordering): $term_perms
+      Of terms (homogenization): $homog_term_perms"""
+    for i in 1:length(polys)
         basis_cfs = basis.coeffs[i]
+        poly_index = input_polys_perm[i]
+        poly = polys[poly_index]
         @assert length(poly) == length(basis_cfs)
-        if permute_input_terms
-            for j in 1:length(poly)
-                basis_cfs[j] = convert(
-                    CoeffsType,
-                    AbstractAlgebra.data(
-                        AbstractAlgebra.coeff(poly, term_perms[input_polys_perm[i]][j])
-                    )
-                )
+        for j in 1:length(poly)
+            coeff_index = j
+            if permute_input_terms
+                coeff_index = term_perms[poly_index][coeff_index]
             end
-        else
-            for j in 1:length(poly)
-                basis_cfs[j] = convert(
-                    CoeffsType,
-                    AbstractAlgebra.data(AbstractAlgebra.coeff(poly, j))
-                )
+            if permute_homogenizing_terms
+                coeff_index = homog_term_perms[poly_index][coeff_index]
             end
+            coeff = AbstractAlgebra.data(AbstractAlgebra.coeff(poly, coeff_index))
+            basis_cfs[j] = convert(CoeffsType, coeff)
         end
     end
     nothing

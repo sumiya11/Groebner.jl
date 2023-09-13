@@ -22,6 +22,8 @@ mutable struct ComputationGraphF4{C, M, Ord, Ord2}
     representation::PolynomialRepresentation
     original_ord::Ord2
     term_sorting_permutations::Vector{Vector{Int}}
+    term_homogenizing_permutations::Vector{Vector{Int}}
+    homogenize::Bool
 end
 
 function initialize_computation_graph_f4(
@@ -53,7 +55,9 @@ function initialize_computation_graph_f4(
         params.sweep,
         PolynomialRepresentation(ExponentVector{UInt64}, UInt64),
         params.original_ord,
-        Vector{Vector{Int}}()
+        Vector{Vector{Int}}(),
+        Vector{Vector{Int}}(),
+        params.homogenize
     )
 end
 

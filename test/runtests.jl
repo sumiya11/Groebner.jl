@@ -5,7 +5,8 @@ using AbstractAlgebra
 using Random
 using Groebner
 
-# Check invariants during testing
+# Check invariants during testing.
+# NOTE: it's good to turn this on, as asserts may help to catch segfaults
 Groebner.invariants_enabled() = true
 Groebner.update_logger(stream=stdout, loglevel=0)
 
