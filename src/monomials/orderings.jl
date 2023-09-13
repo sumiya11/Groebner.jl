@@ -1,19 +1,19 @@
 # Monomial orderings supported by this package.
 #
-# The orderings in this file are exported, and exist solely for communicating
+# The orderings in this file are exported, and exist mostly for communicating
 # with the user. These orderings are converted to an internal representation at
 # some stage of the computation. See monomials/internal-orderings.jl
 
 # NOTE: only global monomial orderings are supported.
 
-# NOTE: the functions that actually implement comparators for monomials are
-# specific to the implementation of a monomial. Thus, comparators are defined in
-# the files that implement monomials.
+# NOTE: the functions that implement comparators for monomials are specific to
+# the implementation of a monomial. Thus, monomial comparators for a specific
+# monomial type are defined in the file that implements this monomial type.
 
 # All monomial orderings are subtypes of AbstractMonomialOrdering
 abstract type AbstractMonomialOrdering end
 
-# Tell the algorithm to preserve the monomial ordering defined on the
+# Tells the algorithm to preserve the monomial ordering defined on the
 # given input polynomials, if any.
 """
     InputOrdering()
@@ -199,9 +199,10 @@ end
 """
     ProductOrdering(ord1, ord2)
 
-Product monomial ordering. Compares monomials by `ord1`, break ties by `ord2`.
+Product monomial ordering. Compares monomials by `ord1`, then breaks ties by
+`ord2`.
 
-Can also be constructed using `*`.
+Can be constructed with `*`.
 
 ## Example
 
@@ -222,6 +223,7 @@ R, (x, y, z, t) = QQ["x", "y", "z", "t"];
 
 ord1 = Lex(t)
 ord2 = DegRevLex(x, y, z)
+# t >> x, y, z
 ord = ord1 * ord2
 groebner([x*y*z + z, t * z - 1], ordering=ord)
 ```

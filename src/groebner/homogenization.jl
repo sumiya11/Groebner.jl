@@ -9,12 +9,12 @@ function maximum_totaldeg(ring::PolyRing, monoms::Vector{Vector{T}}) where {T}
 end
 
 # function extend_ordering_in_homogenization(
-#     ord::_Lex{Trivial},
+#     ord::_Lex{IsTrivial},
 #     homogenizing_vairable=:last
-# ) where {Trivial}
+# ) where {IsTrivial}
 #     @assert homogenizing_vairable === :last
 #     current_vars = variable_indices(ord)
-#     new_ord = _Lex{Trivial}(vcat(current_vars, length(current_vars) + 1))
+#     new_ord = _Lex{IsTrivial}(vcat(current_vars, length(current_vars) + 1))
 #     new_ord
 # end
 
