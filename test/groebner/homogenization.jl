@@ -2,7 +2,7 @@ using AbstractAlgebra
 using Combinatorics
 import Random
 
-@testset "homogenization, basic" failfast = true begin
+@testset "homogenization, basic" begin
     for field in [GF(113), GF(2^62 + 135), QQ]
         for ordering in [:lex, :deglex, :degrevlex]
             R, (x, y) = PolynomialRing(field, ["x", "y"], ordering=ordering)
@@ -28,7 +28,7 @@ import Random
     end
 end
 
-@testset "homogenization, orderings" failfast = true begin
+@testset "homogenization, orderings" begin
     for field in [GF(113), GF(2^62 + 135), QQ]
         # Test that the basis obtained with the use of homogenization
         # *coincides* with the one obtained without it
