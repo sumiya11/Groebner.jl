@@ -1,11 +1,18 @@
 ## Groebner v0.4.3 Release notes
 
 Versions of dependencies:
-- Added depency on ExprTools.jl.
+- Added a dependency on ExprTools.jl.
 
-Changes in the interface **(may be breaking)**:
+Changes in the interface:
 
-- The normalization of the output bases have changed. Just as before, the bases are normalized to have the leading coefficients equal to one. In this release, the leading coefficient is selected based on the ordering of the Groebner basis, instead of the ordering of the frontend polynomial implementation.
+- Added keyword argument `homogenize` to `groebner` function. If
+  `homogenize=:yes` is specified, then input generators are homogenized
+  (saturated accordingly) before the computation starts. This option is turned
+  on by default when the monomial ordering is an elimination ordering.
+- The normalization of the output bases have changed. Just as before, a basis is
+  normalized to have its leading coefficients equal to one. In this release, the
+  leading coefficient is selected based on the ordering of the Groebner basis
+  instead of the ordering of the frontend polynomial implementation.
 
 Other changes:
 
