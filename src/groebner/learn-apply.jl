@@ -36,10 +36,22 @@ function _groebner_learn(polynomials, kws, representation)
     params = AlgorithmParameters(ring, representation, kws)
     ring, term_sorting_permutations =
         set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
+    term_homogenizing_permutation = Vector{Vector{Int}}()
+    if params.homogenize
+        term_homogenizing_permutation, ring, monoms, coeffs =
+            homogenize_generators!(ring, monoms, coeffs, params)
+    end
     graph, gb_monoms, gb_coeffs = _groebner_learn(ring, monoms, coeffs, params)
+    if params.homogenize
+        graph.term_homogenizing_permutations = term_homogenizing_permutation
+        ring, gb_monoms, gb_coeffs =
+            dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
+    end
     graph.representation = representation
     graph.term_sorting_permutations = term_sorting_permutations
-    @log level = -7 "Sorting permutations\nTerms: $term_sorting_permutations\nPolynomials: $(graph.input_permutation)"
+    @log level = -7 """Sorting permutations:
+    Terms: $(term_sorting_permutations)
+    Polynomials: $(graph.input_permutation)"""
     @log_performance_counters
     graph, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
 end
@@ -53,8 +65,12 @@ function _groebner_apply!(graph::ComputationGraphF4, polynomials, kws::KeywordsH
         kws,
         orderings=(graph.params.original_ord, graph.params.target_ord)
     )
-    ring = PolyRing(ring.nvars, graph.ring.ord, ring.ch)
+    ring = PolyRing(graph.ring.nvars, graph.ring.ord, ring.ch)
     flag, gb_monoms, gb_coeffs = _groebner_apply!(ring, graph, params)
+    if graph.params.homogenize
+        ring, gb_monoms, gb_coeffs =
+            dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
+    end
     @log_performance_counters
     !flag && return (flag, polynomials)
     flag, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)

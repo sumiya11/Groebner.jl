@@ -554,7 +554,7 @@ function hash_to_exponents(basis::Basis, ht::MonomialHashtable{M}) where {M <: M
         idx = basis.nonredundant[i]
         poly = basis.monoms[idx]
         exps[i] = Vector{M}(undef, length(poly))
-        @inbounds for j in 1:length(poly)
+        for j in 1:length(poly)
             exps[i][j] = ht.monoms[poly[j]]
         end
     end

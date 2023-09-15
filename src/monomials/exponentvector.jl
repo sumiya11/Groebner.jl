@@ -101,14 +101,23 @@ function monom_isless(ea::ExponentVector, eb::ExponentVector, ::_DegRevLex{true}
     end
 end
 
-function monom_isless(ea::ExponentVector, eb::ExponentVector, ord::_DegRevLex{false})
+function monom_isless(
+    ea::ExponentVector{T},
+    eb::ExponentVector{T},
+    ord::_DegRevLex{false}
+) where {T}
     indices = variable_indices(ord)
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
-    tda, tdb = sum(ea[indices .+ 1]), sum(eb[indices .+ 1])
-    if @inbounds tda < tdb
+    eatotaldeg = zero(T)
+    ebtotaldeg = zero(T)
+    @inbounds for i in indices
+        eatotaldeg += ea[i + 1]
+        ebtotaldeg += eb[i + 1]
+    end
+    if eatotaldeg < ebtotaldeg
         return true
-    elseif @inbounds tda != tdb
+    elseif eatotaldeg != ebtotaldeg
         return false
     end
     i = length(indices)
@@ -126,9 +135,9 @@ end
 function monom_isless(ea::ExponentVector, eb::ExponentVector, ::_DegLex{true})
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
-    if @inbounds ea[1] < eb[1]
+    if @inbounds totaldeg(ea) < totaldeg(eb)
         return true
-    elseif @inbounds ea[1] != eb[1]
+    elseif @inbounds totaldeg(ea) != totaldeg(eb)
         return false
     end
     i = 2
@@ -138,14 +147,23 @@ function monom_isless(ea::ExponentVector, eb::ExponentVector, ::_DegLex{true})
     @inbounds return ea[i] < eb[i] ? true : false
 end
 
-function monom_isless(ea::ExponentVector, eb::ExponentVector, ord::_DegLex{false})
+function monom_isless(
+    ea::ExponentVector{T},
+    eb::ExponentVector{T},
+    ord::_DegLex{false}
+) where {T}
     indices = variable_indices(ord)
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
-    tda, tdb = sum(ea[indices .+ 1]), sum(eb[indices .+ 1])
-    if @inbounds tda < tdb
+    eatotaldeg = zero(T)
+    ebtotaldeg = zero(T)
+    @inbounds for i in indices
+        eatotaldeg += ea[i + 1]
+        ebtotaldeg += eb[i + 1]
+    end
+    if eatotaldeg < ebtotaldeg
         return true
-    elseif @inbounds tda != tdb
+    elseif eatotaldeg != ebtotaldeg
         return false
     end
     i = 1

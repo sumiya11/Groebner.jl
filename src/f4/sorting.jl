@@ -182,7 +182,7 @@ end
 #
 # After the sort, the first (smallest) row will have the left-most leading
 # column index and, then, the smallest density.
-function sort_matrix_upper_rows_decreasing!(matrix::MacaulayMatrix)
+function sort_matrix_upper_rows!(matrix::MacaulayMatrix)
     #= smaller means pivot being more left  =#
     #= and density being smaller            =#
     permutation = collect(1:(matrix.nupper))
@@ -206,7 +206,7 @@ end
 #
 # After the sort, the first (smallest) row will have the right-most leading
 # column index and, then, the largest density.
-function sort_matrix_lower_rows_increasing!(matrix::MacaulayMatrix)
+function sort_matrix_lower_rows!(matrix::MacaulayMatrix)
     #= smaller means pivot being more right =#
     #= and density being larger             =#
     permutation = collect(1:(matrix.nlower))

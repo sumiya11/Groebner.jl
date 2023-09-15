@@ -642,9 +642,10 @@ function basis_well_formed(key, ring, basis, hashtable)
         else
             length(basis.coeffs[i]) == length(basis.monoms[i]) && continue
             if key in (:input_f4_apply!, :output_f4_apply!)
-                @log level = 10^3 "Unlucky but probably not fatal cancellation at index $(i)" length(
-                    basis.monoms[i]
-                ) length(basis.coeffs[i])
+                @log level = 10^3 """
+                Unlucky but probably not fatal cancellation in polynomial at index $(i) on apply stage.
+                The number of monomials: $(length(basis.monoms[i]))
+                The number of coefficients: $(length(basis.coeffs[i]))"""
             else
                 return false
             end

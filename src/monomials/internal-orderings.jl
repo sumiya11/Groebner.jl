@@ -1,6 +1,8 @@
-
-# NOTE: these are internal representations of monomial orderings actually used
-# in the computation. See also monomials/orderings.jl for the interface.
+# Internal representations of monomial orderings that are actually used in the
+# computation. The user interface is defined in monomials/orderings.jl.
+#
+# A user-defined ordering is compiled (or, either, just transformed) into a
+# corresponding internal ordering, which is then used in low-level computations.
 
 # All internal orderings are a subtype of this
 abstract type AbstractInternalOrdering end
@@ -10,27 +12,38 @@ abstract type AbstractInternalOrdering end
         ord,
         """The given monomial ordering is inconsistent with the input.
         $msg
+
         Variable mapping: $var_to_index
         Ordering: $ord"""
     ))
 end
 
-struct _Lex{Trivial} <: AbstractInternalOrdering
+# Represents internal monomial orderings restricted onto a set of variables at
+# some particular indices.
+#
+# `IsTrivial` is a parameter set either to `true` or `false`.
+# If `IsTrivial` is `true`, then the indices in the ordering cover all of the
+# variables (so that monomial comparison can be implemented more efficiently).
+struct _Lex{IsTrivial} <: AbstractInternalOrdering
     indices::Vector{Int}
 end
 
-struct _DegLex{Trivial} <: AbstractInternalOrdering
+struct _DegLex{IsTrivial} <: AbstractInternalOrdering
     indices::Vector{Int}
 end
 
-struct _DegRevLex{Trivial} <: AbstractInternalOrdering
+struct _DegRevLex{IsTrivial} <: AbstractInternalOrdering
     indices::Vector{Int}
 end
 
-variable_indices(o::_Lex) = o.indices
-variable_indices(o::_DegLex) = o.indices
-variable_indices(o::_DegRevLex) = o.indices
+variable_indices(o::T) where {T <: Union{_Lex, _DegLex, _DegRevLex}} = o.indices
 
+nontrivialization(o::_Lex) = _Lex{false}(o.indices)
+nontrivialization(o::_DegLex) = _DegLex{false}(o.indices)
+nontrivialization(o::_DegRevLex) = _DegRevLex{false}(o.indices)
+nontrivialization(o) = o
+
+# Maintains a list of variable indices and their weights.
 struct _WeightedOrdering{T} <: AbstractInternalOrdering
     indices::Vector{Int}
     weights::Vector{T}
@@ -43,8 +56,10 @@ end
 
 variable_indices(o::_WeightedOrdering) = o.indices
 
+# A product of two orderings.
 struct _ProductOrdering{O1 <: AbstractInternalOrdering, O2 <: AbstractInternalOrdering} <:
        AbstractInternalOrdering
+    # `ord1`, `ord2` may be `_ProductOrdering`s themselves
     ord1::O1
     ord2::O2
 
@@ -57,7 +72,7 @@ struct _ProductOrdering{O1 <: AbstractInternalOrdering, O2 <: AbstractInternalOr
 end
 
 variable_indices(o::_ProductOrdering) =
-    union(variable_indices(o.ord1), variable_indices(o.ord1))
+    union(variable_indices(o.ord1), variable_indices(o.ord2))
 
 struct _MatrixOrdering{T} <: AbstractInternalOrdering
     indices::Vector{Int}
@@ -70,13 +85,13 @@ end
 
 variable_indices(o::_MatrixOrdering) = o.indices
 
-function check_ordering_ring_consistency(
-    var_to_index,
+function check_ordering_consistency(
+    var_to_index::Dict{V, Int},
     ordering::Ord,
     ring_vars::Vector{T},
     ordering_vars::Vector{U};
-    part_of_a_product=false
-) where {T, U, Ord <: AbstractMonomialOrdering}
+    part_of_a_product::Bool=false
+) where {V, T, U, Ord <: AbstractMonomialOrdering}
     if length(ring_vars) < length(ordering_vars)
         __throw_monomial_ordering_inconsistent(
             "There are too few variables in the ring: $ring_vars.",
@@ -87,7 +102,7 @@ function check_ordering_ring_consistency(
     if !part_of_a_product
         if !(length(ring_vars) == length(ordering_vars))
             __throw_monomial_ordering_inconsistent(
-                "The number of variables in the ordering is different from the ring: $ring_vars.",
+                "The number of variables in the ordering is not equal to that of the ring: $ring_vars.",
                 var_to_index,
                 ordering
             )
@@ -128,7 +143,7 @@ for (Ord, InternalOrd) in ((Lex, _Lex), (DegLex, _DegLex), (DegRevLex, _DegRevLe
             part_of_a_product=false
         ) where {V, T}
             ring_vars = collect(keys(var_to_index))
-            check_ordering_ring_consistency(
+            check_ordering_consistency(
                 var_to_index,
                 ordering,
                 ring_vars,
@@ -189,7 +204,10 @@ function convert_to_internal_monomial_ordering(
         part_of_a_product=true
     )
     if !isempty(intersect(variable_indices(internal_ord1), variable_indices(internal_ord2)))
-        @log level = 0 "There is an intersection of variables of two different blocks in the product ordering."
+        @log level = -0 """
+        Two blocks of the product ordering intersect by their variables.
+        Block 1: $(ord.ord1)
+        Block 2: $(ord.ord2)"""
     end
     _ProductOrdering(internal_ord1, internal_ord2)
 end

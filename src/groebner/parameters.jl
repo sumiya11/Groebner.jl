@@ -8,23 +8,20 @@ else
     Random.MersenneTwister
 end
 
-"""
-    AlgorithmParameters
-
-Stores all parameters for a single GB computation.
-"""
-struct AlgorithmParameters{Ord1, Ord2, Ord3, Arithm}
+# Stores parameters for a single GB computation.
+mutable struct AlgorithmParameters{Ord1, Ord2, Ord3, Arithm}
     # Output polynomials monomial ordering
     target_ord::Ord1
     # Monomial ordering for computation
     computation_ord::Ord2
     # Original ordering
     original_ord::Ord3
-
     # Basis correctness checks levels
     heuristic_check::Bool
     randomized_check::Bool
     certify_check::Bool
+
+    homogenize::Bool
 
     check::Bool
 
@@ -66,6 +63,7 @@ function AlgorithmParameters(
     kwargs::KeywordsHandler;
     orderings=nothing
 )
+    #
     if orderings !== nothing
         target_ord = orderings[2]
         computation_ord = orderings[2]
@@ -80,23 +78,31 @@ function AlgorithmParameters(
         computation_ord = ordering
         original_ord = ring.ord
     end
-
+    #
     heuristic_check = true
     randomized_check = true
     certify_check = kwargs.certify
-
+    # 
+    homogenize = if kwargs.homogenize === :yes
+        true
+    else
+        if kwargs.homogenize === :auto
+            computation_ord isa Lex || computation_ord isa ProductOrdering
+        else
+            false
+        end
+    end
+    #
     linalg = kwargs.linalg
-
     arithmetic = select_arithmetic(ring.ch, representation.coefftype)
-
     ground = :zp
     if iszero(ring.ch)
         ground = :qq
     end
-
+    #
     reduced = kwargs.reduced
     maxpairs = kwargs.maxpairs
-
+    #
     selection_strategy = kwargs.selection
     if selection_strategy === :auto
         if target_ord isa Union{Lex, ProductOrdering}
@@ -105,17 +111,16 @@ function AlgorithmParameters(
             selection_strategy = :normal
         end
     end
+    #
     threading = false
-
+    #
     strategy = kwargs.strategy
     majority_threshold = 1
-
+    #
     seed = kwargs.seed
-
     rng = _default_rng_type(seed)
-
     useed = UInt64(seed)
-
+    #
     sweep = kwargs.sweep
 
     @log level = -1 """
@@ -130,6 +135,7 @@ function AlgorithmParameters(
     linalg = $linalg
     arithmetic = $arithmetic
     reduced = $reduced
+    homogenize = $homogenize
     maxpairs = $maxpairs
     selection_strategy = $selection_strategy
     ground = $ground
@@ -147,6 +153,7 @@ function AlgorithmParameters(
         heuristic_check,
         randomized_check,
         certify_check,
+        homogenize,
         kwargs.check,
         linalg,
         arithmetic,
@@ -171,6 +178,7 @@ function params_mod_p(params::AlgorithmParameters, prime::Integer)
         params.heuristic_check,
         params.randomized_check,
         params.certify_check,
+        params.homogenize,
         params.check,
         params.linalg,
         select_arithmetic(prime, CoeffModular),

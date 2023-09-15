@@ -1,8 +1,6 @@
 import Random
 
 params = (loglevel=0, sweep=true)
-# TODO: do not turn this off 
-Groebner.invariants_enabled() = true
 
 @testset "learn & apply" begin
     K = AbstractAlgebra.GF(2^31 - 1)

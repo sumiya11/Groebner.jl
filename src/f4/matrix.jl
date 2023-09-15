@@ -312,9 +312,6 @@ Used for assessing if all S-polynomials reduce to zero modulo a basis.
 function linear_algebra_isgroebner! end
 
 function linear_algebra!(matrix, basis, params, graph=nothing; linalg::Symbol=:auto)
-    # TODO: is this sort an identity permutation? 
-    sort_matrix_upper_rows_decreasing!(matrix) # for the AB part
-    sort_matrix_lower_rows_increasing!(matrix) # for the CD part
     @log level = -3 repr_matrix(matrix)
     # @invariant matrix_well_formed(:linear_algebra!, matrix)
     if linalg === :auto
@@ -368,7 +365,7 @@ function linear_algebra_reducegb!(
     graph=nothing;
     linalg::Symbol=:auto
 )
-    sort_matrix_upper_rows_decreasing!(matrix)
+    sort_matrix_upper_rows!(matrix)
 
     @log level = -3 repr_matrix(matrix)
 
@@ -409,15 +406,15 @@ function linear_algebra_reducegb!(
 end
 
 function linear_algebra_normalform!(matrix, basis, arithmetic)
-    sort_matrix_upper_rows_decreasing!(matrix)
+    sort_matrix_upper_rows!(matrix)
     @log level = -3 repr_matrix(matrix)
     resize!(matrix.coeffs, matrix.nlower)
     reduce_matrix_lower_part_invariant_pivots!(matrix, basis, arithmetic)
 end
 
 function linear_algebra_isgroebner!(matrix, basis, arithmetic)
-    sort_matrix_upper_rows_decreasing!(matrix)
-    sort_matrix_lower_rows_increasing!(matrix)
+    sort_matrix_upper_rows!(matrix)
+    sort_matrix_lower_rows!(matrix)
     @log level = -3 repr_matrix(matrix)
     reduce_matrix_lower_part_any_nonzero!(matrix, basis, arithmetic)
 end
@@ -430,6 +427,8 @@ function deterministic_sparse_linear_algebra!(
     basis::Basis{C},
     arithmetic::A
 ) where {C <: Coeff, A <: AbstractArithmetic}
+    sort_matrix_upper_rows!(matrix) # for the AB part
+    sort_matrix_lower_rows!(matrix) # for the CD part
     # Reduce CD with AB
     reduce_matrix_lower_part!(matrix, basis, arithmetic)
     # Interreduce CD
@@ -442,6 +441,8 @@ function randomized_sparse_linear_algebra!(
     arithmetic::A,
     rng
 ) where {C <: Coeff, A <: AbstractArithmetic}
+    sort_matrix_upper_rows!(matrix) # for the AB part
+    sort_matrix_lower_rows!(matrix) # for the CD part
     # Reduce CD with AB
     randomized_reduce_matrix_lower_part!(matrix, basis, arithmetic, rng)
     # Interreduce CD
@@ -454,6 +455,8 @@ function learn_sparse_linear_algebra!(
     basis::Basis{C},
     arithmetic::A
 ) where {C <: Coeff, A <: AbstractArithmetic}
+    sort_matrix_upper_rows!(matrix) # for the AB part
+    sort_matrix_lower_rows!(matrix) # for the CD part
     # Reduce CD with AB
     learn_reduce_matrix_lower_part!(graph, matrix, basis, arithmetic)
     # Interreduce CD
@@ -466,6 +469,9 @@ function apply_sparse_linear_algebra!(
     basis::Basis{C},
     arithmetic::A
 ) where {C <: Coeff, A <: AbstractArithmetic}
+    # NOTE: here, we do not need to sort the rows, as they have already been
+    # collected in the right order
+    sort_matrix_lower_rows!(matrix) # for the CD part
     # Reduce CD with AB
     flag = apply_reduce_matrix_lower_part!(graph, matrix, basis, arithmetic)
     if !flag
@@ -1110,7 +1116,7 @@ end
 
 record_active_reducer(active_reducers::Nothing, matrix, idx) = nothing
 function record_active_reducer(active_reducers, matrix, idx)
-    push!(active_reducers, (matrix.upper_to_coeffs[idx], matrix.upper_to_mult[idx]))
+    push!(active_reducers, (idx, matrix.upper_to_coeffs[idx], matrix.upper_to_mult[idx]))
     nothing
 end
 
@@ -1197,7 +1203,7 @@ function learn_reduce_matrix_lower_part!(
     row = zeros(C, ncols)
 
     not_reduced_to_zero = Vector{Int}()
-    useful_reducers = Set{Tuple{Int, MonomIdx}}()
+    useful_reducers = Set{Tuple{Int, Int, MonomIdx}}()
     @log level = -6 "Low to coef" row_idx_to_coeffs matrix.lower_to_mult
 
     new_column_indices, new_coeffs = new_empty_sparse_row(C)
@@ -1215,7 +1221,7 @@ function learn_reduce_matrix_lower_part!(
 
         # reduce it with known pivots from matrix.upper_rows
         # first nonzero in densecoeffs is at startcol position
-        reducers = Tuple{Int, MonomIdx}[]
+        reducers = Tuple{Int, Int, MonomIdx}[]
         first_nnz_column = rowexps[1]
         zeroed = reduce_dense_row_by_pivots_sparse!(
             new_column_indices,
@@ -1254,7 +1260,9 @@ function learn_reduce_matrix_lower_part!(
         new_column_indices, new_coeffs = new_empty_sparse_row(C)
     end
 
-    useful_reducers_sorted = sort(collect(useful_reducers))
+    # NOTE: we sort reducers by their original position in the pivots array.
+    # That way, we can skip sorting at the apply stage.
+    useful_reducers_sorted = sort(collect(useful_reducers), by=reducer -> reducer[1])
     @log level = -7 "" useful_reducers_sorted
     push!(
         graph.matrix_infos,
@@ -1263,7 +1271,7 @@ function learn_reduce_matrix_lower_part!(
     push!(graph.matrix_nonzeroed_rows, not_reduced_to_zero)
     push!(
         graph.matrix_upper_rows,
-        (map(first, useful_reducers_sorted), map(last, useful_reducers_sorted))
+        (map(f -> f[2], useful_reducers_sorted), map(f -> f[3], useful_reducers_sorted))
     )
     push!(
         graph.matrix_lower_rows,

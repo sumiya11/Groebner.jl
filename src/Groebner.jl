@@ -127,6 +127,10 @@ include("groebner/learn-apply.jl")
 include("groebner/isgroebner.jl")
 # `normalform` backend
 include("groebner/normalform.jl")
+# `autoreduce` backend (not exported)
+include("groebner/autoreduce.jl")
+# some tricks (which are used to compute in Lex and Block orderings)
+include("groebner/homogenization.jl")
 
 #= generic fglm implementation =#
 include("fglm/linear.jl")

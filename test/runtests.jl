@@ -5,7 +5,8 @@ using AbstractAlgebra
 using Random
 using Groebner
 
-# Check invariants during testing
+# Check invariants during testing.
+# NOTE: it's good to turn this on, as asserts may help to catch segfaults
 Groebner.invariants_enabled() = true
 Groebner.update_logger(stream=stdout, loglevel=0)
 
@@ -41,7 +42,8 @@ end
         "groebner/groebner_stress",
         "groebner/groebner_large",
         "groebner/many_variables",
-        "groebner/large_exponents"
+        "groebner/large_exponents",
+        "groebner/homogenization"
     ]
 
     @includetests ["learn_and_apply/learn_and_apply"]
