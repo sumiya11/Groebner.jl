@@ -5,7 +5,7 @@ Versions of dependencies:
 
 Changes in the interface:
 
-- Added keyword argument `homogenize` to `groebner` function. If
+- Added keyword argument `homogenize` to the `groebner` function. If
   `homogenize=:yes` is specified, then input generators are homogenized
   (saturated accordingly) before the computation starts. This option is turned
   on by default when the monomial ordering is an elimination ordering.
