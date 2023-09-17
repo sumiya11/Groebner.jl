@@ -60,7 +60,7 @@ This library is maintained by Alexander Demin (<asdemin_2@edu.hse.ru>).
 
 ## Acknowledgement
 
-We would like to acknowledge Jérémy Berthomieu, Christian Eder, and Mohab Safey El Din as this library is inspired by their work ["msolve: A Library for Solving Polynomial Systems"](https://arxiv.org/abs/2104.03572). We are also grateful to Max-Planck-Institut für Informatik and The MAX team at l'X for assistance in producing benchmarks.
+We would like to acknowledge Jérémy Berthomieu, Christian Eder, and Mohab Safey El Din as this library is inspired by their work ["msolve: A Library for Solving Polynomial Systems"](https://arxiv.org/abs/2104.03572). We are also grateful to The Max Planck Institute for Informatics and The MAX team at l'X for providing computational resources.
 
 Special thanks goes to Vladimir Kuznetsov for providing the sources of his F4 implementation.
 
