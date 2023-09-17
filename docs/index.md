@@ -32,6 +32,7 @@ First, import AbstractAlgebra.jl.
 Then, we can create an array of polynomials over a finite field
 
 ```julia:install_aa
+using Pkg # hide
 Pkg.add("AbstractAlgebra") # hide
 ```
 
