@@ -15,7 +15,7 @@ Groebner.jl is a package for fast and generic Gröbner bases computations based 
 
 To install Groebner.jl, run the following in the Julia REPL:
 
-```julia:install
+```julia
 using Pkg; Pkg.add("Groebner")
 ```
 
