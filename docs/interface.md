@@ -13,11 +13,6 @@ where appropriate -->
 using Groebner # hide
 ```
 
-```julia:rrrr
-import Pkg
-Pkg.status()
-```
-
 {{doc groebner groebner fn}}
 
 {{doc isgroebner isgroebner fn}}
@@ -30,11 +25,11 @@ Pkg.status()
 
 ## Monomial orderings
 
-A list of all supported monomial orderings.
-An ordering can be set by passing the keyword argument `ordering`.
+A list of all monomial orderings supported by Groebner.jl.
+An ordering can be set by passing it with the keyword argument `ordering`.
 See below for some examples.
 
-*Note that some frontends, for example, `AbstractAlgebra.jl`, may not support weighted/product/matrix orderings. In such cases, the polynomial terms in the output are ordered w.r.t. some other supported ordering.*
+\note{Some frontends, for example, AbstractAlgebra.jl, may not support weighted/product/matrix orderings from Groebner.jl. In such cases, the basis is computed in the ordering requested by user, but the terms of polynomials in the output are ordered w.r.t. some other ordering that is supported by the frontend.}
 
 {{doc Lex}}
 

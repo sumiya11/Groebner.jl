@@ -5,36 +5,31 @@
 the config file by setting hasmath = false for instance and just setting it to true
 where appropriate -->
 
+@@im-50
+![](/assets/logo-with-text.svg)
+@@
 
-inline: ![alt text](https://juliacon.org/2018/assets/img/julia-logo-dots.png)
-
-
-# Groebner.jl
-
-`Groebner.jl` is a package for fast and generic Gröbner bases computations
-based on Faugère's F4 algorithm [[1]](https://www-polsys.lip6.fr/~jcf/Papers/F99a.pdf) written in pure Julia.
+Groebner.jl is a package for fast and generic Gröbner bases computations based on Faugère's F4 algorithm[^1] written in Julia.
 
 ## Installation
 
-To install `Groebner.jl`, execute the following in Julia:
+To install Groebner.jl, run the following in the Julia REPL:
 
-<!-- ```julia:install
-using Pkg; Pkg.add("Groebner")
-``` -->
 ```julia:install
-1
+using Pkg; Pkg.add("Groebner")
 ```
 
-See **Interface** for a description of all exported functions. Find a quick introduction to Groebner bases and a couple of interesting use cases in **Tutorials**. Meanwhile, below are simple examples.
+See [Interface](interface) for a description of all exported functions. For a quick introduction to Groebner bases we refer to [Tutorials](tutorial). Meanwhile, below are simple examples.
 
 ## Examples
 
-Currently, polynomials from `AbstractAlgebra`, `DynamicPolynomials`, and `Nemo`
+Currently, polynomials from AbstractAlgebra.jl, DynamicPolynomials.jl, and Nemo.jl
 are supported as input.
 
-### with `AbstractAlgebra`
+### with AbstractAlgebra.jl
 
-Let's import `AbstractAlgebra`, create a system over a finite field
+First, import AbstractAlgebra.jl. 
+Then, we can create an array of polynomials over a finite field
 
 ```julia:install_aa
 Pkg.add("AbstractAlgebra") # hide
@@ -43,31 +38,37 @@ Pkg.add("AbstractAlgebra") # hide
 ```julia:aaimport
 using AbstractAlgebra
 
-R, (x, y) = PolynomialRing(GF(2^31 - 1), ["x", "y"])
-polys = [x^3 + y^2, x*y + x^2];
+R, (x, y, z) = PolynomialRing(GF(2^31 - 1), ["x", "y", "z"])
+polys = [x^2 + y + z, x*y + z];
 ```
 
-and compute the Groebner basis
+and compute the Groebner basis with the `groebner` command
+
 ```julia:aagb
 using Groebner
 
 basis = groebner(polys)
 ```
 
-We can also check that a set of polynomials forms a basis
+We can check if a set of polynomials forms a basis
+
 ```julia:aaisgb
 isgroebner(basis)
 ```
 
-We check if $x^2y^2 + 2x^3y - xy^2$ is a member of $\langle x^3 + y^2, xy + x^2 \rangle$, using the `normalform` function
+Groebner.jl also provides several monomial orderings. 
+For example, we can eliminate `z` from the above system:
 
-```julia:aagb
-normalform(basis, x^2*y^2 + 2x^3*y - x*y^2)
+```julia:aagb2
+ordering = Lex(z) * DegRevLex(x, y)  # z > x, y
+groebner(polys, ordering=ordering)
 ```
 
-### with `DynamicPolynomials`
+You can find more information on monomial orderings in Groebner.jl in [Monomial Orderings](interface/#monomial_orderings).
 
-We will compute the basis of the `noon-2` system [[2]](https://www.jstor.org/stable/2101937):
+### with DynamicPolynomials.jl
+
+We will compute the basis of the `noon-2` system[^3]
 
 ```julia:install_dynamic
 Pkg.add("DynamicPolynomials") # hide
@@ -85,10 +86,14 @@ groebner(system)
 
 ## Contacts
 
-This library is maintained by Alexander Demin (asdemin_2@edu.hse.ru)
+This library is maintained by Alexander Demin ([asdemin_2@edu.hse.ru](mailto:asdemin_2@edu.hse.ru)).
 
 ## Acknowledgement
 
-We would like to acknowledge Jérémy Berthomieu, Christian Eder and Mohab Safey El Din as this Library is inspired by their work "msolve: A Library for Solving Polynomial Systems". We are also grateful to Max-Planck-Institut für Informatik for assistance in producing benchmarks.
+We would like to acknowledge Jérémy Berthomieu, Christian Eder, and Mohab Safey El Din as this library is inspired by their work "msolve: A Library for Solving Polynomial Systems"[^2]. We are also grateful to The Max Planck Institute for Informatics and The MAX team at l'X for providing computational resources.
 
 Special thanks goes to Vladimir Kuznetsov for providing the sources of his F4 implementation.
+
+[^1]: [https://www-polsys.lip6.fr/~jcf/Papers/F99a.pdf](https://www-polsys.lip6.fr/~jcf/Papers/F99a.pdf)
+[^3]: [https://www.jstor.org/stable/2101937](https://www.jstor.org/stable/2101937)
+[^2]: [https://msolve.lip6.fr/](https://msolve.lip6.fr/)

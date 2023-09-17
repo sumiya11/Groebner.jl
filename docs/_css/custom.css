@@ -1,18 +1,28 @@
 @import url('https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,700;0,900;1,300;1,400;1,600;1,700;1,900&family=Work+Sans:ital,wght@0,400;0,600;1,400;1,600&display=swap');
-html, body {
+
+html,
+body {
     font-family: 'Work Sans', serif;
 }
 
-h1 { color: #333; }
-h1, h2, h3 {
+h1 {
+    color: #333;
+}
+
+h1,
+h2,
+h3 {
     font-family: 'Source Serif Pro';
 }
-.franklin-content li > p {
+
+.franklin-content li>p {
     padding: 0;
     margin: 0;
 }
 
-h2 { color: #3f3f3f; }
+h2 {
+    color: #3f3f3f;
+}
 
 .franklin-content h1 {
     margin-bottom: 0;
@@ -26,11 +36,13 @@ h2 { color: #3f3f3f; }
 .content {
     padding-top: 0;
 }
-.franklin-content pre > code {
+
+.franklin-content pre>code {
     border: 1px solid #6B8E2340;
     padding: 1.5em;
     border-radius: 0;
 }
+
 pre.code-output {
     background: #6B8E2340;
     padding-left: 0.5em;
@@ -57,6 +69,7 @@ pre.code-output {
 .franklin-content .docstring h1 {
     font-size: 1.2em;
 }
+
 .franklin-content .docstring h2 {
     font-size: 1em;
 }
@@ -83,4 +96,13 @@ pre.code-output {
 .lead {
     display: none;
     font-size: 0.96em;
+}
+
+.im-50 {
+    text-align: center;
+}
+
+.im-50 img {
+    padding: 0;
+    width: 60%;
 }

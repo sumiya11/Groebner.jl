@@ -19,7 +19,9 @@ abstract type AbstractMonomialOrdering end
     InputOrdering()
 
 Preserves the monomial ordering defined on the input polynomials.
-This is the default option.
+
+This is the default value for the `ordering` keyword argument in the exported
+functions.
 
 ## Example
 
@@ -39,12 +41,13 @@ struct InputOrdering <: AbstractMonomialOrdering end
     Lex(variables)
     Lex(variables...)
 
-Lexicographical monomial ordering, defined as follows:
+Lexicographical monomial ordering.
+*Dura Lex, sed Lex.*
 
-\$x_1^a_1...x_n^a_n < x_1^b_1...x_n^b_n\$
+We use the definition from Chapter 1, Computational Commutative Algebra 1, by
+Martin Kreuzer, Lorenzo Robbiano. 
 
-if there exists \$k ∈ 1..n\$ such that \$a_j = b_j\$ for \$j\$ in \$1..k-1\$ and
-\$a_k < b_k\$.
+DOI: https://doi.org/10.1007/978-3-540-70628-1.
 
 ## Possible Options
 
@@ -63,6 +66,10 @@ groebner([x*y + x, x + y^2], ordering=Lex())
 
 # Lexicographical ordering with y > x
 groebner([x*y + x, x + y^2], ordering=Lex([y, x]))
+
+# Lexicographical ordering with x > y
+# Note that both syntax -- Lex([...]) and Lex(...) -- are allowed
+groebner([x*y + x, x + y^2], ordering=Lex(x, y))
 ```
 """
 struct Lex{T} <: AbstractMonomialOrdering
@@ -84,13 +91,12 @@ end
     DegLex(variables)
     DegLex(variables...)
 
-Degree lexicographical monomial ordering, defined as follows:
+Degree lexicographical monomial ordering.
 
-\$x_1^a_1...x_n^a_n < x_1^b_1...x_n^b_n\$
+We use the definition from Chapter 1, Computational Commutative Algebra 1, by
+Martin Kreuzer, Lorenzo Robbiano. 
 
-- if \$a_1 +...+ a_n < b_1 +...+ b_n\$, or, 
-- if \$a_1 +...+ a_n = b_1 +...+ b_n\$ and there exists \$k ∈ 1..n\$ such that
-    \$a_j = b_j\$ for \$j\$ in \$1..k-1\$ and \$a_k < b_k\$.
+DOI: https://doi.org/10.1007/978-3-540-70628-1.
 
 ## Example
 
@@ -124,13 +130,12 @@ end
     DegRevLex(variables)
     DegRevLex(variables...)
 
-Degree reverse lexicographical monomial ordering, defined as follows:
+Degree reverse lexicographical monomial ordering.
 
-\$x_1^a_1...x_n^a_n < x_1^b_1...x_n^b_n\$
+We use the definition from Chapter 1, Computational Commutative Algebra 1, by
+Martin Kreuzer, Lorenzo Robbiano. 
 
-- if \$a_1 +...+ a_n < b_1 +...+ b_n\$, or, 
-- if \$a_1 +...+ a_n = b_1 +...+ b_n\$ and there exists \$k ∈ 1..n\$ such that
-    \$a_j = b_j\$ for \$j\$ in \$k+1..n\$ and \$a_k > b_k\$.
+DOI: https://doi.org/10.1007/978-3-540-70628-1.
 
 ## Example
 
@@ -164,7 +169,7 @@ end
 
 Weighted monomial ordering.
 
-*Only positive weights are supported at the moment.*
+*Only positive weights are supported.*
 
 ## Example
 
@@ -202,7 +207,7 @@ end
 Product monomial ordering. Compares monomials by `ord1`, then breaks ties by
 `ord2`.
 
-Can be constructed with `*`.
+Can also be constructed with `*`.
 
 ## Example
 
@@ -210,7 +215,7 @@ Can be constructed with `*`.
 using Groebner, AbstractAlgebra
 R, (x, y, z, w) = QQ["x", "y", "z", "w"];
 
-# Ordering with x > y >> w > z
+# Ordering with x, y > w, z
 ord = ProductOrdering(DegRevLex(x, y), DegRevLex(w, z))
 groebner([x*y + w, y*z - w], ordering=ord)
 ```
@@ -251,15 +256,6 @@ end
     MatrixOrdering(Vector{Vector})
     
 Matrix monomial ordering. 
-
-*The number of matrix columns must be equal to the number of variables.*
-
-Let ``M`` be an ``r x n`` matrix with rows ``m_1, ..., m_r``. 
-Then ``M`` defines the following ordering:
-
-\$\$x^a < x^b\$\$
-
-if ``m_i^T a < m_i^T b`` for some ``i``, and ``m_j^T a = m_j^T b`` for ``1 < j < i``.
 
 ## Example
 

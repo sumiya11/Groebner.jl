@@ -4,20 +4,20 @@
 
 Computes a Groebner basis of `polynomials`.
 
-## Possible Options!!
+## Possible Options
 
-The `groebner` routine takes the following options:
+The `groebner` routine takes the following optional arguments:
 - `reduced`: If the returned basis must be autoreduced and unique (default is
   `true`).
 - `ordering`: Specifies the monomial ordering. Available monomial orderings are: 
     - `InputOrdering()` for inferring the ordering from the given `polynomials`
       (default), 
-    - `Lex()` for lexicographic, 
-    - `DegLex()` for degree lexicographic, 
-    - `DegRevLex()` for degree reverse lexicographic, 
-    - `WeightedOrdering(weights)` for weighted ordering, 
+    - `Lex(args...)` for lexicographic, 
+    - `DegLex(args...)` for degree lexicographic, 
+    - `DegRevLex(args...)` for degree reverse lexicographic, 
+    - `WeightedOrdering(args...)` for weighted ordering, 
     - `ProductOrdering(args...)` for block ordering, 
-    - `MatrixOrdering(matrix)` for matrix ordering. 
+    - `MatrixOrdering(args...)` for matrix ordering. 
   For details and examples see the corresponding documentation page.
 - `certify`: Certify the obtained basis. When this option is `false`, the
     algorithm is randomized, and the result is correct with high probability.
@@ -40,8 +40,8 @@ The `groebner` routine takes the following options:
     Default value is `0`, which means that only info and warnings are printed.
     Set `loglevel` to negative values, e.g., `-1`, for debugging.
 - `maxpairs`: The maximum number of critical pairs used at once in matrix
-    construction. By default, this is not specified. Tweak this option to try to
-    lower the amount of RAM consumed.
+    construction in the F4 algorithm. By default, this is not specified. Tweak
+    this option to try to lower the amount of RAM consumed.
 - `homogenize`: Controls the use of homogenization in the algorithm. Possible
   options are:
     - `:yes`, always homogenize the input ideal,
@@ -64,6 +64,12 @@ Using `AbstractAlgebra`:
 using Groebner, AbstractAlgebra
 R, (x, y) = QQ["x", "y"]
 groebner([x*y^2 + x, y*x^2 + y])
+```
+
+Or, in another monomial ordering:
+
+```jldoctest
+groebner([x*y^2 + x, y*x^2 + y], ordering=Lex(y, x))
 ```
 """
 function groebner(polynomials::AbstractVector; options...)
@@ -148,11 +154,11 @@ end
 """
     isgroebner(polynomials; options...)
 
-Checks if the given array `polynomials` forms a Groebner basis.
+Checks if `polynomials` forms a Groebner basis.
 
 ## Possible Options
 
-The `isgroebner` routine takes the following options:
+The `isgroebner` routine takes the following optional arguments:
 - `ordering`: Specifies the monomial ordering. Available monomial orderings are: 
     - `InputOrdering()` for inferring the ordering from the given `polynomials`
       (default), 
@@ -200,7 +206,7 @@ Computes the normal form of polynomials `tobereduced` w.r.t `basis`.
 
 ## Possible Options
 
-The `normalform` routine takes the following options:
+The `normalform` routine takes the following optional arguments:
 - `check`: Check if the given array `basis` forms a Groebner basis (default is `true`).
 - `ordering`: Specifies the monomial ordering. Available monomial orderings are: 
     - `InputOrdering()` for inferring the ordering from the given `polynomials`
@@ -238,11 +244,11 @@ normalform(basis::AbstractVector, tobereduced; options...) =
 """
     kbase(basis; options...)
 
-Computes the basis of the quotient ideal as a vector space.
+Computes the basis of the quotient ideal of `basis` as a vector space.
 
 ## Possible Options
 
-The `kbase` routine takes the following options:
+The `kbase` routine takes the following optional arguments:
 - `check`: Check if the given array `basis` forms a Groebner basis (default is `true`).
 - `loglevel`: Logging level, an integer. Higher values mean less verbose.
     Default value is `0`, which means that only warnings are printed. Set
