@@ -1,0 +1,94 @@
+\documentclass{standalone}
+
+\usepackage{julialogo}
+
+\usepackage{polyglossia}
+\setdefaultlanguage{english}
+
+\usepackage{fontspec}
+\usepackage{xspace}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+\usetikzlibrary{shapes.arrows}
+\usetikzlibrary{positioning}
+\usetikzlibrary{calc}
+
+% https://github.com/JuliaLang/julia-logo-graphics#color-definitions
+\definecolor{juliared}{rgb}{0.796, 0.235, 0.2}
+\definecolor{juliagreen}{rgb}{0.22, 0.596, 0.149}
+\definecolor{juliablue}{rgb}{0.251, 0.388, 0.847}
+\definecolor{juliapurple}{rgb}{0.584, 0.345, 0.698}
+\definecolor{mygray}{rgb}{0.3, 0.3, 0.3}
+\definecolor{arrowbordercolor}{rgb}{0.0, 0.0, 0.0}
+\definecolor{arrowcolor}{rgb}{1.0, 1.0, 1.0}
+% \definecolor{arrowcolor}{rgb}{0.0, 0.0, 0.0}
+
+\def\scale{3}
+\def\size{1.2 * \scale}
+\def\dist{1.3 * \scale}
+\def\radius{\size / 2}
+\def\shift{1/sqrt(2)*\radius}
+\def\arrowlinewidth{7.0}
+\def\arrowwidth{12.0}
+\def\arrowindent{0.11}
+
+\tikzset{blob/.style={fill opacity=1.0, circle, minimum size=\size cm,thick}}
+\tikzset{blobred/.style={fill=juliared, draw=juliared, blob}}
+\tikzset{blobpurple/.style={fill=juliapurple, draw=juliapurple, blob}}
+\tikzset{blobgreen/.style={fill=juliagreen, draw=juliagreen, blob}}
+\tikzset{blobblue/.style={fill=juliablue, draw=juliablue, blob}}
+
+% https://tex.stackexchange.com/questions/432138/automatically-positioning-node-shape-on-to-path-in-tikz-for-outlined-transpa/432147#432147
+\tikzset{
+  my wide arrow/.style args={width #1 line width #2}{
+    -{Triangle[length=0.9*#1,width={2.0*#1},color=arrowcolor, round]},
+    line width=1.0*#1, % color = arrowcolor,
+    % line cap=round % outer arrow
+    postaction={draw,-{Triangle[length={0.9*#1-2*#2},width={2*#1-3*sqrt(2)*#2}, round, color=arrowbordercolor]},
+    line width={#1-2*#2},shorten <=#2,shorten >=#2,opacity=1,color=arrowbordercolor}, % second arrow
+  }
+}
+
+\DeclareRobustCommand\groebner{%
+\begin{tikzpicture}[baseline=0mm, every node/.style={inner sep=0mm, outer sep=0mm}]
+\TamilMNvTwelve
+\node[anchor=base, white]        (g) at (0,0) {\julialetter{G}};
+\node[anchor=base, right=-0.122ex of g, white] (r) {\julialetter{r}};
+\node[anchor=base, right=-0.122ex of r, white] (o) {\julialetter{o}};
+\node[anchor=base, right=-0.122ex of o, white] (e) {\julialetter{e}};
+\node[anchor=base, right=-0.122ex of e, white] (b) {\julialetter{b}};
+\node[anchor=base, right=-0.122ex of b, white] (n) {\julialetter{n}};
+\node[anchor=base, right=-0.122ex of n, white] (e2) {\julialetter{e}};
+\node[anchor=base, right=-0.122ex of e2, white] (r2) {\julialetter{r}};
+\node[anchor=base, right=-0.122ex of r2, white] (dot) {\julialetter{.}};
+\node[anchor=base, right=-0.122ex of dot, white] (j) {\julialetter{j}};
+\node[anchor=base, right=-0.122ex of j, white] (l) {\julialetter{l}};
+
+\end{tikzpicture}\xspace%
+}
+
+\begin{document}
+
+\resizebox{1.0\textwidth}{!}{
+\begin{tikzpicture}
+    \node[scale=20.0] at (-23,-0.5) {\groebner};
+    
+    \draw ({-\dist},0.0) node (a) {} (\dist,0.0) node (b) {} (0.0, \dist) node (c) {} (0.0, {-\dist}) node (d) {};
+
+    \draw (a) node[blobred] {};
+    \draw (b) node[blobpurple] {};
+    \draw (c) node[blobgreen] {};
+    \draw (d) node[blobblue] {};
+
+    \draw[my wide arrow=width \arrowwidth mm line width \arrowlinewidth pt,color=arrowcolor] ({(-\shift) - \arrowindent},{(-\shift) + \dist - \arrowindent}) to ({-\dist + \shift + \arrowindent},{\shift + \arrowindent});
+
+    \draw[my wide arrow=width \arrowwidth mm line width \arrowlinewidth pt,color=arrowcolor] ({-\dist + \shift + \arrowindent},{-\shift - \arrowindent}) -- ({-\shift - \arrowindent},{-\dist +\shift + \arrowindent});
+
+    \draw[my wide arrow=width \arrowwidth mm line width \arrowlinewidth pt,color=arrowcolor] ({+\shift + \arrowindent},{-\shift + \dist - \arrowindent}) -- ({+\dist - \shift - \arrowindent},{\shift + \arrowindent});
+
+    \draw[my wide arrow=width \arrowwidth mm line width \arrowlinewidth pt,color=arrowcolor] ({+\dist - \shift - \arrowindent},{-\shift - \arrowindent}) -- ({+\shift + \arrowindent},{-\dist +\shift + \arrowindent});
+    \end{tikzpicture}
+}
+
+\end{document}
