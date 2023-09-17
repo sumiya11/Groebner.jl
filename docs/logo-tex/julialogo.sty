@@ -1,0 +1,52 @@
+% Provides a Julia logo in LaTeX
+%
+% LaTeX version of logo implemented by John Wickerson (https://johnwickerson.github.io/):
+% https://tex.stackexchange.com/a/113557
+%
+% Edited by Jeremy Van Cleve (http://vancleve.theoretical.bio)
+% to match official Julia colors and font:
+% https://github.com/JuliaGraphics/julia-logo-graphics
+
+\NeedsTeXFormat{LaTeX2e}[1994/06/01]
+\ProvidesPackage{julialogo}[2018 v0.2 packaged code by John Wickerson with my edits]
+
+\RequirePackage{fontspec}
+\RequirePackage{tikz}
+\RequirePackage{xspace}
+\usetikzlibrary{positioning}
+\usetikzlibrary{calc}
+
+\newfontfamily\TamilMNvTwelve[
+  Path            = fonts/,
+  BoldFont        = TamilMNv12d2e1-Bold.otf,
+  Ligatures       = TeX,
+  Scale           = MatchUppercase
+  ]{TamilMNv12d2e1.otf}
+
+\definecolor{juliared}{rgb}{0.796, 0.235, 0.2}
+\definecolor{juliagreen}{rgb}{0.22, 0.596, 0.149}
+\definecolor{juliablue}{rgb}{0.251, 0.388, 0.847}
+\definecolor{juliapurple}{rgb}{0.584, 0.345, 0.698}
+
+\tikzset{
+  juliadot/.style args={#1}{shape=circle,minimum width=0.42ex,fill=#1}
+}
+
+\newcommand\julialetter[1]{{\strut\bfseries#1}}
+
+\DeclareRobustCommand\julia{%
+\begin{tikzpicture}[baseline=0mm, every node/.style={inner sep=0mm, outer sep=0mm}]
+\TamilMNvTwelve
+\node[anchor=base]        (j) at (0,0) {\julialetter{j}};
+\node[anchor=base, right=-0.122ex of j] (u) {\julialetter{u}};
+\node[anchor=base, right=-0.122ex of u] (l) {\julialetter{l}};
+\node[anchor=base, right=-0.122ex of l] (i) {\julialetter{i}};
+\node[anchor=base, right=-0.122ex of i] (a) {\julialetter{a}};
+\path let \p1 = (j) in node[juliadot={juliablue}] (bluedot) at (\x1-0.0ex,1.28ex) {};
+\path let \p1 = (i) in node[juliadot={juliared}] (reddot) at (\x1+0.021ex,1.28ex) {};
+\path let \p1 = (reddot) in node[juliadot={juliapurple}] (purpledot) at (\x1+0.489ex,\y1) {};
+\path let \p1 = (reddot) in node[juliadot={juliagreen}] (greendot) at (\x1+0.241ex,\y1+0.423ex) {};
+\end{tikzpicture}\xspace%
+}
+
+\endinput
