@@ -1,4 +1,12 @@
-# Groebner.jl
+
+<div align="left">
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://github.com/sumiya11/Groebner.jl/docs/assets/logo-dark-with-text.svg">
+      <img alt="Groebner.jl logo" src="https://github.com/sumiya11/Groebner.jl/docs/assets/logo-with-text.svg">
+    </picture>
+</div>
+
+---
 
 [![Runtests](https://github.com/sumiya11/Groebner.jl/actions/workflows/Runtests.yml/badge.svg)](https://github.com/sumiya11/Groebner.jl/actions/workflows/Runtests.yml)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://sumiya11.github.io/Groebner.jl)

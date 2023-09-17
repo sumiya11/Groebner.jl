@@ -6,6 +6,9 @@ the config file by setting hasmath = false for instance and just setting it to t
 where appropriate -->
 
 
+inline: ![alt text](https://juliacon.org/2018/assets/img/julia-logo-dots.png)
+
+
 # Groebner.jl
 
 `Groebner.jl` is a package for fast and generic Gröbner bases computations
@@ -15,8 +18,11 @@ based on Faugère's F4 algorithm [[1]](https://www-polsys.lip6.fr/~jcf/Papers/F9
 
 To install `Groebner.jl`, execute the following in Julia:
 
-```julia:install
+<!-- ```julia:install
 using Pkg; Pkg.add("Groebner")
+``` -->
+```julia:install
+1
 ```
 
 See **Interface** for a description of all exported functions. Find a quick introduction to Groebner bases and a couple of interesting use cases in **Tutorials**. Meanwhile, below are simple examples.

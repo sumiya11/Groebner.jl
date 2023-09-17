@@ -4,7 +4,7 @@
 
 Computes a Groebner basis of `polynomials`.
 
-## Possible Options
+## Possible Options!!
 
 The `groebner` routine takes the following options:
 - `reduced`: If the returned basis must be autoreduced and unique (default is
@@ -20,11 +20,13 @@ The `groebner` routine takes the following options:
     - `MatrixOrdering(matrix)` for matrix ordering. 
   For details and examples see the corresponding documentation page.
 - `certify`: Certify the obtained basis. When this option is `false`, the
-    algorithm is randomized, and the result is correct with high probability
-    (default is `false`).
+    algorithm is randomized, and the result is correct with high probability.
+    When this option is `true`, the result is guaranteed to be correct in case
+    the ideal is homogeneous (default is `false`). 
 - `linalg`: Linear algebra backend. Available options are: 
     - `:deterministic` for deterministic sparse linear algebra, 
-    - `:randomized` for probabilistic sparse linear algebra (default is `:randomized`).
+    - `:randomized` for probabilistic sparse linear algebra (default is
+      `:randomized`).
 - `monoms`: Monomial representation used in the computations. The algorithm
     tries to automatically choose the most suitable monomial representation.
     Otherwise, set `monoms` to one of the following: 

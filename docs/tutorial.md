@@ -14,7 +14,7 @@ import Pkg; Pkg.add("BenchmarkTools") # hide
 Pkg.add("Graphs") # hide
 Pkg.add("GraphPlot") # hide
 Pkg.add("AbstractAlgebra") # hide
-Pkg.add("Groebner") # hide
+# Pkg.add("Groebner") # hide
 Pkg.add("DynamicPolynomials") # hide
 Pkg.add("AbstractAlgebra") # hide
 Pkg.add("Compose") # hide
