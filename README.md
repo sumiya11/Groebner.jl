@@ -1,4 +1,10 @@
-![Groebner.jl logo](/docs/logo-tex/logo-with-text.svg "Groebner.jl logo")
+
+<div align="left">
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://github.com/sumiya11/Groebner.jl/docs/assets/logo-dark-with-text.svg">
+      <img alt="Groebner.jl logo" src="https://github.com/sumiya11/Groebner.jl/docs/assets/logo-with-text.svg">
+    </picture>
+</div>
 
 ---
 
