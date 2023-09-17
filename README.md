@@ -1,4 +1,6 @@
-# Groebner.jl
+![Groebner.jl logo](/docs/logo-tex/logo-with-text.svg "Groebner.jl logo")
+
+---
 
 [![Runtests](https://github.com/sumiya11/Groebner.jl/actions/workflows/Runtests.yml/badge.svg)](https://github.com/sumiya11/Groebner.jl/actions/workflows/Runtests.yml)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://sumiya11.github.io/Groebner.jl)
