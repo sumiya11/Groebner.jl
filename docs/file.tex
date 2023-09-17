@@ -1,0 +1,79 @@
+\documentclass[tikz]{standalone}
+
+\usepackage{fontspec}
+% \setmainfont{Noto Sans Tamil}
+
+\usepackage{polyglossia}
+\setdefaultlanguage{english}
+
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+\usetikzlibrary{shapes.arrows}
+\usetikzlibrary{positioning}
+\usetikzlibrary{calc}
+
+% https://github.com/JuliaLang/julia-logo-graphics#color-definitions
+\definecolor{jblue}{rgb}{0.251, 0.388, 0.847}
+\definecolor{jred}{rgb}{0.796, 0.235, 0.2}
+\definecolor{jgreen}{rgb}{0.22, 0.596, 0.149}
+\definecolor{jpurple}{rgb}{0.584, 0.345, 0.698}
+\definecolor{mygray}{rgb}{0.3, 0.3, 0.3}
+
+\def\scale{3}
+\def\size{1 * \scale}
+\def\dist{1.2 * \scale}
+\def\radius{\size / 2}
+\def\shift{1/sqrt(2)*\radius}
+\def\arrowlinewidth{1.3}
+\def\arrowwidth{7.0}
+\def\arrowindent{0.2}
+
+\tikzset{blob/.style={fill opacity=1.0, circle, minimum size=\size cm,thick}}
+\tikzset{blobred/.style={fill=jred, draw=jred, blob}}
+\tikzset{blobpurple/.style={fill=jpurple, draw=jpurple, blob}}
+\tikzset{blobgreen/.style={fill=jgreen, draw=jgreen, blob}}
+\tikzset{blobblue/.style={fill=jblue, draw=jblue, blob}}
+
+% https://tex.stackexchange.com/questions/432138/automatically-positioning-node-shape-on-to-path-in-tikz-for-outlined-transpa/432147#432147
+\tikzset{
+  my fat arrow/.style args={width #1 line width #2}{
+    -{Triangle[length=#1,width={2*#1}]},line width=#1,, % outer arrow
+    postaction={draw,-{Triangle[length={#1-2*#2},width={2*#1-3*sqrt(2)*#2}]},white,
+    line width={#1-2*#2},shorten <=#2,shorten >=#2,opacity=1}, % second arrow
+  }
+}
+
+\begin{document}
+
+\begin{tikzpicture}
+    % \draw[help lines,line width=.1pt,step=.1] (-\dist-\size/2,-\dist - \size/2) grid (\dist + \size/2,\dist + \size/2);
+
+    \draw ({-\dist},0.0) node (a) {} (\dist,0.0) node (b) {} (0.0, \dist) node (c) {} (0.0, {-\dist}) node (d) {};
+
+    \draw (a) node[blobred] {};
+    \draw (b) node[blobpurple] {};
+    \draw (c) node[blobgreen] {};
+    \draw (d) node[blobblue] {};
+
+    \draw[my fat arrow=width \arrowwidth mm line width \arrowlinewidth pt,black] ({(-\shift) - \arrowindent},{(-\shift) + \dist - \arrowindent}) to ({-\dist + \shift + \arrowindent},{\shift + \arrowindent});
+
+    \draw[my fat arrow=width \arrowwidth mm line width \arrowlinewidth pt,black] ({-\dist + \shift + \arrowindent},{-\shift - \arrowindent}) -- ({-\shift - \arrowindent},{-\dist +\shift + \arrowindent});
+
+    \draw[my fat arrow=width \arrowwidth mm line width \arrowlinewidth pt,black] ({+\shift + \arrowindent},{-\shift + \dist - \arrowindent}) -- ({+\dist - \shift - \arrowindent},{\shift + \arrowindent});
+
+    \draw[my fat arrow=width \arrowwidth mm line width \arrowlinewidth pt,black] ({+\dist - \shift - \arrowindent},{-\shift - \arrowindent}) -- ({+\shift + \arrowindent},{-\dist +\shift + \arrowindent});
+    
+    % \draw [thick, mygray, line width=4pt, arrows = {-Stealth[inset=0pt, angle=90:6pt]}] ({-\shift},{-\shift + \dist}) -- ({-\dist + \shift},{\shift});
+
+    % \draw [thick, mygray, line width=4pt, arrows = {-Stealth[inset=0pt, angle=90:6pt]}] ({-\dist + \shift},{-\shift}) -- ({-\shift},{-\dist +\shift});
+
+    % \draw [thick, mygray, line width=4pt, arrows = {-Stealth[inset=0pt, angle=90:6pt]}] ({+\shift},{-\shift + \dist}) -- ({+\dist - \shift},{\shift});
+
+    % \draw [thick, mygray, line width=4pt, arrows = {-Stealth[inset=0pt, angle=90:6pt]}] ({+\dist - \shift},{-\shift}) -- ({+\shift},{-\dist +\shift});
+
+    % \draw ({\blobsize + \blobdist},0.0) node (T) {
+    %     Groebner.jl
+    % };
+\end{tikzpicture}
+
+\end{document}

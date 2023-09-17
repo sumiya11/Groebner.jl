@@ -1,5 +1,5 @@
 @def title = "Groebner.jl — Interface"
-@def hasmath = false
+@def hasmath = true
 @def hascode = true
 <!-- Note: by default hasmath == true and hascode == false. You can change this in
 the config file by setting hasmath = false for instance and just setting it to true
@@ -11,6 +11,11 @@ where appropriate -->
 
 ```julia:load_groebner
 using Groebner # hide
+```
+
+```julia:rrrr
+import Pkg
+Pkg.status()
 ```
 
 {{doc groebner groebner fn}}
