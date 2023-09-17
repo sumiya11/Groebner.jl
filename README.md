@@ -1,7 +1,7 @@
 <div align="left">
     <picture>
         <source media="(prefers-color-scheme: dark)" srcset="https://github.com/sumiya11/Groebner.jl/raw/master/docs/assets/logo-dark-with-text.svg">
-      <img alt="Groebner.jl logo" src="https://github.com/sumiya11/Groebner.jl/raw/master/docs/assets/logo-with-text.svg">
+      <img width="80%" alt="Groebner.jl logo" src="https://github.com/sumiya11/Groebner.jl/raw/master/docs/assets/logo-with-text.svg">
     </picture>
 </div>
 
@@ -23,14 +23,14 @@ You can install Groebner.jl using the Julia package manager. From the Julia REPL
 import Pkg; Pkg.add("Groebner")
 ```
 
-Our package works with polynomials from `AbstractAlgebra.jl`, `DynamicPolynomials.jl`, and `Nemo.jl`. Let's create a ring of polynomials in 3 variables
+Groebner.jl works with polynomials from AbstractAlgebra.jl, DynamicPolynomials.jl, and Nemo.jl. For example, let's create a ring of polynomials in 3 variables
 
 ```julia
 using AbstractAlgebra
 R, (x1, x2, x3) = PolynomialRing(QQ, ["x1", "x2", "x3"])
 ```
 
-Then we can define a simple polynomial system
+Then, we can define a simple polynomial system
 
 ```julia
 polys = [
@@ -45,38 +45,22 @@ And compute the Groebner basis by passing the system to `groebner`
 ```julia
 using Groebner
 G = groebner(polys)
+```
+```julia
 3-element Vector{AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}:
  x1 + x2 + x3
  x2^2 + x2*x3 + x3^2
  x3^3 - 1
 ```
 
-## Performance
-
-We compare the runtime of our implementation against the ones from `Singular` and `Maple` computer algebra systems. The table below lists measured runtimes of Groebner basis routine for several standard benchmark systems in seconds
-
-|   System    |  Groebner.jl    | Singular | Maple |
-| :---:       | :---: | :----: |  :---:   |
-| [cyclic-7](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/systems/standard/cyclic12.txt)   | **0.08 s**  | 1.4 s    | **0.08 s** |
-| [cyclic-8](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/systems/standard/cyclic13.txt)   |  1.3 s  | 40 s    | **1.1 s** |
-| [katsura-10](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/systems/standard/katsura9.txt)    | **0.8 s**  | 71 s    | 0.9 s |
-| [katsura-11](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/systems/standard/katsura10.txt)  |  **5.8 s**  | 774 s   | 10 s |
-| [eco-12](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/systems/standard/eco10.txt)   |  2.0 s  | 334 s   | **1.6 s** |
-| [eco-13](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/systems/standard/eco11.txt)   | **8.8 s**  | 5115 s   | 13 s |
-| [noon-7](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/systems/standard/noon7.txt)      |  **0.1 s**  | 0.3 s    | 0.15 s |
-| [noon-8](https://github.com/sumiya11/Groebner.jl/tree/master/benchmark/systems/standard/noon8.txt)      |  **1.0 s**  | 3.3 s    | 1.1 s |
-
-The bases are computed in `degrevlex` monomial ordering over finite field of characteristic $2^{31}-1$ with all operations single-threaded.
-
-We emphasize that `Groebner.jl` is a specialized library while `Singular` is an extensive general purpose computer algebra system.
 
 ## Contacts
 
-This library is maintained by Alexander Demin (<asdemin_2@edu.hse.ru>)
+This library is maintained by Alexander Demin (<asdemin_2@edu.hse.ru>).
 
 ## Acknowledgement
 
-We would like to acknowledge Jérémy Berthomieu, Christian Eder and Mohab Safey El Din as this Library is inspired by their work ["msolve: A Library for Solving Polynomial Systems"](https://arxiv.org/abs/2104.03572). We are also grateful to Max-Planck-Institut für Informatik for assistance in producing benchmarks.
+We would like to acknowledge Jérémy Berthomieu, Christian Eder, and Mohab Safey El Din as this library is inspired by their work ["msolve: A Library for Solving Polynomial Systems"](https://arxiv.org/abs/2104.03572). We are also grateful to Max-Planck-Institut für Informatik and The MAX team at l'X for assistance in producing benchmarks.
 
 Special thanks goes to Vladimir Kuznetsov for providing the sources of his F4 implementation.
 
