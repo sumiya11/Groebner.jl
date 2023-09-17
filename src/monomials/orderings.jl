@@ -30,7 +30,7 @@ using Groebner, AbstractAlgebra
 R, (x, y) = QQ["x", "y"]
 
 # Uses the ordering `InputOrdering`, which, in this case, 
-# defaults to the lexicographical ordering with x < y
+# defaults to the lexicographical ordering with x > y
 groebner([x*y + x, x + y^2])
 ```
 """
