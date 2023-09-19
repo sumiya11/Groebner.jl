@@ -27,13 +27,14 @@ Groebner.jl works with polynomials from AbstractAlgebra.jl, DynamicPolynomials.j
 
 ```julia
 using AbstractAlgebra
-R, (x1, x2, x3) = PolynomialRing(QQ, ["x1", "x2", "x3"])
+
+R, (x1, x2, x3) = QQ["x1", "x2", "x3"]
 ```
 
 Then, we can define a simple polynomial system
 
 ```julia
-polys = [
+system = [
   x1 + x2 + x3,
   x1*x2 + x1*x3 + x2*x3,
   x1*x2*x3 - 1
@@ -44,9 +45,11 @@ And compute the Groebner basis by passing the system to `groebner`
 
 ```julia
 using Groebner
-G = groebner(polys)
+
+G = groebner(system)
 ```
 ```julia
+# result
 3-element Vector{AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}:
  x1 + x2 + x3
  x2^2 + x2*x3 + x3^2
