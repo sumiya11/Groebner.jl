@@ -8,9 +8,6 @@ using Statistics
 
 using Singular
 
-Groebner.logging_enabled() = false
-Groebner.invariants_enabled() = false
-
 logger = Logging.ConsoleLogger(stdout, Logging.Info)
 global_logger(logger)
 
