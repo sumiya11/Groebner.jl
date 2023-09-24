@@ -296,12 +296,12 @@ function run_benchmarks(args)
         end
     end
 
-    printstyled(
+    print(
         """
         Benchmarking finished in $(round((time_ns() - timestamp) / 1e9, digits=2)) seconds.
         Results are written to $benchmark_dir
-        """,
-        color=:light_green
+        """
+        # color=:light_green
     )
 
     systems_to_benchmark
@@ -437,7 +437,7 @@ function collect_timings(args, names; content=:compare)
         write(io, resulting_md)
     end
 
-    printstyled("Table with results is written to $table_filename", color=:light_green)
+    print("Table with results is written to $table_filename\n") #, color=:light_green)
 end
 
 function main()
