@@ -1,3 +1,18 @@
+# Load all required packages
+import Pkg
+Pkg.activate("benchgb")
+Pkg.add(
+    "Groebner",
+    "AbstractAlgebra",
+    "BenchmarkTools",
+    "ArgParse",
+    "CpuId",
+    "Printf",
+    "Distributed",
+    "Dates",
+    "ProgressMeter"
+)
+
 using ArgParse
 using CpuId, Logging, Pkg, Printf
 using Base.Threads
