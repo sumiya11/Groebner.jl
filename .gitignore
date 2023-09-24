@@ -1,4 +1,5 @@
 Manifest.toml
+!benchmark/**/Manifest.toml
 LocalPreferences.toml
 .vscode
 /.benchmarkci

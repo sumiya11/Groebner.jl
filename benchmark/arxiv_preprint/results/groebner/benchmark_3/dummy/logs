@@ -10,9 +10,9 @@
 └   NUM_RUNS = 1
 ┌ Info: 
 └   BENCHMARK_SET = 3
-  Activating project at `C:\data\projects\gbgb\Groebner.jl\benchmark\arxiv_preprint`
-  No Changes to `C:\data\projects\gbgb\Groebner.jl\benchmark\arxiv_preprint\Project.toml`
-  No Changes to `C:\data\projects\gbgb\Groebner.jl\benchmark\arxiv_preprint\Manifest.toml`
+  Activating project at `C:\data\projects\gbgb\Groebner.jl\benchmark\arxiv_preprint\generate\groebner`
+  No Changes to `C:\data\projects\gbgb\Groebner.jl\benchmark\arxiv_preprint\generate\groebner\Project.toml`
+  No Changes to `C:\data\projects\gbgb\Groebner.jl\benchmark\arxiv_preprint\generate\groebner\Manifest.toml`
 [ Info: Processing dummy
 [ Info: Averaging over 1 runs.
 ┌ Info: Computing GB..

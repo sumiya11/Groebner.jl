@@ -1,6 +1,6 @@
 ## Benchmark results
 
-2023-09-24T23:59:45.669
+2023-09-25T00:48:58.335
 
 - Benchmarked backend: `groebner`
 - Workers: 4
