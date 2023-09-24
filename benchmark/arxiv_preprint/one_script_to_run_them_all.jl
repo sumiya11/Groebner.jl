@@ -232,7 +232,7 @@ function run_benchmarks(args)
             push!(running, processes[end])
             next!(
                 prog,
-                showvalues = generate_showvalues(processes),
+                showvalues = generate_showvalues(running),
                 step       = 0,
                 valuecolor = _progressbar_value_color
                 # spinner = "⌜⌝⌟⌞",
@@ -253,7 +253,7 @@ function run_benchmarks(args)
                 start_time = proc.start_time
                 next!(
                     prog,
-                    showvalues = generate_showvalues(processes),
+                    showvalues = generate_showvalues(running),
                     valuecolor = _progressbar_value_color
                 )
                 @debug "Yielded $(proc.problem_name) after $(seconds_passed(start_time)) seconds"
@@ -267,7 +267,7 @@ function run_benchmarks(args)
                     # close(proc.errfile)
                     next!(
                         prog,
-                        showvalues = generate_showvalues(processes),
+                        showvalues = generate_showvalues(running),
                         valuecolor = _progressbar_value_color
                     )
                     @debug "Timed-out $(proc.problem_name) after $(seconds_passed(start_time)) seconds"
