@@ -70,11 +70,10 @@ function parse_commandline()
     parse_args(s)
 end
 
-function generate_benchmark_file(backend, name, system, dir)
+function generate_benchmark_file(backend, name, system, dir, nruns, log_filename)
+    ring = parent(system[1])
+    field = base_ring(ring)
     if backend == "groebner" || backend == "singular"
-        # generate strings to write to a file
-        ring = parent(system[1])
-        field = base_ring(ring)
         vars_repr = join(map(string, gens(ring)), ", ")
         field_repr = if iszero(characteristic(field))
             "QQ"
@@ -96,6 +95,35 @@ function generate_benchmark_file(backend, name, system, dir)
         println(fd, "")
         println(fd, ring_repr)
         println(fd, system_repr)
+        close(fd)
+    elseif backend == "maple"
+        fd = open("$dir/$name.mpl", "w")
+        println(fd, "# $name")
+        println(fd, "with(Groebner):")
+        println(fd, "with(PolynomialIdeals):")
+        println(fd, "kernelopts(numcpus=1);")
+        system_repr = join(map(s -> "\t\t" * s, map(repr, system)), ",\n")
+        vars_repr = join(map(string, gens(ring)), ", ")
+        println(fd, "")
+        println(fd, "runtime := 2^1000:")
+        println(fd, "for i from 1 by 1 to $nruns do")
+        println(fd, "\tJ := [\n$system_repr\n\t]:")
+        println(fd, "\tprint(\"Running $name\");")
+        println(fd, "\tst := time[real]():")
+        println(
+            fd,
+            "\tGroebner[Basis](J, tdeg($vars_repr), method=fgb, characteristic=$(characteristic(field))):"
+        )
+        println(fd, "\tprint(\"$name: \", time[real]() - st);")
+        println(fd, "\truntime := min(runtime, time[real]() - st);")
+        println(fd, "end do;")
+        println(fd, "")
+        println(fd, "logs_fn := \"$log_filename\":")
+        println(fd, "FileTools[Text][WriteLine](logs_fn, \"$name\");")
+        println(
+            fd,
+            "FileTools[Text][WriteLine](logs_fn, cat(\"total_time, \", String(runtime)));"
+        )
         close(fd)
     end
 end
@@ -122,12 +150,16 @@ function command_to_run_a_single_system(
             "$problem_num_runs",
             "$problem_set_id"
         ])
+    elseif backend == "maple"
+        scriptpath = (@__DIR__) * "/" * get_benchmark_dir(backend, problem_set_id)
+        return Cmd(["maple", "$scriptpath/$problem_name/$(problem_name).mpl"])
     end
 end
 
 function populate_benchmarks(args; regenerate=true)
     backend = args["backend"]
     benchmark_id = args["benchmark"]
+    nruns = args["nruns"]
     benchmark = get_benchmark(benchmark_id)
     benchmark_name, systems = benchmark.name, benchmark.systems
     benchmark_dir = (@__DIR__) * "/" * get_benchmark_dir(backend, benchmark_id)
@@ -159,7 +191,15 @@ function populate_benchmarks(args; regenerate=true)
         @debug "Generating $system_name"
         benchmark_system_dir = "$benchmark_dir/$system_name/"
         mkpath(benchmark_system_dir)
-        generate_benchmark_file(backend, system_name, system, benchmark_system_dir)
+        log_filename = "$benchmark_dir/$system_name/$(generic_filename("logs"))"
+        generate_benchmark_file(
+            backend,
+            system_name,
+            system,
+            benchmark_system_dir,
+            nruns,
+            log_filename
+        )
     end
     finish!(prog)
     true
@@ -329,7 +369,6 @@ function collect_timings(args, names; content=:compare)
     @assert length(targets) > 0
     @info """
     Collecting benchmark results for $backend.
-
     Statistics of interest:
     \t$(join(map(string, targets), "\n\t"))
     """
@@ -392,14 +431,14 @@ function collect_timings(args, names; content=:compare)
 
     _target = :total_time
     formatting_style = CATEGORY_FORMAT[_target]
-    println("=================")
+    println("===")
     println("Benchmark results, $backend")
     for name in names
         if haskey(runtime, name)
             println("\t$name -- $(formatting_style(runtime[name][_target])) s")
         end
     end
-    println("=================")
+    println("===")
 
     if !isempty(cannot_collect)
         printstyled("(!) Cannot collect benchmark data for:\n", color=:red)
