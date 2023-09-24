@@ -1,0 +1,19 @@
+┌ Info: 
+│   ARGS =
+│    3-element Vector{String}:
+│     "reimer 8"
+│     "1"
+└     "1"
+┌ Info: 
+└   PROBLEM_NAME = "reimer 8"
+┌ Info: 
+└   NUM_RUNS = 1
+┌ Info: 
+└   BENCHMARK_SET = 1
+  Activating project at `~/Groebner.jl/benchmark/arxiv_preprint/generate/groebner`
+  No Changes to `~/Groebner.jl/benchmark/arxiv_preprint/generate/groebner/Project.toml`
+  No Changes to `~/Groebner.jl/benchmark/arxiv_preprint/generate/groebner/Manifest.toml`
+[ Info: Processing reimer 8
+[ Info: Averaging over 1 runs.
+┌ Info: Computing GB..
+└   iter = 1

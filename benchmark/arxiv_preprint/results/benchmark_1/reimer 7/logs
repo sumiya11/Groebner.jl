@@ -1,0 +1,16 @@
+┌ Info: 
+│   ARGS =
+│    3-element Vector{String}:
+│     "reimer 7"
+│     "1"
+└     "1"
+┌ Info: 
+└   PROBLEM_NAME = "reimer 7"
+┌ Info: 
+└   NUM_RUNS = 1
+┌ Info: 
+└   BENCHMARK_SET = 1
+[ Info: Processing reimer 7
+[ Info: Averaging over 1 runs.
+┌ Info: Computing GB..
+└   iter = 1

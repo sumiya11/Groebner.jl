@@ -1,0 +1,16 @@
+┌ Info: 
+│   ARGS =
+│    3-element Vector{String}:
+│     "eco 11"
+│     "1"
+└     "1"
+┌ Info: 
+└   PROBLEM_NAME = "eco 11"
+┌ Info: 
+└   NUM_RUNS = 1
+┌ Info: 
+└   BENCHMARK_SET = 1
+[ Info: Processing eco 11
+[ Info: Averaging over 1 runs.
+┌ Info: Computing GB..
+└   iter = 1

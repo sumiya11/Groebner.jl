@@ -1,0 +1,19 @@
+┌ Info: 
+│   ARGS =
+│    3-element Vector{String}:
+│     "henrion 5"
+│     "1"
+└     "1"
+┌ Info: 
+└   PROBLEM_NAME = "henrion 5"
+┌ Info: 
+└   NUM_RUNS = 1
+┌ Info: 
+└   BENCHMARK_SET = 1
+  Activating project at `~/Groebner.jl/benchmark/arxiv_preprint/generate/singular`
+  No Changes to `~/Groebner.jl/benchmark/arxiv_preprint/generate/singular/Project.toml`
+  No Changes to `~/Groebner.jl/benchmark/arxiv_preprint/generate/singular/Manifest.toml`
+[ Info: Processing henrion 5
+[ Info: Averaging over 1 runs.
+┌ Info: Computing GB..
+└   iter = 1

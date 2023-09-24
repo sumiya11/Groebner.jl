@@ -1,0 +1,9 @@
+henrion 6
+total_time, 2.691
+           10
+
+> FileTools[Text][WriteLine](logs_fn, cat("total_time, ", String(runtime)));
+                                       18
+
+> quit
+memory used=6.3MB, alloc=40.3MB, time=0.11

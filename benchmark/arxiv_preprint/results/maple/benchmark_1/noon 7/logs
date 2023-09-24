@@ -1,0 +1,9 @@
+noon 7
+total_time, 13.635
+             7
+
+> FileTools[Text][WriteLine](logs_fn, cat("total_time, ", String(runtime)));
+                                       19
+
+> quit
+memory used=10.0MB, alloc=40.3MB, time=0.27

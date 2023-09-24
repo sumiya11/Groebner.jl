@@ -1,0 +1,16 @@
+┌ Info: 
+│   ARGS =
+│    3-element Vector{String}:
+│     "noon 9"
+│     "1"
+└     "1"
+┌ Info: 
+└   PROBLEM_NAME = "noon 9"
+┌ Info: 
+└   NUM_RUNS = 1
+┌ Info: 
+└   BENCHMARK_SET = 1
+[ Info: Processing noon 9
+[ Info: Averaging over 1 runs.
+┌ Info: Computing GB..
+└   iter = 1
