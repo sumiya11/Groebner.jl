@@ -6,7 +6,7 @@ Pkg.instantiate()
 using CpuId, Logging, Pkg, Printf
 using Statistics
 
-using Singular
+import Singular
 
 logger = Logging.ConsoleLogger(stdout, Logging.Info)
 global_logger(logger)
