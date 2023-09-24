@@ -429,6 +429,13 @@ function collect_timings(args, names; content=:compare)
         close(data_file)
     end
 
+    if !isempty(cannot_collect)
+        printstyled("(!) Cannot collect benchmark data for:\n", color=:red)
+        for (name,) in cannot_collect
+            println("\t$name")
+        end
+    end
+
     _target = :total_time
     formatting_style = CATEGORY_FORMAT[_target]
     println("===")
@@ -436,18 +443,11 @@ function collect_timings(args, names; content=:compare)
     for name in names
         if haskey(runtime, name)
             if haskey(runtime[name], _target)
-                println("\t$name -- $(formatting_style(runtime[name][_target])) s")
+                println("\t$name\t\t$(formatting_style(runtime[name][_target])) s")
             end
         end
     end
     println("===")
-
-    if !isempty(cannot_collect)
-        printstyled("(!) Cannot collect benchmark data for:\n", color=:red)
-        for (name,) in cannot_collect
-            println("\t$name")
-        end
-    end
 
     # Print the table to BENCHMARK_TABLE.
     resulting_md = ""
