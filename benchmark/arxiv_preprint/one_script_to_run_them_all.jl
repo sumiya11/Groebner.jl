@@ -275,6 +275,13 @@ function run_benchmarks(args)
             end
         end
         deleteat!(running, to_be_removed)
+        next!(
+            prog,
+            showvalues = generate_showvalues(running),
+            step       = 0,
+            valuecolor = _progressbar_value_color
+            # spinner = "⌜⌝⌟⌞",
+        )
         if isempty(queue) && isempty(running)
             @debug "All benchmarks finished"
             break
