@@ -1,17 +1,7 @@
 # Load all required packages
 import Pkg
-Pkg.activate("benchgb")
-Pkg.add(
-    "Groebner",
-    "AbstractAlgebra",
-    "BenchmarkTools",
-    "ArgParse",
-    "CpuId",
-    "Printf",
-    "Distributed",
-    "Dates",
-    "ProgressMeter"
-)
+Pkg.activate(".")
+Pkg.instantiate()
 
 using ArgParse
 using CpuId, Logging, Pkg, Printf
