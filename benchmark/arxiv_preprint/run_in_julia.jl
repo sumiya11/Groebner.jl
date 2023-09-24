@@ -3,6 +3,9 @@ using Statistics
 
 using Groebner
 
+Groebner.logging_enabled() = false
+Groebner.invariants_enabled() = false
+
 logger = Logging.ConsoleLogger(stdout, Logging.Info)
 global_logger(logger)
 
@@ -38,7 +41,8 @@ function process_system()
     for cat in ALL_CATEGORIES
         runtime[PROBLEM_NAME][cat] = Inf
     end
-    for _ in 1:NUM_RUNS
+    for iter in 1:NUM_RUNS
+        @info "Computing GB.." iter
         timing = @timed result = groebner(system)
         @debug "Result is" result
         # for cat in ID_TIME_CATEGORIES
