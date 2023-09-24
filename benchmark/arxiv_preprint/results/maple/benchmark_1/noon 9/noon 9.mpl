@@ -23,6 +23,6 @@ for i from 1 by 1 to 1 do
 	runtime := min(runtime, time[real]() - st);
 end do;
 
-logs_fn := "C:\data\projects\gbgb\Groebner.jl\benchmark\arxiv_preprint/results/maple/benchmark_1/noon 9/logs":
-FileTools[Text][WriteLine](logs_fn, "noon 9");
-FileTools[Text][WriteLine](logs_fn, cat("total_time, ", String(runtime)));
+timings_fn := "C:\data\projects\gbgb\Groebner.jl\benchmark\arxiv_preprint/results/maple/benchmark_1/noon 9/timings":
+FileTools[Text][WriteLine](timings_fn, "noon 9");
+FileTools[Text][WriteLine](timings_fn, cat("total_time, ", String(runtime)));

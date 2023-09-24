@@ -70,7 +70,7 @@ function parse_commandline()
     parse_args(s)
 end
 
-function generate_benchmark_file(backend, name, system, dir, nruns, timings_filename)
+function generate_benchmark_file(backend, name, system, dir, nruns, time_filename)
     ring = parent(system[1])
     field = base_ring(ring)
     if backend == "groebner" || backend == "singular"
@@ -118,7 +118,7 @@ function generate_benchmark_file(backend, name, system, dir, nruns, timings_file
         println(fd, "\truntime := min(runtime, time[real]() - st);")
         println(fd, "end do;")
         println(fd, "")
-        println(fd, "timings_fn := \"$timings_filename\":")
+        println(fd, "timings_fn := \"$time_filename\":")
         println(fd, "FileTools[Text][WriteLine](timings_fn, \"$name\");")
         println(
             fd,
@@ -191,14 +191,14 @@ function populate_benchmarks(args; regenerate=true)
         @debug "Generating $system_name"
         benchmark_system_dir = "$benchmark_dir/$system_name/"
         mkpath(benchmark_system_dir)
-        timings_filename = "$benchmark_dir/$system_name/$(timings_filename())"
+        time_filename = "$benchmark_dir/$system_name/$(timings_filename())"
         generate_benchmark_file(
             backend,
             system_name,
             system,
             benchmark_system_dir,
             nruns,
-            timings_filename
+            time_filename
         )
     end
     finish!(prog)
