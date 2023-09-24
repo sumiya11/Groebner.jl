@@ -1,0 +1,30 @@
+# katsura 10
+with(Groebner):
+with(PolynomialIdeals):
+kernelopts(numcpus=1);
+
+runtime := 2^1000:
+for i from 1 by 1 to 1 do
+	J := [
+		x0^2 + 2147483646*x0 + 2*x1^2 + 2*x2^2 + 2*x3^2 + 2*x4^2 + 2*x5^2 + 2*x6^2 + 2*x7^2 + 2*x8^2 + 2*x9^2 + 2*x10^2,
+		2*x0*x1 + 2*x1*x2 + 2147483646*x1 + 2*x2*x3 + 2*x3*x4 + 2*x4*x5 + 2*x5*x6 + 2*x6*x7 + 2*x7*x8 + 2*x8*x9 + 2*x9*x10,
+		2*x0*x2 + x1^2 + 2*x1*x3 + 2*x2*x4 + 2147483646*x2 + 2*x3*x5 + 2*x4*x6 + 2*x5*x7 + 2*x6*x8 + 2*x7*x9 + 2*x8*x10,
+		2*x0*x3 + 2*x1*x2 + 2*x1*x4 + 2*x2*x5 + 2*x3*x6 + 2147483646*x3 + 2*x4*x7 + 2*x5*x8 + 2*x6*x9 + 2*x7*x10,
+		2*x0*x4 + 2*x1*x3 + 2*x1*x5 + x2^2 + 2*x2*x6 + 2*x3*x7 + 2*x4*x8 + 2147483646*x4 + 2*x5*x9 + 2*x6*x10,
+		2*x0*x5 + 2*x1*x4 + 2*x1*x6 + 2*x2*x3 + 2*x2*x7 + 2*x3*x8 + 2*x4*x9 + 2*x5*x10 + 2147483646*x5,
+		2*x0*x6 + 2*x1*x5 + 2*x1*x7 + 2*x2*x4 + 2*x2*x8 + x3^2 + 2*x3*x9 + 2*x4*x10 + 2147483646*x6,
+		2*x0*x7 + 2*x1*x6 + 2*x1*x8 + 2*x2*x5 + 2*x2*x9 + 2*x3*x4 + 2*x3*x10 + 2147483646*x7,
+		2*x0*x8 + 2*x1*x7 + 2*x1*x9 + 2*x2*x6 + 2*x2*x10 + 2*x3*x5 + x4^2 + 2147483646*x8,
+		2*x0*x9 + 2*x1*x8 + 2*x1*x10 + 2*x2*x7 + 2*x3*x6 + 2*x4*x5 + 2147483646*x9,
+		x0 + 2*x1 + 2*x2 + 2*x3 + 2*x4 + 2*x5 + 2*x6 + 2*x7 + 2*x8 + 2*x9 + 2*x10 + 2147483646
+	]:
+	print("Running katsura 10");
+	st := time[real]():
+	Groebner[Basis](J, tdeg(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10), method=fgb, characteristic=2147483647):
+	print("katsura 10: ", time[real]() - st);
+	runtime := min(runtime, time[real]() - st);
+end do;
+
+logs_fn := "C:\data\projects\gbgb\Groebner.jl\benchmark\arxiv_preprint/results/maple/benchmark_1/katsura 10/logs":
+FileTools[Text][WriteLine](logs_fn, "katsura 10");
+FileTools[Text][WriteLine](logs_fn, cat("total_time, ", String(runtime)));
