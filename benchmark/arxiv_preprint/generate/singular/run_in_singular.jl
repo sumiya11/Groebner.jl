@@ -38,11 +38,11 @@ function aa_system_to_singular(system)
     if !iszero(modulo)
         ground_s = Singular.N_ZpField(modulo)
         R_s, _ =
-            Singular.PolynomialRing(ground_s, ["x$i" for i in 1:n], ordering=:degrevlex)
+            Singular.polynomial_ring(ground_s, ["x$i" for i in 1:n], ordering=:degrevlex)
         system_s = map(
             f -> AbstractAlgebra.change_base_ring(
                 ground_s,
-                AbstractAlgebra.map_coefficients(c -> ground_s(c.d), f),
+                AbstractAlgebra.map_coefficients(c -> ground_s(AbstractAlgebra.data(c)), f),
                 parent=R_s
             ),
             system
@@ -50,7 +50,7 @@ function aa_system_to_singular(system)
     else
         ground_s = Singular.QQ
         R_s, _ =
-            Singular.PolynomialRing(ground_s, ["x$i" for i in 1:n], ordering=:degrevlex)
+            Singular.polynomial_ring(ground_s, ["x$i" for i in 1:n], ordering=:degrevlex)
         system_s = map(
             f -> AbstractAlgebra.change_base_ring(
                 ground_s,
