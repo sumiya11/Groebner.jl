@@ -35,23 +35,38 @@ function aa_system_to_singular(system)
     R = AbstractAlgebra.parent(system[1])
     modulo = AbstractAlgebra.characteristic(R)
     n = AbstractAlgebra.nvars(R)
-    ground_s = Singular.N_ZpField(modulo)
-    R_s, _ = Singular.PolynomialRing(ground_s, ["x$i" for i in 1:n], ordering=:degrevlex)
-    system_s = map(
-        f -> AbstractAlgebra.change_base_ring(
-            ground_s,
-            AbstractAlgebra.map_coefficients(c -> ground_s(c.d), f),
-            parent=R_s
-        ),
-        system
-    )
+    if !iszero(modulo)
+        ground_s = Singular.N_ZpField(modulo)
+        R_s, _ =
+            Singular.PolynomialRing(ground_s, ["x$i" for i in 1:n], ordering=:degrevlex)
+        system_s = map(
+            f -> AbstractAlgebra.change_base_ring(
+                ground_s,
+                AbstractAlgebra.map_coefficients(c -> ground_s(c.d), f),
+                parent=R_s
+            ),
+            system
+        )
+    else
+        ground_s = Singular.QQ
+        R_s, _ =
+            Singular.PolynomialRing(ground_s, ["x$i" for i in 1:n], ordering=:degrevlex)
+        system_s = map(
+            f -> AbstractAlgebra.change_base_ring(
+                ground_s,
+                AbstractAlgebra.map_coefficients(c -> ground_s(c), f),
+                parent=R_s
+            ),
+            system
+        )
+    end
     ideal_s = Singular.Ideal(R_s, system_s)
     ideal_s
 end
 
 # Compile
 singular_system = aa_system_to_singular(system)
-Singular.std(system, complete_reduction=true)
+Singular.std(singular_system, complete_reduction=true)
 
 function process_system()
     @info "Processing $PROBLEM_NAME"
@@ -65,7 +80,7 @@ function process_system()
     for iter in 1:NUM_RUNS
         @info "Computing GB.." iter
         singular_system = aa_system_to_singular(system)
-        timing = @timed result = Singular.std(system, complete_reduction=true)
+        timing = @timed result = Singular.std(singular_system, complete_reduction=true)
         @debug "Result is" result
         runtime[PROBLEM_NAME][:total_time] =
             min(runtime[PROBLEM_NAME][:total_time], timing.time)
