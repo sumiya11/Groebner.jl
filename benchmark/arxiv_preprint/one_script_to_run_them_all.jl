@@ -390,6 +390,17 @@ function collect_timings(args, names; content=:compare)
         close(data_file)
     end
 
+    _target = :total_time
+    formatting_style = CATEGORY_FORMAT[_target]
+    println("=================")
+    println("Benchmark results, $backend")
+    for name in names
+        if haskey(runtime, name)
+            println("\t$name -- $(formatting_style(runtime[name][_target])) s")
+        end
+    end
+    println("=================")
+
     if !isempty(cannot_collect)
         printstyled("(!) Cannot collect benchmark data for:\n", color=:red)
         for (name,) in cannot_collect
