@@ -1,9 +1,0 @@
-henrion 5
-total_time, .36e-1
-          10
-
-> FileTools[Text][WriteLine](logs_fn, cat("total_time, ", String(runtime)));
-                                       19
-
-> quit
-memory used=2.1MB, alloc=8.3MB, time=0.04

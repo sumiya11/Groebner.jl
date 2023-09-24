@@ -1,9 +1,0 @@
-cyclic 8
-total_time, 31.454
-           9
-
-> FileTools[Text][WriteLine](logs_fn, cat("total_time, ", String(runtime)));
-                                       19
-
-> quit
-memory used=14.5MB, alloc=40.3MB, time=1.22

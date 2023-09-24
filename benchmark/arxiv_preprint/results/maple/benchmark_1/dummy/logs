@@ -1,9 +1,0 @@
-dummy
-total_time, .4e-2
-               6
-
-> FileTools[Text][WriteLine](logs_fn, cat("total_time, ", String(runtime)));
-                                       18
-
-> quit
-memory used=1.6MB, alloc=8.3MB, time=0.04
