@@ -1,6 +1,7 @@
 # Add all required packages
 import Pkg
 Pkg.activate(".")
+Pkg.resolve()
 Pkg.instantiate()
 
 # Load the packages
@@ -444,7 +445,7 @@ function collect_timings(args, names; content=:compare)
     end
 
     table_filename =
-        (@__DIR__) * "/$BENCHMARK_RESULTS/$(BENCHMARK_TABLE)_$(benchmark_id).md"
+        (@__DIR__) * "/$BENCHMARK_RESULTS/$backend/$(BENCHMARK_TABLE)_$(benchmark_id).md"
     open(table_filename, "w") do io
         write(io, resulting_md)
     end

@@ -1,5 +1,7 @@
 import Pkg
 Pkg.activate(".")
+Pkg.resolve()
+Pkg.instantiate()
 
 using CpuId, Logging, Pkg, Printf
 using Statistics
