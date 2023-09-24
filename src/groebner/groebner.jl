@@ -84,13 +84,21 @@ function _groebner(
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
     # NOTE: we can mutate ring, monoms, and coeffs here.
-    # if params.strategy === :learn_and_apply
-    #     _groebner_learn_and_apply(ring, monoms, coeffs, params)
-    # else
-    #     @assert params.strategy === :classic_modular
-    #     _groebner_classic_modular(ring, monoms, coeffs, params)
-    # end
-    _groebner_classic_modular(ring, monoms, coeffs, params)
+    if params.modular_strategy === :learn_and_apply
+        _groebner_learn_and_apply(ring, monoms, coeffs, params)
+    else
+        @assert params.modular_strategy === :classic_modular
+        _groebner_classic_modular(ring, monoms, coeffs, params)
+    end
+end
+
+function _groebner_learn_and_apply(
+    ring::PolyRing,
+    monoms::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    params::AlgorithmParameters
+) where {M <: Monom, C <: CoeffQQ}
+    throw("Not implemented, sorry!")
 end
 
 function _groebner_classic_modular(
@@ -218,7 +226,7 @@ function _groebner_classic_modular(
     @log level = -2 "Used $(length(luckyprimes.primes)) primes in total over $(iters) iterations"
     # take monomials from the basis modulo a prime
     gb_monoms, _ = export_basis_data(basis_ff, hashtable)
-    # take coefficients from the reconstrcted basis
+    # take coefficients from the reconstructed basis
     gb_coeffs_qq = state.gb_coeffs_qq
     return gb_monoms, gb_coeffs_qq
 end

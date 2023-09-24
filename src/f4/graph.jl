@@ -13,6 +13,8 @@ mutable struct ComputationGraphF4{C, M, Ord, Ord2}
     matrix_nonzeroed_rows::Vector{Vector{Int}}
     matrix_upper_rows::Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}
     matrix_lower_rows::Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}
+    # matrix_upper_rows_buffers::Vector{Vector{Vector{Int32}}}
+    # matrix_lower_rows_buffers::Vector{Vector{Vector{Int32}}}
     output_nonredundant_indices::Vector{Int}
     nonredundant_indices_before_reduce::Vector{Int}
     output_sort_indices::Vector{Int}
@@ -47,6 +49,8 @@ function initialize_computation_graph_f4(
         Vector{Vector{Int}}(),
         Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}(),
         Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}(),
+        # Vector{Vector{Vector{Int32}}}(),
+        # Vector{Vector{Vector{Int32}}}(),
         Vector{Int}(),
         Vector{Int}(),
         Vector{Int}(),

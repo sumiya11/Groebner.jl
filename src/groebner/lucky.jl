@@ -1,8 +1,8 @@
 # Lucky primes are prime numbers used in modular computation. 
 #
 # The sequence of lucky primes is increasing and deterministic, and starts with
-# the FIRST_LUCKY_PRIME Groebner basis is computed modulo a lucky prime, and the
-# correctness of the computed basis is checked modulo some another prime.
+# the FIRST_LUCKY_PRIME. Groebner basis is computed modulo a lucky prime, and
+# the correctness of the computed basis is checked modulo some another prime.
 
 # There are currently 50,697,537 primes between FIRST_LUCKY_PRIME and
 # FIRST_CHECK_PRIME. This limits us to about 

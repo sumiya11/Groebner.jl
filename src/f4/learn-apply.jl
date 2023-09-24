@@ -101,8 +101,6 @@ function symbolic_preprocessing!(
         etmp = hashtable.monoms[mult_idx]
         rpoly = basis.monoms[poly_idx]
 
-        # vidx = insert_in_hash_table!(symbol_ht, etmp)
-
         matrix.lower_rows[i] =
             multiplied_poly_to_matrix_row!(symbol_ht, hashtable, h, etmp, rpoly)
 
@@ -120,7 +118,6 @@ function symbolic_preprocessing!(
         h = hashtable.hashdata[mult_idx].hash
         etmp = hashtable.monoms[mult_idx]
         rpoly = basis.monoms[poly_idx]
-        # vidx = insert_in_hash_table!(symbol_ht, etmp)
 
         matrix.upper_rows[i] =
             multiplied_poly_to_matrix_row!(symbol_ht, hashtable, h, etmp, rpoly)

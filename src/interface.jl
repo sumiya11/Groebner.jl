@@ -82,11 +82,6 @@ function groebner(polynomials::AbstractVector; options...)
     _groebner(polynomials, KeywordsHandler(:groebner, options))::typeof(polynomials)
 end
 
-# - `selection`: Selection strategy for critical pairs. Available options are:
-#     - `:auto` for automatic choice (default),
-#     - `:normal` for degree normal selection strategy,
-#     - `:sugar` for sugar selection strategy.
-
 """
     groebner_learn(polynomials; options...)
 
@@ -143,6 +138,9 @@ flag, gb_2 = groebner_apply!(graph, [2x*y^2 + 3x, 4y*x^2 + 5y])
 @assert flag
 ```
 """
+function groebner_apply! end
+
+# Specialization for a single input
 function groebner_apply!(graph, polynomials::AbstractVector; options...)
     _groebner_apply!(
         graph,

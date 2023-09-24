@@ -6,7 +6,7 @@ using Random
 using Groebner
 
 # Check invariants during testing.
-# NOTE: it's good to turn this on, as asserts may help to catch segfaults
+# NOTE: it's good to turn this on, as asserts may help to prevent segfaults
 Groebner.invariants_enabled() = true
 Groebner.update_logger(stream=stdout, loglevel=0)
 
