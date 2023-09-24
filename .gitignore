@@ -3,4 +3,3 @@ LocalPreferences.toml
 .vscode
 /.benchmarkci
 /benchmark/*.json
-/benchmark/*/results/benchmark*

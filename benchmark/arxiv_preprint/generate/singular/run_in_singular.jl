@@ -1,7 +1,10 @@
+import Pkg
+Pkg.activate("generate/singular")
+
 using CpuId, Logging, Pkg, Printf
 using Statistics
 
-using Groebner
+using Singular
 
 Groebner.logging_enabled() = false
 Groebner.invariants_enabled() = false
@@ -9,14 +12,14 @@ Groebner.invariants_enabled() = false
 logger = Logging.ConsoleLogger(stdout, Logging.Info)
 global_logger(logger)
 
-include("utils.jl")
+include("../utils.jl")
 
 const runtime = Dict()
 
 const PROBLEM_NAME = ARGS[1]
 const NUM_RUNS = parse(Int, ARGS[2])
 const BENCHMARK_SET = parse(Int, ARGS[3])
-const BENCHMARK_DIR = get_benchmark_dir(BENCHMARK_SET)
+const BENCHMARK_DIR = "../../" * get_benchmark_dir("singular", BENCHMARK_SET)
 
 @info "" ARGS
 @info "" PROBLEM_NAME
@@ -29,8 +32,27 @@ flush(stderr)
 path = (@__DIR__) * "/$BENCHMARK_DIR/$PROBLEM_NAME/$PROBLEM_NAME.jl"
 include(path)
 
+function aa_system_to_singular(system)
+    R = AbstractAlgebra.parent(system[1])
+    modulo = AbstractAlgebra.characteristic(R)
+    n = AbstractAlgebra.nvars(R)
+    ground_s = Singular.N_ZpField(modulo)
+    R_s, _ = Singular.PolynomialRing(ground_s, ["x$i" for i in 1:n], ordering=:degrevlex)
+    system_s = map(
+        f -> AbstractAlgebra.change_base_ring(
+            ground_s,
+            AbstractAlgebra.map_coefficients(c -> ground_s(c.d), f),
+            parent=R_s
+        ),
+        system
+    )
+    ideal_s = Singular.Ideal(R_s, system_s)
+    ideal_s
+end
+
 # Compile
-groebner(system)
+singular_system = aa_system_to_singular(system)
+Singular.std(system, complete_reduction=true)
 
 function process_system()
     @info "Processing $PROBLEM_NAME"
@@ -43,27 +65,12 @@ function process_system()
     end
     for iter in 1:NUM_RUNS
         @info "Computing GB.." iter
-        timing = @timed result = groebner(system)
+        singular_system = aa_system_to_singular(system)
+        timing = @timed result = Singular.std(system, complete_reduction=true)
         @debug "Result is" result
-        # for cat in ID_TIME_CATEGORIES
-        #     if haskey(StructuralIdentifiability._runtime_logger, cat)
-        #         runtime[PROBLEM_NAME][cat] = StructuralIdentifiability._runtime_logger[cat]
-        #     end
-        # end
-        # for cat in ID_runtime_CATEGORIES
-        #     if haskey(StructuralIdentifiability._runtime_logger, cat)
-        #         runtime[PROBLEM_NAME][cat] =
-        #             deepcopy(StructuralIdentifiability._runtime_logger[cat])
-        #     end
-        # end
         runtime[PROBLEM_NAME][:total_time] =
             min(runtime[PROBLEM_NAME][:total_time], timing.time)
     end
-    # for cat in ID_TIME_CATEGORIES
-    #     if haskey(runtime[PROBLEM_NAME], cat)
-    #         runtime[PROBLEM_NAME][cat] = runtime[PROBLEM_NAME][cat] / NUM_RUNS
-    #     end
-    # end
 end
 
 function dump_timings()

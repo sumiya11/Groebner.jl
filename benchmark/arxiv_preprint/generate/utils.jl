@@ -3,8 +3,8 @@ using Printf
 
 const BENCHMARK_RESULTS = "results"
 
-function get_benchmark_dir(id)
-    "$BENCHMARK_RESULTS/benchmark_$id"
+function get_benchmark_dir(backend, id)
+    "$BENCHMARK_RESULTS/$backend/benchmark_$id"
 end
 
 const TIME_CATEGORIES = [:total_time]

@@ -1,22 +1,25 @@
-# Load all required packages
+# Add all required packages
 import Pkg
 Pkg.activate(".")
 Pkg.instantiate()
 
+# Load the packages
 using ArgParse
-using CpuId, Logging, Pkg, Printf
 using Base.Threads
+using CpuId, Logging, Pkg, Printf
 using Distributed
 using Dates
 using ProgressMeter
+using AbstractAlgebra, Groebner
 
-using Groebner, AbstractAlgebra
-
+# Set the logger
 global_logger(Logging.ConsoleLogger(stdout, Logging.Info))
 
-include("benchmark_systems.jl")
-include("utils.jl")
+# Load benchmark systems
+include("generate/benchmark_systems.jl")
+include("generate/utils.jl")
 
+# Set the properties of progress bar
 const _progressbar_color = :light_green
 const _progressbar_value_color = :light_green
 progressbar_enabled() =
@@ -24,6 +27,7 @@ progressbar_enabled() =
 
 const BENCHMARK_TABLE = "benchmark_result"
 
+# Parses command-line arguments
 function parse_commandline()
     s = ArgParseSettings()
     #! format: off
@@ -66,7 +70,7 @@ function parse_commandline()
 end
 
 function generate_benchmark_file(backend, name, system, dir)
-    if backend == "groebner"
+    if backend == "groebner" || backend == "singular"
         # generate strings to write to a file
         ring = parent(system[1])
         field = base_ring(ring)
@@ -104,7 +108,15 @@ function command_to_run_a_single_system(
     if backend == "groebner"
         return Cmd([
             "julia",
-            (@__DIR__) * "/run_in_julia.jl",
+            (@__DIR__) * "/generate/groebner/run_in_groebner.jl",
+            "$problem_name",
+            "$problem_num_runs",
+            "$problem_set_id"
+        ])
+    elseif backend == "singular"
+        return Cmd([
+            "julia",
+            (@__DIR__) * "/generate/singular/run_in_singular.jl",
             "$problem_name",
             "$problem_num_runs",
             "$problem_set_id"
@@ -117,7 +129,7 @@ function populate_benchmarks(args; regenerate=true)
     benchmark_id = args["benchmark"]
     benchmark = get_benchmark(benchmark_id)
     benchmark_name, systems = benchmark.name, benchmark.systems
-    benchmark_dir = (@__DIR__) * "/" * get_benchmark_dir(benchmark_id)
+    benchmark_dir = (@__DIR__) * "/" * get_benchmark_dir(backend, benchmark_id)
     dir_present = isdir(benchmark_dir)
     if !dir_present || regenerate
         @info "Re-generating the folder with benchmarks"
@@ -167,7 +179,7 @@ function run_benchmarks(args)
     benchmark = get_benchmark(benchmark_id)
     benchmark_name = benchmark.name
 
-    benchmark_dir = (@__DIR__) * "/" * get_benchmark_dir(benchmark_id)
+    benchmark_dir = (@__DIR__) * "/" * get_benchmark_dir(backend, benchmark_id)
     systems_to_benchmark = first(walkdir(benchmark_dir))[2]
     indices_to_benchmark = collect(1:length(systems_to_benchmark))
 
@@ -310,7 +322,7 @@ end
 function collect_timings(args, names; content=:compare)
     backend = args["backend"]
     benchmark_id = args["benchmark"]
-    benchmark_dir = (@__DIR__) * "/" * get_benchmark_dir(benchmark_id)
+    benchmark_dir = (@__DIR__) * "/" * get_benchmark_dir(backend, benchmark_id)
 
     targets = [:total_time]
     @assert length(targets) > 0
@@ -440,6 +452,12 @@ function collect_timings(args, names; content=:compare)
     print("Table with results is written to $table_filename\n") #, color=:light_green)
 end
 
+function check_if_feasible(args)
+    if args["backend"] == "singular"
+        # hmm
+    end
+end
+
 function main()
     # Parse command line args
     args = parse_commandline()
@@ -447,6 +465,8 @@ function main()
     for (arg, val) in args
         @debug "$arg  =>  $val"
     end
+
+    check_if_feasible(args)
 
     # Create directories with benchmarks
     populate_benchmarks(args)
