@@ -12,7 +12,7 @@ using ProgressMeter
 
 using Groebner, AbstractAlgebra
 
-global_logger(Logging.ConsoleLogger(stdout, Logging.Debug))
+global_logger(Logging.ConsoleLogger(stdout, Logging.Info))
 
 include("benchmark_systems.jl")
 include("utils.jl")
@@ -353,13 +353,13 @@ function collect_timings(args, names; content=:compare)
             data_file = open("$benchmark_dir/$name/$datafn", "r")
         catch e
             @debug "Cannot collect data for $name"
-            push!(cannot_collect, (name,))
+            # push!(cannot_collect, (name,))
             continue
         end
         lines = readlines(data_file)
         if isempty(lines)
             @debug "Cannot collect data for $name"
-            push!(cannot_collect, (name,))
+            # push!(cannot_collect, (name,))
             continue
         end
         @assert lines[1] == name
@@ -417,7 +417,7 @@ function collect_timings(args, names; content=:compare)
     resulting_md *= "Versions of the dependencies:\n\n"
 
     deps = Pkg.dependencies()
-    stid_info = deps[findfirst(x -> x.name == "StructuralIdentifiability", deps)]
+    stid_info = deps[findfirst(x -> x.name == "Groebner", deps)]
     for (s, uid) in stid_info.dependencies
         if deps[uid].version !== nothing
             resulting_md *= "* $s : $(deps[uid].version)\n"
