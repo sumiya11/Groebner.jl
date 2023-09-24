@@ -435,7 +435,9 @@ function collect_timings(args, names; content=:compare)
     println("Benchmark results, $backend")
     for name in names
         if haskey(runtime, name)
-            println("\t$name -- $(formatting_style(runtime[name][_target])) s")
+            if haskey(runtime[name], _target)
+                println("\t$name -- $(formatting_style(runtime[name][_target])) s")
+            end
         end
     end
     println("===")
