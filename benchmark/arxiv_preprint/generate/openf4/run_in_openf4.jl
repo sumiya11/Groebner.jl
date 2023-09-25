@@ -46,7 +46,7 @@ function process_system()
     )
     proc = run(cmd_compille, wait=true)
     if proc.exitcode != 0
-        @warn "Something probably went wrong in openf4"
+        @warn "Failed to compile for openf4"
         exit(1)
     end
     for iter in 1:NUM_RUNS
