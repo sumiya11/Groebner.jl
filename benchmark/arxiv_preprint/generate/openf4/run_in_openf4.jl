@@ -17,6 +17,9 @@ const PROBLEM_NAME = ARGS[1]
 const NUM_RUNS = parse(Int, ARGS[2])
 const BENCHMARK_SET = parse(Int, ARGS[3])
 const LIB_PATH = ARGS[4]
+index1 = startswith(LIB_PATH, "/") ? 2 : 1
+index2 = endswith(LIB_PATH, "/") ? length(LIB_PATH) - 1 : length(LIB_PATH)
+const LIB_PATH_NORM = LIB_PATH[index1:index2]
 const BENCHMARK_DIR = "../../" * get_benchmark_dir("openf4", BENCHMARK_SET)
 
 @info "" ARGS
@@ -39,7 +42,7 @@ function process_system()
 
     problempath = (@__DIR__) * "/$BENCHMARK_DIR/$PROBLEM_NAME/"
     cmd_compille = Cmd(
-        `g++ $(problempath)$(PROBLEM_NAME).cpp -I/$LIB_PATH/include/ -L/$LIB_PATH/lib/ -lopenf4 -Wl,-rpath=/$LIB_PATH/lib/ -o $(problempath)$(PROBLEM_NAME).o`
+        `g++ $(problempath)$(PROBLEM_NAME).cpp -I/$LIB_PATH_NORM/include/ -L/$LIB_PATH_NORM/lib/ -lopenf4 -Wl,-rpath=/$LIB_PATH_NORM/lib/ -o $(problempath)$(PROBLEM_NAME).o`
     )
     proc = run(cmd_compille, wait=true)
     if proc.exitcode != 0
