@@ -127,22 +127,10 @@ function generate_benchmark_file(backend, name, system, dir, nruns, time_filenam
         close(fd)
     elseif backend == "msolve"
         vars_repr = join(map(string, gens(ring)), ", ")
-        field_repr = if iszero(characteristic(field))
-            "QQ"
-        else
-            "GF($(characteristic(field)))"
-        end
-        vars_repr_quoted = map(s -> "$s", map(string, gens(ring)))
-        ring_repr = """ring, ($vars_repr) = PolynomialRing(
-            $field_repr, 
-            $vars_repr_quoted, 
-            ordering=:degrevlex
-        )"""
         system_repr = join(map(repr, system), ",\n")
         fd = open("$dir/$name.jl", "w")
         println(fd, "$vars_repr")
         println(fd, "$(characteristic(field))")
-        println(fd, ring_repr)
         println(fd, system_repr)
         close(fd)
     end
