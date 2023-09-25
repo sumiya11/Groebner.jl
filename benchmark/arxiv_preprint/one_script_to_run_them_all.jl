@@ -550,7 +550,7 @@ function collect_timings(args, names; content=:compare)
     - Benchmarked backend: `$backend`
     - Workers: $(args["nworkers"])
     - Timeout: $(args["timeout"]) s
-    - Aggregated over: $(args[nruns]) runs
+    - Aggregated over: $(args["nruns"]) runs
 
     **All timings in seconds.**
 
