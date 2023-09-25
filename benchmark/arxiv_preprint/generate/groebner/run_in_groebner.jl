@@ -27,6 +27,7 @@ const BENCHMARK_DIR = "../../" * get_benchmark_dir("groebner", BENCHMARK_SET)
 @info "" PROBLEM_NAME
 @info "" NUM_RUNS
 @info "" BENCHMARK_SET
+@info "" "$(@__DIR__)"
 flush(stdout)
 flush(stderr)
 
