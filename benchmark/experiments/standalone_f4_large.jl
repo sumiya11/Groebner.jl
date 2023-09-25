@@ -50,26 +50,18 @@ ground = AbstractAlgebra.GF(2^30 + 3)
 run_f4_ff_degrevlex_benchmarks(ground)
 
 #=
-cyclic 7
-  0.163683 seconds (91.60 k allocations: 55.431 MiB, 5.30% gc time, 31.38% compilation time) 
-cyclic 8
-  1.690214 seconds (267.60 k allocations: 292.095 MiB, 8.76% gc time, 0.23% compilation time)
-katsura 9
-  0.208915 seconds (74.23 k allocations: 53.478 MiB)
-katsura 10
-  1.492179 seconds (195.74 k allocations: 176.967 MiB, 11.31% gc time)
-katsura 11
-  7.061800 seconds (515.75 k allocations: 617.090 MiB, 1.46% gc time)
-noon 7
-  0.307783 seconds (209.98 k allocations: 77.458 MiB, 41.56% gc time)
-noon 8
-  1.665348 seconds (945.53 k allocations: 353.220 MiB, 14.79% gc time)
-noon 9
- 13.829567 seconds (4.30 M allocations: 2.044 GiB, 3.35% gc time)
-eco 10
-  0.115604 seconds (72.95 k allocations: 41.181 MiB)
-eco 11
-  0.538119 seconds (188.62 k allocations: 111.055 MiB)
-eco 12
-  2.762637 seconds (553.62 k allocations: 381.915 MiB)
+sqrt(nlow / 3)
+cyclic 7 -- 0.070263489 s
+cyclic 8 -- 1.14754937 s
+cyclic 9 -- 95.630521758 s
+katsura 9 -- 0.121808741 s
+katsura 10 -- 0.647219826 s
+katsura 11 -- 4.292973661 s
+katsura 12 -- 31.899829963 s
+noon 7 -- 0.140998391 s
+noon 8 -- 1.506614076 s
+noon 9 -- 15.763489396 s
+eco 11 -- 0.308983478 s
+eco 12 -- 1.780714725 s
+eco 12 -- 8.237998759 s
 =#
