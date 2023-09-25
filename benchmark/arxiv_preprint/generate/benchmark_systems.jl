@@ -20,7 +20,7 @@ function dummy_system(ground_field)
 end
 
 function benchmark_set_1()
-    ground_field = AbstractAlgebra.GF(2^31 - 1)
+    ground_field = AbstractAlgebra.GF(2^30 + 3)
 
     systems = [
         dummy_system(ground_field),
