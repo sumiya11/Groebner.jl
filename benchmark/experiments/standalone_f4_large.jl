@@ -6,6 +6,9 @@ using BenchmarkTools
 using Logging
 # global_logger(ConsoleLogger(stderr, Logging.Error))
 
+Groebner.logging_enabled() = false
+Groebner.invariants_enabled() = false
+
 function benchmark_system_my(system)
     system = Groebner.change_ordering(system, :degrevlex)
 
