@@ -6,46 +6,44 @@ using BenchmarkTools
 using Logging
 # global_logger(ConsoleLogger(stderr, Logging.Error))
 
-# BenchmarkTools.DEFAULT_PARAMETERS.seconds = 6
-
 function benchmark_system_my(system)
     system = Groebner.change_ordering(system, :degrevlex)
-    Groebner.groebner([system[1]])
 
-    # gb = Groebner.groebner(system)
-    # println("length = $(length(gb))")
-    # println("degree = $(maximum(AbstractAlgebra.total_degree, gb))")
-    Groebner.groebner(system, linalg=:prob)
+    Groebner.groebner(system)
 
-    @time Groebner.groebner(system, linalg=:prob)
+    t = Inf
+    for i in 1:3
+        timing = @timed Groebner.groebner(system)
+        t = min(t, timing.time)
+    end
+    t
 end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
         ("cyclic 7", Groebner.cyclicn(7, ground=ground)),
         ("cyclic 8", Groebner.cyclicn(8, ground=ground)),
+        ("cyclic 9", Groebner.cyclicn(9, ground=ground)),
         ("katsura 9", Groebner.katsuran(9, ground=ground)),
         ("katsura 10", Groebner.katsuran(10, ground=ground)),
         ("katsura 11", Groebner.katsuran(11, ground=ground)),
+        ("katsura 12", Groebner.katsuran(12, ground=ground)),
         ("noon 7", Groebner.noonn(7, ground=ground)),
         ("noon 8", Groebner.noonn(8, ground=ground)),
         ("noon 9", Groebner.noonn(9, ground=ground)),
-        ("eco 10", Groebner.eco10(ground=ground)),
         ("eco 11", Groebner.eco11(ground=ground)),
-        ("eco 12", Groebner.eco12(ground=ground))
+        ("eco 12", Groebner.eco12(ground=ground)),
+        ("eco 12", Groebner.eco13(ground=ground))
     ]
 
     for (name, system) in systems
-        println("$name")
-        benchmark_system_my(system)
+        print("$name -- ")
+        t = benchmark_system_my(system)
+        println("$t s")
     end
 end
 
-println()
-
-Groebner._min_pairs[] = 1000
-
-ground = AbstractAlgebra.GF(2^31 - 1)
+ground = AbstractAlgebra.GF(2^30 + 3)
 run_f4_ff_degrevlex_benchmarks(ground)
 
 #=
