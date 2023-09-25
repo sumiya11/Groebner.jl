@@ -11,7 +11,7 @@ using Base.Threads
 using CpuId, Logging, Pkg, Printf
 using Distributed
 using Dates
-using ProgressMeter
+using ProgressMeter, PrettyTables
 using AbstractAlgebra, Groebner
 
 # Set the logger
@@ -47,9 +47,8 @@ function parse_commandline()
             required = true
         "lib"
             help = """
-            If openf4 is specified as the backend, then this argument is
-            required. 
-            It must point to the location where openf4 library is installed."""
+            Required if openf4 is specified as the backend. 
+            Must point to the location where openf4 library is installed."""
             arg_type = String
             default = ""
             required = false
@@ -517,17 +516,28 @@ function collect_timings(args, names; content=:compare)
         end
     end
 
+    println("===")
     _target = :total_time
     formatting_style = CATEGORY_FORMAT[_target]
-    println("===")
-    println("Benchmark results, $backend")
+    conf = set_pt_conf(tf=tf_markdown, alignment=:c)
+    title = "Benchmark results, $backend"
+    header = ["System", "Time, s"]
+    vec_of_vecs = Vector{Vector{Any}}()
     for name in names
-        if haskey(runtime, name)
-            if haskey(runtime[name], _target)
-                println("\t$name\t\t$(formatting_style(runtime[name][_target])) s")
-            end
+        if haskey(runtime, name) && haskey(runtime[name], _target)
+            push!(vec_of_vecs, [name, formatting_style(runtime[name][_target])])
+        else
+            push!(vec_of_vecs, [name, "-"])
         end
     end
+    table = Array{Any, 2}(undef, length(vec_of_vecs), 2)
+    for i in 1:length(vec_of_vecs)
+        for j in 1:2
+            table[i, j] = vec_of_vecs[i][j]
+        end
+    end
+    str = pretty_table_with_conf(conf, table; header=header, title=title)
+    println(str)
     println("===")
 
     # Print the table to BENCHMARK_TABLE.
