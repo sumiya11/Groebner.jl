@@ -37,7 +37,7 @@ function process_system()
     end
     for iter in 1:NUM_RUNS
         @info "Computing GB.." iter
-        problemfile = "/$BENCHMARK_DIR/$PROBLEM_NAME/$(PROBLEM_NAME).in"
+        problemfile = (@__DIR__) * "/$BENCHMARK_DIR/$PROBLEM_NAME/$(PROBLEM_NAME).in"
         cmd = Cmd(`msolve -g 2 -f $problemfile -o /dev/null`)
         proc = run(cmd, wait=true)
         @assert process_exited(proc)
