@@ -35,6 +35,7 @@ function benchmark_set_1()
         ("eco 11", Groebner.eco11(ground=ground_field)),
         ("eco 12", Groebner.eco12(ground=ground_field)),
         ("eco 13", Groebner.eco13(ground=ground_field)),
+        ("eco 14", Groebner.eco14(ground=ground_field)),
         ("noon 7", Groebner.noonn(7, ground=ground_field)),
         ("noon 8", Groebner.noonn(8, ground=ground_field)),
         ("noon 9", Groebner.noonn(9, ground=ground_field)),
