@@ -1,5 +1,6 @@
 import Pkg
 Pkg.activate(@__DIR__)
+Pkg.update()
 Pkg.resolve()
 Pkg.instantiate()
 
@@ -49,9 +50,9 @@ function process_system()
         @warn "Failed to compile for openf4"
         exit(1)
     end
+    cd("$(problempath)")
     for iter in 1:NUM_RUNS
         @info "Computing GB.." iter
-        cd("$(problempath)")
         cmd_exec = Cmd(["./$PROBLEM_NAME"])
         timing = @timed proc = run(cmd_exec, wait=true)
         @assert process_exited(proc)

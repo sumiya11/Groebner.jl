@@ -1,10 +1,10 @@
 ## Benchmark results
 
-2023-09-25T01:42:44.829
+2023-09-25T18:04:04.355
 
 - Benchmarked backend: `groebner`
 - Workers: 4
-- Timeout: 300 s
+- Timeout: 20 s
 
 **All timings in seconds.**
 
