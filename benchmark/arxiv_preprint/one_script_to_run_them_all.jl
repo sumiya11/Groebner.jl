@@ -125,6 +125,26 @@ function generate_benchmark_file(backend, name, system, dir, nruns, time_filenam
             "FileTools[Text][WriteLine](timings_fn, cat(\"total_time, \", String(runtime)));"
         )
         close(fd)
+    elseif backend == "msolve"
+        vars_repr = join(map(string, gens(ring)), ", ")
+        field_repr = if iszero(characteristic(field))
+            "QQ"
+        else
+            "GF($(characteristic(field)))"
+        end
+        vars_repr_quoted = map(s -> "$s", map(string, gens(ring)))
+        ring_repr = """ring, ($vars_repr) = PolynomialRing(
+            $field_repr, 
+            $vars_repr_quoted, 
+            ordering=:degrevlex
+        )"""
+        system_repr = join(map(repr, system), ",\n")
+        fd = open("$dir/$name.jl", "w")
+        println(fd, "$vars_repr")
+        println(fd, "$(characteristic(field))")
+        println(fd, ring_repr)
+        println(fd, system_repr)
+        close(fd)
     end
 end
 
@@ -153,6 +173,10 @@ function command_to_run_a_single_system(
     elseif backend == "maple"
         scriptpath = (@__DIR__) * "/" * get_benchmark_dir(backend, problem_set_id)
         return Cmd(["maple", "$scriptpath/$problem_name/$(problem_name).mpl"])
+    elseif backend == "msolve"
+        problempath = (@__DIR__) * "/" * get_benchmark_dir(backend, problem_set_id)
+        problemfile = "$problempath/$problem_name/$(problem_name).in"
+        return Cmd(`msolve msolve -g 2 -f $problemfile -o /dev/null`)
     end
 end
 
