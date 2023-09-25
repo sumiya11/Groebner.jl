@@ -760,7 +760,7 @@ end
 
 # The number of blocks to split the matrix into
 function nblocks_in_randomized(nrows::Int)
-    floor(Int, min(3, nrows - 1)) + 1
+    floor(Int, sqrt(nrows / 5)) + 1
 end
 
 # Given a matrix of form 
