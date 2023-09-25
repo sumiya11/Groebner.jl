@@ -39,7 +39,7 @@ function process_system()
         @info "Computing GB.." iter
         problemfile = (@__DIR__) * "/$BENCHMARK_DIR/$PROBLEM_NAME/$(PROBLEM_NAME).in"
         cmd = Cmd(`msolve -g 2 -f $problemfile -o /dev/null`)
-        proc = run(cmd, wait=true)
+        timing = @timed proc = run(cmd, wait=true)
         @assert process_exited(proc)
         if proc.exitcode != 0
             @warn "Something probably went wrong in msolve"
