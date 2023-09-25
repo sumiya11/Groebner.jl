@@ -220,7 +220,7 @@ function command_to_run_a_single_system(
     elseif backend == "openf4"
         return Cmd([
             "julia",
-            (@__DIR__) * "/generate/openf4/run_in_openf4.cpp",
+            (@__DIR__) * "/generate/openf4/run_in_openf4.jl",
             "$problem_name",
             "$problem_num_runs",
             "$problem_set_id",
