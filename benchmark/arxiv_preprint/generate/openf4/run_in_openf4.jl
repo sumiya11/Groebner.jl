@@ -51,8 +51,8 @@ function process_system()
     end
     for iter in 1:NUM_RUNS
         @info "Computing GB.." iter
-        binary_file_esc = replace("$(problempath)$(PROBLEM_NAME)", " " => "\\ ")
-        cmd_exec = Cmd([".$binary_file_esc"])
+        cd("$(problempath)")
+        cmd_exec = Cmd(["./$PROBLEM_NAME"])
         timing = @timed proc = run(cmd_exec, wait=true)
         @assert process_exited(proc)
         if proc.exitcode != 0
