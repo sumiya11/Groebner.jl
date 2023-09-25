@@ -1,39 +1,39 @@
 ## Benchmark results
 
-2023-09-25T15:59:20.050
+2023-09-25T15:48:43.771
 
 - Benchmarked backend: `openf4`
-- Workers: 4
+- Workers: 16
 - Timeout: 300 s
 
 **All timings in seconds.**
 
 |Model|Total|
 |-----|---|
-|cyclic 7| - |
-|cyclic 8| - |
+|cyclic 7|0.34|
+|cyclic 8|7.62|
 |cyclic 9| - |
-|dummy| - |
-|eco 11| - |
-|eco 12| - |
-|eco 13| - |
-|henrion 5| - |
-|henrion 6| - |
-|henrion 7| - |
-|katsura 10| - |
-|katsura 11| - |
-|katsura 12| - |
-|noon 7| - |
-|noon 8| - |
-|noon 9| - |
-|reimer 6| - |
-|reimer 7| - |
-|reimer 8| - |
+|dummy|0.01|
+|eco 11|1.57|
+|eco 12|9.36|
+|eco 13|52.36|
+|henrion 5|0.02|
+|henrion 6|0.23|
+|henrion 7|20.73|
+|katsura 10|5.07|
+|katsura 11|31.50|
+|katsura 12|216.15|
+|noon 7|0.96|
+|noon 8|11.15|
+|noon 9|130.39|
+|reimer 6|0.18|
+|reimer 7|4.23|
+|reimer 8|175.34|
 
 *Benchmarking environment:*
 
-* Total RAM (GiB): 7
-* Processor: Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz
+* Total RAM (GiB): 2003
+* Processor: AMD EPYC 7702 64-Core Processor                
 * Julia version: 1.9.1
 
 Versions of the dependencies:
