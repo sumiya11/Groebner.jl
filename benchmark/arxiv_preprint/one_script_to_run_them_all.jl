@@ -128,7 +128,7 @@ function generate_benchmark_file(backend, name, system, dir, nruns, time_filenam
     elseif backend == "msolve"
         vars_repr = join(map(string, gens(ring)), ", ")
         system_repr = join(map(repr, system), ",\n")
-        fd = open("$dir/$name.jl", "w")
+        fd = open("$dir/$name.in", "w")
         println(fd, "$vars_repr")
         println(fd, "$(characteristic(field))")
         println(fd, system_repr)
