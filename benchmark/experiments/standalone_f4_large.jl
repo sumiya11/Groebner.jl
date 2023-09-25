@@ -48,20 +48,3 @@ end
 
 ground = AbstractAlgebra.GF(2^30 + 3)
 run_f4_ff_degrevlex_benchmarks(ground)
-
-#=
-sqrt(nlow / 3)
-cyclic 7 -- 0.070263489 s
-cyclic 8 -- 1.14754937 s
-cyclic 9 -- 95.630521758 s
-katsura 9 -- 0.121808741 s
-katsura 10 -- 0.647219826 s
-katsura 11 -- 4.292973661 s
-katsura 12 -- 31.899829963 s
-noon 7 -- 0.140998391 s
-noon 8 -- 1.506614076 s
-noon 9 -- 15.763489396 s
-eco 11 -- 0.308983478 s
-eco 12 -- 1.780714725 s
-eco 12 -- 8.237998759 s
-=#

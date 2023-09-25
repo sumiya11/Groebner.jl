@@ -44,6 +44,14 @@ function parse_commandline()
             - openf4"""
             arg_type = String
             required = true
+        "lib"
+            help = """
+            If openf4 is specified as the backend, then this argument is
+            required. 
+            It must point to the location where openf4 library is installed."""
+            arg_type = String
+            default = ""
+            required = false
         "--benchmark"
             help = """
             The index of benchmark dataset.
@@ -133,6 +141,45 @@ function generate_benchmark_file(backend, name, system, dir, nruns, time_filenam
         println(fd, "$(characteristic(field))")
         println(fd, system_repr)
         close(fd)
+    elseif backend == "openf4"
+        fd = open("$dir/$name.cpp", "w")
+        println(fd, "// $name")
+        println(fd, "#include <iostream>")
+        println(fd, "#include <string>")
+        println(fd, "#include <vector>")
+        println(fd, "#include <libopenf4.h>")
+        println(
+            fd,
+            """
+            using namespace std;
+
+            int main (int argc, char **argv)
+            {
+            """
+        )
+        vars_repr =
+            join(map(s -> "\tvariableName.push_back(\"$s\");", map(repr, gens(ring))), "\n")
+        system_repr = join(
+            map(s -> "\tpolynomialArray.emplace_back(\"$s\");", map(repr, system)),
+            "\n"
+        )
+        println(
+            fd,
+            """
+            \tvector<string> polynomialArray;
+            \tvector<string> variableName;
+            
+            $vars_repr
+            $system_repr
+
+            \tvector<string> basis = groebnerBasisF4($(characteristic(field)), $(length(gens(ring))), variableName, polynomialArray, 1, 0);
+            
+            std::cout << \"The basis contains \" << basis.size() << \" elements.\" << std::endl;
+            """
+        )
+        println(fd, "\treturn 0;")
+        println(fd, "}")
+        close(fd)
     end
 end
 
@@ -140,7 +187,8 @@ function command_to_run_a_single_system(
     backend,
     problem_name,
     problem_num_runs,
-    problem_set_id
+    problem_set_id;
+    lib=nothing
 )
     if backend == "groebner"
         return Cmd([
@@ -169,7 +217,17 @@ function command_to_run_a_single_system(
             "$problem_num_runs",
             "$problem_set_id"
         ])
+    elseif backend == "openf4"
+        return Cmd([
+            "julia",
+            (@__DIR__) * "/generate/msolve/run_in_openf4.jl",
+            "$problem_name",
+            "$problem_num_runs",
+            "$problem_set_id",
+            "$lib"
+        ])
     end
+    throw("Unknown backend")
 end
 
 function populate_benchmarks(args; regenerate=true)
@@ -285,7 +343,13 @@ function run_benchmarks(args)
             log_filename = generic_filename("logs")
             log_file = open("$benchmark_dir/$problem_name/$log_filename", "w")
             @debug "Running $problem_name. Logs: $benchmark_dir/$problem_name/$log_filename"
-            cmd = command_to_run_a_single_system(backend, problem_name, nruns, benchmark_id)
+            cmd = command_to_run_a_single_system(
+                backend,
+                problem_name,
+                nruns,
+                benchmark_id,
+                lib=args["lib"]
+            )
             cmd = Cmd(cmd, ignorestatus=true, detach=false, env=copy(ENV))
             proc = run(pipeline(cmd, stdout=log_file, stderr=log_file), wait=false)
             push!(

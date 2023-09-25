@@ -1,7 +1,6 @@
 # Sorting monomials, polynomials, and other things.
 
 # Unstable algorithm should be a bit faster for large arrays
-# (basically, quicksort/radixsort vs. mergesort)
 _default_sorting_alg() = Base.Sort.DEFAULT_UNSTABLE
 
 # Sorts arr at the range of indices from..to 
