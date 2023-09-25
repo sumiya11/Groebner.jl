@@ -2,11 +2,9 @@
 
 This directory can be used to run benchmarks for `Groebner.jl`, `Singular`, `Maple`, `OpenF4`, and `msolve`.
 
-Benchmark systems are defined in `benchmark_systems.jl`.
+Benchmark systems are defined in `generate/benchmark_systems.jl`.
 
-Benchmark results will be printed to the stdout and also written to `results` directory.
-
-The correctness of computed Groebner bases is validated by comparing the hashes of the output polynomials to the hashes of the true basis.
+Benchmark results will be printed to the stdout and also written to a separate table in the `results` directory.
 
 ## Groebner.jl
 
@@ -28,7 +26,6 @@ julia one_script_to_rule_them_all.jl groebner
 #### For `Singular` benchmarks, you will need:
 
 1. A Julia client v1.6+ installed. See the official installation guide at https://julialang.org/downloads/platform/
-
 
 *Running Singular benchmarks on Windows platforms is not possible.*
 

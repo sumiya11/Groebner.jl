@@ -27,9 +27,11 @@ function benchmark_set_1()
         ("cyclic 7", Groebner.cyclicn(7, ground=ground_field)),
         ("cyclic 8", Groebner.cyclicn(8, ground=ground_field)),
         ("cyclic 9", Groebner.cyclicn(9, ground=ground_field)),
+        ("cyclic 10", Groebner.cyclicn(10, ground=ground_field)),
         ("katsura 10", Groebner.katsuran(10, ground=ground_field)),
         ("katsura 11", Groebner.katsuran(11, ground=ground_field)),
         ("katsura 12", Groebner.katsuran(12, ground=ground_field)),
+        ("katsura 13", Groebner.katsuran(13, ground=ground_field)),
         ("eco 11", Groebner.eco11(ground=ground_field)),
         ("eco 12", Groebner.eco12(ground=ground_field)),
         ("eco 13", Groebner.eco13(ground=ground_field)),
@@ -41,7 +43,8 @@ function benchmark_set_1()
         ("henrion 7", Groebner.henrion7(ground=ground_field)),
         ("reimer 6", Groebner.reimern(6, ground=ground_field)),
         ("reimer 7", Groebner.reimern(7, ground=ground_field)),
-        ("reimer 8", Groebner.reimern(8, ground=ground_field))
+        ("reimer 8", Groebner.reimern(8, ground=ground_field)),
+        ("reimer 9", Groebner.reimern(9, ground=ground_field))
     ]
 
     (name="Integers modulo 2^31-1", field=ground_field, systems=systems)
