@@ -42,7 +42,7 @@ function process_system()
 
     problempath = (@__DIR__) * "/$BENCHMARK_DIR/$PROBLEM_NAME/"
     cmd_compille = Cmd(
-        `g++ $(problempath)$(PROBLEM_NAME).cpp -I/$LIB_PATH_NORM/include/ -L/$LIB_PATH_NORM/lib/ -lopenf4 -Wl,-rpath=/$LIB_PATH_NORM/lib/ -o $(problempath)$(PROBLEM_NAME).o`
+        `g++ $(problempath)$(PROBLEM_NAME).cpp -I/$LIB_PATH_NORM/include/ -L/$LIB_PATH_NORM/lib/ -lopenf4 -Wl,-rpath=/$LIB_PATH_NORM/lib/ -o $(problempath)$(PROBLEM_NAME)`
     )
     proc = run(cmd_compille, wait=true)
     if proc.exitcode != 0
@@ -51,7 +51,7 @@ function process_system()
     end
     for iter in 1:NUM_RUNS
         @info "Computing GB.." iter
-        cmd_exec = Cmd(`.$(problempath)$(PROBLEM_NAME).o`)
+        cmd_exec = Cmd(`.$(problempath)$(PROBLEM_NAME)`)
         timing = @timed proc = run(cmd_exec, wait=true)
         @assert process_exited(proc)
         if proc.exitcode != 0
