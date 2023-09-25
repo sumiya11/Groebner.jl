@@ -162,9 +162,13 @@ function command_to_run_a_single_system(
         scriptpath = (@__DIR__) * "/" * get_benchmark_dir(backend, problem_set_id)
         return Cmd(["maple", "$scriptpath/$problem_name/$(problem_name).mpl"])
     elseif backend == "msolve"
-        problempath = (@__DIR__) * "/" * get_benchmark_dir(backend, problem_set_id)
-        problemfile = "$problempath/$problem_name/$(problem_name).in"
-        return Cmd(`msolve msolve -g 2 -f $problemfile -o /dev/null`)
+        return Cmd([
+            "julia",
+            (@__DIR__) * "/generate/msolve/run_in_msolve.jl",
+            "$problem_name",
+            "$problem_num_runs",
+            "$problem_set_id"
+        ])
     end
 end
 
