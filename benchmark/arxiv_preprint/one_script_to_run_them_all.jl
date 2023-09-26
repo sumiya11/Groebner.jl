@@ -155,7 +155,7 @@ function generate_benchmark_file(backend, name, system, dir, validate, nruns, ti
                 fd,
                 """
                 for poly in G do
-                    FileTools[Text][WriteLine](output_fn, String(poly)):
+                    FileTools[Text][WriteLine](output_fn, cat(String(poly), \",\")):
                 end do;
                 """
             )
@@ -220,7 +220,8 @@ function generate_benchmark_file(backend, name, system, dir, validate, nruns, ti
                 \tfor (size_t i = 0; i < basis.size(); i++) {
                 \t\toutput << basis[i] << \",\" << endl;
                 \t}
-                \toutput.close();"""
+                \toutput.close();
+                """
             )
         end
         println(fd, "\treturn 0;")
