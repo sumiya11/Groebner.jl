@@ -533,7 +533,7 @@ function validate_results(args, problem_names)
             true_result_exists = true
         catch e
             @debug "Cannot collect validation data for $name"
-            printstyled("\tMISSING CERTIFICATE\n", color=:light_red)
+            printstyled("\tMISSING CERTIFICATE..", color=:light_red)
         end
         # At this point, the recently computed basis is stored in `result`
         @assert result_exists
