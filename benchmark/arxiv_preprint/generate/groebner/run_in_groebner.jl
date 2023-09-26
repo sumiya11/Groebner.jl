@@ -1,8 +1,7 @@
 import Pkg
-Pkg.activate(@__DIR__)
-Pkg.update()
-Pkg.resolve()
-Pkg.instantiate()
+
+include("../utils.jl")
+julia_pkg_preamble("$(@__DIR__)")
 
 using CpuId, Logging, Pkg, Printf
 using Statistics
@@ -15,19 +14,20 @@ Groebner.invariants_enabled() = false
 logger = Logging.ConsoleLogger(stdout, Logging.Info)
 global_logger(logger)
 
-include("../utils.jl")
-
 const runtime = Dict()
 
 const PROBLEM_NAME = ARGS[1]
 const NUM_RUNS = parse(Int, ARGS[2])
 const BENCHMARK_SET = parse(Int, ARGS[3])
+const VALIDATE = parse(Bool, ARGS[4])
+
 const BENCHMARK_DIR = "../../" * get_benchmark_dir("groebner", BENCHMARK_SET)
 
 @info "" ARGS
 @info "" PROBLEM_NAME
 @info "" NUM_RUNS
 @info "" BENCHMARK_SET
+@info "" VALIDATE
 @info "" "$(@__DIR__)"
 flush(stdout)
 flush(stderr)
@@ -52,6 +52,17 @@ function process_system()
         @info "Computing GB.." iter
         timing = @timed result = groebner(system)
         @debug "Result is" result
+        if VALIDATE
+            output_fn = (@__DIR__) * "/$BENCHMARK_DIR/$PROBLEM_NAME/$(output_filename())"
+            @info "Printing the basis to $output_fn"
+            output_file = open(output_fn, "w")
+            ring = parent(system[1])
+            vars_str = join(map(repr, AbstractAlgebra.gens(ring)), ", ")
+            println(output_file, vars_str)
+            println(output_file, AbstractAlgebra.characteristic(base_ring(ring)))
+            println(output_file, join(map(repr, result), ",\n"))
+            close(output_file)
+        end
         # for cat in ID_TIME_CATEGORIES
         #     if haskey(StructuralIdentifiability._runtime_logger, cat)
         #         runtime[PROBLEM_NAME][cat] = StructuralIdentifiability._runtime_logger[cat]

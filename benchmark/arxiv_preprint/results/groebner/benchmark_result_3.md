@@ -1,10 +1,11 @@
 ## Benchmark results
 
-2023-09-25T18:04:04.355
+2023-09-26T23:00:59.298
 
 - Benchmarked backend: `groebner`
 - Workers: 4
-- Timeout: 20 s
+- Timeout: 100 s
+- Aggregated over: 1 runs
 
 **All timings in seconds.**
 
@@ -25,5 +26,5 @@ Versions of the dependencies:
 * Primes : 0.5.4
 * ExprTools : 0.1.10
 * SIMD : 3.4.5
-* AbstractAlgebra : 0.32.1
+* AbstractAlgebra : 0.32.3
 * SnoopPrecompile : 1.0.3

@@ -48,7 +48,7 @@ function benchmark_set_1()
         ("reimer 9", Groebner.reimern(9, ground=ground_field))
     ]
 
-    (name="Integers modulo 2^31-1", field=ground_field, systems=systems)
+    (name="Integers modulo 2^30 + 3", field=ground_field, systems=systems)
 end
 
 function benchmark_set_2()

@@ -1,7 +1,7 @@
 import Pkg
-Pkg.activate(@__DIR__)
-Pkg.resolve()
-Pkg.instantiate()
+
+include("../utils.jl")
+julia_pkg_preamble("$(@__DIR__)")
 
 using CpuId, Logging, Pkg, Printf
 using Statistics

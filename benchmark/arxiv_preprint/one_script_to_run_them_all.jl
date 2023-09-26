@@ -1,9 +1,8 @@
 # Add all required packages
 import Pkg
-Pkg.activate(".")
-Pkg.update()
-Pkg.resolve()
-Pkg.instantiate()
+
+include("generate/utils.jl")
+julia_pkg_preamble(".")
 
 # Load the packages
 using ArgParse
@@ -19,15 +18,15 @@ global_logger(Logging.ConsoleLogger(stdout, Logging.Info))
 
 # Load benchmark systems
 include("generate/benchmark_systems.jl")
-include("generate/utils.jl")
+
+# Load the code to compute the certificate of a groebner basis
+include("generate/basis_certificate.jl")
 
 # Set the properties of progress bar
 const _progressbar_color = :light_green
 const _progressbar_value_color = :light_green
 progressbar_enabled() =
     Logging.Info <= Logging.min_enabled_level(current_logger()) < Logging.Warn
-
-const BENCHMARK_TABLE = "benchmark_result"
 
 # Parses command-line arguments
 function parse_commandline()
@@ -45,7 +44,7 @@ function parse_commandline()
             - openf4"""
             arg_type = String
             required = true
-        "lib"
+        "lopenf4"
             help = """
             Required if openf4 is specified as the backend. 
             Must point to the location where openf4 library is installed."""
@@ -56,10 +55,21 @@ function parse_commandline()
             help = """
             The index of benchmark dataset.
             Possible options are:
-            - 1: for benchmarks over integers modulo 2^31-1
+            - 1: for benchmarks over integers modulo a prime
             - 2: for benchmarks over the rationals"""
             arg_type = Int
             default = 1
+        "--validate"
+            help = """
+            Validate the output bases against the (presumably) correct ones.
+            This can result in a slowdown for some of the backends.
+                
+            Possible options are:
+            - `yes`: validate results
+            - `no`: do not validate results
+            - `update`: update validation certificates"""
+            arg_type = String
+            default = "yes"
         "--nruns"
             help = "Number of times to run the benchmark."
             arg_type = Int
@@ -78,7 +88,7 @@ function parse_commandline()
     parse_args(s)
 end
 
-function generate_benchmark_file(backend, name, system, dir, nruns, time_filename)
+function generate_benchmark_file(backend, name, system, dir, validate, nruns, time_filename)
     ring = parent(system[1])
     field = base_ring(ring)
     if backend == "groebner" || backend == "singular"
@@ -120,7 +130,7 @@ function generate_benchmark_file(backend, name, system, dir, nruns, time_filenam
         println(fd, "\tst := time[real]():")
         println(
             fd,
-            "\tGroebner[Basis](J, tdeg($vars_repr), method=fgb, characteristic=$(characteristic(field))):"
+            "\tG := Groebner[Basis](J, tdeg($vars_repr), method=fgb, characteristic=$(characteristic(field))):"
         )
         println(fd, "\tprint(\"$name: \", time[real]() - st);")
         println(fd, "\truntime := min(runtime, time[real]() - st);")
@@ -132,6 +142,24 @@ function generate_benchmark_file(backend, name, system, dir, nruns, time_filenam
             fd,
             "FileTools[Text][WriteLine](timings_fn, cat(\"total_time, \", String(runtime)));"
         )
+        if validate
+            println(fd)
+            output_fn = output_filename()
+            println(fd, "output_fn := \"$dir/$output_fn\":")
+            println(fd, "FileTools[Text][WriteLine](output_fn, \"$vars_repr\");")
+            println(
+                fd,
+                "FileTools[Text][WriteLine](output_fn, \"$(characteristic(field))\");"
+            )
+            println(
+                fd,
+                """
+                for poly in G do
+                    FileTools[Text][WriteLine](output_fn, String(poly)):
+                end do;
+                """
+            )
+        end
         close(fd)
     elseif backend == "msolve"
         vars_repr = join(map(string, gens(ring)), ", ")
@@ -145,6 +173,7 @@ function generate_benchmark_file(backend, name, system, dir, nruns, time_filenam
         fd = open("$dir/$name.cpp", "w")
         println(fd, "// $name")
         println(fd, "#include <iostream>")
+        println(fd, "#include <fstream>")
         println(fd, "#include <string>")
         println(fd, "#include <vector>")
         println(fd, "#include <libopenf4.h>")
@@ -174,9 +203,26 @@ function generate_benchmark_file(backend, name, system, dir, nruns, time_filenam
 
             \tvector<string> basis = groebnerBasisF4($(characteristic(field)), $(length(gens(ring))), variableName, polynomialArray, 1, 0);
             
-            std::cout << \"The basis contains \" << basis.size() << \" elements.\" << std::endl;
+            \tstd::cout << \"The basis contains \" << basis.size() << \" elements.\" << std::endl;
             """
         )
+        if validate
+            vars_ = join(map(repr, gens(ring)), ", ")
+            output_fn = output_filename()
+            println(fd)
+            println(
+                fd,
+                """
+                \tofstream output;
+                \toutput.open(\"$dir/$output_fn\");
+                \toutput << \"$vars_\" << endl;
+                \toutput << \"$(characteristic(field))\" << endl;
+                \tfor (size_t i = 0; i < basis.size(); i++) {
+                \t\toutput << basis[i] << \",\" << endl;
+                \t}
+                \toutput.close();"""
+            )
+        end
         println(fd, "\treturn 0;")
         println(fd, "}")
         close(fd)
@@ -187,7 +233,8 @@ function command_to_run_a_single_system(
     backend,
     problem_name,
     problem_num_runs,
-    problem_set_id;
+    problem_set_id,
+    validate;
     lib=nothing
 )
     if backend == "groebner"
@@ -196,7 +243,8 @@ function command_to_run_a_single_system(
             (@__DIR__) * "/generate/groebner/run_in_groebner.jl",
             "$problem_name",
             "$problem_num_runs",
-            "$problem_set_id"
+            "$problem_set_id",
+            "$validate"
         ])
     elseif backend == "singular"
         return Cmd([
@@ -204,7 +252,8 @@ function command_to_run_a_single_system(
             (@__DIR__) * "/generate/singular/run_in_singular.jl",
             "$problem_name",
             "$problem_num_runs",
-            "$problem_set_id"
+            "$problem_set_id",
+            "$validate"
         ])
     elseif backend == "maple"
         scriptpath = (@__DIR__) * "/" * get_benchmark_dir(backend, problem_set_id)
@@ -215,7 +264,8 @@ function command_to_run_a_single_system(
             (@__DIR__) * "/generate/msolve/run_in_msolve.jl",
             "$problem_name",
             "$problem_num_runs",
-            "$problem_set_id"
+            "$problem_set_id",
+            "$validate"
         ])
     elseif backend == "openf4"
         return Cmd([
@@ -234,6 +284,7 @@ function populate_benchmarks(args; regenerate=true)
     backend = args["backend"]
     benchmark_id = args["benchmark"]
     nruns = args["nruns"]
+    validate = args["validate"] in ["yes", "update"]
     benchmark = get_benchmark(benchmark_id)
     benchmark_name, systems = benchmark.name, benchmark.systems
     benchmark_dir = (@__DIR__) * "/" * get_benchmark_dir(backend, benchmark_id)
@@ -271,6 +322,7 @@ function populate_benchmarks(args; regenerate=true)
             system_name,
             system,
             benchmark_system_dir,
+            validate,
             nruns,
             time_filename
         )
@@ -284,8 +336,8 @@ function run_benchmarks(args)
     timeout = args["timeout"]
     @assert timeout > 0
     backend = args["backend"]
-    @assert backend in ("groebner", "singular", "maple", "openf4", "msolve")
     nworkers = args["nworkers"]
+    validate = args["validate"] in ["yes", "update"]
     @assert nworkers > 0
     nruns = args["nruns"]
     @assert nruns > 0
@@ -299,9 +351,10 @@ function run_benchmarks(args)
     indices_to_benchmark = collect(1:length(systems_to_benchmark))
 
     @info """
-    Benchmarking $backend."""
-    @info """
+    Benchmarking $backend.
+    Benchmark suite: $benchmark_name
     Number of benchmark systems: $(length(systems_to_benchmark))
+    Validate result: $(validate)
     Workers: $(nworkers)
     Timeout: $timeout seconds"""
     @info """
@@ -348,7 +401,8 @@ function run_benchmarks(args)
                 problem_name,
                 nruns,
                 benchmark_id,
-                lib=args["lib"]
+                validate,
+                lib=args["lopenf4"]
             )
             cmd = Cmd(cmd, ignorestatus=true, detach=false, env=copy(ENV))
             proc = run(pipeline(cmd, stdout=log_file, stderr=log_file), wait=false)
@@ -429,26 +483,93 @@ function run_benchmarks(args)
         end
     end
 
-    print(
-        """
-        Benchmarking finished in $(round((time_ns() - timestamp) / 1e9, digits=2)) seconds.
-        Results are written to $benchmark_dir
-        """
-        # color=:light_green
+    println()
+    println(
+        "Benchmarking finished in $(round((time_ns() - timestamp) / 1e9, digits=2)) seconds."
     )
+    printstyled("Benchmark results", color=:light_green)
+    println(" are written to $benchmark_dir")
 
     systems_to_benchmark
 end
 
-function collect_timings(args, names; content=:compare)
+function validate_results(args, problem_names)
+    backend = args["backend"]
+    if !(args["validate"] in ["yes", "update"])
+        @info "Skipping result validation for $backend"
+        return nothing
+    end
+
+    update_certificates = args["validate"] == "update"
+
+    benchmark_id = args["benchmark"]
+    benchmark_dir = (@__DIR__) * "/" * get_benchmark_dir(backend, benchmark_id)
+    validate_dir = (@__DIR__) * "/" * get_validate_dir(benchmark_id)
+
+    println()
+    @info "Validating results for $backend."
+
+    for problem_name in problem_names
+        print("$problem_name:")
+        problem_valiate_path = "$validate_dir/$problem_name/$(hash_filename())"
+        problem_result_path = "$benchmark_dir/$problem_name/$(output_filename())"
+        true_result_exists, true_result = false, nothing
+        result_exists, result = false, nothing
+        try
+            result_file = open(problem_result_path, "r")
+            result = read(result_file, String)
+            result_exists = true
+        catch e
+            @debug "Cannot collect result data for $name"
+            printstyled("\tMISSING RESULT\n", color=:light_red)
+        end
+        if !result_exists
+            continue
+        end
+        try
+            true_result_file = open(problem_valiate_path, "r")
+            true_result = read(true_result_file, String)
+            true_result = standardize_certificate(true_result)
+            true_result_exists = true
+        catch e
+            @debug "Cannot collect validation data for $name"
+            printstyled("\tMISSING CERTIFICATE\n", color=:light_red)
+        end
+        # At this point, the recently computed basis is stored in `result`
+        @assert result_exists
+        result_validation_hash = compute_basis_validation_hash(result)
+        if update_certificates || !true_result_exists
+            mkpath("$validate_dir/$problem_name/")
+            true_result_file = open(problem_valiate_path, "w")
+            println(true_result_file, result_validation_hash)
+            printstyled("\tUPDATED\n", color=:light_yellow)
+            continue
+        end
+        @assert result_exists && true_result_exists
+        @assert is_certificate_standardized(result_validation_hash)
+        @assert is_certificate_standardized(true_result)
+        if result_validation_hash != true_result
+            printstyled("\tWRONG\n", color=:light_red)
+            println("True certificate:\n$true_result")
+            println("Current certificate:\n$result_validation_hash")
+        else
+            printstyled("\tOK\n", color=:light_green)
+        end
+    end
+
+    nothing
+end
+
+function collect_timings(args, names)
     backend = args["backend"]
     benchmark_id = args["benchmark"]
     benchmark_dir = (@__DIR__) * "/" * get_benchmark_dir(backend, benchmark_id)
 
     targets = [:total_time]
     @assert length(targets) > 0
+    println()
     @info """
-    Collecting benchmark results for $backend.
+    Collecting results for $backend.
     Statistics of interest:
     \t$(join(map(string, targets), "\n\t"))
     """
@@ -516,8 +637,7 @@ function collect_timings(args, names; content=:compare)
         end
     end
 
-    println("===")
-    _target = :total_time
+    _target = targets[1]
     formatting_style = CATEGORY_FORMAT[_target]
     conf = set_pt_conf(tf=tf_markdown, alignment=:c)
     title = "Benchmark results, $backend"
@@ -536,9 +656,8 @@ function collect_timings(args, names; content=:compare)
             table[i, j] = vec_of_vecs[i][j]
         end
     end
-    str = pretty_table_with_conf(conf, table; header=header, title=title)
-    println(str)
-    println("===")
+    println()
+    pretty_table_with_conf(conf, table; header=header, title=title)
 
     # Print the table to BENCHMARK_TABLE.
     resulting_md = ""
@@ -594,13 +713,14 @@ function collect_timings(args, names; content=:compare)
         write(io, resulting_md)
     end
 
-    print("Table with results is written to $table_filename\n") #, color=:light_green)
+    println()
+    printstyled("Table with results", color=:light_green)
+    println(" is written to $table_filename")
 end
 
-function check_if_feasible(args)
-    if args["backend"] == "singular"
-        # hmm
-    end
+function check_args(args)
+    backend = args["backend"]
+    @assert backend in ("groebner", "singular", "maple", "openf4", "msolve")
 end
 
 function main()
@@ -611,16 +731,19 @@ function main()
         @debug "$arg  =>  $val"
     end
 
-    check_if_feasible(args)
+    check_args(args)
 
     # Create directories with benchmarks
     populate_benchmarks(args)
 
     # Run benchmarks and record results
-    problems = run_benchmarks(args)
+    computed_problems = run_benchmarks(args)
+
+    # Validate computed Groebner bases
+    validate_results(args, computed_problems)
 
     # Collect the timings and other info
-    collect_timings(args, problems)
+    collect_timings(args, computed_problems)
 end
 
 main()

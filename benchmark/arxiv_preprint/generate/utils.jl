@@ -1,12 +1,23 @@
 # shared utilities for benchmarking
 using Printf
 
+# Benchmark results directory
 const BENCHMARK_RESULTS = "results"
+# Directory with data necessary for validating benchmark results
+const BENCHMARK_VALIDATE = "validate"
+# Table with results is written to file..
+const BENCHMARK_TABLE = "benchmark_result"
 
+# Benchmark directory for a specific backend and benchmark set id
 function get_benchmark_dir(backend, id)
     "$BENCHMARK_RESULTS/$backend/benchmark_$id"
 end
 
+function get_validate_dir(id)
+    "$BENCHMARK_VALIDATE/benchmark_$id"
+end
+
+# Statistics of interest
 const TIME_CATEGORIES = [:total_time]
 const DATA_CATEGORIES = []
 const ALL_CATEGORIES = union(TIME_CATEGORIES, DATA_CATEGORIES)
@@ -21,10 +32,22 @@ for cat in ALL_CATEGORIES
     end
 end
 
+# Code templates
+function julia_pkg_preamble(dir)
+    Pkg.Registry.add("General")
+    Pkg.activate(dir)
+    Pkg.resolve()
+    Pkg.instantiate()
+    nothing
+end
+
 timings_filename() = generic_filename("timings")
 function timings_filename(id)
     generic_filename("timings", id)
 end
+
+hash_filename() = generic_filename("hash")
+output_filename() = generic_filename("output")
 
 function result_filename(id)
     generic_filename("result", id)
