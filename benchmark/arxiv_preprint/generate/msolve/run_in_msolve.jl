@@ -41,7 +41,10 @@ function process_system()
     for iter in 1:NUM_RUNS
         @info "Computing GB.." iter
         problemfile = (@__DIR__) * "/$BENCHMARK_DIR/$PROBLEM_NAME/$(PROBLEM_NAME).in"
-        cmd = Cmd(`msolve -g 2 -l 44 -c 0 -f $problemfile -o /dev/null`)
+        outputfile =
+            VALIDATE ? (@__DIR__) * "/$BENCHMARK_DIR/$PROBLEM_NAME/$(output_filename())" :
+            "/dev/null"
+        cmd = Cmd(`msolve -g 2 -l 44 -c 0 -f $problemfile -o $outputfile`)
         timing = @timed proc = run(cmd, wait=true)
         @assert process_exited(proc)
         if proc.exitcode != 0

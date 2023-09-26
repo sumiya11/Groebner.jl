@@ -1,12 +1,12 @@
 ## Benchmark results
 
-2023-09-27T01:22:28.991
+2023-09-27T01:27:00.963
 
 Benchmarked backend: groebner
 Benchmark suite: Integers modulo 2^30 + 3
 
 - Workers: 4
-- Timeout: 10 s
+- Timeout: 20 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
