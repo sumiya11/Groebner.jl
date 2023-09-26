@@ -1,12 +1,21 @@
 ## Benchmark results
 
+<<<<<<< HEAD
 2023-09-26T23:53:49.829
+=======
+2023-09-27T01:22:28.991
+>>>>>>> bee7f5ff3890c2365c7ff3d0d9693ec4eb3e4815
 
 Benchmarked backend: groebner
 Benchmark suite: Integers modulo 2^30 + 3
 
+<<<<<<< HEAD
 - Workers: 20
 - Timeout: 20 s
+=======
+- Workers: 4
+- Timeout: 10 s
+>>>>>>> bee7f5ff3890c2365c7ff3d0d9693ec4eb3e4815
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
@@ -15,13 +24,18 @@ Benchmark suite: Integers modulo 2^30 + 3
 |-----|---|
 |cyclic 10| - |
 |cyclic 7| - |
+<<<<<<< HEAD
 |cyclic 8|1.21|
+=======
+|cyclic 8| - |
+>>>>>>> bee7f5ff3890c2365c7ff3d0d9693ec4eb3e4815
 |cyclic 9| - |
 |dummy| - |
 |eco 11| - |
 |eco 12| - |
 |eco 13| - |
 |eco 14| - |
+<<<<<<< HEAD
 |henrion 5|0.00|
 |henrion 6|0.04|
 |henrion 7|1.73|
@@ -35,12 +49,27 @@ Benchmark suite: Integers modulo 2^30 + 3
 |reimer 6|0.04|
 |reimer 7|0.78|
 |reimer 8|16.92|
+=======
+|henrion 5| - |
+|henrion 6| - |
+|henrion 7| - |
+|katsura 10| - |
+|katsura 11| - |
+|katsura 12| - |
+|katsura 13| - |
+|noon 7| - |
+|noon 8| - |
+|noon 9| - |
+|reimer 6| - |
+|reimer 7| - |
+|reimer 8| - |
+>>>>>>> bee7f5ff3890c2365c7ff3d0d9693ec4eb3e4815
 |reimer 9| - |
 
 *Benchmarking environment:*
 
-* Total RAM (GiB): 2003
-* Processor: AMD EPYC 7702 64-Core Processor                
+* Total RAM (GiB): 7
+* Processor: Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz
 * Julia version: 1.9.1
 
 Versions of the dependencies:

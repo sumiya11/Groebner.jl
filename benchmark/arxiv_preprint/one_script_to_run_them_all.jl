@@ -535,7 +535,7 @@ function validate_results(args, problem_names)
             result_exists = true
         catch e
             @debug "Cannot collect result data for $name"
-            printstyled("\tMISSING RESULT\n", color=:light_red)
+            printstyled("\tMISSING RESULT\n", color=:light_yellow)
         end
         if !result_exists
             continue
@@ -547,7 +547,7 @@ function validate_results(args, problem_names)
             true_result_exists = true
         catch e
             @debug "Cannot collect validation data for $name"
-            printstyled("\tMISSING CERTIFICATE.. ", color=:light_red)
+            printstyled("\tMISSING CERTIFICATE.. ", color=:light_yellow)
         end
         # At this point, the recently computed basis is stored in `result`
         @assert result_exists
@@ -648,7 +648,7 @@ function collect_timings(args, names)
     if !isempty(cannot_collect)
         printstyled("(!) Cannot collect benchmark data for:\n", color=:light_red)
         for (name,) in cannot_collect
-            println("$name, ")
+            print("$name, ")
         end
         println()
     end
