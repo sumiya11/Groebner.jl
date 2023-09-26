@@ -533,6 +533,9 @@ function validate_results(args, problem_names)
             result_file = open(problem_result_path, "r")
             result = read(result_file, String)
             result_exists = true
+            if isempty(string(strip(result, [' ', '\n', '\r'])))
+                result_exists = false
+            end
         catch e
             @debug "Cannot collect result data for $name"
             printstyled("\tMISSING RESULT\n", color=:light_yellow)

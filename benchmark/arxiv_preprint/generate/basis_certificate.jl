@@ -44,8 +44,29 @@ function parse_polynomial_from_terms(
     cfs, exps
 end
 
+function getlines_backend_dependent(result)
+    if startswith(result, "#")
+        #Reduced Groebner basis for input in characteristic 1073741827
+        #for variable order x, y
+        #w.r.t. grevlex monomial ordering
+        # #consisting of 2 elements:
+        # [1*x^1+1*y^1,
+        # 1*y^2+536870913]:
+        lines = split(result, "\n")
+        line2 = strip(split(lines[1])[end])
+        line1 = split(lines[2])[4:end]
+        lines_polys = lines[5:end]
+        lines_polys[1] = lines_polys[1][2:end]
+        if length(lines_polys) > 1
+            lines_polys[end] = lines_polys[end][1:(end - 2)]
+        end
+        return vcat(line1, line2, lines_polys)
+    end
+    split(result, "\n")
+end
+
 function parse_system_naive(result::String)
-    lines = split(result, "\n")
+    lines = getlines_backend_dependent(result)
     @assert length(lines) > 2
     base_field, ring_nemo, vars_nemo = extract_ring(lines[1], lines[2])
     polys_str = map(s -> string(strip(s, [' ', ',', '\t'])), lines[3:end])
