@@ -477,7 +477,7 @@ function run_benchmarks(args)
     finish!(prog)
 
     if !isempty(errored)
-        printstyled("(!) Maybe errored:\n", color=:red)
+        printstyled("(!) Maybe errored:\n", color=:light_red)
         for proc in errored
             println("\t$(proc.problem_name)")
         end
@@ -494,6 +494,7 @@ function run_benchmarks(args)
 end
 
 function validate_results(args, problem_names)
+    println()
     backend = args["backend"]
     if !(args["validate"] in ["yes", "update"])
         @info "Skipping result validation for $backend"
@@ -506,8 +507,20 @@ function validate_results(args, problem_names)
     benchmark_dir = (@__DIR__) * "/" * get_benchmark_dir(backend, benchmark_id)
     validate_dir = (@__DIR__) * "/" * get_validate_dir(benchmark_id)
 
-    println()
-    @info "Validating results for $backend."
+    @info "Validating results for $backend. May take some time."
+
+    if update_certificates
+        @info "Re-generating the folder with certificates"
+        try
+            if isdir(validate_dir)
+                rm(validate_dir, recursive=true, force=true)
+            end
+        catch err
+            @info "Something went wrong when deleting the directory with certificates"
+            showerror(stdout, err)
+            println(stdout)
+        end
+    end
 
     for problem_name in problem_names
         print("$problem_name:")
@@ -542,7 +555,7 @@ function validate_results(args, problem_names)
             mkpath("$validate_dir/$problem_name/")
             true_result_file = open(problem_validate_path, "w")
             println(true_result_file, result_validation_hash)
-            printstyled("\tUPDATED\n", color=:light_yellow)
+            printstyled("\tUPDATED\n", color=:light_green)
             continue
         end
         @assert result_exists && true_result_exists
@@ -632,7 +645,7 @@ function collect_timings(args, names)
     end
 
     if !isempty(cannot_collect)
-        printstyled("(!) Cannot collect benchmark data for:\n", color=:red)
+        printstyled("(!) Cannot collect benchmark data for:\n", color=:light_red)
         for (name,) in cannot_collect
             println("\t$name")
         end
