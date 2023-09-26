@@ -125,7 +125,7 @@ function is_certificate_standardized(certificate)
 end
 
 function standardize_certificate(certificate)
-    certificate = strip(string(certificate), ['\n', ' '])
+    certificate = strip(string(certificate), ['\n', ' ', '\r'])
     certificate
 end
 

@@ -16,12 +16,15 @@ const runtime = Dict()
 const PROBLEM_NAME = ARGS[1]
 const NUM_RUNS = parse(Int, ARGS[2])
 const BENCHMARK_SET = parse(Int, ARGS[3])
+const VALIDATE = parse(Bool, ARGS[4])
+
 const BENCHMARK_DIR = "../../" * get_benchmark_dir("msolve", BENCHMARK_SET)
 
 @info "" ARGS
 @info "" PROBLEM_NAME
 @info "" NUM_RUNS
 @info "" BENCHMARK_SET
+@info "" VALIDATE
 @info "" "$(@__DIR__)"
 flush(stdout)
 flush(stderr)
