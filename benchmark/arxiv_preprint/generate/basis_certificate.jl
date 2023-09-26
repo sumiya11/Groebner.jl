@@ -1,22 +1,12 @@
 import Nemo
 
-function parse_system_using_meta_parse(result::String)
-    lines = split(result, "\n")
-    @assert length(lines) > 2
-    base_field, ring_nemo, vars_nemo = extract_ring(lines[1], lines[2])
-    polys_str = map(s -> strip(s, [' ', ',', '\t']), lines[3:end])
-    polys_str = filter(!isempty, polys_str)
-    polys_nemo = Vector{Nemo.elem_type(ring_nemo)}()
-    var_mapping = Dict{Symbol, Nemo.elem_type(ring_nemo)}(
-        x => gen(ring_nemo, i) for (i, x) in enumerate(symbols(ring_nemo))
-    )
-    @info "" polys_str var_mapping ring_nemo
-    for poly_str in polys_str
-        poly_expr = Meta.parse(poly_str)
-        poly_nemo = myeval(poly_expr, base_field, var_mapping)
-        push!(polys_nemo, poly_nemo)
-    end
-    ring_nemo, polys_nemo
+function extract_ring(line1, line2)
+    vars_str = map(f -> string(strip(f, [',', ' ', '\t'])), split(line1, ","))
+    char = parse(BigInt, strip(line2))
+    @assert char < typemax(UInt)
+    base_field = iszero(char) ? Nemo.QQ : Nemo.GF(UInt(char))
+    ring_nemo, vars_nemo = Nemo.PolynomialRing(base_field, vars_str, ordering=:degrevlex)
+    base_field, ring_nemo, vars_nemo
 end
 
 function parse_polynomial_from_terms(
@@ -89,7 +79,7 @@ function parse_system_naive(result::String)
 end
 
 # "inline" tests
-for parse_system in [parse_system_naive] #parse_system_using_meta_parse]
+for parse_system in [parse_system_naive]
     ring, polys = parse_system("""
     x, y,z  
     13
