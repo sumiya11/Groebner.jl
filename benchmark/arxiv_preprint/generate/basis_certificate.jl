@@ -54,15 +54,13 @@ function getlines_backend_dependent(result)
         # 1*y^2+536870913]:
         lines = split(result, "\n")
         line2 = strip(split(lines[1])[end])
-        line1 = split(lines[2])[4:end]
-        lines_polys = lines[5:end]
+        line1 = join(split(lines[2])[4:end], " ")
+        lines_polys = filter(!isempty, lines[5:end])
         lines_polys[1] = lines_polys[1][2:end]
-        if length(lines_polys) > 1
-            lines_polys[end] = lines_polys[end][1:(end - 2)]
-        end
+        lines_polys[end] = lines_polys[end][1:(end - 2)]
         return vcat(line1, line2, lines_polys)
     end
-    split(result, "\n")
+    filter(!isempty, split(result, "\n"))
 end
 
 function parse_system_naive(result::String)
@@ -112,7 +110,7 @@ for parse_system in [parse_system_naive]
     flag1 = Nemo.symbols(ring) == [:x, :y, :z]
     flag2 = Nemo.base_ring(ring) == Nemo.GF(13)
     flag3 = map(string, polys) == ["4", "10*x + 9*y + 5*z", "x^3*y + 1"]
-    @assert flag1 && flag2 && flag3 "Parsing routine $parse_system is broken"
+    @assert flag1 && flag2 && flag3 "Parsing routine $parse_system is broken for groebner"
 
     ring, polys = parse_system("""
     x1,x2  
@@ -134,7 +132,20 @@ for parse_system in [parse_system_naive]
             "-1",
             "0"
         ]
-    @assert flag1 && flag2 && flag3 "Parsing routine $parse_system is broken"
+    @assert flag1 && flag2 && flag3 "Parsing routine $parse_system is broken for groebner"
+
+    ring, polys = parse_system("""
+    #Reduced Groebner basis for input in characteristic 1073741827
+    #for variable order z1, z2, z3, z4, z5, z6, z7
+    #w.r.t. grevlex monomial ordering
+    #consisting of 209 elements:
+    [1*z1^1+1*z2^1+1*z3^1+1*z4^1+1*z5^1+1*z6^1+1*z7^1,
+    -z6^3]:
+    """)
+    flag1 = Nemo.symbols(ring) == [:z1, :z2, :z3, :z4, :z5, :z6, :z7]
+    flag2 = Nemo.base_ring(ring) == Nemo.GF(2^30 + 3)
+    flag3 = map(string, polys) == ["z1 + z2 + z3 + z4 + z5 + z6 + z7", "1073741826*z6^3"]
+    @assert flag1 && flag2 && flag3 "Parsing routine $parse_system is broken for msolve"
 end
 
 function get_certificate(ring, polys)
