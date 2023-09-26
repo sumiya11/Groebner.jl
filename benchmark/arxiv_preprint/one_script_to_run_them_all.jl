@@ -540,7 +540,7 @@ function validate_results(args, problem_names)
         result_validation_hash = compute_basis_validation_hash(result)
         if update_certificates || !true_result_exists
             mkpath("$validate_dir/$problem_name/")
-            true_result_file = open(problem_valiate_path, "w")
+            true_result_file = open(problem_validate_path, "w")
             println(true_result_file, result_validation_hash)
             printstyled("\tUPDATED\n", color=:light_yellow)
             continue
