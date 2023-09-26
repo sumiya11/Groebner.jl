@@ -538,9 +538,9 @@ function validate_results(args, problem_names)
             end
         catch e
             @debug "Cannot collect result data for $name"
-            printstyled("\tMISSING RESULT\n", color=:light_yellow)
         end
         if !result_exists
+            printstyled("\tMISSING RESULT\n", color=:light_yellow)
             continue
         end
         try
