@@ -55,7 +55,8 @@ function getlines_backend_dependent(result)
         lines = split(result, "\n")
         line2 = strip(split(lines[1])[end])
         line1 = join(split(lines[2])[4:end], " ")
-        lines_polys = filter(!isempty, lines[5:end])
+        lines_polys =
+            filter(!isempty, map(f -> string(strip(f, [' ', '\n', '\r'])), lines[5:end]))
         lines_polys[1] = lines_polys[1][2:end]
         lines_polys[end] = lines_polys[end][1:(end - 2)]
         return vcat(line1, line2, lines_polys)
