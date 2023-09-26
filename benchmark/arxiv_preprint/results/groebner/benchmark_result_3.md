@@ -1,6 +1,6 @@
 ## Benchmark results
 
-2023-09-26T23:16:43.177
+2023-09-27T00:21:08.883
 
 Benchmarked backend: groebner
 Benchmark suite: dummy set
@@ -13,7 +13,7 @@ Benchmark suite: dummy set
 
 |Model|Total|
 |-----|---|
-|dummy|0.00|
+|dummy| - |
 
 *Benchmarking environment:*
 

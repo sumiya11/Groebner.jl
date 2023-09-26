@@ -46,7 +46,7 @@ function timings_filename(id)
     generic_filename("timings", id)
 end
 
-hash_filename() = generic_filename("hash")
+certificate_filename() = generic_filename("certificate")
 output_filename() = generic_filename("output")
 
 function result_filename(id)

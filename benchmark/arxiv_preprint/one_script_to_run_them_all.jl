@@ -296,7 +296,7 @@ function populate_benchmarks(args; regenerate=true)
                 rm(benchmark_dir, recursive=true, force=true)
             end
         catch err
-            @info "Something went wrong when deleting the benchmarks folder"
+            @info "Something went wrong when deleting the directory with benchmarks"
             showerror(stdout, err)
             println(stdout)
         end
@@ -511,7 +511,7 @@ function validate_results(args, problem_names)
 
     for problem_name in problem_names
         print("$problem_name:")
-        problem_valiate_path = "$validate_dir/$problem_name/$(hash_filename())"
+        problem_validate_path = "$validate_dir/$problem_name/$(certificate_filename())"
         problem_result_path = "$benchmark_dir/$problem_name/$(output_filename())"
         true_result_exists, true_result = false, nothing
         result_exists, result = false, nothing
@@ -527,7 +527,7 @@ function validate_results(args, problem_names)
             continue
         end
         try
-            true_result_file = open(problem_valiate_path, "r")
+            true_result_file = open(problem_validate_path, "r")
             true_result = read(true_result_file, String)
             true_result = standardize_certificate(true_result)
             true_result_exists = true
@@ -549,7 +549,7 @@ function validate_results(args, problem_names)
         @assert is_certificate_standardized(result_validation_hash)
         @assert is_certificate_standardized(true_result)
         if result_validation_hash != true_result
-            printstyled("\tWRONG\n", color=:light_red)
+            printstyled("\tWRONG RESULT\n", color=:light_red)
             println("True certificate:\n$true_result")
             println("Current certificate:\n$result_validation_hash")
         else
