@@ -479,8 +479,9 @@ function run_benchmarks(args)
     if !isempty(errored)
         printstyled("(!) Maybe errored:\n", color=:light_red)
         for proc in errored
-            println("\t$(proc.problem_name)")
+            print("$(proc.problem_name), ")
         end
+        println()
     end
 
     println()
@@ -647,8 +648,9 @@ function collect_timings(args, names)
     if !isempty(cannot_collect)
         printstyled("(!) Cannot collect benchmark data for:\n", color=:light_red)
         for (name,) in cannot_collect
-            println("\t$name")
+            println("$name, ")
         end
+        println()
     end
 
     _target = targets[1]
