@@ -533,7 +533,7 @@ function validate_results(args, problem_names)
             true_result_exists = true
         catch e
             @debug "Cannot collect validation data for $name"
-            printstyled("\tMISSING CERTIFICATE..", color=:light_red)
+            printstyled("\tMISSING CERTIFICATE.. ", color=:light_red)
         end
         # At this point, the recently computed basis is stored in `result`
         @assert result_exists
@@ -658,7 +658,7 @@ function collect_timings(args, names)
         end
     end
     println()
-    pretty_table_with_conf(conf, table; header=header, title=title)
+    pretty_table_with_conf(conf, table; header=header, title=title, limit_printing=false)
 
     # Print the table to BENCHMARK_TABLE.
     resulting_md = ""
