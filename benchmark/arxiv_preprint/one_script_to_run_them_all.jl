@@ -564,6 +564,7 @@ function collect_timings(args, names)
     backend = args["backend"]
     benchmark_id = args["benchmark"]
     benchmark_dir = (@__DIR__) * "/" * get_benchmark_dir(backend, benchmark_id)
+    benchmark_name = get_benchmark(benchmark_id).name
 
     targets = [:total_time]
     @assert length(targets) > 0
@@ -666,7 +667,9 @@ function collect_timings(args, names)
 
     $(now())
 
-    - Benchmarked backend: `$backend`
+    Benchmarked backend: $backend
+    Benchmark suite: $benchmark_name
+
     - Workers: $(args["nworkers"])
     - Timeout: $(args["timeout"]) s
     - Aggregated over: $(args["nruns"]) runs
