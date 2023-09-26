@@ -46,20 +46,19 @@ end
 
 function getlines_backend_dependent(result)
     if startswith(result, "#")
-        #Reduced Groebner basis for input in characteristic 1073741827
-        #for variable order x, y
-        #w.r.t. grevlex monomial ordering
-        # #consisting of 2 elements:
-        # [1*x^1+1*y^1,
-        # 1*y^2+536870913]:
         lines = split(result, "\n")
         line2 = strip(split(lines[1])[end])
         line1 = join(split(lines[2])[4:end], " ")
         lines_polys =
             filter(!isempty, map(f -> string(strip(f, [' ', '\n', '\r'])), lines[5:end]))
+        @assert startswith(lines_polys[1], "[")
         lines_polys[1] = lines_polys[1][2:end]
+        @assert endswith(lines_polys[end], "]:")
         lines_polys[end] = lines_polys[end][1:(end - 2)]
         return vcat(line1, line2, lines_polys)
+    end
+    if contains(result, ")") && contains(result, "(")
+        result = replace(result, "(" => "", ")" => "")
     end
     filter(!isempty, split(result, "\n"))
 end
@@ -147,6 +146,17 @@ for parse_system in [parse_system_naive]
     flag2 = Nemo.base_ring(ring) == Nemo.GF(2^30 + 3)
     flag3 = map(string, polys) == ["z1 + z2 + z3 + z4 + z5 + z6 + z7", "1073741826*z6^3"]
     @assert flag1 && flag2 && flag3 "Parsing routine $parse_system is broken for msolve"
+
+    ring, polys = parse_system("""
+    x, y  
+    13
+    (1*x^1) + (1*y^1),
+    (1*y^2) + (16*1),
+    """)
+    flag1 = Nemo.symbols(ring) == [:x, :y]
+    flag2 = Nemo.base_ring(ring) == Nemo.GF(13)
+    flag3 = map(string, polys) == ["x + y", "y^2 + 3"]
+    @assert flag1 && flag2 && flag3 "Parsing routine $parse_system is broken for openf4"
 end
 
 function get_certificate(ring, polys)
