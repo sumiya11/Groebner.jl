@@ -1,16 +1,5 @@
 import Nemo
 
-include("myeval.jl")
-
-function extract_ring(line1, line2)
-    vars_str = map(f -> string(strip(f, [',', ' ', '\t'])), split(line1, ","))
-    char = parse(BigInt, strip(line2))
-    @assert char < typemax(UInt)
-    base_field = iszero(char) ? Nemo.QQ : Nemo.GF(UInt(char))
-    ring_nemo, vars_nemo = Nemo.PolynomialRing(base_field, vars_str, ordering=:degrevlex)
-    base_field, ring_nemo, vars_nemo
-end
-
 function parse_system_using_meta_parse(result::String)
     lines = split(result, "\n")
     @assert length(lines) > 2

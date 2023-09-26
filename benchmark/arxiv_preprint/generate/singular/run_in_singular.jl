@@ -18,12 +18,15 @@ const runtime = Dict()
 const PROBLEM_NAME = ARGS[1]
 const NUM_RUNS = parse(Int, ARGS[2])
 const BENCHMARK_SET = parse(Int, ARGS[3])
+const VALIDATE = parse(Bool, ARGS[4])
+
 const BENCHMARK_DIR = "../../" * get_benchmark_dir("singular", BENCHMARK_SET)
 
 @info "" ARGS
 @info "" PROBLEM_NAME
 @info "" NUM_RUNS
 @info "" BENCHMARK_SET
+@info "" VALIDATE
 @info "" "$(@__DIR__)"
 flush(stdout)
 flush(stderr)
@@ -85,6 +88,17 @@ function process_system()
         @debug "Result is" result
         runtime[PROBLEM_NAME][:total_time] =
             min(runtime[PROBLEM_NAME][:total_time], timing.time)
+        if VALIDATE
+            output_fn = (@__DIR__) * "/$BENCHMARK_DIR/$PROBLEM_NAME/$(output_filename())"
+            @info "Printing the basis to $output_fn"
+            output_file = open(output_fn, "w")
+            ring = parent(system[1])
+            vars_str = join(map(repr, Singular.gens(ring)), ", ")
+            println(output_file, vars_str)
+            println(output_file, Singular.characteristic(base_ring(ring)))
+            println(output_file, join(map(repr, result), ",\n"))
+            close(output_file)
+        end
     end
 end
 
