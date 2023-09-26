@@ -1,34 +1,39 @@
 ## Benchmark results
 
-2023-09-25T16:17:24.805
+2023-09-26T00:12:55.748
 
 - Benchmarked backend: `groebner`
-- Workers: 16
-- Timeout: 300 s
+- Workers: 8
+- Timeout: 12000 s
+- Aggregated over: 3 runs
 
 **All timings in seconds.**
 
 |Model|Total|
 |-----|---|
-|cyclic 7|0.10|
-|cyclic 8|1.18|
-|cyclic 9|96.56|
+|cyclic 10| - |
+|cyclic 7|0.08|
+|cyclic 8|1.15|
+|cyclic 9|95.93|
 |dummy|0.00|
-|eco 11|0.32|
-|eco 12|1.84|
-|eco 13|8.25|
+|eco 11|0.30|
+|eco 12|1.80|
+|eco 13|8.31|
+|eco 14|79.48|
 |henrion 5|0.00|
 |henrion 6|0.03|
-|henrion 7|1.75|
-|katsura 10|0.67|
-|katsura 11|4.50|
-|katsura 12|31.70|
-|noon 7|0.16|
-|noon 8|1.52|
-|noon 9|15.80|
-|reimer 6|0.05|
-|reimer 7|0.71|
-|reimer 8|16.84|
+|henrion 7|1.68|
+|katsura 10|0.65|
+|katsura 11|4.49|
+|katsura 12|31.71|
+|katsura 13|218.26|
+|noon 7|0.14|
+|noon 8|1.60|
+|noon 9|15.73|
+|reimer 6|0.04|
+|reimer 7|0.63|
+|reimer 8|16.53|
+|reimer 9|698.89|
 
 *Benchmarking environment:*
 
