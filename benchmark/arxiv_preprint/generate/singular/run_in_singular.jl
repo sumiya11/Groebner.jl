@@ -96,7 +96,7 @@ function process_system()
             vars_str = join(map(repr, Singular.gens(ring)), ", ")
             println(output_file, vars_str)
             println(output_file, Singular.characteristic(base_ring(ring)))
-            println(output_file, join(map(repr, result), ",\n"))
+            println(output_file, join(map(repr, Singular.gens(result)), ",\n"))
             close(output_file)
         end
     end
