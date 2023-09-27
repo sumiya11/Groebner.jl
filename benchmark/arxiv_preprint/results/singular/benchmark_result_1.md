@@ -1,6 +1,6 @@
 ## Benchmark results
 
-2023-09-27T00:22:25.286
+2023-09-27T00:29:55.206
 
 Benchmarked backend: singular
 Benchmark suite: Integers modulo 2^30 + 3
@@ -14,25 +14,25 @@ Benchmark suite: Integers modulo 2^30 + 3
 |Model|Total|
 |-----|---|
 |cyclic 10| - |
-|cyclic 7|1.45|
-|cyclic 8|40.35|
+|cyclic 7|1.47|
+|cyclic 8|40.34|
 |cyclic 9| - |
 |dummy|0.00|
-|eco 11|31.38|
+|eco 11|31.73|
 |eco 12| - |
 |eco 13| - |
 |eco 14| - |
 |henrion 5|0.01|
-|henrion 6|0.32|
+|henrion 6|0.31|
 |henrion 7| - |
 |katsura 10| - |
 |katsura 11| - |
 |katsura 12| - |
 |katsura 13| - |
 |noon 7|0.38|
-|noon 8|3.44|
+|noon 8|3.46|
 |noon 9| - |
-|reimer 6|10.12|
+|reimer 6|10.10|
 |reimer 7| - |
 |reimer 8| - |
 |reimer 9| - |

@@ -1,34 +1,41 @@
 ## Benchmark results
 
-2023-09-25T15:48:43.771
+2023-09-27T01:43:48.858
 
-- Benchmarked backend: `openf4`
+Benchmarked backend: openf4
+Benchmark suite: Integers modulo 2^30 + 3
+
 - Workers: 16
-- Timeout: 300 s
+- Timeout: 100 s
+- Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total|
 |-----|---|
-|cyclic 7|0.34|
-|cyclic 8|7.62|
+|cyclic 10| - |
+|cyclic 7|0.35|
+|cyclic 8|7.31|
 |cyclic 9| - |
 |dummy|0.01|
-|eco 11|1.57|
-|eco 12|9.36|
-|eco 13|52.36|
-|henrion 5|0.02|
-|henrion 6|0.23|
-|henrion 7|20.73|
-|katsura 10|5.07|
-|katsura 11|31.50|
-|katsura 12|216.15|
-|noon 7|0.96|
-|noon 8|11.15|
-|noon 9|130.39|
-|reimer 6|0.18|
-|reimer 7|4.23|
-|reimer 8|175.34|
+|eco 11|1.46|
+|eco 12|8.31|
+|eco 13| - |
+|eco 14| - |
+|henrion 5|0.03|
+|henrion 6|0.24|
+|henrion 7|20.36|
+|katsura 10|4.88|
+|katsura 11|31.29|
+|katsura 12| - |
+|katsura 13| - |
+|noon 7|1.00|
+|noon 8|10.99|
+|noon 9| - |
+|reimer 6|0.19|
+|reimer 7|4.31|
+|reimer 8| - |
+|reimer 9| - |
 
 *Benchmarking environment:*
 
@@ -43,5 +50,5 @@ Versions of the dependencies:
 * Primes : 0.5.4
 * ExprTools : 0.1.10
 * SIMD : 3.4.5
-* AbstractAlgebra : 0.32.1
+* AbstractAlgebra : 0.32.3
 * SnoopPrecompile : 1.0.3

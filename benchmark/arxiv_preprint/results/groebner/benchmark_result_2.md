@@ -1,25 +1,28 @@
 ## Benchmark results
 
-2023-09-25T03:31:55.162
+2023-09-27T02:24:08.357
 
-- Benchmarked backend: `groebner`
+Benchmarked backend: groebner
+Benchmark suite: The rationals
+
 - Workers: 16
-- Timeout: 300 s
+- Timeout: 600 s
+- Aggregated over: 2 runs
 
 **All timings in seconds.**
 
 |Model|Total|
 |-----|---|
-|cyclic 7|4.08|
-|cyclic 8|108.93|
+|cyclic 7|4.15|
+|cyclic 8|106.70|
 |dummy|0.00|
-|eco 10|0.78|
-|eco 11|6.17|
-|henrion 6|3.62|
+|eco 10|0.77|
+|eco 11|6.11|
+|henrion 6|3.52|
 |katsura 10| - |
-|katsura 9|22.24|
-|noon 8|8.59|
-|noon 9|99.11|
+|katsura 9|22.26|
+|noon 8|8.67|
+|noon 9|99.24|
 
 *Benchmarking environment:*
 
@@ -34,5 +37,5 @@ Versions of the dependencies:
 * Primes : 0.5.4
 * ExprTools : 0.1.10
 * SIMD : 3.4.5
-* AbstractAlgebra : 0.32.1
+* AbstractAlgebra : 0.32.3
 * SnoopPrecompile : 1.0.3
