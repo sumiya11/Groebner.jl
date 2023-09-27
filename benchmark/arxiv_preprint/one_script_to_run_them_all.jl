@@ -77,7 +77,7 @@ function parse_commandline()
         "--timeout"
             help = "Timeout, s."
             arg_type = Int
-            default = 300
+            default = 600
         "--nworkers"
             help = "The number of worker processes."
             arg_type = Int
