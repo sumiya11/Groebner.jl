@@ -25,7 +25,7 @@ Computed Groebner bases will be verified against the correct Groebner bases (or 
 julia one_script_to_run_them_all.jl groebner
 ```
 
-**NOTE:** It is possible to specify some command-line options. For example, the following command
+**NOTE:** It is possible to specify some command-line options (these are valid for all software benchmarked here). For example, the following command
 
 ```
 julia one_script_to_run_them_all.jl groebner --timeout=600 --nworkers=20 --nruns=10 --validate=yes --benchmark=2
@@ -37,7 +37,7 @@ runs Groebner.jl benchmarks under the following conditions:
 - Distribute benchmarks over `20` worker processes
 - Rerun each benchmark `10` times and aggregate timings
 - Validate the correctness of resulting Groebner bases
-- Use the second benchmark suite (see `generate/benchmark_systems.jl` for details) 
+- Use the `2`-nd benchmark suite (see `generate/benchmark_systems.jl` for details) 
 
 ## Singular
 
