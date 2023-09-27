@@ -1,8 +1,7 @@
 # Monomial hashtable.
 
-# This hashtable implementation assumes that
-# the hash function is linear. (each monomial implementation must implement
-# linear hash function)
+# This hashtable implementation assumes that the hash function is linear. (each
+# monomial implementation must implement linear hash function)
 
 # The hashtable size is always the power of two. The hashtable size is doubled
 # each time the load factor exceeds ht_resize_threshold (see below).
@@ -11,7 +10,7 @@
 
 # Some monomial implementations are mutable, and some are not. In order to
 # maintain generic code that will work for both, we usually write something
-# like: m3 = monom_product!(m3, m1, m2) Then, if a mutable implementation is
+# like: m3 = monom_product!(m3, m1, m2). Then, if a mutable implementation is
 #   used, m3 would be overwritten inside of monom_product!. Otherwise,
 # monom_product! would return a new immutable object that is then assigned to
 # m3. That allows us to write more or less independently of the monomial

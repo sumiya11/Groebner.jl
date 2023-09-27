@@ -10,19 +10,24 @@ end
 
 # Stores parameters for a single GB computation.
 mutable struct AlgorithmParameters{Ord1, Ord2, Ord3, Arithm}
-    # Output polynomials monomial ordering
+    # Monomial ordering of output polynomials
     target_ord::Ord1
-    # Monomial ordering for computation
+    # Monomial ordering for the actual computation
     computation_ord::Ord2
-    # Original ordering
+    # Original monomial ordering
     original_ord::Ord3
-    # Basis correctness checks levels
+
+    # Specieifes correctness checks levels
     heuristic_check::Bool
     randomized_check::Bool
     certify_check::Bool
 
+    # If do homogenize input generators
     homogenize::Bool
 
+    # This option only makes sense for functions `normalform` and `kbase`. It
+    # specifies if the program should check if the input is indeed a Groebner
+    # basis.
     check::Bool
 
     # Linear algebra backend to be used. Currently available are
@@ -30,30 +35,48 @@ mutable struct AlgorithmParameters{Ord1, Ord2, Ord3, Arithm}
     # - :randomized for probabilistic linear algebra
     linalg::Symbol
 
+    # This can hold buffers or precomputed multiplicative inverses to speed up
+    # the arithmetic in the ground field
     arithmetic::Arithm
 
-    # Reduced Groebner basis is needed
+    # If reduced Groebner basis is needed
     reduced::Bool
 
+    # Limit the number of critical pairs in the F4 matrix by this number
     maxpairs::Int
 
+    # Selection strategy. One of the following:
+    # - :normal
     selection_strategy::Symbol
 
-    # Ground field of computation. Currently options are
-    # - :qq for rationals,
-    # - :zp for integers modulo a prime.
+    # Ground field of computation. This can be one of the following:
+    # - :qq for the rationals
+    # - :zp for integers modulo a prime
     ground::Symbol
 
-    # TODO: introduce two strategies: :classic_modular and :learn_and_apply
-    strategy::Symbol
+    # Strategy for modular computation in groebner. This can be one of the
+    # following:
+    # - :classic_modular
+    # - :learn_and_apply
+    modular_strategy::Symbol
+
+    # In modular computation, compute (at least!) this many bases modulo
+    # different primes until a consensus is reached
     majority_threshold::Int
 
+    # Use multi-threading.
+    # This does nothing currently.
     threading::Bool
 
-    # Random number generator seed
+    # Random number generator
     seed::UInt64
     rng::_default_rng_type
 
+    # Internal option for `groebner`.
+    # At the end of F4, polynomials are interreduced. 
+    # We can mark and sweep polynomials that are redundant prior to
+    # interreduction to speed things up a bit. This option specifies if such
+    # sweep should be done.
     sweep::Bool
 end
 
@@ -63,7 +86,7 @@ function AlgorithmParameters(
     kwargs::KeywordsHandler;
     orderings=nothing
 )
-    #
+    # TODO: we should probably document this better
     if orderings !== nothing
         target_ord = orderings[2]
         computation_ord = orderings[2]
@@ -114,7 +137,7 @@ function AlgorithmParameters(
     #
     threading = false
     #
-    strategy = kwargs.strategy
+    modular_strategy = kwargs.modular
     majority_threshold = 1
     #
     seed = kwargs.seed
@@ -139,7 +162,7 @@ function AlgorithmParameters(
     maxpairs = $maxpairs
     selection_strategy = $selection_strategy
     ground = $ground
-    strategy = $strategy
+    modular_strategy = $modular_strategy
     majority_threshold = $majority_threshold
     threading = $threading
     seed = $seed
@@ -161,7 +184,7 @@ function AlgorithmParameters(
         maxpairs,
         selection_strategy,
         ground,
-        strategy,
+        modular_strategy,
         majority_threshold,
         threading,
         useed,
@@ -186,7 +209,7 @@ function params_mod_p(params::AlgorithmParameters, prime::Integer)
         params.maxpairs,
         params.selection_strategy,
         params.ground,
-        params.strategy,
+        params.modular_strategy,
         params.majority_threshold,
         params.threading,
         params.seed,

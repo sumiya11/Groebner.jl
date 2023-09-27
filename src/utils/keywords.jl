@@ -18,7 +18,7 @@ const _supported_kw_args = (
         loglevel    = _default_loglevel,
         maxpairs    = typemax(Int),   # NOTE: maybe use Inf?
         selection   = :auto,
-        strategy    = :classic_modular,
+        modular     = :classic_modular,
         sweep       = false,
         homogenize  = :auto
     ),
@@ -76,7 +76,7 @@ struct KeywordsHandler{Ord}
     loglevel::Int
     maxpairs::Int
     selection::Symbol
-    strategy::Symbol
+    modular::Symbol
     check::Bool
     sweep::Bool
     homogenize::Symbol
@@ -102,8 +102,8 @@ struct KeywordsHandler{Ord}
         end
         maxpairs = get(kws, :maxpairs, get(default_kw_args, :maxpairs, typemax(Int)))
         @assert maxpairs > 0 "The limit on the number of critical pairs must be positive"
-        strategy = get(kws, :strategy, get(default_kw_args, :strategy, :classic_modular))
-        @assert strategy in (:classic_modular, :learn_and_apply) "Not recognized strategy: $strategy"
+        modular = get(kws, :modular, get(default_kw_args, :modular, :classic_modular))
+        @assert modular in (:classic_modular, :learn_and_apply) "Not recognized modular strategy: $modular"
         selection = get(kws, :selection, get(default_kw_args, :selection, :auto))
         @assert selection in (:auto, :normal, :sugar, :be_divided_and_perish)
         check = get(kws, :check, get(default_kw_args, :check, true))
@@ -120,7 +120,7 @@ struct KeywordsHandler{Ord}
           loglevel   = $loglevel, 
           maxpairs   = $maxpairs,
           selection  = $selection,
-          strategy   = $strategy,
+          modular   = $modular,
           check      = $check,
           sweep      = $sweep
           homogenize = $homogenize"""
@@ -134,7 +134,7 @@ struct KeywordsHandler{Ord}
             loglevel,
             maxpairs,
             selection,
-            strategy,
+            modular,
             check,
             sweep,
             homogenize

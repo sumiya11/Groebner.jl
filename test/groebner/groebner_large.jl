@@ -135,6 +135,16 @@ using Primes
 
     system = [x1 - (2^31 - 1) * x2 - (2^30 + 3) * x3]
     @test Groebner.groebner(system) == system
+
+    ###########################################################################
+    for start_of_range in [2^10, 2^20, 2^30, 2^40]
+        for size_of_range in [10, 100, 1000]
+            N = prod(Primes.nextprimes(BigInt(start_of_range), size_of_range))
+            system = [x1 + N // (N + 1), x3 - (N + 1) // (N - 1), x2 + 42]
+            gb = Groebner.groebner(system)
+            @test gb == [x3 - (N + 1) // (N - 1), x2 + 42, x1 + N // (N + 1)]
+        end
+    end
 end
 
 @testset "groebner large problems" begin
