@@ -45,7 +45,7 @@ runs Groebner.jl benchmarks under the following conditions:
 
 1. A Julia client v1.6+ installed. See the official installation guide at https://julialang.org/downloads/platform/
 
-*Running Singular benchmarks on Windows platforms is not possible.*
+*Running Singular benchmarks on Windows is not possible.*
 
 #### To run `Singular` benchmarks
 
@@ -69,7 +69,7 @@ julia one_script_to_run_them_all.jl singular
 julia one_script_to_run_them_all.jl maple
 ```
 
-Internally, this will run `maple system.mpl` for each benchmark system.
+Internally, this will generate `system.mpl` and run `maple system.mpl` for each benchmark system.
 
 ## OpenF4
 
@@ -87,7 +87,7 @@ julia one_script_to_run_them_all.jl openf4 /path/to/openf4/lib
 
 where `/path/to/openf4/lib` is the path to the directory where openf4 library is installed.
 
-Internally, this will compile and run the benchmark with `g++ system.cpp -o bench` and `./bench` for each benchmark system.
+Internally, this will generate `system.cpp`, compile `system.cpp` (with `g++`), and execute the resulting binary for each benchmark system.
 
 ## msolve
 
