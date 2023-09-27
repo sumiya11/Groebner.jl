@@ -197,12 +197,12 @@ function generate_benchmark_file(backend, name, system, dir, validate, nruns, ti
             """
             \tvector<string> polynomialArray;
             \tvector<string> variableName;
-            
+
             $vars_repr
             $system_repr
 
             \tvector<string> basis = groebnerBasisF4($(characteristic(field)), $(length(gens(ring))), variableName, polynomialArray, 1, 0);
-            
+
             \tstd::cout << \"The basis contains \" << basis.size() << \" elements.\" << std::endl;
             """
         )
