@@ -28,14 +28,14 @@ julia one_script_to_run_them_all.jl groebner
 **NOTE:** It is possible to specify some command-line options (these are valid for all software benchmarked here). For example, the following command
 
 ```
-julia one_script_to_run_them_all.jl groebner --timeout=600 --nworkers=20 --nruns=10 --validate=yes --benchmark=2
+julia one_script_to_run_them_all.jl groebner --timeout=600 --nworkers=20 --nruns=5 --validate=yes --benchmark=2
 ```
 
 runs Groebner.jl benchmarks under the following conditions:
 
 - Timeout `600 s` for each benchmark
 - Distribute benchmarks over `20` worker processes
-- Rerun each benchmark `10` times and aggregate timings
+- Rerun each benchmark `5` times and aggregate timings
 - Validate the correctness of resulting Groebner bases
 - Use the `2`-nd benchmark suite (see `generate/benchmark_systems.jl` for details) 
 
