@@ -839,12 +839,9 @@ function f4_normalform!(
     # Fill the matrix
     select_tobereduced!(basis, tobereduced, matrix, symbol_ht, ht)
     symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
-    @log level = -7 "" matrix
     column_to_monom_mapping!(matrix, symbol_ht)
-    @log level = -7 "" matrix
     # Reduce the matrix
     linear_algebra_normalform!(matrix, basis, arithmetic)
-    @log level = -7 "" matrix
     # Export the rows of the matrix back to the basis elements
     convert_rows_to_basis_elements_nf!(matrix, tobereduced, ht, symbol_ht)
     tobereduced
