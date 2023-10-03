@@ -11,8 +11,6 @@ import Singular
 logger = Logging.ConsoleLogger(stdout, Logging.Info)
 global_logger(logger)
 
-include("../utils.jl")
-
 const runtime = Dict()
 
 const PROBLEM_NAME = ARGS[1]

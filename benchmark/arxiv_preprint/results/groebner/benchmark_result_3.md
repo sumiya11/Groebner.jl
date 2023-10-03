@@ -1,6 +1,6 @@
 ## Benchmark results
 
-2023-09-27T00:48:18.844
+2023-10-03T19:44:33.696
 
 Benchmarked backend: groebner
 Benchmark suite: dummy set
@@ -17,8 +17,8 @@ Benchmark suite: dummy set
 
 *Benchmarking environment:*
 
-* Total RAM (GiB): 7
-* Processor: Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz
+* Total RAM (GiB): 2003
+* Processor: AMD EPYC 7702 64-Core Processor                
 * Julia version: 1.9.1
 
 Versions of the dependencies:

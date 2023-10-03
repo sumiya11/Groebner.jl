@@ -1,12 +1,12 @@
 ## Benchmark results
 
-2023-09-27T07:21:53.204
+2023-10-03T19:35:39.241
 
 Benchmarked backend: groebner
 Benchmark suite: Integers modulo 2^30 + 3
 
-- Workers: 16
-- Timeout: 3600 s
+- Workers: 4
+- Timeout: 60 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
@@ -15,26 +15,26 @@ Benchmark suite: Integers modulo 2^30 + 3
 |-----|---|
 |cyclic 10| - |
 |cyclic 7|0.09|
-|cyclic 8|1.25|
-|cyclic 9|96.04|
+|cyclic 8|1.18|
+|cyclic 9| - |
 |dummy|0.00|
 |eco 11|0.32|
-|eco 12|1.81|
-|eco 13|8.53|
-|eco 14|78.01|
+|eco 12|1.82|
+|eco 13|8.52|
+|eco 14| - |
 |henrion 5|0.00|
-|henrion 6|0.05|
-|henrion 7|1.68|
-|katsura 10|0.68|
-|katsura 11|4.59|
+|henrion 6|0.03|
+|henrion 7|1.90|
+|katsura 10|0.74|
+|katsura 11|4.45|
 |katsura 12|32.09|
 |katsura 13|219.01|
 |noon 7|0.16|
-|noon 8|1.65|
-|noon 9|16.47|
+|noon 8|1.66|
+|noon 9|15.87|
 |reimer 6|0.04|
 |reimer 7|0.66|
-|reimer 8|17.22|
+|reimer 8|16.88|
 |reimer 9|681.04|
 
 *Benchmarking environment:*

@@ -1,8 +1,8 @@
 ## Benchmark results
 
-2023-10-03T19:45:21.112
+2023-10-03T19:45:57.978
 
-Benchmarked backend: singular
+Benchmarked backend: maple
 Benchmark suite: dummy set
 
 - Workers: 4
@@ -13,7 +13,7 @@ Benchmark suite: dummy set
 
 |Model|Total|
 |-----|---|
-|dummy|0.00|
+|dummy|0.02|
 
 *Benchmarking environment:*
 

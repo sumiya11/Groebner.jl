@@ -34,6 +34,7 @@ end
 
 # Code templates
 function julia_pkg_preamble(dir)
+    @info "Activating environment at $dir"
     Pkg.Registry.add("General")
     Pkg.activate(dir)
     Pkg.resolve()
