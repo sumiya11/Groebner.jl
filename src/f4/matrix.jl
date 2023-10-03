@@ -907,7 +907,10 @@ function reduce_matrix_lower_part_invariant_pivots!(
             matrix,
             basis,
             pivots,
-            first_nnz_column,
+            # first_nnz_column,
+            # TODO: this is incorrect; for the counter-example see
+            # https://github.com/sumiya11/Groebner.jl/issues/82
+            1,
             arithmetic,
             tmp_pos=-1
         )

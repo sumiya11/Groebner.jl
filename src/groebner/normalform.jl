@@ -37,6 +37,11 @@ function _normalform(polynomials, to_be_reduced, kws::KeywordsHandler)
             )
         end
     end
+    @log level = -2 """
+      Finalized polynomial rings:
+      Basis: $ring
+      To be reduced: $ring_"""
+    @assert ring.nvars == ring_.nvars && ring.ch == ring_.ch && isequal(ring.ord, ring_.ord)
     monoms_reduced, coeffs_reduced = _normalform(
         ring,
         monoms,
@@ -45,6 +50,9 @@ function _normalform(polynomials, to_be_reduced, kws::KeywordsHandler)
         coeffs_to_be_reduced_nonzero,
         params
     )
+    @log level = -6 """After normal form: 
+    Monoms: $monoms_reduced 
+    Coeffs: $coeffs_reduced"""
     monoms_to_be_reduced[nonzero_indices] .= monoms_reduced
     coeffs_to_be_reduced[nonzero_indices] .= coeffs_reduced
     monoms_reduced = monoms_to_be_reduced
@@ -70,6 +78,11 @@ function _normalform(
         coeffs_to_be_reduced,
         hashtable
     )
+    @log level = -7 """
+      Polynomials in internal representation before reduction:
+      Basis: $basis
+      To be reduced: $tobereduced
+      """
     f4_normalform!(ring, basis, tobereduced, hashtable, params.arithmetic)
     export_basis_data(tobereduced, hashtable)
 end

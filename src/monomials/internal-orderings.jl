@@ -43,6 +43,9 @@ nontrivialization(o::_DegLex) = _DegLex{false}(o.indices)
 nontrivialization(o::_DegRevLex) = _DegRevLex{false}(o.indices)
 nontrivialization(o) = o
 
+Base.isequal(ord1::T, ord2::T) where {T <: Union{_Lex, _DegLex, _DegRevLex}} =
+    variable_indices(ord1) == variable_indices(ord2)
+
 # Maintains a list of variable indices and their weights.
 struct _WeightedOrdering{T} <: AbstractInternalOrdering
     indices::Vector{Int}
@@ -55,6 +58,9 @@ struct _WeightedOrdering{T} <: AbstractInternalOrdering
 end
 
 variable_indices(o::_WeightedOrdering) = o.indices
+
+Base.isequal(ord1::T, ord2::T) where {T <: _WeightedOrdering} =
+    ord1.indices == ord2.indices && ord1.weights == ord2.weights
 
 # A product of two orderings.
 struct _ProductOrdering{O1 <: AbstractInternalOrdering, O2 <: AbstractInternalOrdering} <:
@@ -74,6 +80,9 @@ end
 variable_indices(o::_ProductOrdering) =
     union(variable_indices(o.ord1), variable_indices(o.ord2))
 
+Base.isequal(ord1::T, ord2::T) where {T <: _ProductOrdering} =
+    ord1.ord1 == ord2.ord1 && ord1.ord2 == ord2.ord2
+
 struct _MatrixOrdering{T} <: AbstractInternalOrdering
     indices::Vector{Int}
     rows::Vector{Vector{T}}
@@ -84,6 +93,9 @@ struct _MatrixOrdering{T} <: AbstractInternalOrdering
 end
 
 variable_indices(o::_MatrixOrdering) = o.indices
+
+Base.isequal(ord1::T, ord2::T) where {T <: _MatrixOrdering} =
+    ord1.indices == ord2.indices && ord1.rows == ord2.rows
 
 function check_ordering_consistency(
     var_to_index::Dict{V, Int},

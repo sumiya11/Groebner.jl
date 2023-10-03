@@ -274,7 +274,6 @@ function select_tobereduced!(
         matrix.coeffs[matrix.nrows] = tobereduced.coeffs[i]
     end
 
-    basis.nfilled
     basis.nnonredundant = basis.nprocessed = basis.nfilled
     basis.isredundant .= 0
     @inbounds for i in 1:(basis.nnonredundant)
