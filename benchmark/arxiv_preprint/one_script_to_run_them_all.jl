@@ -368,6 +368,7 @@ function run_benchmarks(args)
     processes = []
     running = []
     errored = []
+    timedout = []
 
     generate_showvalues(processes) =
         () -> [(
@@ -453,6 +454,7 @@ function run_benchmarks(args)
                     kill(proc.julia_process)
                     close(proc.logfile)
                     # close(proc.errfile)
+                    push!(timedout, proc)
                     next!(
                         prog,
                         showvalues = generate_showvalues(running),
@@ -476,6 +478,14 @@ function run_benchmarks(args)
         end
     end
     finish!(prog)
+
+    if !isempty(timedout)
+        printstyled("(!) Timed-out:\n", color=:light_yellow)
+        for proc in timedout
+            print("$(proc.problem_name), ")
+        end
+        println()
+    end
 
     if !isempty(errored)
         printstyled("(!) Maybe errored:\n", color=:light_red)
@@ -555,7 +565,11 @@ function validate_results(args, problem_names)
         end
         # At this point, the recently computed basis is stored in `result`
         @assert result_exists
-        result_validation_hash = compute_basis_validation_hash(result)
+        success, result_validation_hash = compute_basis_validation_hash(result)
+        if !success
+            @warn "Bad file encountered at $problem_result_path. Skipping"
+            continue
+        end
         if update_certificates || !true_result_exists
             mkpath("$validate_dir/$problem_name/")
             true_result_file = open(problem_validate_path, "w")
@@ -567,7 +581,7 @@ function validate_results(args, problem_names)
         @assert is_certificate_standardized(result_validation_hash)
         @assert is_certificate_standardized(true_result)
         if result_validation_hash != true_result
-            printstyled("\tWRONG RESULT\n", color=:light_red)
+            printstyled("\tWRONG HASH\n", color=:light_red)
             println("True certificate:\n$true_result")
             println("Current certificate:\n$result_validation_hash")
         else

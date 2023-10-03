@@ -73,22 +73,30 @@ end
 #! format: on
 
 using Nemo, AbstractAlgebra, Primes
-R, (x, y) = PolynomialRing(QQ, ["x", "y"], ordering=:degrevlex)
+using BenchmarkTools
+R, (x, y) =
+    AbstractAlgebra.PolynomialRing(AbstractAlgebra.QQ, ["x", "y"], ordering=:degrevlex)
 
-Groebner.logging_enabled() = false
+Groebner.logging_enabled() = true
 Groebner.invariants_enabled() = false
 
-AbstractAlgebra.crt
+K = AbstractAlgebra.GF(2^30 + 3)
+
+kat_10_msolve = katsura_10_msolve(K);
+kat_11_msolve = katsura_11_msolve(K);
+kat_12_msolve = katsura_12_msolve(K);
+
+@btime Groebner.groebner($kat_10_msolve, loglevel=0);
+@btime Groebner.groebner($kat_11_msolve, loglevel=0);
+@btime Groebner.groebner($kat_12_msolve, loglevel=0);
 
 p = prod(Primes.nextprimes(BigInt(2^30), 1000))
 @profview gb = Groebner.groebner([y + p], loglevel=-1);
 @assert gb == [y + p]
 
 1
-K = GF(2^30 + 3)
 
 k = Groebner.katsuran(11, ground=K, ordering=:degrevlex)
-kat_10_msolve = katsura_10_msolve(K)
 kat_11_msolve = katsura_11_msolve(K)
 kat_12_msolve = katsura_12_msolve(K)
 kat_13_msolve = katsura_13_msolve(K)

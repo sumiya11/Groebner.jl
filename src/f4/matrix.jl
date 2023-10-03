@@ -305,7 +305,6 @@ Used for assessing if all S-polynomials reduce to zero modulo a basis.
 function linear_algebra_isgroebner! end
 
 function linear_algebra!(matrix, basis, params, graph=nothing; linalg::Symbol=:auto)
-    @log level = -3 repr_matrix(matrix)
     # @invariant matrix_well_formed(:linear_algebra!, matrix)
     if linalg === :auto
         linalg = params.linalg
@@ -360,8 +359,6 @@ function linear_algebra_reducegb!(
 )
     sort_matrix_upper_rows!(matrix)
 
-    @log level = -3 repr_matrix(matrix)
-
     arithmetic = params.arithmetic
     if linalg === :auto
         linalg = params.linalg
@@ -400,6 +397,7 @@ end
 
 function linear_algebra_normalform!(matrix, basis, arithmetic)
     sort_matrix_upper_rows!(matrix)
+    @log level = -3 "linear_algebra_normalform!"
     @log level = -3 repr_matrix(matrix)
     resize!(matrix.coeffs, matrix.nlower)
     reduce_matrix_lower_part_invariant_pivots!(matrix, basis, arithmetic)
@@ -408,6 +406,7 @@ end
 function linear_algebra_isgroebner!(matrix, basis, arithmetic)
     sort_matrix_upper_rows!(matrix)
     sort_matrix_lower_rows!(matrix)
+    @log level = -3 "linear_algebra_isgroebner!"
     @log level = -3 repr_matrix(matrix)
     reduce_matrix_lower_part_any_nonzero!(matrix, basis, arithmetic)
 end
@@ -422,6 +421,8 @@ function deterministic_sparse_linear_algebra!(
 ) where {C <: Coeff, A <: AbstractArithmetic}
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
+    @log level = -3 "deterministic_sparse_linear_algebra!"
+    @log level = -3 repr_matrix(matrix)
     # Reduce CD with AB
     reduce_matrix_lower_part!(matrix, basis, arithmetic)
     # Interreduce CD
@@ -436,6 +437,8 @@ function randomized_sparse_linear_algebra!(
 ) where {C <: Coeff, A <: AbstractArithmetic}
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
+    @log level = -3 "randomized_sparse_linear_algebra!"
+    @log level = -3 repr_matrix(matrix)
     # Reduce CD with AB
     randomized_reduce_matrix_lower_part!(matrix, basis, arithmetic, rng)
     # Interreduce CD
@@ -450,6 +453,8 @@ function learn_sparse_linear_algebra!(
 ) where {C <: Coeff, A <: AbstractArithmetic}
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
+    @log level = -3 "learn_sparse_linear_algebra!"
+    @log level = -3 repr_matrix(matrix)
     # Reduce CD with AB
     learn_reduce_matrix_lower_part!(graph, matrix, basis, arithmetic)
     # Interreduce CD
@@ -465,6 +470,8 @@ function apply_sparse_linear_algebra!(
     # NOTE: here, we do not need to sort the rows, as they have already been
     # collected in the right order
     sort_matrix_lower_rows!(matrix) # for the CD part
+    @log level = -3 "apply_sparse_linear_algebra!"
+    @log level = -3 repr_matrix(matrix)
     # Reduce CD with AB
     flag = apply_reduce_matrix_lower_part!(graph, matrix, basis, arithmetic)
     if !flag
@@ -479,6 +486,8 @@ function deterministic_sparse_interreduction!(
     basis::Basis{C},
     arithmetic::A
 ) where {C <: Coeff, A <: AbstractArithmetic}
+    @log level = -3 "deterministic_sparse_interreduction!"
+    @log level = -3 repr_matrix(matrix)
     # Prepare the matrix
     absolute_index_pivots_in_interreduction!(matrix, basis)
     # Interreduce AB
@@ -492,6 +501,8 @@ function learn_deterministic_sparse_interreduction!(
     basis::Basis{C},
     arithmetic::A
 ) where {C <: Coeff, A <: AbstractArithmetic}
+    @log level = -3 "learn_deterministic_sparse_interreduction!"
+    @log level = -3 repr_matrix(matrix)
     # Prepare the matrix
     absolute_index_pivots_in_interreduction!(matrix, basis)
     # Interreduce AB
@@ -505,6 +516,8 @@ function apply_deterministic_sparse_interreduction!(
     basis::Basis{C},
     arithmetic::A
 ) where {C <: Coeff, A <: AbstractArithmetic}
+    @log level = -3 "apply_deterministic_sparse_interreduction!"
+    @log level = -3 repr_matrix(matrix)
     # Prepare the matrix
     absolute_index_pivots_in_interreduction!(matrix, basis)
     # Interreduce AB
@@ -787,6 +800,11 @@ function randomized_reduce_matrix_lower_part!(
     nblocks = nblocks_in_randomized(nlow)
     rem = nlow % nblocks == 0 ? 0 : 1
     rowsperblock = div(nlow, nblocks) + rem
+    @log level = -3 """
+    Rows in the lower part: $nlow
+    The bumber of blocks: $nblocks
+    Rows per block: $rowsperblock"""
+    nnz_counter = 0
 
     row = zeros(C, ncols)
     rows_multipliers = zeros(C, rowsperblock)
@@ -835,7 +853,7 @@ function randomized_reduce_matrix_lower_part!(
                 ctr = nrowstotal
                 break
             end
-
+            nnz_counter += 1
             absolute_i = (i - 1) * rowsperblock + ctr + 1
 
             # matrix coeffs sparsely stores coefficients of new row
@@ -854,6 +872,7 @@ function randomized_reduce_matrix_lower_part!(
             new_column_indices, new_coeffs = new_empty_sparse_row(C)
         end
     end
+    @log level = -3 "Nonzero rows: $nnz_counter (out of $nlow)"
     true
 end
 
