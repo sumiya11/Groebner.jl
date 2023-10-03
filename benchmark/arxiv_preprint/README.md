@@ -8,7 +8,7 @@ The definitions of benchmark systems can be found in `generate/benchmark_systems
 
 Benchmark results will be printed to the stdout and also written to a table in the `results` directory.
 
-Computed Groebner bases will be verified against the correct Groebner bases (or rather, against short certificates).
+Computed Groebner bases will be verified against the correct Groebner bases (or, rather, against short certificates that are assumed to be correct).
 
 ## Groebner.jl
 
