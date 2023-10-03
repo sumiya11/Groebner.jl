@@ -112,15 +112,13 @@ end
     bug(gens, exps)
 end
 
-#! format: off
 @testset "regression, column order in normalform" begin
-    P, (x1,x2) = PolynomialRing(GF(1119649), ["x1", "x2"])
-    
+    P, (x1, x2) = PolynomialRing(GF(1119649), ["x1", "x2"])
+
     gb = [x1 + 1]
     f = x1 + x2^2
     f_nf = Groebner.normalform(gb, f, ordering=Groebner.DegRevLex())
-    residual = Groebner.normalform(gb, f - f_nf, ordering = Groebner.DegRevLex())
+    residual = Groebner.normalform(gb, f - f_nf, ordering=Groebner.DegRevLex())
 
     @test iszero(residual)
 end
-#! format: on
