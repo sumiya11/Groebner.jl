@@ -4,6 +4,11 @@ import Random
 
 @testset "homogenization, basic" begin
     for field in [GF(113), GF(2^62 + 135), QQ]
+        R, x = PolynomialRing(field, "x")
+        @test Groebner.groebner([x^2 - 1, (x + 1) * x^2], homogenize=:yes) == [x + 1]
+        @test Groebner.groebner([x^2 - 1, (x + 1) * x^2], homogenize=:no) == [x + 1]
+        @test Groebner.groebner([x^2 - 1, (x + 1) * x^2], homogenize=:auto) == [x + 1]
+
         for ordering in [:lex, :deglex, :degrevlex]
             R, (x, y) = PolynomialRing(field, ["x", "y"], ordering=ordering)
 
