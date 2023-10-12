@@ -110,7 +110,13 @@ function AlgorithmParameters(
         true
     else
         if kwargs.homogenize === :auto
-            computation_ord isa Lex || computation_ord isa ProductOrdering
+            if ring.nvars <= 1
+                false
+            elseif computation_ord isa Lex || computation_ord isa ProductOrdering
+                true
+            else
+                false
+            end
         else
             false
         end

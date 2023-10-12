@@ -13,7 +13,11 @@
         arr = [x, y]
         gb = groebner(arr)
         isgroebner(arr)
-        normalform(arr, [x, y])
+        normalform(arr, arr)
+
+        R, (x, y) = AbstractAlgebra.PolynomialRing(AbstractAlgebra.GF(2^31 - 1), ["x", "y"])
+        arr = [x, y]
+        gb = groebner(arr, ordering=DegRevLex())
     end
 end
 

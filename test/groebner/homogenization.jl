@@ -14,6 +14,11 @@ import Random
             @test Groebner.groebner([x, y], homogenize=:yes) == [y, x]
             @test Groebner.isgroebner(Groebner.groebner([x + 1, y + 2], homogenize=:yes))
 
+            if ordering === :lex
+                gb = Groebner.groebner([x + y^2, x^2 - 1], homogenize=:yes)
+                @test (y^4 - 1) in gb && (x + y^2) in gb
+            end
+
             for case in [
                 Groebner.katsuran(2, ground=field, ordering=ordering),
                 Groebner.katsuran(3, ground=field, ordering=ordering),
