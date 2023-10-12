@@ -9,8 +9,6 @@ using Statistics
 logger = Logging.ConsoleLogger(stdout, Logging.Info)
 global_logger(logger)
 
-include("../utils.jl")
-
 const runtime = Dict()
 
 const PROBLEM_NAME = ARGS[1]
@@ -44,7 +42,7 @@ function process_system()
         outputfile =
             VALIDATE ? (@__DIR__) * "/$BENCHMARK_DIR/$PROBLEM_NAME/$(output_filename())" :
             "/dev/null"
-        cmd = Cmd(`msolve -g 2 -l 44 -c 0 -f $problemfile -o $outputfile`)
+        cmd = Cmd(`msolve -g 2 -l 44 -c 0 -f $problemfile -o $outputfile`, detach=false)
         timing = @timed proc = run(cmd, wait=true)
         @assert process_exited(proc)
         if proc.exitcode != 0

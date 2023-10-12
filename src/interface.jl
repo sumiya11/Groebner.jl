@@ -205,7 +205,7 @@ Computes the normal form of polynomials `tobereduced` w.r.t `basis`.
 ## Possible Options
 
 The `normalform` routine takes the following optional arguments:
-- `check`: Check if the given array `basis` forms a Groebner basis (default is `true`).
+- `check`: Check if the given array `basis` forms a Groebner basis (default is `false`).
 - `ordering`: Specifies the monomial ordering. Available monomial orderings are: 
     - `InputOrdering()` for inferring the ordering from the given `polynomials`
       (default), 
@@ -247,7 +247,7 @@ Computes the basis of the quotient ideal of `basis` as a vector space.
 ## Possible Options
 
 The `kbase` routine takes the following optional arguments:
-- `check`: Check if the given array `basis` forms a Groebner basis (default is `true`).
+- `check`: Check if the given array `basis` forms a Groebner basis (default is `false`).
 - `loglevel`: Logging level, an integer. Higher values mean less verbose.
     Default value is `0`, which means that only warnings are printed. Set
     `loglevel` to negative values, e.g., `-1`, for debugging.

@@ -8,7 +8,7 @@ The definitions of benchmark systems can be found in `generate/benchmark_systems
 
 Benchmark results will be printed to the stdout and also written to a table in the `results` directory.
 
-Computed Groebner bases will be verified against the correct Groebner bases (or rather, against short certificates).
+Computed Groebner bases will be verified against the correct Groebner bases (or, rather, against short certificates that are assumed to be correct).
 
 ## Groebner.jl
 
@@ -25,7 +25,7 @@ Computed Groebner bases will be verified against the correct Groebner bases (or 
 julia one_script_to_run_them_all.jl groebner
 ```
 
-**NOTE:** It is possible to specify some command-line options (these are valid for all software benchmarked here). For example, the following command
+It is possible to specify some command-line options (these are available for all benchmarked software). For example, the following command
 
 ```
 julia one_script_to_run_them_all.jl groebner --timeout=600 --nworkers=20 --nruns=3 --validate=yes --benchmark=2

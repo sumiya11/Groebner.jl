@@ -1,19 +1,28 @@
 ## Benchmark results
 
-2023-10-03T19:45:21.112
+2023-10-03T20:44:04.983
 
 Benchmarked backend: singular
-Benchmark suite: dummy set
+Benchmark suite: The rationals
 
-- Workers: 4
-- Timeout: 60 s
+- Workers: 20
+- Timeout: 1200 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total|
 |-----|---|
+|cyclic 7| - |
+|cyclic 8| - |
 |dummy|0.00|
+|eco 10|29.41|
+|eco 11| - |
+|henrion 6|4.05|
+|katsura 10| - |
+|katsura 9|127.50|
+|noon 8|10.66|
+|noon 9|109.81|
 
 *Benchmarking environment:*
 

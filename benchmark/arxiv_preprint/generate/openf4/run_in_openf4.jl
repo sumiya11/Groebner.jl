@@ -9,8 +9,6 @@ using Statistics
 logger = Logging.ConsoleLogger(stdout, Logging.Info)
 global_logger(logger)
 
-include("../utils.jl")
-
 const runtime = Dict()
 
 const PROBLEM_NAME = ARGS[1]
@@ -42,7 +40,8 @@ function process_system()
 
     problempath = (@__DIR__) * "/$BENCHMARK_DIR/$PROBLEM_NAME/"
     cmd_compille = Cmd(
-        `g++ $(problempath)$(PROBLEM_NAME).cpp -I/$LIB_PATH_NORM/include/ -L/$LIB_PATH_NORM/lib/ -lopenf4 -Wl,-rpath=/$LIB_PATH_NORM/lib/ -o $(problempath)$(PROBLEM_NAME)`
+        `g++ $(problempath)$(PROBLEM_NAME).cpp -I/$LIB_PATH_NORM/include/ -L/$LIB_PATH_NORM/lib/ -lopenf4 -Wl,-rpath=/$LIB_PATH_NORM/lib/ -o $(problempath)$(PROBLEM_NAME)`,
+        detach=false
     )
     proc = run(cmd_compille, wait=true)
     if proc.exitcode != 0

@@ -58,9 +58,10 @@ function process_system()
             output_file = open(output_fn, "w")
             ring = parent(system[1])
             vars_str = join(map(repr, AbstractAlgebra.gens(ring)), ", ")
+            system_str = join(map(repr, result), ",\n")
             println(output_file, vars_str)
             println(output_file, AbstractAlgebra.characteristic(base_ring(ring)))
-            println(output_file, join(map(repr, result), ",\n"))
+            println(output_file, system_str)
             close(output_file)
         end
         # for cat in ID_TIME_CATEGORIES

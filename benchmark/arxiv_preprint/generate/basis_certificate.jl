@@ -1,4 +1,5 @@
 import Nemo
+using SHA
 
 function extract_ring(line1, line2)
     vars_str = map(f -> string(strip(f, [',', ' ', '\t'])), split(line1, ","))
@@ -65,8 +66,11 @@ end
 
 function parse_system_naive(result::String)
     lines = getlines_backend_dependent(result)
-    @assert length(lines) > 2
+    @assert length(lines) >= 2
     base_field, ring_nemo, vars_nemo = extract_ring(lines[1], lines[2])
+    if length(lines) == 2
+        return ring_nemo, []
+    end
     polys_str = map(s -> string(strip(s, [' ', ',', '\t'])), lines[3:end])
     polys_str = filter(!isempty, polys_str)
     str_to_var = Dict{String, Nemo.elem_type(ring_nemo)}(string(v) => v for v in vars_nemo)
@@ -159,8 +163,23 @@ for parse_system in [parse_system_naive]
     @assert flag1 && flag2 && flag3 "Parsing routine $parse_system is broken for openf4"
 end
 
+function hash_polynomial(poly, h)
+    poly_str = repr(poly)
+    sha3_256(poly_str)
+end
+
 function get_certificate(ring, polys)
-    length(polys)
+    filter!(!iszero, polys)
+    @assert !isempty(polys)
+    sort!(polys, by=Nemo.leading_monomial)
+    polys = map(poly -> Nemo.divexact(poly, Nemo.leading_coefficient(poly)), polys)
+    h = map(i -> UInt8(0), 1:32)
+    for (i, poly) in enumerate(polys)
+        i_8 = i % UInt8
+        h = i_8 .⊻ hash_polynomial(poly, h)
+    end
+    certificate = bytes2hex(h)
+    certificate
 end
 
 function is_certificate_standardized(certificate)
@@ -174,6 +193,9 @@ end
 
 function compute_basis_validation_hash(result)
     ring, polys = parse_system_naive(result)
+    if isempty(polys)
+        return false, ""
+    end
     certificate = get_certificate(ring, polys)
-    standardize_certificate(certificate)
+    true, standardize_certificate(certificate)
 end

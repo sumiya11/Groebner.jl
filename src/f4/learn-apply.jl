@@ -378,7 +378,6 @@ end
 
 function reduction_learn!(graph, basis, matrix, hashtable, symbol_ht, params)
     column_to_monom_mapping!(matrix, symbol_ht)
-    @log level = -3 repr_matrix(matrix)
     linear_algebra!(matrix, basis, params, graph, linalg=:learn)
     @log level = -6 "After linear algebra" matrix
     convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht)

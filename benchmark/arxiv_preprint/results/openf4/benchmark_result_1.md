@@ -1,12 +1,12 @@
 ## Benchmark results
 
-2023-09-27T01:43:48.858
+2023-10-03T19:59:45.568
 
 Benchmarked backend: openf4
 Benchmark suite: Integers modulo 2^30 + 3
 
-- Workers: 16
-- Timeout: 100 s
+- Workers: 20
+- Timeout: 10 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
@@ -14,26 +14,26 @@ Benchmark suite: Integers modulo 2^30 + 3
 |Model|Total|
 |-----|---|
 |cyclic 10| - |
-|cyclic 7|0.35|
-|cyclic 8|7.31|
+|cyclic 7| - |
+|cyclic 8| - |
 |cyclic 9| - |
-|dummy|0.01|
-|eco 11|1.46|
-|eco 12|8.31|
+|dummy| - |
+|eco 11| - |
+|eco 12| - |
 |eco 13| - |
 |eco 14| - |
-|henrion 5|0.03|
-|henrion 6|0.24|
-|henrion 7|20.36|
-|katsura 10|4.88|
-|katsura 11|31.29|
+|henrion 5| - |
+|henrion 6| - |
+|henrion 7| - |
+|katsura 10| - |
+|katsura 11| - |
 |katsura 12| - |
 |katsura 13| - |
-|noon 7|1.00|
-|noon 8|10.99|
+|noon 7| - |
+|noon 8| - |
 |noon 9| - |
-|reimer 6|0.19|
-|reimer 7|4.31|
+|reimer 6| - |
+|reimer 7| - |
 |reimer 8| - |
 |reimer 9| - |
 

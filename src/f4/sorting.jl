@@ -224,11 +224,9 @@ function sort_matrix_lower_rows!(matrix::MacaulayMatrix)
     matrix
 end
 
-# Sorts the columns of the matrix (encoded in `column_to_monom` vector) by the role of
-# the corresponding monomial in the matrix, and then by the current monomial
-# ordering decreasingly.
-#
-# See f4/matrix.jl for details
+# Sorts the columns of the matrix (encoded in `column_to_monom` vector) by the
+# role of the corresponding monomial in the matrix, and then by the current
+# monomial ordering decreasingly.
 function sort_columns_by_labels!(
     column_to_monom::Vector{T},
     symbol_ht::MonomialHashtable
