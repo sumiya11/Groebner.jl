@@ -17,7 +17,7 @@ using AbstractAlgebra, Groebner
 global_logger(Logging.ConsoleLogger(stdout, Logging.Info))
 
 # Load benchmark systems
-include("generate/benchmark_systems.jl")
+include("benchmark_systems.jl")
 
 # Load the code to generate benchmarks for different software
 include("generate/benchmark_generators.jl")
@@ -64,7 +64,7 @@ function parse_commandline()
             default = 1
         "--validate"
             help = """
-            Validate the output bases against the (presumably) correct ones.
+            Validate the output bases against the correct ones.
             This can result in a slowdown for some of the backends.
                 
             Possible options are:
@@ -80,7 +80,7 @@ function parse_commandline()
         "--timeout"
             help = "Timeout, s."
             arg_type = Int
-            default = 600
+            default = 60
         "--nworkers"
             help = "The number of worker processes."
             arg_type = Int

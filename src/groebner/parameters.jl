@@ -123,6 +123,19 @@ function AlgorithmParameters(
     end
     #
     linalg = kwargs.linalg
+    if !iszero(ring.ch)
+        # Do not use randomized linear algebra if the field characteristic is
+        # too small. TODO: In the future, it would be good to adapt randomized
+        # linear algebra to this case
+        if ring.ch < 5000
+            if linalg === :randomized
+                @log level = -1 """
+                Switching from randomized linear algebra to a deterministic one.
+                Reason: the field characteristic is too small."""
+                linalg = :deterministic
+            end
+        end
+    end
     arithmetic = select_arithmetic(ring.ch, representation.coefftype)
     ground = :zp
     if iszero(ring.ch)

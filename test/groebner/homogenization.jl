@@ -49,7 +49,7 @@ end
             (system=[x, y, z], ord=Groebner.Lex()),
             (system=[x, y, z], ord=Groebner.Lex(z) * Groebner.Lex(x, y)),
             # TODO: uncomment once this is fixed: https://github.com/sumiya11/Groebner.jl/issues/78
-            # (system=[x^2 + 1, x * y + 2, y * z + 3], ord=Groebner.DegLex()),
+            (system=[x^2 + 1, x * y + 2, y * z + 3], ord=Groebner.DegLex()),
             (
                 system=[x^20 - x^15 - x^5 + y * z, x * y^10 + x^3 * y^3 + x * y],
                 ord=Groebner.DegRevLex()
@@ -83,7 +83,7 @@ end
             gb2 = Groebner.groebner(system, ordering=ord, homogenize=:yes)
 
             # TODO: uncomment once this is fixed: https://github.com/sumiya11/Groebner.jl/issues/78
-            # @test Groebner.isgroebner(gb1, ordering=ord)
+            @test Groebner.isgroebner(gb1, ordering=ord)
 
             @test gb1 == gb2
 

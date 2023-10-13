@@ -1,6 +1,6 @@
 ## Benchmark results
 
-2023-10-03T19:35:39.241
+2023-10-13T14:13:57.207
 
 Benchmarked backend: groebner
 Benchmark suite: Integers modulo 2^30 + 3
@@ -14,33 +14,32 @@ Benchmark suite: Integers modulo 2^30 + 3
 |Model|Total|
 |-----|---|
 |cyclic 10| - |
-|cyclic 7|0.09|
-|cyclic 8|1.18|
+|cyclic 7| - |
+|cyclic 8|2.59|
 |cyclic 9| - |
-|dummy|0.00|
-|eco 11|0.32|
-|eco 12|1.82|
-|eco 13|8.52|
-|eco 14| - |
-|henrion 5|0.00|
-|henrion 6|0.03|
-|henrion 7|1.90|
-|katsura 10|0.74|
-|katsura 11|4.45|
-|katsura 12|32.09|
-|katsura 13|219.01|
-|noon 7|0.16|
-|noon 8|1.66|
-|noon 9|15.87|
-|reimer 6|0.04|
-|reimer 7|0.66|
-|reimer 8|16.88|
-|reimer 9|681.04|
+|dummy| - |
+|eco 11| - |
+|eco 12| - |
+|eco 13| - |
+|henrion 5| - |
+|henrion 6|0.12|
+|henrion 7| - |
+|katsura 10| - |
+|katsura 11| - |
+|katsura 12| - |
+|katsura 13| - |
+|noon 7|0.58|
+|noon 8| - |
+|noon 9| - |
+|reimer 6| - |
+|reimer 7|1.88|
+|reimer 8| - |
+|reimer 9| - |
 
 *Benchmarking environment:*
 
-* Total RAM (GiB): 2003
-* Processor: AMD EPYC 7702 64-Core Processor                
+* Total RAM (GiB): 7
+* Processor: Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz
 * Julia version: 1.9.1
 
 Versions of the dependencies:

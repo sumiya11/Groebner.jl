@@ -187,7 +187,7 @@ function convert_to_internal(
     kws::KeywordsHandler;
     dropzeros=true
 )
-    check_input(polynomials)
+    check_input(polynomials, kws)
     # NOTE: Input polynomials must not be modified.
     @log level = -2 "Converting input polynomials to internal representation.."
     ring = extract_ring(polynomials)
@@ -206,13 +206,13 @@ function convert_to_internal(
     ring, var_to_index, monoms, coeffs
 end
 
-function check_input(polynomials)
+function check_input(polynomials, kws)
     if isempty(polynomials)
-        __throw_input_not_supported(polynomials, "Empty input polynomials")
+        __throw_input_not_supported(polynomials, "Empty input array.")
     end
     # TODO: check that there are no parameters
     # TODO: check that the ground field is Z_p or QQ
-    nothing
+    true
 end
 
 function extract_polys(

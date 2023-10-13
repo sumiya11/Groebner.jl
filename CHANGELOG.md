@@ -1,3 +1,10 @@
+## Groebner v0.4.5 Release notes
+
+A couple of bugfixes.
+
+Versions of dependencies:
+- Updated dependency on AbstractAlgebra.jl.
+
 ## Groebner v0.4.4 Release notes
 
 Now Groebner.jl has a logo!

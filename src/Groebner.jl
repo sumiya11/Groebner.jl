@@ -133,8 +133,10 @@ include("groebner/autoreduce.jl")
 include("groebner/homogenization.jl")
 
 #= generic fglm implementation =#
+# NOTE: this is currently not exported, and is only for internal use
 include("fglm/linear.jl")
 include("fglm/fglm.jl")
+include("fglm/kbase.jl")
 
 # API
 include("interface.jl")

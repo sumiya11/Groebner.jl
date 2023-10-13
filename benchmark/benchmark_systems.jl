@@ -5,18 +5,9 @@ function get_benchmark(code)
         benchmark_set_1()
     elseif code == 2
         benchmark_set_2()
-    else
-        (
-            name="dummy set",
-            field=AbstractAlgebra.QQ,
-            systems=[dummy_system(AbstractAlgebra.QQ), dummy_system(AbstractAlgebra.QQ)]
-        )
+    elseif code == 3
+        dummy_set_3()
     end
-end
-
-function dummy_system(ground_field)
-    ring, (x, y) = AbstractAlgebra.PolynomialRing(ground_field, ["x", "y"])
-    ("dummy", [x^2 + y^2 - 1, x + y])
 end
 
 function benchmark_set_1()
@@ -35,7 +26,7 @@ function benchmark_set_1()
         ("eco 11", Groebner.eco11(ground=ground_field)),
         ("eco 12", Groebner.eco12(ground=ground_field)),
         ("eco 13", Groebner.eco13(ground=ground_field)),
-        ("eco 14", Groebner.eco14(ground=ground_field)),
+        # ("eco 14", Groebner.eco14(ground=ground_field)),
         ("noon 7", Groebner.noonn(7, ground=ground_field)),
         ("noon 8", Groebner.noonn(8, ground=ground_field)),
         ("noon 9", Groebner.noonn(9, ground=ground_field)),
@@ -67,4 +58,17 @@ function benchmark_set_2()
     ]
 
     (name="The rationals", field=ground_field, systems=systems)
+end
+
+function dummy_system(ground_field)
+    ring, (x, y) = AbstractAlgebra.PolynomialRing(ground_field, ["x", "y"])
+    ("dummy", [x^2 + y^2 - 1, x + y])
+end
+
+function dummy_set_3()
+    (
+        name="dummy set",
+        field=AbstractAlgebra.QQ,
+        systems=[dummy_system(AbstractAlgebra.QQ), dummy_system(AbstractAlgebra.QQ)]
+    )
 end
