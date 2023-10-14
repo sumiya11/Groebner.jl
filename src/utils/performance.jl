@@ -86,6 +86,7 @@ const _perf_counters = Vector{PerfCounterRecord}()
 const _perf_id_to_index = Dict{Any, Int}()
 
 function refresh_performance_counters!()
+    threadid() != 1 && return nothing
     for record in _perf_counters
         refresh_counter!(record)
     end

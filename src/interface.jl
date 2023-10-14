@@ -4,6 +4,12 @@
 
 Computes a Groebner basis of `polynomials`.
 
+The `polynomials` must be an array of polynomials from `AbstractAlgebra.jl`,
+`Nemo.jl`, or `DynamicPolynomials.jl`. For `AbstractAlgebra.jl` and `Nemo.jl`,
+the coefficients of polynomials must be either in `GF(p)` or in `QQ`.
+
+This function is thread-safe.
+
 ## Possible Options
 
 The `groebner` routine takes the following optional arguments:
@@ -37,8 +43,8 @@ The `groebner` routine takes the following optional arguments:
 - `seed`: The seed for randomization. Default value is `42`. Groebner uses
     `Random.Xoshiro` and `Random.MersenneTwister` for random number generation.
 - `loglevel`: Logging level, an integer. Higher values mean less verbose.
-    Default value is `0`, which means that only info and warnings are printed.
-    Set `loglevel` to negative values, e.g., `-1`, for debugging.
+    Default value is `0`, which means that only warnings are printed. Set
+    `loglevel` to negative values, e.g., to `-3`, for debugging.
 - `maxpairs`: The maximum number of critical pairs used at once in matrix
     construction in the F4 algorithm. By default, this is not specified. Tweak
     this option to try to lower the amount of RAM consumed.

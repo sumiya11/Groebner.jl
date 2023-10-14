@@ -20,7 +20,8 @@ const _supported_kw_args = (
         selection   = :auto,
         modular     = :classic_modular,
         sweep       = false,
-        homogenize  = :auto
+        homogenize  = :auto,
+        statistics  = false
     ),
     normalform = (
         check    = false,
@@ -80,6 +81,7 @@ struct KeywordsHandler{Ord}
     check::Bool
     sweep::Bool
     homogenize::Symbol
+    statistics::Bool
 
     function KeywordsHandler(function_key, kws)
         @assert haskey(_supported_kw_args, function_key)
@@ -109,6 +111,7 @@ struct KeywordsHandler{Ord}
         check = get(kws, :check, get(default_kw_args, :check, true))
         sweep = get(kws, :sweep, get(default_kw_args, :sweep, false))
         homogenize = get(kws, :homogenize, get(default_kw_args, :homogenize, :auto))
+        statistics = get(kws, :statistics, get(default_kw_args, :statistics, false))
         @log level = -1 """
           Using keywords: 
           reduced    = $reduced, 
@@ -123,7 +126,8 @@ struct KeywordsHandler{Ord}
           modular   = $modular,
           check      = $check,
           sweep      = $sweep
-          homogenize = $homogenize"""
+          homogenize = $homogenize
+          statistics = $statistics"""
         new{typeof(ordering)}(
             reduced,
             ordering,
@@ -137,7 +141,8 @@ struct KeywordsHandler{Ord}
             modular,
             check,
             sweep,
-            homogenize
+            homogenize,
+            statistics
         )
     end
 end
