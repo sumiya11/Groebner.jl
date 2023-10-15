@@ -45,6 +45,10 @@ using Logging
 import MultivariatePolynomials
 import MultivariatePolynomials: AbstractPolynomial, AbstractPolynomialLike
 
+# For printing the tables with statistics in the console nicely
+import PrettyTables
+using Printf
+
 import Primes
 import Primes: nextprime
 
@@ -52,9 +56,11 @@ import Random
 
 using SIMD
 
+include("utils/prettyprinting.jl")
 include("utils/logging.jl")
 include("utils/invariants.jl")
 include("utils/performance.jl")
+include("utils/statistics.jl")
 
 # Minimalistic plotting with Unicode
 include("utils/plots.jl")

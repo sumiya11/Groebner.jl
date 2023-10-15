@@ -1,6 +1,8 @@
+# Adapted from and entirely inspired by UnicodePlots.jl.
+# The licence is MIT.
+# https://github.com/JuliaPlots/UnicodePlots.jl/blob/master/LICENSE.md
+
 # Automatic plotting of the sparsity pattern of F4 matrices
-#
-# Adapted from and entirely inspired by UnicodePlots.jl 
 
 const UnicodeType = UInt32
 

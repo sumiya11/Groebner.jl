@@ -21,7 +21,7 @@ const _supported_kw_args = (
         modular     = :classic_modular,
         sweep       = false,
         homogenize  = :auto,
-        statistics  = false
+        statistics  = :no
     ),
     normalform = (
         check    = false,
@@ -81,7 +81,7 @@ struct KeywordsHandler{Ord}
     check::Bool
     sweep::Bool
     homogenize::Symbol
-    statistics::Bool
+    statistics::Symbol
 
     function KeywordsHandler(function_key, kws)
         @assert haskey(_supported_kw_args, function_key)
@@ -99,7 +99,7 @@ struct KeywordsHandler{Ord}
         seed = get(kws, :seed, get(default_kw_args, :seed, 42))
         loglevel = get(kws, :loglevel, get(default_kw_args, :loglevel, 0))
         update_logger(loglevel=loglevel)
-        if loglevel <= -1
+        if loglevel <= 0
             refresh_performance_counters!()
         end
         maxpairs = get(kws, :maxpairs, get(default_kw_args, :maxpairs, typemax(Int)))
@@ -111,7 +111,8 @@ struct KeywordsHandler{Ord}
         check = get(kws, :check, get(default_kw_args, :check, true))
         sweep = get(kws, :sweep, get(default_kw_args, :sweep, false))
         homogenize = get(kws, :homogenize, get(default_kw_args, :homogenize, :auto))
-        statistics = get(kws, :statistics, get(default_kw_args, :statistics, false))
+        statistics = get(kws, :statistics, get(default_kw_args, :statistics, :no))
+        @assert statistics in (:no, :timings, :all)
         @log level = -1 """
           Using keywords: 
           reduced    = $reduced, 

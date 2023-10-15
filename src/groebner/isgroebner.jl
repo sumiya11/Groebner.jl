@@ -39,7 +39,7 @@ function _isgroebner(
         Keyword argument `certify=true` was provided. 
         Checking that the given input is a Groebner basis directly over the rationals"""
         flag = f4_isgroebner!(ring, basis, pairset, hashtable, params.arithmetic)
-        @log_performance_counters
+        # @log_performance_counters
         return flag
     end
     # Otherwise, check modulo a prime
@@ -53,6 +53,6 @@ function _isgroebner(
     ring_ff, basis_ff = reduce_modulo_p!(buffer, ring, basis_zz, prime, deepcopy=true)
     arithmetic = select_arithmetic(prime, CoeffModular)
     flag = f4_isgroebner!(ring_ff, basis_ff, pairset, hashtable, arithmetic)
-    @log_performance_counters
+    # @log_performance_counters
     flag
 end

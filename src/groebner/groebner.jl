@@ -50,9 +50,10 @@ function _groebner(polynomials, kws::KeywordsHandler, representation)
         ring, gbmonoms, gbcoeffs =
             dehomogenize_generators!(ring, gbmonoms, gbcoeffs, params)
     end
-    @log_performance_counters
     # Convert result back to the representation of input
-    convert_to_output(ring, polynomials, gbmonoms, gbcoeffs, params)
+    basis = convert_to_output(ring, polynomials, gbmonoms, gbcoeffs, params)
+    log_performance_counters(params.statistics)
+    basis
 end
 
 # Groebner basis over Z_p.

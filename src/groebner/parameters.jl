@@ -78,6 +78,8 @@ mutable struct AlgorithmParameters{Ord1, Ord2, Ord3, Arithm}
     # interreduction to speed things up a bit. This option specifies if such
     # sweep should be done.
     sweep::Bool
+
+    statistics::Symbol
 end
 
 function AlgorithmParameters(
@@ -165,6 +167,8 @@ function AlgorithmParameters(
     #
     sweep = kwargs.sweep
 
+    statistics = kwargs.statistics
+
     @log level = -1 """
     Selected parameters:
     target_ord = $target_ord
@@ -186,7 +190,8 @@ function AlgorithmParameters(
     threading = $threading
     seed = $seed
     rng = $rng
-    sweep = $sweep"""
+    sweep = $sweep
+    statistics = $statistics"""
 
     AlgorithmParameters(
         target_ord,
@@ -208,7 +213,8 @@ function AlgorithmParameters(
         threading,
         useed,
         rng,
-        sweep
+        sweep,
+        statistics
     )
 end
 

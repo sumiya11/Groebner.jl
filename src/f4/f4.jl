@@ -22,7 +22,7 @@
 #
 # If `normalize_input=true` is provided, normalizes the basis.
 # If `sort_input=true` is provided, sorts the basis.
-function initialize_structs(
+@timed_block function initialize_structs(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},

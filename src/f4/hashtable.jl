@@ -169,7 +169,9 @@ end
 # initialize hashtable either for `symbolic_preprocessing` or for `update` functions
 # These are of the same purpose and structure as basis hashtable,
 # but are more local oriented
-function initialize_secondary_hashtable(basis_ht::MonomialHashtable{M}) where {M}
+@timed_block function initialize_secondary_hashtable(
+    basis_ht::MonomialHashtable{M}
+) where {M}
     # 2^6 seems to be the best out of 2^5, 2^6, 2^7
     initial_size = 2^6
 
@@ -284,7 +286,7 @@ function ishashcollision(ht::MonomialHashtable, vidx, e, he)
     false
 end
 
-function insert_in_hash_table!(ht::MonomialHashtable{M}, e::M) where {M}
+@timed_block function insert_in_hash_table!(ht::MonomialHashtable{M}, e::M) where {M}
     # generate hash
     he = monom_hash(e, ht.hasher)
 
@@ -552,7 +554,7 @@ function insert_multiplied_poly_in_hash_table!(
     row
 end
 
-function multiplied_poly_to_matrix_row!(
+@timed_block function multiplied_poly_to_matrix_row!(
     symbolic_ht::MonomialHashtable,
     basis_ht::MonomialHashtable{M},
     htmp::MonomHash,

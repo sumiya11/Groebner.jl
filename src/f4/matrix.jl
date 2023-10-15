@@ -107,7 +107,7 @@ end
 # MacaulayMatrix utilities
 
 # Initializes an empty matrix with coefficients of type T
-function initialize_matrix(ring::PolyRing, ::Type{T}) where {T <: Coeff}
+@timed_block function initialize_matrix(ring::PolyRing, ::Type{T}) where {T <: Coeff}
     upper_rows = Vector{Vector{ColumnLabel}}(undef, 0)
     lower_rows = Vector{Vector{ColumnLabel}}(undef, 0)
     column_to_monom = Vector{MonomIdx}(undef, 0)

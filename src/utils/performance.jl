@@ -11,7 +11,7 @@ performance counters are disabled, and entail no runtime overhead.
 
 See also `@timed_block`.
 """
-performance_counters_enabled() = false
+performance_counters_enabled() = true
 
 """
     rdtsc() -> Int
@@ -59,7 +59,7 @@ macro log_performance_counters()
         quote
             if $(@__MODULE__).logging_enabled() &&
                $(@__MODULE__).performance_counters_enabled()
-                _log_performance_counters()
+                log_performance_counters()
             else
                 nothing
             end
@@ -83,13 +83,16 @@ function refresh_counter!(perf::PerfCounterRecord)
 end
 
 const _perf_counters = Vector{PerfCounterRecord}()
+const _perf_stopwatch_start = Ref{UInt}(UInt(0))
 const _perf_id_to_index = Dict{Any, Int}()
 
 function refresh_performance_counters!()
+    !performance_counters_enabled() && return nothing
     threadid() != 1 && return nothing
     for record in _perf_counters
         refresh_counter!(record)
     end
+    _perf_stopwatch_start[] = time_ns()
     nothing
 end
 
@@ -106,9 +109,11 @@ function _timed_block(file, line, id, type, expr)
     result = gensym()
     quote
         if $(@__MODULE__).performance_counters_enabled()
-            $beginstamp = rdtsc()
+            # $beginstamp = rdtsc()
+            $beginstamp = time_ns()
             $result = $expr
-            $counter = rdtsc() - $beginstamp
+            # $counter = rdtsc() - $beginstamp
+            $counter = time_ns() - $beginstamp
             accumulate_counter($index, $counter)
             $result
         else
@@ -123,39 +128,55 @@ function accumulate_counter(index, cycles)
     nothing
 end
 
+function log_performance_counters(statistics)
+    if statistics === :no
+        return nothing
+    end
+    _log_performance_counters()
+end
+
+const _perf_table_columns = ["Location", "Hits", "Time / Hit", "Time", "% of total"]
+
 function _log_performance_counters()
-    msg = ""
-    tracked_names = Vector{String}(undef, length(_perf_counters))
-    for i in 1:length(_perf_counters)
-        record = _perf_counters[i]
-        loc = if record.type === :function
-            "$(record.id)"
-        else
-            "$(last(split(record.file, "/"))):($(record.line))"
-        end
-        tracked_names[i] = loc
+    # columns = ["location", "hits", "cycles / hit", "cycles, total"]
+    rows = map(counter -> counter.id, _perf_counters)
+
+    m, n = length(rows), length(_perf_table_columns)
+    table = Array{Any, 2}(undef, m, n)
+
+    total_cycles_recorded = sum(counter -> counter.cycles, _perf_counters)
+    total_cycles = time_ns() - _perf_stopwatch_start[]
+    for (i, counter) in enumerate(_perf_counters)
+        file = counter.file
+        line = counter.line
+        hits = counter.hits
+        cycles = counter.cycles
+        cycles_per_hit = hits == 0 ? 0 : div(cycles, hits)
+        percent = cycles / total_cycles
+        table[i, 1] = splitpath(file)[end] * ":" * string(line)
+        table[i, 2] = hits
+        # table[i, 3] = pretty_number(String, cycles_per_hit)
+        table[i, 3] = prettytime(cycles_per_hit)
+        table[i, 4] = prettytime(cycles)
+        table[i, 5] = prettypercent(percent)
     end
-    table_left_col_length = maximum(length, tracked_names)
-    tab_length = 8  # hmm?
-    ntabs = div(table_left_col_length - 1, tab_length) + 2
-    header = "Performance counters (does not account for overlap)\n"
-    table_header = "\t"^ntabs * "hits\tcycles/hit\n"
-    msg *= header
-    msg *= table_header
-    for i in 1:length(_perf_counters)
-        record = _perf_counters[i]
-        name = tracked_names[i]
-        ntabs_i = 0
-        hits = record.hits
-        cycles = record.cycles
-        mean_cycles = if !iszero(hits)
-            round(Int, cycles / hits)
-        else
-            0
-        end
-        msg *= name * " "^(tab_length * ntabs - length(name))
-        msg *= "\t"^ntabs_i * "$hits\t$mean_cycles\n"
-    end
-    @log level = -1 msg
-    nothing
+
+    row_permutation = collect(1:m)
+    sort!(row_permutation, by=idx -> parse(Float64, table[idx, end][1:(end - 1)]), rev=true)
+    table = table[row_permutation, :]
+    rows = rows[row_permutation]
+
+    PrettyTables.pretty_table(
+        table,
+        title="Performance counters for Groebner.jl",
+        # label="Does not account for overlap",
+        row_labels=rows,
+        header=_perf_table_columns,
+        limit_printing=false,
+        display_size=(-1, -1)
+    )
+    # println(
+    #     "Recorded $(prettytime(total_cycles_recorded)) out of total $(prettytime(total_cycles)) ($(prettypercent(total_cycles_recorded/total_cycles)))."
+    # )
+    println("Timings do not account for overlap.")
 end
