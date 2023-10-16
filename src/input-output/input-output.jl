@@ -181,7 +181,7 @@ representation specified by `representation`.
 
 Returns a tuple (`ring`, `var_to_index`, `monoms`, `coeffs`).
 """
-@timed_block function convert_to_internal(
+@timeit to function convert_to_internal(
     representation::PolynomialRepresentation,
     polynomials,
     kws::KeywordsHandler;
@@ -246,7 +246,7 @@ Converts polynomials in internal representation given by arrays `monoms` and
 `coeffs` into polynomials in the output format (using `polynomials` as a
 reference).
 """
-@timed_block function convert_to_output(
+@timeit to function convert_to_output(
     ring::PolyRing,
     polynomials,
     monoms::Vector{Vector{M}},

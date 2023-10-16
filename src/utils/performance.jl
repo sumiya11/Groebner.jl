@@ -1,6 +1,6 @@
 # Measuring performance
 
-# Provides the macro @timed_block, which can be used to track the performance of
+# Provides the macro @timeit to, which can be used to track the performance of
 # a code block / function
 
 """
@@ -9,7 +9,7 @@
 Specifies if performance should be tracked in Groebner. If `false`, then all
 performance counters are disabled, and entail no runtime overhead.
 
-See also `@timed_block`.
+See also `@timeit to`.
 """
 performance_counters_enabled() = true
 
@@ -21,8 +21,8 @@ Returns the Read Time Stamp Counter.
 rdtsc() = ccall("llvm.x86.rdtsc", llvmcall, Int, ())
 
 """
-    @timed_block begin ... end
-    @timed_block function ... end
+    @timeit to begin ... end
+    @timeit to function ... end
 
 Wraps the expression in a timed block.
 
@@ -45,7 +45,7 @@ macro timed_block(expr)
         id = Meta.quot(fdef[:name])
         type = :function
         fdef[:body] = _timed_block(file, line, id, type, fdef[:body])
-        combinedef(fdef)
+        esc(combinedef(fdef))
     end
 end
 

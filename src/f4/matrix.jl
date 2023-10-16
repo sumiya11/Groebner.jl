@@ -107,7 +107,7 @@ end
 # MacaulayMatrix utilities
 
 # Initializes an empty matrix with coefficients of type T
-@timed_block function initialize_matrix(ring::PolyRing, ::Type{T}) where {T <: Coeff}
+@timeit to function initialize_matrix(ring::PolyRing, ::Type{T}) where {T <: Coeff}
     upper_rows = Vector{Vector{ColumnLabel}}(undef, 0)
     lower_rows = Vector{Vector{ColumnLabel}}(undef, 0)
     column_to_monom = Vector{MonomIdx}(undef, 0)
@@ -541,7 +541,7 @@ end
 # As a result, the matrix of the following form is produced:
 #   A B
 #   0 D' 
-function reduce_matrix_lower_part!(
+@timeit to function reduce_matrix_lower_part!(
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
     arithmetic::A
@@ -1039,7 +1039,7 @@ function normalize_sparse_row!(
     row
 end
 
-function reduce_dense_row_by_sparse_row!(
+@timeit to function reduce_dense_row_by_sparse_row!(
     row::Vector{T},
     indices::Vector{ColumnLabel},
     coeffs::Vector{T},
@@ -1135,7 +1135,7 @@ function record_active_reducer(active_reducers, matrix, idx)
     nothing
 end
 
-function reduce_dense_row_by_pivots_sparse!(
+@timeit to function reduce_dense_row_by_pivots_sparse!(
     new_column_indices::Vector{ColumnLabel},
     new_coeffs::Vector{C},
     row::Vector{C},

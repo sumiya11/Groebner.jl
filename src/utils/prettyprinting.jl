@@ -224,3 +224,24 @@ function prettytime(t)
     end
     return string(@sprintf("%.3f", value), " ", units)
 end
+
+function prettycount(t::Integer)
+    if t < 1000
+        return string(t)
+    elseif t < 1000^2
+        value, units = t / 1000, "k"
+    elseif t < 1000^3
+        value, units = t / 1e6, "M"
+    else
+        value, units = t / 1e9, "B"
+    end
+
+    if round(value) >= 100
+        str = string(@sprintf("%.0f", value), units)
+    elseif round(value * 10) >= 100
+        str = string(@sprintf("%.1f", value), units)
+    else
+        str = string(@sprintf("%.2f", value), units)
+    end
+    return str
+end

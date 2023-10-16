@@ -239,6 +239,7 @@ function params_mod_p(params::AlgorithmParameters, prime::Integer)
         params.threading,
         params.seed,
         params.rng,
-        params.sweep
+        params.sweep,
+        params.statistics
     )
 end

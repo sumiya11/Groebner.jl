@@ -214,7 +214,7 @@ end
 
 # Normalize each element of the input basis
 # by dividing it by leading coefficient
-@timed_block function normalize_basis!(ring, basis::Basis{<:CoeffFF})
+@timeit to function normalize_basis!(ring, basis::Basis{<:CoeffFF})
     @log level = -4 "Normalizing polynomials in the basis"
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.nfilled)
@@ -431,7 +431,7 @@ end
 # from the added elements
 #
 # Always checks new elements redundancy.
-@timed_block function update!(
+@timeit to function update!(
     pairset::Pairset,
     basis::Basis,
     ht::MonomialHashtable{M},
@@ -528,7 +528,7 @@ end
 # f4 must produce a `Basis` object which satisfies several conditions.
 # This functions standardizes the given basis so that conditions hold.
 # (see f4/f4.jl)
-@timed_block function standardize_basis!(ring, basis::Basis, ht::MonomialHashtable, ord)
+@timeit to function standardize_basis!(ring, basis::Basis, ht::MonomialHashtable, ord)
     @inbounds for i in 1:(basis.nnonredundant)
         idx = basis.nonredundant[i]
         basis.nonredundant[i] = i
@@ -562,7 +562,7 @@ function hash_to_exponents(basis::Basis, ht::MonomialHashtable{M}) where {M <: M
 end
 
 # Returns the exponent vectors and the coefficients of polynomials in the basis
-@timed_block function export_basis_data(
+@timeit to function export_basis_data(
     basis::Basis{C},
     ht::MonomialHashtable{M}
 ) where {M <: Monom, C <: Coeff}
