@@ -195,7 +195,7 @@ function repr_matrix(matrix::MacaulayMatrix{T}) where {T}
     A: $(m_A) x $(n_A) with $(nnz_A) nonzeros (REF: $(A_ref), RREF: $(A_rref))
     B: $(m_B) x $(n_B) with $(nnz_B) nonzeros
     C: $(m_C) x $(n_C) with $(nnz_C) nonzeros
-    D: $(m_D) x $(n_D) with $(nnz_D) nonzeros
+    D: $(m_D) x $(n_D) with $(nnz_D) nonzeros ($(percent(nnz_D / (m_D * n_D))) %)
 
     Sparsity pattern:
 

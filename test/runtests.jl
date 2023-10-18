@@ -3,7 +3,7 @@ using TestSetExtensions
 
 using AbstractAlgebra
 using Random
-using Groebner
+# using Groebner
 
 # Check invariants during testing.
 # NOTE: it's good to turn this on, as asserts may help to prevent segfaults
@@ -65,6 +65,8 @@ end
     end
 
     @includetests ["output_inferred"]
+
+    @includetests ["utils/logging", "utils/timings"]
 
     # test for regressions
     @includetests ["regressions"]

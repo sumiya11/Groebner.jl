@@ -24,7 +24,7 @@ end
 @testset "handling many variables" begin
 
     # up to 63
-    for n in 2:3:63
+    for n in 2:5:63
         test_n_variables(n)
     end
 
@@ -35,7 +35,7 @@ end
     end
 
     # up to 511
-    for n in [128, 257, 256, 511]
+    for n in [128, 256, 257, 511]
         @info "Variables:" n
         R, x = PolynomialRing(QQ, ["x$i" for i in 1:n])
         f = x

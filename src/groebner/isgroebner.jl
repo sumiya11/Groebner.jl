@@ -10,11 +10,13 @@ function _isgroebner(polynomials, kws::KeywordsHandler)
     end
     params = AlgorithmParameters(ring, polynomial_repr, kws)
     ring, _ = set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
-    _isgroebner(ring, monoms, coeffs, params)
+    res = _isgroebner(ring, monoms, coeffs, params)
+    log_performance_counters(params.statistics)
+    res
 end
 
 # isgroebner for Finite fields
-function _isgroebner(
+@timeit function _isgroebner(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -25,7 +27,7 @@ function _isgroebner(
 end
 
 # isgroebner for Rational numbers
-function _isgroebner(
+@timeit function _isgroebner(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -39,7 +41,6 @@ function _isgroebner(
         Keyword argument `certify=true` was provided. 
         Checking that the given input is a Groebner basis directly over the rationals"""
         flag = f4_isgroebner!(ring, basis, pairset, hashtable, params.arithmetic)
-        # @log_performance_counters
         return flag
     end
     # Otherwise, check modulo a prime
@@ -53,6 +54,5 @@ function _isgroebner(
     ring_ff, basis_ff = reduce_modulo_p!(buffer, ring, basis_zz, prime, deepcopy=true)
     arithmetic = select_arithmetic(prime, CoeffModular)
     flag = f4_isgroebner!(ring_ff, basis_ff, pairset, hashtable, arithmetic)
-    # @log_performance_counters
     flag
 end

@@ -11,6 +11,12 @@ where appropriate -->
 using Groebner # hide
 ```
 
+### Getting Groebner.jl for development
+
+git clone ...
+
+or Pkg.dev
+
 ### Structure of Groebner.jl
 
 ..Graph of function calls..

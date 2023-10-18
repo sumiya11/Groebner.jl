@@ -313,6 +313,7 @@ end
         if is_monom_divisible(monom, lead_monom)
             break
         end
+        i += 1
     end
     i
 end

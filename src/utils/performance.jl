@@ -13,11 +13,12 @@
 """
     performance_counters_enabled() -> Bool
 
-If performance-tracking macro `@timeit` should be enabled in Groebner. If
-`false`, then all performance counters are disabled, and entail no runtime
-overhead.
+If performance-tracking macro `@timeit` should be enabled in Groebner. 
+
+When this is `false`, all performance counters in Groebner are disabled and
+entail no runtime overhead.
 """
-performance_counters_enabled() = true
+performance_counters_enabled() = false
 
 timeit_debug_enabled() = false
 
