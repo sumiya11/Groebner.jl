@@ -214,7 +214,7 @@ end
 
 # Normalize each element of the input basis
 # by dividing it by leading coefficient
-@timeit to function normalize_basis!(ring, basis::Basis{<:CoeffFF})
+@timeit function normalize_basis!(ring, basis::Basis{<:CoeffFF})
     @log level = -4 "Normalizing polynomials in the basis"
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.nfilled)
@@ -251,7 +251,7 @@ end
 #
 # NOTE: discarding redundant critical pairs is unaffected by the current
 # selection strategy
-function update_pairset!(
+@timeit function update_pairset!(
     pairset::Pairset,
     basis::Basis{C},
     ht::MonomialHashtable{M},
@@ -356,7 +356,7 @@ function update_pairset!(
 end
 
 # Updates information about redundant generators in the basis
-function update_basis!(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
+@timeit function update_basis!(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
     k = 1
     lead = basis.divmasks
     nonred = basis.nonredundant
@@ -431,7 +431,7 @@ end
 # from the added elements
 #
 # Always checks new elements redundancy.
-@timeit to function update!(
+@timeit function update!(
     pairset::Pairset,
     basis::Basis,
     ht::MonomialHashtable{M},
@@ -528,7 +528,7 @@ end
 # f4 must produce a `Basis` object which satisfies several conditions.
 # This functions standardizes the given basis so that conditions hold.
 # (see f4/f4.jl)
-@timeit to function standardize_basis!(ring, basis::Basis, ht::MonomialHashtable, ord)
+@timeit function standardize_basis!(ring, basis::Basis, ht::MonomialHashtable, ord)
     @inbounds for i in 1:(basis.nnonredundant)
         idx = basis.nonredundant[i]
         basis.nonredundant[i] = i
@@ -562,7 +562,7 @@ function hash_to_exponents(basis::Basis, ht::MonomialHashtable{M}) where {M <: M
 end
 
 # Returns the exponent vectors and the coefficients of polynomials in the basis
-@timeit to function export_basis_data(
+@timeit function export_basis_data(
     basis::Basis{C},
     ht::MonomialHashtable{M}
 ) where {M <: Monom, C <: Coeff}

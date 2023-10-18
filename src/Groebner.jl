@@ -49,8 +49,7 @@ import MultivariatePolynomials: AbstractPolynomial, AbstractPolynomialLike
 import PrettyTables
 using Printf
 
-using TimerOutputs
-const to = TimerOutput()
+import TimerOutputs
 
 import Primes
 import Primes: nextprime

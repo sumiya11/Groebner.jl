@@ -22,7 +22,7 @@
 #
 # If `normalize_input=true` is provided, normalizes the basis.
 # If `sort_input=true` is provided, sorts the basis.
-@timeit to function initialize_structs(
+@timeit function initialize_structs(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -105,7 +105,7 @@ function initialize_basis_using_existing_hashtable(
 end
 
 # F4 reduction
-@timeit to function reduction!(
+@timeit function reduction!(
     ring::PolyRing,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -121,8 +121,17 @@ end
     convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 end
 
+"""
+    fufu
+
+X
+"""
+@timeit function fufu(x)
+    x
+end
+
 # F4 symbolic preprocessing
-@timeit to function symbolic_preprocessing!(
+@timeit function symbolic_preprocessing!(
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
@@ -137,7 +146,7 @@ end
 
     resize_matrix_upper_part_if_needed!(matrix, ncols + symbol_load)
 
-    @log level = 0 "Finding reducers in the basis..." basis.nnonredundant
+    @log level = -6 "Finding reducers in the basis..." basis.nnonredundant
 
     # 3. Traverse all monomials in symbol_ht and search for a polynomial reducer
     #    for each monomial.
@@ -286,7 +295,7 @@ function select_tobereduced!(
     nothing
 end
 
-@timeit to function find_lead_monom_that_divides_use_divmask(i, divmask, basis)
+@timeit function find_lead_monom_that_divides_use_divmask(i, divmask, basis)
     lead_divmasks = basis.divmasks
     @inbounds while i <= basis.nnonredundant
         # TODO: rethink division masks to support more variables
@@ -298,7 +307,7 @@ end
     i
 end
 
-@timeit to function find_lead_monom_that_divides(i, monom, basis, ht)
+@timeit function find_lead_monom_that_divides(i, monom, basis, ht)
     @inbounds while i <= basis.nnonredundant
         lead_monom = ht.monoms[basis.monoms[basis.nonredundant[i]][1]]
         if is_monom_divisible(monom, lead_monom)
@@ -312,7 +321,7 @@ end
 # with leading term that divides monomial `vidx`. 
 # If such polynomial was found, 
 # writes the divisor polynomial to the hashtable `symbol_ht`
-@timeit to function find_multiplied_reducer!(
+@timeit function find_multiplied_reducer!(
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
@@ -452,7 +461,7 @@ end
 # If `maxpairs=N` is provided, the number of critical pairs is limited by `N`
 # (modulo some technical details).
 # If `select_all=true` is provided, selects all critical pairs.
-@timeit to function select_critical_pairs!(
+@timeit function select_critical_pairs!(
     pairset::Pairset,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -690,7 +699,7 @@ end
 # - basis.monoms and basis.coeffs are of size basis.nprocessed
 # - basis elements are sorted increasingly wrt the term ordering on lead elements
 # - divmasks in basis are filled and coincide with divmasks in hashtable
-function f4!(
+@timeit function f4!(
     ring::PolyRing,
     basis::Basis{C},
     pairset::Pairset,
@@ -812,7 +821,7 @@ end
 
 # Checks that all S-polynomials formed by the elements of the given basis reduce
 # to zero.
-function f4_isgroebner!(
+@timeit function f4_isgroebner!(
     ring,
     basis::Basis{C},
     pairset,
@@ -843,7 +852,7 @@ function f4_isgroebner!(
 end
 
 # Reduces each polynomial in the `tobereduced` by the polynomials from the `basis`.
-function f4_normalform!(
+@timeit function f4_normalform!(
     ring::PolyRing,
     basis::Basis{C},
     tobereduced::Basis{C},

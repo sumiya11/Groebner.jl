@@ -58,7 +58,7 @@ end
 
 # Groebner basis over Z_p.
 # Just calls f4 directly.
-function _groebner(
+@timeit function _groebner(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -78,7 +78,7 @@ end
 
 # Groebner basis over Q.
 # GB over the rationals uses modular computation.
-function _groebner(
+@timeit function _groebner(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},

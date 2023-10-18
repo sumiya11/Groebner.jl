@@ -196,7 +196,7 @@ end
 # 
 # Writes the coefficients of the basis modulo P * P1*P2*...*Pk to
 # state.gb_coeffs_zz inplace
-function crt_reconstruct!(
+@timeit function crt_reconstruct!(
     state::GroebnerState,
     ring::PolyRing,
     lucky::LuckyPrimes,
@@ -267,7 +267,7 @@ end
 # numbers to state.gb_coeffs_qq inplace
 #
 # Returns true is the reconstrction is successfull, false otherwise.
-function rational_reconstruct!(state::GroebnerState, lucky::LuckyPrimes)
+@timeit function rational_reconstruct!(state::GroebnerState, lucky::LuckyPrimes)
     modulo = lucky.modulo
     buffer = state.buffer
     bnd = rational_reconstruction_bound(modulo)

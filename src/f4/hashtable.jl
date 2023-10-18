@@ -169,7 +169,7 @@ end
 # initialize hashtable either for `symbolic_preprocessing` or for `update` functions
 # These are of the same purpose and structure as basis hashtable,
 # but are more local oriented
-@timeit to function initialize_secondary_hashtable(basis_ht::MonomialHashtable{M}) where {M}
+@timeit function initialize_secondary_hashtable(basis_ht::MonomialHashtable{M}) where {M}
     # 2^6 seems to be the best out of 2^5, 2^6, 2^7
     initial_size = 2^6
 
@@ -239,7 +239,7 @@ function next_lookup_index(h::MonomHash, j::MonomHash, mod::MonomHash)
     (h + j) & mod + MonomHash(1)
 end
 
-@timeit to function resize_hashtable_if_needed!(ht::MonomialHashtable, added::Integer)
+function resize_hashtable_if_needed!(ht::MonomialHashtable, added::Integer)
     newsize = ht.size
     while ht_needs_resize(newsize, ht.load, added)
         newsize *= 2
@@ -467,7 +467,7 @@ end
 # add monomials from `poly` multiplied by exponent vector `etmp`
 # with hash `htmp` to hashtable `symbol_ht`,
 # and substitute hashes in row
-@timeit to function insert_multiplied_poly_in_hash_table!(
+@timeit function insert_multiplied_poly_in_hash_table!(
     row::Vector{MonomIdx},
     htmp::MonomHash,
     etmp::M,
@@ -554,7 +554,7 @@ end
     row
 end
 
-@timeit to function multiplied_poly_to_matrix_row!(
+@timeit function multiplied_poly_to_matrix_row!(
     symbolic_ht::MonomialHashtable,
     basis_ht::MonomialHashtable{M},
     htmp::MonomHash,
