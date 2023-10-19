@@ -73,6 +73,10 @@ for (op, n) in _defined_packed_pairs
     end
 end
 
+copy_monom(pv::PackedTuple1{T, B}) where {T <: UInt64, B} = pv
+copy_monom(pv::PackedTuple2{T, B}) where {T <: UInt64, B} = pv
+copy_monom(pv::PackedTuple3{T, B}) where {T <: UInt64, B} = pv
+
 copy_monom(pv::PackedTuple1{T, B}) where {T, B} = PackedTuple1{T, B}(pv.a1)
 copy_monom(pv::PackedTuple2{T, B}) where {T, B} = PackedTuple2{T, B}(pv.a1, pv.a2)
 copy_monom(pv::PackedTuple3{T, B}) where {T, B} = PackedTuple3{T, B}(pv.a1, pv.a2, pv.a3)
@@ -273,6 +277,7 @@ function monom_isless(
     monom_isless(a, b, ord)
 end
 
+# TODO: specialize for T == UInt64
 function monom_isless(
     ea::PackedTuple1{T, B},
     eb::PackedTuple1{T, B},

@@ -52,7 +52,7 @@ function _groebner_learn(polynomials, kws, representation)
     @log level = -7 """Sorting permutations:
     Terms: $(term_sorting_permutations)
     Polynomials: $(graph.input_permutation)"""
-    @log_performance_counters
+    # @log_performance_counters
     graph, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
 end
 
@@ -71,7 +71,7 @@ function _groebner_apply!(graph::ComputationGraphF4, polynomials, kws::KeywordsH
         ring, gb_monoms, gb_coeffs =
             dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
     end
-    @log_performance_counters
+    # @log_performance_counters
     !flag && return (flag, polynomials)
     flag, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
 end

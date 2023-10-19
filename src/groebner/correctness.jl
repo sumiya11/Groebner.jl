@@ -9,7 +9,7 @@
 #
 # Usually, by default, only the first two are active, which gives the correct
 # basis with a high probability
-function correctness_check!(
+@timeit function correctness_check!(
     state,
     lucky,
     ring,

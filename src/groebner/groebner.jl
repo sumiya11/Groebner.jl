@@ -50,14 +50,15 @@ function _groebner(polynomials, kws::KeywordsHandler, representation)
         ring, gbmonoms, gbcoeffs =
             dehomogenize_generators!(ring, gbmonoms, gbcoeffs, params)
     end
-    @log_performance_counters
     # Convert result back to the representation of input
-    convert_to_output(ring, polynomials, gbmonoms, gbcoeffs, params)
+    basis = convert_to_output(ring, polynomials, gbmonoms, gbcoeffs, params)
+    log_performance_counters(params.statistics)
+    basis
 end
 
 # Groebner basis over Z_p.
 # Just calls f4 directly.
-function _groebner(
+@timeit function _groebner(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -77,7 +78,7 @@ end
 
 # Groebner basis over Q.
 # GB over the rationals uses modular computation.
-function _groebner(
+@timeit function _groebner(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},

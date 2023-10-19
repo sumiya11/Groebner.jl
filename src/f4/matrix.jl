@@ -107,7 +107,7 @@ end
 # MacaulayMatrix utilities
 
 # Initializes an empty matrix with coefficients of type T
-function initialize_matrix(ring::PolyRing, ::Type{T}) where {T <: Coeff}
+@timeit function initialize_matrix(ring::PolyRing, ::Type{T}) where {T <: Coeff}
     upper_rows = Vector{Vector{ColumnLabel}}(undef, 0)
     lower_rows = Vector{Vector{ColumnLabel}}(undef, 0)
     column_to_monom = Vector{MonomIdx}(undef, 0)
@@ -195,7 +195,7 @@ function repr_matrix(matrix::MacaulayMatrix{T}) where {T}
     A: $(m_A) x $(n_A) with $(nnz_A) nonzeros (REF: $(A_ref), RREF: $(A_rref))
     B: $(m_B) x $(n_B) with $(nnz_B) nonzeros
     C: $(m_C) x $(n_C) with $(nnz_C) nonzeros
-    D: $(m_D) x $(n_D) with $(nnz_D) nonzeros
+    D: $(m_D) x $(n_D) with $(nnz_D) nonzeros ($(percent(nnz_D / (m_D * n_D))) %)
 
     Sparsity pattern:
 
@@ -541,7 +541,7 @@ end
 # As a result, the matrix of the following form is produced:
 #   A B
 #   0 D' 
-function reduce_matrix_lower_part!(
+@timeit function reduce_matrix_lower_part!(
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
     arithmetic::A
@@ -662,7 +662,7 @@ function apply_reduce_matrix_lower_part!(
 end
 
 # Interreduces the matrix.pivots 
-function interreduce_matrix_pivots!(
+@timeit function interreduce_matrix_pivots!(
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
     arithmetic::A;
@@ -1135,7 +1135,7 @@ function record_active_reducer(active_reducers, matrix, idx)
     nothing
 end
 
-function reduce_dense_row_by_pivots_sparse!(
+@timeit function reduce_dense_row_by_pivots_sparse!(
     new_column_indices::Vector{ColumnLabel},
     new_coeffs::Vector{C},
     row::Vector{C},

@@ -66,6 +66,8 @@ end
 
     @includetests ["output_inferred"]
 
+    @includetests ["utils/logging", "utils/timings"]
+
     # test for regressions
     @includetests ["regressions"]
 end

@@ -58,11 +58,13 @@ function _normalform(polynomials, to_be_reduced, kws::KeywordsHandler)
     monoms_reduced = monoms_to_be_reduced
     coeffs_reduced = coeffs_to_be_reduced
     # TODO: remove `to_be_reduced` from arguments here
-    @log_performance_counters
-    convert_to_output(ring, to_be_reduced, monoms_reduced, coeffs_reduced, params)
+    # @log_performance_counters
+    res = convert_to_output(ring, to_be_reduced, monoms_reduced, coeffs_reduced, params)
+    log_performance_counters(params.statistics)
+    res
 end
 
-function _normalform(
+@timeit function _normalform(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},

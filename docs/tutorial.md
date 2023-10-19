@@ -31,7 +31,7 @@ The following contains a series of tutorials that illustrate interesting usecase
 
 In particular, these notes are intended as a non-rigorus introduction to the notion of Groebner bases.
 
-We also refer to a [Tutorial by Michael Stillman](https://www3.risc.jku.at/research/theorema/Groebner-Bases-Bibliography/gbbib_files/publication_190.pdf) that covers similar examples but in much more detail.
+We also refer to the [Tutorial by Michael Stillman](https://www3.risc.jku.at/research/theorema/Groebner-Bases-Bibliography/gbbib_files/publication_190.pdf) that covers similar examples but in much more detail.
 
 <!-- Introduced by Buchberger in 1965 for handling quotient space of ideals algorithmically, Groebner bases are excellent for **variable elimination, system solving**, and many more. Among others, Groebner bases find applications in
 

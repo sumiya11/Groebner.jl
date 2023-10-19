@@ -18,10 +18,12 @@ function _kbase(polynomials, kws)
     end
     ring, _ = set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
     m, c = kbase_f4(ring, monoms, coeffs, params)
-    convert_to_output(ring, polynomials, m, c, params)
+    res = convert_to_output(ring, polynomials, m, c, params)
+    log_performance_counters(params.statistics)
+    res
 end
 
-function kbase_f4(
+@timeit function kbase_f4(
     ring::PolyRing,
     basisexps::Vector{Vector{M}},
     basiscoeffs::Vector{Vector{C}},
