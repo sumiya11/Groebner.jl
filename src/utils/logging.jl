@@ -76,7 +76,7 @@ function update_logger(; stream=nothing, loglevel=nothing)
             stream,
             prev_logger.min_level,
             meta_formatter=meta_formatter_groebner
-            # NOTE: usage of this keyword argument fails on Julia v1.6
+            # NOTE: the use of this keyword argument fails on Julia v1.6
             # show_limited=prev_logger.show_limited
         )
     end
