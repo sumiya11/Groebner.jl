@@ -5,7 +5,7 @@
 the config file by setting hasmath = false for instance and just setting it to true
 where appropriate -->
 
-# Developer documentation
+## For developers
 
 ```julia:load_groebner
 using Groebner # hide
