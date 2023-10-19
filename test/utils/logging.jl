@@ -8,7 +8,7 @@ using Logging
         gb = [y^2 - z^2, x * z + y, x * y + z]
         gb1 = @test_logs Groebner.groebner(f, loglevel=-3)
         gb2 = @test_logs Groebner.groebner(f, loglevel=Int8(-3))
-        prev_logger = global_logger(ConsoleLogger(Logging.Warn))
+        prev_logger = global_logger(ConsoleLogger(stdout, Logging.Warn))
         gb3 = @test_logs Groebner.groebner(f, loglevel=Int8(-3))
         global_logger(prev_logger)
         @test gb == gb1 == gb2 == gb3
