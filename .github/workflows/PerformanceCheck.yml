@@ -1,4 +1,4 @@
-name: Performance Regressions
+name: Performance Check
 on: [push, pull_request]
 jobs:
   build-and-benchmark:
@@ -12,11 +12,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Install Julia
-      - uses: julia-actions/setup-julia@latest
-        with:
-          version: ${{ matrix.julia-version }}
+      uses: julia-actions/setup-julia@latest
+      with:
+        version: ${{ matrix.julia-version }}
     - name: Build project
-      - uses: julia-actions/julia-buildpkg@latest
+      uses: julia-actions/julia-buildpkg@latest
     - run: julia -e '
             using Pkg;
             Pkg.add(["Test", "TestSetExtensions"]);
