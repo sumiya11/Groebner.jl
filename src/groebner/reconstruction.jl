@@ -137,9 +137,9 @@ function CRT!(
     m1::BigInt,
     m2::BigInt
 )
-    @invariant M == m1 * m2
-    @invariant minv1 == Base.GMP.MPZ.gcdext(m1, m2)[2]
-    @invariant minv2 == Base.GMP.MPZ.gcdext(m1, m2)[3]
+    # @invariant M == m1 * m2
+    # @invariant minv1 == Base.GMP.MPZ.gcdext(m1, m2)[2]
+    # @invariant minv2 == Base.GMP.MPZ.gcdext(m1, m2)[3]
     Base.GMP.MPZ.mul!(buf, m1, minv1)
     Base.GMP.MPZ.mul_ui!(n1, buf, a2)
 

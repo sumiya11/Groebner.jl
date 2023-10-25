@@ -168,7 +168,7 @@ function _groebner_classic_modular(
     # At this point, either the reconstruction or the correctness check failed.
     # Continue to compute Groebner bases modulo different primes in batches. 
     batchsize = 1
-    batchsize_multiplier = 2
+    batchsize_multiplier = 1.4
     @log level = -2 """
       Preparing to compute bases in batches.. 
       The initial size of the batch is $batchsize. 
@@ -186,10 +186,6 @@ function _groebner_classic_modular(
     # end of the batch.
     iters = 0
     while !correct_basis
-        @log level = -2 """
-          Used $(length(luckyprimes.primes)) primes in total over $(iters + 1) iterations.
-          The current batch size is $batchsize.
-          """
         for j in 1:batchsize
             prime = next_lucky_prime!(luckyprimes)
             @log level = -3 "The lucky prime is $prime"
@@ -211,9 +207,13 @@ function _groebner_classic_modular(
         @log level = -4 "Reconstructing coefficients from Z_$(luckyprimes.modulo * prime) to QQ"
         success_reconstruct = rational_reconstruct!(state, luckyprimes)
         @log level = -3 "Reconstruction successfull: $success_reconstruct"
+        @log level = -2 """
+          Used $(length(luckyprimes.primes)) primes in total over $(iters + 1) iterations.
+          The current batch size is $batchsize.
+          """
         if !success_reconstruct
             iters += 1
-            batchsize = batchsize * batchsize_multiplier
+            batchsize = max(batchsize + 1, round(Int, batchsize * batchsize_multiplier))
             continue
         end
         correct_basis = correctness_check!(
@@ -227,7 +227,7 @@ function _groebner_classic_modular(
             params
         )
         iters += 1
-        batchsize = batchsize * batchsize_multiplier
+        batchsize = max(batchsize + 1, round(Int, batchsize * batchsize_multiplier))
     end
     @log level = -2 "Correctness check passed!"
     @log level = -2 "Used $(length(luckyprimes.primes)) primes in total over $(iters) iterations"
