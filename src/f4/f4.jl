@@ -712,7 +712,7 @@ end
     @invariant basis_well_formed(:input_f4!, ring, basis, hashtable)
     # @invariant pairset_well_formed(:input_f4!, pairset, basis, ht)
 
-    @log level = -2 "Entering F4."
+    @log level = -3 "Entering F4."
     normalize_basis!(ring, basis)
 
     matrix = initialize_matrix(ring, C)
@@ -798,18 +798,18 @@ end
     set_final_basis!(tracer, basis.nfilled)
 
     if params.sweep
-        @log level = -3 "Sweeping redundant elements in the basis"
+        @log level = -4 "Sweeping redundant elements in the basis"
         sweep_redundant!(basis, hashtable)
     end
 
     # mark redundant elements
     mark_redundant!(basis)
-    @log level = -3 "Filtered elements marked redundant"
+    @log level = -4 "Filtered elements marked redundant"
 
     if params.reduced
-        @log level = -2 "Autoreducing the final basis.."
+        @log level = -4 "Autoreducing the final basis.."
         reducegb_f4!(ring, basis, matrix, hashtable, symbol_ht, params)
-        @log level = -3 "Autoreduced!"
+        @log level = -4 "Autoreduced!"
     end
 
     standardize_basis!(ring, basis, hashtable, hashtable.ord)

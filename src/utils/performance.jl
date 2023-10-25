@@ -6,9 +6,10 @@
 # When active, one hit of @timeit has runtime overhead of around 250
 # nanoseconds.
 # 
-# @timeit can be turned off with `performance_counters_enabled`. This eliminates
-# all runtime overhead. Thus, it is fine to leave the @timeit statements in the
-# source code, since they do not affect performance.
+# @timeit can be turned off by setting `performance_counters_enabled` to
+# `false`. This will compile out `@timeit` statements (and eliminate all runtime
+# overhead). Thus, it is fine to leave the @timeit statements in the source
+# code, since they do not affect performance when inactive.
 
 """
     performance_counters_enabled() -> Bool

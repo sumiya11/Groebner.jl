@@ -104,7 +104,7 @@ function AlgorithmParameters(
         original_ord = ring.ord
     end
     #
-    heuristic_check = true
+    heuristic_check = false
     randomized_check = true
     certify_check = kwargs.certify
     # 
