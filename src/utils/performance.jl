@@ -23,11 +23,6 @@ performance_counters_enabled() = false
 
 const _groebner_timer = TimerOutputs.TimerOutput()
 
-@noinline __throw_timeit_error() = throw(ArgumentError("""
-    Invalid usage of macro @timeit in Groebner.jl. Use it as:
-    @timeit label expr
-    @timeit function foo() ... end"""))
-
 """
     @timeit label expr
     @timeit function foo() ... end
@@ -69,6 +64,11 @@ macro timeit(args...)
     _timeit(__module__, args...)
 end
 
+@noinline __throw_timeit_error() = throw(ArgumentError("""
+    Invalid usage of macro @timeit in Groebner.jl. Use it as:
+    @timeit label expr
+    @timeit function foo() ... end"""))
+
 function _timeit(m, expr)
     _timeit(m, nothing, expr)
 end
@@ -92,12 +92,12 @@ function _timeit_func(m, label, expr)
 end
 
 function _timeit_expr(m, label, expr)
-    fn = gensym()
+    # NOTE: some care should be taken to handle the case when expr contains
+    # statements such as @label and @goto 
+    timed_expr = TimerOutputs._timer_expr(m, false, _groebner_timer, label, expr)
     quote
         if $(@__MODULE__).performance_counters_enabled()
-            # This is a hack for the case when expr contains @label statements 
-            $fn = () -> TimerOutputs.@timeit($_groebner_timer, $label, $expr)
-            $fn()
+            $timed_expr
         else
             $expr
         end

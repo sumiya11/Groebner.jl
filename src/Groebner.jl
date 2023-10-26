@@ -46,7 +46,6 @@ import MultivariatePolynomials
 import MultivariatePolynomials: AbstractPolynomial, AbstractPolynomialLike
 
 # For printing the tables with statistics in the console nicely
-import PrettyTables
 using Printf
 
 import TimerOutputs

@@ -23,4 +23,4 @@ jobs:
             Pkg.add(url="https://github.com/sumiya11/Groebner.jl");
             using GitHubActions, Logging;
             global_logger(GitHubActionsLogger());
-            include("test/performance/runtests.jl")'
+            include("benchmark/CI-scripts/runtests.jl")'

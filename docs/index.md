@@ -72,6 +72,7 @@ You can find more information on monomial orderings in Groebner.jl in [Monomial 
 We will compute the basis of the `noon-2` system[^3]
 
 ```julia:install_dynamic
+import Pkg; # hide
 Pkg.add("DynamicPolynomials") # hide
 ```
 
