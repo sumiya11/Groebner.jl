@@ -17,15 +17,50 @@ end
 push!(
     suite,
     (
-        problem_name="finite field, katsura 5",
+        problem_name="groebner, GF(2^31-1), katsura 5",
         result=compute_gb(Groebner.katsuran(5, ordering=:degrevlex, ground=GF(2^31 - 1)))
     )
 )
 push!(
     suite,
     (
-        problem_name="finite field, katsura 6",
+        problem_name="groebner, GF(2^31-1), katsura 6",
         result=compute_gb(Groebner.katsuran(6, ordering=:degrevlex, ground=GF(2^31 - 1)))
+    )
+)
+push!(
+    suite,
+    (
+        problem_name="groebner, GF(2^31-1), katsura 8",
+        result=compute_gb(Groebner.katsuran(8, ordering=:degrevlex, ground=GF(2^31 - 1)))
+    )
+)
+push!(
+    suite,
+    (
+        problem_name="groebner, GF(2^31-1), cyclic 8",
+        result=compute_gb(Groebner.cyclicn(8, ordering=:degrevlex, ground=GF(2^31 - 1)))
+    )
+)
+push!(
+    suite,
+    (
+        problem_name="groebner, QQ, katsura 8",
+        result=compute_gb(Groebner.katsuran(8, ordering=:degrevlex, ground=QQ))
+    )
+)
+push!(
+    suite,
+    (
+        problem_name="groebner, QQ, eco 10",
+        result=compute_gb(Groebner.katsuran(6, ordering=:degrevlex, ground=QQ))
+    )
+)
+push!(
+    suite,
+    (
+        problem_name="groebner, QQ, cyclic 7",
+        result=compute_gb(Groebner.cyclicn(7, ordering=:degrevlex, ground=QQ))
     )
 )
 

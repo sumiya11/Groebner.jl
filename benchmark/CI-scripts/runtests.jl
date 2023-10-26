@@ -57,4 +57,5 @@ end
 
 @testset "Compare performance" verbose = true begin
     compare()
+    versioninfo(verbose=true)
 end
