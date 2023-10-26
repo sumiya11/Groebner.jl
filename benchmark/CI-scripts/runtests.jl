@@ -2,6 +2,7 @@
 
 using Test
 using TestSetExtensions
+using InteractiveUtils
 
 const MAX_ACCEPTABLE_DEVIATION = 0.1
 
