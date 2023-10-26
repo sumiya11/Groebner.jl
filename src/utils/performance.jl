@@ -21,9 +21,12 @@ entail no runtime overhead.
 """
 performance_counters_enabled() = false
 
-timeit_debug_enabled() = false
-
 const _groebner_timer = TimerOutputs.TimerOutput()
+
+@noinline __throw_timeit_error() = throw(ArgumentError("""
+    Invalid usage of macro @timeit in Groebner.jl. Use it as:
+    @timeit label expr
+    @timeit function foo() ... end"""))
 
 """
     @timeit label expr
@@ -33,9 +36,6 @@ Wraps the expression (or function) in a timed block.
 
 Timed block records some runtime performance information, if performance
 counters are enabled in Groebner (see `performance_counters_enabled`).
-
-The function `log_performance_counters` prints the table with statistics into
-the current logging IO-stream.
 
 ## Example
 
@@ -53,20 +53,55 @@ We can also benchmark separate expressions:
 
 ```jldoctest
 @timeit function foo()
-    @timeit "initialize data" X = rand(100)
-    @timeit "compute stuff" y = map(x -> sin(x) + cos(x), X)
+    @timeit "initialize data" xs = rand(100)
+    @timeit "compute stuff" y = map(x -> sin(x) + cos(x), xs)
     return y 
 end
 ```
+
+Note: `@timeit` cannot wrap separate expressions that contain `@label` or
+`@goto` (functions are fine).
 """
 macro timeit(args...)
-    esc(quote
+    if isempty(args) || length(args) > 2
+        __throw_timeit_error()
+    end
+    _timeit(__module__, args...)
+end
+
+function _timeit(m, expr)
+    _timeit(m, nothing, expr)
+end
+
+function _timeit(m, label, expr)
+    timed_expr = if TimerOutputs.is_func_def(expr)
+        _timeit_func(m, label, expr)
+    else
+        _timeit_expr(m, label, expr)
+    end
+    esc(timed_expr)
+end
+
+function _timeit_func(m, label, expr)
+    expr = macroexpand(m, expr)
+    def = splitdef(expr)
+    label === nothing && (label = string(def[:name]))
+    @debug "Groebner.@timeit tracks function $label"
+    def[:body] = _timeit_expr(m, label, def[:body])
+    combinedef(def)
+end
+
+function _timeit_expr(m, label, expr)
+    fn = gensym()
+    quote
         if $(@__MODULE__).performance_counters_enabled()
-            Base.@__doc__ TimerOutputs.@timeit($_groebner_timer, $(args...))
+            # This is a hack for the case when expr contains @label statements 
+            $fn = () -> TimerOutputs.@timeit($_groebner_timer, $label, $expr)
+            $fn()
         else
-            $(args[end])
+            $expr
         end
-    end)
+    end
 end
 
 function refresh_performance_counters!()
@@ -78,9 +113,14 @@ end
 
 function log_performance_counters(statistics)
     (statistics === :no) && return nothing
-    !performance_counters_enabled() && return nothing
+    if !performance_counters_enabled()
+        @log level = 0 """
+        Performance counters are not printed since `performance_counters_enabled()` is `false`.
+        """
+        return nothing
+    end
     threadid() != 1 && return nothing
-    iostream = _default_logger[].stream
+    iostream = stdout
     TimerOutputs.print_timer(
         iostream,
         _groebner_timer,

@@ -1135,7 +1135,7 @@ function record_active_reducer(active_reducers, matrix, idx)
     nothing
 end
 
-@timeit function reduce_dense_row_by_pivots_sparse!(
+function reduce_dense_row_by_pivots_sparse!(
     new_column_indices::Vector{ColumnLabel},
     new_coeffs::Vector{C},
     row::Vector{C},

@@ -467,7 +467,7 @@ end
 # add monomials from `poly` multiplied by exponent vector `etmp`
 # with hash `htmp` to hashtable `symbol_ht`,
 # and substitute hashes in row
-@timeit function insert_multiplied_poly_in_hash_table!(
+function insert_multiplied_poly_in_hash_table!(
     row::Vector{MonomIdx},
     htmp::MonomHash,
     etmp::M,

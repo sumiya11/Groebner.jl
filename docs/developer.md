@@ -11,51 +11,81 @@ where appropriate -->
 using Groebner # hide
 ```
 
-### Getting Groebner.jl for development
+### Project source
 
-git clone ...
+You can get a clone of the GitHub repository with:
 
-or Pkg.dev
+```git clone https://github.com/sumiya11/Groebner.jl```
 
-### Structure of Groebner.jl
+If you want to browse the repository online, or fork it on GitHub, it can be accessed here:
 
-..Graph of function calls..
+https://github.com/sumiya11/Groebner.jl
 
-### Utilities
+The up-to-date branch in the repository is "master".
 
-#### Assertions
+### Development directions
 
-To enable/disable all `@invariant` macro in Groebner.jl, change `Groebner.invariants_enabled()` to `true`/`false`. 
+WIP
+
+### Utilities in Groebner.jl
+
+Internally, Groebner.jl provides some utilities for convenient assertion checking, logging, and timings measurment. These are implemented via macros `@invariant`, `@log`, and `@timeit`, respectively.
+
+Each utility can be globally enabled/disabled by setting the appropriate switch to `true`/`false`. The switches and their default values are: 
+
+
+| Macro      | Switch         | Default value |
+|------------|------------------------------|--------|
+| @invariant | invariants_enabled           | `true` |
+| @log       | logging_enabled              | `true` |
+| @timeit    | performance_counters_enabled | `false`|
+
+If the switch value is `false`, then the corresponding macro gets *compiled-out*, and has no performance impact.
+
+
+Therefore, for example, if you would like to get the best performance out of Groebner.jl, and do not care about assertions and logging, you can do
+```
+using Groebner
+Groebner.invariants_enabled() = false
+Groebner.logging_enabled() = false
+```
+
+For precise definitions and some examples, see below.
+
+#### Assertions checking
+
+{{doc Groebner.invariants_enabled Groebner.invariants_enabled fn}}
 
 {{doc Groebner.@invariant Groebner.@invariant macro}}
 
 #### Logging
 
-To enable/disable all `@log` macro in Groebner.jl, change `Groebner.logging_enabled()` to `true`/`false`. 
-
-For example,
+If `Groebner.logging_enabled` is `true`, then you can do for example,
 ```julia:dev-log
 using Groebner, AbstractAlgebra
-_, (x,y,z) = GF(2^31-1)["x","y","z"]
+R, (x,y,z) = GF(2^31-1)["x","y","z"]
+
 groebner([x*y + z, x*z + y], loglevel=-3)
 ```
 
 {{doc Groebner.@log Groebner.@log macro}}
 
-#### Collecting statistics and measuring performance
+#### Measuring performance
 
 All functions in the interface of Groebner.jl have keyword argument
 `statistics`. This keyword argument can be set to either of: `:no`, `:timings`, and `:all`. 
 
-To enable/disable all `@log` macro in Groebner.jl, change `Groebner.logging_enabled()` to `true`/`false`. 
+Note that `Groebner.performance_counters_enabled` is `false` by default. You should set it to `true` if you want to record and print statistics. For example,
 
-For example,
 ```julia:dev-timings
 using Groebner, AbstractAlgebra
-_, (x,y,z) = GF(2^31-1)["x","y","z"]
+
+# Enable performance counters
+Groebner.performance_counters_enabled() = true
+
+R, (x,y,z) = GF(2^31-1)["x","y","z"]
+
 groebner([x*y + z, x*z + y], statistics=:timings)
 ```
-
-Timings are recorded
 
 {{doc Groebner.@timeit Groebner.@timeit macro}}
