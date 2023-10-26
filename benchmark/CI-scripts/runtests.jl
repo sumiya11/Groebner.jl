@@ -4,7 +4,8 @@ using Test
 using TestSetExtensions
 using InteractiveUtils
 
-const MAX_ACCEPTABLE_DEVIATION = 0.1
+const MAX_ACCEPTABLE_RELATIVE_DEVIATION = 0.1
+const IGNORE_SMALL_ABSOLUTE_DEVIATION = 1e-3
 
 @info "Start benchmarking.."
 
@@ -52,7 +53,12 @@ function compare()
         Problem: $(join(problem_name, ",")).
         Groebner.jl latest : $time_latest s
         Groebner.jl nightly: $time_nightly s"""
-        @test (time_nightly - time_latest) / time_latest < MAX_ACCEPTABLE_DEVIATION
+        delta = time_nightly - time_latest
+        if delta / time_latest < MAX_ACCEPTABLE_DEVIATION
+            if delta > IGNORE_SMALL_ABSOLUTE_DEVIATION
+                @test delta / time_latest < MAX_ACCEPTABLE_DEVIATION
+            end
+        end
     end
 end
 

@@ -5,7 +5,7 @@ suite = []
 
 function compute_gb(system)
     times = []
-    trials = 5
+    trials = 7
     for _ in 1:trials
         GC.gc()
         time = @elapsed groebner(system)
@@ -38,6 +38,13 @@ push!(
 push!(
     suite,
     (
+        problem_name="groebner, GF(2^31-1), katsura 10",
+        result=compute_gb(Groebner.katsuran(10, ordering=:degrevlex, ground=GF(2^31 - 1)))
+    )
+)
+push!(
+    suite,
+    (
         problem_name="groebner, GF(2^31-1), cyclic 8",
         result=compute_gb(Groebner.cyclicn(8, ordering=:degrevlex, ground=GF(2^31 - 1)))
     )
@@ -53,7 +60,7 @@ push!(
     suite,
     (
         problem_name="groebner, QQ, eco 10",
-        result=compute_gb(Groebner.katsuran(6, ordering=:degrevlex, ground=QQ))
+        result=compute_gb(Groebner.eco10(ordering=:degrevlex, ground=QQ))
     )
 )
 push!(
