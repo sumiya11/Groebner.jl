@@ -74,7 +74,7 @@ You can find more information on monomial orderings in Groebner.jl in [Monomial 
 
 ### with DynamicPolynomials.jl
 
-We will compute the basis of the `noon-2` system[^3]
+We will compute the basis of the `noon-2` system[^2]
 
 ```julia:install_dynamic
 import Pkg; # hide
@@ -97,10 +97,11 @@ This library is maintained by Alexander Demin ([asdemin_2@edu.hse.ru](mailto:asd
 
 ## Acknowledgement
 
-We would like to acknowledge Jérémy Berthomieu, Christian Eder, and Mohab Safey El Din as this library is inspired by their work "msolve: A Library for Solving Polynomial Systems"[^2]. We are also grateful to The Max Planck Institute for Informatics and The MAX team at l'X for providing computational resources.
+We would like to acknowledge the developers of the msolve library ([https://msolve.lip6.fr/](https://msolve.lip6.fr/)), as several components of Groebner.jl were adapted from msolve. In our F4 implementation, we adapt and adjust the code of monomial hashtable, critical pair handling and symbolic preprocessing, and linear algebra from msolve. The source code of msolve is available at [https://github.com/algebraic-solving/msolve](https://github.com/algebraic-solving/msolve).
 
-Special thanks goes to Vladimir Kuznetsov for providing the sources of his F4 implementation.
+We are grateful to Vladimir Kuznetsov for providing the sources of his F4 implementation.
+
+We thank The Max Planck Institute for Informatics and The MAX team at l'X for providing computational resources.
 
 [^1]: [https://www-polsys.lip6.fr/~jcf/Papers/F99a.pdf](https://www-polsys.lip6.fr/~jcf/Papers/F99a.pdf)
-[^3]: [https://www.jstor.org/stable/2101937](https://www.jstor.org/stable/2101937)
-[^2]: [https://msolve.lip6.fr/](https://msolve.lip6.fr/)
+[^2]: [https://www.jstor.org/stable/2101937](https://www.jstor.org/stable/2101937)
