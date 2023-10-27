@@ -1,8 +1,9 @@
-## Groebner v0.4.5 Release notes
+## Groebner v0.5.0 Release notes
 
 New features
 - Added keyword argument `statistics` to all functions in the interface. It allows one to collect and print some timings and statistics after the computation finishes.
 - Added section `Development` on the documentation page.
+- Now each new push is automatically benchmarked against the previous release to detect performance regressions.
 
 A couple of bugfixes.
 
