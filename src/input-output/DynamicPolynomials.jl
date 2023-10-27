@@ -11,6 +11,10 @@ function extract_ring(orig_polys::Vector{<:AbstractPolynomialLike{T}}) where {T}
     PolyRing{typeof(ord)}(nv, ord, UInt(0))
 end
 
+function _check_input(polynomials::Vector{<:AbstractPolynomialLike{T}}, kws) where {T}
+    true
+end
+
 function extract_coeffs_qq(
     representation,
     ring::PolyRing,

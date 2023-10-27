@@ -1,5 +1,7 @@
 using Logging
 
+Groebner.logging_enabled() = true
+
 @testset "logging" begin
     if Groebner.logging_enabled()
         R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"])

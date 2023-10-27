@@ -2,12 +2,13 @@
 
 New features
 - Added keyword argument `statistics` to all functions in the interface. It allows one to collect and print some timings and statistics after the computation finishes.
-- Added section `For developers` on the documentation page.
+- Added section `Development` on the documentation page.
 
 A couple of bugfixes.
 
 Versions of dependencies:
 - Updated dependency on AbstractAlgebra.jl.
+- Added a dependency on TimerOutputs.jl.
 
 ## Groebner v0.4.4 Release notes
 

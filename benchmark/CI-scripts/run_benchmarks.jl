@@ -1,3 +1,6 @@
+# This script is not intended to be run directly.
+# Instead, see runtests.jl.
+
 using Groebner
 using AbstractAlgebra
 
@@ -14,6 +17,7 @@ function compute_gb(system)
     minimum(times)
 end
 
+# Compute Groebner bases over
 push!(
     suite,
     (
@@ -63,6 +67,14 @@ push!(
         result=compute_gb(Groebner.eco10(ordering=:degrevlex, ground=QQ))
     )
 )
+push!(
+    suite,
+    (
+        problem_name="groebner, QQ, cyclic 7",
+        result=compute_gb(Groebner.cyclicn(7, ordering=:degrevlex, ground=QQ))
+    )
+)
+
 push!(
     suite,
     (

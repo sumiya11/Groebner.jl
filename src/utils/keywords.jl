@@ -24,25 +24,25 @@ const _supported_kw_args = (
         statistics  = :no
     ),
     normalform = (
-        check    = false,
-        ordering = InputOrdering(),
-        monoms   = :dense,
-        loglevel = _default_loglevel,
+        check       = false,
+        ordering    = InputOrdering(),
+        monoms      = :dense,
+        loglevel    = _default_loglevel,
         statistics  = :no
     ),
     isgroebner = (
-        ordering = InputOrdering(),
-        certify  = true,
-        seed     = 42,
-        monoms   = :dense,
-        loglevel = _default_loglevel,
+        ordering    = InputOrdering(),
+        certify     = true,
+        seed        = 42,
+        monoms      = :dense,
+        loglevel    = _default_loglevel,
         statistics  = :no
     ),
     kbase = (
-        check    = false,
-        ordering = InputOrdering(),
-        monoms   = :dense,
-        loglevel = _default_loglevel,
+        check       = false,
+        ordering    = InputOrdering(),
+        monoms      = :dense,
+        loglevel    = _default_loglevel,
         statistics  = :no
     ),
     groebner_learn = (
@@ -55,10 +55,10 @@ const _supported_kw_args = (
         statistics  = :no
     ),
     groebner_apply! = (
-        seed     = 42,
-        monoms   = :auto,
-        loglevel = _default_loglevel,
-        sweep    = true,
+        seed        = 42,
+        monoms      = :auto,
+        loglevel    = _default_loglevel,
+        sweep       = true,
         statistics  = :no
     )
 )
@@ -67,10 +67,12 @@ const _supported_kw_args = (
 """
     KeywordsHandler
 
-Stores keyword arguments passed to one of the functions in the interface. On
-creation, checks that the arguments are correct.
+Stores keyword arguments passed to one of the functions in the interface. 
 
-Sets the global logger for Groebner.jl.
+On creation, 
+- checks that the arguments are correct
+- sets the global logger for Groebner.jl
+- refreshes performance counters for Groebner.jl
 """
 struct KeywordsHandler{Ord}
     reduced::Bool
@@ -148,7 +150,7 @@ struct KeywordsHandler{Ord}
           loglevel   = $loglevel, 
           maxpairs   = $maxpairs,
           selection  = $selection,
-          modular   = $modular,
+          modular    = $modular,
           check      = $check,
           sweep      = $sweep
           homogenize = $homogenize

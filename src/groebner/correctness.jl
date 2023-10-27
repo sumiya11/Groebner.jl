@@ -99,8 +99,7 @@ function randomized_correctness_check!(
     # Check that initial ideal contains in the computed groebner basis modulo a
     # random prime
     arithmetic = select_arithmetic(prime, CoeffModular)
-    # TODO: Why is this here?
-    # F4 normalizes the basis on entry
+    # TODO: Why is this here? F4 normalizes the basis on entry
     normalize_basis!(ring_ff, gb_ff)
     f4_normalform!(ring_ff, gb_ff, input_ff, hashtable, arithmetic)
     for i in 1:(input_ff.nprocessed)

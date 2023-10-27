@@ -19,6 +19,17 @@ end
     R, (x, y) = AbstractAlgebra.GF(Primes.nextprime(BigInt(2)^100))["x", "y"]
     @test_throws DomainError Groebner.groebner([x, y])
 
+    R, (x, y) = AbstractAlgebra.ZZ["x", "y"]
+    @test_throws DomainError Groebner.groebner([x, y])
+
+    R_, (a) = AbstractAlgebra.QQ["a"]
+    R, (x, y) = R_["x", "y"]
+    @test_throws DomainError Groebner.groebner([x, y])
+
+    # R_, (a) = AbstractAlgebra.QQ["a"]
+    # R, (x, y) = AbstractAlgebra.FractionField(R_)["x", "y"]
+    # @test_throws DomainError Groebner.groebner([x, y])
+
     aa_orderings_to_test = [:lex, :degrevlex, :deglex]
     aa_grounds_to_test = [
         AbstractAlgebra.GF(2^62 + 135),

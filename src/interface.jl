@@ -53,6 +53,12 @@ The `groebner` routine takes the following optional arguments:
     - `:yes`, always homogenize the input ideal,
     - `:no`, never homogenize the input ideal,
     - `:auto`, for the automatic choice (default).
+- `statistics`: After the function exits, print some runtime statistics.
+  Possible options are:
+  - `:no`, do not print anything (default),
+  - `:timings`, print the table with timings and allocations. Note that
+    `Groebner.performance_counters_enabled()` must be set to `true` for this to
+    have effect.
 
 ## Example
 
@@ -88,6 +94,8 @@ function groebner(polynomials::AbstractVector; options...)
     _groebner(polynomials, KeywordsHandler(:groebner, options))::typeof(polynomials)
 end
 
+# NOTE: the function `groebner_learn` is documented, but Groebner.jl does not
+# export it. Use it at your own risk
 """
     groebner_learn(polynomials; options...)
 
@@ -120,6 +128,8 @@ function groebner_learn(polynomials::AbstractVector; options...)
     _groebner_learn(polynomials, KeywordsHandler(:groebner_learn, options))
 end
 
+# NOTE: the function `groebner_apply!` is documented, but Groebner.jl does not
+# export it. Use it at your own risk
 """
     groebner_apply!(graph, polynomials; options...)
 
@@ -179,6 +189,12 @@ The `isgroebner` routine takes the following optional arguments:
 - `loglevel`: Logging level, an integer. Higher values mean less verbose.
     Default value is `0`, which means that only warnings are printed. Set
     `loglevel` to negative values, e.g., `-1`, for debugging.
+- `statistics`: After the function exits, print some runtime statistics.
+    Possible options are:
+    - `:no`, do not print anything (default),
+    - `:timings`, print the table with timings and allocations. Note that
+      `Groebner.performance_counters_enabled()` must be set to `true` for this to
+      have effect.
 
 ## Example
 
@@ -225,6 +241,12 @@ The `normalform` routine takes the following optional arguments:
 - `loglevel`: Logging level, an integer. Higher values mean less verbose.
   Default value is `0`, which means that only warnings are printed. Set
   `loglevel` to negative values, e.g., `-1`, for debugging.
+- `statistics`: After the function exits, print some runtime statistics.
+  Possible options are:
+  - `:no`, do not print anything (default),
+  - `:timings`, print the table with timings and allocations. Note that
+    `Groebner.performance_counters_enabled()` must be set to `true` for this to
+    have effect.
 
 ## Example
 
@@ -257,6 +279,12 @@ The `kbase` routine takes the following optional arguments:
 - `loglevel`: Logging level, an integer. Higher values mean less verbose.
     Default value is `0`, which means that only warnings are printed. Set
     `loglevel` to negative values, e.g., `-1`, for debugging.
+- `statistics`: After the function exits, print some runtime statistics.
+    Possible options are:
+    - `:no`, do not print anything (default),
+    - `:timings`, print the table with timings and allocations. Note that
+      `Groebner.performance_counters_enabled()` must be set to `true` for this to
+      have effect.
 
 ## Example
 

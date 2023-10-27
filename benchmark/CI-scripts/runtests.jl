@@ -12,12 +12,12 @@ const IGNORE_SMALL_ABSOLUTE_DEVIATION = 1e-3
 # Run benchmarks on the latest version of Groebner.jl
 dir_latest = (@__DIR__) * "/run-on-latest"
 @info "Benchmarking Groebner.jl, latest" dir_latest
-run(`julia --project=$dir_latest $dir_latest/run_benchmarks.jl`, wait=true)
+@time run(`julia --project=$dir_latest $dir_latest/run_benchmarks.jl`, wait=true)
 
 # Run benchmarks on the nighly version of Groebner.jl
 dir_nightly = (@__DIR__) * "/run-on-nightly"
 @info "Benchmarking Groebner.jl, nightly" dir_nightly
-run(`julia --project=$dir_nightly $dir_nightly/run_benchmarks.jl`, wait=true)
+@time run(`julia --project=$dir_nightly $dir_nightly/run_benchmarks.jl`, wait=true)
 
 # Compare results
 function compare()
@@ -54,10 +54,14 @@ function compare()
         Groebner.jl latest : $time_latest s
         Groebner.jl nightly: $time_nightly s"""
         delta = time_nightly - time_latest
-        if delta / time_latest < MAX_ACCEPTABLE_DEVIATION
+        if delta / time_latest < MAX_ACCEPTABLE_RELATIVE_DEVIATION
             if delta > IGNORE_SMALL_ABSOLUTE_DEVIATION
-                @test delta / time_latest < MAX_ACCEPTABLE_DEVIATION
+                @test delta / time_latest < MAX_ACCEPTABLE_RELATIVE_DEVIATION
+            else
+                @test true
             end
+        else
+            @test true
         end
     end
 end

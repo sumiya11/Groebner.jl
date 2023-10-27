@@ -16,8 +16,22 @@ import Primes
 end
 
 @testset "Nemo.jl, input-output" begin
-    R, (x, y) = AbstractAlgebra.GF(Primes.nextprime(BigInt(2)^100))["x", "y"]
+    R, (x, y) = Nemo.GF(Nemo.fmpz(Primes.nextprime(BigInt(2)^100)))["x", "y"]
     @test_throws DomainError Groebner.groebner([x, y])
+
+    R, (x, y) = Nemo.GF(2, 2)["x", "y"]
+    @test_throws DomainError Groebner.groebner([x, y])
+
+    R, (x, y) = Nemo.ZZ["x", "y"]
+    @test_throws DomainError Groebner.groebner([x, y])
+
+    R_, (a) = Nemo.QQ["a"]
+    R, (x, y) = R_["x", "y"]
+    @test_throws DomainError Groebner.groebner([x, y])
+
+    # R_, (a) = Nemo.QQ["a"]
+    # R, (x, y) = AbstractAlgebra.FractionField(R_)["x", "y"]
+    # @test_throws DomainError Groebner.groebner([x, y])
 
     nemo_orderings_to_test = [:lex, :deglex, :degrevlex]
     nemo_grounds_to_test = [Nemo.GF(2^62 + 135), Nemo.GF(2^31 - 1), Nemo.GF(17), Nemo.QQ]

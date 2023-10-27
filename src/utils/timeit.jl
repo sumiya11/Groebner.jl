@@ -23,6 +23,11 @@ performance_counters_enabled() = false
 
 const _groebner_timer = TimerOutputs.TimerOutput()
 
+@noinline __throw_timeit_error() = throw(ArgumentError("""
+    Invalid usage of macro @timeit in Groebner.jl. Use it as:
+    @timeit label expr
+    @timeit function foo() ... end"""))
+
 """
     @timeit label expr
     @timeit function foo() ... end
@@ -64,11 +69,6 @@ macro timeit(args...)
     _timeit(__module__, args...)
 end
 
-@noinline __throw_timeit_error() = throw(ArgumentError("""
-    Invalid usage of macro @timeit in Groebner.jl. Use it as:
-    @timeit label expr
-    @timeit function foo() ... end"""))
-
 function _timeit(m, expr)
     _timeit(m, nothing, expr)
 end
@@ -86,7 +86,7 @@ function _timeit_func(m, label, expr)
     expr = macroexpand(m, expr)
     def = splitdef(expr)
     label === nothing && (label = string(def[:name]))
-    @debug "Groebner.@timeit tracks function $label"
+    @debug "Groebner.@timeit now tracks function $label"
     def[:body] = _timeit_expr(m, label, def[:body])
     combinedef(def)
 end

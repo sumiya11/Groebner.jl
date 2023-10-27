@@ -18,15 +18,12 @@ Check that `expr` evaluates to `true` at runtime. If not, throw an
 macro invariant(arg)
     # NOTE: This formulation of @invariant does not propagate the error source
     # path out of the macro
-    esc(:(
+    expr = quote
         if $(@__MODULE__).invariants_enabled()
             @assert $arg
         else
             nothing
         end
-    ))
-    # if !invariants_enabled()
-    #     return nothing
-    # end
-    # esc(:(@assert $arg))
+    end
+    esc(expr)
 end

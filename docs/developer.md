@@ -27,7 +27,7 @@ The up-to-date branch in the repository is "master".
 
 ### Development directions
 
-WIP
+WIP!
 
 ### Utilities in Groebner.jl
 
@@ -35,18 +35,17 @@ Internally, Groebner.jl provides utilities for convenient assertion checking, lo
 
 Each utility can be globally enabled/disabled by setting the appropriate switch to `true`/`false`. The switches and their default values are: 
 
-
-| Macro      | Switch         | Default value |
-|------------|------------------------------|--------|
-| `@invariant` | `invariants_enabled`           | `true` |
-| `@log`       | `logging_enabled`              | `true` |
-| `@timeit`    | `performance_counters_enabled` | `false`|
+| Macro        | Switch                         | Default value |
+|--------------|--------------------------------|---------------|
+| `@invariant` | `invariants_enabled`           | `true`        |
+| `@log`       | `logging_enabled`              | `true`        |
+| `@timeit`    | `performance_counters_enabled` | `false`       |
 
 If the switch value is `false`, then the corresponding macro gets *compiled-out*, and has no performance impact.
 
 Therefore, for example, if you would like to get the best performance out of Groebner.jl, and do not care about assertions and logging, you can do
 
-```
+```julia
 using Groebner
 Groebner.invariants_enabled() = false
 Groebner.logging_enabled() = false
@@ -54,7 +53,7 @@ Groebner.logging_enabled() = false
 
 #### Logging
 
-If `Groebner.logging_enabled` is `true`, then you can do, for example,
+Assuming `Groebner.logging_enabled()` is `true`, for printing some logs you can do, for example,
 ```julia:./dev-log
 using Groebner, AbstractAlgebra
 
@@ -67,10 +66,11 @@ groebner([x*y + z, x*z + y], loglevel=-2)
 
 #### Measuring performance
 
-All functions in the interface have keyword argument `statistics`. This keyword
-argument can be set to either of: `:no`, `:timings`, and `:all`. 
+All functions in the interface have keyword argument `statistics`. This argument can be set to either of: `:no`, `:timings`, and `:all`. 
 
-Since `Groebner.performance_counters_enabled` is `false` by default, you should set it to `true` if you want to record and print some statistics. For example,
+Use `statistics=:timings` to print the table with timings and allocations of internal functions of Groebner.jl.
+
+Since `Groebner.performance_counters_enabled()` is `false` by default, you should set it to `true` to record runtime statistics. For example,
 
 ```julia:dev-timings
 using Groebner, AbstractAlgebra
