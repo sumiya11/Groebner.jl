@@ -83,12 +83,15 @@ function update_logger(; loglevel=nothing)
     # end
     if loglevel !== nothing
         prev_logger = _default_logger[]
-        _default_logger[] = Logging.ConsoleLogger(
-            # prev_logger.stream,
+        new_logger = @static if VERSION >= v"1.7.0"
+            Logging.ConsoleLogger(
             loglevel,
-            # meta_formatter=meta_formatter_groebner
-            # show_limited=prev_logger.show_limited
+            meta_formatter=meta_formatter_groebner
         )
+        else
+            Logging.ConsoleLogger(loglevel)
+        end
+        _default_logger[] = new_logger
     end
     nothing
 end
