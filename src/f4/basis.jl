@@ -1,3 +1,26 @@
+# Parts of this file were taked and adapted from msolve
+#   https://github.com/algebraic-solving/msolve
+# The license is GNU General Public License v2.0.
+#
+# msolve is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# msolve is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with msolve.  If not, see <https://www.gnu.org/licenses/>
+#
+# Authors:
+# Jérémy Berthomieu
+# Christian Eder
+# Mohab Safey El Din
+
+#####
 # Pairset and Basis
 
 # Basis is a structure that stores a list of polynomials. Each polynomial is
