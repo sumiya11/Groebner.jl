@@ -20,6 +20,7 @@ jobs:
           - {user: JuliaSymbolics, repo: Symbolics.jl, group: All}
           - {user: SciML, repo: StructuralIdentifiability.jl, group: All}
           - {user: alexeyovchinnikov, repo: SIAN-Julia, group: All}
+          - {user: sumiya11, repo: ParamPunPam.jl, group: All}
 
     steps:
       - uses: actions/checkout@v2
