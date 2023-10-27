@@ -12,18 +12,17 @@ using Primes
     ]
     buf, buf1, buf2, buf3, n1, n2 = [BigInt(0) for _ in 1:6]
 
-    for ms in Ms
-        M = prod(ms)
+    for (m1, m2) in Ms
+        M = prod((m1, m2))
         nums = [rand(0:(M - 1)) for _ in 1:1000]
-
-        msinv = [gcdx(ms[1], ms[2])[2], gcdx(ms[1], ms[2])[3]]
+        minv1, minv2 = invmod(m1, m2), invmod(m2, m1)
         for a in nums
-            rs = modular_images(a, ms)
-
-            r1, r2 = BigInt.(rs)
-            m1, m2 = BigInt.(ms)
-            minv1, minv2 = BigInt.(msinv)
-            Groebner.CRT!(M, buf, n1, n2, r1, minv1, UInt64(r2), minv2, m1, m2)
+            as = modular_images(a, (m1, m2))
+            a1, a2 = BigInt.(as)
+            m1, m2 = BigInt.((m1, m2))
+            minv1, minv2 = BigInt.((minv1, minv2))
+            c1, c2 = m2 * minv2, m1 * minv1
+            Groebner.CRT!(M, buf, n1, n2, a1, c1, UInt64(a2), c2)
             @test buf == a
         end
     end
