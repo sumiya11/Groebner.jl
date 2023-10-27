@@ -86,7 +86,7 @@ function update_logger(; loglevel=nothing)
         _default_logger[] = Logging.ConsoleLogger(
             # prev_logger.stream,
             loglevel,
-            meta_formatter=meta_formatter_groebner
+            # meta_formatter=meta_formatter_groebner
             # show_limited=prev_logger.show_limited
         )
     end
