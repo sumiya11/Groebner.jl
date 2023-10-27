@@ -62,7 +62,7 @@ This library is maintained by Alexander Demin (<asdemin_2@edu.hse.ru>).
 
 ## Acknowledgement
 
-We would like to acknowledge the developers of the msolve library ([https://msolve.lip6.fr/](https://msolve.lip6.fr/)), as several components of Groebner.jl were adapted from msolve. In our F4 implementation, we adapt and adjust the code of monomial hashtable, critical pair handling and symbolic preprocessing, and linear algebra from msolve. The source code of msolve are available at [https://github.com/algebraic-solving/msolve](https://github.com/algebraic-solving/msolve).
+We would like to acknowledge the developers of the msolve library ([https://msolve.lip6.fr/](https://msolve.lip6.fr/)), as several components of Groebner.jl were adapted from msolve. In our F4 implementation, we adapt and adjust the code of monomial hashtable, critical pair handling and symbolic preprocessing, and linear algebra from msolve. The source code of msolve is available at [https://github.com/algebraic-solving/msolve](https://github.com/algebraic-solving/msolve).
 
 We are grateful to Vladimir Kuznetsov for providing the sources of his F4 implementation.
 
