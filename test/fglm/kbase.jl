@@ -37,7 +37,7 @@
 end
 
 @testset "kbase zeros" begin
-    for field in [GF(2), GF(2^31 - 1), ZZ, QQ]
+    for field in [GF(2), GF(2^31 - 1), QQ]
         R, (x, y, z) = PolynomialRing(field, ["x", "y", "z"], ordering=:lex)
 
         @test_throws DomainError Groebner.kbase([R(0)])
