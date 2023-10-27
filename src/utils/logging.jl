@@ -89,7 +89,7 @@ function update_logger(; loglevel=nothing)
             meta_formatter=meta_formatter_groebner
         )
         else
-            Logging.ConsoleLogger(loglevel)
+            Logging.ConsoleLogger(Logging.LogLevel(loglevel))
         end
         _default_logger[] = new_logger
     end
