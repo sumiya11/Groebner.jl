@@ -19,7 +19,7 @@ jobs:
       uses: julia-actions/julia-buildpkg@latest
     - run: julia -e '
             using Pkg;
-            Pkg.add(["Test", "TestSetExtensions", "Random", "GitHubActions", "Logging", "AbstractAlgebra"]);
+            Pkg.add(["Test", "TestSetExtensions", "Random", "GitHubActions", "Logging", "AbstractAlgebra", "Nemo"]);
             Pkg.add(url="https://github.com/sumiya11/Groebner.jl");
             using GitHubActions, Logging;
             global_logger(GitHubActionsLogger());

@@ -152,7 +152,7 @@ include("fglm/kbase.jl")
 # API
 include("interface.jl")
 
-using SnoopPrecompile
+using PrecompileTools
 include("precompile.jl")
 
 export groebner, groebner_learn, groebner_apply!

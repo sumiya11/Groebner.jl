@@ -69,8 +69,7 @@ groebner([x*y + z, x*z + y], loglevel=-2)
 All functions in the interface have keyword argument `statistics`. This argument can be set to either of: `:no`, `:timings`, and `:all`. 
 
 Use `statistics=:timings` to print the table with timings and allocations of internal functions of Groebner.jl.
-
-Since `Groebner.performance_counters_enabled()` is `false` by default, you should set it to `true` to record runtime statistics. For example,
+You should also set `Groebner.performance_counters_enabled()` to `true` to record runtime statistics. For example,
 
 ```julia:dev-timings
 using Groebner, AbstractAlgebra
