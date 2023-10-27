@@ -168,7 +168,7 @@ function _groebner_classic_modular(
     # At this point, either the reconstruction or the correctness check failed.
     # Continue to compute Groebner bases modulo different primes in batches. 
     batchsize = 1
-    batchsize_multiplier = 2
+    batchsize_multiplier = 1.4
     @log level = -2 """
       Preparing to compute bases in batches.. 
       The initial size of the batch is $batchsize. 
@@ -186,30 +186,36 @@ function _groebner_classic_modular(
     # end of the batch.
     iters = 0
     while !correct_basis
-        @log level = -2 """
-          Used $(length(luckyprimes.primes)) primes in total over $(iters) iterations.
-          The current batch size is $batchsize.
-          """
         for j in 1:batchsize
             prime = next_lucky_prime!(luckyprimes)
-            @log level = -2 "The lucky prime is $prime"
-            @log level = -2 "Reducing input generators modulo $prime"
+            @log level = -3 "The lucky prime is $prime"
+            @log level = -3 "Reducing input generators modulo $prime"
             # Perform reduction modulo prime and store result in basis_ff
             ring_ff, basis_ff =
                 reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
             params_zp = params_mod_p(params, prime)
             f4!(ring_ff, basis_ff, pairset, hashtable, tracer, params_zp)
             if !majority_vote!(state, basis_ff, tracer, params)
-                @log level = -2 "Majority vote is not conclusive, aborting reconstruction!"
+                @log level = -3 "Majority vote is not conclusive, aborting reconstruction!"
                 continue
             end
-            @log level = -2 "Reconstructing coefficients from Z_$(luckyprimes.modulo) * Z_$(prime) to Z_$(luckyprimes.modulo * prime)"
+            @log level = -3 "Reconstructing coefficients using CRT"
+            @log level = -4 "Reconstructing coefficients from Z_$(luckyprimes.modulo) * Z_$(prime) to Z_$(luckyprimes.modulo * prime)"
             crt_reconstruct!(state, ring_ff, luckyprimes, basis_ff)
         end
-        @log level = -2 "Reconstructing coefficients from Z_$(luckyprimes.modulo * prime) to QQ"
+        @log level = -3 "Reconstructing coefficients to QQ"
+        @log level = -4 "Reconstructing coefficients from Z_$(luckyprimes.modulo * prime) to QQ"
         success_reconstruct = rational_reconstruct!(state, luckyprimes)
-        @log level = -2 "Reconstruction successfull: $success_reconstruct"
-        !success_reconstruct && continue
+        @log level = -3 "Reconstruction successfull: $success_reconstruct"
+        @log level = -2 """
+          Used $(length(luckyprimes.primes)) primes in total over $(iters + 1) iterations.
+          The current batch size is $batchsize.
+          """
+        if !success_reconstruct
+            iters += 1
+            batchsize = max(batchsize + 1, round(Int, batchsize * batchsize_multiplier))
+            continue
+        end
         correct_basis = correctness_check!(
             state,
             luckyprimes,
@@ -221,7 +227,7 @@ function _groebner_classic_modular(
             params
         )
         iters += 1
-        batchsize = batchsize * batchsize_multiplier
+        batchsize = max(batchsize + 1, round(Int, batchsize * batchsize_multiplier))
     end
     @log level = -2 "Correctness check passed!"
     @log level = -2 "Used $(length(luckyprimes.primes)) primes in total over $(iters) iterations"

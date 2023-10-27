@@ -121,15 +121,6 @@ end
     convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 end
 
-"""
-    fufu
-
-X
-"""
-@timeit function fufu(x)
-    x
-end
-
 # F4 symbolic preprocessing
 @timeit function symbolic_preprocessing!(
     basis::Basis,
@@ -295,7 +286,7 @@ function select_tobereduced!(
     nothing
 end
 
-@timeit function find_lead_monom_that_divides_use_divmask(i, divmask, basis)
+function find_lead_monom_that_divides_use_divmask(i, divmask, basis)
     lead_divmasks = basis.divmasks
     @inbounds while i <= basis.nnonredundant
         # TODO: rethink division masks to support more variables
@@ -307,7 +298,7 @@ end
     i
 end
 
-@timeit function find_lead_monom_that_divides(i, monom, basis, ht)
+function find_lead_monom_that_divides(i, monom, basis, ht)
     @inbounds while i <= basis.nnonredundant
         lead_monom = ht.monoms[basis.monoms[basis.nonredundant[i]][1]]
         if is_monom_divisible(monom, lead_monom)
@@ -321,8 +312,8 @@ end
 # Finds a polynomial from the `basis` 
 # with leading term that divides monomial `vidx`. 
 # If such polynomial was found, 
-# writes the divisor polynomial to the hashtable `symbol_ht`
-@timeit function find_multiplied_reducer!(
+# writes the divisor polynomial to the hashtable `symbol_ht` 
+function find_multiplied_reducer!(
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
@@ -712,7 +703,7 @@ end
     @invariant basis_well_formed(:input_f4!, ring, basis, hashtable)
     # @invariant pairset_well_formed(:input_f4!, pairset, basis, ht)
 
-    @log level = -2 "Entering F4."
+    @log level = -3 "Entering F4."
     normalize_basis!(ring, basis)
 
     matrix = initialize_matrix(ring, C)
@@ -798,18 +789,18 @@ end
     set_final_basis!(tracer, basis.nfilled)
 
     if params.sweep
-        @log level = -3 "Sweeping redundant elements in the basis"
+        @log level = -4 "Sweeping redundant elements in the basis"
         sweep_redundant!(basis, hashtable)
     end
 
     # mark redundant elements
     mark_redundant!(basis)
-    @log level = -3 "Filtered elements marked redundant"
+    @log level = -4 "Filtered elements marked redundant"
 
     if params.reduced
-        @log level = -2 "Autoreducing the final basis.."
+        @log level = -4 "Autoreducing the final basis.."
         reducegb_f4!(ring, basis, matrix, hashtable, symbol_ht, params)
-        @log level = -3 "Autoreduced!"
+        @log level = -4 "Autoreduced!"
     end
 
     standardize_basis!(ring, basis, hashtable, hashtable.ord)

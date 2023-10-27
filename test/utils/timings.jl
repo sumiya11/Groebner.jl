@@ -1,5 +1,6 @@
-# How do we test the output printed to stdout in this case?..
-@testset "collect statistics: timings" begin
+# How do we test the output printed to stdout?..
+
+function test_timings()
     R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"])
     f = [x * y + z, x * z + y]
 
@@ -29,4 +30,11 @@
     basis3 = Groebner.kbase(f, statistics=:all)
     @test basis1 == basis2 == basis3
     @test_throws AssertionError Groebner.kbase(f, statistics=:alll)
+end
+
+@testset "collect statistics: timings" begin
+    Groebner.performance_counters_enabled() = true
+    test_timings()
+    Groebner.performance_counters_enabled() = false
+    test_timings()
 end

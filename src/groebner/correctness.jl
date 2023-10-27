@@ -57,7 +57,7 @@
 end
 
 # Heuristic bound on the size of coefficients of the basis.
-threshold_in_heuristic_check(sznum, szden, szmod) = 1.30 * (sznum + szden) >= szmod
+threshold_in_heuristic_check(sznum, szden, szmod) = 1.15 * (sznum + szden) >= szmod
 
 # Checks that 
 #   ln(num) + ln(den) < C ln(modulo)
@@ -73,7 +73,7 @@ function heuristic_correctness_check(gb_coeffs_qq, modulo)
                 Base.GMP.MPZ.sizeinbase(d, 2),
                 lnm
             )
-                @log level = -2 "Heuristic check failed for coefficient $n/$d and modulo $modulo"
+                @log level = -5 "Heuristic check failed for coefficient $n/$d and modulo $modulo"
                 return false
             end
         end
@@ -99,8 +99,7 @@ function randomized_correctness_check!(
     # Check that initial ideal contains in the computed groebner basis modulo a
     # random prime
     arithmetic = select_arithmetic(prime, CoeffModular)
-    # TODO: Why is this here?
-    # F4 normalizes the basis on entry
+    # TODO: Why is this here? F4 normalizes the basis on entry
     normalize_basis!(ring_ff, gb_ff)
     f4_normalform!(ring_ff, gb_ff, input_ff, hashtable, arithmetic)
     for i in 1:(input_ff.nprocessed)

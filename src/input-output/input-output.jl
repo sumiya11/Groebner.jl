@@ -210,9 +210,7 @@ function check_input(polynomials, kws)
     if isempty(polynomials)
         __throw_input_not_supported(polynomials, "Empty input array.")
     end
-    # TODO: check that there are no parameters
-    # TODO: check that the ground field is Z_p or QQ
-    true
+    _check_input(polynomials, kws)
 end
 
 function extract_polys(

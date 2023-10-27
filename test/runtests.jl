@@ -6,9 +6,9 @@ using Random
 using Groebner
 
 # Check invariants during testing.
-# NOTE: it's good to turn this on, as asserts may help to prevent segfaults
+# NOTE: it's good to turn this on!
 Groebner.invariants_enabled() = true
-Groebner.update_logger(stream=stdout, loglevel=0)
+Groebner.update_logger(loglevel=0)
 
 # Taken from JuMP/test/solvers.jl
 function try_import(name::Symbol)

@@ -1,0 +1,26 @@
+name: Performance Check
+on: [push, pull_request]
+jobs:
+  build-and-benchmark:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        julia-version: ['1']
+        julia-arch: [x64]
+        os: [ubuntu-latest]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Install Julia
+      uses: julia-actions/setup-julia@latest
+      with:
+        version: ${{ matrix.julia-version }}
+    - name: Build project
+      uses: julia-actions/julia-buildpkg@latest
+    - run: julia -e '
+            using Pkg;
+            Pkg.add(["Test", "TestSetExtensions", "Random", "GitHubActions", "Logging", "AbstractAlgebra"]);
+            Pkg.add(url="https://github.com/sumiya11/Groebner.jl");
+            using GitHubActions, Logging;
+            global_logger(GitHubActionsLogger());
+            include("benchmark/CI-scripts/runtests.jl")'

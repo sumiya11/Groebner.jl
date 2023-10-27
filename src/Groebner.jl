@@ -46,7 +46,6 @@ import MultivariatePolynomials
 import MultivariatePolynomials: AbstractPolynomial, AbstractPolynomialLike
 
 # For printing the tables with statistics in the console nicely
-import PrettyTables
 using Printf
 
 import TimerOutputs
@@ -58,10 +57,14 @@ import Random
 
 using SIMD
 
+# For printing some logging info to console nicely
 include("utils/prettyprinting.jl")
+# Provides the `@log` macro for logging stuff
 include("utils/logging.jl")
+# Provides the `@invariant` macro
 include("utils/invariants.jl")
-include("utils/performance.jl")
+# Provides the macro `@timeit` for measuring performance of the internals
+include("utils/timeit.jl")
 include("utils/statistics.jl")
 
 # Minimalistic plotting with Unicode

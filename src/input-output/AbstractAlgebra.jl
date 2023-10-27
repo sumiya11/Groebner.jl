@@ -1,7 +1,6 @@
 # Conversion from AbstractAlgebra.jl into internal representation.
 
-# This all is just not fantastic. 
-# We are practically dancing for rain around AbstractAlgebra.jl internals here.
+# This all is not good. We are relying on AbstractAlgebra.jl internals here.
 
 const _AA_supported_orderings_symbols = (:lex, :deglex, :degrevlex)
 const _AA_exponent_type = UInt64
@@ -30,6 +29,28 @@ function peek_at_polynomials(polynomials::Vector{T}) where {T}
         )
     end
     :abstractalgebra, length(polynomials), UInt(BigInt(char)), nvars, ord
+end
+
+function _check_input(polynomials::Vector{T}, kws) where {T}
+    R = parent(first(polynomials))
+    K = base_ring(R)
+    if !(K isa AbstractAlgebra.Field)
+        __throw_input_not_supported("Coefficient ring must be a field", K)
+    end
+    if !iszero(AbstractAlgebra.characteristic(K))
+        if hasmethod(AbstractAlgebra.degree, Tuple{typeof(K)})
+            if !isone(AbstractAlgebra.degree(K))
+                __throw_input_not_supported(
+                    "Non-prime coefficient fields are not supported",
+                    K
+                )
+            end
+        end
+    end
+    # if hasmethod(AbstractAlgebra.gens, Tuple{typeof(K)})
+    #     __throw_input_not_supported("Parametric coefficients are not supported", K)
+    # end
+    true
 end
 
 # Determines the monomial ordering of the output,

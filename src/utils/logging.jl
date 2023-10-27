@@ -1,7 +1,8 @@
 # Logging for Groebner
 
 # Provides the macro @log, which can be used to log a record with the given
-# message. The macro @log wraps the standard Logging.@logmsg.
+# message to console. The macro @log wraps Logging.@logmsg from the standard
+# library.
 
 # Logging is disabled on all threads except the one with threadid() == 1.
 
@@ -24,20 +25,19 @@ macro log end
 function meta_formatter_groebner end
 
 @noinline __throw_log_macro_error(file, line, error) =
-    throw(LoadError(file, line, "Invalid syntax for @log macro. $error"))
+    throw(ArgumentError("Invalid syntax for @log macro. $error"))
 
 const _default_message_loglevel = LogLevel(0)
 const _default_logger = @static if VERSION >= v"1.7.0"
     Ref{Logging.ConsoleLogger}(
         Logging.ConsoleLogger(
-            stdout,
             Logging.Info,
             show_limited=false,
             meta_formatter=meta_formatter_groebner
         )
     )
 else
-    Ref{Logging.ConsoleLogger}(Logging.ConsoleLogger(stdout))
+    Ref{Logging.ConsoleLogger}(Logging.ConsoleLogger())
 end
 
 function meta_formatter_groebner(level::LogLevel, _module, group, id, file, line)
@@ -111,14 +111,6 @@ end
 macro log(args...)
     file, line = String(__source__.file), Int(__source__.line)
     level, msgs = pruneargs(file, line, args)
-    # if !logging_enabled()
-    #     return nothing
-    # end
-    # esc(:(
-    #     with_logger($(@__MODULE__)._default_logger[]) do
-    #         @logmsg LogLevel($level) $(msgs...)
-    #     end
-    # ))
     esc(:(
         if $(@__MODULE__).logging_enabled()
             if threadid() == 1

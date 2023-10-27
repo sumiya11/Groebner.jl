@@ -908,7 +908,8 @@ function reduce_matrix_lower_part_invariant_pivots!(
             basis,
             pivots,
             # first_nnz_column,
-            # TODO: this is incorrect; for the counter-example see
+            # TODO: using first_nnz_column is incorrect here; 
+            # for the counter-example see
             # https://github.com/sumiya11/Groebner.jl/issues/82
             1,
             arithmetic,
@@ -1135,7 +1136,7 @@ function record_active_reducer(active_reducers, matrix, idx)
     nothing
 end
 
-@timeit function reduce_dense_row_by_pivots_sparse!(
+function reduce_dense_row_by_pivots_sparse!(
     new_column_indices::Vector{ColumnLabel},
     new_coeffs::Vector{C},
     row::Vector{C},
