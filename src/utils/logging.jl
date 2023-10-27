@@ -84,12 +84,13 @@ function update_logger(; loglevel=nothing)
     if loglevel !== nothing
         prev_logger = _default_logger[]
         new_logger = @static if VERSION >= v"1.7.0"
-            Logging.ConsoleLogger(
-            loglevel,
-            meta_formatter=meta_formatter_groebner
-        )
+            Logging.ConsoleLogger(stderr, loglevel, meta_formatter=meta_formatter_groebner)
         else
-            Logging.ConsoleLogger(Logging.LogLevel(loglevel))
+            Logging.ConsoleLogger(
+                stderr,
+                Logging.LogLevel(loglevel);
+                meta_formatter=meta_formatter_groebner
+            )
         end
         _default_logger[] = new_logger
     end
