@@ -37,7 +37,7 @@ const _default_logger = @static if VERSION >= v"1.7.0"
         )
     )
 else
-    Ref{Logging.ConsoleLogger}(Logging.ConsoleLogger(stdout))
+    Ref{Logging.ConsoleLogger}(Logging.ConsoleLogger())
 end
 
 function meta_formatter_groebner(level::LogLevel, _module, group, id, file, line)
@@ -66,25 +66,25 @@ function meta_formatter_groebner(level::LogLevel, _module, group, id, file, line
 end
 
 # Updates the global logging parameters in the Groebner module. 
-function update_logger(; stream=nothing, loglevel=nothing)
+function update_logger(; loglevel=nothing)
     # Don't change anything if run from a worker thread.
     # Maybe throw a warning?
     threadid() != 1 && return nothing
-    if stream !== nothing
-        prev_logger = _default_logger[]
-        _default_logger[] = Logging.ConsoleLogger(
-            stream,
-            prev_logger.min_level,
-            meta_formatter=meta_formatter_groebner
-            # NOTE: the use of this keyword argument leads to fails on Julia
-            # v1.6
-            # show_limited=prev_logger.show_limited
-        )
-    end
+    # if stream !== nothing
+    #     prev_logger = _default_logger[]
+    #     _default_logger[] = Logging.ConsoleLogger(
+    #         stream,
+    #         prev_logger.min_level,
+    #         meta_formatter=meta_formatter_groebner
+    #         # NOTE: the use of this keyword argument leads to fails on Julia
+    #         # v1.6
+    #         # show_limited=prev_logger.show_limited
+    #     )
+    # end
     if loglevel !== nothing
         prev_logger = _default_logger[]
         _default_logger[] = Logging.ConsoleLogger(
-            prev_logger.stream,
+            # prev_logger.stream,
             loglevel,
             meta_formatter=meta_formatter_groebner
             # show_limited=prev_logger.show_limited
