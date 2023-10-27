@@ -37,7 +37,7 @@ const _default_logger = @static if VERSION >= v"1.7.0"
         )
     )
 else
-    Ref{Logging.ConsoleLogger}(Logging.ConsoleLogger())
+    Ref{Logging.ConsoleLogger}(Logging.ConsoleLogger(stdout))
 end
 
 function meta_formatter_groebner(level::LogLevel, _module, group, id, file, line)
