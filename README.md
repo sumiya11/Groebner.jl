@@ -9,6 +9,7 @@
 
 [![Runtests](https://github.com/sumiya11/Groebner.jl/actions/workflows/Runtests.yml/badge.svg)](https://github.com/sumiya11/Groebner.jl/actions/workflows/Runtests.yml)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://sumiya11.github.io/Groebner.jl)
+[![codecov](https://codecov.io/github/sumiya11/Groebner.jl/branch/master/graph/badge.svg)](https://codecov.io/github/sumiya11/Groebner.jl/branch/master/graph/badge.svg)
 
 Groebner.jl is a Julia package for computing Groebner bases over fields.
 
