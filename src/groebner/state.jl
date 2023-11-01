@@ -230,6 +230,8 @@ end
     Base.GMP.MPZ.set_ui!(bigch, characteristic)
     Base.GMP.MPZ.mul_ui!(M, lucky.modulo, characteristic)
     Base.GMP.MPZ.gcdext!(buf, invm1, invm2, lucky.modulo, bigch)
+    Base.GMP.MPZ.mul!(invm1, lucky.modulo)
+    Base.GMP.MPZ.mul_ui!(invm2, bigch)
     gb_coeffs_ff = basis_ff.coeffs
     @invariant length(gb_coeffs_zz) == length(gb_coeffs_ff)
     @inbounds for i in 1:length(gb_coeffs_zz)
@@ -237,7 +239,7 @@ end
         for j in 1:length(gb_coeffs_zz[i])
             ca = gb_coeffs_zz[i][j]
             cf = gb_coeffs_ff[i][j]
-            CRT!(M, buf, n1, n2, ca, invm1, cf, invm2, lucky.modulo, bigch)
+            CRT!(M, buf, n1, n2, ca, invm2, cf, invm1)
             Base.GMP.MPZ.set!(gb_coeffs_zz[i][j], buf)
         end
     end

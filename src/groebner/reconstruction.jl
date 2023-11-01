@@ -122,8 +122,11 @@ Writes the answer to `buf` inplace.
 ## Additional parameters:
 
 - `M`: must be equal to `m1 * m2`
-- `buf`, `n1`, `n2`: buffers
-- `minv1 m1 + minv2 m2 = 1`: the modular inverses of `m1` and `m2` respectively
+- `buf`, `n1`, `n2`: additional buffers
+- `c1`, `c2`: numbers, such that `c1 = m2 * invmod(m2, m1)`, and `c2 = m1 *
+  invmod(m1, m2)`
+
+Then, `x` is obtained as `x = c1 a1 + c2 a2 mod M`.
 """
 function CRT!(
     M::BigInt,
@@ -131,20 +134,12 @@ function CRT!(
     n1::BigInt,
     n2::BigInt,
     a1::BigInt,
-    minv1::BigInt,
+    c1::BigInt,
     a2::UInt,
-    minv2::BigInt,
-    m1::BigInt,
-    m2::BigInt
+    c2::BigInt
 )
-    # @invariant M == m1 * m2
-    # @invariant minv1 == Base.GMP.MPZ.gcdext(m1, m2)[2]
-    # @invariant minv2 == Base.GMP.MPZ.gcdext(m1, m2)[3]
-    Base.GMP.MPZ.mul!(buf, m1, minv1)
-    Base.GMP.MPZ.mul_ui!(n1, buf, a2)
-
-    Base.GMP.MPZ.mul!(buf, m2, minv2)
-    Base.GMP.MPZ.mul!(n2, buf, a1)
+    Base.GMP.MPZ.mul_ui!(n1, c2, a2)
+    Base.GMP.MPZ.mul!(n2, c1, a1)
 
     Base.GMP.MPZ.add!(buf, n1, n2)
     Base.GMP.MPZ.fdiv_r!(buf, M)
