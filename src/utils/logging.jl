@@ -105,7 +105,11 @@ function pruneargs(file, line, args)
     level = _default_message_loglevel
     length(args) == 1 && return level, args
     if args[1] isa Expr && args[1].head == :(=)
-        @assert args[1].args[1] == :level
+        args[1].args[1] != :level && __throw_log_macro_error(
+            file,
+            line,
+            "Use `@log level=N expr` to log a message with a certain loglevel."
+        )
         level = args[1].args[2]
         args = args[2:end]
     end

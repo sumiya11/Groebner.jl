@@ -3,6 +3,7 @@
 
 using Groebner
 using AbstractAlgebra
+import Primes
 import Nemo
 
 suite = []
@@ -98,6 +99,51 @@ push!(
     (
         problem_name="groebner, AA, QQ, cyclic 7",
         result=compute_gb(Groebner.cyclicn(7, ordering=:degrevlex, ground=QQ))
+    )
+)
+
+function multimodular_gb_problem(nbits; np=AbstractAlgebra)
+    R, (x1, x2, x3, x4) =
+        np.PolynomialRing(np.QQ, ["x1", "x2", "x3", "x4"], ordering=:degrevlex)
+    nbits_per_prime = 31
+    nprimes = max(div(nbits, nbits_per_prime), 1)
+    N = prod(map(BigInt, Primes.nextprimes(2^31 - 100, nprimes)))
+    @info "Constructing a multi-modular problem" np nbits nbits_per_prime nprimes
+    system = [
+        x1 + x2 + x3 + x4,
+        x1 * x2 + x1 * x3 + x1 * x4 + x2 * x3 + x2 * x4 + x3 * x4,
+        x1 * x2 * x3 + x1 * x2 * x4 + x1 * x3 * x4 + x2 * x3 * x4,
+        x1 * x2 * x3 * x4 + N
+    ]
+    system
+end
+
+push!(
+    suite,
+    (
+        problem_name="groebner, AA, QQ, 1000-bit output coeffs",
+        result=compute_gb(multimodular_gb_problem(1000, np=AbstractAlgebra))
+    )
+)
+push!(
+    suite,
+    (
+        problem_name="groebner, AA, QQ, 10000-bit output coeffs",
+        result=compute_gb(multimodular_gb_problem(10000, np=AbstractAlgebra))
+    )
+)
+push!(
+    suite,
+    (
+        problem_name="groebner, Nemo, QQ, 1000-bit output coeffs",
+        result=compute_gb(multimodular_gb_problem(1000, np=Nemo))
+    )
+)
+push!(
+    suite,
+    (
+        problem_name="groebner, Nemo, QQ, 10000-bit output coeffs",
+        result=compute_gb(multimodular_gb_problem(10000, np=Nemo))
     )
 )
 

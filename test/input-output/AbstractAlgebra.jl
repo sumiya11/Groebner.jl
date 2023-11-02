@@ -38,6 +38,25 @@ end
         AbstractAlgebra.QQ
     ]
 
+    for aaord in aa_orderings_to_test
+        R, (x, y) = AbstractAlgebra.PolynomialRing(
+            AbstractAlgebra.GF(5),
+            ["x", "y"],
+            ordering=aaord
+        )
+        fs = [x + 3y, R(0)]
+        for gbord in [
+            Groebner.Lex(x, y),
+            Groebner.DegLex(x, y),
+            Groebner.DegRevLex(x, y),
+            Groebner.DegLex(x) * Groebner.DegRevLex(y)
+        ]
+            gb = Groebner.groebner(fs)
+            @test gb == [x + 3y]
+            @test parent(gb[1]) == R
+        end
+    end
+
     for ord in aa_orderings_to_test
         for ground in aa_grounds_to_test
             R, (x,) = PolynomialRing(ground, ["x"], ordering=ord)
@@ -65,42 +84,29 @@ end
     for ground in aa_grounds_to_test
         R, (x,) = PolynomialRing(ground, ["x"], ordering=aa_ord)
         for case in [
-            (gb_ord=Groebner.Lex(), same_parent=true),
-            (gb_ord=Groebner.DegLex(), same_parent=false),
-            (gb_ord=Groebner.DegRevLex(), same_parent=false),
-            (gb_ord=Groebner.Lex(x), same_parent=true),
-            (gb_ord=Groebner.DegLex(x), same_parent=false)
+            Groebner.Lex(),
+            Groebner.DegLex(),
+            Groebner.DegRevLex(),
+            Groebner.Lex(x),
+            Groebner.DegLex(x)
         ]
-            gb_ord = case.gb_ord
-            same_parent = case.same_parent
-            gb = Groebner.groebner([x^2], ordering=gb_ord)
-            if same_parent
-                @test parent(first(gb)) == R
-                @test gb == [x^2]
-            else
-                @test repr(gb[1]) == "x^2"
-            end
+            gb = Groebner.groebner([x^2], ordering=case)
+            @test parent(first(gb)) == R
+            @test gb == [x^2]
         end
 
         R, (x, y) = PolynomialRing(ground, ["x", "y"], ordering=aa_ord)
         fs = [x^2 + 3, y - 1]
         for case in [
-            (gb_ord=Groebner.Lex(), same_parent=true),
-            (gb_ord=Groebner.DegLex(), same_parent=false),
-            (gb_ord=Groebner.DegRevLex(), same_parent=false),
-            (gb_ord=Groebner.Lex(x, y), same_parent=true),
-            (gb_ord=Groebner.Lex(y, x), same_parent=true)
+            Groebner.Lex(),
+            Groebner.DegLex(),
+            Groebner.DegRevLex(),
+            Groebner.Lex(x, y),
+            Groebner.Lex(y, x)
         ]
-            gb_ord = case.gb_ord
-            same_parent = case.same_parent
-            gb = Groebner.groebner(fs, ordering=gb_ord)
-            if same_parent
-                @test parent(first(gb)) == R
-                @test all(in(fs), gb)
-            else
-                @test repr(x^2 + 3) in map(repr, gb)
-                @test repr(y - 1) in map(repr, gb)
-            end
+            gb = Groebner.groebner(fs, ordering=case)
+            @test parent(first(gb)) == R
+            @test all(in(fs), gb)
         end
     end
 end

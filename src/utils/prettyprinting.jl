@@ -1,3 +1,5 @@
+# This file is WIP and is not used at the moment
+
 # Adapted from PrettyNumbers.jl
 # The licence is MIT.
 # https://github.com/ronisbr/PrettyNumbers.jl/blob/main/LICENSE.md

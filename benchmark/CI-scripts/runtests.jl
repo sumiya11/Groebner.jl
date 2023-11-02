@@ -11,7 +11,7 @@ const IGNORE_SMALL_ABSOLUTE_DEVIATION = 1e-3
 
 # Run benchmarks on the latest version of Groebner.jl
 dir_latest = (@__DIR__) * "/run-on-latest"
-@info "Benchmarking Groebner.jl, latest" dir_latest
+@info "Benchmarking Groebner.jl, stable" dir_latest
 @time run(`julia --project=$dir_latest $dir_latest/run_benchmarks.jl`, wait=true)
 
 # Run benchmarks on the nighly version of Groebner.jl
@@ -49,18 +49,25 @@ function compare()
         @assert problem_name == problem_name_
         time_latest = parse(Float64, time_latest)
         time_nightly = parse(Float64, time_nightly)
-        @info """
-        Problem: $(join(problem_name, ",")).
-        Groebner.jl latest : $time_latest s
-        Groebner.jl nightly: $time_nightly s"""
+        print(
+            join(problem_name, ","),
+            ": stable v nightly: $time_latest v $time_nightly s => "
+        )
         delta = time_nightly - time_latest
-        if delta / time_latest < MAX_ACCEPTABLE_RELATIVE_DEVIATION
-            if delta > IGNORE_SMALL_ABSOLUTE_DEVIATION
+        if abs(delta) / time_latest < MAX_ACCEPTABLE_RELATIVE_DEVIATION
+            if abs(delta) > IGNORE_SMALL_ABSOLUTE_DEVIATION
+                if delta > 0
+                    printstyled("Regression\n", color=:red)
+                else
+                    printstyled("Improvement\n", color=:green)
+                end
                 @test delta / time_latest < MAX_ACCEPTABLE_RELATIVE_DEVIATION
             else
+                printstyled("Insignificant\n")
                 @test true
             end
         else
+            printstyled("Insignificant\n")
             @test true
         end
     end
