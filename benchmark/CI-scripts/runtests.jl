@@ -43,18 +43,16 @@ function compare()
     @assert results_latest[1] == "latest" && results_nightly[1] == "nightly"
     results_latest = results_latest[2:end]
     results_nightly = results_nightly[2:end]
+    println("Groebner.jl, stable v nightly:")
     for (latest, nightly) in zip(results_latest, results_nightly)
         problem_name..., time_latest = split(latest, ",")
         problem_name_..., time_nightly = split(nightly, ",")
         @assert problem_name == problem_name_
         time_latest = parse(Float64, time_latest)
         time_nightly = parse(Float64, time_nightly)
-        print(
-            join(problem_name, ","),
-            ": stable v nightly: $time_latest v $time_nightly s => "
-        )
+        print(join(problem_name, ","), ":\t$time_latest v $time_nightly s =>\t")
         delta = time_nightly - time_latest
-        if abs(delta) / time_latest < MAX_ACCEPTABLE_RELATIVE_DEVIATION
+        if abs(delta) / time_latest > MAX_ACCEPTABLE_RELATIVE_DEVIATION
             if abs(delta) > IGNORE_SMALL_ABSOLUTE_DEVIATION
                 if delta > 0
                     printstyled("Regression\n", color=:red)

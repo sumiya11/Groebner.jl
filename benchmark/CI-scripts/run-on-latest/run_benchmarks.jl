@@ -1,5 +1,6 @@
 import Pkg
 Pkg.add("Groebner")
+Pkg.update("Groebner")
 
 include("../run_benchmarks.jl")
 
