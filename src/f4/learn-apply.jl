@@ -259,7 +259,7 @@ function reducegb_f4_apply!(
     true
 end
 
-function standardize_basis_apply!(graph)
+function standardize_basis_apply!(ring, graph)
     basis = graph.gb_basis
     buf = graph.buf_basis
     basis.size = basis.nprocessed = basis.nfilled = basis.nnonredundant
@@ -270,27 +270,11 @@ function standardize_basis_apply!(graph)
     end
     buf.nprocessed = buf.nnonredundant = 0
     buf.nfilled = graph.input_basis.nfilled
-    normalize_basis!(graph.ring, basis)
-end
-
-function standardize_basis_learn!(graph, ring, basis, ht, ord)
-    @inbounds for i in 1:(basis.nnonredundant)
-        idx = basis.nonredundant[i]
-        basis.nonredundant[i] = i
-        basis.isredundant[i] = false
-        basis.coeffs[i] = basis.coeffs[idx]
-        basis.monoms[i] = basis.monoms[idx]
-    end
-    basis.size = basis.nprocessed = basis.nfilled = basis.nnonredundant
-    resize!(basis.coeffs, basis.nprocessed)
-    resize!(basis.monoms, basis.nprocessed)
-    resize!(basis.divmasks, basis.nprocessed)
-    resize!(basis.nonredundant, basis.nprocessed)
-    resize!(basis.isredundant, basis.nprocessed)
-    perm = sort_polys_by_lead_increasing!(basis, ht, ord=ord)
-    graph.output_sort_indices = perm
     normalize_basis!(ring, basis)
 end
+
+###
+# Apply stage
 
 function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
     @invariant basis_well_formed(:input_f4_apply!, ring, basis, graph.hashtable)
@@ -357,7 +341,7 @@ function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
         @log level = -6 "Autoreduced!"
     end
 
-    standardize_basis_apply!(graph)
+    standardize_basis_apply!(ring, graph)
     basis = graph.gb_basis
 
     @log level = -6 "After apply standardization" basis
@@ -365,6 +349,28 @@ function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
     @invariant basis_well_formed(:output_f4_apply!, ring, basis, hashtable)
 
     true
+end
+
+###
+# Learn stage
+
+function standardize_basis_learn!(graph, ring, basis, ht, ord)
+    @inbounds for i in 1:(basis.nnonredundant)
+        idx = basis.nonredundant[i]
+        basis.nonredundant[i] = i
+        basis.isredundant[i] = false
+        basis.coeffs[i] = basis.coeffs[idx]
+        basis.monoms[i] = basis.monoms[idx]
+    end
+    basis.size = basis.nprocessed = basis.nfilled = basis.nnonredundant
+    resize!(basis.coeffs, basis.nprocessed)
+    resize!(basis.monoms, basis.nprocessed)
+    resize!(basis.divmasks, basis.nprocessed)
+    resize!(basis.nonredundant, basis.nprocessed)
+    resize!(basis.isredundant, basis.nprocessed)
+    perm = sort_polys_by_lead_increasing!(basis, ht, ord=ord)
+    graph.output_sort_indices = perm
+    normalize_basis!(ring, basis)
 end
 
 function update!(graph, pairset, basis, hashtable, update_ht)
@@ -513,7 +519,7 @@ function f4_learn!(
         @log level = -3 "F4: iteration $i"
         @log level = -3 "F4: available $(pairset.load) pairs"
 
-        select_critical_pairs!(
+        degree_i, npairs_i = select_critical_pairs!(
             pairset,
             basis,
             matrix,
@@ -522,6 +528,7 @@ function f4_learn!(
             params.selection_strategy,
             maxpairs=params.maxpairs
         )
+        push!(graph.critical_pair_sequence, (degree_i, npairs_i))
         # Color with [F4]
 
         symbolic_preprocessing!(graph, basis, matrix, hashtable, symbol_ht)

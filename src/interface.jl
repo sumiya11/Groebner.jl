@@ -94,8 +94,6 @@ function groebner(polynomials::AbstractVector; options...)
     _groebner(polynomials, KeywordsHandler(:groebner, options))::typeof(polynomials)
 end
 
-# NOTE: the function `groebner_learn` is documented, but Groebner.jl does not
-# export it. Use it at your own risk
 """
     groebner_learn(polynomials; options...)
 
@@ -107,9 +105,13 @@ bases, which should be the specializations of the same basis as the one
 
 *At the moment, only input over integers modulo a prime is supported.*
 
+This function is thread-safe.
+
 See also `groebner_apply!`.
 
 ## Example
+
+Using `groebner_learn` and `groebner_apply!` over the same ground field:
 
 ```jldoctest
 using Groebner, AbstractAlgebra
@@ -118,18 +120,35 @@ R, (x, y) = GF(2^31-1)["x", "y"]
 # Learn
 graph, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
 
-# Apply
-flag, gb_2 = groebner_apply!(graph, [2x*y^2 + 3x, 4y*x^2 + 5y])
+# Apply (same ground field, different coefficients)
+success, gb_2 = groebner_apply!(graph, [2x*y^2 + 3x, 4y*x^2 + 5y])
 
-@assert flag
+@assert success
+```
+
+Using `groebner_learn` and `groebner_apply!` over different ground fields:
+
+```jldoctest
+using Groebner, AbstractAlgebra
+R, (x, y) = GF(2^31-1)["x", "y"]
+
+# Learn
+graph, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
+
+# Create a ring with a different modulo
+_R, (_x, _y) = GF(2^30+3)["x", "y"]
+
+# Apply (with a different modulo)
+success, gb_2 = groebner_apply!(graph, [2_x*_y^2 + 3_x, 4_y*_x^2 + 5_y])
+
+@assert success
+@assert gb_2 == groebner([2_x*_y^2 + 3_x, 4_y*_x^2 + 5_y])
 ```
 """
 function groebner_learn(polynomials::AbstractVector; options...)
     _groebner_learn(polynomials, KeywordsHandler(:groebner_learn, options))
 end
 
-# NOTE: the function `groebner_apply!` is documented, but Groebner.jl does not
-# export it. Use it at your own risk
 """
     groebner_apply!(graph, polynomials; options...)
 
@@ -137,9 +156,13 @@ Computes a Groebner basis of `polynomials` using the given computation `graph`.
 
 *At the moment, only input over integers modulo a prime is supported.*
 
+This function is *not* thread-safe.
+
 See also `groebner_learn`.
 
 ## Example
+
+Using `groebner_learn` and `groebner_apply!` over the same ground field:
 
 ```jldoctest
 using Groebner, AbstractAlgebra
@@ -148,10 +171,29 @@ R, (x, y) = GF(2^31-1)["x", "y"]
 # Learn
 graph, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
 
-# Apply
-flag, gb_2 = groebner_apply!(graph, [2x*y^2 + 3x, 4y*x^2 + 5y])
+# Apply (same ground field, different coefficients)
+success, gb_2 = groebner_apply!(graph, [2x*y^2 + 3x, 4y*x^2 + 5y])
 
-@assert flag
+@assert success
+```
+
+Using `groebner_learn` and `groebner_apply!` over different ground fields:
+
+```jldoctest
+using Groebner, AbstractAlgebra
+R, (x, y) = GF(2^31-1)["x", "y"]
+
+# Learn
+graph, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
+
+# Create a ring with a different modulo
+_R, (_x, _y) = GF(2^30+3)["x", "y"]
+
+# Apply (with a different modulo)
+success, gb_2 = groebner_apply!(graph, [2_x*_y^2 + 3_x, 4_y*_x^2 + 5_y])
+
+@assert success
+@assert gb_2 == groebner([2_x*_y^2 + 3_x, 4_y*_x^2 + 5_y])
 ```
 """
 function groebner_apply! end

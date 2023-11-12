@@ -2,15 +2,13 @@ import Random
 
 params = (loglevel=0, sweep=true)
 
-@testset "learn & apply" begin
+@testset "learn & apply, same field" begin
     K = AbstractAlgebra.GF(2^31 - 1)
-    K2 = AbstractAlgebra.GF(2^30 + 3)
-
     R, (x, y) = PolynomialRing(K, ["x", "y"], ordering=:degrevlex)
-    R2, (x2, y2) = PolynomialRing(K2, ["x", "y"], ordering=:degrevlex)
     R2, xs = PolynomialRing(K, ["x$i" for i in 1:30], ordering=:degrevlex)
 
     @test_throws DomainError Groebner.groebner_learn([R(0), R(0)]; params...)
+
     cases = [
         (system=[x, R(0)],),
         (system=[R(1)],),
@@ -37,6 +35,7 @@ params = (loglevel=0, sweep=true)
         (system=Groebner.s9_1(ordering=:degrevlex, ground=K),),
         (system=[sum(xs) + prod(xs), sum(xs)^2, prod(xs) - 1],)
     ]
+
     for case in cases
         # Learn and apply on the same system
         system = case.system
@@ -55,20 +54,153 @@ params = (loglevel=0, sweep=true)
             flag, gb_2 = Groebner.groebner_apply!(graph, system_; params...)
             @test flag && gb_2 == true_gb
         end
+    end
+end
+
+@testset "learn & apply, different modulo" begin
+    # Some small tests and corner cases
+    K, K2, K3 = GF(5), GF(7), GF(11)
+    R, (x, y) = PolynomialRing(K, ["x", "y"], ordering=:degrevlex)
+    R2, (x2, y2) = PolynomialRing(K2, ["x", "y"], ordering=:degrevlex)
+    R3, (x3, y3) = PolynomialRing(K3, ["x", "y"], ordering=:degrevlex)
+    system = [x^4 + 2y^3 + 3x^2 + 4y, 4y^4 + 3x^3 + 2y^2 + 1x]
+    system2 = map(f -> map_coefficients(c -> K2(data(c)), f), system)
+
+    graph, gb_1 = Groebner.groebner_learn(system; params...)
+    flag, gb_2 = Groebner.groebner_apply!(graph, system2; params...)
+    @test flag && gb_2 == Groebner.groebner(system2)
+
+    graph, gb_1 = Groebner.groebner_learn(system2; params...)
+    flag, gb_2 = Groebner.groebner_apply!(graph, system; params...)
+    @test flag && gb_2 == Groebner.groebner(system)
+
+    system = [6x2^4 + 6y2 + 1, y2 + 3]
+    system2 = map(f -> map_coefficients(c -> K(data(c)), f), system)
+    system3 = map(f -> map_coefficients(c -> K3(data(c)), f), system)
+    graph, gb_1 = Groebner.groebner_learn(system; params...)
+    flag, gb_2 = Groebner.groebner_apply!(graph, system2; params...)
+    @test flag && gb_2 == Groebner.groebner(system2)
+    flag, gb_3 = Groebner.groebner_apply!(graph, system3; params...)
+    @test flag && gb_3 == Groebner.groebner(system3)
+
+    system = [5x2 + 5, 5y2 + 1]
+    system2 = map(f -> map_coefficients(c -> K(data(c)), f), system)
+    graph, gb_1 = Groebner.groebner_learn(system; params...)
+    @test_throws DomainError Groebner.groebner_apply!(graph, system2; params...)
+    system = [x2 + 5, y2 + 1]
+    system2 = map(f -> map_coefficients(c -> K(data(c)), f), system)
+    graph, gb_1 = Groebner.groebner_learn(system; params...)
+    @test_throws DomainError Groebner.groebner_apply!(graph, system2; params...)
+
+    # Going from small characteristic to large is not allowed
+    # NOTE: it should be allowed
+    K1, K2 = GF(2^31 - 1), GF(2^60 + 33)
+    R, (x, y) = PolynomialRing(K1, ["x", "y"], ordering=:degrevlex)
+    R2, (x2, y2) = PolynomialRing(K2, ["x", "y"], ordering=:degrevlex)
+    system = [x + 1, y - 1]
+    system2 = map(f -> map_coefficients(c -> K2(data(c)), f), system)
+    graph, gb_1 = Groebner.groebner_learn(system; params...)
+    @test_throws DomainError Groebner.groebner_apply!(graph, system2; params...)
+
+    # Going from one monomial ordering to another is not allowed
+    K1, K2 = GF(2^31 - 1), GF(2^60 + 33)
+    R, (x, y) = PolynomialRing(K1, ["x", "y"], ordering=:lex)
+    R2, (x2, y2) = PolynomialRing(K2, ["x", "y"], ordering=:degrevlex)
+    system = [x + 1, y - 1]
+    system2 = [x2 + 1, y2 - 1]
+    graph, gb_1 = Groebner.groebner_learn(system; params...)
+    @test_throws DomainError Groebner.groebner_apply!(graph, system2; params...)
+
+    K1, K2 = GF(2^31 - 1), GF(2^60 + 33)
+    R, (x, y) = PolynomialRing(K1, ["x", "y"], ordering=:lex)
+    R2, (x2, y2) = PolynomialRing(K2, ["x", "y"], ordering=:degrevlex)
+    system = [x + 1, y - 1]
+    system2 = [x2 + 1, y2 - 1]
+    graph, gb_1 = Groebner.groebner_learn(system; params...)
+    @test_throws AssertionError Groebner.groebner_apply!(
+        graph,
+        system2;
+        ordering=Groebner.DegRevLex(),
+        params...
+    )
+
+    # NOTE: these systems are only relatively very large.
+    # We should also test for larger systems and larger primes!!
+    R, (x, y) = PolynomialRing(ZZ, ["x", "y"], ordering=:degrevlex)
+    cases = [
+        (system=[x, R(0)],),
+        (system=[R(1)],),
+        (system=[x, y],),
+        (system=[x, x],),
+        (system=[x, y, x * y],),
+        (system=[x + 1, y + 2, x * y + 3],),
+        (system=[x^20 * y + x + 1, x * y^20 + y + 1],),
+        (system=[x^20 * y + x + 1, x * y^20 + y + 1],),
+        (system=Groebner.noonn(3, ordering=:lex, ground=ZZ),),
+        (system=Groebner.noonn(4, ordering=:deglex, ground=ZZ),),
+        (system=Groebner.noonn(5, ordering=:degrevlex, ground=ZZ),),
+        (system=Groebner.katsuran(3, ordering=:degrevlex, ground=ZZ),),
+        (system=Groebner.katsuran(4, ordering=:degrevlex, ground=ZZ),),
+        (system=Groebner.katsuran(5, ordering=:degrevlex, ground=ZZ),),
+        (system=Groebner.katsuran(6, ordering=:degrevlex, ground=ZZ),),
+        (system=Groebner.katsuran(7, ordering=:degrevlex, ground=ZZ),),
+        (system=Groebner.cyclicn(5, ordering=:degrevlex, ground=ZZ),),
+        (system=Groebner.cyclicn(6, ordering=:degrevlex, ground=ZZ),),
+        (system=Groebner.rootn(5, ordering=:lex, ground=ZZ),),
+        (system=Groebner.rootn(5, ordering=:deglex, ground=ZZ),),
+        (system=Groebner.rootn(6, ordering=:degrevlex, ground=ZZ),),
+        (system=Groebner.eco5(ordering=:degrevlex, ground=ZZ),),
+        (system=Groebner.ku10(ordering=:degrevlex, ground=ZZ),),
+        (system=Groebner.kinema(ordering=:degrevlex, ground=ZZ),),
+        (system=Groebner.sparse5(ordering=:degrevlex, ground=ZZ),),
+        (system=Groebner.s9_1(ordering=:degrevlex, ground=ZZ),)
+    ]
+
+    # Some bigger tests
+    K = AbstractAlgebra.GF(2^31 - 1)
+    Ks = [
+        AbstractAlgebra.GF(2^31 - 1),
+        AbstractAlgebra.GF(2^30 + 3),
+        AbstractAlgebra.GF(2^31 + 11),
+        AbstractAlgebra.GF(2^20 + 7),
+        AbstractAlgebra.GF(2^20 + 13),
+        AbstractAlgebra.GF(2^20 + 25),
+        AbstractAlgebra.GF(2^15 + 3),
+        AbstractAlgebra.GF(2^15 + 11),
+        AbstractAlgebra.GF(2^15 + 15)
+        # it may be dangerous to use learn & apply for small primes..
+        # AbstractAlgebra.GF(2^11 + 5),
+        # AbstractAlgebra.GF(2^11 + 15),
+        # AbstractAlgebra.GF(2^11 + 21)
+    ]
+    for case in cases
+        # Learn and apply on the same system
+        system = case.system
+        system_zp = map(f -> map_coefficients(c -> K(BigInt(c)), f), system)
+        true_gb = Groebner.groebner(system_zp; params...)
+        graph, gb_1 = Groebner.groebner_learn(system_zp; params...)
+        flag, gb_2 = Groebner.groebner_apply!(graph, system_zp; params...)
+        @test flag && gb_2 == true_gb
 
         # Apply on the same system but modulo a different prime 
-        @test_broken false
-        # system_2 = map(f -> map_coefficients(c -> K2(data(c)), f), system)
-        # try
-        #     flag, gb_2 = Groebner.groebner_apply!(graph, system_2; params...)
-        #     @test flag && gb_2 == Groebner.groebner(system_2)
-        # catch error
-        #     if error isa AssertionError || error isa DomainError
-        #         @test_broken false
-        #     else
-        #         rethrow(error)
-        #     end
-        # end
+        for K_ in Ks
+            system_zp_2 = map(f -> map_coefficients(c -> K_(BigInt(c)), f), system)
+            flag, gb_2 = Groebner.groebner_apply!(graph, system_zp_2; params...)
+            @test flag && gb_2 == Groebner.groebner(system_zp_2)
+        end
+    end
+
+    K1 = GF(2^31 - 1)
+    R, (x, y) = PolynomialRing(ZZ, ["x", "y"], ordering=:lex)
+    system = [BigInt(2)^1000 * x + (BigInt(2)^1001 + 1) * y + 1]
+    system_zp = map(f -> map_coefficients(c -> K1(BigInt(c)), f), system)
+    graph, gb_1 =
+        Groebner.groebner_learn(system_zp; ordering=Groebner.DegRevLex(y, x), params...)
+    for K in Primes.nextprimes(2^31, 200)
+        system_zp = map(f -> map_coefficients(c -> GF(K)(BigInt(c)), f), system)
+        true_gb = Groebner.groebner(system_zp; ordering=Groebner.DegRevLex(y, x), params...)
+        flag, gb_2 = Groebner.groebner_apply!(graph, system_zp; params...)
+        @test flag && gb_2 == true_gb
     end
 end
 
@@ -141,8 +273,7 @@ end
             @test gb_1 == gb_2 == [x * y^1000 + y, x^1000 * y + y^1000, y^1999 - x^999 * y]
         end
 
-        # TODO
-        # @test_throws AssertionError Groebner.groebner_apply!(graph, s; sweep=!params.sweep)
+        @test_throws DomainError Groebner.groebner_apply!(graph, s; sweep=!params.sweep)
     end
 
     K = AbstractAlgebra.GF(2^31 - 1)
@@ -154,8 +285,7 @@ end
     flag, gb_2 = Groebner.groebner_apply!(graph, system_1; params...)
     @test flag && gb_2 == gb_1
 
-    # TODO: Think about something here
-    # @test_throws AssertionError Groebner.groebner_apply!(graph, [x, y]; params...)
+    @test_throws DomainError Groebner.groebner_apply!(graph, [x, y]; params...)
 
     # Cancellation of a leading term:
     # s-poly of x + 1 and x*y + y is 0 = y - y.

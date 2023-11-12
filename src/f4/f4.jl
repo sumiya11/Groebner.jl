@@ -508,7 +508,7 @@ end
     pairset.load -= npairs
 
     @log level = -3 "Selected $(npairs) pairs of degree $(deg) from pairset, $(pairset.load) pairs left"
-    nothing
+    deg, npairs
 end
 
 # Adds the first `npairs` pairs from the pairset to the matrix
@@ -660,8 +660,8 @@ function basis_well_formed(key, ring, basis, hashtable)
             if key in (:input_f4_apply!, :output_f4_apply!)
                 @log level = 10^3 """
                 Unlucky but probably not fatal cancellation in polynomial at index $(i) on apply stage.
-                The number of monomials: $(length(basis.monoms[i]))
-                The number of coefficients: $(length(basis.coeffs[i]))"""
+                The number of monomials (expected): $(length(basis.monoms[i]))
+                The number of coefficients (got): $(length(basis.coeffs[i]))"""
             else
                 return false
             end
