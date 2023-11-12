@@ -4,4 +4,4 @@ Pkg.update("Groebner")
 
 include("../run_benchmarks.jl")
 
-dump_results((@__DIR__) * "/results", "latest")
+dump_results((@__DIR__) * "/results", "stable")
