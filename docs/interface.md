@@ -45,7 +45,7 @@ See below for some examples.
 
 {{doc MatrixOrdering MatrixOrdering st}}
 
-## Learn and apply
+## Learn and Apply
 
 ```julia:load_groebner
 using Groebner # hide

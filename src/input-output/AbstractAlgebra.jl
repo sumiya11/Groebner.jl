@@ -179,7 +179,7 @@ function _is_input_ring_compatible_in_apply(graph, ring, kws)
         @log level = 1000 """
         On apply stage the ground field characteristic is $(ring.ch), which is too large compared to the learn stage. 
         The learn stage used characteristic $(graph.ring.ch).
-        
+
         Please consider learning with a larger characteristic and trying this again, or submitting a GitHub issue :^)."""
         return false
     end

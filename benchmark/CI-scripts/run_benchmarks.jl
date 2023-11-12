@@ -73,9 +73,9 @@ push!(
 function learn_and_apply(system)
     times = []
     trials = 7
+    graph, gb = groebner_learn(system)
     for _ in 1:trials
         GC.gc()
-        graph, gb = groebner_learn(system)
         time2 = @elapsed groebner_apply!(graph, system)
         push!(times, time2)
     end
@@ -98,6 +98,24 @@ push!(
         problem_name="groebner_apply!, Nemo, GF(2^31-1), cyclic 7",
         result=learn_and_apply(
             Groebner.cyclicn(7, ordering=:degrevlex, ground=Nemo.GF(2^31 - 1))
+        )
+    )
+)
+push!(
+    suite,
+    (
+        problem_name="groebner_apply!, AA, GF(2^31-1), katsura 10",
+        result=learn_and_apply(
+            Groebner.katsuran(10, ordering=:degrevlex, ground=GF(2^31 - 1))
+        )
+    )
+)
+push!(
+    suite,
+    (
+        problem_name="groebner_apply!, Nemo, GF(2^31-1), katsura 10",
+        result=learn_and_apply(
+            Groebner.katsuran(10, ordering=:degrevlex, ground=Nemo.GF(2^31 - 1))
         )
     )
 )
