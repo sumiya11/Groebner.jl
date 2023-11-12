@@ -44,3 +44,13 @@ See below for some examples.
 {{doc ProductOrdering ProductOrdering str}}
 
 {{doc MatrixOrdering MatrixOrdering st}}
+
+## Learn and apply
+
+```julia:load_groebner
+using Groebner # hide
+```
+
+{{doc groebner_learn groebner_learn fn}}
+
+{{doc groebner_apply! groebner_apply! fn}}

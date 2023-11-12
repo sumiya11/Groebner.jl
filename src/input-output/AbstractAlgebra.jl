@@ -152,18 +152,50 @@ function extract_coeffs_ff(
     map(Ch ∘ AbstractAlgebra.data, AbstractAlgebra.coefficients(poly))
 end
 
-function _is_input_compatible_in_apply(graph, ring, kws)
-    # TODO: Check that leading monomials coincide!
+###
+# Process input polynomials on the apply stage
+
+function _is_input_ring_compatible_in_apply(graph, ring, kws)
     @log level = -7 "" graph.original_ord ring.ord
     if graph.original_ord != ring.ord
-        @log level = 1 "Input ordering $(ring.ord) is different from the one used to learn the graph ($(graph.original_ord))"
+        @log level = 1000 """
+        On apply stage the monomial ordering of input is different from the one used on the learn stage
+        Apply stage (current): $(ring.ord)
+        Learn stage: $(graph.original_ord)"""
         return false
     end
     if graph.sweep_output != kws.sweep
-        @log level = 1 "Input sweep option ($(kws.sweep)) is different from the one used to learn the graph ($(graph.sweep_output))."
+        @log level = 1000 "Input sweep option ($(kws.sweep)) is different from the one used on the learn stage ($(graph.sweep_output))."
         return false
     end
-    @log level = -1 "In groebner_apply! the argument monom=$(kws.monoms) was ignored"
+    @log level = -1 "On apply stage the argument monoms=$(kws.monoms) was ignored"
+    if graph.ring.ch != ring.ch
+        # Not an error, just debug message
+        @log level = -1 """
+        On apply stage the ground field characteristic is $(ring.ch), 
+        the learn stage used different characteristic $(graph.ring.ch)"""
+    end
+    if graph.ring.ch < 2^32 && ring.ch >= 2^32
+        @log level = 1000 """
+        On apply stage the ground field characteristic is $(ring.ch), which is too large compared to the learn stage. 
+        The learn stage used characteristic $(graph.ring.ch).
+        
+        Please consider learning with a larger characteristic and trying this again, or submitting a GitHub issue :^)."""
+        return false
+    end
+    true
+end
+
+function _is_input_compatible_in_apply(graph, ring, polynomials, kws)
+    graph_signature = graph.input_signature
+    homogenized = graph.homogenize
+    if !(
+        length(graph_signature) + count(iszero, polynomials) ==
+        length(polynomials) + homogenized
+    )
+        @log level = 1000 "The number of input polynomials on the apply stage ($(length(polynomials))) is different from the number on the learn stage ($(length(graph_signature) + count(iszero, polynomials) - homogenized))."
+        return false
+    end
     true
 end
 
@@ -175,7 +207,13 @@ function extract_coeffs_raw!(
 ) where {T}
     # write new coefficients directly to graph.basis
     ring = extract_ring(polys)
-    if !_is_input_compatible_in_apply(graph, ring, kws)
+    if !_is_input_ring_compatible_in_apply(graph, ring, kws)
+        __throw_input_not_supported(
+            ring,
+            "Input does not seem to be compatible with the learned graph."
+        )
+    end
+    if !_is_input_compatible_in_apply(graph, ring, polys, kws)
         __throw_input_not_supported(
             ring,
             "Input does not seem to be compatible with the learned graph."
@@ -202,6 +240,7 @@ function extract_coeffs_raw!(
             iszero(ring.ch) ? -one(C) : (ring.ch - one(ring.ch))
     end
     @log level = -6 "Extracted coefficients from $(length(polys)) polynomials." basis
+    @log level = -8 "Extracted coefficients" basis.coeffs
     ring
 end
 
@@ -215,7 +254,13 @@ function _extract_coeffs_raw!(
 ) where {CoeffsType}
     permute_input_terms = !isempty(term_perms)
     permute_homogenizing_terms = !isempty(homog_term_perms)
-    @assert basis.nfilled == count(!iszero, polys) + permute_homogenizing_terms
+    if !(basis.nfilled == count(!iszero, polys) + permute_homogenizing_terms)
+        @log level = 1000 "Input on apply stage contains too many zeroes polynomials. Error will follow."
+        __throw_input_not_supported(
+            "Potential coefficient cancellation in input on apply stage.",
+            false
+        )
+    end
     polys = filter(!iszero, polys)
     @log level = -2 """
     Permuting input terms: $permute_input_terms
@@ -224,11 +269,16 @@ function _extract_coeffs_raw!(
       Of polynomials: $input_polys_perm
       Of terms (change of ordering): $term_perms
       Of terms (homogenization): $homog_term_perms"""
-    for i in 1:length(polys)
+    @inbounds for i in 1:length(polys)
         basis_cfs = basis.coeffs[i]
         poly_index = input_polys_perm[i]
         poly = polys[poly_index]
-        @assert length(poly) == length(basis_cfs)
+        if !(length(poly) == length(basis_cfs))
+            __throw_input_not_supported(
+                "Potential coefficient cancellation in input polynomial at index $i on apply stage.",
+                poly
+            )
+        end
         for j in 1:length(poly)
             coeff_index = j
             if permute_input_terms

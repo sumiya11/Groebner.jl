@@ -1,3 +1,7 @@
+# Exposes learn and apply strategy to user
+
+###
+# Learn stage
 
 # Proxy function for handling exceptions.
 # NOTE: probably at some point we'd want to merge this with error handling in
@@ -56,6 +60,26 @@ function _groebner_learn(polynomials, kws, representation)
     graph, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
 end
 
+function _groebner_learn(
+    ring,
+    monoms,
+    coeffs::Vector{Vector{C}},
+    params
+) where {C <: CoeffFF}
+    @log level = -2 "Groebner learn phase over Z_p"
+    # Initialize F4 structs
+    graph, basis, pairset, hashtable =
+        initialize_structs_learn(ring, monoms, coeffs, params)
+    @log level = -5 "Before F4:" basis
+    f4_learn!(graph, ring, graph.gb_basis, pairset, hashtable, params)
+    @log level = -5 "After F4:" basis
+    gb_monoms, gb_coeffs = export_basis_data(graph.gb_basis, graph.hashtable)
+    graph, gb_monoms, gb_coeffs
+end
+
+###
+# Apply stage
+
 function _groebner_apply!(graph::ComputationGraphF4, polynomials, kws::KeywordsHandler)
     ring = extract_coeffs_raw!(graph, graph.representation, polynomials, kws)
     # TODO: this is a bit hacky
@@ -74,23 +98,6 @@ function _groebner_apply!(graph::ComputationGraphF4, polynomials, kws::KeywordsH
     # @log_performance_counters
     !flag && return (flag, polynomials)
     flag, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
-end
-
-function _groebner_learn(
-    ring,
-    monoms,
-    coeffs::Vector{Vector{C}},
-    params
-) where {C <: CoeffFF}
-    @log level = -2 "Groebner learn phase over Z_p"
-    # Initialize F4 structs
-    graph, basis, pairset, hashtable =
-        initialize_structs_learn(ring, monoms, coeffs, params)
-    @log level = -5 "Before F4:" basis
-    f4_learn!(graph, ring, graph.gb_basis, pairset, hashtable, params)
-    @log level = -5 "After F4:" basis
-    gb_monoms, gb_coeffs = export_basis_data(graph.gb_basis, graph.hashtable)
-    graph, gb_monoms, gb_coeffs
 end
 
 function _groebner_apply!(ring, graph, params)
