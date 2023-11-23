@@ -17,7 +17,7 @@ SIMD = "fdea26ae-647d-5447-a871-4b548cad5224"
 TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
 [compat]
-AbstractAlgebra = "0.23, 0.24, 0.25, 0.26, 0.27, 0.28, 0.29, 0.30, 0.31, 0.32, 0.33"
+AbstractAlgebra = "0.23, 0.24, 0.25, 0.26, 0.27, 0.28, 0.29, 0.30, 0.31, 0.32, 0.33, 0.34"
 BenchmarkTools = "1"
 Combinatorics = "1"
 ExprTools = "0.1"
