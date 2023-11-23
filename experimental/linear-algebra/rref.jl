@@ -1,16 +1,52 @@
-using AbstractAlgebra, AllocCheck, BenchmarkTools
+using AbstractAlgebra, AllocCheck, BenchmarkTools, Logging, IOCapture
+
+function get_all_monoms_up_to_total_degree(ring, vars, degree)
+    if degree == 0 || length(vars) == 0
+        return [one(ring)]
+    end
+    res = get_all_monoms_up_to_total_degree(ring, vars, degree - 1)
+    res_prev = copy(res)
+    for var in vars
+        append!(res, res_prev .* var)
+    end
+    unique!(res)
+end
 
 R, (x, y, z) = PolynomialRing(GF(2^31 - 1), ["x", "y", "z"], ordering=:degrevlex)
-
 s = [2x * y + 5y + 7, 9x * y + 11x + 13]
 
 g = GF(2^31 - 1)
 o = :degrevlex
-si = Groebner.katsuran(8, ordering=:degrevlex, ground=GF(2^31 - 1))
+si = Groebner.cyclicn(8, ordering=:degrevlex, ground=GF(2^31 - 1));
 
-@time gb1 = Groebner.groebner(si, linalg=:direct_rref, sparsity=:sparsedense, loglevel=0);
+R, x = PolynomialRing(GF(2^31 - 1), [["x$i" for i in 1:6]...], ordering=:degrevlex)
+m = get_all_monoms_up_to_total_degree(R, gens(R), 5);
+length(m)
+S = map(i -> sum(rand(m, div(length(m), 2))), 1:7);
+map(length, S)
+@time Groebner.groebner(S, linalg=:deterministic);
+si = S
 
-@time gb2 = Groebner.groebner(si, linalg=:deterministic);
+begin
+    io1 = open((@__DIR__) * "/logs_direct.txt", "w")
+    io2 = open((@__DIR__) * "/logs_deterministic.txt", "w")
+
+    c1 = IOCapture.capture() do
+        @time gb2 =
+            Groebner.groebner(si, linalg=:direct_rref, sparsity=:sparse, loglevel=-3)
+    end
+    println(io1, c1.output)
+
+    c2 = IOCapture.capture() do
+        @time gb2 = Groebner.groebner(si, linalg=:deterministic, loglevel=-3)
+    end
+    println(io2, c2.output)
+
+    @assert c1.value == c2.value
+
+    close(io1)
+    close(io2)
+end
 
 for si in [
     Groebner.katsuran(6, ordering=o, ground=g),

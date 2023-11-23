@@ -487,10 +487,15 @@ function deterministic_sparse_linear_algebra!(
     sort_matrix_lower_rows!(matrix) # for the CD part
     @log level = -3 "deterministic_sparse_linear_algebra!"
     @log level = -3 repr_matrix(matrix)
-    # Reduce CD with AB
-    reduce_matrix_lower_part!(matrix, basis, arithmetic)
-    # Interreduce CD
-    interreduce_matrix_pivots!(matrix, basis, arithmetic)
+    @time flag = begin
+        # Reduce CD with AB
+        reduce_matrix_lower_part!(matrix, basis, arithmetic)
+        # Interreduce CD
+        interreduce_matrix_pivots!(matrix, basis, arithmetic)
+    end
+    # @log level = -3 "" t.time t.bytes
+
+    flag
 end
 
 function randomized_sparse_linear_algebra!(
@@ -523,17 +528,18 @@ function direct_rref_sparse_linear_algebra!(
     @log level = -3 repr_matrix(matrix)
 
     # Produce the RREF of AB
-    flag = if linalg.sparsity === :sparse
+    @time flag = if linalg.sparsity === :sparse
         interreduce_matrix_upper_part!(matrix, basis, arithmetic)
-        @log level = -3 repr_matrix(matrix)
+        # @log level = -3 repr_matrix(matrix)
         reduce_matrix_lower_part!(matrix, basis, arithmetic)
         interreduce_matrix_pivots!(matrix, basis, arithmetic)
     else
         interreduce_matrix_upper_part_sparsedense!(matrix, basis, arithmetic)
-        @log level = -3 repr_matrix(matrix)
+        # @log level = -3 repr_matrix(matrix)
         reduce_matrix_lower_part_sparsedense!(matrix, basis, arithmetic)
         interreduce_matrix_pivots_dense!(matrix, basis, arithmetic)
     end
+    # @log level = -3 "" t.time t.bytes
 
     flag
 end
@@ -1580,9 +1586,6 @@ function reduce_dense_row_by_sparse_row!(
     nothing
 end
 
-const count1 = Ref(0)
-const count2 = Ref(0)
-
 # row1 := row1 - mul * row2
 function reduce_dense_row_by_dense_row!(
     row1::Vector{T},
@@ -1592,9 +1595,6 @@ function reduce_dense_row_by_dense_row!(
 ) where {T <: CoeffFF, A <: AbstractArithmeticZp}
     @invariant length(row1) == length(row2)
     # @invariant isone(coeffs[1])
-
-    count1[] = count1[] + isone(mul)
-    count2[] = count2[] + 2
 
     @inbounds mul = divisor(arithmetic) - mul
 
