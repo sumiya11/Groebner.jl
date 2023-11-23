@@ -28,7 +28,7 @@ const DivisionMask = UInt32
 
 # Hashvalue of a single monomial
 struct Hashvalue
-    # index of the monomial in the F4 matrix (defaults to zero),
+    # index of the monomial in the F4 matrix (defaults to NON_PIVOT_COLUMN, or 0),
     idx::Int32
     # hash of the monomial,
     hash::MonomHash

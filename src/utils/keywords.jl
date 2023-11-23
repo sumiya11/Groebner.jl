@@ -21,7 +21,8 @@ const _supported_kw_args = (
         modular     = :classic_modular,
         sweep       = false,
         homogenize  = :auto,
-        statistics  = :no
+        statistics  = :no,
+        sparsity    = :sparse
     ),
     normalform = (
         check       = false,
@@ -79,6 +80,7 @@ struct KeywordsHandler{Ord}
     ordering::Ord
     certify::Bool
     linalg::Symbol
+    sparsity::Symbol
     monoms::Symbol
     seed::Int
     loglevel::Int
@@ -100,10 +102,11 @@ struct KeywordsHandler{Ord}
         ordering = get(kws, :ordering, get(default_kw_args, :ordering, InputOrdering()))
         certify = get(kws, :certify, get(default_kw_args, :certify, false))
         linalg = get(kws, :linalg, get(default_kw_args, :linalg, :randomized))
-        @assert linalg in (:randomized, :deterministic) """
+        @assert linalg in (:randomized, :deterministic, :direct_rref) """
         Not recognized linear algebra option: $linalg
         Possible choices for keyword "linalg" are:
-        `:randomized`, `:deterministic`"""
+        `:randomized`, `:deterministic`, `:direct_rref`"""
+        sparsity = get(kws, :sparsity, get(default_kw_args, :sparsity, :sparse))
         monoms = get(kws, :monoms, get(default_kw_args, :monoms, :dense))
         @assert monoms in (:auto, :dense, :packed, :sparse) """
         Not recognized monomial representation: $monoms
@@ -160,6 +163,7 @@ struct KeywordsHandler{Ord}
             ordering,
             certify,
             linalg,
+            sparsity,
             monoms,
             seed,
             loglevel,

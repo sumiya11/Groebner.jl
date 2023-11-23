@@ -242,7 +242,7 @@ function sort_columns_by_labels!(
         end
         @inbounds ea = es[a]
         @inbounds eb = es[b]
-        !monom_isless(ea, eb, ord)
+        monom_isless(eb, ea, ord)
     end
 
     ordcmp = (x, y) -> cmp(x, y, symbol_ht.ord)

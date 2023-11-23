@@ -8,6 +8,18 @@ else
     Random.MersenneTwister
 end
 
+# Specifies linear backend algorithm
+struct LinearAlgebra
+    # One of :randomized, :deterministic, :direct_rref
+    algorithm::Symbol
+    # One of :sparse, :sparsedense
+    sparsity::Symbol
+
+    function LinearAlgebra(algorithm, sparsity)
+        new(algorithm, sparsity)
+    end
+end
+
 # Stores parameters for a single GB computation.
 mutable struct AlgorithmParameters{Ord1, Ord2, Ord3, Arithm}
     # Monomial ordering of output polynomials
@@ -30,10 +42,8 @@ mutable struct AlgorithmParameters{Ord1, Ord2, Ord3, Arithm}
     # basis.
     check::Bool
 
-    # Linear algebra backend to be used. Currently available are
-    # - :deterministic for exact deterministic algebra,
-    # - :randomized for probabilistic linear algebra
-    linalg::Symbol
+    # Linear algebra backend to be used
+    linalg::LinearAlgebra
 
     # This can hold buffers or precomputed multiplicative inverses to speed up
     # the arithmetic in the ground field
@@ -138,6 +148,8 @@ function AlgorithmParameters(
             end
         end
     end
+    linalg_struct = LinearAlgebra(linalg, kwargs.sparsity)
+
     arithmetic = select_arithmetic(ring.ch, representation.coefftype)
     ground = :zp
     if iszero(ring.ch)
@@ -178,7 +190,7 @@ function AlgorithmParameters(
     randomized_check = $randomized_check
     certify_check = $certify_check
     check = $(kwargs.check)
-    linalg = $linalg
+    linalg = $linalg_struct
     arithmetic = $arithmetic
     reduced = $reduced
     homogenize = $homogenize
@@ -202,7 +214,7 @@ function AlgorithmParameters(
         certify_check,
         homogenize,
         kwargs.check,
-        linalg,
+        linalg_struct,
         arithmetic,
         reduced,
         maxpairs,

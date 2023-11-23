@@ -30,6 +30,7 @@ function _groebner(polynomials, kws::KeywordsHandler, representation)
     # polynomials. Convert these to an internal polynomial representation. 
     # NOTE: This must copy the input, so that input `polynomials` is never
     # modified.
+    # NOTE: The body of this function is type-unstable (by design)
     ring, var_to_index, monoms, coeffs =
         convert_to_internal(representation, polynomials, kws)
     # Check and set parameters and monomial ordering

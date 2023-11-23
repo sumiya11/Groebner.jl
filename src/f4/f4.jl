@@ -20,7 +20,7 @@
 #   - hashtable: a MonomialHashtable instance that stores monomials.
 #   - permutation: a sorting permutation for input polynomials.
 #
-# If `normalize_input=true` is provided, normalizes the basis.
+# If `normalize_input=true` is provided, normalizes the basis. 
 # If `sort_input=true` is provided, sorts the basis.
 @timeit function initialize_structs(
     ring::PolyRing,
@@ -122,6 +122,16 @@ end
 end
 
 # F4 symbolic preprocessing
+@timeit function symbolic_preprocessing!(
+    basis::Basis,
+    matrix::MacaulayMatrix,
+    ht::MonomialHashtable,
+    symbol_ht::MonomialHashtable,
+    params::AlgorithmParameters
+)
+    symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
+end
+
 @timeit function symbolic_preprocessing!(
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -760,7 +770,7 @@ end
         @log level = -3 "After normal selection: available $(pairset.load) pairs"
         @log level = -3 repr_basis(basis)
 
-        symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
+        symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht, params)
 
         # reduces polys and obtains new potential basis elements
         reduction!(ring, basis, matrix, hashtable, symbol_ht, params)

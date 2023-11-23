@@ -6,43 +6,32 @@
 #   | A  B |
 #   | C  D | 
 #
-# The sparsity structure of the matrix looks similar to:
+# The sparsity structure of the matrix upon creation looks similar to:
 #
 #           A          B
-#     ............ | ......
-#       .......... | ......
-#         ........ | ......
-#  A        ...... | ......
-#             .... |  .....
-#               .. |   ....
-#     ---------------------
-#            ..... | ......
-#  C      ........ | ......
-#      ........... | ......
+#     ........... | ......
+#       ......... | ......
+#         ....... | ......
+#  A        ..... | ......
+#             ... |  .....
+#               . |   ....
+#     --------------------
+#            .... | ......
+#  C      ....... | ......
+#      .......... | ......
 #
-# NOTE: check out `repr_matrix` for printing a nice matrix representation.
+# NOTE: Check out `repr_matrix` for printing this nice matrix representation in
+# runtime.
 
-# The primary action on a MacaulayMatrix is getting it into row echelon form.
+# The primary action on a MacaulayMatrix is computing
+#   D - C inv(A) B,
+# which is equivalent to reducing the CD block (lower part of the matrix) with
+# the AB block (upper part of the matrix) via Gaussian elimination.
 #
 # Usually, by construction,
 # - Block A is already in row-echelon-form.
+# - Block A is the largest block, and is very sparse.
 # - Permuting columns is not allowed.
-#
-# Upon completion, the matrix may look similar to:
-#
-#           A          B
-#     ............ | ......
-#       .......... | ......
-#         ........ | ......
-#  A        ...... | ......
-#             .... |  .....
-#               .. |   ....
-#     ---------------------
-#                  | ......
-#  C               |   ....
-#                  |     ..
-#                  |      .
-#
 
 const ColumnLabel = Int32
 
@@ -53,31 +42,41 @@ const PIVOT_COLUMN = 2
 
 mutable struct MacaulayMatrix{T <: Coeff}
     # A row in the matrix is represented sparsely with a vector of indices of
-    # nonzero columns.
-    # The coefficients of a matrix row can be stored in two different places:
+    # nonzero columns. The coefficients of a matrix row may be stored in two
+    # different places:
     # - Either as a pointer to a polynomial in the basis that has the same
     #   coefficients.
     # - Or stored explicitly in the matrix.
 
-    # Rows from the block AB.
+    # Rows from the block AB
     upper_rows::Vector{Vector{ColumnLabel}}
     # Rows from the block CD
     lower_rows::Vector{Vector{ColumnLabel}}
 
+    # Explicitly stored coefficients of upper rows.
+    upper_coeffs::Vector{Vector{T}}
     # Explicitly stored coefficients of *some* rows
-    coeffs::Vector{Vector{T}}
+    some_coeffs::Vector{Vector{T}}
+
+    # Explicitly stored coefficients of block B.
+    B_coeffs_dense::Vector{Vector{T}}
+    # Explicitly stored coefficients of block D.
+    D_coeffs_dense::Vector{Vector{T}}
 
     # Maps column index in the range {1 ... ncols} to a corresponding monomial
     column_to_monom::Vector{MonomIdx}
+
+    # If the AB part of the matrix is in RREF
+    upper_is_rref::Bool
 
     # The total number of allocated rows
     size::Int
     # The number of filled rows
     nrows::Int
-    # The number of columns
+    # The total number of columns
     ncolumns::Int
     # The number of pivots, i.e. the number of linearly independent elements in
-    # the block CD after the reduction by the block AB
+    # the block CD after the linear reduction by the block AB
     npivots::Int
 
     # The number of upper rows (in the AB block)
@@ -93,6 +92,7 @@ mutable struct MacaulayMatrix{T <: Coeff}
     # pivots[i] may be undefined. In that case, there is no pivot row with the
     # leading column i
     pivots::Vector{Vector{ColumnLabel}}
+    pivot_indices::Vector{Int}
 
     # Index of the row --> position of the array of coefficients for this row
     upper_to_coeffs::Vector{Int}
@@ -111,7 +111,11 @@ end
     upper_rows = Vector{Vector{ColumnLabel}}(undef, 0)
     lower_rows = Vector{Vector{ColumnLabel}}(undef, 0)
     column_to_monom = Vector{MonomIdx}(undef, 0)
-    coeffs = Vector{Vector{T}}(undef, 0)
+    upper_coeffs = Vector{Vector{T}}(undef, 0)
+    some_coeffs = Vector{Vector{T}}(undef, 0)
+    B_coeffs_dense = Vector{Vector{T}}(undef, 0)
+    D_coeffs_dense = Vector{Vector{T}}(undef, 0)
+    upper_is_rref = false
     size = 0
     npivots = 0
     nrows = 0
@@ -121,6 +125,7 @@ end
     nleft = 0
     nright = 0
     pivots = Vector{Vector{ColumnLabel}}(undef, 0)
+    pivot_indices = Vector{Int}()
     upper_to_coeffs = Vector{Int}(undef, 0)
     lower_to_coeffs = Vector{Int}(undef, 0)
     upper_to_mult = Vector{MonomIdx}(undef, 0)
@@ -128,8 +133,12 @@ end
     MacaulayMatrix(
         upper_rows,
         lower_rows,
-        coeffs,
+        upper_coeffs,
+        some_coeffs,
+        B_coeffs_dense,
+        D_coeffs_dense,
         column_to_monom,
+        upper_is_rref,
         size,
         nrows,
         ncolumns,
@@ -139,6 +148,7 @@ end
         nleft,
         nright,
         pivots,
+        pivot_indices,
         upper_to_coeffs,
         lower_to_coeffs,
         upper_to_mult,
@@ -147,7 +157,7 @@ end
 end
 
 # Returns a string with human-readable information about the matrix. Currently,
-# used in logging (call, e.g., `groebner(system, loglevel=-3)` to check out)
+# used in logging (call, e.g., `groebner(system, loglevel=-3)`)
 function repr_matrix(matrix::MacaulayMatrix{T}) where {T}
     m, n = matrix.nrows, matrix.ncolumns
     m_A, n_A = matrix.nupper, matrix.nleft
@@ -157,19 +167,22 @@ function repr_matrix(matrix::MacaulayMatrix{T}) where {T}
     nnz_A, nnz_B, nnz_C, nnz_D = 0, 0, 0, 0
     A_ref, A_rref = true, true
     # NOTE: probably want to adjust this when the terminal shrinks
-    max_canvas_width = 40
+    max_canvas_width = DEFAULT_CANVAS_WIDTH
     canvas = CanvasMatrix2x2(m_A, m_C, n_A, n_B, max_width=max_canvas_width)
     for i in 1:(matrix.nupper)
         row = matrix.upper_rows[i]
-        if length(row) > 1
-            A_rref = false
-        end
         if row[1] < i
             A_ref = true
+        end
+        if row[1] != i
+            A_rref = false
         end
         for j in 1:length(row)
             point!(canvas, i, row[j])
             if row[j] <= matrix.nleft
+                if row[j] != i
+                    A_rref = false
+                end
                 nnz_A += 1
             else
                 nnz_B += 1
@@ -191,11 +204,13 @@ function repr_matrix(matrix::MacaulayMatrix{T}) where {T}
     percent(x) = round(100 * x, digits=2)
     s = """
     $(typeof(matrix))
-    $m x $n with $nnz nonzeros ($(percent(nnz / (m * n))) %)
-    A: $(m_A) x $(n_A) with $(nnz_A) nonzeros (REF: $(A_ref), RREF: $(A_rref))
-    B: $(m_B) x $(n_B) with $(nnz_B) nonzeros
-    C: $(m_C) x $(n_C) with $(nnz_C) nonzeros
-    D: $(m_D) x $(n_D) with $(nnz_D) nonzeros ($(percent(nnz_D / (m_D * n_D))) %)
+    $m x $n with $nnz nnz ($(percent(nnz / (m * n)))%)
+    A: $(m_A) x $(n_A) with $(nnz_A) nnz ($(percent(nnz_A / (m_A * n_A)))%) (REF: $(A_ref), RREF: $(A_rref))
+    B: $(m_B) x $(n_B) with $(nnz_B) nnz ($(percent(nnz_B / (m_B * n_B)))%)
+    C: $(m_C) x $(n_C) with $(nnz_C) nnz ($(percent(nnz_C / (m_C * n_C)))%)
+    D: $(m_D) x $(n_D) with $(nnz_D) nnz ($(percent(nnz_D / (m_D * n_D)))%)
+
+    RREF flag: $(matrix.upper_is_rref)
 
     Sparsity pattern:
 
@@ -206,28 +221,39 @@ end
 
 # Checks that the matrix is well formed.
 # Generally this should be called on the entry to a linear algebra routine.
-function matrix_well_formed(key, matrix::MacaulayMatrix)
-    if !(matrix.size == length(matrix.upper_rows))
-        return false
-    end
-    if !(matrix.ncolumns == matrix.nleft + matrix.nright)
-        return false
-    end
-    if !(matrix.nrows == matrix.nupperper + matrix.nlower)
-        return false
-    end
-    if key in (:in_reduction_apply!, :in_reduction!, :in_reduction_learn!)
-        for i in 1:length(matrix.upper_rows)
-            !isassigned(matrix.upper_rows, i) && continue
-            if isempty(matrix.upper_rows[i])
-                return false
-            end
+function matrix_well_formed(func_id::Symbol, matrix::MacaulayMatrix)
+    !(matrix.ncolumns == matrix.nleft + matrix.nright) && return false
+    !(matrix.nrows == matrix.nupper + matrix.nlower) && return false
+    !(matrix.nupper == matrix.nleft) && return false
+
+    for i in 1:length(matrix.upper_rows)
+        if !isassigned(matrix.upper_rows, i)
+            continue
         end
-        for i in 1:length(matrix.lower_rows)
-            !isassigned(matrix.lower_rows, i) && continue
-            if isempty(matrix.lower_rows[i])
-                return false
-            end
+        # if !issorted(matrix.upper_rows[i])
+        #     return false
+        # end
+    end
+
+    if !(
+        func_id in
+        (:linear_algebra!, :in_reduction_apply!, :in_reduction!, :in_reduction_learn!)
+    )
+        return true
+    end
+    @inbounds for i in 1:length(matrix.upper_rows)
+        !isassigned(matrix.upper_rows, i) && continue
+        if isempty(matrix.upper_rows[i])
+            return false
+        end
+        # if !(matrix.upper_rows[i][1] == i)
+        #     return false
+        # end
+    end
+    @inbounds for i in 1:length(matrix.lower_rows)
+        !isassigned(matrix.lower_rows, i) && continue
+        if isempty(matrix.lower_rows[i])
+            return false
         end
     end
     true
@@ -245,6 +271,7 @@ function reinitialize_matrix!(matrix::MacaulayMatrix{T}, size::Int) where {T}
     matrix.size = 2 * size
     matrix.ncolumns = 0
     matrix.nleft = 0
+    matrix.upper_is_rref = false
     matrix.nright = 0
     matrix.nupper = 0
     matrix.nlower = 0
@@ -267,48 +294,83 @@ end
 # MacaulayMatrix linear algebra, high level
 
 """
-    linear_algebra!(matrix, basis, params, [graph])
+    linear_algebra!
 
-Produces a REF of the `matrix`. Returns `true` if successful.
+Given the matrix
 
-Used in the F4 reduction.
+    | A B |
+    | C D |
+
+Reduces the `CD` part with respect to the `AB` part and interreduces the result
+inplace. 
+
+In other words, computes the reduced row echelon form of
+
+    D - C inv(A) B
+
+Returns `true` if successful and `false` otherwise.
 """
 function linear_algebra! end
 
 """
-    linear_algebra_reducegb!(matrix, basis, params, [graph])
+    linear_algebra_reducegb!
 
-Produces the RREF of the `matrix`. Returns `true` if successful.
+Given the matrix
 
-Used in the autoreduction of the basis.
+    | A B |
+    | C D |
+
+Reduces the `CD` part with respect to the `AB` part and interreduces the result
+inplace.
+
+Returns `true` if successful and `false` otherwise.
+
+TODO: document the differences with linear_algebra!
 """
 function linear_algebra_reducegb! end
 
 """
-    linear_algebra_normalform!(matrix, basis, params, [graph])
+    linear_algebra_normalform!
 
-Puts the `matrix` in RREF, but does **not use** the rows from lower part of the
-matrix as pivots for in reduction. Returns `true` if successful.
+Given the matrix
 
-Used in the computation of normal forms.
+    | A B |
+    | C D |
+
+Reduces the `CD` part with respect to the `AB` part.
+
+Returns `true` if successful and `false` otherwise.
 """
 function linear_algebra_normalform! end
 
 """
-    linear_algebra_isgroebner!(matrix, basis, params, [graph])
+    linear_algebra_isgroebner!
 
-Checks that the lower part of the `matrix` reduces to zero w.r.t. the upper
-part.
+Given the matrix
 
-Used for assessing if all S-polynomials reduce to zero modulo a basis.
+    | A B |
+    | C D |
+
+Checks that the reduced row echelon form of
+
+    D - C inv(A) B
+
+is zero.
 """
 function linear_algebra_isgroebner! end
 
-function linear_algebra!(matrix, basis, params, graph=nothing; linalg::Symbol=:auto)
-    # @invariant matrix_well_formed(:linear_algebra!, matrix)
-    if linalg === :auto
+function linear_algebra!(
+    matrix,
+    basis,
+    params,
+    graph=nothing;
+    linalg::LinearAlgebra=LinearAlgebra(:auto, :sparse)
+)
+    @invariant matrix_well_formed(:linear_algebra!, matrix)
+    if linalg.algorithm === :auto
         linalg = params.linalg
     end
+
     rng = params.rng
     arithmetic = params.arithmetic
     flag = if !isnothing(graph)
@@ -319,14 +381,16 @@ function linear_algebra!(matrix, basis, params, graph=nothing; linalg::Symbol=:a
     return flag
 end
 
-function linear_algebra!(matrix, basis, linalg, arithmetic, rng)
-    resize!(matrix.coeffs, matrix.nlower)
-    # @invariant matrix_well_formed(:none, matrix)
-    flag = if linalg === :deterministic
-        deterministic_sparse_linear_algebra!(matrix, basis, arithmetic)
+function linear_algebra!(matrix, basis, linalg::LinearAlgebra, arithmetic, rng)
+    resize!(matrix.some_coeffs, matrix.nlower)
+    flag = if linalg.algorithm === :deterministic
+        deterministic_sparse_linear_algebra!(matrix, basis, linalg, arithmetic)
+    elseif linalg.algorithm === :randomized
+        randomized_sparse_linear_algebra!(matrix, basis, linalg, arithmetic, rng)
+    elseif linalg.algorithm === :direct_rref
+        direct_rref_sparse_linear_algebra!(matrix, basis, linalg, arithmetic)
     else
-        @assert linalg === :randomized
-        randomized_sparse_linear_algebra!(matrix, basis, arithmetic, rng)
+        deterministic_sparse_linear_algebra!(matrix, basis, linalg, arithmetic)
     end
     flag
 end
@@ -335,16 +399,15 @@ function linear_algebra!(
     graph::ComputationGraphF4,
     matrix::MacaulayMatrix,
     basis::Basis,
-    linalg,
+    linalg::LinearAlgebra,
     arithmetic,
     rng
 )
-    resize!(matrix.coeffs, matrix.nlower)
-    # @invariant matrix_well_formed(:none, matrix)
-    flag = if linalg === :learn
+    resize!(matrix.some_coeffs, matrix.nlower)
+    flag = if linalg.algorithm === :learn
         learn_sparse_linear_algebra!(graph, matrix, basis, arithmetic)
     else
-        @assert linalg === :apply
+        @assert linalg.algorithm === :apply
         apply_sparse_linear_algebra!(graph, matrix, basis, arithmetic)
     end
     flag
@@ -355,12 +418,12 @@ function linear_algebra_reducegb!(
     basis,
     params,
     graph=nothing;
-    linalg::Symbol=:auto
+    linalg::LinearAlgebra=LinearAlgebra(:auto, :sparse)
 )
     sort_matrix_upper_rows!(matrix)
 
     arithmetic = params.arithmetic
-    if linalg === :auto
+    if linalg.algorithm === :auto
         linalg = params.linalg
     end
 
@@ -375,7 +438,7 @@ end
 function linear_algebra_reducegb!(
     matrix,
     basis,
-    linalg,
+    linalg::LinearAlgebra,
     arithmetic::A
 ) where {A <: AbstractArithmetic}
     deterministic_sparse_interreduction!(matrix, basis, arithmetic)
@@ -385,10 +448,10 @@ function linear_algebra_reducegb!(
     graph,
     matrix,
     basis,
-    linalg,
+    linalg::LinearAlgebra,
     arithmetic::A
 ) where {A <: AbstractArithmetic}
-    if linalg === :learn
+    if linalg.algorithm === :learn
         learn_deterministic_sparse_interreduction!(graph, matrix, basis, arithmetic)
     else
         apply_deterministic_sparse_interreduction!(graph, matrix, basis, arithmetic)
@@ -399,7 +462,7 @@ function linear_algebra_normalform!(matrix, basis, arithmetic)
     sort_matrix_upper_rows!(matrix)
     @log level = -3 "linear_algebra_normalform!"
     @log level = -3 repr_matrix(matrix)
-    resize!(matrix.coeffs, matrix.nlower)
+    resize!(matrix.some_coeffs, matrix.nlower)
     reduce_matrix_lower_part_invariant_pivots!(matrix, basis, arithmetic)
 end
 
@@ -417,6 +480,7 @@ end
 function deterministic_sparse_linear_algebra!(
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
+    linalg,
     arithmetic::A
 ) where {C <: Coeff, A <: AbstractArithmetic}
     sort_matrix_upper_rows!(matrix) # for the AB part
@@ -432,6 +496,7 @@ end
 function randomized_sparse_linear_algebra!(
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
+    linalg,
     arithmetic::A,
     rng
 ) where {C <: Coeff, A <: AbstractArithmetic}
@@ -443,6 +508,34 @@ function randomized_sparse_linear_algebra!(
     randomized_reduce_matrix_lower_part!(matrix, basis, arithmetic, rng)
     # Interreduce CD
     interreduce_matrix_pivots!(matrix, basis, arithmetic)
+end
+
+function direct_rref_sparse_linear_algebra!(
+    matrix::MacaulayMatrix{C},
+    basis::Basis{C},
+    linalg,
+    arithmetic::A
+) where {C <: Coeff, A <: AbstractArithmetic}
+    sort_matrix_upper_rows!(matrix) # for the AB part
+    sort_matrix_lower_rows!(matrix) # for the CD part
+
+    @log level = -3 "direct_rref_sparse_linear_algebra!"
+    @log level = -3 repr_matrix(matrix)
+
+    # Produce the RREF of AB
+    flag = if linalg.sparsity === :sparse
+        interreduce_matrix_upper_part!(matrix, basis, arithmetic)
+        @log level = -3 repr_matrix(matrix)
+        reduce_matrix_lower_part!(matrix, basis, arithmetic)
+        interreduce_matrix_pivots!(matrix, basis, arithmetic)
+    else
+        interreduce_matrix_upper_part_sparsedense!(matrix, basis, arithmetic)
+        @log level = -3 repr_matrix(matrix)
+        reduce_matrix_lower_part_sparsedense!(matrix, basis, arithmetic)
+        interreduce_matrix_pivots_dense!(matrix, basis, arithmetic)
+    end
+
+    flag
 end
 
 function learn_sparse_linear_algebra!(
@@ -575,6 +668,7 @@ end
             basis,
             pivots,
             first_nnz_column,
+            ncols,
             arithmetic,
             tmp_pos=-1
         )
@@ -583,15 +677,278 @@ end
 
         # Store the new row in the matrix,
         # AND add it to the active pivots
-        matrix.coeffs[i] = new_coeffs
+        matrix.some_coeffs[i] = new_coeffs
         pivots[new_column_indices[1]] = new_column_indices
         # Set a reference to the coefficients of this row in the matrix
         matrix.lower_to_coeffs[new_column_indices[1]] = i
 
-        normalize_sparse_row!(matrix.coeffs[i], arithmetic)
+        normalize_sparse_row!(matrix.some_coeffs[i], arithmetic)
 
         new_column_indices, new_coeffs = new_empty_sparse_row(C)
     end
+    true
+end
+
+@timeit function reduce_matrix_lower_part_sparsedense!(
+    matrix::MacaulayMatrix{C},
+    basis::Basis{C},
+    arithmetic::A
+) where {C <: Coeff, A <: AbstractArithmetic}
+    # Prepare the matrix
+    # pivots, row_index_to_coeffs = absolute_index_pivots!(matrix)
+    ncols = matrix.ncolumns
+    nlow = matrix.nlower
+    nup = matrix.nupper
+    pivots = matrix.pivots
+    nleft = matrix.nleft
+    nright = matrix.nright
+    resize!(matrix.D_coeffs_dense, nlow)
+    row1 = zeros(C, nleft)
+
+    # @info "" matrix.B_coeffs_dense
+    # @info "" matrix.lower_rows matrix.lower_to_coeffs
+
+    # new_column_indices, new_coeffs = new_empty_sparse_row(C)
+    @inbounds for i in 1:nlow
+        row2 = zeros(C, nright)
+        # Select the row from the lower part of the matrix to be reduced
+        nnz_column_indices = matrix.lower_rows[i]
+        # Locate the array of coefficients of this row.
+        # NOTE: no copy of coefficients is needed
+        nnz_coeffs = basis.coeffs[matrix.lower_to_coeffs[i]]
+        @invariant length(nnz_column_indices) == length(nnz_coeffs)
+
+        # @info "!!" i
+        # println(nnz_column_indices)
+        # println(nnz_coeffs)
+
+        for j in 1:nleft
+            row1[j] = zero(C)
+        end
+        for j in 1:nright
+            row2[j] = zero(C)
+        end
+        for j in 1:length(nnz_column_indices)
+            idx = nnz_column_indices[j]
+            if idx <= nleft
+                row1[idx] = nnz_coeffs[j]
+            else
+                row2[idx - nleft] = nnz_coeffs[j]
+            end
+        end
+        # println(row1)
+        # println(row2)
+
+        first_nnz_column = nnz_column_indices[1]
+        pivot = reduce_dense_row_by_pivots_sparsedense!(
+            row1,
+            row2,
+            matrix,
+            basis,
+            matrix.pivots,
+            first_nnz_column,
+            nleft,
+            arithmetic
+        )
+
+        # println("reduced: ", pivot)
+        # println(row1)
+        # println(row2)
+
+        # If the row is fully reduced
+        iszero(pivot) && continue
+
+        normalize_dense_row!(row2, arithmetic, pivot)
+        matrix.D_coeffs_dense[i] = row2
+        # pivots[new_column_indices[1]] = new_column_indices
+        # Set a reference to the coefficients of this row in the matrix
+        # matrix.upper_rows[nleft + i] = [ColumnLabel(i)]
+
+        matrix.pivot_indices[i] = pivot
+
+        # Store the new row in the matrix,
+        # AND add it to the active pivots
+        # matrix.some_coeffs[i] = new_coeffs
+        # pivots[new_column_indices[1]] = new_column_indices
+        # # Set a reference to the coefficients of this row in the matrix
+        # matrix.lower_to_coeffs[new_column_indices[1]] = i
+
+        # normalize_sparse_row!(matrix.some_coeffs[i], arithmetic)
+
+        # new_column_indices, new_coeffs = new_empty_sparse_row(C)
+    end
+    true
+end
+
+@timeit function interreduce_matrix_upper_part!(
+    matrix::MacaulayMatrix{C},
+    basis::Basis{C},
+    arithmetic::A
+) where {C <: Coeff, A <: AbstractArithmetic}
+    ncols = matrix.ncolumns
+    nlow = matrix.nlower
+    nup = matrix.nupper
+    nleft = matrix.nleft
+    nright = matrix.nright
+    resize!(matrix.upper_coeffs, nup)
+    row = zeros(C, ncols)
+    new_column_indices, new_coeffs = new_empty_sparse_row(C)
+    @invariant matrix.nupper == matrix.nleft
+    @inbounds for i in nup:-1:1
+        nnz_column_indices = matrix.upper_rows[i]
+        nnz_coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
+        # @info "" i
+        # println(nnz_column_indices)
+        # println(nnz_coeffs)
+        # Load coefficients into a dense array
+        load_sparse_row!(row, nnz_column_indices, nnz_coeffs)
+        # Reduce the row with respect to the known `pivots` from the upper part
+        # of the matrix.
+        # NOTE: this also does partial interreduction of the lower matrix rows.
+        # Upon discovery of a new pivot from the lower part of the matrix, we
+        # add it the pivot to the pool available of pivots
+        first_nnz_column = nnz_column_indices[1]
+        zeroed = reduce_dense_row_by_pivots_sparse!(
+            new_column_indices,
+            new_coeffs,
+            row,
+            matrix,
+            basis,
+            matrix.upper_rows,
+            first_nnz_column,
+            ncols,
+            arithmetic,
+            tmp_pos=first_nnz_column,
+            computing_rref=true
+        )
+        # If the row is fully reduced
+        if zeroed
+            return false
+        end
+
+        # println(new_column_indices)
+        # println(new_coeffs)
+
+        # Store the new row in the matrix,
+        # AND add it to the active pivots
+        matrix.upper_coeffs[i] = new_coeffs
+        # pivots[new_column_indices[1]] = new_column_indices
+        # Set a reference to the coefficients of this row in the matrix
+        matrix.upper_rows[i] = new_column_indices
+
+        normalize_sparse_row!(matrix.upper_coeffs[i], arithmetic)
+
+        new_column_indices, new_coeffs = new_empty_sparse_row(C)
+    end
+
+    matrix.upper_is_rref = true
+    for i in 1:(matrix.nupper)
+        @invariant matrix.upper_rows[i][1] == i
+    end
+
+    true
+end
+
+@timeit function interreduce_matrix_upper_part_sparsedense!(
+    matrix::MacaulayMatrix{C},
+    basis::Basis{C},
+    arithmetic::A
+) where {C <: Coeff, A <: AbstractArithmetic}
+    # pivots, _ = absolute_index_pivots!(matrix)
+    pivots = Vector{Vector{ColumnLabel}}(undef, matrix.ncolumns)
+    @inbounds for i in 1:(matrix.nupper)
+        pivots[matrix.upper_rows[i][1]] = matrix.upper_rows[i]
+    end
+    matrix.pivots = pivots
+
+    ncols = matrix.ncolumns
+    nlow = matrix.nlower
+    nup = matrix.nupper
+    nleft = matrix.nleft
+    nright = matrix.nright
+
+    resize!(matrix.pivot_indices, nup + nlow)
+    @inbounds for i in 1:(nup + nlow)
+        matrix.pivot_indices[i] = 0
+    end
+
+    resize!(matrix.upper_coeffs, nup)
+    resize!(matrix.B_coeffs_dense, ncols)
+
+    row1 = zeros(C, nleft)
+    # new_column_indices, new_coeffs = new_empty_sparse_row(C)
+    @invariant matrix.nupper == matrix.nleft
+    @inbounds for i in nup:-1:1
+        row2 = zeros(C, nright)
+
+        nnz_column_indices = matrix.upper_rows[i]
+        nnz_coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
+
+        # @info "!" i
+        # println(nnz_column_indices)
+        # println(nnz_coeffs)
+        @invariant length(nnz_column_indices) == length(nnz_coeffs)
+        @invariant isone(nnz_coeffs[1])
+
+        for j in 1:nleft
+            row1[j] = zero(C)
+        end
+        for j in 1:nright
+            row2[j] = zero(C)
+        end
+        for j in 1:length(nnz_column_indices)
+            idx = nnz_column_indices[j]
+            if idx <= nleft
+                row1[idx] = nnz_coeffs[j]
+            else
+                row2[idx - nleft] = nnz_coeffs[j]
+            end
+        end
+        # println(row1)
+        # println(row2)
+
+        # Load coefficients into a dense array
+        # load_sparse_row!(row, nnz_column_indices, nnz_coeffs)
+        # Reduce the row with respect to the known `pivots` from the upper part
+        # of the matrix.
+        # NOTE: this also does partial interreduction of the lower matrix rows.
+        # Upon discovery of a new pivot from the lower part of the matrix, we
+        # add it the pivot to the pool available of pivots
+        first_nnz_column = nnz_column_indices[1]
+        # @invariant isone(nnz_coeffs[1])
+        # normalize dense row ?
+        pivot = reduce_dense_row_by_pivots_sparsedense!(
+            row1,
+            row2,
+            matrix,
+            basis,
+            pivots,
+            first_nnz_column + 1,
+            nleft,
+            arithmetic
+        )
+
+        # println("reduced: ", pivot)
+        # println(row1)
+        # println(row2)
+
+        # Store the new row in the matrix,
+        # AND add it to the active pivots
+        matrix.B_coeffs_dense[first_nnz_column] = row2
+        # pivots[new_column_indices[1]] = new_column_indices
+        # Set a reference to the coefficients of this row in the matrix
+        # matrix.pivot_indices[i] = i
+
+        # normalize_sparse_row!(matrix.upper_coeffs[i], arithmetic)
+
+        # new_column_indices, new_coeffs = new_empty_sparse_row(C)
+    end
+
+    matrix.upper_is_rref = true
+    for i in 1:(matrix.nupper)
+        @invariant matrix.upper_rows[i][1] == i
+    end
+
     true
 end
 
@@ -639,6 +996,7 @@ function apply_reduce_matrix_lower_part!(
             basis,
             pivots,
             first_nnz_column,
+            ncols,
             arithmetic,
             tmp_pos=-1
         )
@@ -649,12 +1007,12 @@ function apply_reduce_matrix_lower_part!(
 
         # Store the new row in the matrix,
         # AND add it to the active pivots
-        matrix.coeffs[i] = new_coeffs
+        matrix.some_coeffs[i] = new_coeffs
         pivots[new_column_indices[1]] = new_column_indices
         # Set a reference to the coefficients of this row in the matrix
         matrix.lower_to_coeffs[new_column_indices[1]] = i
 
-        normalize_sparse_row!(matrix.coeffs[i], arithmetic)
+        normalize_sparse_row!(matrix.some_coeffs[i], arithmetic)
 
         new_column_indices, new_coeffs = new_empty_sparse_row(C)
     end
@@ -668,6 +1026,7 @@ end
     arithmetic::A;
     reversed_rows::Bool=false
 ) where {C <: Coeff, A <: AbstractArithmetic}
+    ncols = matrix.ncolumns
     pivots = matrix.pivots
     new_pivots = 0
     # Indices of rows that did no reduce to zero
@@ -687,7 +1046,7 @@ end
             nnz_coeffs = basis.coeffs[matrix.upper_to_coeffs[abs_column_idx]]
         else
             # lower part of matrix
-            nnz_coeffs = matrix.coeffs[matrix.lower_to_coeffs[abs_column_idx]]
+            nnz_coeffs = matrix.some_coeffs[matrix.lower_to_coeffs[abs_column_idx]]
         end
         @assert length(nnz_column_indices) == length(nnz_coeffs)
         load_sparse_row!(row, nnz_column_indices, nnz_coeffs)
@@ -702,6 +1061,7 @@ end
             basis,
             pivots,
             first_nnz_column,
+            ncols,
             arithmetic,
             tmp_pos=first_nnz_column
         )
@@ -716,12 +1076,128 @@ end
         # update row and coeffs
         if !reversed_rows
             matrix.lower_rows[new_pivots] = new_column_indices
-            matrix.coeffs[matrix.lower_to_coeffs[abs_column_idx]] = new_coeffs
+            matrix.some_coeffs[matrix.lower_to_coeffs[abs_column_idx]] = new_coeffs
             pivots[abs_column_idx] = matrix.lower_rows[new_pivots]
         else
             matrix.lower_rows[matrix.nrows - new_pivots + 1] = new_column_indices
-            matrix.coeffs[matrix.lower_to_coeffs[abs_column_idx]] = new_coeffs
+            matrix.some_coeffs[matrix.lower_to_coeffs[abs_column_idx]] = new_coeffs
             pivots[abs_column_idx] = matrix.lower_rows[matrix.nrows - new_pivots + 1]
+        end
+    end
+
+    matrix.npivots = matrix.nrows = matrix.size = new_pivots
+    resize!(matrix.lower_rows, new_pivots)
+    resize!(not_reduced_to_zero, new_pivots)
+    true, any_zeroed, not_reduced_to_zero
+end
+
+# Interreduces the matrix.pivots 
+@timeit function interreduce_matrix_pivots_dense!(
+    matrix::MacaulayMatrix{C},
+    basis::Basis{C},
+    arithmetic::A;
+    reversed_rows::Bool=false
+) where {C <: Coeff, A <: AbstractArithmetic}
+    ncols = matrix.ncolumns
+    nlow = matrix.nlower
+    nup = matrix.nupper
+    nleft = matrix.nleft
+    nright = matrix.nright
+
+    resize!(matrix.lower_to_coeffs, ncols)
+    resize!(matrix.some_coeffs, ncols)
+
+    pivots = matrix.pivots
+    pivot_indices = matrix.pivot_indices
+    new_pivots = 0
+    # Indices of rows that did no reduce to zero
+    not_reduced_to_zero = Vector{Int}(undef, nlow)
+    row = zeros(C, matrix.ncolumns)
+    resize!(matrix.lower_rows, matrix.ncolumns)
+    any_zeroed = false
+
+    # @info "" matrix.D_coeffs_dense
+
+    row1 = zeros(C, nleft)
+    # for each column in the block D..
+    @inbounds for i in 1:nlow
+        # Check if there is a row that starts at `abs_column_idx`
+        if iszero(pivot_indices[i])
+            any_zeroed = true
+            continue
+        end
+
+        new_pivot = 0
+        row2 = matrix.D_coeffs_dense[i]
+        for j in 1:length(row2)
+            if !iszero(row2[j])
+                new_pivot = j
+                break
+            end
+        end
+        pivot_indices[i] = new_pivot
+
+        if iszero(pivot_indices[i])
+            any_zeroed = true
+            continue
+        end
+
+        first_nnz_column = pivot_indices[i]
+        normalize_dense_row!(row2, arithmetic, first_nnz_column)
+
+        # @info "!!&&" i first_nnz_column
+        # println(row2)
+
+        for j in 1:nlow
+            if j == i
+                continue
+            end
+            if iszero(pivot_indices[j]) || pivot_indices[j] > first_nnz_column
+                continue
+            end
+            to_be_reduced = matrix.D_coeffs_dense[j]
+            if iszero(to_be_reduced[first_nnz_column])
+                continue
+            end
+            mul = to_be_reduced[first_nnz_column]
+            reduce_dense_row_by_dense_row!(to_be_reduced, row2, mul, arithmetic)
+        end
+
+        new_column_indices, new_coeffs = new_empty_sparse_row(C)
+        resize!(new_column_indices, length(row2))
+        resize!(new_coeffs, length(row2))
+        cnt = extract_sparse_row!(
+            new_column_indices,
+            new_coeffs,
+            row2,
+            first_nnz_column,
+            nright
+        )
+        resize!(new_column_indices, cnt)
+        for j in 1:length(new_column_indices)
+            new_column_indices[j] = nleft + new_column_indices[j]
+        end
+        resize!(new_coeffs, cnt)
+
+        first_nnz_column = first_nnz_column + nleft
+        # println(new_column_indices)
+        # println(new_coeffs)
+        # println(first_nnz_column)
+        @invariant isone(new_coeffs[1])
+
+        new_pivots += 1
+        not_reduced_to_zero[new_pivots] = first_nnz_column
+        # update row and coeffs
+        if !reversed_rows
+            matrix.lower_rows[new_pivots] = new_column_indices
+            matrix.lower_to_coeffs[first_nnz_column] = new_pivots
+            matrix.some_coeffs[new_pivots] = new_coeffs
+            # pivots[first_nnz_column] = matrix.lower_rows[new_pivots]
+        else
+            matrix.lower_rows[matrix.nrows - new_pivots + 1] = new_column_indices
+            matrix.lower_to_coeffs[first_nnz_column] = new_pivots
+            matrix.some_coeffs[new_pivots] = new_coeffs
+            # pivots[first_nnz_column] = matrix.lower_rows[matrix.nrows - new_pivots + 1]
         end
     end
 
@@ -845,6 +1321,7 @@ function randomized_reduce_matrix_lower_part!(
                 basis,
                 pivots,
                 startcol,
+                ncols,
                 arithmetic,
                 tmp_pos=-1
             )
@@ -857,7 +1334,7 @@ function randomized_reduce_matrix_lower_part!(
             absolute_i = (i - 1) * rowsperblock + ctr + 1
 
             # matrix coeffs sparsely stores coefficients of new row
-            matrix.coeffs[absolute_i] = new_coeffs
+            matrix.some_coeffs[absolute_i] = new_coeffs
             # add new pivot at column index newrow[1]
             #  (which is the first nnz column of newrow)
             pivots[new_column_indices[1]] = new_column_indices
@@ -866,7 +1343,7 @@ function randomized_reduce_matrix_lower_part!(
             matrix.lower_to_coeffs[new_column_indices[1]] = absolute_i
 
             # normalize if needed
-            normalize_sparse_row!(matrix.coeffs[absolute_i], arithmetic)
+            normalize_sparse_row!(matrix.some_coeffs[absolute_i], arithmetic)
 
             ctr += 1
             new_column_indices, new_coeffs = new_empty_sparse_row(C)
@@ -894,7 +1371,7 @@ function reduce_matrix_lower_part_invariant_pivots!(
 
         # corresponding coefficients from basis
         # (no need to copy here)
-        cfsref = matrix.coeffs[row_idx_to_coeffs[i]]
+        cfsref = matrix.some_coeffs[row_idx_to_coeffs[i]]
         load_sparse_row!(row, rowexps, cfsref)
 
         # reduce it with known pivots from matrix.upper_rows
@@ -912,12 +1389,13 @@ function reduce_matrix_lower_part_invariant_pivots!(
             # for the counter-example see
             # https://github.com/sumiya11/Groebner.jl/issues/82
             1,
+            ncols,
             arithmetic,
             tmp_pos=-1
         )
 
         # matrix coeffs sparsely stores coefficients of new row
-        matrix.coeffs[i] = new_coeffs
+        matrix.some_coeffs[i] = new_coeffs
         # add new pivot at column index newrow[1]
         #  (which is the first nnz column of newrow)
         matrix.lower_rows[i] = new_column_indices
@@ -958,6 +1436,7 @@ function reduce_matrix_lower_part_any_nonzero!(
             basis,
             pivots,
             first_nnz_column,
+            ncols,
             arithmetic,
             tmp_pos=-1
         )
@@ -991,18 +1470,21 @@ function absolute_index_pivots_in_interreduction!(matrix::MacaulayMatrix, basis:
     resize!(matrix.upper_to_mult, matrix.ncolumns)
     resize!(matrix.lower_to_coeffs, matrix.ncolumns)
     resize!(matrix.lower_to_mult, matrix.ncolumns)
-    resize!(matrix.coeffs, matrix.ncolumns)
+    resize!(matrix.some_coeffs, matrix.ncolumns)
 
     pivots = Vector{Vector{ColumnLabel}}(undef, matrix.ncolumns)
     @inbounds for i in 1:(matrix.nrows)
         pivots[matrix.upper_rows[i][1]] = matrix.upper_rows[i]
         matrix.lower_to_coeffs[matrix.upper_rows[i][1]] = i
-        matrix.coeffs[i] = copy(basis.coeffs[matrix.upper_to_coeffs[i]])
+        matrix.some_coeffs[i] = copy(basis.coeffs[matrix.upper_to_coeffs[i]])
     end
 
     matrix.pivots = pivots
     pivots
 end
+
+###
+# Basic routines for dense and sparse vectors
 
 function new_empty_sparse_row(::Type{C}) where {C <: Coeff}
     Vector{ColumnLabel}(), Vector{C}()
@@ -1040,6 +1522,44 @@ function normalize_sparse_row!(
     row
 end
 
+# Normalize the row to have the leading coefficient equal to 1
+function normalize_dense_row!(
+    row::Vector{T},
+    arithmetic::A,
+    first_nnz_index::Int=1
+) where {T <: CoeffFF, A <: AbstractArithmeticZp}
+    @invariant !iszero(row[first_nnz_index])
+
+    @inbounds if isone(row[first_nnz_index])
+        return row
+    end
+    @inbounds pinv = mod_x(invmod(row[first_nnz_index], divisor(arithmetic)), arithmetic)
+    @inbounds row[first_nnz_index] = one(row[first_nnz_index])
+    @inbounds for i in (first_nnz_index + 1):length(row)
+        row[i] = mod_x(row[i] * pinv, arithmetic)
+    end
+    row
+end
+
+# Normalize the row to have the leading coefficient equal to 1
+function normalize_dense_row!(
+    row::Vector{T},
+    arithmetic::A,
+    first_nnz_index::Int=1
+) where {T <: CoeffQQ, A <: AbstractArithmeticQQ}
+    @invariant !iszero(row[first_nnz_index])
+
+    @inbounds if isone(row[first_nnz_index])
+        return row
+    end
+    @inbounds pinv = inv(row[first_nnz_index])
+    @inbounds row[first_nnz_index] = one(row[first_nnz_index])
+    @inbounds for i in (first_nnz_index + 1):length(row)
+        row[i] = row[i] * pinv
+    end
+    row
+end
+
 function reduce_dense_row_by_sparse_row!(
     row::Vector{T},
     indices::Vector{ColumnLabel},
@@ -1055,6 +1575,55 @@ function reduce_dense_row_by_sparse_row!(
     @inbounds for j in 1:length(indices)
         idx = indices[j]
         row[idx] = mod_x(row[idx] + mul * coeffs[j], arithmetic)
+    end
+
+    nothing
+end
+
+const count1 = Ref(0)
+const count2 = Ref(0)
+
+# row1 := row1 - mul * row2
+function reduce_dense_row_by_dense_row!(
+    row1::Vector{T},
+    row2::Vector{T},
+    mul::T,
+    arithmetic::A
+) where {T <: CoeffFF, A <: AbstractArithmeticZp}
+    @invariant length(row1) == length(row2)
+    # @invariant isone(coeffs[1])
+
+    count1[] = count1[] + isone(mul)
+    count2[] = count2[] + 2
+
+    @inbounds mul = divisor(arithmetic) - mul
+
+    # On our benchmarks, usually,
+    #   length(row) / length(indices)
+    # roughly varies from 10 to 100
+    @inbounds for j in 1:length(row1)
+        row1[j] = mod_x(row1[j] + mul * row2[j], arithmetic)
+    end
+
+    nothing
+end
+
+# row1 := row1 - mul * row2
+function reduce_dense_row_by_dense_row!(
+    row1::Vector{T},
+    row2::Vector{T},
+    mul::T,
+    arithmetic::A
+) where {T <: CoeffQQ, A <: AbstractArithmeticQQ}
+    @invariant length(row1) == length(row2)
+    # @invariant isone(coeffs[1])
+    # @inbounds mul = divisor(arithmetic) - row[indices[1]]
+
+    # On our benchmarks, usually,
+    #   length(row) / length(indices)
+    # roughly varies from 10 to 100
+    @inbounds for j in 1:length(row1)
+        row1[j] = row1[j] - mul * row2[j]
     end
 
     nothing
@@ -1110,7 +1679,7 @@ function extract_sparse_row!(indices, coeffs, row::Vector{T}, from::Int, to::Int
             j += 1
         end
     end
-    nothing
+    j - 1
 end
 
 # function extract_sparse_row_2!(vals::Vector{UInt}, dense::Vector{UInt})
@@ -1144,10 +1713,12 @@ function reduce_dense_row_by_pivots_sparse!(
     basis::Basis{C},
     pivots::Vector{Vector{ColumnLabel}},
     start_column::Integer,
+    end_column::Integer,
     arithmetic::A,
     active_reducers=nothing;
     tmp_pos::Integer=-1,
-    exact_column_mapping::Bool=false
+    exact_column_mapping::Bool=false,
+    computing_rref::Bool=false
 ) where {C <: Coeff, A <: AbstractArithmetic}
     ncolumns = matrix.ncolumns
     nleft = matrix.nleft
@@ -1156,12 +1727,13 @@ function reduce_dense_row_by_pivots_sparse!(
     # The index of the first nonzero elemen in the reduced row
     new_pivot = -1
 
-    @inbounds for i in start_column:ncolumns
+    @inbounds for i in start_column:end_column
         # @inbounds for i in start_column:nleft
         # if the element is zero - no reduction is needed
         if iszero(row[i])
             continue
         end
+        # @log level = 1000 "" start_column end_column i
 
         # if there is no pivot with the leading column index equal to i
         if !isassigned(pivots, i) || (tmp_pos != -1 && tmp_pos == i)
@@ -1177,15 +1749,20 @@ function reduce_dense_row_by_pivots_sparse!(
         indices = pivots[i]
         if exact_column_mapping
             # if reducer is from new matrix pivots
-            coeffs = matrix.coeffs[tmp_pos]
+            coeffs = matrix.some_coeffs[tmp_pos]
         elseif i <= nleft
             # if reducer is from the upper part of the matrix
-            coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
+            if matrix.upper_is_rref || computing_rref
+                coeffs = matrix.upper_coeffs[i]
+            else
+                coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
+            end
             record_active_reducer(active_reducers, matrix, i)
         else
             # if reducer is from the lower part of the matrix
-            coeffs = matrix.coeffs[matrix.lower_to_coeffs[i]]
+            coeffs = matrix.some_coeffs[matrix.lower_to_coeffs[i]]
         end
+        # @log level = 1000 "" indices coeffs
 
         reduce_dense_row_by_sparse_row!(row, indices, coeffs, arithmetic)
         @invariant iszero(row[i])
@@ -1205,6 +1782,48 @@ function reduce_dense_row_by_pivots_sparse!(
         ncolumns
     )
     false
+end
+
+function reduce_dense_row_by_pivots_sparsedense!(
+    left_row,
+    right_row,
+    matrix,
+    basis,
+    pivots,
+    start_column,
+    end_column,
+    arithmetic
+)
+    @inbounds for i in start_column:end_column
+        # @inbounds for i in start_column:nleft
+        # if the element is zero - no reduction is needed
+        if iszero(left_row[i])
+            continue
+        end
+        # @log level = 1000 "" start_column end_column i
+
+        # if there is no pivot with the leading column index equal to i
+        if !isassigned(pivots, i)
+            continue
+        end
+        # at this point, we have determined that row[i] is nonzero and that
+        # pivots[i] is a valid reducer of row
+
+        mult = left_row[i]
+        reducer = matrix.B_coeffs_dense[i]
+        # @log level = 1000 "" indices coeffs
+
+        reduce_dense_row_by_dense_row!(right_row, reducer, mult, arithmetic)
+    end
+    pivot = 0
+    @inbounds for i in 1:length(right_row)
+        if !iszero(right_row[i])
+            pivot = i
+            break
+        end
+    end
+
+    pivot
 end
 
 function learn_reduce_matrix_lower_part!(
@@ -1247,6 +1866,7 @@ function learn_reduce_matrix_lower_part!(
             basis,
             pivots,
             first_nnz_column,
+            ncols,
             arithmetic,
             reducers,
             tmp_pos=-1
@@ -1262,7 +1882,7 @@ function learn_reduce_matrix_lower_part!(
         @log level = -7 "Not zero" i row_idx_to_coeffs[i] matrix.lower_to_mult[i]
 
         # matrix coeffs sparsely stores coefficients of new row
-        matrix.coeffs[i] = new_coeffs
+        matrix.some_coeffs[i] = new_coeffs
         # add new pivot at column index newrow[1]
         #  (which is the first nnz column of newrow)
         pivots[new_column_indices[1]] = new_column_indices
@@ -1271,7 +1891,7 @@ function learn_reduce_matrix_lower_part!(
         matrix.lower_to_coeffs[new_column_indices[1]] = i
 
         # normalize if needed
-        normalize_sparse_row!(matrix.coeffs[i], arithmetic)
+        normalize_sparse_row!(matrix.some_coeffs[i], arithmetic)
 
         new_column_indices, new_coeffs = new_empty_sparse_row(C)
     end
@@ -1309,7 +1929,7 @@ function apply_sparse_rref!(
     ncols = matrix.ncolumns
     nlow = matrix.nlower
 
-    arithmetic = select_arithmetic(matrix.coeffs, ring.ch)
+    arithmetic = select_arithmetic(matrix.some_coeffs, ring.ch)
 
     # move known matrix pivots,
     # no copy
@@ -1346,6 +1966,7 @@ function apply_sparse_rref!(
             basis,
             pivs,
             ColumnLabel(startcol),
+            ColumnLabel(ncols),
             ColumnLabel(-1),
             arithmetic
         )
@@ -1356,7 +1977,7 @@ function apply_sparse_rref!(
         end
 
         # matrix coeffs sparsely stores coefficients of new row
-        matrix.coeffs[i] = newcfs
+        matrix.some_coeffs[i] = newcfs
         # add new pivot at column index newrow[1]
         #  (which is the first nnz column of newrow)
         pivs[newrow[1]] = newrow
@@ -1365,7 +1986,7 @@ function apply_sparse_rref!(
         matrix.lower_to_coeffs[newrow[1]] = i
 
         # normalize if needed
-        normalize_sparse_row!(matrix.coeffs[i], arithmetic)
+        normalize_sparse_row!(matrix.some_coeffs[i], arithmetic)
     end
 
     interreduce_lower_part!(matrix, basis, pivs, arithmetic)
@@ -1387,7 +2008,7 @@ function column_to_monom_mapping!(matrix::MacaulayMatrix, symbol_ht::MonomialHas
         column_to_monom[j] = i
         j += 1
         # meaning the column is pivoted
-        if hdata[i].idx == 2
+        if hdata[i].idx == PIVOT_COLUMN
             k += 1
         end
     end
@@ -1443,8 +2064,9 @@ function convert_rows_to_basis_elements!(
     @inbounds for i in 1:(matrix.npivots)
         colidx = rows[i][1]
         insert_in_basis_hash_table_pivots(rows[i], ht, symbol_ht, matrix.column_to_monom)
-        basis.coeffs[crs + i] = matrix.coeffs[matrix.lower_to_coeffs[colidx]]
+        basis.coeffs[crs + i] = matrix.some_coeffs[matrix.lower_to_coeffs[colidx]]
         basis.monoms[crs + i] = matrix.lower_rows[i]
+        @invariant length(basis.coeffs[crs + i]) == length(basis.monoms[crs + i])
     end
 
     basis.nfilled += matrix.npivots
@@ -1462,10 +2084,10 @@ function convert_rows_to_basis_elements_nf!(
         basis.nprocessed += 1
         basis.nnonredundant += 1
         basis.nonredundant[basis.nnonredundant] = basis.nprocessed
-        if isassigned(matrix.coeffs, i)
+        if isassigned(matrix.some_coeffs, i)
             row = matrix.lower_rows[i]
             insert_in_basis_hash_table_pivots(row, ht, symbol_ht, matrix.column_to_monom)
-            basis.coeffs[basis.nprocessed] = matrix.coeffs[i]
+            basis.coeffs[basis.nprocessed] = matrix.some_coeffs[i]
             basis.monoms[basis.nprocessed] = row
         else
             empty!(basis.coeffs[basis.nprocessed])

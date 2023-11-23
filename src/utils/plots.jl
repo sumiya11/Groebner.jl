@@ -38,6 +38,8 @@ const ASPECT_RATIO = Ref(4 / 3)
 const DEFAULT_HEIGHT = Ref(15)
 const DEFAULT_WIDTH = Ref(round(Int, DEFAULT_HEIGHT[] * 2ASPECT_RATIO[]))
 
+const DEFAULT_CANVAS_WIDTH = 40
+
 y_pixel_per_char() = 4
 x_pixel_per_char() = 2
 
