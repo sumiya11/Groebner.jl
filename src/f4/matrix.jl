@@ -510,9 +510,11 @@ function randomized_sparse_linear_algebra!(
     @log level = -3 "randomized_sparse_linear_algebra!"
     @log level = -3 repr_matrix(matrix)
     # Reduce CD with AB
-    randomized_reduce_matrix_lower_part!(matrix, basis, arithmetic, rng)
-    # Interreduce CD
-    interreduce_matrix_pivots!(matrix, basis, arithmetic)
+    @time begin
+        randomized_reduce_matrix_lower_part!(matrix, basis, arithmetic, rng)
+        # Interreduce CD
+        interreduce_matrix_pivots!(matrix, basis, arithmetic)
+    end
 end
 
 function direct_rref_sparse_linear_algebra!(
@@ -572,12 +574,14 @@ function apply_sparse_linear_algebra!(
     @log level = -3 "apply_sparse_linear_algebra!"
     @log level = -3 repr_matrix(matrix)
     # Reduce CD with AB
-    flag = apply_reduce_matrix_lower_part!(graph, matrix, basis, arithmetic)
-    if !flag
-        return flag
+    @time begin
+        flag = apply_reduce_matrix_lower_part!(graph, matrix, basis, arithmetic)
+        if !flag
+            return flag
+        end
+        # Interreduce CD
+        apply_interreduce_matrix_pivots!(graph, matrix, basis, arithmetic)
     end
-    # Interreduce CD
-    apply_interreduce_matrix_pivots!(graph, matrix, basis, arithmetic)
 end
 
 function deterministic_sparse_interreduction!(

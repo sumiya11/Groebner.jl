@@ -270,7 +270,7 @@ function select_tobereduced!(
     # to lower rows of the matrix
     reinitialize_matrix!(matrix, max(basis.nfilled, tobereduced.nfilled))
     resize!(matrix.lower_rows, tobereduced.nfilled)
-    resize!(matrix.coeffs, tobereduced.nfilled)
+    resize!(matrix.some_coeffs, tobereduced.nfilled)
 
     etmp = construct_const_monom(M, ht.nvars)
 
@@ -283,7 +283,7 @@ function select_tobereduced!(
         matrix.lower_to_coeffs[matrix.nrows] = i
         # TODO: not really needed here
         matrix.lower_to_mult[matrix.nrows] = insert_in_hash_table!(ht, etmp)
-        matrix.coeffs[matrix.nrows] = tobereduced.coeffs[i]
+        matrix.some_coeffs[matrix.nrows] = tobereduced.coeffs[i]
     end
 
     basis.nnonredundant = basis.nprocessed = basis.nfilled

@@ -2,7 +2,7 @@
 │ reduced    = true, 
 │ ordering   = Main.Groebner.InputOrdering(), 
 │ certify    = false, 
-│ linalg     = deterministic, 
+│ linalg     = randomized, 
 │ monoms     = auto, 
 │ seed       = 42, 
 │ loglevel   = -3, 
@@ -40,7 +40,7 @@
 │ randomized_check = true
 │ certify_check = false
 │ check = true
-│ linalg = Main.Groebner.LinearAlgebra(:deterministic, :sparse)
+│ linalg = Main.Groebner.LinearAlgebra(:randomized, :sparse)
 │ arithmetic = Main.Groebner.SpecializedBuiltinArithmeticZp{UInt64, true}(0x0000000200000005, 0x1e, 0x000000007fffffff)
 │ reduced = true
 │ homogenize = false
@@ -86,7 +86,7 @@
 │ Filled / Processed / Non-redundant : 5 / 5 / 5
 │ Size allocated: 5
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
-┌ Debug: deterministic_sparse_linear_algebra!
+┌ Debug: randomized_sparse_linear_algebra!
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
 ┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
 │ 11 x 18 with 40 nnz (20.2%)
@@ -106,7 +106,13 @@
 │ ⢀⠌⢄⢀⠀│⠀⡀⠌⠀⢨
 │ 
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
-  0.000027 seconds (33 allocations: 3.016 KiB)
+┌ Debug: Rows in the lower part: 3
+│ The bumber of blocks: 2
+│ Rows per block: 2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 3 (out of 3)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.029515 seconds (877 allocations: 48.969 KiB, 97.85% compilation time)
 ┌ Debug: F4: iteration 2
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
 ┌ Debug: F4: available 6 pairs
@@ -119,7 +125,7 @@
 │ Filled / Processed / Non-redundant : 8 / 8 / 7
 │ Size allocated: 10
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
-┌ Debug: deterministic_sparse_linear_algebra!
+┌ Debug: randomized_sparse_linear_algebra!
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
 ┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
 │ 12 x 20 with 54 nnz (22.5%)
@@ -139,7 +145,13 @@
 │ ⢀⠤⠈⣀⣀│⠀⠀⠈⠉⠄⠬
 │ 
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
-  0.000023 seconds (25 allocations: 2.594 KiB)
+┌ Debug: Rows in the lower part: 3
+│ The bumber of blocks: 2
+│ Rows per block: 2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 2 (out of 3)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.000147 seconds (400 allocations: 26.766 KiB)
 ┌ Debug: F4: iteration 3
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
 ┌ Debug: F4: available 6 pairs
@@ -152,7 +164,7 @@
 │ Filled / Processed / Non-redundant : 10 / 10 / 8
 │ Size allocated: 20
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
-┌ Debug: deterministic_sparse_linear_algebra!
+┌ Debug: randomized_sparse_linear_algebra!
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
 ┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
 │ 16 x 27 with 81 nnz (18.75%)
@@ -173,7 +185,13 @@
 │ ⣀⠠⠤⡩⢀⠭│⠀⡀⡠⠀⣀⠄⢀⠄
 │ 
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
-  0.000009 seconds (25 allocations: 2.875 KiB)
+┌ Debug: Rows in the lower part: 3
+│ The bumber of blocks: 2
+│ Rows per block: 2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 2 (out of 3)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.000139 seconds (400 allocations: 27.062 KiB)
 ┌ Debug: F4: iteration 4
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
 ┌ Debug: F4: available 10 pairs
@@ -186,7 +204,7 @@
 │ Filled / Processed / Non-redundant : 12 / 12 / 9
 │ Size allocated: 20
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
-┌ Debug: deterministic_sparse_linear_algebra!
+┌ Debug: randomized_sparse_linear_algebra!
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
 ┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
 │ 15 x 24 with 79 nnz (21.94%)
@@ -207,7 +225,13 @@
 │ ⣀⣄⠉⠉⡀⡌│⠀⠤⠄⠠⠁⠀
 │ 
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
-  0.000012 seconds (17 allocations: 2.250 KiB)
+┌ Debug: Rows in the lower part: 3
+│ The bumber of blocks: 2
+│ Rows per block: 2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 1 (out of 3)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.000135 seconds (391 allocations: 26.125 KiB)
 ┌ Debug: F4: iteration 5
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
 ┌ Debug: F4: available 9 pairs
@@ -220,7 +244,7 @@
 │ Filled / Processed / Non-redundant : 13 / 13 / 10
 │ Size allocated: 20
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
-┌ Debug: deterministic_sparse_linear_algebra!
+┌ Debug: randomized_sparse_linear_algebra!
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
 ┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
 │ 57 x 62 with 308 nnz (8.72%)
@@ -250,7 +274,13 @@
 │ ⡀⡀⠔⠁⠀⠀⠀⠀⠀⠀⡀⢀⢀⠠⠐⠈⠀⠀⠀⠄⢐⢌⠔⠡│⠀⠀⠀⠊⠀⠐⠁
 │ 
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
-  0.000021 seconds (32 allocations: 4.344 KiB)
+┌ Debug: Rows in the lower part: 9
+│ The bumber of blocks: 2
+│ Rows per block: 5
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 3 (out of 9)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.000184 seconds (408 allocations: 28.625 KiB)
 ┌ Debug: F4: iteration 6
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
 ┌ Debug: F4: available 7 pairs
@@ -263,7 +293,7 @@
 │ Filled / Processed / Non-redundant : 16 / 16 / 12
 │ Size allocated: 20
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
-┌ Debug: deterministic_sparse_linear_algebra!
+┌ Debug: randomized_sparse_linear_algebra!
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
 ┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
 │ 29 x 32 with 191 nnz (20.58%)
@@ -286,7 +316,13 @@
 │ ⡀⡰⡈⡀⠘⠀⡀⢃⡀⡛⠘│⠸⠸⡤⡤⠧
 │ 
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
-  0.000013 seconds (24 allocations: 2.734 KiB)
+┌ Debug: Rows in the lower part: 7
+│ The bumber of blocks: 2
+│ Rows per block: 4
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 2 (out of 7)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.000144 seconds (400 allocations: 26.750 KiB)
 ┌ Debug: F4: iteration 7
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
 ┌ Debug: F4: available 6 pairs
@@ -299,7 +335,7 @@
 │ Filled / Processed / Non-redundant : 18 / 18 / 14
 │ Size allocated: 20
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
-┌ Debug: deterministic_sparse_linear_algebra!
+┌ Debug: randomized_sparse_linear_algebra!
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
 ┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
 │ 35 x 37 with 217 nnz (16.76%)
@@ -324,7 +360,13 @@
 │ ⡠⠀⠂⠁⢈⠄⡡⠀⢚⠄⢊⡥⡡⠖│⠀⢘⢊⠄⠂
 │ 
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
-  0.000009 seconds (8 allocations: 1.891 KiB)
+┌ Debug: Rows in the lower part: 6
+│ The bumber of blocks: 2
+│ Rows per block: 3
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 0 (out of 6)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.000154 seconds (384 allocations: 25.906 KiB)
 ┌ Debug: deterministic_sparse_interreduction!
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
 ┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
@@ -349,5 +391,5 @@
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
 ┌ Debug: Converting polynomials from internal representation to output format
 └ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
-  0.187694 seconds (19.76 k allocations: 1.902 MiB, 89.69% compilation time)
+  0.062038 seconds (20.21 k allocations: 1.937 MiB, 80.54% compilation time)
 

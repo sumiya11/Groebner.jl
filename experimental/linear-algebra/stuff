@@ -1,0 +1,272 @@
+# An attempt at finding the eigenvalue with largest magnitude of some
+# large matrices defined by a small number of parameters. Inspired by
+# this post on Julia's Discourse:
+#
+# https://discourse.julialang.org/t/strategy-for-finding-eigenvalues-of-an-infinite-banded-matrix/106513/3?u=nsajko
+#
+# The idea is to use the characteristic polynomial and other known
+# relations for constructing a system of polynomial equations, which
+# could perhaps be solved using Gröbner bases, as implemented in the
+# Groebner.jl Julia package, given enough additional relations.
+#
+# The relations that are currently in use are *not* restrictive enough
+# for obtaining a finite set of solutions for the eigenvalues. Trying
+# to think of other relations to add to the system.
+
+# In Mason's problem, the parameters are all negative. Here they're all
+# positive instead. This is OK because, for any matrix `M`, the
+# eigenvalues of `-M` are just the eigenvalues of `M`, but with
+# all signs reversed.
+
+# Parameters, they define the elements of the matrix: `a`, `b`, `c₀`,
+# `c₁`, `c₂`. `x` is the indeterminate representing an eigenvalue.
+
+module EigenMasonEquations
+
+import LinearAlgebra, LinearAlgebraX, MultivariatePolynomials
+
+const MP = MultivariatePolynomials
+
+const NT = NTuple{n, Any} where {n}
+
+square(x) = x * x
+
+"""
+An equation that represents the inequality `0 ≤ target`. `scratch`
+should be a dedicated variable, used just in this equation.
+"""
+is_ordered_after_zero(::typeof(≤), target, scratch) = square(scratch) - target
+
+"""
+An equation that represents the inequality `0 < target`. `scratch`
+should be a dedicated variable, used just in this equation.
+"""
+is_ordered_after_zero(::typeof(<), target, scratch) = square(scratch) * target - true
+
+is_ordered_after_zero(
+    r::R,
+    ::Type{T},
+    target,
+    scratch
+) where {R <: Union{typeof(≤), typeof(<)}, T} =
+    is_ordered_after_zero(r, target, scratch + zero(T))
+
+"""
+An equation that represents the inequality `l o r`. `scratch`
+should be a variable dedicated just for this equation.
+"""
+are_ordered(o::R, ::Type{T}, l, r, scratch) where {R <: Union{typeof(≤), typeof(<)}, T} =
+    is_ordered_after_zero(o, T, r - l, scratch)
+
+"""
+An equation that represents the Laguerre–Samuelson inequality for the
+polynomial `p` with indeterminate `x`.
+`scratch` should be a variable dedicated just for this equation.
+"""
+function laguerre_samuelson_inequality(::Type{I}, p, x, scratch) where {I}
+    n = MP.maxdegree(p, x)
+    coef = let p = p, x = x
+        i -> MP.coefficient(p, x^i, (x,))
+    end
+    isone(coef(n)) || error("polynomial not monic")
+    a_nm1 = coef(n - 1)
+    a_nm2 = coef(n - 2)
+    c0 = I(n)::I
+    c1 = I(n - 1)::I
+    c2 = I(2 * n)::I
+    are_ordered(
+        ≤,
+        I,
+        square(c0 * x + a_nm1),
+        c1 * (c1 * square(a_nm1) - c2 * a_nm2),
+        scratch
+    )
+end
+
+uniform_scaling_matrix(x, n) = (LinearAlgebra.Diagonal ∘ fill)(x, n)
+
+function characteristic_polynomial(m, x)
+    n = LinearAlgebra.checksquare(m)
+    LinearAlgebraX.detx(m - uniform_scaling_matrix(x, n))
+end
+
+symmetric_setindex!(m::LinearAlgebra.Symmetric, v, i, j) = m[begin + i, begin + j] = v
+
+function symmetric_setindex!(m::AbstractMatrix, v, i, j)
+    m[begin + i, begin + j] = v
+    m[begin + j, begin + i] = v
+end
+
+function symmetric_set_diagonal!(m, j, x)
+    n = LinearAlgebra.checksquare(m)
+    (j ∈ 0:(n - 1)) || error("`j` out of bounds")
+    for i in 0:(n - 1 - j)
+        symmetric_setindex!(m, x, i, i + j)
+    end
+end
+
+new_square_zero_matrix(::Type{T}, n) where {T} = zeros(T, n, n)
+
+function the_matrix(::Type{I}, n, ab::NT{2}, c::NT{m}) where {I, m}
+    T = (eltype ∘ promote)(zero(I), ab..., c...)
+    ret = new_square_zero_matrix(T, n)
+    c! = let r = ret, c = c
+        i -> symmetric_set_diagonal!(r, 2 * i, c[begin + i])
+    end
+    for i in Base.OneTo(m)
+        c!(i - 1)
+    end
+    (a, b) = ab
+    if 0 < n
+        symmetric_setindex!(ret, a, 0, 0)
+        if 1 < n
+            symmetric_setindex!(ret, a, 1, 1)
+            symmetric_setindex!(ret, b, 0, 1)
+        end
+    end
+    LinearAlgebra.issymmetric(ret) || error("matrix not symmetric")
+    S = LinearAlgebra.Symmetric
+    S(ret)::S{T}
+end
+
+the_polynomial(::Type{I}, n, x, ab::NT{2}, c::NT{m}) where {I, m} =
+    characteristic_polynomial(the_matrix(I, n, ab, c), x)
+
+struct Variables{
+    m,
+    X,
+    AB <: NT{2},
+    CF,
+    CR <: NT{m},
+    SAB <: NT{2},
+    SCF,
+    SCR <: NT{m},
+    LS,
+    OA,
+    OC,
+    OAB,
+    OBA,
+    OCC1 <: NT{m},
+    OCC2 <: Tuple
+}
+    x::X
+    ab::AB
+    c_first::CF
+    c_rest::CR
+    sign_ab::SAB
+    sign_c_first::SCF
+    sign_c_rest::SCR
+    laguerre_samuelson::LS
+    order_a::OA
+    order_c::OC
+    order_ab::OAB
+    order_ba::OBA
+    order_cc1::OCC1
+    order_cc2::OCC2
+end
+
+function the_equations(::Type{I}, n, vars::Variables{c_rest_len}) where {I, c_rest_len}
+    is_pos        = (l, s) -> is_ordered_after_zero(<, I, l, s)
+    greater_than  = (l, r, s) -> are_ordered(<, I, l, r, s)
+    greater_or_eq = (l, r, s) -> are_ordered(≤, I, l, r, s)
+
+    p = the_polynomial(I, n, vars.x, vars.ab, (vars.c_first, vars.c_rest...))
+    s_ab = map(is_pos, vars.ab, vars.sign_ab)
+    s_c_first = is_pos(vars.c_first, vars.sign_c_first)
+    s_c_rest = map(is_pos, vars.c_rest, vars.sign_c_rest)
+    ls = laguerre_samuelson_inequality(I, p, vars.x, vars.laguerre_samuelson)
+
+    # Theorem 4.8 from *Eigenvalues of Nonnegative Symmetric Matrices*, 1974,
+    # Miroslav Fiedler, 10.1016/0024-3795(74)90031-7
+    #
+    # Only necessarily holds for the greatest eigenvalue; i.e., if we assume
+    # these equations hold, we're potentially losing all other eigenvalues.
+    o_a = greater_or_eq(first(vars.ab), vars.x, vars.order_a)
+    o_c = greater_or_eq(vars.c_first, vars.x, vars.order_c)
+
+    mag_fac_small = I(2)
+    mag_fac_big   = I(1000)
+
+    # Some equations specific to Mason's problem
+    #
+    # * b < a
+    # * a,b have similar magnitudes: a ≤ mag_fac_small*b
+    # * c_first is of greater magnitude than any of c_rest
+    # * all c_rest values have similar magnitudes
+    occ1 = let ge = greater_or_eq, cf = vars.c_first, cr = vars.c_rest, cc = vars.order_cc1
+        i -> ge(mag_fac_big * (cr[i]), cf, cc[i])
+    end
+    occ2 = let ge = greater_or_eq, cr = vars.c_rest, cc = vars.order_cc2
+        function (i)
+            j = i - 1
+            k = j >>> true
+            a = cr[begin + k]
+            b = cr[begin + k + 1]
+            if iseven(j)
+                ge(a, mag_fac_small * b, cc[i])
+            else
+                ge(b, mag_fac_small * a, cc[i])
+            end
+        end
+    end
+    (va, vb) = vars.ab
+    spec = (
+        greater_than(vb, va, vars.order_ab),
+        greater_or_eq(va, mag_fac_small * vb, vars.order_ba),
+        ntuple(occ1, Val(c_rest_len))...,
+        ntuple(occ2, Val(2 * (c_rest_len - 1)))...
+    )
+
+    ret = (p, s_ab..., s_c_first, s_c_rest..., ls, o_a, o_c, spec...)
+    collect(ret)
+end
+
+end
+
+import Groebner, DynamicPolynomials, TypedPolynomials
+const GRB = Groebner
+const POL = DynamicPolynomials
+const EME = EigenMasonEquations
+
+function my_groebner_(::Type{I}, n, vars; kwargs...) where {I}
+    system = (collect ∘ EME.the_equations)(I, n, vars)
+    println(DynamicPolynomials.variables(system))
+    println(system)
+    @time GRB.groebner(system; kwargs...)
+end
+
+function default_vars()
+    POL.@polyvar x c₀ c₀ₛ l aₒ c₀ₒ abₒ baₒ
+    v_ab      = POL.@polyvar a b
+    v_c_rest  = POL.@polyvar c₁ c₂
+    v_sign_ab = POL.@polyvar aₛ bₛ
+    v_sign_c  = POL.@polyvar c₁ₛ c₂ₛ
+    v_cc1     = POL.@polyvar q₁ q₂
+    v_cc2     = POL.@polyvar r₁ r₂
+    EME.Variables(
+        x,
+        v_ab,
+        c₀,
+        v_c_rest,
+        v_sign_ab,
+        c₀ₛ,
+        v_sign_c,
+        l,
+        aₒ,
+        c₀ₒ,
+        abₒ,
+        baₒ,
+        v_cc1,
+        v_cc2
+    )
+end
+
+my_groebner_(::Type{I}, n; kwargs...) where {I} =
+    my_groebner_(I, n, default_vars(); kwargs...)
+
+my_groebner_2(::Type{I}, n) where {I} = my_groebner_(I, n, ordering=GRB.DegLex())
+my_groebner_3(::Type{I}, n) where {I} = my_groebner_(I, n, ordering=GRB.DegRevLex())
+
+my_groebner(n) = my_groebner_3(BigInt, n)
+
+my_groebner(16)

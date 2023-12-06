@@ -17,19 +17,24 @@ s = [2x * y + 5y + 7, 9x * y + 11x + 13]
 
 g = GF(2^31 - 1)
 o = :degrevlex
-si = Groebner.cyclicn(8, ordering=:degrevlex, ground=GF(2^31 - 1));
+si = Groebner.eco5(ordering=:degrevlex, ground=GF(2^31 - 1));
 
-R, x = PolynomialRing(GF(2^31 - 1), [["x$i" for i in 1:6]...], ordering=:degrevlex)
-m = get_all_monoms_up_to_total_degree(R, gens(R), 5);
-length(m)
-S = map(i -> sum(rand(m, div(length(m), 2))), 1:7);
-map(length, S)
-@time Groebner.groebner(S, linalg=:deterministic);
-si = S
+# R, x = PolynomialRing(GF(2^31 - 1), [["x$i" for i in 1:6]...], ordering=:degrevlex)
+# m = get_all_monoms_up_to_total_degree(R, gens(R), 5);
+# length(m)
+# S = map(i -> sum(rand(m, div(length(m), 2))), 1:7);
+# map(length, S)
+# @time Groebner.groebner(S, linalg=:deterministic);
+# si = S
+graph, gb = Groebner.groebner_learn(si);
+@time flag, gb2 = Groebner.groebner_apply!(graph, si, loglevel=0);
+@assert flag
 
 begin
     io1 = open((@__DIR__) * "/logs_direct.txt", "w")
     io2 = open((@__DIR__) * "/logs_deterministic.txt", "w")
+    io3 = open((@__DIR__) * "/logs_randomized.txt", "w")
+    io4 = open((@__DIR__) * "/logs_apply.txt", "w")
 
     c1 = IOCapture.capture() do
         @time gb2 =
@@ -42,10 +47,25 @@ begin
     end
     println(io2, c2.output)
 
-    @assert c1.value == c2.value
+    c3 = IOCapture.capture() do
+        @time gb2 = Groebner.groebner(si, linalg=:randomized, loglevel=-3)
+    end
+    println(io3, c3.output)
+
+    graph, gb = Groebner.groebner_learn(si)
+    c4 = IOCapture.capture() do
+        @time flag, gb2 = Groebner.groebner_apply!(graph, si, loglevel=-3)
+        @assert flag
+        gb2
+    end
+    println(io4, c4.output)
+
+    @assert c1.value == c2.value == c3.value == c4.value
 
     close(io1)
     close(io2)
+    close(io3)
+    close(io4)
 end
 
 for si in [

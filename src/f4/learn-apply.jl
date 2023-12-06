@@ -62,7 +62,8 @@ function reduction_apply!(
         column_to_monom_mapping!(graph, matrix, symbol_ht)
     end
 
-    flag = linear_algebra!(matrix, basis, params, graph, linalg=:apply)
+    flag =
+        linear_algebra!(matrix, basis, params, graph, linalg=LinearAlgebra(:apply, :sparse))
     if !flag
         return false
     end
@@ -235,7 +236,12 @@ function reducegb_f4_apply!(
 
     @log level = -6 "In autoreduction apply" basis matrix
 
-    flag = linear_algebra_reducegb!(matrix, basis, params, linalg=:apply)
+    flag = linear_algebra_reducegb!(
+        matrix,
+        basis,
+        params,
+        linalg=LinearAlgebra(:apply, :sparse)
+    )
     if !flag
         return false
     end
@@ -280,6 +286,9 @@ function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
     @invariant basis_well_formed(:input_f4_apply!, ring, basis, graph.hashtable)
     @assert params.reduced == true
 
+    empty!(_used_monoms_in_upper_part)
+    empty!(_used_seq)
+
     normalize_basis!(ring, basis)
 
     iters_total = length(graph.matrix_infos) - 1
@@ -301,6 +310,16 @@ function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
 
         symbolic_preprocessing!(graph, iters, basis, matrix, hashtable, symbol_ht)
         @log level = -5 "After symbolic preprocessing:" matrix
+
+        used = 0
+        for jjj in 1:(matrix.nupper)
+            m = symbol_ht.monoms[matrix.upper_rows[jjj][1]]
+            if haskey(_used_monoms_in_upper_part, m)
+                used += 1
+            end
+            _used_monoms_in_upper_part[m] = iters
+        end
+        push!(_used_seq, (nupper=matrix.nupper, used=used))
 
         flag = reduction_apply!(graph, basis, matrix, hashtable, symbol_ht, iters, params)
         if !flag
@@ -346,6 +365,14 @@ function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
 
     @log level = -6 "After apply standardization" basis
 
+    @warn "Used"
+    println(_used_seq)
+    println(
+        "(Aggregate) Used / All: ",
+        sum(map(s -> s.used, _used_seq)) / sum(map(s -> s.nupper, _used_seq))
+    )
+    println("Unique used: $(length(_used_monoms_in_upper_part))")
+
     @invariant basis_well_formed(:output_f4_apply!, ring, basis, hashtable)
 
     true
@@ -384,7 +411,7 @@ end
 
 function reduction_learn!(graph, basis, matrix, hashtable, symbol_ht, params)
     column_to_monom_mapping!(matrix, symbol_ht)
-    linear_algebra!(matrix, basis, params, graph, linalg=:learn)
+    linear_algebra!(matrix, basis, params, graph, linalg=LinearAlgebra(:learn, :sparse))
     @log level = -6 "After linear algebra" matrix
     convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht)
 end
@@ -445,7 +472,13 @@ function f4_reducegb_learn!(
 
     @log level = -6 "In autoreduction learn" basis matrix
 
-    linear_algebra_reducegb!(matrix, basis, params, graph, linalg=:learn)
+    linear_algebra_reducegb!(
+        matrix,
+        basis,
+        params,
+        graph,
+        linalg=LinearAlgebra(:learn, :sparse)
+    )
 
     convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 
@@ -480,6 +513,9 @@ function f4_reducegb_learn!(
     graph.output_nonredundant_indices = copy(basis.nonredundant[1:k])
 end
 
+const _used_monoms_in_upper_part = Dict()
+const _used_seq = []
+
 function f4_learn!(
     graph,
     ring::PolyRing,
@@ -491,6 +527,9 @@ function f4_learn!(
     # @invariant hashtable_well_formed(:input_f4!, ring, hashtable)
     @invariant basis_well_formed(:input_f4_learn!, ring, basis, hashtable)
     # @invariant pairset_well_formed(:input_f4!, pairset, basis, ht)
+
+    empty!(_used_monoms_in_upper_part)
+    empty!(_used_seq)
 
     @assert basis == graph.gb_basis
     @assert params.reduced === true
@@ -529,16 +568,52 @@ function f4_learn!(
             maxpairs=params.maxpairs
         )
         push!(graph.critical_pair_sequence, (degree_i, npairs_i))
+        # @info "$i: " degree_i npairs_i matrix.nlower matrix.nupper
+        # @info "After select_critical_pairs!"
+        # println("""
+        # matrix.lower_to_coeffs = $(matrix.lower_to_coeffs[1:matrix.nlower])
+        # matrix.lower_to_mult   = $(matrix.lower_to_mult[1:matrix.nlower])
+        # matrix.upper_to_coeffs = $(matrix.upper_to_coeffs[1:matrix.nupper])
+        # matrix.upper_to_mult   = $(matrix.upper_to_mult[1:matrix.nupper])""")
         # Color with [F4]
 
         symbolic_preprocessing!(graph, basis, matrix, hashtable, symbol_ht)
-        @log level = -6 "Formed a matrix of size X, DISPLAY_MATRIX"
-        @log level = -6 "After symbolic preprocessing:" matrix
+        # @log level = -6 "Formed a matrix of size X, DISPLAY_MATRIX"
+        # @log level = -6 "After symbolic preprocessing:" matrix
+        # @info "After symbolic_preprocessing!"
+        # println("""
+        # matrix.upper_to_coeffs = $(matrix.upper_to_coeffs[1:matrix.nupper])
+        # matrix.upper_to_mult   = $(matrix.upper_to_mult[1:matrix.nupper])""")
+
+        # @warn "Leading exponents ($(matrix.nupper) in total) in the upper part:"
+        # for jjj in 1:(matrix.nupper)
+        #     println(symbol_ht.monoms[matrix.upper_rows[jjj][1]], ", ")
+        # end
+        used = 0
+        for jjj in 1:(matrix.nupper)
+            m = symbol_ht.monoms[matrix.upper_rows[jjj][1]]
+            if haskey(_used_monoms_in_upper_part, m)
+                used += 1
+            end
+            _used_monoms_in_upper_part[m] = i
+        end
+        nupper = matrix.nupper
+
+        # println()
 
         # reduces polys and obtains new potential basis elements
         reduction_learn!(graph, basis, matrix, hashtable, symbol_ht, params)
 
         @log level = -6 "After reduction_learn:" matrix basis
+
+        for jjj in (basis.nprocessed + 1):(basis.nprocessed + matrix.npivots)
+            m = hashtable.monoms[basis.monoms[jjj][1]]
+            if haskey(_used_monoms_in_upper_part, m)
+                used += 1
+            end
+            _used_monoms_in_upper_part[m] = i
+        end
+        push!(_used_seq, (nupper=nupper, used=used))
 
         # update the current basis with polynomials produced from reduction,
         # does not copy,
@@ -583,6 +658,14 @@ function f4_learn!(
     standardize_basis_learn!(graph, ring, basis, hashtable, hashtable.ord)
 
     @log level = -6 "After learn standardization" basis
+
+    @warn "Used"
+    println(_used_seq)
+    println(
+        "(Aggregate) Used / All: ",
+        sum(map(s -> s.used, _used_seq)) / sum(map(s -> s.nupper, _used_seq))
+    )
+    println("Unique used: $(length(_used_monoms_in_upper_part))")
 
     # @invariant hashtable_well_formed(:output_f4!, ring, hashtable)
     @invariant basis_well_formed(:output_f4_learn!, ring, basis, hashtable)
