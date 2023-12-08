@@ -10,6 +10,9 @@ module Groebner
 Specifies if custom asserts and invariants are checked.
 If `false`, then all checks are disabled, and entail no runtime overhead.
 
+Thus, it should be fine to use `@invariant` in performance-critical code, as
+long as Groebner is compiled with `invariants_enabled() = false`.
+
 See also `@invariant` in `src/utils/invariants.jl`.
 """
 invariants_enabled() = true
@@ -26,9 +29,8 @@ logging_enabled() = true
 
 # Groebner does not provide a polynomial implementation of its own but relies on
 # existing symbolic computation packages in Julia for communicating with the
-# user instead. Groebner accepts as its input polynomials from the Julia
-# packages AbstractAlgebra.jl (Oscar.jl) and MultivariatePolynomials.jl. This
-# list can be extended; see `src/input-output/` for details.
+# user. Groebner accepts as its input polynomials from the Julia packages
+# AbstractAlgebra.jl, Nemo.jl (Oscar.jl) and MultivariatePolynomials.jl.
 import AbstractAlgebra
 import AbstractAlgebra: base_ring, elem_type
 
@@ -54,6 +56,7 @@ import Primes
 import Primes: nextprime
 
 import Random
+import Random: AbstractRNG
 
 using SIMD
 
@@ -114,6 +117,8 @@ include("f4/basis.jl")
 include("f4/graph.jl")
 # `MacaulayMatrix` implementation
 include("f4/matrix.jl")
+# Linear algebra algorithms
+include("f4/linalg.jl")
 include("f4/sorting.jl")
 # Some very shallow tracing
 include("f4/tracer.jl")

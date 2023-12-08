@@ -10,9 +10,10 @@ end
 
 # Specifies linear backend algorithm
 struct LinearAlgebra
-    # One of :randomized, :deterministic, :direct_rref
+    # One of :deterministic, :randomized, :experimental_1, :experimental_2,
+    # :experimental_3,
     algorithm::Symbol
-    # One of :sparse, :sparsedense
+    # One of :dense, :sparse
     sparsity::Symbol
 
     function LinearAlgebra(algorithm, sparsity)
@@ -21,15 +22,22 @@ struct LinearAlgebra
 end
 
 # Stores parameters for a single GB computation.
-mutable struct AlgorithmParameters{Ord1, Ord2, Ord3, Arithm}
-    # Monomial ordering of output polynomials
-    target_ord::Ord1
+# NOTE: in principle, MonomOrd1, ..., MonomOrd3 can be subtypes of any type
+# besides the usual Groebner.AbstractInternalOrdering
+mutable struct AlgorithmParameters{
+    MonomOrd1,
+    MonomOrd2,
+    MonomOrd3,
+    Arithmetic <: AbstractArithmetic
+}
+    # Desired monomial ordering of output polynomials
+    target_ord::MonomOrd1
     # Monomial ordering for the actual computation
-    computation_ord::Ord2
-    # Original monomial ordering
-    original_ord::Ord3
+    computation_ord::MonomOrd2
+    # Original monomial ordering of input polynomials
+    original_ord::MonomOrd3
 
-    # Specieifes correctness checks levels
+    # Specifies correctness checks levels
     heuristic_check::Bool
     randomized_check::Bool
     certify_check::Bool
@@ -47,7 +55,7 @@ mutable struct AlgorithmParameters{Ord1, Ord2, Ord3, Arithm}
 
     # This can hold buffers or precomputed multiplicative inverses to speed up
     # the arithmetic in the ground field
-    arithmetic::Arithm
+    arithmetic::Arithmetic
 
     # If reduced Groebner basis is needed
     reduced::Bool
@@ -57,6 +65,7 @@ mutable struct AlgorithmParameters{Ord1, Ord2, Ord3, Arithm}
 
     # Selection strategy. One of the following:
     # - :normal
+    # well, it is tricky to implement sugar selection with F4..
     selection_strategy::Symbol
 
     # Ground field of computation. This can be one of the following:
@@ -70,8 +79,8 @@ mutable struct AlgorithmParameters{Ord1, Ord2, Ord3, Arithm}
     # - :learn_and_apply
     modular_strategy::Symbol
 
-    # In modular computation, compute (at least!) this many bases modulo
-    # different primes until a consensus is reached
+    # In modular computation of the basis, compute (at least!) this many bases
+    # modulo different primes until a consensus in majority vote is reached
     majority_threshold::Int
 
     # Use multi-threading.
@@ -135,20 +144,24 @@ function AlgorithmParameters(
     end
     #
     linalg = kwargs.linalg
-    if !iszero(ring.ch)
+    # Default linear algebra algorithm is randomized
+    if linalg === :auto
+        linalg = :randomized
+    end
+    if !iszero(ring.ch) && linalg === :randomized
         # Do not use randomized linear algebra if the field characteristic is
-        # too small. TODO: In the future, it would be good to adapt randomized
-        # linear algebra to this case
+        # too small. 
+        # TODO: In the future, it would be good to adapt randomized linear
+        # algebra to this case by taking more random samples
         if ring.ch < 5000
-            if linalg === :randomized
-                @log level = -1 """
-                Switching from randomized linear algebra to a deterministic one.
-                Reason: the field characteristic is too small."""
-                linalg = :deterministic
-            end
+            @log level = -1 """
+            The field characteristic is too small.
+            Switching from randomized linear algebra to a deterministic one."""
+            linalg = :deterministic
         end
     end
-    linalg_struct = LinearAlgebra(linalg, kwargs.sparsity)
+    linalg_sparsity = :sparse
+    linalg_algorithm = LinearAlgebra(linalg, linalg_sparsity)
 
     arithmetic = select_arithmetic(ring.ch, representation.coefftype)
     ground = :zp
@@ -190,7 +203,7 @@ function AlgorithmParameters(
     randomized_check = $randomized_check
     certify_check = $certify_check
     check = $(kwargs.check)
-    linalg = $linalg_struct
+    linalg = $linalg_algorithm
     arithmetic = $arithmetic
     reduced = $reduced
     homogenize = $homogenize
@@ -214,7 +227,7 @@ function AlgorithmParameters(
         certify_check,
         homogenize,
         kwargs.check,
-        linalg_struct,
+        linalg_algorithm,
         arithmetic,
         reduced,
         maxpairs,

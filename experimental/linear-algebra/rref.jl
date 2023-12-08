@@ -12,12 +12,28 @@ function get_all_monoms_up_to_total_degree(ring, vars, degree)
     unique!(res)
 end
 
+R, xi = PolynomialRing(GF(2^31 - 1), ["x$i" for i in 1:4], ordering=:degrevlex)
+
+m = get_all_monoms_up_to_total_degree(R, xi, 4)
+system = Vector{eltype(m)}()
+for i in 1:4
+    c = [rand(GF(2^31 - 1)) for j in 1:length(m)]
+    push!(system, sum(c .* m))
+end
+si = system
+@time gb = Groebner.groebner(si, linalg=:randomized, loglevel=-3);
+
 R, (x, y, z) = PolynomialRing(GF(2^31 - 1), ["x", "y", "z"], ordering=:degrevlex)
-s = [2x * y + 5y + 7, 9x * y + 11x + 13]
+s = [x * y^2 + 2z^2 + 1, x^2 * z + 3y]
+si = s
+@time gb1 = Groebner.groebner(si, linalg=:auto, loglevel=-3);
+@time gb2 = Groebner.groebner(si, linalg=:deterministic, loglevel=-3);
+@time gb3 = Groebner.groebner(si, linalg=:experimental_2, loglevel=-3);
+gb1 == gb2 == gb3 == gb
 
 g = GF(2^31 - 1)
 o = :degrevlex
-si = Groebner.eco5(ordering=:degrevlex, ground=GF(2^31 - 1));
+si = Groebner.cyclicn(5, ordering=:degrevlex, ground=GF(2^31 - 1));
 
 # R, x = PolynomialRing(GF(2^31 - 1), [["x$i" for i in 1:6]...], ordering=:degrevlex)
 # m = get_all_monoms_up_to_total_degree(R, gens(R), 5);
@@ -26,8 +42,8 @@ si = Groebner.eco5(ordering=:degrevlex, ground=GF(2^31 - 1));
 # map(length, S)
 # @time Groebner.groebner(S, linalg=:deterministic);
 # si = S
-graph, gb = Groebner.groebner_learn(si);
-@time flag, gb2 = Groebner.groebner_apply!(graph, si, loglevel=0);
+graph, gb = Groebner.groebner_learn(si, loglevel=-3);
+@time flag, gb2 = Groebner.groebner_apply!(graph, si, loglevel=-3);
 @assert flag
 
 begin

@@ -143,7 +143,7 @@ end
     # 2. Monomials that represent the columns of the matrix are stored in the
     #    symbol_ht hashtable.
     symbol_load = symbol_ht.load
-    ncols = matrix.ncolumns
+    ncols = matrix.ncols_left
 
     resize_matrix_upper_part_if_needed!(matrix, ncols + symbol_load)
 
@@ -159,21 +159,18 @@ end
             i += MonomIdx(1)
             continue
         end
-        resize_matrix_upper_part_if_needed!(matrix, matrix.nupper + 1)
+        resize_matrix_upper_part_if_needed!(matrix, matrix.nrows_filled_upper + 1)
 
         hashval = symbol_ht.hashdata[i]
         symbol_ht.hashdata[i] =
             Hashvalue(UNKNOWN_PIVOT_COLUMN, hashval.hash, hashval.divmask, hashval.deg)
-        matrix.ncolumns += 1
+        matrix.ncols_left += 1
         find_multiplied_reducer!(basis, matrix, ht, symbol_ht, i)
         i += MonomIdx(1)
     end
 
-    # Shrink the matrix, set the dimensions
-    resize!(matrix.upper_rows, matrix.nupper)
-    matrix.nrows += matrix.nupper - ncols
-    matrix.nlower = matrix.nrows - matrix.nupper
-    matrix.size = matrix.nrows
+    # Shrink the matrix
+    resize!(matrix.upper_rows, matrix.nrows_filled_upper)
 end
 
 # Given a `basis` object that stores some groebner basis
@@ -197,25 +194,23 @@ function reducegb_f4!(
     # add all non redundant elements from the basis
     # as matrix upper rows
     @inbounds for i in 1:(basis.nnonredundant) #
-        matrix.nrows += 1
-        uprows[matrix.nrows] = multiplied_poly_to_matrix_row!(
+        row_idx = matrix.nrows_filled_upper += 1
+        uprows[row_idx] = multiplied_poly_to_matrix_row!(
             symbol_ht,
             ht,
             MonomHash(0),
             etmp,
             basis.monoms[basis.nonredundant[i]]
         )
-
-        matrix.upper_to_coeffs[matrix.nrows] = basis.nonredundant[i]
-        matrix.upper_to_mult[matrix.nrows] = insert_in_hash_table!(ht, etmp)
-        hv = symbol_ht.hashdata[uprows[matrix.nrows][1]]
-        symbol_ht.hashdata[uprows[matrix.nrows][1]] =
+        matrix.upper_to_coeffs[row_idx] = basis.nonredundant[i]
+        matrix.upper_to_mult[row_idx] = insert_in_hash_table!(ht, etmp)
+        hv = symbol_ht.hashdata[uprows[row_idx][1]]
+        symbol_ht.hashdata[uprows[row_idx][1]] =
             Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
     end
 
     # needed for correct column count in symbol hashtable
-    matrix.ncolumns = matrix.nrows
-    matrix.nupper = matrix.nrows
+    matrix.ncols_left = matrix.ncols_left
 
     symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
     # set all pivots to unknown
@@ -225,9 +220,8 @@ function reducegb_f4!(
     end
 
     column_to_monom_mapping!(matrix, symbol_ht)
-    matrix.ncolumns = matrix.nleft + matrix.nright
 
-    linear_algebra_reducegb!(matrix, basis, params)
+    linear_algebra_autoreduce_basis!(matrix, basis, params)
 
     convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 
@@ -275,15 +269,17 @@ function select_tobereduced!(
     etmp = construct_const_monom(M, ht.nvars)
 
     @inbounds for i in 1:(tobereduced.nfilled)
-        matrix.nrows += 1
+        matrix.nrows_filled_lower += 1
+        row_idx = matrix.nrows_filled_lower
+
         gen = tobereduced.monoms[i]
         h = MonomHash(0)
-        matrix.lower_rows[matrix.nrows] =
+        matrix.lower_rows[row_idx] =
             multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, gen)
-        matrix.lower_to_coeffs[matrix.nrows] = i
+        matrix.lower_to_coeffs[row_idx] = i
         # TODO: not really needed here
-        matrix.lower_to_mult[matrix.nrows] = insert_in_hash_table!(ht, etmp)
-        matrix.some_coeffs[matrix.nrows] = tobereduced.coeffs[i]
+        matrix.lower_to_mult[row_idx] = insert_in_hash_table!(ht, etmp)
+        matrix.some_coeffs[row_idx] = tobereduced.coeffs[i]
     end
 
     basis.nnonredundant = basis.nprocessed = basis.nfilled
@@ -368,23 +364,23 @@ function find_multiplied_reducer!(
     # (!) hash is linear
     @inbounds h = symbol_ht.hashdata[vidx].hash - ht.hashdata[rpoly[1]].hash
 
-    matrix.upper_rows[matrix.nupper + 1] =
+    matrix.upper_rows[matrix.nrows_filled_upper + 1] =
         multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, rpoly)
-    @inbounds matrix.upper_to_coeffs[matrix.nupper + 1] = basis.nonredundant[i]
+    @inbounds matrix.upper_to_coeffs[matrix.nrows_filled_upper + 1] = basis.nonredundant[i]
     # TODO: this line is here with the sole purpose -- to support tracing.
     # Probably want to factor it out.
-    matrix.upper_to_mult[matrix.nupper + 1] = insert_in_hash_table!(ht, etmp)
+    matrix.upper_to_mult[matrix.nrows_filled_upper + 1] = insert_in_hash_table!(ht, etmp)
     # if sugar
     #     # updates sugar
     #     poly = basis.nonredundant[i]
     #     new_poly_sugar = totaldeg(etmp) + basis.sugar_cubes[poly]
-    #     matrix.upper_to_sugar[matrix.nupper + 1] = new_poly_sugar
+    #     matrix.upper_to_sugar[matrix.nrows_filled_upper + 1] = new_poly_sugar
     # end
 
     hv = symbol_ht.hashdata[vidx]
     symbol_ht.hashdata[vidx] = Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
 
-    matrix.nupper += 1
+    matrix.nrows_filled_upper += 1
     i += 1
 
     nothing
@@ -544,7 +540,7 @@ function add_critical_pairs_to_matrix!(
     etmp = ht.monoms[1]
     i = 1
     @inbounds while i <= npairs
-        matrix.ncolumns += 1
+        matrix.ncols_left += 1
         npolys = 1
         lcm = pairs[i].lcm
         j = i
@@ -581,20 +577,17 @@ function add_critical_pairs_to_matrix!(
         htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
 
         # add row as a reducer
-        matrix.nupper += 1
-        uprows[matrix.nupper] =
+        row_idx = matrix.nrows_filled_upper += 1
+        uprows[row_idx] =
             multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly_monoms)
         # map upper row to index in basis
-        matrix.upper_to_coeffs[matrix.nupper] = prev
-        matrix.upper_to_mult[matrix.nupper] = insert_in_hash_table!(ht, etmp)
+        matrix.upper_to_coeffs[row_idx] = prev
+        matrix.upper_to_mult[row_idx] = insert_in_hash_table!(ht, etmp)
 
         # mark lcm column as reducer in symbolic hashtable
-        hv = symbol_ht.hashdata[uprows[matrix.nupper][1]]
-        symbol_ht.hashdata[uprows[matrix.nupper][1]] =
+        hv = symbol_ht.hashdata[uprows[row_idx][1]]
+        symbol_ht.hashdata[uprows[row_idx][1]] =
             Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
-
-        # increase number of rows set
-        matrix.nrows += 1
 
         # over all polys with same lcm,
         # add them to the lower part of matrix
@@ -621,24 +614,22 @@ function add_critical_pairs_to_matrix!(
             htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
 
             # add row to be reduced
-            matrix.nlower += 1
-            lowrows[matrix.nlower] =
+            row_idx = matrix.nrows_filled_lower += 1
+            lowrows[row_idx] =
                 multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly_monoms)
             # map lower row to index in basis
-            matrix.lower_to_coeffs[matrix.nlower] = prev
-            matrix.lower_to_mult[matrix.nlower] = insert_in_hash_table!(ht, etmp)
+            matrix.lower_to_coeffs[row_idx] = prev
+            matrix.lower_to_mult[row_idx] = insert_in_hash_table!(ht, etmp)
 
-            hv = symbol_ht.hashdata[lowrows[matrix.nlower][1]]
-            symbol_ht.hashdata[lowrows[matrix.nlower][1]] =
+            hv = symbol_ht.hashdata[lowrows[row_idx][1]]
+            symbol_ht.hashdata[lowrows[row_idx][1]] =
                 Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
-
-            matrix.nrows += 1
         end
 
         i = j
     end
 
-    resize!(matrix.lower_rows, matrix.nrows - matrix.ncolumns)
+    resize!(matrix.lower_rows, matrix.nrows_filled_lower)
 end
 
 function basis_well_formed(key, ring, basis, hashtable)
