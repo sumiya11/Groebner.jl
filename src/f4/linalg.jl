@@ -476,7 +476,7 @@ function reduce_dense_row_by_sparse_row!(
         row[idx] = mod_x(row[idx] + mul * coeffs[j], arithmetic)
     end
 
-    nothing
+    sum(rand(100))
 end
 
 # Linear combination of dense vector and sparse vector
