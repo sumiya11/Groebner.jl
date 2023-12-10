@@ -38,11 +38,11 @@ end
 
     for ord in nemo_orderings_to_test
         for ground in nemo_grounds_to_test
-            R, x = Nemo.PolynomialRing(ground, "x")
+            R, x = PolynomialRing(ground, "x")
             gb = Groebner.groebner([(x - 1) * (x + 8), (x + 8) * (x + 10)])
             @test gb == [(x + 8)]
 
-            R, (x, y) = Nemo.PolynomialRing(ground, ["x", "y"], ordering=ord)
+            R, (x, y) = PolynomialRing(ground, ["x", "y"], ordering=ord)
             fs = [x^2 * y + 3, (2^31 - 5) * x - (2^31 - 4) * y]
             gb = Groebner.groebner(fs)
             @test parent(gb[1]) == R
