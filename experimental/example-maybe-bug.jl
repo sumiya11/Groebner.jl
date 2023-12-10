@@ -7,7 +7,7 @@ gb = Groebner.groebner(s, loglevel=-2, modular=:learn_and_apply)
 gb2 = Groebner.groebner(s, loglevel=-2, modular=:classic_modular)
 gb == gb2
 
-k = Groebner.noonn(8, ground=QQ, ordering=:degrevlex)
+k = Groebner.noonn(7, ground=QQ, ordering=:degrevlex)
 
 @time gb = Groebner.groebner(k, loglevel=0, modular=:learn_and_apply);
 @time gb2 = Groebner.groebner(k, loglevel=0, modular=:classic_modular);

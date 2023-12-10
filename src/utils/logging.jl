@@ -34,8 +34,7 @@ function meta_formatter_groebner end
         meta_formatter=meta_formatter_groebner
     )
 else
-    backend_logger(level) =
-        Logging.ConsoleLogger(level; meta_formatter=meta_formatter_groebner)
+    backend_logger(level) = Logging.ConsoleLogger(level)
 end
 
 ###
