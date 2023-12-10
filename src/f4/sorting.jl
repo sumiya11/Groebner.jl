@@ -1,3 +1,8 @@
+# Parts of this file were adapted from msolve
+#   https://github.com/algebraic-solving/msolve
+# msolve is distributed under GNU GPL version 2
+#   https://github.com/algebraic-solving/msolve/blob/master/COPYING
+
 # Sorting monomials, polynomials, and other things.
 
 # Unstable algorithm should be a bit faster for large arrays

@@ -4,6 +4,15 @@ module Groebner
 # Groebner works over integers modulo a prime and over the rationals. At its
 # heart, Groebner implements F4, multi-modular techniques, and tracing.
 
+# Parts of Groebner were adapted from msolve
+#   https://github.com/algebraic-solving/msolve
+# msolve is distributed under GNU GPL version 2
+#   https://github.com/algebraic-solving/msolve/blob/master/COPYING
+#
+# More precisely, the F4 implementation in Groebner adapts monomial hashtable
+# implementation and routines for critical pair handling, symbolic
+# preprocessing, and linear algebra from msolve.
+
 """
     invariants_enabled() -> Bool
 
