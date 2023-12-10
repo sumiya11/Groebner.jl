@@ -122,5 +122,3 @@ end)
     basis = map(_ -> Monom(rand(1:COUNT[]), 0), 1:($n))
     basis, pool
 end)
-
-
