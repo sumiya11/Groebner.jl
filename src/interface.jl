@@ -30,9 +30,9 @@ The `groebner` routine takes the following optional arguments:
     When this option is `true`, the result is guaranteed to be correct in case
     the ideal is homogeneous (default is `false`). 
 - `linalg`: Linear algebra backend. Available options are: 
+    - `:auto`: for the automatic choice (default),
     - `:deterministic` for deterministic sparse linear algebra, 
-    - `:randomized` for probabilistic sparse linear algebra (default is
-      `:randomized`).
+    - `:randomized` for probabilistic sparse linear algebra.
 - `monoms`: Monomial representation used in the computations. The algorithm
     tries to automatically choose the most suitable monomial representation.
     Otherwise, set `monoms` to one of the following: 
@@ -43,8 +43,8 @@ The `groebner` routine takes the following optional arguments:
 - `modular`: Modular computation algorithm. Only has effect when computing basis
     over the rational numbers. Possible options are:
     - `:auto` for the automatic choice (default),
-    - `:classic_modular` for the classic multi-modular algorithm TODO: reference,
-    - `:learn_and_apply` for the learn & apply algorithm from TODO: reference.
+    - `:classic_modular` for the classic multi-modular algorithm,
+    - `:learn_and_apply` for the learn & apply algorithm.
 - `seed`: The seed for randomization. Default value is `42`. Groebner uses
     `Random.Xoshiro` and `Random.MersenneTwister` for random number generation.
 - `loglevel`: Logging level, an integer. Higher values mean less verbose.
@@ -103,13 +103,13 @@ end
 """
     groebner_learn(polynomials; options...)
 
-Computes a Groebner basis of `polynomials` and emits the computation graph.
+Computes a Groebner basis of `polynomials` and emits the computation trace.
 
-The graph can be used to speed up the computation of subsequent Groebner
-bases, which should be the specializations of the same basis as the one
-`groebner_learn` had been applied to.
+The trace can be then used to speed up the computation of subsequent Groebner
+bases, which should be the specializations of the same ideal as the one
+`groebner_learn` has been applied to.
 
-*At the moment, only input over integers modulo a prime is supported.*
+The input `polynomials` must be an array of polynomials over a finite field.
 
 This function is thread-safe.
 
@@ -124,10 +124,10 @@ using Groebner, AbstractAlgebra
 R, (x, y) = GF(2^31-1)["x", "y"]
 
 # Learn
-graph, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
+trace, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
 
 # Apply (same ground field, different coefficients)
-success, gb_2 = groebner_apply!(graph, [2x*y^2 + 3x, 4y*x^2 + 5y])
+success, gb_2 = groebner_apply!(trace, [2x*y^2 + 3x, 4y*x^2 + 5y])
 
 @assert success
 ```
@@ -139,13 +139,13 @@ using Groebner, AbstractAlgebra
 R, (x, y) = GF(2^31-1)["x", "y"]
 
 # Learn
-graph, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
+trace, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
 
 # Create a ring with a different modulo
 _R, (_x, _y) = GF(2^30+3)["x", "y"]
 
 # Apply (with a different modulo)
-success, gb_2 = groebner_apply!(graph, [2_x*_y^2 + 3_x, 4_y*_x^2 + 5_y])
+success, gb_2 = groebner_apply!(trace, [2_x*_y^2 + 3_x, 4_y*_x^2 + 5_y])
 
 @assert success
 @assert gb_2 == groebner([2_x*_y^2 + 3_x, 4_y*_x^2 + 5_y])
@@ -161,11 +161,11 @@ function groebner_learn(polynomials::AbstractVector; options...)
 end
 
 """
-    groebner_apply!(graph, polynomials; options...)
+    groebner_apply!(trace, polynomials; options...)
 
-Computes a Groebner basis of `polynomials` using the given computation `graph`.
+Computes a Groebner basis of `polynomials` using the given computation `trace`.
 
-*At the moment, only input over integers modulo a prime is supported.*
+The input `polynomials` must be an array of polynomials over a finite field.
 
 This function is *not* thread-safe.
 
@@ -180,10 +180,10 @@ using Groebner, AbstractAlgebra
 R, (x, y) = GF(2^31-1)["x", "y"]
 
 # Learn
-graph, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
+trace, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
 
 # Apply (same ground field, different coefficients)
-success, gb_2 = groebner_apply!(graph, [2x*y^2 + 3x, 4y*x^2 + 5y])
+success, gb_2 = groebner_apply!(trace, [2x*y^2 + 3x, 4y*x^2 + 5y])
 
 @assert success
 ```
@@ -195,13 +195,13 @@ using Groebner, AbstractAlgebra
 R, (x, y) = GF(2^31-1)["x", "y"]
 
 # Learn
-graph, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
+trace, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
 
 # Create a ring with a different modulo
 _R, (_x, _y) = GF(2^30+3)["x", "y"]
 
 # Apply (with a different modulo)
-success, gb_2 = groebner_apply!(graph, [2_x*_y^2 + 3_x, 4_y*_x^2 + 5_y])
+success, gb_2 = groebner_apply!(trace, [2_x*_y^2 + 3_x, 4_y*_x^2 + 5_y])
 
 @assert success
 @assert gb_2 == groebner([2_x*_y^2 + 3_x, 4_y*_x^2 + 5_y])
@@ -210,13 +210,13 @@ success, gb_2 = groebner_apply!(graph, [2_x*_y^2 + 3_x, 4_y*_x^2 + 5_y])
 function groebner_apply! end
 
 # Specialization for a single input
-function groebner_apply!(graph, polynomials::AbstractVector; options...)
+function groebner_apply!(trace, polynomials::AbstractVector; options...)
     keywords = KeywordsHandler(:groebner_apply!, options)
 
     setup_logging(keywords)
     setup_statistics(keywords)
 
-    _groebner_apply!(graph, polynomials, keywords)::Tuple{Bool, typeof(polynomials)}
+    _groebner_apply!(trace, polynomials, keywords)::Tuple{Bool, typeof(polynomials)}
 end
 
 """

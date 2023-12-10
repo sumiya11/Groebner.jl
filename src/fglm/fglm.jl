@@ -11,7 +11,7 @@ Base.isempty(m::NextMonomials) = m.load == 0
 
 function initialize_nextmonomials(ht::MonomialHashtable{M}, ord) where {M}
     zz = construct_const_monom(M, ht.nvars)
-    vidx = insert_in_hash_table!(ht, zz)
+    vidx = insert_in_hashtable!(ht, zz)
     monoms = Vector{MonomIdx}(undef, 2^3)
     monoms[1] = vidx
     load = 1
@@ -30,7 +30,7 @@ function insertnexts!(m::NextMonomials, ht::MonomialHashtable{M}, monom::MonomId
         edense = monom_to_dense_vector!(tmp, eprod)
         edense[i] += 1
         eprod = construct_monom(M, edense)
-        vidx = insert_in_hash_table!(ht, eprod)
+        vidx = insert_in_hashtable!(ht, eprod)
 
         if !haskey(m.done, vidx)
             m.load += 1

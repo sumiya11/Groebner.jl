@@ -153,30 +153,30 @@ end
 ###
 # Process input polynomials on the apply stage
 
-function _is_input_ring_compatible_in_apply(graph, ring, kws)
-    @log level = -7 "" graph.original_ord ring.ord
-    if graph.original_ord != ring.ord
+function _is_input_ring_compatible_in_apply(trace, ring, kws)
+    @log level = -7 "" trace.original_ord ring.ord
+    if trace.original_ord != ring.ord
         @log level = 1000 """
         On apply stage the monomial ordering of input is different from the one used on the learn stage
         Apply stage (current): $(ring.ord)
-        Learn stage: $(graph.original_ord)"""
+        Learn stage: $(trace.original_ord)"""
         return false
     end
-    if graph.sweep_output != kws.sweep
-        @log level = 1000 "Input sweep option ($(kws.sweep)) is different from the one used on the learn stage ($(graph.sweep_output))."
+    if trace.sweep_output != kws.sweep
+        @log level = 1000 "Input sweep option ($(kws.sweep)) is different from the one used on the learn stage ($(trace.sweep_output))."
         return false
     end
     @log level = -1 "On apply stage the argument monoms=$(kws.monoms) was ignored"
-    if graph.ring.ch != ring.ch
+    if trace.ring.ch != ring.ch
         # Not an error, just debug message
         @log level = -1 """
         On apply stage the ground field characteristic is $(ring.ch), 
-        the learn stage used different characteristic $(graph.ring.ch)"""
+        the learn stage used different characteristic $(trace.ring.ch)"""
     end
-    if graph.ring.ch < 2^32 && ring.ch >= 2^32
+    if trace.ring.ch < 2^32 && ring.ch >= 2^32
         @log level = 1000 """
         On apply stage the ground field characteristic is $(ring.ch), which is too large compared to the learn stage. 
-        The learn stage used characteristic $(graph.ring.ch).
+        The learn stage used characteristic $(trace.ring.ch).
 
         Please consider learning with a larger characteristic and trying this again, or submitting a GitHub issue :^)."""
         return false
@@ -184,43 +184,43 @@ function _is_input_ring_compatible_in_apply(graph, ring, kws)
     true
 end
 
-function _is_input_compatible_in_apply(graph, ring, polynomials, kws)
-    graph_signature = graph.input_signature
-    homogenized = graph.homogenize
+function _is_input_compatible_in_apply(trace, ring, polynomials, kws)
+    trace_signature = trace.input_signature
+    homogenized = trace.homogenize
     if !(
-        length(graph_signature) + count(iszero, polynomials) ==
+        length(trace_signature) + count(iszero, polynomials) ==
         length(polynomials) + homogenized
     )
-        @log level = 1000 "The number of input polynomials on the apply stage ($(length(polynomials))) is different from the number on the learn stage ($(length(graph_signature) + count(iszero, polynomials) - homogenized))."
+        @log level = 1000 "The number of input polynomials on the apply stage ($(length(polynomials))) is different from the number on the learn stage ($(length(trace_signature) + count(iszero, polynomials) - homogenized))."
         return false
     end
     true
 end
 
 function extract_coeffs_raw!(
-    graph,
+    trace,
     representation::PolynomialRepresentation,
     polys::Vector{T},
     kws::KeywordsHandler
 ) where {T}
-    # write new coefficients directly to graph.basis
+    # write new coefficients directly to trace.basis
     ring = extract_ring(polys)
-    if !_is_input_ring_compatible_in_apply(graph, ring, kws)
+    if !_is_input_ring_compatible_in_apply(trace, ring, kws)
         __throw_input_not_supported(
             ring,
-            "Input does not seem to be compatible with the learned graph."
+            "Input does not seem to be compatible with the learned trace."
         )
     end
-    if !_is_input_compatible_in_apply(graph, ring, polys, kws)
+    if !_is_input_compatible_in_apply(trace, ring, polys, kws)
         __throw_input_not_supported(
             ring,
-            "Input does not seem to be compatible with the learned graph."
+            "Input does not seem to be compatible with the learned trace."
         )
     end
-    basis = graph.buf_basis
-    input_polys_perm = graph.input_permutation
-    term_perms = graph.term_sorting_permutations
-    homog_term_perm = graph.term_homogenizing_permutations
+    basis = trace.buf_basis
+    input_polys_perm = trace.input_permutation
+    term_perms = trace.term_sorting_permutations
+    homog_term_perm = trace.term_homogenizing_permutations
     CoeffType = representation.coefftype
     _extract_coeffs_raw!(
         basis,
@@ -230,7 +230,7 @@ function extract_coeffs_raw!(
         polys,
         CoeffType
     )
-    if graph.homogenize
+    if trace.homogenize
         @assert length(basis.coeffs[length(polys) + 1]) == 2
         C = eltype(basis.coeffs[length(polys) + 1][1])
         basis.coeffs[length(polys) + 1][1] = one(C)

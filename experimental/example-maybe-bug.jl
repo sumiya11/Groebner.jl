@@ -3,14 +3,14 @@ using AbstractAlgebra, BenchmarkTools # , Groebner
 R, (x1, x2, x3) = PolynomialRing(QQ, ["x1", "x2", "x3"], ordering=:degrevlex)
 
 s = [x1 * x2^2 + 2^20, x1 * x3 + 2^30 + 1, x2 * x3 + x1 - 2^40]
-gb = Groebner.groebner(s, loglevel=-2, modular=:learn_and_apply)
-gb2 = Groebner.groebner(s, loglevel=-2, modular=:classic_modular)
+gb = Groebner.groebner(s, loglevel=0, modular=:learn_and_apply)
+gb2 = Groebner.groebner(s, loglevel=0, modular=:classic_modular)
 gb == gb2
 
-k = Groebner.noonn(7, ground=QQ, ordering=:degrevlex)
+k = Groebner.noonn(5, ground=QQ, ordering=:degrevlex)
 
-@time gb = Groebner.groebner(k, loglevel=0, modular=:learn_and_apply);
-@time gb2 = Groebner.groebner(k, loglevel=0, modular=:classic_modular);
+@time gb = Groebner.groebner(k);
+@time gb2 = Groebner.groebner(k);
 gb == gb2
 
 # for k = 7

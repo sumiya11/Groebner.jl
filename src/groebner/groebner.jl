@@ -81,7 +81,7 @@ end
     # NOTE: the sorting of input polynomials is not deterministic across
     # different Julia versions when sorting only w.r.t. the leading term
     basis, pairset, hashtable = initialize_structs(ring, monoms, coeffs, params)
-    tracer = Tracer()
+    tracer = TinyTraceF4()
     f4!(ring, basis, pairset, hashtable, tracer, params)
     # Extract monomials and coefficients from basis and hashtable
     gbmonoms, gbcoeffs = export_basis_data(basis, hashtable)
@@ -146,7 +146,7 @@ function _groebner_learn_and_apply(
 
     @log level = -5 "Before F4" basis_ff
     params_zp = params_mod_p(params, prime)
-    graph = initialize_computation_graph_f4(
+    trace = initialize_trace_f4(
         ring_ff,
         deepcopy_basis(basis_ff),
         basis_ff,
@@ -155,10 +155,10 @@ function _groebner_learn_and_apply(
         params_zp
     )
 
-    f4_learn!(graph, ring_ff, graph.gb_basis, pairset, hashtable, params_zp)
-    @log level = -5 "After F4:" graph.gb_basis
+    f4_learn!(trace, ring_ff, trace.gb_basis, pairset, hashtable, params_zp)
+    @log level = -5 "After F4:" trace.gb_basis
 
-    push!(state.gb_coeffs_ff_all, deepcopy(graph.gb_basis.coeffs))
+    push!(state.gb_coeffs_ff_all, deepcopy(trace.gb_basis.coeffs))
 
     # Reconstruct coefficients and write results to the accumulator.
     # CRT reconstrction is trivial here.
@@ -181,7 +181,7 @@ function _groebner_learn_and_apply(
             ring_ff,
             basis,
             basis_zz,
-            graph.gb_basis,
+            trace.gb_basis,
             hashtable,
             params
         )
@@ -189,7 +189,7 @@ function _groebner_learn_and_apply(
         # At this point, if the constructed basis is correct, we return it.
         if correct_basis
             # take monomials from the basis modulo a prime
-            gb_monoms, _ = export_basis_data(graph.gb_basis, hashtable)
+            gb_monoms, _ = export_basis_data(trace.gb_basis, hashtable)
             # take coefficients from the reconstrcted basis
             gb_coeffs_qq = state.gb_coeffs_qq
             return gb_monoms, gb_coeffs_qq
@@ -250,14 +250,14 @@ function _groebner_learn_and_apply(
                 reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
             params_zp = params_mod_p(params, prime)
 
-            graph.buf_basis = basis_ff
-            graph.ring = ring_ff
+            trace.buf_basis = basis_ff
+            trace.ring = ring_ff
 
-            f4_apply!(graph, ring_ff, graph.buf_basis, params_zp)
+            f4_apply!(trace, ring_ff, trace.buf_basis, params_zp)
 
-            push!(state.gb_coeffs_ff_all, deepcopy(graph.gb_basis.coeffs))
+            push!(state.gb_coeffs_ff_all, deepcopy(trace.gb_basis.coeffs))
 
-            if !majority_vote!(state, graph.gb_basis, nothing, params)
+            if !majority_vote!(state, trace.gb_basis, nothing, params)
                 @log level = -3 "Majority vote is not conclusive, aborting reconstruction!"
                 continue
             end
@@ -328,7 +328,7 @@ function _groebner_learn_and_apply(
             ring_ff,
             basis,
             basis_zz,
-            graph.gb_basis,
+            trace.gb_basis,
             hashtable,
             params
         )
@@ -342,7 +342,7 @@ function _groebner_learn_and_apply(
 
     # Construct the output basis.
     # Take monomials from the basis modulo a prime
-    gb_monoms, _ = export_basis_data(graph.gb_basis, hashtable)
+    gb_monoms, _ = export_basis_data(trace.gb_basis, hashtable)
     # Take coefficients from the reconstructed basis
     gb_coeffs_qq = state.gb_coeffs_qq
 
@@ -363,7 +363,7 @@ function _groebner_classic_modular(
     # Initialize F4 structs
     basis, pairset, hashtable =
         initialize_structs(ring, monoms, coeffs, params, normalize_input=false)
-    tracer = Tracer(params)
+    tracer = TinyTraceF4(params)
     crt_algorithm = params.crt_algorithm
 
     # Scale the input coefficients to integers to speed up the subsequent search

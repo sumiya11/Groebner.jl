@@ -119,18 +119,18 @@ include("input-output/DynamicPolynomials.jl")
 include("f4/hashtable.jl")
 # `Pairset` and `Basis` implementations
 include("f4/basis.jl")
-# Computation graph for F4 (tracing)
-include("f4/graph.jl")
+# Tracing for F4
+include("f4/trace.jl")
 # `MacaulayMatrix` implementation
 include("f4/matrix.jl")
 # Linear algebra algorithms
 include("f4/linalg.jl")
 include("f4/sorting.jl")
-# Some very shallow tracing
-include("f4/tracer.jl")
+# Additional tiny tracing
+include("f4/tiny-trace.jl")
 # All together combined in the F4 algorithm
 include("f4/f4.jl")
-# Learn & apply specific routines
+# Learn & apply add-on
 include("f4/learn-apply.jl")
 
 #= more high level functions =#

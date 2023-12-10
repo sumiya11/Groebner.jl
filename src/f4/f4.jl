@@ -56,36 +56,6 @@
     basis, pairset, hashtable, permutation
 end
 
-# Same as initialize_structs, but also initializes a computation graph
-function initialize_structs_learn(
-    ring::PolyRing,
-    monoms::Vector{Vector{M}},
-    coeffs::Vector{Vector{C}},
-    params::AlgorithmParameters;
-    normalize_input=true,
-    sort_input=true
-) where {M <: Monom, C <: Coeff}
-    basis, pairset, hashtable, permutation = initialize_structs(
-        ring,
-        monoms,
-        coeffs,
-        params,
-        normalize_input=normalize_input,
-        sort_input=sort_input
-    )
-
-    graph = initialize_computation_graph_f4(
-        ring,
-        deepcopy_basis(basis),
-        basis,
-        hashtable,
-        permutation,
-        params
-    )
-
-    graph, basis, pairset, hashtable, permutation
-end
-
 # Same as initialize_structs, but uses an existing hashtable
 function initialize_basis_using_existing_hashtable(
     ring::PolyRing,
@@ -199,7 +169,7 @@ function reducegb_f4!(
             basis.monoms[basis.nonredundant[i]]
         )
         matrix.upper_to_coeffs[row_idx] = basis.nonredundant[i]
-        matrix.upper_to_mult[row_idx] = insert_in_hash_table!(ht, etmp)
+        matrix.upper_to_mult[row_idx] = insert_in_hashtable!(ht, etmp)
         hv = symbol_ht.hashdata[uprows[row_idx][1]]
         symbol_ht.hashdata[uprows[row_idx][1]] =
             Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
@@ -274,7 +244,7 @@ function select_tobereduced!(
             multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, gen)
         matrix.lower_to_coeffs[row_idx] = i
         # TODO: not really needed here
-        matrix.lower_to_mult[row_idx] = insert_in_hash_table!(ht, etmp)
+        matrix.lower_to_mult[row_idx] = insert_in_hashtable!(ht, etmp)
         matrix.some_coeffs[row_idx] = tobereduced.coeffs[i]
     end
 
@@ -365,7 +335,7 @@ function find_multiplied_reducer!(
     @inbounds matrix.upper_to_coeffs[matrix.nrows_filled_upper + 1] = basis.nonredundant[i]
     # TODO: this line is here with the sole purpose -- to support tracing.
     # Probably want to factor it out.
-    matrix.upper_to_mult[matrix.nrows_filled_upper + 1] = insert_in_hash_table!(ht, etmp)
+    matrix.upper_to_mult[matrix.nrows_filled_upper + 1] = insert_in_hashtable!(ht, etmp)
     # if sugar
     #     # updates sugar
     #     poly = basis.nonredundant[i]
@@ -579,7 +549,7 @@ function add_critical_pairs_to_matrix!(
             multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly_monoms)
         # map upper row to index in basis
         matrix.upper_to_coeffs[row_idx] = prev
-        matrix.upper_to_mult[row_idx] = insert_in_hash_table!(ht, etmp)
+        matrix.upper_to_mult[row_idx] = insert_in_hashtable!(ht, etmp)
 
         # mark lcm column as reducer in symbolic hashtable
         hv = symbol_ht.hashdata[uprows[row_idx][1]]
@@ -616,7 +586,7 @@ function add_critical_pairs_to_matrix!(
                 multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly_monoms)
             # map lower row to index in basis
             matrix.lower_to_coeffs[row_idx] = prev
-            matrix.lower_to_mult[row_idx] = insert_in_hash_table!(ht, etmp)
+            matrix.lower_to_mult[row_idx] = insert_in_hashtable!(ht, etmp)
 
             hv = symbol_ht.hashdata[lowrows[row_idx][1]]
             symbol_ht.hashdata[lowrows[row_idx][1]] =
@@ -694,7 +664,7 @@ end
     basis::Basis{C},
     pairset::Pairset,
     hashtable::MonomialHashtable{M},
-    tracer::Tracer,
+    tracer::TinyTraceF4,
     params::AlgorithmParameters
 ) where {M <: Monom, C <: Coeff}
     # @invariant hashtable_well_formed(:input_f4!, ring, hashtable)

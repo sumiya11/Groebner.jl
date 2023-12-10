@@ -69,7 +69,7 @@ function linear_algebra!(
     matrix::MacaulayMatrix,
     basis::Basis,
     params::AlgorithmParameters,
-    graph=nothing;
+    trace=nothing;
     linalg=nothing
 )
     @invariant matrix_well_formed(:linear_algebra!, matrix)
@@ -83,8 +83,8 @@ function linear_algebra!(
         linalg = params.linalg
     end
 
-    flag = if !isnothing(graph)
-        linear_algebra!(graph, matrix, basis, linalg, arithmetic, rng)
+    flag = if !isnothing(trace)
+        linear_algebra!(trace, matrix, basis, linalg, arithmetic, rng)
     else
         linear_algebra!(matrix, basis, linalg, arithmetic, rng)
     end
@@ -96,7 +96,7 @@ function linear_algebra_autoreduce_basis!(
     matrix::MacaulayMatrix,
     basis::Basis,
     params::AlgorithmParameters,
-    graph=nothing;
+    trace=nothing;
     linalg=nothing
 )
     @invariant matrix_well_formed(:linear_algebra_autoreduce_basis!, matrix)
@@ -106,8 +106,8 @@ function linear_algebra_autoreduce_basis!(
         linalg = params.linalg
     end
 
-    flag = if !isnothing(graph)
-        linear_algebra_autoreduce_basis!(graph, matrix, basis, linalg, arithmetic)
+    flag = if !isnothing(trace)
+        linear_algebra_autoreduce_basis!(trace, matrix, basis, linalg, arithmetic)
     else
         linear_algebra_autoreduce_basis!(matrix, basis, linalg, arithmetic)
     end
@@ -172,9 +172,9 @@ function linear_algebra!(
     flag
 end
 
-# Linear algebra with a learned graph of computation
+# Linear algebra with a learned trace of computation
 function linear_algebra!(
-    graph::ComputationGraphF4,
+    trace::TraceF4,
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
@@ -182,10 +182,10 @@ function linear_algebra!(
     rng::AbstractRNG
 )
     flag = if linalg.algorithm === :learn
-        learn_sparse_linear_algebra!(graph, matrix, basis, arithmetic)
+        learn_sparse_linear_algebra!(trace, matrix, basis, arithmetic)
     else
         @assert linalg.algorithm === :apply
-        apply_sparse_linear_algebra!(graph, matrix, basis, arithmetic)
+        apply_sparse_linear_algebra!(trace, matrix, basis, arithmetic)
     end
 
     flag
@@ -287,7 +287,7 @@ function direct_rref_sparsedense_linear_algebra!(
 end
 
 function learn_sparse_linear_algebra!(
-    graph::ComputationGraphF4,
+    trace::TraceF4,
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
@@ -297,7 +297,7 @@ function learn_sparse_linear_algebra!(
     @log level = -3 "learn_sparse_linear_algebra!"
     @log level = -3 repr_matrix(matrix)
     # Reduce CD with AB
-    learn_reduce_matrix_lower_part!(graph, matrix, basis, arithmetic)
+    learn_reduce_matrix_lower_part!(trace, matrix, basis, arithmetic)
     # Interreduce CD
     interreduce_matrix_pivots!(matrix, basis, arithmetic)
 
@@ -305,7 +305,7 @@ function learn_sparse_linear_algebra!(
 end
 
 function apply_sparse_linear_algebra!(
-    graph::ComputationGraphF4,
+    trace::TraceF4,
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
@@ -316,12 +316,12 @@ function apply_sparse_linear_algebra!(
     @log level = -3 "apply_sparse_linear_algebra!"
     @log level = -3 repr_matrix(matrix)
     # Reduce CD with AB
-    flag = apply_reduce_matrix_lower_part!(graph, matrix, basis, arithmetic)
+    flag = apply_reduce_matrix_lower_part!(trace, matrix, basis, arithmetic)
     if !flag
         return flag
     end
     # Interreduce CD
-    apply_interreduce_matrix_pivots!(graph, matrix, basis, arithmetic)
+    apply_interreduce_matrix_pivots!(trace, matrix, basis, arithmetic)
 
     true
 end
@@ -338,7 +338,7 @@ function linear_algebra_autoreduce_basis!(
 end
 
 function linear_algebra_autoreduce_basis!(
-    graph::ComputationGraphF4,
+    trace::TraceF4,
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
@@ -347,10 +347,10 @@ function linear_algebra_autoreduce_basis!(
     sort_matrix_upper_rows!(matrix)
 
     if linalg.algorithm === :learn
-        learn_deterministic_sparse_interreduction!(graph, matrix, basis, arithmetic)
+        learn_deterministic_sparse_interreduction!(trace, matrix, basis, arithmetic)
     else
         @assert linalg.algorithm === :apply
-        apply_deterministic_sparse_interreduction!(graph, matrix, basis, arithmetic)
+        apply_deterministic_sparse_interreduction!(trace, matrix, basis, arithmetic)
     end
 
     true
@@ -372,7 +372,7 @@ function deterministic_sparse_interreduction!(
 end
 
 function learn_deterministic_sparse_interreduction!(
-    graph::ComputationGraphF4,
+    trace::TraceF4,
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
@@ -382,13 +382,13 @@ function learn_deterministic_sparse_interreduction!(
     # Prepare the matrix
     absolute_index_pivots_in_interreduction!(matrix, basis)
     # Interreduce AB
-    learn_interreduce_matrix_pivots!(graph, matrix, basis, arithmetic, reversed_rows=true)
+    learn_interreduce_matrix_pivots!(trace, matrix, basis, arithmetic, reversed_rows=true)
 
     true
 end
 
 function apply_deterministic_sparse_interreduction!(
-    graph::ComputationGraphF4,
+    trace::TraceF4,
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
@@ -399,7 +399,7 @@ function apply_deterministic_sparse_interreduction!(
     absolute_index_pivots_in_interreduction!(matrix, basis)
     # Interreduce AB
     flag = apply_interreduce_matrix_pivots!(
-        graph,
+        trace,
         matrix,
         basis,
         arithmetic,
@@ -1437,7 +1437,7 @@ end
 # Returns `false` if any row reduced to zero (since we expect that on the apply
 # stage the rows are linearly independent)
 function apply_reduce_matrix_lower_part!(
-    graph::ComputationGraphF4,
+    trace::TraceF4,
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
     arithmetic::A
@@ -1501,7 +1501,7 @@ function apply_reduce_matrix_lower_part!(
 end
 
 function learn_interreduce_matrix_pivots!(
-    graph::ComputationGraphF4,
+    trace::TraceF4,
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
     arithmetic::A;
@@ -1512,25 +1512,25 @@ function learn_interreduce_matrix_pivots!(
         interreduce_matrix_pivots!(matrix, basis, arithmetic, reversed_rows=reversed_rows)
     !flag && return flag
 
-    # Update the computation graph
+    # Update the computation trace
     _, ncols = size(matrix)
     nup, nlow = nrows_filled(matrix)
     push!(
-        graph.matrix_infos,
+        trace.matrix_infos,
         (nup=matrix.nrows_filled_upper, nlow=matrix.nrows_filled_lower, ncols=ncols)
     )
-    push!(graph.matrix_nonzeroed_rows, not_reduced_to_zero)
+    push!(trace.matrix_nonzeroed_rows, not_reduced_to_zero)
     push!(
-        graph.matrix_upper_rows,
+        trace.matrix_upper_rows,
         (matrix.upper_to_coeffs[1:nup], matrix.upper_to_mult[1:nup])
     )
-    push!(graph.matrix_lower_rows, (Vector{Int}(), Vector{Int}()))
+    push!(trace.matrix_lower_rows, (Vector{Int}(), Vector{Int}()))
 
     true
 end
 
 function apply_interreduce_matrix_pivots!(
-    graph::ComputationGraphF4,
+    trace::TraceF4,
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
     arithmetic::A;
@@ -1720,7 +1720,7 @@ function record_active_reducer(active_reducers, matrix, idx)
 end
 
 function learn_reduce_matrix_lower_part!(
-    graph::ComputationGraphF4,
+    trace::TraceF4,
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
     arithmetic::A
@@ -1787,95 +1787,21 @@ function learn_reduce_matrix_lower_part!(
     # This way, the rows are already sorted at the apply stage.
     useful_reducers_sorted = sort(collect(useful_reducers), by=reducer -> reducer[1])
     push!(
-        graph.matrix_infos,
+        trace.matrix_infos,
         (nup=matrix.nrows_filled_upper, nlow=matrix.nrows_filled_lower, ncols=ncols)
     )
-    push!(graph.matrix_nonzeroed_rows, not_reduced_to_zero)
+    push!(trace.matrix_nonzeroed_rows, not_reduced_to_zero)
     push!(
-        graph.matrix_upper_rows,
+        trace.matrix_upper_rows,
         (map(f -> f[2], useful_reducers_sorted), map(f -> f[3], useful_reducers_sorted))
     )
     push!(
-        graph.matrix_lower_rows,
+        trace.matrix_lower_rows,
         (row_idx_to_coeffs[not_reduced_to_zero], matrix.lower_to_mult[not_reduced_to_zero])
     )
 
     true
 end
-
-# function apply_sparse_rref!(
-#     graph::ComputationGraphF4,
-#     ring::PolyRing,
-#     matrix::MacaulayMatrix{C},
-#     basis::Basis{C},
-#     rng::AbstractRNG
-# ) where {C <: Coeff}
-#     _, ncols = size(matrix)
-#     nlow = matrix.nrows_filled_lower
-
-#     arithmetic = select_arithmetic(matrix.some_coeffs, ring.ch)
-
-#     # move known matrix pivots,
-#     # no copy
-#     pivs, l2c_tmp = get_absolute_pivots!(matrix)
-#     @log level = -7 "absolute_pivots!" pivs l2c_tmp
-
-#     rowidx2coef = matrix.lower_to_coeffs
-#     matrix.lower_to_coeffs = l2c_tmp
-
-#     # unknown pivots,
-#     # we will modify them inplace when reducing by pivs
-#     upivs = matrix.lower_rows
-#     densecoeffs = zeros(C, ncols)
-
-#     @inbounds for i in 1:nlow
-#         # select next row to be reduced
-#         # npiv ~ exponents
-#         rowexps = upivs[i]
-
-#         # corresponding coefficients from basis
-#         # (no need to copy here)
-#         cfsref = basis.coeffs[rowidx2coef[i]]
-
-#         # we load coefficients into dense array
-#         # into rowexps indices
-#         load_sparse_row!(densecoeffs, rowexps, cfsref)
-
-#         # reduce it with known pivots from matrix.upper_rows
-#         # first nonzero in densecoeffs is at startcol position
-#         startcol = rowexps[1]
-#         zeroed, newrow, newcfs = reduce_dense_row_by_pivots_sparse!(
-#             densecoeffs,
-#             matrix,
-#             basis,
-#             pivs,
-#             ColumnLabel(startcol),
-#             ColumnLabel(ncols),
-#             ColumnLabel(-1),
-#             arithmetic
-#         )
-#         # if fully reduced
-#         if zeroed
-#             # then something has gone wrong in tracing 
-#             return false
-#         end
-
-#         # matrix coeffs sparsely stores coefficients of new row
-#         matrix.some_coeffs[i] = newcfs
-#         # add new pivot at column index newrow[1]
-#         #  (which is the first nnz column of newrow)
-#         pivs[newrow[1]] = newrow
-#         # set ref to coefficient to matrix
-#         # guaranteed to be from lower part
-#         matrix.lower_to_coeffs[newrow[1]] = i
-
-#         # normalize if needed
-#         normalize_row!(matrix.some_coeffs[i], arithmetic)
-#     end
-
-#     interreduce_lower_part!(matrix, basis, pivs, arithmetic)
-#     true
-# end
 
 ###
 # Re-enumerating columns in the matrix and other auxiliaries
@@ -1944,7 +1870,7 @@ function convert_rows_to_basis_elements!(
 
     @inbounds for i in 1:(matrix.npivots)
         colidx = rows[i][1]
-        insert_in_basis_hash_table_pivots(rows[i], ht, symbol_ht, matrix.column_to_monom)
+        insert_in_basis_hashtable_pivots(rows[i], ht, symbol_ht, matrix.column_to_monom)
         basis.coeffs[crs + i] = matrix.some_coeffs[matrix.lower_to_coeffs[colidx]]
         basis.monoms[crs + i] = matrix.lower_rows[i]
         @invariant length(basis.coeffs[crs + i]) == length(basis.monoms[crs + i])
@@ -1967,7 +1893,7 @@ function convert_rows_to_basis_elements_nf!(
         basis.nonredundant[basis.nnonredundant] = basis.nprocessed
         if isassigned(matrix.some_coeffs, i)
             row = matrix.lower_rows[i]
-            insert_in_basis_hash_table_pivots(row, ht, symbol_ht, matrix.column_to_monom)
+            insert_in_basis_hashtable_pivots(row, ht, symbol_ht, matrix.column_to_monom)
             basis.coeffs[basis.nprocessed] = matrix.some_coeffs[i]
             basis.monoms[basis.nprocessed] = row
         else
@@ -1979,7 +1905,7 @@ function convert_rows_to_basis_elements_nf!(
     nothing
 end
 
-function insert_in_basis_hash_table_pivots(
+function insert_in_basis_hashtable_pivots(
     row::Vector{ColumnLabel},
     ht::MonomialHashtable{M},
     symbol_ht::MonomialHashtable{M},

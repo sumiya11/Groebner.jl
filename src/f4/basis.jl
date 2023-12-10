@@ -3,7 +3,7 @@
 # Basis is a structure that stores a list of polynomials. Each polynomial is
 # represented with a sorted vector of monomials and a vector of coefficients.
 # Monomials and coefficients are stored in the basis separately. Each monomial
-# is represented with an integer --- an index to a bucket in the hashtable (see
+# is represented with an integer -- an index to a bucket in the hashtable (see
 # f4/hashtable.jl).
 
 # Pairset is a list of critical pairs (SPairs).
@@ -339,7 +339,7 @@ end
 
     # add new lcms to the basis hashtable,
     # including index j and not including index pc
-    insert_lcms_in_basis_hash_table!(pairset, pl, ht, update_ht, basis, lcms, j, pc + 1)
+    insert_lcms_in_basis_hashtable!(pairset, pl, ht, update_ht, basis, lcms, j, pc + 1)
 
     # mark redundant polynomials in basis
     nonred = basis.nonredundant
@@ -483,7 +483,7 @@ function fill_data!(
         basis.monoms[i] = Vector{MonomIdx}(undef, nterms)
         poly = basis.monoms[i]
         @inbounds for j in 1:nterms
-            poly[j] = insert_in_hash_table!(ht, exponents[i][j])
+            poly[j] = insert_in_hashtable!(ht, exponents[i][j])
         end
 
         # sort terms (not needed)
@@ -581,7 +581,7 @@ end
 # For a given list of S-pairs and a list of indices `plcm`
 # adds indices from plcm[ifirst:ilast]
 # to the hashtable ht
-function insert_lcms_in_basis_hash_table!(
+function insert_lcms_in_basis_hashtable!(
     pairset::Pairset,
     off::Int,
     ht::MonomialHashtable{M},

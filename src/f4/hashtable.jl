@@ -72,6 +72,9 @@ mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractInternalOrdering}
     offset::Int
 end
 
+###
+# Initialization and resizing
+
 # Resize hashtable if load factor exceeds this ht_resize_threshold. Load factor
 # of a hashtable instance must be smaller than ht_resize_threshold at any point
 # in its lifetime
@@ -80,9 +83,9 @@ ht_needs_resize(size, load, added) = (load + added) / size > ht_resize_threshold
 
 function initialize_hashtable(
     ring::PolyRing{Ord},
-    rng,
+    rng::AbstractRNG,
     MonomT::T,
-    initial_size
+    initial_size::Int
 ) where {Ord <: AbstractInternalOrdering, T}
     exponents = Vector{MonomT}(undef, initial_size)
     hashdata = Vector{Hashvalue}(undef, initial_size)
@@ -94,8 +97,8 @@ function initialize_hashtable(
     # initialize hashing vector
     hasher = construct_hash_vector(MonomT, nvars)
 
-    # exponents[1:load] cover all stored exponents
-    # , also exponents[1] is zeroed by default
+    # exponents[1:load] covers all stored exponents
+    # , also exponents[1] is [0, 0, ..., 0] by default
     load = 1
     size = initial_size
 
@@ -137,7 +140,7 @@ function initialize_hashtable(
     )
 end
 
-function copy_hashtable(ht::MonomialHashtable{M, O}) where {M, O}
+function copy_hashtable(ht::MonomialHashtable)
     exps = Vector{M}(undef, ht.size)
     table = Vector{MonomIdx}(undef, ht.size)
     data = Vector{Hashvalue}(undef, ht.size)
@@ -169,7 +172,7 @@ end
 # initialize hashtable either for `symbolic_preprocessing` or for `update` functions
 # These are of the same purpose and structure as basis hashtable,
 # but are more local oriented
-@timeit function initialize_secondary_hashtable(basis_ht::MonomialHashtable{M}) where {M}
+@timeit function initialize_secondary_hashtable(ht::MonomialHashtable{M}) where {M <: Monom}
     # 2^6 seems to be the best out of 2^5, 2^6, 2^7
     initial_size = 2^6
 
@@ -178,16 +181,16 @@ end
     hashtable = zeros(MonomIdx, initial_size)
 
     # preserve ring info
-    nvars = basis_ht.nvars
-    ord = basis_ht.ord
+    nvars = ht.nvars
+    ord = ht.ord
 
     # preserve division info
-    divmap = basis_ht.divmap
-    ndivbits = basis_ht.ndivbits
-    ndivvars = basis_ht.ndivvars
+    divmap = ht.divmap
+    ndivbits = ht.ndivbits
+    ndivvars = ht.ndivvars
 
     # preserve hasher
-    hasher = basis_ht.hasher
+    hasher = ht.hasher
 
     load = 1
     size = initial_size
@@ -202,7 +205,7 @@ end
         hasher,
         nvars,
         ord,
-        basis_ht.use_divmask,
+        ht.use_divmask,
         divmap,
         ndivvars,
         ndivbits,
@@ -235,7 +238,7 @@ function reinitialize_hashtable!(ht::MonomialHashtable{M}) where {M}
     nothing
 end
 
-function select_hashtable_size(ring::PolyRing, monoms)
+function select_hashtable_size(ring::PolyRing, monoms::AbstractVector)
     nvars = ring.nvars
     sz = length(monoms)
 
@@ -257,12 +260,7 @@ function select_hashtable_size(ring::PolyRing, monoms)
     tablesize
 end
 
-# Returns the next look-up position in the table 
-function next_lookup_index(h::MonomHash, j::MonomHash, mod::MonomHash)
-    (h + j) & mod + MonomHash(1)
-end
-
-function resize_hashtable_if_needed!(ht::MonomialHashtable, added::Integer)
+function resize_hashtable_if_needed!(ht::MonomialHashtable, added::Int)
     newsize = ht.size
     while ht_needs_resize(newsize, ht.load, added)
         newsize *= 2
@@ -295,7 +293,13 @@ function resize_hashtable_if_needed!(ht::MonomialHashtable, added::Integer)
     nothing
 end
 
-#------------------------------------------------------------------------------
+###
+# Insertion of monomials
+
+# Returns the next look-up position in the table 
+function next_lookup_index(h::MonomHash, j::MonomHash, mod::MonomHash)
+    (h + j) & mod + MonomHash(1)
+end
 
 # if hash collision happened
 function ishashcollision(ht::MonomialHashtable, vidx, e, he)
@@ -310,7 +314,7 @@ function ishashcollision(ht::MonomialHashtable, vidx, e, he)
     false
 end
 
-function insert_in_hash_table!(ht::MonomialHashtable{M}, e::M) where {M}
+function insert_in_hashtable!(ht::MonomialHashtable{M}, e::M) where {M <: Monom}
     # generate hash
     he = monom_hash(e, ht.hasher)
 
@@ -352,16 +356,15 @@ function insert_in_hash_table!(ht::MonomialHashtable{M}, e::M) where {M}
     return vidx
 end
 
-#------------------------------------------------------------------------------
+###
+# Division masks
 
 function is_divmask_divisible(d1::DivisionMask, d2::DivisionMask)
     iszero(~d1 & d2)
 end
 
-#=
-    Having `ht` filled with monomials from input polys,
-    computes ht.divmap and divmask for each of already stored monomials
-=#
+# Having `ht` filled with monomials from input polys,
+# computes ht.divmap and divmask for each of already stored monomials
 function fill_divmask!(ht::MonomialHashtable)
     ndivvars = ht.ndivvars
 
@@ -410,7 +413,8 @@ function fill_divmask!(ht::MonomialHashtable)
     nothing
 end
 
-#------------------------------------------------------------------------------
+###
+# Monomial arithmetic
 
 # h1 divisible by h2
 function is_monom_divisible(h1::MonomIdx, h2::MonomIdx, ht::MonomialHashtable)
@@ -445,10 +449,11 @@ function get_lcm(
 
     etmp = monom_lcm!(etmp, e1, e2)
 
-    insert_in_hash_table!(ht2, etmp)
+    insert_in_hashtable!(ht2, etmp)
 end
 
-#------------------------------------------------------------------------------
+###
+# 
 
 # compare pairwise divisibility of lcms from a[first:last] with lcm
 function check_monomial_division_in_update(
@@ -457,7 +462,7 @@ function check_monomial_division_in_update(
     last::Int,
     lcm::MonomIdx,
     ht::MonomialHashtable{M}
-) where {M}
+) where {M <: Monom}
 
     # pairs are sorted, we only need to check entries above starting point
 
@@ -488,19 +493,17 @@ function check_monomial_division_in_update(
     nothing
 end
 
-#------------------------------------------------------------------------------
-
 # add monomials from `poly` multiplied by exponent vector `etmp`
 # with hash `htmp` to hashtable `symbol_ht`,
 # and substitute hashes in row
-function insert_multiplied_poly_in_hash_table!(
+function insert_multiplied_poly_in_hashtable!(
     row::Vector{MonomIdx},
     htmp::MonomHash,
     etmp::M,
     poly::Vector{MonomIdx},
     ht::MonomialHashtable{M},
     symbol_ht::MonomialHashtable{M}
-) where {M}
+) where {M <: Monom}
 
     # length of poly to add
     len = length(poly)
@@ -586,9 +589,9 @@ end
     htmp::MonomHash,
     etmp::M,
     poly::Vector{MonomIdx}
-) where {M}
+) where {M <: Monom}
     row = similar(poly)
     resize_hashtable_if_needed!(symbolic_ht, length(poly))
 
-    insert_multiplied_poly_in_hash_table!(row, htmp, etmp, poly, basis_ht, symbolic_ht)
+    insert_multiplied_poly_in_hashtable!(row, htmp, etmp, poly, basis_ht, symbolic_ht)
 end

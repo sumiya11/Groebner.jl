@@ -45,19 +45,19 @@ function _groebner_learn(polynomials, kws, representation)
         term_homogenizing_permutation, ring, monoms, coeffs =
             homogenize_generators!(ring, monoms, coeffs, params)
     end
-    graph, gb_monoms, gb_coeffs = _groebner_learn(ring, monoms, coeffs, params)
+    trace, gb_monoms, gb_coeffs = _groebner_learn(ring, monoms, coeffs, params)
     if params.homogenize
-        graph.term_homogenizing_permutations = term_homogenizing_permutation
+        trace.term_homogenizing_permutations = term_homogenizing_permutation
         ring, gb_monoms, gb_coeffs =
             dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
     end
-    graph.representation = representation
-    graph.term_sorting_permutations = term_sorting_permutations
+    trace.representation = representation
+    trace.term_sorting_permutations = term_sorting_permutations
     @log level = -7 """Sorting permutations:
     Terms: $(term_sorting_permutations)
-    Polynomials: $(graph.input_permutation)"""
+    Polynomials: $(trace.input_permutation)"""
     # @print_performance_counters
-    graph, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
+    trace, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
 end
 
 function _groebner_learn(
@@ -68,30 +68,30 @@ function _groebner_learn(
 ) where {C <: CoeffFF}
     @log level = -2 "Groebner learn phase over Z_p"
     # Initialize F4 structs
-    graph, basis, pairset, hashtable =
-        initialize_structs_learn(ring, monoms, coeffs, params)
+    trace, basis, pairset, hashtable =
+        initialize_structs_with_trace(ring, monoms, coeffs, params)
     @log level = -5 "Before F4:" basis
-    f4_learn!(graph, ring, graph.gb_basis, pairset, hashtable, params)
+    f4_learn!(trace, ring, trace.gb_basis, pairset, hashtable, params)
     @log level = -5 "After F4:" basis
-    gb_monoms, gb_coeffs = export_basis_data(graph.gb_basis, graph.hashtable)
-    graph, gb_monoms, gb_coeffs
+    gb_monoms, gb_coeffs = export_basis_data(trace.gb_basis, trace.hashtable)
+    trace, gb_monoms, gb_coeffs
 end
 
 ###
 # Apply stage
 
-function _groebner_apply!(graph::ComputationGraphF4, polynomials, kws::KeywordsHandler)
-    ring = extract_coeffs_raw!(graph, graph.representation, polynomials, kws)
+function _groebner_apply!(trace::TraceF4, polynomials, kws::KeywordsHandler)
+    ring = extract_coeffs_raw!(trace, trace.representation, polynomials, kws)
     # TODO: this is a bit hacky
     params = AlgorithmParameters(
         ring,
-        graph.representation,
+        trace.representation,
         kws,
-        orderings=(graph.params.original_ord, graph.params.target_ord)
+        orderings=(trace.params.original_ord, trace.params.target_ord)
     )
-    ring = PolyRing(graph.ring.nvars, graph.ring.ord, ring.ch)
-    flag, gb_monoms, gb_coeffs = _groebner_apply!(ring, graph, params)
-    if graph.params.homogenize
+    ring = PolyRing(trace.ring.nvars, trace.ring.ord, ring.ch)
+    flag, gb_monoms, gb_coeffs = _groebner_apply!(ring, trace, params)
+    if trace.params.homogenize
         ring, gb_monoms, gb_coeffs =
             dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
     end
@@ -100,11 +100,11 @@ function _groebner_apply!(graph::ComputationGraphF4, polynomials, kws::KeywordsH
     flag, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
 end
 
-function _groebner_apply!(ring, graph, params)
+function _groebner_apply!(ring, trace, params)
     @log level = -1 "Groebner Apply phase"
     @log level = -2 "Applying modulo $(ring.ch)"
-    flag = f4_apply!(graph, ring, graph.buf_basis, params)
-    gb_monoms, gb_coeffs = export_basis_data(graph.gb_basis, graph.hashtable)
+    flag = f4_apply!(trace, ring, trace.buf_basis, params)
+    gb_monoms, gb_coeffs = export_basis_data(trace.gb_basis, trace.hashtable)
     # Check once again that the sizes coincide
     length(gb_monoms) != length(gb_coeffs) && return false, gb_monoms, gb_coeffs
     @inbounds for i in 1:length(gb_monoms)
