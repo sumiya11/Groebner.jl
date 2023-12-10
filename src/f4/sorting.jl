@@ -184,18 +184,20 @@ end
 function sort_matrix_upper_rows!(matrix::MacaulayMatrix)
     #= smaller means pivot being more left  =#
     #= and density being smaller            =#
-    permutation = collect(1:(matrix.nupper))
+    permutation = collect(1:(matrix.nrows_filled_upper))
     cmp =
         (x, y) -> matrix_row_decreasing_cmp(
             @inbounds(matrix.upper_rows[x]),
             @inbounds(matrix.upper_rows[y])
         )
     sort!(permutation, lt=cmp, alg=_default_sorting_alg())
-    matrix.upper_rows[1:(matrix.nupper)] = matrix.upper_rows[permutation]
-    matrix.upper_to_coeffs[1:(matrix.nupper)] = matrix.upper_to_coeffs[permutation]
+    matrix.upper_rows[1:(matrix.nrows_filled_upper)] = matrix.upper_rows[permutation]
+    matrix.upper_to_coeffs[1:(matrix.nrows_filled_upper)] =
+        matrix.upper_to_coeffs[permutation]
     # TODO: this is a bit hacky
     if !isempty(matrix.upper_to_mult)
-        matrix.upper_to_mult[1:(matrix.nupper)] = matrix.upper_to_mult[permutation]
+        matrix.upper_to_mult[1:(matrix.nrows_filled_upper)] =
+            matrix.upper_to_mult[permutation]
     end
     matrix
 end
@@ -208,18 +210,20 @@ end
 function sort_matrix_lower_rows!(matrix::MacaulayMatrix)
     #= smaller means pivot being more right =#
     #= and density being larger             =#
-    permutation = collect(1:(matrix.nlower))
+    permutation = collect(1:(matrix.nrows_filled_lower))
     cmp =
         (x, y) -> matrix_row_increasing_cmp(
             @inbounds(matrix.lower_rows[x]),
             @inbounds(matrix.lower_rows[y])
         )
     sort!(permutation, lt=cmp, alg=_default_sorting_alg())
-    matrix.lower_rows[1:(matrix.nlower)] = matrix.lower_rows[permutation]
-    matrix.lower_to_coeffs[1:(matrix.nlower)] = matrix.lower_to_coeffs[permutation]
+    matrix.lower_rows[1:(matrix.nrows_filled_lower)] = matrix.lower_rows[permutation]
+    matrix.lower_to_coeffs[1:(matrix.nrows_filled_lower)] =
+        matrix.lower_to_coeffs[permutation]
     # TODO: this is a bit hacky
     if !isempty(matrix.lower_to_mult)
-        matrix.lower_to_mult[1:(matrix.nlower)] = matrix.lower_to_mult[permutation]
+        matrix.lower_to_mult[1:(matrix.nrows_filled_lower)] =
+            matrix.lower_to_mult[permutation]
     end
     matrix
 end
@@ -242,7 +246,7 @@ function sort_columns_by_labels!(
         end
         @inbounds ea = es[a]
         @inbounds eb = es[b]
-        !monom_isless(ea, eb, ord)
+        monom_isless(eb, ea, ord)
     end
 
     ordcmp = (x, y) -> cmp(x, y, symbol_ht.ord)

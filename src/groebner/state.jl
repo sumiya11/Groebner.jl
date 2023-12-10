@@ -42,21 +42,43 @@ mutable struct CoefficientBuffer
 end
 
 # The state of the modular GB 
-mutable struct GroebnerState{T1 <: CoeffZZ, T2 <: CoeffQQ}
+mutable struct GroebnerState{T1 <: CoeffZZ, T2 <: CoeffQQ, T3}
     gb_coeffs_zz::Vector{Vector{T1}}
     prev_gb_coeffs_zz::Vector{Vector{T1}}
     gb_coeffs_qq::Vector{Vector{T2}}
+
+    #
+    gb_coeffs_ff_all::Vector{Vector{Vector{T3}}}
+    prev_index::Int
+
+    #
+    selected_coeffs_zz::Vector{T1}
+    selected_prev_coeffs_zz::Vector{T1}
+    selected_coeffs_qq::Vector{T2}
+    is_crt_reconstructed_mask::Vector{BitVector}
+    is_rational_reconstructed_mask::Vector{BitVector}
+
     buffer::CoefficientBuffer
-    function GroebnerState{T1, T2}(params) where {T1 <: CoeffZZ, T2 <: CoeffQQ}
+    function GroebnerState{T1, T2, T3}(
+        params
+    ) where {T1 <: CoeffZZ, T2 <: CoeffQQ, T3 <: CoeffFF}
         new(
-            Vector{Vector{T1}}(undef, 0),
-            Vector{Vector{T1}}(undef, 0),
-            Vector{Vector{T2}}(undef, 0),
+            Vector{Vector{T1}}(),
+            Vector{Vector{T1}}(),
+            Vector{Vector{T2}}(),
+            Vector{Vector{Vector{T3}}}(),
+            0,
+            Vector{T1}(),
+            Vector{T1}(),
+            Vector{T2}(),
+            Vector{BitVector}(),
+            Vector{BitVector}(),
             CoefficientBuffer()
         )
     end
 end
 
+# TODO
 function majority_vote!(state, basis_ff, tracer, params)
     true
 end
@@ -180,14 +202,22 @@ function resize_state_if_needed!(
     resize!(state.gb_coeffs_zz, length(gb_coeffs))
     resize!(state.prev_gb_coeffs_zz, length(gb_coeffs))
     resize!(state.gb_coeffs_qq, length(gb_coeffs))
+    resize!(state.is_crt_reconstructed_mask, length(gb_coeffs))
+    resize!(state.is_rational_reconstructed_mask, length(gb_coeffs))
+
     @inbounds for i in 1:length(gb_coeffs)
-        # TODO: we are being too generous with memory here
         state.gb_coeffs_zz[i] = [BigInt(0) for _ in 1:length(gb_coeffs[i])]
         state.prev_gb_coeffs_zz[i] = [BigInt(0) for _ in 1:length(gb_coeffs[i])]
         state.gb_coeffs_qq[i] = [Rational{BigInt}(1) for _ in 1:length(gb_coeffs[i])]
+        state.is_crt_reconstructed_mask[i] = falses(length(gb_coeffs[i]))
+        state.is_rational_reconstructed_mask[i] = falses(length(gb_coeffs[i]))
     end
+
     nothing
 end
+
+###
+# CRT
 
 # Reconstruct coefficients of the basis using CRT.
 #
@@ -196,67 +226,317 @@ end
 # 
 # Writes the coefficients of the basis modulo P * P1*P2*...*Pk to
 # state.gb_coeffs_zz inplace
-@timeit function crt_reconstruct!(
-    state::GroebnerState,
-    ring::PolyRing,
-    lucky::LuckyPrimes,
-    basis_ff::Basis{T}
-) where {T <: CoeffFF}
+function full_incremental_crt_reconstruct!(state::GroebnerState, lucky::LuckyPrimes)
     if isempty(state.gb_coeffs_zz)
-        # If first time reconstruction
-        resize_state_if_needed!(state, basis_ff.coeffs)
-        crt_reconstruct_trivial!(state, basis_ff.coeffs)
-        Base.GMP.MPZ.mul_ui!(lucky.modulo, last(lucky.primes))
+        @log level = -2 "Using full trivial CRT reconstruction"
+        coeffs_ff = state.gb_coeffs_ff_all[1]
+        resize_state_if_needed!(state, coeffs_ff)
+        gb_coeffs_zz = state.gb_coeffs_zz
+        @inbounds for i in 1:length(coeffs_ff)
+            for j in 1:length(coeffs_ff[i])
+                Base.GMP.MPZ.set_ui!(gb_coeffs_zz[i][j], coeffs_ff[i][j])
+            end
+        end
+        Base.GMP.MPZ.mul_ui!(lucky.modulo, lucky.primes[1])
         return nothing
     end
-    @invariant length(basis_ff.coeffs) == length(state.gb_coeffs_zz)
+    # @invariant length(coeffs_ff) == length(state.gb_coeffs_zz)
+
+    @log level = -2 "Using full CRT reconstruction"
     gb_coeffs_zz = state.gb_coeffs_zz
     prev_gb_coeffs_zz = state.prev_gb_coeffs_zz
-    # Copy current basis coefficients to the previous array
-    @inbounds for i in 1:length(gb_coeffs_zz)
-        @invariant length(gb_coeffs_zz[i]) == length(prev_gb_coeffs_zz[i])
-        for j in 1:length(gb_coeffs_zz[i])
-            Base.GMP.MPZ.set!(prev_gb_coeffs_zz[i][j], gb_coeffs_zz[i][j])
-        end
-    end
+    is_crt_reconstructed_mask = state.is_crt_reconstructed_mask
+
+    # Takes the lock..
+    @invariant length(state.gb_coeffs_ff_all) == length(lucky.primes)
+
     # Set the buffers for CRT and precompute some values
     buffer = state.buffer
     buf = buffer.reconstructbuf1
     n1, n2 = buffer.reconstructbuf2, buffer.reconstructbuf3
     M = buffer.reconstructbuf4
-    bigch = buffer.reconstructbuf5
     invm1, invm2 = buffer.reconstructbuf6, buffer.reconstructbuf7
-    characteristic = ring.ch
-    Base.GMP.MPZ.set_ui!(bigch, characteristic)
-    Base.GMP.MPZ.mul_ui!(M, lucky.modulo, characteristic)
-    Base.GMP.MPZ.gcdext!(buf, invm1, invm2, lucky.modulo, bigch)
-    Base.GMP.MPZ.mul!(invm1, lucky.modulo)
-    Base.GMP.MPZ.mul_ui!(invm2, bigch)
-    gb_coeffs_ff = basis_ff.coeffs
-    @invariant length(gb_coeffs_zz) == length(gb_coeffs_ff)
+
+    Base.GMP.MPZ.set_ui!(lucky.modulo, lucky.primes[1])
+
     @inbounds for i in 1:length(gb_coeffs_zz)
-        @invariant length(gb_coeffs_zz[i]) == length(gb_coeffs_ff[i])
+        @invariant length(gb_coeffs_zz[i]) == length(prev_gb_coeffs_zz[i])
         for j in 1:length(gb_coeffs_zz[i])
-            ca = gb_coeffs_zz[i][j]
-            cf = gb_coeffs_ff[i][j]
-            CRT!(M, buf, n1, n2, ca, invm2, cf, invm1)
-            Base.GMP.MPZ.set!(gb_coeffs_zz[i][j], buf)
+            if is_crt_reconstructed_mask[i][j]
+                continue
+            end
+            Base.GMP.MPZ.set_ui!(gb_coeffs_zz[i][j], state.gb_coeffs_ff_all[1][i][j])
         end
     end
-    Base.GMP.MPZ.mul_ui!(lucky.modulo, last(lucky.primes))
+
+    @inbounds for i in 1:length(gb_coeffs_zz)
+        if is_crt_reconstructed_mask[i][1]
+            continue
+        end
+        Base.GMP.MPZ.set_ui!(gb_coeffs_zz[i][1], CoeffModular(1))
+    end
+
+    for idx in 2:length(lucky.primes)
+        CRT_precompute!(M, n1, n2, invm1, lucky.modulo, invm2, lucky.primes[idx])
+        gb_coeffs_ff = state.gb_coeffs_ff_all[idx]
+
+        @invariant length(gb_coeffs_zz) == length(gb_coeffs_ff)
+        @inbounds for i in 1:length(gb_coeffs_zz)
+            @invariant length(gb_coeffs_zz[i]) == length(gb_coeffs_ff[i])
+
+            # Skip reconstruction of the first coefficient
+            for j in 2:length(gb_coeffs_zz[i])
+                if is_crt_reconstructed_mask[i][j]
+                    continue
+                end
+
+                # Copy current basis coefficients to the previous array
+                # Base.GMP.MPZ.set!(prev_gb_coeffs_zz[i][j], gb_coeffs_zz[i][j])
+
+                c_zz = gb_coeffs_zz[i][j]
+                c_ff = gb_coeffs_ff[i][j]
+
+                CRT!(M, buf, n1, n2, c_zz, invm1, c_ff, invm2)
+
+                Base.GMP.MPZ.set!(gb_coeffs_zz[i][j], buf)
+            end
+        end
+
+        Base.GMP.MPZ.mul_ui!(lucky.modulo, lucky.primes[idx])
+    end
+
     nothing
 end
 
-function crt_reconstruct_trivial!(
-    state::GroebnerState,
-    gb_coeffs_ff::Vector{Vector{T1}}
-) where {T1 <: CoeffFF}
+function full_simultaneous_crt_reconstruct!(state::GroebnerState, lucky::LuckyPrimes)
+    if isempty(state.gb_coeffs_zz)
+        @log level = -2 "Using full trivial CRT reconstruction"
+        coeffs_ff = state.gb_coeffs_ff_all[1]
+        resize_state_if_needed!(state, coeffs_ff)
+        gb_coeffs_zz = state.gb_coeffs_zz
+        @inbounds for i in 1:length(coeffs_ff)
+            for j in 1:length(coeffs_ff[i])
+                Base.GMP.MPZ.set_ui!(gb_coeffs_zz[i][j], coeffs_ff[i][j])
+            end
+        end
+        Base.GMP.MPZ.mul_ui!(lucky.modulo, lucky.primes[1])
+        return nothing
+    end
+    # @invariant length(coeffs_ff) == length(state.gb_coeffs_zz)
+
+    @log level = -2 "Using full CRT reconstruction"
     gb_coeffs_zz = state.gb_coeffs_zz
-    @inbounds for i in 1:length(gb_coeffs_ff)
-        for j in 1:length(gb_coeffs_ff[i])
-            Base.GMP.MPZ.set_ui!(gb_coeffs_zz[i][j], gb_coeffs_ff[i][j])
+    prev_gb_coeffs_zz = state.prev_gb_coeffs_zz
+    is_crt_reconstructed_mask = state.is_crt_reconstructed_mask
+
+    # Takes the lock..
+    @invariant length(state.gb_coeffs_ff_all) == length(lucky.primes)
+
+    # Set the buffers for CRT and precompute some values
+    buffer = state.buffer
+    buf = buffer.reconstructbuf1
+    n1, n2 = buffer.reconstructbuf2, buffer.reconstructbuf3
+    M = buffer.reconstructbuf4
+    invm1, invm2 = buffer.reconstructbuf6, buffer.reconstructbuf7
+    M0 = buffer.reconstructbuf8
+    MM0 = buffer.reconstructbuf9
+
+    @inbounds for i in 1:length(gb_coeffs_zz)
+        @invariant length(gb_coeffs_zz[i]) == length(prev_gb_coeffs_zz[i])
+
+        for j in 1:length(gb_coeffs_zz[i])
+            if is_crt_reconstructed_mask[i][j]
+                continue
+            end
+            Base.GMP.MPZ.set_ui!(gb_coeffs_zz[i][j], state.gb_coeffs_ff_all[1][i][j])
         end
     end
+
+    @inbounds for i in 1:length(gb_coeffs_zz)
+        if is_crt_reconstructed_mask[i][1]
+            continue
+        end
+        Base.GMP.MPZ.set_ui!(gb_coeffs_zz[i][1], CoeffModular(1))
+    end
+
+    n = length(lucky.primes)
+    rems = Vector{CoeffModular}(undef, n)
+    mults = Vector{BigInt}(undef, n)
+    for i in 1:length(mults)
+        mults[i] = BigInt(0)
+    end
+    moduli = lucky.primes
+    CRT_precompute!(M, n1, n2, mults, moduli)
+
+    @log level = -6 "Using simultaneous CRT with moduli $moduli"
+
+    @inbounds for i in 1:length(gb_coeffs_zz)
+        for j in 2:length(gb_coeffs_zz[i])
+            if is_crt_reconstructed_mask[i][j]
+                continue
+            end
+
+            for ell in 1:length(lucky.primes)
+                rems[ell] = state.gb_coeffs_ff_all[ell][i][j]
+            end
+
+            CRT!(M, buf, n1, n2, rems, mults)
+
+            # cf_zz = selected_prev_coeffs_zz[i]
+            # CRT!(MM0, buf, n1, n2, cf_zz, invm1, buf, invm2)
+
+            # Base.GMP.MPZ.set!(selected_coeffs_zz[i], buf)
+
+            Base.GMP.MPZ.set!(gb_coeffs_zz[i][j], buf)
+        end
+    end
+
+    Base.GMP.MPZ.set!(lucky.modulo, M)
+
+    nothing
+end
+
+@timeit function partial_incremental_crt_reconstruct!(
+    state::GroebnerState,
+    lucky::LuckyPrimes,
+    indices_selection::Vector{Tuple{Int, Int}}
+)
+    gb_coeffs_ff = state.gb_coeffs_ff_all[end]
+    selected_coeffs_zz = state.selected_coeffs_zz
+    selected_prev_coeffs_zz = state.selected_prev_coeffs_zz
+    selected_coeffs_qq = state.selected_coeffs_qq
+    gb_coeffs_zz = state.gb_coeffs_zz
+    is_crt_reconstructed_mask = state.is_crt_reconstructed_mask
+
+    if length(selected_prev_coeffs_zz) < length(indices_selection)
+        @log level = -2 "Using partial incremental trivial CRT"
+        resize!(selected_prev_coeffs_zz, length(indices_selection))
+        resize!(selected_coeffs_zz, length(indices_selection))
+        resize!(selected_coeffs_qq, length(indices_selection))
+        @inbounds for i in 1:length(indices_selection)
+            i1, i2 = indices_selection[i]
+            selected_prev_coeffs_zz[i] = BigInt(0)
+            selected_coeffs_zz[i] = BigInt(0)
+            selected_coeffs_qq[i] = Rational{BigInt}(0)
+
+            Base.GMP.MPZ.set_ui!(selected_coeffs_zz[i], gb_coeffs_ff[i1][i2])
+            Base.GMP.MPZ.set!(gb_coeffs_zz[i1][i2], selected_coeffs_zz[i])
+        end
+        state.prev_index = 1
+        return nothing
+    end
+
+    @log level = -3 "Using partial incremental CRT"
+
+    @inbounds for i in 1:length(indices_selection)
+        Base.GMP.MPZ.set!(selected_prev_coeffs_zz[i], selected_coeffs_zz[i])
+    end
+
+    # Set the buffers for CRT and precompute some values
+    buffer = state.buffer
+    buf = buffer.reconstructbuf1
+    n1, n2 = buffer.reconstructbuf2, buffer.reconstructbuf3
+    M = buffer.reconstructbuf4
+    invm1, invm2 = buffer.reconstructbuf6, buffer.reconstructbuf7
+
+    CRT_precompute!(M, n1, n2, invm1, lucky.modulo, invm2, last(lucky.primes))
+
+    @inbounds for i in 1:length(indices_selection)
+        i1, i2 = indices_selection[i]
+
+        c_zz = selected_coeffs_zz[i]
+        c_ff = gb_coeffs_ff[i1][i2]
+        CRT!(M, buf, n1, n2, c_zz, invm1, c_ff, invm2)
+
+        Base.GMP.MPZ.set!(selected_coeffs_zz[i], buf)
+
+        # Mark that the coefficient is already reconstructed and save it
+        is_crt_reconstructed_mask[i1][i2] = true
+        Base.GMP.MPZ.set!(gb_coeffs_zz[i1][i2], selected_coeffs_zz[i])
+    end
+
+    Base.GMP.MPZ.mul_ui!(lucky.modulo, last(lucky.primes))
+    state.prev_index += 1
+    @log level = -3 "After:" lucky.modulo state.prev_index
+
+    nothing
+end
+
+@timeit function partial_simultaneous_crt_reconstruct!(
+    state::GroebnerState,
+    lucky::LuckyPrimes,
+    indices_selection::Vector{Tuple{Int, Int}}
+)
+    selected_coeffs_zz = state.selected_coeffs_zz
+    selected_prev_coeffs_zz = state.selected_prev_coeffs_zz
+    selected_coeffs_qq = state.selected_coeffs_qq
+    is_crt_reconstructed_mask = state.is_crt_reconstructed_mask
+
+    if length(selected_prev_coeffs_zz) < length(indices_selection)
+        partial_incremental_crt_reconstruct!(state, lucky, indices_selection)
+        return nothing
+    end
+
+    prev_index = state.prev_index
+    n = length(lucky.primes) - prev_index
+    @assert n > 0
+    if n == 1
+        @log level = -2 "Since there is only 1 new modulo, using incremental CRT"
+        partial_incremental_crt_reconstruct!(state, lucky, indices_selection)
+        return nothing
+    end
+
+    @log level = -2 "Using partial simultaneous CRT on range $(prev_index + 1)..$(length(lucky.primes))"
+
+    @assert n > 1
+    @inbounds for i in 1:length(indices_selection)
+        Base.GMP.MPZ.set!(selected_prev_coeffs_zz[i], selected_coeffs_zz[i])
+    end
+
+    # Set the buffers for CRT and precompute some values
+    buffer = state.buffer
+    buf = buffer.reconstructbuf1
+    n1, n2 = buffer.reconstructbuf2, buffer.reconstructbuf3
+    M = buffer.reconstructbuf4
+
+    invm1, invm2 = buffer.reconstructbuf6, buffer.reconstructbuf7
+    M0 = buffer.reconstructbuf8
+    MM0 = buffer.reconstructbuf9
+
+    rems = Vector{CoeffModular}(undef, n)
+    mults = Vector{BigInt}(undef, n)
+    for i in 1:length(mults)
+        mults[i] = BigInt(0)
+    end
+    moduli = lucky.primes[(prev_index + 1):end]
+    CRT_precompute!(M, n1, n2, mults, moduli)
+
+    Base.GMP.MPZ.set!(M0, lucky.modulo)
+    CRT_precompute!(MM0, n1, n2, invm1, M0, invm2, M)
+
+    @log level = -6 "Using simultaneous CRT with moduli $moduli" lucky.modulo M0 M MM0
+
+    @inbounds for i in 1:length(indices_selection)
+        i1, i2 = indices_selection[i]
+
+        for j in (prev_index + 1):length(lucky.primes)
+            rems[j - prev_index] = state.gb_coeffs_ff_all[j][i1][i2]
+        end
+
+        CRT!(M, buf, n1, n2, rems, mults)
+
+        cf_zz = selected_prev_coeffs_zz[i]
+        CRT!(MM0, buf, n1, n2, cf_zz, invm1, buf, invm2)
+
+        Base.GMP.MPZ.set!(selected_coeffs_zz[i], buf)
+
+        is_crt_reconstructed_mask[i1][i2] = true
+        Base.GMP.MPZ.set!(state.gb_coeffs_zz[i1][i2], selected_coeffs_zz[i])
+    end
+
+    state.prev_index += n
+    Base.GMP.MPZ.set!(lucky.modulo, MM0)
+
     nothing
 end
 
@@ -269,10 +549,13 @@ end
 # numbers to state.gb_coeffs_qq inplace
 #
 # Returns true is the reconstrction is successfull, false otherwise.
-@timeit function rational_reconstruct!(state::GroebnerState, lucky::LuckyPrimes)
+@timeit function full_rational_reconstruct!(state::GroebnerState, lucky::LuckyPrimes)
     modulo = lucky.modulo
+    @invariant modulo == prod(BigInt, lucky.primes)
+
     buffer = state.buffer
     bnd = rational_reconstruction_bound(modulo)
+
     buf, buf1 = buffer.reconstructbuf1, buffer.reconstructbuf2
     buf2, buf3 = buffer.reconstructbuf3, buffer.reconstructbuf4
     u1, u2 = buffer.reconstructbuf5, buffer.reconstructbuf6
@@ -280,12 +563,19 @@ end
     v2, v3 = buffer.reconstructbuf9, buffer.reconstructbuf10
     gb_coeffs_zz = state.gb_coeffs_zz
     gb_coeffs_qq = state.gb_coeffs_qq
+    is_rational_reconstructed_mask = state.is_rational_reconstructed_mask
+
     @invariant length(gb_coeffs_zz) == length(gb_coeffs_qq)
+
     @inbounds for i in 1:length(gb_coeffs_zz)
         @invariant length(gb_coeffs_zz[i]) == length(gb_coeffs_qq[i])
-        # skip reconstrction of the first coefficient, it is equal to one in the
+        # Skip reconstrction of the first coefficient, it is equal to one in the
         # reduced basis
         for j in 2:length(gb_coeffs_zz[i])
+            if is_rational_reconstructed_mask[i][j]
+                continue
+            end
+
             cz = gb_coeffs_zz[i][j]
             cq = gb_coeffs_qq[i][j]
             num, den = numerator(cq), denominator(cq)
@@ -306,9 +596,70 @@ end
                 cz,
                 modulo
             )
+
             !success && return false
         end
+
         @invariant isone(gb_coeffs_qq[i][1])
     end
+
+    true
+end
+
+@timeit function partial_rational_reconstruct!(
+    state::GroebnerState,
+    lucky::LuckyPrimes,
+    indices_selection::Vector{Tuple{Int, Int}}
+)
+    modulo = lucky.modulo
+    @invariant modulo == prod(BigInt, lucky.primes)
+
+    buffer = state.buffer
+    bnd = rational_reconstruction_bound(modulo)
+
+    buf, buf1 = buffer.reconstructbuf1, buffer.reconstructbuf2
+    buf2, buf3 = buffer.reconstructbuf3, buffer.reconstructbuf4
+    u1, u2 = buffer.reconstructbuf5, buffer.reconstructbuf6
+    u3, v1 = buffer.reconstructbuf7, buffer.reconstructbuf8
+    v2, v3 = buffer.reconstructbuf9, buffer.reconstructbuf10
+
+    selected_coeffs_zz = state.selected_coeffs_zz
+    selected_coeffs_qq = state.selected_coeffs_qq
+    gb_coeffs_qq = state.gb_coeffs_qq
+    is_rational_reconstructed_mask = state.is_rational_reconstructed_mask
+
+    @inbounds for i in 1:length(indices_selection)
+        i1, i2 = indices_selection[i]
+
+        cz = selected_coeffs_zz[i]
+        cq = selected_coeffs_qq[i]
+        num, den = numerator(cq), denominator(cq)
+        success = rational_reconstruction!(
+            num,
+            den,
+            bnd,
+            buf,
+            buf1,
+            buf2,
+            buf3,
+            u1,
+            u2,
+            u3,
+            v1,
+            v2,
+            v3,
+            cz,
+            modulo
+        )
+
+        !success && return false
+
+        # Mark that the coefficient is already reconstructed
+        is_rational_reconstructed_mask[i1][i2] = true
+        tnum, tden = numerator(gb_coeffs_qq[i1][i2]), denominator(gb_coeffs_qq[i1][i2])
+        Base.GMP.MPZ.set!(tnum, num)
+        Base.GMP.MPZ.set!(tden, den)
+    end
+
     true
 end

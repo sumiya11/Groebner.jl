@@ -14,9 +14,9 @@ function column_to_monom_mapping!(graph, matrix, symbol_ht)
 
     column_to_monom = matrix.column_to_monom
 
-    matrix.nleft = k  # CHECK!
+    matrix.ncols_left = k  # CHECK!
     # -1 as long as hashtable load is always 1 more than actual
-    matrix.nright = load - matrix.nleft - 1
+    matrix.ncols_right = load - matrix.ncols_left - 1
 
     # store the other direction of mapping,
     # hash -> column
@@ -25,24 +25,19 @@ function column_to_monom_mapping!(graph, matrix, symbol_ht)
         hdata[column_to_monom[k]] = Hashvalue(k, hv.hash, hv.divmask, hv.deg)
     end
 
-    @inbounds for k in 1:(matrix.nupper)
+    @inbounds for k in 1:(matrix.nrows_filled_upper)
         row = matrix.upper_rows[k]
         for j in 1:length(row)
             row[j] = hdata[row[j]].idx
         end
     end
 
-    @inbounds for k in 1:(matrix.nlower)
+    @inbounds for k in 1:(matrix.nrows_filled_lower)
         row = matrix.lower_rows[k]
         for j in 1:length(row)
             row[j] = hdata[row[j]].idx
         end
     end
-
-    matrix.ncolumns = matrix.nleft + matrix.nright
-
-    @assert matrix.nleft + matrix.nright == symbol_ht.load - 1 == matrix.ncolumns
-    @assert matrix.nlower + matrix.nupper == matrix.nrows
 end
 
 function reduction_apply!(
@@ -62,11 +57,11 @@ function reduction_apply!(
         column_to_monom_mapping!(graph, matrix, symbol_ht)
     end
 
-    flag = linear_algebra!(matrix, basis, params, graph, linalg=:apply)
+    flag =
+        linear_algebra!(matrix, basis, params, graph, linalg=LinearAlgebra(:apply, :sparse))
     if !flag
         return false
     end
-    @log level = -6 "After linear algebra" matrix
 
     convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
     true
@@ -140,12 +135,8 @@ function symbolic_preprocessing!(
         i += MonomIdx(1)
     end
 
-    @log level = -6 "Symbol ht:" symbol_ht
-
-    matrix.nrows = nlow + nup
-    matrix.nlower = nlow
-    matrix.nupper = nup
-    matrix.size = matrix.nrows
+    matrix.nrows_filled_lower = nlow
+    matrix.nrows_filled_upper = nup
 end
 
 function reducegb_f4_apply!(
@@ -173,12 +164,10 @@ function reducegb_f4_apply!(
     matrix.lower_to_coeffs = Vector{Int}(undef, nlow)
     matrix.upper_to_coeffs = Vector{Int}(undef, nup)
 
-    matrix.nrows = 0
-    matrix.ncolumns = 0
-    matrix.nleft = 0
-    matrix.nright = 0
-    matrix.nupper = nup
-    matrix.nlower = nlow
+    matrix.ncols_left = 0
+    matrix.ncols_right = 0
+    matrix.nrows_filled_upper = nup
+    matrix.nrows_filled_lower = nlow
 
     etmp = construct_const_monom(M, hashtable.nvars)
     # etmp is now set to zero, and has zero hash
@@ -186,10 +175,7 @@ function reducegb_f4_apply!(
     resize_hashtable_if_needed!(symbol_ht, nlow + nup + 2)
 
     # needed for correct column count in symbol hashtable
-    matrix.ncolumns = matrix.nrows
-    matrix.nupper = matrix.nrows
-
-    @log level = -5 "Before autoreduce apply" basis uprows upmults lowmults matrix_info
+    matrix.ncols_left = matrix.nrows_filled_upper
 
     for i in 1:nup
         mult_idx = upmults[i]
@@ -198,8 +184,6 @@ function reducegb_f4_apply!(
         h = hashtable.hashdata[mult_idx].hash
         etmp = hashtable.monoms[mult_idx]
         rpoly = basis.monoms[poly_idx]
-
-        @log level = -6 "Up row" etmp
 
         # Not too good
         # iszero(h) && continue
@@ -216,14 +200,10 @@ function reducegb_f4_apply!(
         hv = symbol_ht.hashdata[i]
         symbol_ht.hashdata[i] = Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
     end
-    # matrix.ncolumns = ncols
 
-    matrix.nrows = nlow + nup
-    matrix.nlower = nlow
-    matrix.nupper = nup
-    matrix.size = matrix.nrows
+    matrix.nrows_filled_lower = nlow
+    matrix.nrows_filled_upper = nup
 
-    @log level = -2 length(graph.matrix_sorted_columns) iter
     if length(graph.matrix_sorted_columns) < iter
         column_to_monom_mapping!(matrix, symbol_ht)
         push!(graph.matrix_sorted_columns, matrix.column_to_monom)
@@ -231,11 +211,13 @@ function reducegb_f4_apply!(
         matrix.column_to_monom = graph.matrix_sorted_columns[iter]
         column_to_monom_mapping!(graph, matrix, symbol_ht)
     end
-    matrix.ncolumns = matrix.nleft + matrix.nright
 
-    @log level = -6 "In autoreduction apply" basis matrix
-
-    flag = linear_algebra_reducegb!(matrix, basis, params, linalg=:apply)
+    flag = linear_algebra_autoreduce_basis!(
+        matrix,
+        basis,
+        params,
+        linalg=LinearAlgebra(:apply, :sparse)
+    )
     if !flag
         return false
     end
@@ -243,8 +225,6 @@ function reducegb_f4_apply!(
 
     basis.nfilled = matrix.npivots + basis.nprocessed
     basis.nprocessed = matrix.npivots
-
-    @log level = -6 "Apply autoreduction: after linalg" basis matrix
 
     # we may have added some multiples of reduced basis polynomials
     # from the matrix, so get rid of them
@@ -276,7 +256,7 @@ end
 ###
 # Apply stage
 
-function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
+@timeit function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
     @invariant basis_well_formed(:input_f4_apply!, ring, basis, graph.hashtable)
     @assert params.reduced == true
 
@@ -287,20 +267,17 @@ function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
     hashtable = graph.hashtable
 
     matrix = initialize_matrix(ring, C)
-    @log level = -6 "Applying modulo $(ring.ch)"
+    @log level = -5 "Applying modulo $(ring.ch)"
 
     update_basis!(basis, hashtable)
 
-    @log level = -6 "Input basis:" basis
-
     while iters < iters_total
         iters += 1
-        @log level = -3 "F4 Apply iteration $iters"
+        @log level = -5 "F4 Apply iteration $iters"
 
         symbol_ht = initialize_secondary_hashtable(hashtable)
 
         symbolic_preprocessing!(graph, iters, basis, matrix, hashtable, symbol_ht)
-        @log level = -5 "After symbolic preprocessing:" matrix
 
         flag = reduction_apply!(graph, basis, matrix, hashtable, symbol_ht, iters, params)
         if !flag
@@ -308,23 +285,15 @@ function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
             return false
         end
 
-        @log level = -6 "After reduction_apply:" matrix basis
-
         update_basis!(basis, hashtable)
 
         @log_memory_locals
-
-        @log level = -6 "After update apply" basis
-
-        # matrix = initialize_matrix(ring, C)
     end
-
-    @log level = -6 "Before reduction" basis
 
     # mark_redundant!(basis)
 
     if params.reduced
-        @log level = -6 "Autoreducing the final basis.."
+        @log level = -5 "Autoreducing the final basis.."
         symbol_ht = initialize_secondary_hashtable(hashtable)
         flag = reducegb_f4_apply!(
             graph,
@@ -338,13 +307,10 @@ function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
         if !flag
             return false
         end
-        @log level = -6 "Autoreduced!"
     end
 
     standardize_basis_apply!(ring, graph)
     basis = graph.gb_basis
-
-    @log level = -6 "After apply standardization" basis
 
     @invariant basis_well_formed(:output_f4_apply!, ring, basis, hashtable)
 
@@ -373,19 +339,9 @@ function standardize_basis_learn!(graph, ring, basis, ht, ord)
     normalize_basis!(ring, basis)
 end
 
-function update!(graph, pairset, basis, hashtable, update_ht)
-    update!(pairset, basis, hashtable, update_ht)
-end
-
-function symbolic_preprocessing!(graph, basis, matrix, hashtable, symbol_ht)
-    symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
-    @log level = -6 "Symbol ht:" symbol_ht
-end
-
 function reduction_learn!(graph, basis, matrix, hashtable, symbol_ht, params)
     column_to_monom_mapping!(matrix, symbol_ht)
-    linear_algebra!(matrix, basis, params, graph, linalg=:learn)
-    @log level = -6 "After linear algebra" matrix
+    linear_algebra!(matrix, basis, params, graph, linalg=LinearAlgebra(:learn, :sparse))
     convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht)
 end
 
@@ -398,21 +354,17 @@ function f4_reducegb_learn!(
     symbol_ht::MonomialHashtable{M},
     params
 ) where {M}
-    @log level = -6 "Entering learn autoreduction" basis
-
     etmp = construct_const_monom(M, ht.nvars)
     # etmp is now set to zero, and has zero hash
 
     reinitialize_matrix!(matrix, basis.nnonredundant)
     uprows = matrix.upper_rows
 
-    @log level = -6 "Before autoreduce learn" basis
-
     # add all non redundant elements from basis
     # as matrix upper rows
     @inbounds for i in 1:(basis.nnonredundant) #
-        matrix.nrows += 1
-        uprows[matrix.nrows] = multiplied_poly_to_matrix_row!(
+        row_idx = matrix.nrows_filled_upper += 1
+        uprows[row_idx] = multiplied_poly_to_matrix_row!(
             symbol_ht,
             ht,
             MonomHash(0),
@@ -420,18 +372,17 @@ function f4_reducegb_learn!(
             basis.monoms[basis.nonredundant[i]]
         )
 
-        matrix.upper_to_coeffs[matrix.nrows] = basis.nonredundant[i]
-        matrix.upper_to_mult[matrix.nrows] = insert_in_hash_table!(ht, etmp)
+        matrix.upper_to_coeffs[row_idx] = basis.nonredundant[i]
+        matrix.upper_to_mult[row_idx] = insert_in_hash_table!(ht, etmp)
         # set lead index as 1
-        hv = symbol_ht.hashdata[uprows[matrix.nrows][1]]
-        symbol_ht.hashdata[uprows[matrix.nrows][1]] =
+        hv = symbol_ht.hashdata[uprows[row_idx][1]]
+        symbol_ht.hashdata[uprows[row_idx][1]] =
             Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
     end
     graph.nonredundant_indices_before_reduce = basis.nonredundant[1:(basis.nnonredundant)]
 
     # needed for correct column count in symbol hashtable
-    matrix.ncolumns = matrix.nrows
-    matrix.nupper = matrix.nrows
+    matrix.ncols_left = matrix.nrows_filled_upper
 
     symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
     # set all pivots to unknown
@@ -441,11 +392,16 @@ function f4_reducegb_learn!(
     end
 
     column_to_monom_mapping!(matrix, symbol_ht)
-    matrix.ncolumns = matrix.nleft + matrix.nright
 
     @log level = -6 "In autoreduction learn" basis matrix
 
-    linear_algebra_reducegb!(matrix, basis, params, graph, linalg=:learn)
+    linear_algebra_autoreduce_basis!(
+        matrix,
+        basis,
+        params,
+        graph,
+        linalg=LinearAlgebra(:learn, :sparse)
+    )
 
     convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 
@@ -480,7 +436,7 @@ function f4_reducegb_learn!(
     graph.output_nonredundant_indices = copy(basis.nonredundant[1:k])
 end
 
-function f4_learn!(
+@timeit function f4_learn!(
     graph,
     ring::PolyRing,
     basis::Basis{C},
@@ -506,7 +462,7 @@ function f4_learn!(
 
     # add the first batch of critical pairs to the pairset
     @log level = -3 "Processing initial polynomials, generating first critical pairs"
-    pairset_size = update!(graph, pairset, basis, hashtable, update_ht)
+    pairset_size = update!(pairset, basis, hashtable, update_ht)
     @log level = -3 "Out of $(basis.nfilled) polynomials, $(basis.nprocessed) are non-redundant"
     @log level = -3 "Generated $(pairset.load) critical pairs"
 
@@ -529,11 +485,8 @@ function f4_learn!(
             maxpairs=params.maxpairs
         )
         push!(graph.critical_pair_sequence, (degree_i, npairs_i))
-        # Color with [F4]
 
-        symbolic_preprocessing!(graph, basis, matrix, hashtable, symbol_ht)
-        @log level = -6 "Formed a matrix of size X, DISPLAY_MATRIX"
-        @log level = -6 "After symbolic preprocessing:" matrix
+        symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
 
         # reduces polys and obtains new potential basis elements
         reduction_learn!(graph, basis, matrix, hashtable, symbol_ht, params)
@@ -543,7 +496,7 @@ function f4_learn!(
         # update the current basis with polynomials produced from reduction,
         # does not copy,
         # checks for redundancy
-        pairset_size = update!(graph, pairset, basis, hashtable, update_ht)
+        pairset_size = update!(pairset, basis, hashtable, update_ht)
 
         @log level = -6 "After update learn" basis
         # clear symbolic hashtable

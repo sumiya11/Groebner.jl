@@ -1,0 +1,952 @@
+┌ Debug: Using keywords: 
+│ reduced    = true, 
+│ ordering   = Main.Groebner.InputOrdering(), 
+│ certify    = false, 
+│ linalg     = randomized, 
+│ monoms     = auto, 
+│ seed       = 42, 
+│ loglevel   = -3, 
+│ maxpairs   = 9223372036854775807,
+│ selection  = auto,
+│ modular    = classic_modular,
+│ check      = true,
+│ sweep      = false
+│ homogenize = auto
+│ statistics = no
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Selecting monomial representation.
+│ Given hint hint=none. Keyword argument monoms=auto
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Frontend: abstractalgebra
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Input: 9 polynomials over zp in 5 variables
+│ Ordering: degrevlex
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Internal representation: 
+│ monomials are Main.Groebner.PackedTuple1{UInt64, UInt8}
+│ coefficients are UInt64
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Converting input polynomials to internal representation..
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Done converting input polynomials to internal representation.
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Removing zero polynomials
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Selected parameters:
+│ target_ord = Main.Groebner.DegRevLex{Nothing}(nothing, false)
+│ computation_ord = Main.Groebner.DegRevLex{Nothing}(nothing, false)
+│ original_ord = Main.Groebner.DegRevLex{Nothing}(nothing, false)
+│ heuristic_check = true
+│ randomized_check = true
+│ certify_check = false
+│ check = true
+│ linalg = Main.Groebner.LinearAlgebra(:randomized, :sparse)
+│ arithmetic = Main.Groebner.SpecializedBuiltinArithmeticZp{UInt64, true}(0x0000000200000005, 0x1e, 0x000000007fffffff)
+│ reduced = true
+│ homogenize = false
+│ maxpairs = 9223372036854775807
+│ selection_strategy = normal
+│ ground = zp
+│ modular_strategy = classic_modular
+│ majority_threshold = 1
+│ threading = false
+│ seed = 42
+│ rng = Random.Xoshiro(0xa379de7eeeb2a4e8, 0x953dccb6b532b3af, 0xf597b8ff8cfd652a, 0xccd7337c571680d1)
+│ sweep = false
+│ statistics = no
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Internal ordering:
+│ Main.Groebner._DegRevLex{true}([1, 2, 3, 4, 5])
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Backend: F4 over Z_2147483647
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Initializing structs..
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Initial hashtable size is 16384
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Using division masks: true
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Entering F4.
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Processing initial polynomials, generating first critical pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Out of 9 polynomials, 9 are non-redundant
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Generated 8 critical pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: F4: iteration 1
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: F4: available 8 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Selected 8 pairs of degree 5 from pairset, 0 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: After normal selection: available 0 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.Basis{UInt64}
+│ Filled / Processed / Non-redundant : 9 / 9 / 1
+│ Size allocated: 9
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: randomized_sparse_linear_algebra!
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
+│ 9 x 252 with 2268 nnz (100.0%)
+│ A: 1 x 1 with 1 nnz (100.0%) (REF: true, RREF: true)
+│ B: 1 x 251 with 251 nnz (100.0%)
+│ C: 8 x 1 with 8 nnz (100.0%)
+│ D: 8 x 251 with 2008 nnz (100.0%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+│ ⠀⠀⠈⠀⠀│⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉
+│ ─────⠀────────────────────────────────────────
+│ ⠀⠀⢰⠀⠀│⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶
+│ ⠀⠀⢸⠀⠀│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Rows in the lower part: 8
+│ The bumber of blocks: 2
+│ Rows per block: 4
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 8 (out of 8)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.000216 seconds (450 allocations: 89.469 KiB)
+┌ Debug: F4: iteration 2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: F4: available 11 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Selected 11 pairs of degree 6 from pairset, 0 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: After normal selection: available 0 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.Basis{UInt64}
+│ Filled / Processed / Non-redundant : 17 / 17 / 9
+│ Size allocated: 18
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: randomized_sparse_linear_algebra!
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
+│ 53 x 461 with 12972 nnz (53.09%)
+│ A: 42 x 42 with 385 nnz (21.83%) (REF: true, RREF: false)
+│ B: 42 x 419 with 9903 nnz (56.27%)
+│ C: 11 x 42 with 246 nnz (53.25%)
+│ D: 11 x 419 with 2438 nnz (52.9%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠙⢿⡿⠻⠻│⠿⣿⣿⣿⣿⡿⣿⣿⣿⡿⢿⣿⣿⣿⣿⣿⢿⣿⣿⣿⠿⣿⣿⢿⣿⣿⠿⣿⣿⢿⣿⣿⠻⣿⣿⣿⣿
+│ ⠀⠀⠈⠻⣤│⠀⠉⠉⠉⠉⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⢿⣬⣭⣭⣽⣿⣿⣿⣿⣿⣿⣤⣭⣭⣿⣿⣿⣧⣽⣿⣯⣿
+│ ─────⠀─────────────────────────────────────
+│ ⢀⣦⣴⣴⣴│⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣴⣶⣶⣴⣶
+│ ⡜⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Rows in the lower part: 11
+│ The bumber of blocks: 2
+│ Rows per block: 6
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 11 (out of 11)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.001183 seconds (473 allocations: 166.016 KiB)
+┌ Debug: F4: iteration 3
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: F4: available 22 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Selected 22 pairs of degree 7 from pairset, 0 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: After normal selection: available 0 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.Basis{UInt64}
+│ Filled / Processed / Non-redundant : 28 / 28 / 20
+│ Size allocated: 36
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: randomized_sparse_linear_algebra!
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
+│ 150 x 750 with 47538 nnz (42.26%)
+│ A: 128 x 128 with 1974 nnz (12.05%) (REF: true, RREF: false)
+│ B: 128 x 622 with 36566 nnz (45.93%)
+│ C: 22 x 128 with 1538 nnz (54.62%)
+│ D: 22 x 622 with 7460 nnz (54.52%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠙⢿⡟⠟⠛⠟│⣿⣿⣿⣿⣿⡟⣿⣿⢻⣿⣿⣿⣿⣿⡟⣿⣿⢻⣿⣿⣿⣿⣿⡟⣿⣿⣿⣿⣿⣿⣿⢻⣿⣿
+│ ⠀⠀⠙⢭⣀⣉│⠉⠉⠹⠿⠿⣿⣿⣿⣿⣿⣿⣿⣉⣉⣛⣿⣿⣿⣿⣿⣿⣀⣉⣛⣿⣿⣿⣇⣈⣻⣿⣈⣿⣻
+│ ⠀⠀⠀⠀⠙⢯│⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⠿⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣻⣿⣿
+│ ──────⠀──────────────────────────────────
+│ ⣸⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Rows in the lower part: 22
+│ The bumber of blocks: 3
+│ Rows per block: 8
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 19 (out of 22)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.003051 seconds (537 allocations: 349.203 KiB)
+┌ Debug: F4: iteration 4
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: F4: available 56 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Selected 56 pairs of degree 8 from pairset, 0 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: After normal selection: available 0 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.Basis{UInt64}
+│ Filled / Processed / Non-redundant : 47 / 47 / 39
+│ Size allocated: 72
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: randomized_sparse_linear_algebra!
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
+│ 341 x 1113 with 140989 nnz (37.15%)
+│ A: 285 x 285 with 7696 nnz (9.47%) (REF: true, RREF: false)
+│ B: 285 x 828 with 99469 nnz (42.15%)
+│ C: 56 x 285 with 8207 nnz (51.42%)
+│ D: 56 x 828 with 25617 nnz (55.25%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠙⢿⠟⠁⠉⠙⠃⠉│⠉⣿⣿⣿⣿⣿⣿⣿⡏⣿⣿⣿⣿⣿⣿⡏⠉⣿⣿⣿⣿⡏⢩⣿⣿⡇⢩⣿⢹⣿
+│ ⠀⠀⠀⠀⠙⢧⣤⣤⣥⣤│⠀⠉⠛⠻⠿⠿⠿⠿⣧⣭⣭⣿⣿⣿⣿⣧⣤⣭⣽⣿⣿⣧⣬⣭⣿⣧⣬⣿⣬⣿
+│ ⠀⠀⠀⠀⠀⠀⠙⢧⡄⠤│⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣿⣿⣿⣿⣿⡿⠿⣿⣿⣿⣿⡿⢿⣿⣿⡿⢿⣿⢿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠙⢿│⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⠉⠉⠉⠉⠿⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ──────────⠀──────────────────────────────
+│ ⢀⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⣸⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Rows in the lower part: 56
+│ The bumber of blocks: 5
+│ Rows per block: 12
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 45 (out of 56)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.016401 seconds (745 allocations: 949.547 KiB)
+┌ Debug: F4: iteration 5
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: F4: available 150 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Selected 150 pairs of degree 9 from pairset, 0 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: After normal selection: available 0 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.Basis{UInt64}
+│ Filled / Processed / Non-redundant : 92 / 92 / 84
+│ Size allocated: 144
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: randomized_sparse_linear_algebra!
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
+│ 646 x 1459 with 361165 nnz (38.32%)
+│ A: 496 x 496 with 26090 nnz (10.61%) (REF: true, RREF: false)
+│ B: 496 x 963 with 217475 nnz (45.53%)
+│ C: 150 x 496 with 30515 nnz (41.01%)
+│ D: 150 x 963 with 87085 nnz (60.29%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠙⢯⣿⣿⣿⡿⠿⣿⣿⣿⠿⣾⢿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢿⣿⣿⣿⡿⢿⣿⡷⢿⡿⣿
+│ ⠀⠀⠙⢿⣿⠋⠉⠉⣛⠛⠉⠙⠉│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣟⣛⣿⣿⣿⣿⢙⣛⣿⣿⡏⢙⣻⡏⣛⡏⣿
+│ ⠀⠀⠀⠀⠙⢧⣤⣤⣭⣭⣤⣤⣤│⠛⠻⠿⠿⠿⣯⣽⣿⣿⣿⣯⣭⣭⣽⣿⣿⣬⣭⣭⣿⣧⣬⣭⣧⣭⣧⣯
+│ ⠀⠀⠀⠀⠀⠀⠈⠳⣶⠒⠀⠒⠐│⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣻⣿⣿⣿⣟⣻⣿⣟⣿⣟⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⣶⠾⠶│⠀⠀⠀⠀⠀⠙⠛⠛⠛⠛⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⣾│⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠛⠛⠛⢻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ─────────────⠀───────────────────────────
+│ ⠀⢠⣿⣾⣿⣶⣿⣿⣿⣶⣿⣶⣶│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⢠⠏⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⡞⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Rows in the lower part: 150
+│ The bumber of blocks: 8
+│ Rows per block: 19
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 95 (out of 150)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.073503 seconds (1.15 k allocations: 2.099 MiB)
+┌ Debug: F4: iteration 6
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: F4: available 380 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Selected 380 pairs of degree 10 from pairset, 0 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: After normal selection: available 0 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.Basis{UInt64}
+│ Filled / Processed / Non-redundant : 187 / 187 / 179
+│ Size allocated: 288
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: randomized_sparse_linear_algebra!
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
+│ 1115 x 1688 with 758045 nnz (40.28%)
+│ A: 735 x 735 with 65554 nnz (12.13%) (REF: true, RREF: false)
+│ B: 735 x 953 with 362271 nnz (51.72%)
+│ C: 380 x 735 with 115039 nnz (41.19%)
+│ D: 380 x 953 with 215181 nnz (59.42%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠙⢿⣿⣿⣿⡏⠉⣛⣿⣿⣿⠈⠉⠉⠃⠉⠈│⣿⣿⣿⣿⣟⣻⣿⣿⡇⠉⣛⣻⣿⡇⠉⣛⣿⡇⠉⣻⠈⣻⣟
+│ ⠀⠀⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⢿⡿⠿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠙⢷⣶⣾⣿⣿⣿⣴⣾⣷⣦⣶⠴│⠛⠛⣿⣿⣿⣿⣿⣿⣧⣿⣿⣿⣿⣧⣿⣿⣿⣧⣿⣿⣼⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠙⢿⣿⣿⣿⠀⠰⢎⡀⠀⠀│⠀⠀⣿⣿⣿⣿⣿⣿⣧⣶⣿⣿⣿⣧⣶⣿⣿⣧⣶⣿⣴⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⣭⠀⠀⠀⠀⠀⠀│⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⣭⡭⠍⠭⠩│⠀⠀⠉⠉⣿⣿⣿⣿⡿⣿⣿⣿⣿⡿⣿⣿⣿⡿⣿⣿⢿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⣦⡴⠤│⠀⠀⠀⠀⠹⠿⠿⠿⣯⣭⣿⣿⣿⣯⣭⣿⣿⣯⣭⣿⣭⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⣬│⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠿⠿⠿⣯⣿⣿⣿⣯⣿⣿⣽⣿⣿
+│ ─────────────────⠀───────────────────────
+│ ⠀⠀⠀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⡼⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⢰⠃⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⢀⡏⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⡞⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Rows in the lower part: 380
+│ The bumber of blocks: 12
+│ Rows per block: 32
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 182 (out of 380)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.230199 seconds (1.84 k allocations: 3.634 MiB)
+┌ Debug: F4: iteration 7
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: F4: available 485 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Selected 60 pairs of degree 9 from pairset, 425 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: After normal selection: available 425 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.Basis{UInt64}
+│ Filled / Processed / Non-redundant : 369 / 369 / 349
+│ Size allocated: 576
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: randomized_sparse_linear_algebra!
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
+│ 651 x 1362 with 389606 nnz (43.94%)
+│ A: 591 x 591 with 38032 nnz (10.89%) (REF: true, RREF: false)
+│ B: 591 x 771 with 305254 nnz (66.99%)
+│ C: 60 x 591 with 18240 nnz (51.44%)
+│ D: 60 x 771 with 28080 nnz (60.7%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠻⣿⣿⣿⣿⣿⣿⣿⣿⠉⠉⠙⠻⠏⠉⠙⠉│⣿⣿⣿⣿⣿⡟⠛⣻⣿⣿⣿⠉⠛⢛⣿⣿⠉⠛⣻⡏⢛⡟⣟
+│ ⠀⠈⠻⣿⣿⣿⣿⣿⣿⠀⠀⠘⡇⠄⠀⠀⠀│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣿⣿⣿⣿⣶⣿⣿⣷⣿⣿⣿
+│ ⠀⠀⠀⠈⠻⣍⣿⣿⣿⠀⠀⠀⡇⠀⠀⠀⠀│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠈⠻⣟⠛⠀⠀⠀⠃⠀⠀⠀⠀│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠈⢣⣤⣤⣤⡤⢤⣤⠤⠤│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢶⣶⡗⠆⠐⠖⠐│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠛⣿⣿⣿⣿⠛⣿⣿⡟⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢧⡄⠀⠠⠀│⣿⣿⣿⣿⣿⡿⠿⣿⣿⣿⣿⠿⠿⢿⣿⣿⠿⠿⣿⡿⢿⡿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢿⣉⢉│⠀⠈⠉⠉⠉⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢶│⠀⠀⠀⠀⠀⠈⠉⠛⠛⠛⠻⠶⣿⣿⣿⣿⣶⣿⣿⣷⣿⣿⣿
+│ ─────────────────⠀───────────────────────
+│ ⣰⣶⣾⣿⣿⣿⣿⣿⣿⣶⣶⣾⣧⣴⣶⣤⣤│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣿⣿⣿⣿⣶⣿⣿⣷⣿⣿⣿
+│ ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Rows in the lower part: 60
+│ The bumber of blocks: 5
+│ Rows per block: 12
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 60 (out of 60)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.050894 seconds (865 allocations: 1.126 MiB)
+┌ Debug: F4: iteration 8
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: F4: available 725 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Selected 300 pairs of degree 9 from pairset, 425 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: After normal selection: available 425 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.Basis{UInt64}
+│ Filled / Processed / Non-redundant : 429 / 429 / 349
+│ Size allocated: 576
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: randomized_sparse_linear_algebra!
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
+│ 931 x 1342 with 582762 nnz (46.64%)
+│ A: 631 x 631 with 56476 nnz (14.18%) (REF: true, RREF: false)
+│ B: 631 x 711 with 312686 nnz (69.7%)
+│ C: 300 x 631 with 86520 nnz (45.71%)
+│ D: 300 x 711 with 127080 nnz (59.58%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠙⢿⣿⣿⣿⣿⣿⣿⡇⠀⢈⣉⣿⣿⡇⠀⠈⠀│⣿⣿⣿⡇⣉⣹⣿⣿⣿⡇⢈⣉⣿⣿⡇⢈⣉⣿⡇⣹⣏⣿
+│ ⠀⠀⠙⢿⠿⢿⣿⣿⡇⠀⠈⣿⣿⣿⡇⠀⠀⠀│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠑⢾⣿⣿⡇⠀⠀⣿⣿⣿⡇⠀⠀⠀│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⢸⣿⣿⡇⠀⠀⠀│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠙⢟⣛⣿⣿⣿⡟⢛⣉⢉│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢿⣿⣿⡇⠀⢀⠀│⣿⣿⣿⣷⣿⣿⣿⣿⣿⣷⣾⣿⣿⣿⣷⣾⣿⣿⣷⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢟⡁⠀⠀⠀│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢿⣋⢋│⠉⠉⠉⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢶│⠀⠀⠀⠀⠉⠙⠛⠛⠛⠷⢾⣿⣿⣿⣷⣾⣿⣿⣷⣿⣿⣿
+│ ──────────────────⠀──────────────────────
+│ ⠀⠀⠀⣠⣋⣿⣿⣿⣇⣀⣸⣿⣿⣿⣇⣀⠀⠀│⣿⣿⣿⣇⣿⣿⣿⣿⣿⣇⣸⣿⣿⣿⣇⣸⣿⣿⣇⣿⣿⣿
+│ ⠀⠀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⢰⢻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⡏⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⡼⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Rows in the lower part: 300
+│ The bumber of blocks: 11
+│ Rows per block: 28
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 300 (out of 300)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.339664 seconds (2.79 k allocations: 3.642 MiB)
+┌ Debug: F4: iteration 9
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: F4: available 1421 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Selected 960 pairs of degree 8 from pairset, 461 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: After normal selection: available 461 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.Basis{UInt64}
+│ Filled / Processed / Non-redundant : 729 / 729 / 339
+│ Size allocated: 1152
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: randomized_sparse_linear_algebra!
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
+│ 1605 x 1056 with 691623 nnz (40.81%)
+│ A: 645 x 645 with 100263 nnz (24.1%) (REF: true, RREF: false)
+│ B: 645 x 411 with 195840 nnz (73.88%)
+│ C: 960 x 645 with 157650 nnz (25.46%)
+│ D: 960 x 411 with 237870 nnz (60.29%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠙⢯⣿⣿⣿⣿⣿⣿⣿⣿⠛⠿⣿⣿⣿⣿⣿⣿⠩│⡿⢿⣿⣿⣿⡿⢿⣿⣿⡿⣿⣿⣿
+│ ⠀⠀⠙⢿⣿⣿⣿⣿⣿⣿⠀⣶⣿⣿⣿⣿⣿⣿⠀│⣷⣾⣿⣿⣿⣷⣾⣿⣿⣷⣿⣿⣿
+│ ⠀⠀⠀⠀⠙⢯⣿⣿⣿⣿⠀⣿⣿⣿⣿⣿⣿⣿⠀│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠙⢯⡉⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠉⠻⣿⣿⣿⣿⣿⣿⣿⣿⠿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⣭⣭⣭⣭⣭⣭⠠│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⣭⣭⣭⣭⠀│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⣄⠀⠀│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⢶│⠿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ───────────────────⠀─────────────
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣶⣶⣿⣿⣿⣿⣿⣿⣶│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⡞⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⢰⠃⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⠀⡏⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⠀⢸⠁⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⢀⡏⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⠀⣸⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⢀⡇⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⠀⣸⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⢰⠃⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⠀⡏⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⠀⢸⠁⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⠀⢠⠏⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⢀⡏⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ ⡼⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Rows in the lower part: 960
+│ The bumber of blocks: 18
+│ Rows per block: 54
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 411 (out of 960)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.204751 seconds (3.67 k allocations: 1.236 MiB)
+┌ Debug: F4: iteration 10
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: F4: available 866 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Selected 15 pairs of degree 2 from pairset, 851 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: After normal selection: available 851 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.Basis{UInt64}
+│ Filled / Processed / Non-redundant : 1140 / 1140 / 411
+│ Size allocated: 1152
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: randomized_sparse_linear_algebra!
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
+│ 30 x 15 with 30 nnz (6.67%)
+│ A: 15 x 15 with 15 nnz (6.67%) (REF: true, RREF: true)
+│ B: 15 x 0 with 0 nnz (NaN%)
+│ C: 15 x 15 with 15 nnz (6.67%)
+│ D: 15 x 0 with 0 nnz (NaN%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠐⢄⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠑⢄⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠑⢄⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠑⢄│⠀⠀⠀⠀⠀
+│ ────────⠀─────
+│ ⠀⠀⠀⠀⠀⠀⠀⡠│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⡠⠊⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⡠⠊⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⢀⡠⠊⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Rows in the lower part: 15
+│ The bumber of blocks: 3
+│ Rows per block: 5
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 0 (out of 15)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.000147 seconds (384 allocations: 24.844 KiB)
+┌ Debug: F4: iteration 11
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: F4: available 851 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Selected 35 pairs of degree 3 from pairset, 816 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: After normal selection: available 816 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.Basis{UInt64}
+│ Filled / Processed / Non-redundant : 1140 / 1140 / 411
+│ Size allocated: 1152
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: randomized_sparse_linear_algebra!
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
+│ 70 x 35 with 70 nnz (2.86%)
+│ A: 35 x 35 with 35 nnz (2.86%) (REF: true, RREF: true)
+│ B: 35 x 0 with 0 nnz (NaN%)
+│ C: 35 x 35 with 35 nnz (2.86%)
+│ D: 35 x 0 with 0 nnz (NaN%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠐⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠉⠢⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠑⠢⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⢄⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄│⠀⠀⠀⠀⠀
+│ ──────────────────⠀─────
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠔⠉⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⠊⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠔⠊⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⠊⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⡠⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⡠⠊⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⡠⠊⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⢀⡠⠊⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Rows in the lower part: 35
+│ The bumber of blocks: 4
+│ Rows per block: 9
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 0 (out of 35)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.000150 seconds (384 allocations: 25.734 KiB)
+┌ Debug: F4: iteration 12
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: F4: available 816 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Selected 70 pairs of degree 4 from pairset, 746 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: After normal selection: available 746 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.Basis{UInt64}
+│ Filled / Processed / Non-redundant : 1140 / 1140 / 411
+│ Size allocated: 1152
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: randomized_sparse_linear_algebra!
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
+│ 140 x 70 with 140 nnz (1.43%)
+│ A: 70 x 70 with 70 nnz (1.43%) (REF: true, RREF: true)
+│ B: 70 x 0 with 0 nnz (NaN%)
+│ C: 70 x 70 with 70 nnz (1.43%)
+│ D: 70 x 0 with 0 nnz (NaN%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄│⠀⠀⠀⠀⠀
+│ ────────────────────────⠀─────
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠔│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠜⠁⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠜⠁⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠜⠁⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠜⠁⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠜⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠖⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⣀⠖⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⣀⠖⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⣀⠖⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⣀⠖⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⣀⠖⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Rows in the lower part: 70
+│ The bumber of blocks: 5
+│ Rows per block: 14
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 0 (out of 70)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.000134 seconds (385 allocations: 27.609 KiB)
+┌ Debug: F4: iteration 13
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: F4: available 746 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Selected 117 pairs of degree 5 from pairset, 629 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: After normal selection: available 629 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.Basis{UInt64}
+│ Filled / Processed / Non-redundant : 1140 / 1140 / 411
+│ Size allocated: 1152
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: randomized_sparse_linear_algebra!
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
+│ 234 x 117 with 234 nnz (0.85%)
+│ A: 117 x 117 with 117 nnz (0.85%) (REF: true, RREF: true)
+│ B: 117 x 0 with 0 nnz (NaN%)
+│ C: 117 x 117 with 117 nnz (0.85%)
+│ D: 117 x 0 with 0 nnz (NaN%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄│⠀⠀⠀⠀⠀
+│ ────────────────────────⠀─────
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠞│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠞⠁⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠞⠁⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠞⠁⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠞⠁⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⣠⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⣠⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⣠⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⣠⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⣠⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Rows in the lower part: 117
+│ The bumber of blocks: 7
+│ Rows per block: 17
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 0 (out of 117)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.000139 seconds (385 allocations: 29.703 KiB)
+┌ Debug: F4: iteration 14
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: F4: available 629 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Selected 165 pairs of degree 6 from pairset, 464 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: After normal selection: available 464 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.Basis{UInt64}
+│ Filled / Processed / Non-redundant : 1140 / 1140 / 411
+│ Size allocated: 1152
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: randomized_sparse_linear_algebra!
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
+│ 330 x 165 with 330 nnz (0.61%)
+│ A: 165 x 165 with 165 nnz (0.61%) (REF: true, RREF: true)
+│ B: 165 x 0 with 0 nnz (NaN%)
+│ C: 165 x 165 with 165 nnz (0.61%)
+│ D: 165 x 0 with 0 nnz (NaN%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄│⠀⠀⠀⠀⠀
+│ ────────────────────────⠀─────
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠞│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠞⠁⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠞⠁⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠞⠁⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠞⠁⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⣠⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⣠⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⣠⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⣠⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⣠⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Rows in the lower part: 165
+│ The bumber of blocks: 8
+│ Rows per block: 21
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 0 (out of 165)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.000138 seconds (384 allocations: 31.969 KiB)
+┌ Debug: F4: iteration 15
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: F4: available 464 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Selected 3 pairs of degree 7 from pairset, 461 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: After normal selection: available 461 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.Basis{UInt64}
+│ Filled / Processed / Non-redundant : 1140 / 1140 / 411
+│ Size allocated: 1152
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: randomized_sparse_linear_algebra!
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
+│ 6 x 3 with 6 nnz (33.33%)
+│ A: 3 x 3 with 3 nnz (33.33%) (REF: true, RREF: true)
+│ B: 3 x 0 with 0 nnz (NaN%)
+│ C: 3 x 3 with 3 nnz (33.33%)
+│ D: 3 x 0 with 0 nnz (NaN%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠀⠄⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠈⠠⠀│⠀⠀⠀⠀⠀
+│ ─────⠀─────
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⡀⠠⠈⠀│⠀⠀⠀⠀⠀
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Rows in the lower part: 3
+│ The bumber of blocks: 2
+│ Rows per block: 2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 0 (out of 3)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.000126 seconds (384 allocations: 24.312 KiB)
+┌ Debug: F4: iteration 16
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: F4: available 461 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Selected 120 pairs of degree 9 from pairset, 341 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: After normal selection: available 341 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.Basis{UInt64}
+│ Filled / Processed / Non-redundant : 1140 / 1140 / 411
+│ Size allocated: 1152
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: randomized_sparse_linear_algebra!
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
+│ 1443 x 1323 with 136262 nnz (7.14%)
+│ A: 1323 x 1323 with 86822 nnz (4.96%) (REF: true, RREF: false)
+│ B: 1323 x 0 with 0 nnz (NaN%)
+│ C: 120 x 1323 with 49440 nnz (31.14%)
+│ D: 120 x 0 with 0 nnz (NaN%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠙⢟⠛⠃⠀⠀⠀⠀⠀⢸⣿⣿⣿⣿⣿⣿⡇⠀⢸⣿⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⠀⠀⠀⠀⠀
+│ ⠀⠀⠑⢄⠀⠀⠀⠀⠀⠸⠿⠿⠿⠿⠿⠿⠇⠀⠸⠿⠸⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄│⠀⠀⠀⠀⠀
+│ ────────────────────────────────────────⠀─────
+│ ⠀⢀⣴⣧⣤⣤⣤⣶⣶⣶⣾⣿⣿⣿⣿⣿⣧⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⠀⠀⠀⠀⠀
+│ ⡰⠋⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⠀⠀⠀⠀⠀
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Rows in the lower part: 120
+│ The bumber of blocks: 7
+│ Rows per block: 18
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 0 (out of 120)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.001023 seconds (384 allocations: 81.781 KiB)
+┌ Debug: F4: iteration 17
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: F4: available 341 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Selected 341 pairs of degree 10 from pairset, 0 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: After normal selection: available 0 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.Basis{UInt64}
+│ Filled / Processed / Non-redundant : 1140 / 1140 / 411
+│ Size allocated: 1152
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: randomized_sparse_linear_algebra!
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
+│ 1848 x 1507 with 383701 nnz (13.78%)
+│ A: 1507 x 1507 with 120449 nnz (5.3%) (REF: true, RREF: false)
+│ B: 1507 x 0 with 0 nnz (NaN%)
+│ C: 341 x 1507 with 263252 nnz (51.23%)
+│ D: 341 x 0 with 0 nnz (NaN%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠙⢿⣿⣿⣉⣉⣿⣿⣿⣿⣿⣿⣉⣉⣿⣿⣿⣿⣿⣿⣏⣉⣹⣿⣿⣿⣿⣏⣉⣿⣿⣿⣏⣹⣿⣿⣹⣿⣿│⠀⠀⠀⠀⠀
+│ ⠀⠀⠙⢦⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠢⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⣄⠀⠀⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⣄⠀⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⣄⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⣄⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⢄│⠀⠀⠀⠀⠀
+│ ───────────────────────────────────────⠀─────
+│ ⠀⠀⠀⡼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⠀⠀⠀⠀⠀
+│ ⠀⠀⡼⠁⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⠀⠀⠀⠀⠀
+│ ⠀⢰⠃⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣽⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⠀⠀⠀⠀⠀
+│ ⢀⡏⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⠀⠀⠀⠀⠀
+│ ⡞⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿│⠀⠀⠀⠀⠀
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Rows in the lower part: 341
+│ The bumber of blocks: 11
+│ Rows per block: 31
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Nonzero rows: 0 (out of 341)
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  0.002378 seconds (384 allocations: 89.812 KiB)
+┌ Debug: deterministic_sparse_interreduction!
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
+│ 411 x 411 with 411 nnz (0.24%)
+│ A: 411 x 0 with 0 nnz (NaN%) (REF: true, RREF: true)
+│ B: 411 x 411 with 411 nnz (0.24%)
+│ C: 0 x 0 with 0 nnz (NaN%)
+│ D: 0 x 411 with 0 nnz (NaN%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠀⠀⠀⠀⠀│⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀│⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦⡀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦⡀⠀
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦
+│ ─────⠀────────────────────────────────────────
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+┌ Debug: Converting polynomials from internal representation to output format
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\logging.jl:126
+  1.199239 seconds (83.32 k allocations: 92.681 MiB, 1.16% gc time)
+

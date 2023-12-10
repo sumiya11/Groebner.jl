@@ -1,12 +1,10 @@
 # Main file that defines the f4! function.
 
-# Functions here mostly accept or output a subset of these objects:
-# ring - current polynomial ring,
-# basis - a struct that stores polynomials,
-# matrix - a struct that stores coefficients of polynomials to compute normal
-#            forms,
-# hashtable - a hashtable that stores monomials. (each monomial in the basis
-#        points to a bucket in the hashtable)
+# Functions here mostly work with a subset of these objects:
+# ring      - current polynomial ring,
+# basis     - a struct that stores polynomials,
+# matrix    - a struct that is used for F4-style reduction,
+# hashtable - a hashtable that stores monomials.
 
 @noinline __throw_maximum_iterations_exceeded(iters) =
     throw("""Something probably went wrong in Groebner.jl/F4. 
@@ -14,14 +12,10 @@
           Please consider submitting a GitHub issue.""")
 
 # Given the polynomial ring and the arrays of monomials and coefficients,
-# initializes and returns the following structures:
-#   - basis: a Basis instance that stores polynomials,
-#   - pairset: a Pairset instance that stores critical pairs,
-#   - hashtable: a MonomialHashtable instance that stores monomials.
-#   - permutation: a sorting permutation for input polynomials.
+# initializes and returns the structs that are necessary for calling F4
 #
-# If `normalize_input=true` is provided, normalizes the basis.
-# If `sort_input=true` is provided, sorts the basis.
+# If `normalize_input=true` is provided, also normalizes the polynomials. 
+# If `sort_input=true` is provided, also sorts the polynomials.
 @timeit function initialize_structs(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
@@ -30,10 +24,10 @@
     normalize_input=true,
     sort_input=true
 ) where {M <: Monom, C <: Coeff}
-    @log level = -3 "Initializing structs.."
+    @log level = -5 "Initializing structs.."
 
     tablesize = select_hashtable_size(ring, monoms)
-    @log level = -3 "Initial hashtable size is $tablesize"
+    @log level = -5 "Initial hashtable size is $tablesize"
 
     # Basis for storing basis elements,
     # Pairset for storing critical pairs of basis elements,
@@ -116,12 +110,23 @@ end
     # Construct a mapping from monomials to matrix columns and re-enumerate
     # matrix columns
     column_to_monom_mapping!(matrix, symbol_ht)
+    # Call the linear algebra backend
     linear_algebra!(matrix, basis, params)
     # Extract nonzero rows from the matrix into the basis
     convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 end
 
 # F4 symbolic preprocessing
+@timeit function symbolic_preprocessing!(
+    basis::Basis,
+    matrix::MacaulayMatrix,
+    ht::MonomialHashtable,
+    symbol_ht::MonomialHashtable,
+    params::AlgorithmParameters
+)
+    symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
+end
+
 @timeit function symbolic_preprocessing!(
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -133,11 +138,11 @@ end
     # 2. Monomials that represent the columns of the matrix are stored in the
     #    symbol_ht hashtable.
     symbol_load = symbol_ht.load
-    ncols = matrix.ncolumns
+    ncols = matrix.ncols_left
 
     resize_matrix_upper_part_if_needed!(matrix, ncols + symbol_load)
 
-    @log level = -6 "Finding reducers in the basis..." basis.nnonredundant
+    @log level = -5 "Finding reducers in the basis..." basis.nnonredundant
 
     # 3. Traverse all monomials in symbol_ht and search for a polynomial reducer
     #    for each monomial.
@@ -149,25 +154,23 @@ end
             i += MonomIdx(1)
             continue
         end
-        resize_matrix_upper_part_if_needed!(matrix, matrix.nupper + 1)
+        resize_matrix_upper_part_if_needed!(matrix, matrix.nrows_filled_upper + 1)
 
         hashval = symbol_ht.hashdata[i]
         symbol_ht.hashdata[i] =
             Hashvalue(UNKNOWN_PIVOT_COLUMN, hashval.hash, hashval.divmask, hashval.deg)
-        matrix.ncolumns += 1
+        matrix.ncols_left += 1
         find_multiplied_reducer!(basis, matrix, ht, symbol_ht, i)
         i += MonomIdx(1)
     end
 
-    # Shrink the matrix, set the dimensions
-    resize!(matrix.upper_rows, matrix.nupper)
-    matrix.nrows += matrix.nupper - ncols
-    matrix.nlower = matrix.nrows - matrix.nupper
-    matrix.size = matrix.nrows
+    # Shrink the matrix
+    resize!(matrix.upper_rows, matrix.nrows_filled_upper)
+
+    nothing
 end
 
-# Given a `basis` object that stores some groebner basis
-# performs basis interreduction and writes the result to `basis` inplace
+# Performs autoreduction of basis elements inplace
 function reducegb_f4!(
     ring::PolyRing,
     basis::Basis,
@@ -176,7 +179,7 @@ function reducegb_f4!(
     symbol_ht::MonomialHashtable{M},
     params
 ) where {M}
-    @log level = -7 "Entering autoreduction" basis
+    @log level = -5 "Entering autoreduction" basis
 
     etmp = construct_const_monom(M, ht.nvars)
     # etmp is now set to zero, and has zero hash
@@ -187,25 +190,23 @@ function reducegb_f4!(
     # add all non redundant elements from the basis
     # as matrix upper rows
     @inbounds for i in 1:(basis.nnonredundant) #
-        matrix.nrows += 1
-        uprows[matrix.nrows] = multiplied_poly_to_matrix_row!(
+        row_idx = matrix.nrows_filled_upper += 1
+        uprows[row_idx] = multiplied_poly_to_matrix_row!(
             symbol_ht,
             ht,
             MonomHash(0),
             etmp,
             basis.monoms[basis.nonredundant[i]]
         )
-
-        matrix.upper_to_coeffs[matrix.nrows] = basis.nonredundant[i]
-        matrix.upper_to_mult[matrix.nrows] = insert_in_hash_table!(ht, etmp)
-        hv = symbol_ht.hashdata[uprows[matrix.nrows][1]]
-        symbol_ht.hashdata[uprows[matrix.nrows][1]] =
+        matrix.upper_to_coeffs[row_idx] = basis.nonredundant[i]
+        matrix.upper_to_mult[row_idx] = insert_in_hash_table!(ht, etmp)
+        hv = symbol_ht.hashdata[uprows[row_idx][1]]
+        symbol_ht.hashdata[uprows[row_idx][1]] =
             Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
     end
 
     # needed for correct column count in symbol hashtable
-    matrix.ncolumns = matrix.nrows
-    matrix.nupper = matrix.nrows
+    matrix.ncols_left = matrix.ncols_left
 
     symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
     # set all pivots to unknown
@@ -215,9 +216,8 @@ function reducegb_f4!(
     end
 
     column_to_monom_mapping!(matrix, symbol_ht)
-    matrix.ncolumns = matrix.nleft + matrix.nright
 
-    linear_algebra_reducegb!(matrix, basis, params)
+    linear_algebra_autoreduce_basis!(matrix, basis, params)
 
     convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 
@@ -260,20 +260,22 @@ function select_tobereduced!(
     # to lower rows of the matrix
     reinitialize_matrix!(matrix, max(basis.nfilled, tobereduced.nfilled))
     resize!(matrix.lower_rows, tobereduced.nfilled)
-    resize!(matrix.coeffs, tobereduced.nfilled)
+    resize!(matrix.some_coeffs, tobereduced.nfilled)
 
     etmp = construct_const_monom(M, ht.nvars)
 
     @inbounds for i in 1:(tobereduced.nfilled)
-        matrix.nrows += 1
+        matrix.nrows_filled_lower += 1
+        row_idx = matrix.nrows_filled_lower
+
         gen = tobereduced.monoms[i]
         h = MonomHash(0)
-        matrix.lower_rows[matrix.nrows] =
+        matrix.lower_rows[row_idx] =
             multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, gen)
-        matrix.lower_to_coeffs[matrix.nrows] = i
+        matrix.lower_to_coeffs[row_idx] = i
         # TODO: not really needed here
-        matrix.lower_to_mult[matrix.nrows] = insert_in_hash_table!(ht, etmp)
-        matrix.coeffs[matrix.nrows] = tobereduced.coeffs[i]
+        matrix.lower_to_mult[row_idx] = insert_in_hash_table!(ht, etmp)
+        matrix.some_coeffs[row_idx] = tobereduced.coeffs[i]
     end
 
     basis.nnonredundant = basis.nprocessed = basis.nfilled
@@ -358,23 +360,23 @@ function find_multiplied_reducer!(
     # (!) hash is linear
     @inbounds h = symbol_ht.hashdata[vidx].hash - ht.hashdata[rpoly[1]].hash
 
-    matrix.upper_rows[matrix.nupper + 1] =
+    matrix.upper_rows[matrix.nrows_filled_upper + 1] =
         multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, rpoly)
-    @inbounds matrix.upper_to_coeffs[matrix.nupper + 1] = basis.nonredundant[i]
+    @inbounds matrix.upper_to_coeffs[matrix.nrows_filled_upper + 1] = basis.nonredundant[i]
     # TODO: this line is here with the sole purpose -- to support tracing.
     # Probably want to factor it out.
-    matrix.upper_to_mult[matrix.nupper + 1] = insert_in_hash_table!(ht, etmp)
+    matrix.upper_to_mult[matrix.nrows_filled_upper + 1] = insert_in_hash_table!(ht, etmp)
     # if sugar
     #     # updates sugar
     #     poly = basis.nonredundant[i]
     #     new_poly_sugar = totaldeg(etmp) + basis.sugar_cubes[poly]
-    #     matrix.upper_to_sugar[matrix.nupper + 1] = new_poly_sugar
+    #     matrix.upper_to_sugar[matrix.nrows_filled_upper + 1] = new_poly_sugar
     # end
 
     hv = symbol_ht.hashdata[vidx]
     symbol_ht.hashdata[vidx] = Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
 
-    matrix.nupper += 1
+    matrix.nrows_filled_upper += 1
     i += 1
 
     nothing
@@ -396,14 +398,14 @@ end
 # Returns N, the number of critical pairs of the smallest sugar.
 # Sorts the critical pairs so that the first N pairs are the smallest.
 function lowest_sugar_pairs!(pairset::Pairset, sugar_cubes::Vector{SugarCube})
-    @log level = -1 "Sugar cubes" sugar_cubes
+    @log level = -5 "Sugar cubes" sugar_cubes
     sugar = sort_pairset_by_sugar!(pairset, 1, pairset.load - 1, sugar_cubes)
     @inbounds min_sugar = sugar[1]
     min_idx = 1
     @inbounds while min_idx < pairset.load && sugar[min_idx + 1] == min_sugar
         min_idx += 1
     end
-    @log level = -1 "Selected pairs sugar" sugar min_idx min_sugar
+    @log level = -5 "Selected pairs sugar" sugar min_idx min_sugar
     min_idx
 end
 
@@ -498,7 +500,6 @@ end
 
     # 3. At this stage, we know that the first `npairs` pairs in the pairset are 
     #    selected. We add these pairs to the matrix
-    @log level = -4 "Selected $(npairs) critical pairs"
     add_critical_pairs_to_matrix!(pairset, npairs, basis, matrix, ht, symbol_ht)
 
     # 4. Remove selected parirs from the pairset
@@ -507,7 +508,9 @@ end
     end
     pairset.load -= npairs
 
-    @log level = -3 "Selected $(npairs) pairs of degree $(deg) from pairset, $(pairset.load) pairs left"
+    @log level = -5 "Selected $npairs pairs of degree $deg from pairset, $(pairset.load) pairs left"
+    @stat critical_pairs_deg = deg critical_pairs_count = npairs
+
     deg, npairs
 end
 
@@ -534,7 +537,7 @@ function add_critical_pairs_to_matrix!(
     etmp = ht.monoms[1]
     i = 1
     @inbounds while i <= npairs
-        matrix.ncolumns += 1
+        matrix.ncols_left += 1
         npolys = 1
         lcm = pairs[i].lcm
         j = i
@@ -571,20 +574,17 @@ function add_critical_pairs_to_matrix!(
         htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
 
         # add row as a reducer
-        matrix.nupper += 1
-        uprows[matrix.nupper] =
+        row_idx = matrix.nrows_filled_upper += 1
+        uprows[row_idx] =
             multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly_monoms)
         # map upper row to index in basis
-        matrix.upper_to_coeffs[matrix.nupper] = prev
-        matrix.upper_to_mult[matrix.nupper] = insert_in_hash_table!(ht, etmp)
+        matrix.upper_to_coeffs[row_idx] = prev
+        matrix.upper_to_mult[row_idx] = insert_in_hash_table!(ht, etmp)
 
         # mark lcm column as reducer in symbolic hashtable
-        hv = symbol_ht.hashdata[uprows[matrix.nupper][1]]
-        symbol_ht.hashdata[uprows[matrix.nupper][1]] =
+        hv = symbol_ht.hashdata[uprows[row_idx][1]]
+        symbol_ht.hashdata[uprows[row_idx][1]] =
             Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
-
-        # increase number of rows set
-        matrix.nrows += 1
 
         # over all polys with same lcm,
         # add them to the lower part of matrix
@@ -611,24 +611,22 @@ function add_critical_pairs_to_matrix!(
             htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
 
             # add row to be reduced
-            matrix.nlower += 1
-            lowrows[matrix.nlower] =
+            row_idx = matrix.nrows_filled_lower += 1
+            lowrows[row_idx] =
                 multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly_monoms)
             # map lower row to index in basis
-            matrix.lower_to_coeffs[matrix.nlower] = prev
-            matrix.lower_to_mult[matrix.nlower] = insert_in_hash_table!(ht, etmp)
+            matrix.lower_to_coeffs[row_idx] = prev
+            matrix.lower_to_mult[row_idx] = insert_in_hash_table!(ht, etmp)
 
-            hv = symbol_ht.hashdata[lowrows[matrix.nlower][1]]
-            symbol_ht.hashdata[lowrows[matrix.nlower][1]] =
+            hv = symbol_ht.hashdata[lowrows[row_idx][1]]
+            symbol_ht.hashdata[lowrows[row_idx][1]] =
                 Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
-
-            matrix.nrows += 1
         end
 
         i = j
     end
 
-    resize!(matrix.lower_rows, matrix.nrows - matrix.ncolumns)
+    resize!(matrix.lower_rows, matrix.nrows_filled_lower)
 end
 
 function basis_well_formed(key, ring, basis, hashtable)
@@ -658,10 +656,10 @@ function basis_well_formed(key, ring, basis, hashtable)
         else
             length(basis.coeffs[i]) == length(basis.monoms[i]) && continue
             if key in (:input_f4_apply!, :output_f4_apply!)
-                @log level = 10^3 """
-                Unlucky but probably not fatal cancellation in polynomial at index $(i) on apply stage.
+                @log level = 1_000 """
+                Unlucky but perhaps not fatal cancellation in polynomial at index $(i) on apply stage.
                 The number of monomials (expected): $(length(basis.monoms[i]))
-                The number of coefficients (got): $(length(basis.coeffs[i]))"""
+                The number of monomials (got): $(length(basis.coeffs[i]))"""
             else
                 return false
             end
@@ -713,36 +711,36 @@ end
     symbol_ht = initialize_secondary_hashtable(hashtable)
 
     # add the first batch of critical pairs to the pairset
-    @log level = -3 "Processing initial polynomials, generating first critical pairs"
+    @log level = -4 "Processing initial polynomials, generating first critical pairs"
     pairset_size = update!(pairset, basis, hashtable, update_ht)
     update_tracer_pairset!(tracer, pairset_size)
-    @log level = -3 "Out of $(basis.nfilled) polynomials, $(basis.nprocessed) are non-redundant"
-    @log level = -3 "Generated $(pairset.load) critical pairs"
+    @log level = -4 "Out of $(basis.nfilled) polynomials, $(basis.nprocessed) are non-redundant"
+    @log level = -4 "Generated $(pairset.load) critical pairs"
 
     i = 0
     # While there are pairs to be reduced
     while !isempty(pairset)
         i += 1
-        @log level = -3 "F4: iteration $i"
-        @log level = -3 "F4: available $(pairset.load) pairs"
+        @log level = -4 "F4: iteration $i"
+        @log level = -4 "F4: available $(pairset.load) pairs"
 
         @log_memory_locals basis pairset hashtable update_ht symbol_ht
 
         # if the iteration is redundant according to the previous modular run
-        if isready(tracer)
-            if is_iteration_redundant(tracer, i)
-                discard_normal!(
-                    pairset,
-                    basis,
-                    matrix,
-                    hashtable,
-                    symbol_ht,
-                    maxpairs=params.maxpairs
-                )
-                matrix    = initialize_matrix(ring, C)
-                symbol_ht = initialize_secondary_hashtable(hashtable)
-                continue
-            end
+        if isready(tracer) && is_iteration_redundant(tracer, i)
+            discard_normal!(
+                pairset,
+                basis,
+                matrix,
+                hashtable,
+                symbol_ht,
+                maxpairs=params.maxpairs
+            )
+            # matrix    = initialize_matrix(ring, C)
+            # symbol_ht = initialize_secondary_hashtable(hashtable)
+            reinitialize_matrix!(matrix, 0)
+            reinitialize_hashtable!(symbol_ht)
+            continue
         end
 
         # selects pairs for reduction from pairset following normal strategy
@@ -758,9 +756,8 @@ end
             maxpairs=params.maxpairs
         )
         @log level = -3 "After normal selection: available $(pairset.load) pairs"
-        @log level = -3 repr_basis(basis)
 
-        symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
+        symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht, params)
 
         # reduces polys and obtains new potential basis elements
         reduction!(ring, basis, matrix, hashtable, symbol_ht, params)
@@ -775,15 +772,19 @@ end
 
         # clear symbolic hashtable
         # clear matrix
-        matrix    = initialize_matrix(ring, C)
-        symbol_ht = initialize_secondary_hashtable(hashtable)
+        reinitialize_matrix!(matrix, 0)
+        reinitialize_hashtable!(symbol_ht)
+        # matrix    = initialize_matrix(ring, C)
+        # symbol_ht = initialize_secondary_hashtable(hashtable)
 
         if i > 10_000
-            @log level = 1 "Something has gone wrong in F4. Error will follow."
+            @log level = 1_000 "Something has gone wrong in F4. Error will follow."
             @log_memory_locals
             __throw_maximum_iterations_exceeded(i)
         end
     end
+
+    @stat f4_iterations = i
 
     set_ready!(tracer)
     set_final_basis!(tracer, basis.nfilled)
@@ -793,14 +794,11 @@ end
         sweep_redundant!(basis, hashtable)
     end
 
-    # mark redundant elements
     mark_redundant!(basis)
-    @log level = -4 "Filtered elements marked redundant"
 
     if params.reduced
         @log level = -4 "Autoreducing the final basis.."
         reducegb_f4!(ring, basis, matrix, hashtable, symbol_ht, params)
-        @log level = -4 "Autoreduced!"
     end
 
     standardize_basis!(ring, basis, hashtable, hashtable.ord)

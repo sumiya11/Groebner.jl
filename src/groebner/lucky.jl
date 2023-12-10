@@ -36,6 +36,7 @@ mutable struct LuckyPrimes
     primes::Vector{UInt64}
     # product of all used lucky primes
     modulo::BigInt
+
     function LuckyPrimes(coeffs::Vector{Vector{BigInt}})
         new(coeffs, BigInt(), FIRST_LUCKY_PRIME, FIRST_CHECK_PRIME, UInt64[], BigInt(1))
     end

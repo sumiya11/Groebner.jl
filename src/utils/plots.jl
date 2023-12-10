@@ -38,6 +38,8 @@ const ASPECT_RATIO = Ref(4 / 3)
 const DEFAULT_HEIGHT = Ref(15)
 const DEFAULT_WIDTH = Ref(round(Int, DEFAULT_HEIGHT[] * 2ASPECT_RATIO[]))
 
+const DEFAULT_CANVAS_WIDTH = 40
+
 y_pixel_per_char() = 4
 x_pixel_per_char() = 2
 
@@ -278,7 +280,7 @@ function _show(io::IO, c::CanvasMatrix2x2)
     m1, m2, n1, n2 =
         size(c.A.grid, 1), size(c.C.grid, 1), size(c.A.grid, 2), size(c.B.grid, 2)
     if size(c.C.grid, 1) != size(c.D.grid, 1) || size(c.A.grid, 1) != size(c.B.grid, 1)
-        @log level = 1000 "Canvas dimensions do not agree!"
+        @log level = 1_000 "Canvas dimensions do not agree!"
     end
     for i in 1:m1
         printrow(io, c.A.grid[i, :])

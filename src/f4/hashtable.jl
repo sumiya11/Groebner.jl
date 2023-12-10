@@ -28,7 +28,7 @@ const DivisionMask = UInt32
 
 # Hashvalue of a single monomial
 struct Hashvalue
-    # index of the monomial in the F4 matrix (defaults to zero),
+    # index of the monomial in the F4 matrix (defaults to NON_PIVOT_COLUMN, or 0),
     idx::Int32
     # hash of the monomial,
     hash::MonomHash
@@ -105,7 +105,7 @@ function initialize_hashtable(
 
     # initialize fast divisibility params
     use_divmask = nvars <= 32
-    @log level = -2 "Using division masks: $use_divmask"
+    @log level = -5 "Using division masks: $use_divmask"
     charbit = 8
     int32bits = charbit * sizeof(Int32)
     int32bits != 32 && error("Strange story with Ints")
@@ -212,6 +212,29 @@ end
     )
 end
 
+function reinitialize_hashtable!(ht::MonomialHashtable{M}) where {M}
+    initial_size = 2^6
+
+    # Reinitialize counters
+    ht.load = 1
+    ht.offset = 2
+    ht.size = initial_size
+
+    # NOTE: Preserve division info, hasher, and polynomial ring info
+
+    resize!(ht.monoms, ht.size)
+    resize!(ht.hashdata, ht.size)
+    resize!(ht.hashtable, ht.size)
+    hashtable = ht.hashtable
+    @inbounds for i in 1:(ht.size)
+        hashtable[i] = zero(MonomIdx)
+    end
+
+    ht.monoms[1] = construct_const_monom(M, ht.nvars)
+
+    nothing
+end
+
 function select_hashtable_size(ring::PolyRing, monoms)
     nvars = ring.nvars
     sz = length(monoms)
@@ -250,15 +273,18 @@ function resize_hashtable_if_needed!(ht::MonomialHashtable, added::Integer)
 
         resize!(ht.hashdata, ht.size)
         resize!(ht.monoms, ht.size)
-        ht.hashtable = zeros(Int, ht.size)
+        resize!(ht.hashtable, ht.size)
+        @inbounds for i in 1:(ht.size)
+            ht.hashtable[i] = zero(MonomIdx)
+        end
 
         mod = MonomHash(ht.size - 1)
 
-        for i in (ht.offset):(ht.load)
+        @inbounds for i in (ht.offset):(ht.load)
             # hash for this elem is already computed
             he = ht.hashdata[i].hash
             hidx = he
-            @inbounds for j in MonomHash(1):MonomHash(ht.size)
+            for j in MonomHash(1):MonomHash(ht.size)
                 hidx = next_lookup_index(he, j, mod)
                 !iszero(ht.hashtable[hidx]) && continue
                 ht.hashtable[hidx] = i

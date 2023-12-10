@@ -22,22 +22,56 @@ Allows to specify the logging level with `level=N`.
 """
 macro log end
 
+###
+# Some aux. definitions
+
 function meta_formatter_groebner end
 
-@noinline __throw_log_macro_error(file, line, error) =
-    throw(ArgumentError("Invalid syntax for @log macro. $error"))
-
-const _default_message_loglevel = LogLevel(0)
-const _default_logger = @static if VERSION >= v"1.7.0"
-    Ref{Logging.ConsoleLogger}(
-        Logging.ConsoleLogger(
-            Logging.Info,
-            show_limited=false,
-            meta_formatter=meta_formatter_groebner
-        )
+@static if VERSION >= v"1.7.0"
+    backend_logger(io, level) = Logging.ConsoleLogger(
+        io,
+        level,
+        show_limited=false,
+        meta_formatter=meta_formatter_groebner
     )
 else
-    Ref{Logging.ConsoleLogger}(Logging.ConsoleLogger())
+    backend_logger(io, level) = Logging.ConsoleLogger(io, level)
+end
+
+###
+# Groebner logger
+
+struct GroebnerLogger <: Logging.AbstractLogger
+    logger::ConsoleLogger
+
+    GroebnerLogger() = GroebnerLogger(stderr, Logging.LogLevel(0))
+    function GroebnerLogger(io, loglevel::Logging.LogLevel)
+        new(backend_logger(io, loglevel))
+    end
+end
+
+Logging.min_enabled_level(logger::GroebnerLogger) = Logging.min_enabled_level(logger.logger)
+
+function Logging.shouldlog(logger::GroebnerLogger, level, _module, group, id)
+    Logging.shouldlog(logger.logger, level, _module, group, id)
+end
+
+Logging.catch_exceptions(logger::GroebnerLogger) = Logging.catch_exceptions(logger.logger)
+
+function Logging.handle_message(
+    logger::GroebnerLogger,
+    lvl,
+    msg,
+    _mod,
+    group,
+    id,
+    file,
+    line;
+    kwargs...
+)
+    # TODO: consider using ActiveFilteredLogger from LoggingExtras.jl
+    Logging.handle_message(logger.logger, lvl, msg, _mod, group, id, file, line; kwargs...)
+    nothing
 end
 
 function meta_formatter_groebner(level::LogLevel, _module, group, id, file, line)
@@ -65,8 +99,11 @@ function meta_formatter_groebner(level::LogLevel, _module, group, id, file, line
     return color, prefix, suffix
 end
 
+const _groebner_logger = Ref{GroebnerLogger}(GroebnerLogger())
+
 # Updates the global logging parameters in the Groebner module. 
 function update_logger(; loglevel=nothing)
+    !logging_enabled() && return nothing
     # Don't change anything if run from a worker thread.
     # Maybe throw a warning?
     threadid() != 1 && return nothing
@@ -82,20 +119,18 @@ function update_logger(; loglevel=nothing)
     #     )
     # end
     if loglevel !== nothing
-        prev_logger = _default_logger[]
-        new_logger = @static if VERSION >= v"1.7.0"
-            Logging.ConsoleLogger(stderr, loglevel, meta_formatter=meta_formatter_groebner)
-        else
-            Logging.ConsoleLogger(
-                stderr,
-                Logging.LogLevel(loglevel);
-                meta_formatter=meta_formatter_groebner
-            )
-        end
-        _default_logger[] = new_logger
+        _groebner_logger[] = Groebner.GroebnerLogger(stderr, Logging.LogLevel(loglevel))
     end
     nothing
 end
+
+###
+# The @log macro
+
+@noinline __throw_log_macro_error(file, line, error) =
+    throw(ArgumentError("Invalid syntax for @log macro. $error"))
+
+const _default_message_loglevel = Logging.Info
 
 # Parses the arguments to the @log macro and returns a tuple of expressions that
 # would evaluate to (loglevel, msg1, msg2, ...).
@@ -122,8 +157,8 @@ macro log(args...)
     esc(:(
         if $(@__MODULE__).logging_enabled()
             if threadid() == 1
-                with_logger($(@__MODULE__)._default_logger[]) do
-                    @logmsg LogLevel($level) $(msgs...)
+                with_logger($(@__MODULE__)._groebner_logger[]) do
+                    @logmsg LogLevel($level) $(msgs...) _file = $file _line = $line
                 end
             end
         else

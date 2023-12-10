@@ -5,6 +5,8 @@
 const _AA_supported_orderings_symbols = (:lex, :deglex, :degrevlex)
 const _AA_exponent_type = UInt64
 
+AA_is_multivariate_ring(ring) = AbstractAlgebra.nvars(ring) > 1
+
 ###
 # Converting from AbstractAlgebra to internal representation
 
@@ -14,7 +16,7 @@ function peek_at_polynomials(polynomials::Vector{T}) where {T}
     end
     R = parent(first(polynomials))
     nvars = AbstractAlgebra.nvars(R)
-    ord = if hasmethod(AbstractAlgebra.ordering, Tuple{typeof(R)})
+    ord = if AA_is_multivariate_ring(R)
         # if multivariate
         AbstractAlgebra.ordering(R)
     else
@@ -28,7 +30,7 @@ function peek_at_polynomials(polynomials::Vector{T}) where {T}
             "The characteristic of the field of input is too large and is not supported, sorry"
         )
     end
-    :abstractalgebra, length(polynomials), UInt(BigInt(char)), nvars, ord
+    :abstractalgebra, length(polynomials), UInt(char), nvars, ord
 end
 
 function _check_input(polynomials::Vector{T}, kws) where {T}
@@ -38,14 +40,11 @@ function _check_input(polynomials::Vector{T}, kws) where {T}
         __throw_input_not_supported("Coefficient ring must be a field", K)
     end
     if !iszero(AbstractAlgebra.characteristic(K))
-        if hasmethod(AbstractAlgebra.degree, Tuple{typeof(K)})
-            if !isone(AbstractAlgebra.degree(K))
-                __throw_input_not_supported(
-                    "Non-prime coefficient fields are not supported",
-                    K
-                )
-            end
+        # if hasmethod(AbstractAlgebra.degree, Tuple{typeof(K)})
+        if !isone(AbstractAlgebra.degree(K))
+            __throw_input_not_supported("Non-prime coefficient fields are not supported", K)
         end
+        # end
     end
     # if hasmethod(AbstractAlgebra.gens, Tuple{typeof(K)})
     #     __throw_input_not_supported("Parametric coefficients are not supported", K)
@@ -76,12 +75,11 @@ end
 
 function extract_ring(polynomials)
     R = parent(first(polynomials))
-    T = typeof(R)
-    @assert hasmethod(AbstractAlgebra.nvars, Tuple{T})
-    @assert hasmethod(AbstractAlgebra.characteristic, Tuple{T})
+    # @assert hasmethod(AbstractAlgebra.nvars, Tuple{T})
+    # @assert hasmethod(AbstractAlgebra.characteristic, Tuple{T})
     nv = AbstractAlgebra.nvars(R)
     # lex is the default ordering on univariate polynomials
-    ord = if hasmethod(AbstractAlgebra.ordering, Tuple{T})
+    ord = if AA_is_multivariate_ring(R)
         AbstractAlgebra.ordering(R)
     else
         :lex
@@ -89,7 +87,7 @@ function extract_ring(polynomials)
     # type unstable:
     ordT = ordering_sym2typed(ord)
     ch   = AbstractAlgebra.characteristic(R)
-    PolyRing{typeof(ordT)}(nv, ordT, UInt(BigInt(ch)))
+    PolyRing{typeof(ordT)}(nv, ordT, UInt(ch))
 end
 
 function extract_coeffs(
@@ -303,9 +301,8 @@ end
 function get_var_to_index(
     aa_ring::Union{AbstractAlgebra.MPolyRing{T}, AbstractAlgebra.PolyRing{T}}
 ) where {T}
-    Dict{elem_type(aa_ring), Int}(
-        AbstractAlgebra.gens(aa_ring) .=> 1:AbstractAlgebra.nvars(aa_ring)
-    )
+    v = AbstractAlgebra.gens(aa_ring)
+    Dict{elem_type(aa_ring), Int}(v .=> 1:AbstractAlgebra.nvars(aa_ring))
 end
 
 function extract_monoms(

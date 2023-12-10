@@ -2,7 +2,7 @@ module Groebner
 # Groebner is a package for computing Gröbner bases. This is the main file.
 
 # Groebner works over integers modulo a prime and over the rationals. At its
-# heart Groebner implements F4 and modular techniques.
+# heart, Groebner implements F4, multi-modular techniques, and tracing.
 
 """
     invariants_enabled() -> Bool
@@ -10,9 +10,11 @@ module Groebner
 Specifies if custom asserts and invariants are checked.
 If `false`, then all checks are disabled, and entail no runtime overhead.
 
+It is useful to enable this when debugging the Groebner package.
+
 See also `@invariant` in `src/utils/invariants.jl`.
 """
-invariants_enabled() = true
+invariants_enabled() = false
 
 """
     logging_enabled() -> Bool
@@ -26,9 +28,8 @@ logging_enabled() = true
 
 # Groebner does not provide a polynomial implementation of its own but relies on
 # existing symbolic computation packages in Julia for communicating with the
-# user instead. Groebner accepts as its input polynomials from the Julia
-# packages AbstractAlgebra.jl (Oscar.jl) and MultivariatePolynomials.jl. This
-# list can be extended; see `src/input-output/` for details.
+# user. Groebner accepts as its input polynomials from the Julia packages
+# AbstractAlgebra.jl, Nemo.jl (Oscar.jl) and MultivariatePolynomials.jl.
 import AbstractAlgebra
 import AbstractAlgebra: base_ring, elem_type
 
@@ -45,7 +46,8 @@ using Logging
 import MultivariatePolynomials
 import MultivariatePolynomials: AbstractPolynomial, AbstractPolynomialLike
 
-# For printing the tables with statistics in the console nicely
+# For printing the tables with statistics nicely
+import PrettyTables
 using Printf
 
 import TimerOutputs
@@ -54,8 +56,14 @@ import Primes
 import Primes: nextprime
 
 import Random
+import Random: AbstractRNG
 
 using SIMD
+
+function __init__()
+    update_logger(loglevel=Logging.Info)
+    nothing
+end
 
 # For printing some logging info to console nicely
 include("utils/prettyprinting.jl")
@@ -65,6 +73,7 @@ include("utils/logging.jl")
 include("utils/invariants.jl")
 # Provides the macro `@timeit` for measuring performance of the internals
 include("utils/timeit.jl")
+# Provides the macro `@stat` for collecting statistics
 include("utils/statistics.jl")
 
 # Minimalistic plotting with Unicode
@@ -114,11 +123,14 @@ include("f4/basis.jl")
 include("f4/graph.jl")
 # `MacaulayMatrix` implementation
 include("f4/matrix.jl")
+# Linear algebra algorithms
+include("f4/linalg.jl")
 include("f4/sorting.jl")
 # Some very shallow tracing
 include("f4/tracer.jl")
 # All together combined in the F4 algorithm
 include("f4/f4.jl")
+# Learn & apply specific routines
 include("f4/learn-apply.jl")
 
 #= more high level functions =#

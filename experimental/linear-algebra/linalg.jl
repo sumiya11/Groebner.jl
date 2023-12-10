@@ -7,9 +7,9 @@ using Primes
 fields = vcat(
     [GF(p) for p in Primes.primes(2, 200)],
     [GF(p) for p in Primes.primes(201, 500)[1:3:end]],
-    [GF(p) for p in Primes.primes(501, 1000)[1:5:end]],
-    [GF(p) for p in Primes.primes(1001, 2000)[1:15:end]],
-    [GF(p) for p in Primes.primes(5001, 10000)[1:40:end]]
+    [GF(p) for p in Primes.primes(501, 1000)[1:5:end]]
+    # [GF(p) for p in Primes.primes(1001, 2000)[1:15:end]],
+    # [GF(p) for p in Primes.primes(5001, 10000)[1:40:end]]
     # [GF(p) for p in Primes.primes(10_000, 50_000)[1:150:end]],
     # [GF(p) for p in Primes.primes(50_001, 300_000)[1:500:end]],
     # [GF(p) for p in Primes.primes(300_001, 2^20)[1:1000:end]]

@@ -37,7 +37,7 @@ function initialize_computation_graph_f4(
     permutation,
     params
 )
-    @log level = -4 "Initializing computation graph"
+    @log level = -5 "Initializing computation graph"
     input_signature = Vector{Int}(undef, input_basis.nfilled)
     @inbounds for i in 1:length(input_signature)
         input_signature[i] = length(input_basis.monoms[i])
