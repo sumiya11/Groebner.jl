@@ -64,7 +64,7 @@ push!(
     (
         problem_name="groebner, Nemo, GF(2^31-1), cyclic 8",
         result=compute_gb(
-            Groebner.cyclicn(8, ordering=:degrevlex, ground=Nemo.GF(2^31 - 1), np=Nemo)
+            Groebner.cyclicn(8, ordering=:degrevlex, ground=Nemo.GF(2^31 - 1))
         )
     )
 )
@@ -131,9 +131,7 @@ push!(
     suite,
     (
         problem_name="groebner, Nemo, QQ, katsura 8",
-        result=compute_gb(
-            Groebner.katsuran(8, ordering=:degrevlex, ground=Nemo.QQ, np=Nemo)
-        )
+        result=compute_gb(Groebner.katsuran(8, ordering=:degrevlex, ground=Nemo.QQ))
     )
 )
 push!(
@@ -160,7 +158,7 @@ push!(
 
 function multimodular_gb_problem(nbits; np=AbstractAlgebra)
     R, (x1, x2, x3, x4) =
-        np.PolynomialRing(np.QQ, ["x1", "x2", "x3", "x4"], ordering=:degrevlex)
+        PolynomialRing(np.QQ, ["x1", "x2", "x3", "x4"], ordering=:degrevlex)
     nbits_per_prime = 31
     nprimes = max(div(nbits, nbits_per_prime), 1)
     N = prod(map(BigInt, Primes.nextprimes(2^31 - 100, nprimes)))
@@ -243,7 +241,7 @@ push!(
     (
         problem_name="normalform, Nemo, GF(103), cyclic 8",
         result=compute_normalforms(
-            Groebner.cyclicn(8, ordering=:degrevlex, ground=Nemo.GF(103), np=Nemo)
+            Groebner.cyclicn(8, ordering=:degrevlex, ground=Nemo.GF(103))
         )
     )
 )
