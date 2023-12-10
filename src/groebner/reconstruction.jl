@@ -110,6 +110,9 @@ function rational_reconstruction!(
     true
 end
 
+###
+# CRT
+
 """
 Implements the linear Chinese remainder lifting algorithm. Computes the unique
 `x` such that
@@ -142,5 +145,102 @@ function CRT!(
     Base.GMP.MPZ.mul!(n2, c1, a1)
 
     Base.GMP.MPZ.add!(buf, n1, n2)
+    Base.GMP.MPZ.fdiv_r!(buf, M)
+end
+
+function CRT_precompute!(
+    M::BigInt,
+    n1::BigInt,
+    n2::BigInt,
+    c1::BigInt,
+    m1::BigInt,
+    c2::BigInt,
+    m2::UInt
+)
+    Base.GMP.MPZ.mul_ui!(M, m1, m2)
+    Base.GMP.MPZ.set_ui!(n2, m2)
+
+    Base.GMP.MPZ.gcdext!(n1, c1, c2, n2, m1)
+    Base.GMP.MPZ.mul_ui!(c1, m2)
+    Base.GMP.MPZ.mul!(c2, m1)
+
+    nothing
+end
+
+function CRT_precompute!(
+    M::BigInt,
+    n1::BigInt,
+    n2::BigInt,
+    c1::BigInt,
+    m1::BigInt,
+    c2::BigInt,
+    m2::BigInt
+)
+    Base.GMP.MPZ.mul!(M, m1, m2)
+
+    Base.GMP.MPZ.gcdext!(n1, c1, c2, m2, m1)
+    Base.GMP.MPZ.mul!(c1, m2)
+    Base.GMP.MPZ.mul!(c2, m1)
+
+    nothing
+end
+
+function CRT!(
+    M::BigInt,
+    buf::BigInt,
+    n1::BigInt,
+    n2::BigInt,
+    a1::BigInt,
+    c1::BigInt,
+    a2::BigInt,
+    c2::BigInt
+)
+    Base.GMP.MPZ.mul!(n1, c2, a2)
+    Base.GMP.MPZ.mul!(n2, c1, a1)
+
+    Base.GMP.MPZ.add!(buf, n1, n2)
+    Base.GMP.MPZ.fdiv_r!(buf, M)
+end
+
+function CRT_precompute!(
+    M::BigInt,
+    n1::BigInt,
+    n2::BigInt,
+    ci::Vector{BigInt},
+    moduli::Vector{UInt}
+)
+    n3, n4 = BigInt(), BigInt()
+    Base.GMP.MPZ.set_ui!(M, moduli[1])
+    @inbounds for i in 2:length(moduli)
+        Base.GMP.MPZ.mul_ui!(M, moduli[i])
+    end
+
+    @inbounds for i in 1:length(moduli)
+        Base.GMP.MPZ.set_ui!(n2, moduli[i])
+        Base.GMP.MPZ.tdiv_q!(ci[i], M, n2)
+        Base.GMP.MPZ.gcdext!(n2, n3, n4, ci[i], n2)
+        Base.GMP.MPZ.mul!(ci[i], n3)
+    end
+
+    nothing
+end
+
+function CRT!(
+    M::BigInt,
+    buf::BigInt,
+    n1::BigInt,
+    n2::BigInt,
+    ai::Vector{UInt},
+    ci::Vector{BigInt}
+)
+    @invariant length(ai) == length(ci)
+
+    Base.GMP.MPZ.set_ui!(n1, UInt(0))
+    for i in 1:length(ai)
+        Base.GMP.MPZ.mul_ui!(n2, ci[i], ai[i])
+        Base.GMP.MPZ.add!(n1, n2)
+    end
+
+    Base.GMP.MPZ.set!(buf, n1)
     Base.GMP.MPZ.fdiv_r!(buf, M)
 end

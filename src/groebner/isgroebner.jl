@@ -11,7 +11,7 @@ function _isgroebner(polynomials, kws::KeywordsHandler)
     params = AlgorithmParameters(ring, polynomial_repr, kws)
     ring, _ = set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
     res = _isgroebner(ring, monoms, coeffs, params)
-    log_performance_counters(params.statistics)
+    print_performance_counters(params.statistics)
     res
 end
 

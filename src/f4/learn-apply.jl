@@ -62,7 +62,6 @@ function reduction_apply!(
     if !flag
         return false
     end
-    @log level = -6 "After linear algebra" matrix
 
     convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
     true
@@ -136,8 +135,6 @@ function symbolic_preprocessing!(
         i += MonomIdx(1)
     end
 
-    @log level = -6 "Symbol ht:" symbol_ht
-
     matrix.nrows_filled_lower = nlow
     matrix.nrows_filled_upper = nup
 end
@@ -180,8 +177,6 @@ function reducegb_f4_apply!(
     # needed for correct column count in symbol hashtable
     matrix.ncols_left = matrix.nrows_filled_upper
 
-    @log level = -5 "Before autoreduce apply" basis uprows upmults lowmults matrix_info
-
     for i in 1:nup
         mult_idx = upmults[i]
         poly_idx = uprows[i]
@@ -189,8 +184,6 @@ function reducegb_f4_apply!(
         h = hashtable.hashdata[mult_idx].hash
         etmp = hashtable.monoms[mult_idx]
         rpoly = basis.monoms[poly_idx]
-
-        @log level = -6 "Up row" etmp
 
         # Not too good
         # iszero(h) && continue
@@ -211,7 +204,6 @@ function reducegb_f4_apply!(
     matrix.nrows_filled_lower = nlow
     matrix.nrows_filled_upper = nup
 
-    @log level = -2 length(graph.matrix_sorted_columns) iter
     if length(graph.matrix_sorted_columns) < iter
         column_to_monom_mapping!(matrix, symbol_ht)
         push!(graph.matrix_sorted_columns, matrix.column_to_monom)
@@ -219,8 +211,6 @@ function reducegb_f4_apply!(
         matrix.column_to_monom = graph.matrix_sorted_columns[iter]
         column_to_monom_mapping!(graph, matrix, symbol_ht)
     end
-
-    @log level = -6 "In autoreduction apply" basis matrix
 
     flag = linear_algebra_autoreduce_basis!(
         matrix,
@@ -235,8 +225,6 @@ function reducegb_f4_apply!(
 
     basis.nfilled = matrix.npivots + basis.nprocessed
     basis.nprocessed = matrix.npivots
-
-    @log level = -6 "Apply autoreduction: after linalg" basis matrix
 
     # we may have added some multiples of reduced basis polynomials
     # from the matrix, so get rid of them
@@ -268,7 +256,7 @@ end
 ###
 # Apply stage
 
-function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
+@timeit function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
     @invariant basis_well_formed(:input_f4_apply!, ring, basis, graph.hashtable)
     @assert params.reduced == true
 
@@ -279,20 +267,17 @@ function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
     hashtable = graph.hashtable
 
     matrix = initialize_matrix(ring, C)
-    @log level = -6 "Applying modulo $(ring.ch)"
+    @log level = -5 "Applying modulo $(ring.ch)"
 
     update_basis!(basis, hashtable)
 
-    @log level = -6 "Input basis:" basis
-
     while iters < iters_total
         iters += 1
-        @log level = -3 "F4 Apply iteration $iters"
+        @log level = -5 "F4 Apply iteration $iters"
 
         symbol_ht = initialize_secondary_hashtable(hashtable)
 
         symbolic_preprocessing!(graph, iters, basis, matrix, hashtable, symbol_ht)
-        @log level = -5 "After symbolic preprocessing:" matrix
 
         flag = reduction_apply!(graph, basis, matrix, hashtable, symbol_ht, iters, params)
         if !flag
@@ -300,21 +285,15 @@ function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
             return false
         end
 
-        @log level = -6 "After reduction_apply:" matrix basis
-
         update_basis!(basis, hashtable)
 
         @log_memory_locals
-
-        @log level = -6 "After update apply" basis
     end
-
-    @log level = -6 "Before reduction" basis
 
     # mark_redundant!(basis)
 
     if params.reduced
-        @log level = -6 "Autoreducing the final basis.."
+        @log level = -5 "Autoreducing the final basis.."
         symbol_ht = initialize_secondary_hashtable(hashtable)
         flag = reducegb_f4_apply!(
             graph,
@@ -328,13 +307,10 @@ function f4_apply!(graph, ring, basis::Basis{C}, params) where {C <: Coeff}
         if !flag
             return false
         end
-        @log level = -6 "Autoreduced!"
     end
 
     standardize_basis_apply!(ring, graph)
     basis = graph.gb_basis
-
-    @log level = -6 "After apply standardization" basis
 
     @invariant basis_well_formed(:output_f4_apply!, ring, basis, hashtable)
 
@@ -363,19 +339,9 @@ function standardize_basis_learn!(graph, ring, basis, ht, ord)
     normalize_basis!(ring, basis)
 end
 
-function update!(graph, pairset, basis, hashtable, update_ht)
-    update!(pairset, basis, hashtable, update_ht)
-end
-
-function symbolic_preprocessing!(graph, basis, matrix, hashtable, symbol_ht)
-    symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
-    @log level = -6 "Symbol ht:" symbol_ht
-end
-
 function reduction_learn!(graph, basis, matrix, hashtable, symbol_ht, params)
     column_to_monom_mapping!(matrix, symbol_ht)
     linear_algebra!(matrix, basis, params, graph, linalg=LinearAlgebra(:learn, :sparse))
-    @log level = -6 "After linear algebra" matrix
     convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht)
 end
 
@@ -388,15 +354,11 @@ function f4_reducegb_learn!(
     symbol_ht::MonomialHashtable{M},
     params
 ) where {M}
-    @log level = -6 "Entering learn autoreduction" basis
-
     etmp = construct_const_monom(M, ht.nvars)
     # etmp is now set to zero, and has zero hash
 
     reinitialize_matrix!(matrix, basis.nnonredundant)
     uprows = matrix.upper_rows
-
-    @log level = -6 "Before autoreduce learn" basis
 
     # add all non redundant elements from basis
     # as matrix upper rows
@@ -474,7 +436,7 @@ function f4_reducegb_learn!(
     graph.output_nonredundant_indices = copy(basis.nonredundant[1:k])
 end
 
-function f4_learn!(
+@timeit function f4_learn!(
     graph,
     ring::PolyRing,
     basis::Basis{C},
@@ -500,7 +462,7 @@ function f4_learn!(
 
     # add the first batch of critical pairs to the pairset
     @log level = -3 "Processing initial polynomials, generating first critical pairs"
-    pairset_size = update!(graph, pairset, basis, hashtable, update_ht)
+    pairset_size = update!(pairset, basis, hashtable, update_ht)
     @log level = -3 "Out of $(basis.nfilled) polynomials, $(basis.nprocessed) are non-redundant"
     @log level = -3 "Generated $(pairset.load) critical pairs"
 
@@ -524,7 +486,7 @@ function f4_learn!(
         )
         push!(graph.critical_pair_sequence, (degree_i, npairs_i))
 
-        symbolic_preprocessing!(graph, basis, matrix, hashtable, symbol_ht)
+        symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
 
         # reduces polys and obtains new potential basis elements
         reduction_learn!(graph, basis, matrix, hashtable, symbol_ht, params)
@@ -534,7 +496,7 @@ function f4_learn!(
         # update the current basis with polynomials produced from reduction,
         # does not copy,
         # checks for redundancy
-        pairset_size = update!(graph, pairset, basis, hashtable, update_ht)
+        pairset_size = update!(pairset, basis, hashtable, update_ht)
 
         @log level = -6 "After update learn" basis
         # clear symbolic hashtable

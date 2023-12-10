@@ -8,6 +8,9 @@
 Check that `expr` evaluates to `true` at runtime. If not, throw an
 `AssertionError`.
 
+It should be fine to use the `@invariant` macro in performance-critical code, as
+long as Groebner is compiled with `invariants_enabled() = false`.
+
 ## Examples
 
 ```jldoctest

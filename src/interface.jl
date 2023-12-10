@@ -40,6 +40,11 @@ The `groebner` routine takes the following optional arguments:
     - `:dense` for classic dense exponent vectors,
     - `:packed` for packed representation, 
     - `:sparse` for sparse representation.
+- `modular`: Modular computation algorithm. Only has effect when computing basis
+    over the rational numbers. Possible options are:
+    - `:auto` for the automatic choice (default),
+    - `:classic_modular` for the classic multi-modular algorithm TODO: reference,
+    - `:learn_and_apply` for the learn & apply algorithm from TODO: reference.
 - `seed`: The seed for randomization. Default value is `42`. Groebner uses
     `Random.Xoshiro` and `Random.MersenneTwister` for random number generation.
 - `loglevel`: Logging level, an integer. Higher values mean less verbose.
@@ -85,14 +90,14 @@ groebner([x*y^2 + x, y*x^2 + y], ordering=Lex(y, x))
 ```
 """
 function groebner(polynomials::AbstractVector; options...)
-    # `KeywordsHandler` does several useful things on initialization:
-    #   - checks that the keyword arguments are valid,
-    #   - sets the global logger for this module,
-    #   - refereshes performance counters.
+    keywords = KeywordsHandler(:groebner, options)
+
+    setup_logging(keywords)
+    setup_statistics(keywords)
 
     # NOTE: Type assertion is needed for type stability. This limits us to only
-    # accept input arrays with concrete `eltype`, which is perhaps fine
-    _groebner(polynomials, KeywordsHandler(:groebner, options))::typeof(polynomials)
+    # accept input arrays with concrete `eltype`
+    _groebner(polynomials, keywords)::typeof(polynomials)
 end
 
 """
@@ -147,7 +152,12 @@ success, gb_2 = groebner_apply!(graph, [2_x*_y^2 + 3_x, 4_y*_x^2 + 5_y])
 ```
 """
 function groebner_learn(polynomials::AbstractVector; options...)
-    _groebner_learn(polynomials, KeywordsHandler(:groebner_learn, options))
+    keywords = KeywordsHandler(:groebner_learn, options)
+
+    setup_logging(keywords)
+    setup_statistics(keywords)
+
+    _groebner_learn(polynomials, keywords)
 end
 
 """
@@ -201,11 +211,12 @@ function groebner_apply! end
 
 # Specialization for a single input
 function groebner_apply!(graph, polynomials::AbstractVector; options...)
-    _groebner_apply!(
-        graph,
-        polynomials,
-        KeywordsHandler(:groebner_apply!, options)
-    )::Tuple{Bool, typeof(polynomials)}
+    keywords = KeywordsHandler(:groebner_apply!, options)
+
+    setup_logging(keywords)
+    setup_statistics(keywords)
+
+    _groebner_apply!(graph, polynomials, keywords)::Tuple{Bool, typeof(polynomials)}
 end
 
 """
@@ -258,7 +269,12 @@ isgroebner([x*y^2 + x, y*x^2 + y])
 ```
 """
 function isgroebner(polynomials::AbstractVector; options...)
-    _isgroebner(polynomials, KeywordsHandler(:isgroebner, options))::Bool
+    keywords = KeywordsHandler(:isgroebner, options)
+
+    setup_logging(keywords)
+    setup_statistics(keywords)
+
+    _isgroebner(polynomials, keywords)::Bool
 end
 
 """
@@ -299,16 +315,17 @@ using Groebner, DynamicPolynomials
 normalform([y^2 + x, x^2 + y], x^2 + y^2 + 1)
 ```
 """
-function normalform(basis::AbstractVector, tobereduced::AbstractVector; options...)
-    _normalform(
-        basis,
-        tobereduced,
-        KeywordsHandler(:normalform, options)
-    )::typeof(tobereduced)
+function normalform(basis::AbstractVector, to_be_reduced::AbstractVector; options...)
+    keywords = KeywordsHandler(:normalform, options)
+
+    setup_logging(keywords)
+    setup_statistics(keywords)
+
+    _normalform(basis, to_be_reduced, keywords)::typeof(to_be_reduced)
 end
 
-normalform(basis::AbstractVector, tobereduced; options...) =
-    first(normalform(basis, [tobereduced]; options...))
+normalform(basis::AbstractVector, to_be_reduced; options...) =
+    first(normalform(basis, [to_be_reduced]; options...))
 
 """
     kbase(basis; options...)
@@ -338,5 +355,10 @@ kbase([y^2 + x, x^2 + y])
 ```
 """
 function kbase(basis::AbstractVector; options...)
-    _kbase(basis, KeywordsHandler(:kbase, options))::typeof(basis)
+    keywords = KeywordsHandler(:kbase, options)
+
+    setup_logging(keywords)
+    setup_statistics(keywords)
+
+    _kbase(basis, keywords)::typeof(basis)
 end

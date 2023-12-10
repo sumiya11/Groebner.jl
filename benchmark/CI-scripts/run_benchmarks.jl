@@ -8,9 +8,8 @@ import Nemo
 
 suite = []
 
-function compute_gb(system)
+function compute_gb(system, trials=7)
     times = []
-    trials = 7
     for _ in 1:trials
         GC.gc()
         time = @elapsed groebner(system)
@@ -149,6 +148,13 @@ push!(
     (
         problem_name="groebner, AA, QQ, cyclic 7",
         result=compute_gb(Groebner.cyclicn(7, ordering=:degrevlex, ground=QQ))
+    )
+)
+push!(
+    suite,
+    (
+        problem_name="groebner, AA, QQ, noon 8",
+        result=compute_gb(Groebner.noonn(8, ordering=:degrevlex, ground=QQ), 3)
     )
 )
 

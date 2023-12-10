@@ -97,6 +97,7 @@ using Primes
     # impossible to compute for now
     # UPD: now computes in 7 seconds
     # UPD 2: now computes in 1 second !!
+    # UPD 3: now computes in < 0.3 second !!
     gb = Groebner.groebner(system)
     @test gb == [
         x1 + x2 + x3 + x4,
@@ -119,7 +120,7 @@ using Primes
     end
 end
 
-@testset "groebner large problems" begin
+@testset "groebner, hard-coded answer" begin
     noon = Groebner.change_ordering(Groebner.noonn(4, ground=QQ), :degrevlex)
     (x1, x2, x3, x4) = gens(parent(first(noon)))
 

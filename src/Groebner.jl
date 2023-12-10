@@ -2,7 +2,7 @@ module Groebner
 # Groebner is a package for computing Gröbner bases. This is the main file.
 
 # Groebner works over integers modulo a prime and over the rationals. At its
-# heart Groebner implements F4 and modular techniques.
+# heart, Groebner implements F4, multi-modular techniques, and tracing.
 
 """
     invariants_enabled() -> Bool
@@ -10,12 +10,11 @@ module Groebner
 Specifies if custom asserts and invariants are checked.
 If `false`, then all checks are disabled, and entail no runtime overhead.
 
-Thus, it should be fine to use `@invariant` in performance-critical code, as
-long as Groebner is compiled with `invariants_enabled() = false`.
+It is useful to enable this when debugging the Groebner package.
 
 See also `@invariant` in `src/utils/invariants.jl`.
 """
-invariants_enabled() = true
+invariants_enabled() = false
 
 """
     logging_enabled() -> Bool
@@ -47,7 +46,8 @@ using Logging
 import MultivariatePolynomials
 import MultivariatePolynomials: AbstractPolynomial, AbstractPolynomialLike
 
-# For printing the tables with statistics in the console nicely
+# For printing the tables with statistics nicely
+import PrettyTables
 using Printf
 
 import TimerOutputs
@@ -60,6 +60,11 @@ import Random: AbstractRNG
 
 using SIMD
 
+function __init__()
+    update_logger(loglevel=Logging.Info)
+    nothing
+end
+
 # For printing some logging info to console nicely
 include("utils/prettyprinting.jl")
 # Provides the `@log` macro for logging stuff
@@ -68,6 +73,7 @@ include("utils/logging.jl")
 include("utils/invariants.jl")
 # Provides the macro `@timeit` for measuring performance of the internals
 include("utils/timeit.jl")
+# Provides the macro `@stat` for collecting statistics
 include("utils/statistics.jl")
 
 # Minimalistic plotting with Unicode
@@ -124,6 +130,7 @@ include("f4/sorting.jl")
 include("f4/tracer.jl")
 # All together combined in the F4 algorithm
 include("f4/f4.jl")
+# Learn & apply specific routines
 include("f4/learn-apply.jl")
 
 #= more high level functions =#

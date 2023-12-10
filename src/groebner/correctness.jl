@@ -62,22 +62,39 @@ threshold_in_heuristic_check(sznum, szden, szmod) = 1.15 * (sznum + szden) >= sz
 # Checks that 
 #   ln(num) + ln(den) < C ln(modulo)
 # for all coefficients of form num/den
-function heuristic_correctness_check(gb_coeffs_qq, modulo)
-    lnm = Base.GMP.MPZ.sizeinbase(modulo, 2)
+function heuristic_correctness_check(
+    gb_coeffs_qq::Vector{Vector{T}},
+    modulo::BigInt
+) where {T <: CoeffQQ}
+    modulo_size = Base.GMP.MPZ.sizeinbase(modulo, 2)
+
     @inbounds for i in 1:length(gb_coeffs_qq)
-        for j in 1:length(gb_coeffs_qq[i])
-            n = numerator(gb_coeffs_qq[i][j])
-            d = denominator(gb_coeffs_qq[i][j])
-            if threshold_in_heuristic_check(
-                Base.GMP.MPZ.sizeinbase(n, 2),
-                Base.GMP.MPZ.sizeinbase(d, 2),
-                lnm
-            )
-                @log level = -5 "Heuristic check failed for coefficient $n/$d and modulo $modulo"
-                return false
-            end
+        res = heuristic_correctness_check(gb_coeffs_qq[i], modulo, modulo_size)
+        !res && return false
+    end
+
+    true
+end
+
+function heuristic_correctness_check(
+    gb_coeffs_qq::Vector{T},
+    modulo::BigInt,
+    modulo_size=Base.GMP.MPZ.sizeinbase(modulo, 2)
+) where {T <: CoeffQQ}
+    @inbounds for i in 1:length(gb_coeffs_qq)
+        n = numerator(gb_coeffs_qq[i])
+        d = denominator(gb_coeffs_qq[i])
+
+        if threshold_in_heuristic_check(
+            Base.GMP.MPZ.sizeinbase(n, 2),
+            Base.GMP.MPZ.sizeinbase(d, 2),
+            modulo_size
+        )
+            @log level = -5 "Heuristic check failed for coefficient $n/$d and modulo $modulo"
+            return false
         end
     end
+
     true
 end
 

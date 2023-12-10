@@ -69,64 +69,84 @@ end
 end
 
 @testset "groebner modular" begin
-    R, (x,) = PolynomialRing(QQ, ["x"], ordering=:degrevlex)
-    @test Groebner.groebner([x]) == [x]
-    @test Groebner.groebner([4x]) == [x]
-    @test Groebner.groebner([x + 1]) == [x + 1]
-    @test Groebner.groebner([4x + 1]) == [x + 1 // 4]
-    @test Groebner.groebner([x + 5]) == [x + 5]
-    @test Groebner.groebner([x + 2^10]) == [x + 2^10]
-    @test Groebner.groebner([x + 2^30]) == [x + 2^30]
-    @test Groebner.groebner([x + 2^30 + 3]) == [x + 2^30 + 3]
-    @test Groebner.groebner([x + 2^31 - 1]) == [x + 2^31 - 1]
-    @test Groebner.groebner([x + 2^31 - 1, x^2]) == [1]
-    @test Groebner.groebner([(3232323 // 7777)x + 7777 // 3232323]) ==
-          [x + 60481729 // 10447911976329]
-    @test Groebner.groebner([((2^31 - 1) // 1)x + 1]) == [x + 1 // 2147483647]
-    @test Groebner.groebner([(1 // (2^31 - 1))x + 1]) == [x + 2147483647]
-    @test Groebner.groebner([1 // (2^30 + 3) * x^2 + (2^30 + 3)x + 1 // (1073741831)]) ==
-          [x^2 + 1152921511049297929x + (2^30 + 3) // 1073741831]
+    for modular in [:classic_modular, :learn_and_apply]
+        R, (x,) = PolynomialRing(QQ, ["x"], ordering=:degrevlex)
+        @test Groebner.groebner([x], modular=modular) == [x]
+        @test Groebner.groebner([4x], modular=modular) == [x]
+        @test Groebner.groebner([x + 1], modular=modular) == [x + 1]
+        @test Groebner.groebner([4x + 1], modular=modular) == [x + 1 // 4]
+        @test Groebner.groebner([x + 5], modular=modular) == [x + 5]
+        @test Groebner.groebner([x + 2^10], modular=modular) == [x + 2^10]
+        @test Groebner.groebner([x + 2^30], modular=modular) == [x + 2^30]
+        @test Groebner.groebner([x + 2^30 + 3], modular=modular) == [x + 2^30 + 3]
+        @test Groebner.groebner([x + 2^31 - 1], modular=modular) == [x + 2^31 - 1]
+        @test Groebner.groebner([x + 2^31 - 1, x^2], modular=modular) == [1]
+        @test Groebner.groebner([(3232323 // 7777)x + 7777 // 3232323], modular=modular) ==
+              [x + 60481729 // 10447911976329]
+        @test Groebner.groebner([((2^31 - 1) // 1)x + 1], modular=modular) ==
+              [x + 1 // 2147483647]
+        @test Groebner.groebner([(1 // (2^31 - 1))x + 1], modular=modular) ==
+              [x + 2147483647]
+        @test Groebner.groebner(
+            [1 // (2^30 + 3) * x^2 + (2^30 + 3)x + 1 // (1073741831)],
+            modular=modular
+        ) == [x^2 + 1152921511049297929x + (2^30 + 3) // 1073741831]
 
-    R, (x, y) = PolynomialRing(QQ, ["x", "y"], ordering=:degrevlex)
+        R, (x, y) = PolynomialRing(QQ, ["x", "y"], ordering=:degrevlex)
 
-    fs = [x, y]
-    G = Groebner.groebner(fs)
-    @test G ≂ [y, x]
+        fs = [x, y]
+        G = Groebner.groebner(fs, modular=modular)
+        @test G ≂ [y, x]
 
-    fs = [5y, 3 // 4 * x]
-    G = Groebner.groebner(fs)
-    @test G ≂ [y, x]
+        fs = [5y, 3 // 4 * x]
+        G = Groebner.groebner(fs, modular=modular)
+        @test G ≂ [y, x]
 
-    fs = [x^2 - (1 // 6) * y, x * y]
-    G = Groebner.groebner(fs)
-    @test G ≂ [y^2, x * y, x^2 - (1 // 6)y]
+        fs = [x^2 - (1 // 6) * y, x * y]
+        G = Groebner.groebner(fs, modular=modular)
+        @test G ≂ [y^2, x * y, x^2 - (1 // 6)y]
 
-    fs = [
-        QQ(11, 3) * x^2 * y - QQ(2, 4) * x * y - QQ(1, 7) * y,
-        QQ(1, 1) * x * y + QQ(7, 13) * x
-    ]
-    G = Groebner.groebner(fs)
-    @test G ≂ [y^2 + 7 // 13 * y, x * y + 7 // 13 * x, x^2 - 3 // 22 * x + 39 // 539 * y]
+        fs = [
+            QQ(11, 3) * x^2 * y - QQ(2, 4) * x * y - QQ(1, 7) * y,
+            QQ(1, 1) * x * y + QQ(7, 13) * x
+        ]
+        G = Groebner.groebner(fs, modular=modular)
+        @test G ≂
+              [y^2 + 7 // 13 * y, x * y + 7 // 13 * x, x^2 - 3 // 22 * x + 39 // 539 * y]
 
-    root = Groebner.rootn(3, ground=QQ, ordering=:degrevlex)
-    gb = Groebner.groebner(root)
-    @test Groebner.isgroebner(gb)
+        root = Groebner.rootn(3, ground=QQ, ordering=:degrevlex)
+        gb = Groebner.groebner(root, modular=modular)
+        @test Groebner.isgroebner(gb)
 
-    root = Groebner.rootn(4, ground=QQ, ordering=:degrevlex)
-    gb = Groebner.groebner(root)
-    @test Groebner.isgroebner(gb)
+        root = Groebner.rootn(4, ground=QQ, ordering=:degrevlex)
+        gb = Groebner.groebner(root, modular=modular)
+        @test Groebner.isgroebner(gb)
 
-    root = Groebner.rootn(8, ground=QQ, ordering=:degrevlex)
-    gb = Groebner.groebner(root)
-    @test Groebner.isgroebner(gb)
+        root = Groebner.rootn(8, ground=QQ, ordering=:degrevlex)
+        gb = Groebner.groebner(root, modular=modular)
+        @test Groebner.isgroebner(gb)
 
-    noon = Groebner.noonn(3, ground=QQ, ordering=:degrevlex)
-    gb = Groebner.groebner(noon)
-    @test Groebner.isgroebner(gb)
+        noon = Groebner.noonn(3, ground=QQ, ordering=:degrevlex)
+        gb = Groebner.groebner(noon, modular=modular)
+        @test Groebner.isgroebner(gb)
 
-    noon = Groebner.noonn(4, ground=QQ, ordering=:degrevlex)
-    gb = Groebner.groebner(noon)
-    @test Groebner.isgroebner(gb)
+        noon = Groebner.noonn(4, ground=QQ, ordering=:degrevlex)
+        gb = Groebner.groebner(noon, modular=modular)
+        @test Groebner.isgroebner(gb)
+
+        # Test a number of cases directly
+        R, (x, y, z) = QQ["x", "y", "z"]
+        xs = gens(R)
+        system = [z + 1, -y^5 + y^2 + y + 1, x^10 + x^9 + x^7 - x^5 + x^2 + x]
+        for i in 1:100
+            # Substitute a point of hight of up to 1000 bits. When raised to power
+            # 10, this becomes at most 10k bits
+            point = map(x -> x * BigInt(2)^rand(1:(10i)), xs)
+            system_i = map(poly -> evaluate(poly, point), system)
+            gb_i = Groebner.groebner(system_i, modular=modular)
+            @test gb_i == map(poly -> divexact(poly, leading_coefficient(poly)), system_i)
+        end
+    end
 end
 
 @testset "groebner corner cases" begin

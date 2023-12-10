@@ -83,6 +83,9 @@ mutable struct AlgorithmParameters{
     # modulo different primes until a consensus in majority vote is reached
     majority_threshold::Int
 
+    # :simultaneous or :incremental
+    crt_algorithm::Symbol
+
     # Use multi-threading.
     # This does nothing currently.
     threading::Bool
@@ -184,7 +187,12 @@ function AlgorithmParameters(
     threading = false
     #
     modular_strategy = kwargs.modular
+    if modular_strategy === :auto
+        modular_strategy = :learn_and_apply
+    end
+
     majority_threshold = 1
+    crt_algorithm = :simultaneous
     #
     seed = kwargs.seed
     rng = _default_rng_type(seed)
@@ -212,6 +220,7 @@ function AlgorithmParameters(
     ground = $ground
     modular_strategy = $modular_strategy
     majority_threshold = $majority_threshold
+    crt_algorithm = $crt_algorithm
     threading = $threading
     seed = $seed
     rng = $rng
@@ -235,6 +244,7 @@ function AlgorithmParameters(
         ground,
         modular_strategy,
         majority_threshold,
+        crt_algorithm,
         threading,
         useed,
         rng,
@@ -261,6 +271,7 @@ function params_mod_p(params::AlgorithmParameters, prime::Integer)
         params.ground,
         params.modular_strategy,
         params.majority_threshold,
+        params.crt_algorithm,
         params.threading,
         params.seed,
         params.rng,

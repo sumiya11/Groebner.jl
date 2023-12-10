@@ -215,7 +215,7 @@ end
 # Normalize each element of the input basis
 # by dividing it by leading coefficient
 @timeit function normalize_basis!(ring, basis::Basis{<:CoeffFF})
-    @log level = -4 "Normalizing polynomials in the basis"
+    @log level = -5 "Normalizing polynomials in the basis"
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.nfilled)
         !isassigned(cfs, i) && continue   # TODO: this is kind of bad
@@ -232,7 +232,7 @@ end
 # Normalize each element of the input basis
 # by dividing it by leading coefficient
 function normalize_basis!(ring, basis::Basis{<:CoeffQQ})
-    @log level = -4 "Normalizing polynomials in the basis"
+    @log level = -5 "Normalizing polynomials in the basis"
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.nfilled)
         !isassigned(cfs, i) && continue
@@ -441,6 +441,9 @@ end
     npivs = basis.nfilled
     # number of potential critical pairs to add
     npairs = basis.nprocessed * npivs + div((npivs + 1) * npivs, 2)
+
+    @invariant basis.nfilled >= basis.nprocessed
+    @stat new_basis_elements = basis.nfilled - basis.nprocessed
 
     # make sure pairset and update hashtable have enough
     # space to store new pairs

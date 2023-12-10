@@ -59,8 +59,7 @@ We can also benchmark separate expressions:
 end
 ```
 
-Note: `@timeit` cannot wrap separate expressions that contain `@label` or
-`@goto` (functions are fine).
+NOTE: `@timeit` cannot wrap code blocks that contain `@label` or `@goto`.
 """
 macro timeit(args...)
     if isempty(args) || length(args) > 2
@@ -104,22 +103,24 @@ function _timeit_expr(m, label, expr)
     end
 end
 
-function refresh_performance_counters!()
+function refresh_performance_counters()
     !performance_counters_enabled() && return nothing
     threadid() != 1 && return nothing
     TimerOutputs.reset_timer!(_groebner_timer)
     nothing
 end
 
-function log_performance_counters(statistics)
-    (statistics === :no) && return nothing
-    if !performance_counters_enabled()
-        @log level = 0 """
-        Performance counters are not printed since `performance_counters_enabled()` is `false`.
+function print_performance_counters(statistics)
+    (statistics in (:no, :stats)) && return nothing
+    if statistics in (:timings, :all) && !performance_counters_enabled()
+        @log level = 1_000 """
+        Timings were not collected since `performance_counters_enabled()` is `false`.
+        Consider setting `Groebner.performance_counters_enabled()` to `true` and trying again.
         """
         return nothing
     end
     threadid() != 1 && return nothing
+
     iostream = stdout
     TimerOutputs.print_timer(
         iostream,

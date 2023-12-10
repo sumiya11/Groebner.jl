@@ -74,6 +74,9 @@ function linear_algebra!(
 )
     @invariant matrix_well_formed(:linear_algebra!, matrix)
 
+    @stat matrix_block_sizes = block_sizes(matrix)
+    @stat matrix_nnz = sum(i -> length(matrix.upper_rows[i]), 1:length(matrix.upper_rows))
+
     rng = params.rng
     arithmetic = params.arithmetic
     if isnothing(linalg)
@@ -476,7 +479,7 @@ function reduce_dense_row_by_sparse_row!(
         row[idx] = mod_x(row[idx] + mul * coeffs[j], arithmetic)
     end
 
-    sum(rand(100))
+    nothing
 end
 
 # Linear combination of dense vector and sparse vector
@@ -1153,7 +1156,7 @@ function reduce_matrix_lower_part_any_nonzero!(
 
     @inbounds for i in 1:nlow
         nnz_column_indices = matrix.lower_rows[i]
-        nnz_coeffs = matrix.some_coeffs[row_idx_to_coeffs[i]]
+        nnz_coeffs = basis.coeffs[row_idx_to_coeffs[i]]
 
         load_sparse_row!(row, nnz_column_indices, nnz_coeffs)
 
@@ -1646,7 +1649,6 @@ function reduce_dense_row_by_pivots_sparse!(
         @invariant length(indices) == length(coeffs)
 
         reduce_dense_row_by_sparse_row!(row, indices, coeffs, arithmetic)
-
         @invariant iszero(row[i])
     end
 
