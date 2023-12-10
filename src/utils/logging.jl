@@ -28,13 +28,14 @@ macro log end
 function meta_formatter_groebner end
 
 @static if VERSION >= v"1.7.0"
-    backend_logger(level) = Logging.ConsoleLogger(
+    backend_logger(io, level) = Logging.ConsoleLogger(
+        io,
         level,
         show_limited=false,
         meta_formatter=meta_formatter_groebner
     )
 else
-    backend_logger(level) = Logging.ConsoleLogger(level)
+    backend_logger(io, level) = Logging.ConsoleLogger(io, level)
 end
 
 ###
@@ -43,10 +44,9 @@ end
 struct GroebnerLogger <: Logging.AbstractLogger
     logger::ConsoleLogger
 
-    GroebnerLogger() = GroebnerLogger(Logging.LogLevel(0))
-    GroebnerLogger(loglevel::Logging.LogLevel) = GroebnerLogger(backend_logger(loglevel))
-    function GroebnerLogger(logger)
-        new(logger)
+    GroebnerLogger() = GroebnerLogger(stderr, Logging.LogLevel(0))
+    function GroebnerLogger(io, loglevel::Logging.LogLevel)
+        new(backend_logger(io, loglevel))
     end
 end
 
@@ -119,7 +119,7 @@ function update_logger(; loglevel=nothing)
     #     )
     # end
     if loglevel !== nothing
-        _groebner_logger[] = Groebner.GroebnerLogger(Logging.LogLevel(loglevel))
+        _groebner_logger[] = Groebner.GroebnerLogger(stderr, Logging.LogLevel(loglevel))
     end
     nothing
 end
