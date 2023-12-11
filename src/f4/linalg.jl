@@ -429,10 +429,10 @@ function normalize_row!(
         return row
     end
 
-    @inbounds pinv = mod_x(invmod(lead, divisor(arithmetic)), arithmetic)
+    @inbounds pinv = remainder(invmod(lead, divisor(arithmetic)), arithmetic)
     @inbounds row[1] = one(T)
     @inbounds for i in 2:length(row)
-        row[i] = mod_x(row[i] * pinv, arithmetic)
+        row[i] = remainder(row[i] * pinv, arithmetic)
     end
 
     row
@@ -476,9 +476,43 @@ function reduce_dense_row_by_sparse_row!(
     # roughly varies from 10 to 100
     @inbounds for j in 1:length(indices)
         idx = indices[j]
-        row[idx] = mod_x(row[idx] + mul * coeffs[j], arithmetic)
+        row[idx] = remainder(row[idx] + mul * coeffs[j], arithmetic)
     end
 
+    nothing
+end
+
+function reduce_dense_row_by_sparse_row_no_remainder!(
+    row::Vector{T},
+    indices::Vector{I},
+    coeffs::Vector{T},
+    arithmetic::A
+) where {I, T <: CoeffFF, A <: AbstractArithmeticZp}
+    @invariant isone(coeffs[1])
+    @invariant length(indices) == length(coeffs)
+
+    @inbounds mul = divisor(arithmetic) - row[indices[1]]
+    # On our benchmarks, usually,
+    #   length(row) / length(indices)
+    # roughly varies from 10 to 100
+    @inbounds for j in 1:length(indices)
+        idx = indices[j]
+        row[idx] = row[idx] + mul * coeffs[j]
+    end
+
+    nothing
+end
+
+function dense_row_remainder!(
+    row::Vector{T},
+    arithmetic::A,
+    from::Int=1,
+    to::Int=length(row)
+) where {T, A <: AbstractArithmeticZp}
+    @inbounds for i in from:to
+        iszero(row[i]) && continue
+        row[i] = remainder(row[i], arithmetic)
+    end
     nothing
 end
 
@@ -513,7 +547,7 @@ function reduce_dense_row_by_dense_row!(
     @inbounds mul = divisor(arithmetic) - mul
 
     @inbounds for j in 1:length(row1)
-        row1[j] = mod_x(row1[j] + mul * row2[j], arithmetic)
+        row1[j] = remainder(row1[j] + mul * row2[j], arithmetic)
     end
 
     nothing
@@ -1236,7 +1270,8 @@ function randomized_reduce_matrix_lower_part!(
             # part of the matrix
             for j in 1:nrowstotal
                 # TODO: does not work for the rationals
-                rows_multipliers[j] = mod_x(rand(rng, C), arithmetic)
+                # TODO: can vectorize random number generation
+                rows_multipliers[j] = remainder(rand(rng, C), arithmetic)
             end
             row .= C(0)
             first_nnz_col = ncols
@@ -1250,8 +1285,10 @@ function randomized_reduce_matrix_lower_part!(
                 first_nnz_col = min(first_nnz_col, nnz_column_indices[1])
                 for l in 1:length(nnz_coeffs)
                     colidx = nnz_column_indices[l]
-                    row[colidx] =
-                        mod_x(row[colidx] + rows_multipliers[k] * nnz_coeffs[l], arithmetic)
+                    row[colidx] = remainder(
+                        row[colidx] + rows_multipliers[k] * nnz_coeffs[l],
+                        arithmetic
+                    )
                 end
             end
 
@@ -1306,7 +1343,7 @@ function randomized_hashcolumns_reduce_matrix_lower_part!(
     hash_vector = matrix.buffer_hash_vector
     resize!(hash_vector, nright)
     @inbounds for i in 1:nright
-        hash_vector[i] = mod_x(rand(C), arithmetic)
+        hash_vector[i] = remainder(rand(C), arithmetic)
     end
     @inbounds for i in 1:nup
         row_hash = zero(C)
@@ -1319,7 +1356,7 @@ function randomized_hashcolumns_reduce_matrix_lower_part!(
                 continue
             end
             row_hash =
-                mod_x(row_hash + nnz_coeffs[j] * hash_vector[idx - nleft], arithmetic)
+                remainder(row_hash + nnz_coeffs[j] * hash_vector[idx - nleft], arithmetic)
         end
         matrix.B_coeffs_dense[nnz_column_indices[1]] = [row_hash]
     end
@@ -1342,8 +1379,10 @@ function randomized_hashcolumns_reduce_matrix_lower_part!(
             if idx <= nleft
                 row1[idx] = nnz_coeffs[j]
             else
-                row_hash =
-                    mod_x(row_hash + nnz_coeffs[j] * hash_vector[idx - nleft], arithmetic)
+                row_hash = remainder(
+                    row_hash + nnz_coeffs[j] * hash_vector[idx - nleft],
+                    arithmetic
+                )
             end
         end
         row2[1] = row_hash
@@ -1421,7 +1460,7 @@ function randomized_hashcolumns_reduce_matrix_lower_part!(
                 continue
             end
             row_hash =
-                mod_x(row_hash + new_coeffs[j] * hash_vector[idx - nleft], arithmetic)
+                remainder(row_hash + new_coeffs[j] * hash_vector[idx - nleft], arithmetic)
         end
         matrix.B_coeffs_dense[new_column_indices[1]] = [row_hash]
 
@@ -1612,6 +1651,102 @@ function reduce_dense_row_by_pivots_sparse!(
     # The index of the first nonzero element in the reduced row
     new_pivot = -1
 
+    j = 0
+    nskip = skip(arithmetic)
+    @log level = -4 "" n_reserved_bits(arithmetic) nskip divisor(arithmetic)
+
+    @inbounds for i in start_column:end_column
+        # if the element is zero - no reduction is needed
+        row[i] = remainder(row[i], arithmetic)
+        if iszero(row[i])
+            continue
+        end
+
+        # if there is no pivot with the leading column index equal to i
+        if !isassigned(pivots, i) || (tmp_pos != -1 && tmp_pos == i)
+            if new_pivot == -1
+                new_pivot = i
+            end
+            nonzeros += 1
+            continue
+        end
+        # at this point, we have determined that row[i] is nonzero and that
+        # pivots[i] is a valid reducer of row
+
+        # Locate the support and the coefficients of the reducer row
+        indices = pivots[i]
+        if exact_column_mapping
+            # if reducer is from new matrix pivots
+            coeffs = matrix.some_coeffs[tmp_pos]
+        elseif i <= nleft
+            # if reducer is from the upper part of the matrix
+            if matrix.upper_part_is_rref || computing_rref
+                coeffs = matrix.upper_coeffs[i]
+            else
+                coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
+            end
+            record_active_reducer(active_reducers, matrix, i)
+        else
+            # if reducer is from the lower part of the matrix
+            coeffs = matrix.some_coeffs[matrix.lower_to_coeffs[i]]
+        end
+        @invariant length(indices) == length(coeffs)
+
+        reduce_dense_row_by_sparse_row_no_remainder!(row, indices, coeffs, arithmetic)
+
+        j += 1
+        if iszero(j % nskip)
+            dense_row_remainder!(row, arithmetic, i, end_column)
+        end
+
+        # @invariant iszero(row[i])
+    end
+
+    # all reduced to zero!
+    if nonzeros == 0
+        return true
+    end
+
+    # TODO: perhaps, not needed
+    dense_row_remainder!(row, arithmetic, Int(start_column), Int(end_column))
+
+    # form the resulting row in sparse format
+    resize!(new_column_indices, nonzeros)
+    resize!(new_coeffs, nonzeros)
+    extract_sparse_row!(
+        new_column_indices,
+        new_coeffs,
+        row,
+        convert(Int, start_column),
+        ncols
+    )
+
+    false
+end
+
+function reduce_dense_row_by_pivots_sparse!(
+    new_column_indices::Vector{I},
+    new_coeffs::Vector{C},
+    row::Vector{C},
+    matrix::MacaulayMatrix{C},
+    basis::Basis{C},
+    pivots::Vector{Vector{I}},
+    start_column::Integer,
+    end_column::Integer,
+    arithmetic::A,
+    active_reducers=nothing;
+    tmp_pos::Integer=-1,
+    exact_column_mapping::Bool=false,
+    computing_rref::Bool=false
+) where {I, C <: Coeff, A <: AbstractArithmeticQQ}
+    _, ncols = size(matrix)
+    nleft, _ = ncols_filled(matrix)
+
+    # The number of nonzeros in the reduced row
+    nonzeros = 0
+    # The index of the first nonzero element in the reduced row
+    new_pivot = -1
+
     @inbounds for i in start_column:end_column
         # if the element is zero - no reduction is needed
         if iszero(row[i])
@@ -1649,6 +1784,7 @@ function reduce_dense_row_by_pivots_sparse!(
         @invariant length(indices) == length(coeffs)
 
         reduce_dense_row_by_sparse_row!(row, indices, coeffs, arithmetic)
+
         @invariant iszero(row[i])
     end
 

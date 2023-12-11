@@ -18,9 +18,19 @@ end
 
 divisor(arithm::BuiltinArithmeticZp) = arithm.magic.divisor
 
+function n_reserved_bits(arithm::BuiltinArithmeticZp{T}) where {T <: Unsigned}
+    res = leading_zeros(divisor(arithm)) - (8 >> 1) * sizeof(T)
+    @invariant res >= 0
+    res
+end
+
+function skip(arithm::BuiltinArithmeticZp{T}) where {T <: Unsigned}
+    T(1) << (2 * n_reserved_bits(arithm) - 2)
+end
+
 # Same as the built-in one, by specializes on the type of the prime number and
-# stores the fields inline. This implementation is preferred for primes up to
-# 64 bits.
+# stores the fields inline. This implementation is preferred for primes up to 64
+# bits.
 struct SpecializedBuiltinArithmeticZp{T <: Unsigned, Add} <: AbstractArithmeticZp
     multiplier::T
     shift::UInt8
@@ -38,8 +48,15 @@ end
 
 divisor(arithm::SpecializedBuiltinArithmeticZp) = arithm.divisor
 
-function select_arithmetic(characteristic, ::Type{CoeffType}) where {CoeffType <: CoeffFF}
-    SpecializedBuiltinArithmeticZp(convert(CoeffType, characteristic))
+function n_reserved_bits(arithm::SpecializedBuiltinArithmeticZp{T}) where {T <: Unsigned}
+    # +1 thanks to unsigned representation
+    res = 1 + leading_zeros(divisor(arithm)) - (8 >> 1) * sizeof(T)
+    @invariant res >= 0
+    res
+end
+
+function skip(arithm::SpecializedBuiltinArithmeticZp{T}) where {T <: Unsigned}
+    T(1) << (2 * n_reserved_bits(arithm) - 2)
 end
 
 # Returns the higher half of the product a*b
@@ -59,13 +76,20 @@ end
 
 # TODO: move to linear algebra
 # a modulo p (addition specialization)
-@inline function mod_x(a::T, mod::SpecializedBuiltinArithmeticZp{T, true}) where {T}
+@inline function remainder(a::T, mod::SpecializedBuiltinArithmeticZp{T, true}) where {T}
     x = _mul_high(a, mod.multiplier)
     x = convert(T, convert(T, (convert(T, a - x) >>> 1)) + x)
     a - (x >>> mod.shift) * mod.divisor
 end
 # a modulo p (no addition specialization)
-@inline function mod_x(a::T, mod::SpecializedBuiltinArithmeticZp{T, false}) where {T}
+@inline function remainder(a::T, mod::SpecializedBuiltinArithmeticZp{T, false}) where {T}
     x = _mul_high(a, mod.multiplier)
     a - (x >>> mod.shift) * mod.divisor
+end
+
+###
+# Selection of arithmetic
+
+function select_arithmetic(characteristic, ::Type{CoeffType}) where {CoeffType <: CoeffFF}
+    SpecializedBuiltinArithmeticZp(convert(CoeffType, characteristic))
 end

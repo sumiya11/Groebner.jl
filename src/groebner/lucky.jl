@@ -9,8 +9,8 @@
 #   50,697,537*log2(2^30)*log10(2) ~ 4 * 10^8 
 # decimal digits of coefficient size. Hence, we are able to more or
 # less safely handle coefficients of up to 10^8 digits.
-const FIRST_LUCKY_PRIME = 2^31 - 1
-const FIRST_CHECK_PRIME = 2^30 + 3
+const FIRST_LUCKY_PRIME = 2^27 + 29
+const FIRST_CHECK_PRIME = 2^25 + 35
 
 @noinline function __too_large_coefficient_error(modulo)
     throw(

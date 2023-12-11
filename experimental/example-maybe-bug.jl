@@ -1,15 +1,21 @@
 using AbstractAlgebra, BenchmarkTools # , Groebner
 
-R, (x1, x2, x3) = PolynomialRing(QQ, ["x1", "x2", "x3"], ordering=:degrevlex)
+R, (x1, x2, x3) = PolynomialRing(GF(2^27 + 29), ["x1", "x2", "x3"], ordering=:degrevlex)
+R, (x1, x2, x3) = PolynomialRing(GF(2^31 - 1), ["x1", "x2", "x3"], ordering=:degrevlex)
 
-s = [x1 * x2^2 + 2^20, x1 * x3 + 2^30 + 1, x2 * x3 + x1 - 2^40]
-gb = Groebner.groebner(s, loglevel=0, modular=:learn_and_apply)
-gb2 = Groebner.groebner(s, loglevel=0, modular=:classic_modular)
-gb == gb2
+s = [x1 * x2^2 + 2, x1 * x3 + 3, x2 * x3 + 4 * x1 - 5]
+gb = Groebner.groebner(s, loglevel=-4)
+gb
 
-k = Groebner.noonn(5, ground=QQ, ordering=:degrevlex)
+Groebner.logging_enabled() = false
+k = Groebner.katsuran(9, ground=GF(2^27 + 29), ordering=:degrevlex)
 
-@time gb = Groebner.groebner(k);
+@profview for _ in 1:10
+    gb = Groebner.groebner(k)
+end
+
+Groebner.isgroebner(gb)
+
 @time gb2 = Groebner.groebner(k);
 gb == gb2
 
