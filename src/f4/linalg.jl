@@ -1653,7 +1653,6 @@ function reduce_dense_row_by_pivots_sparse!(
 
     j = 0
     nskip = skip(arithmetic)
-    @log level = -4 "" n_reserved_bits(arithmetic) nskip divisor(arithmetic)
 
     @inbounds for i in start_column:end_column
         # if the element is zero - no reduction is needed
@@ -1698,6 +1697,7 @@ function reduce_dense_row_by_pivots_sparse!(
         if iszero(j % nskip)
             dense_row_remainder!(row, arithmetic, i, end_column)
         end
+        row[i] = zero(row[i])
 
         # @invariant iszero(row[i])
     end
@@ -1708,7 +1708,7 @@ function reduce_dense_row_by_pivots_sparse!(
     end
 
     # TODO: perhaps, not needed
-    dense_row_remainder!(row, arithmetic, Int(start_column), Int(end_column))
+    # dense_row_remainder!(row, arithmetic, Int(start_column), Int(end_column))
 
     # form the resulting row in sparse format
     resize!(new_column_indices, nonzeros)

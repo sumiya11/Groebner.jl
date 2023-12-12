@@ -3,7 +3,7 @@ if !isdefined(Main, :Groebner)
     using Groebner
 end
 
-import AbstractAlgebra
+import AbstractAlgebra, Primes
 using BenchmarkTools
 using Logging
 
@@ -42,9 +42,12 @@ function run_f4_ff_degrevlex_benchmarks(ground)
     end
 end
 
-s = Groebner.katsuran(11, ordering=:degrevlex, ground=AbstractAlgebra.GF(2^31 - 1))
+p1 = 2^31 - 1
+p2 = 2^29 + 11
+p3 = 2^27 + 29
+s = Groebner.katsuran(11, ordering=:degrevlex, ground=AbstractAlgebra.GF(p3))
 
-@time Groebner.groebner(s);
+@profview gb1 = Groebner.groebner(s);
 
 println()
 ground = AbstractAlgebra.GF(1048583)

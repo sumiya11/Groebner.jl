@@ -19,7 +19,7 @@ end
 divisor(arithm::BuiltinArithmeticZp) = arithm.magic.divisor
 
 function n_reserved_bits(arithm::BuiltinArithmeticZp{T}) where {T <: Unsigned}
-    res = leading_zeros(divisor(arithm)) - (8 >> 1) * sizeof(T)
+    res = 1 + leading_zeros(divisor(arithm)) - (8 >> 1) * sizeof(T)
     @invariant res >= 0
     res
 end

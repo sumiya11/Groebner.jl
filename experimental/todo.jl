@@ -1,12 +1,16 @@
 using SIMD, BenchmarkTools
 
-function add_mul!(v1::Vector{T}, c, v2) where {T}
-    @inbounds for i in 1:length(v1)
-        v1[i] += T(c) * T(v2[i])
+function add_mul!(vres::Vector{Int64}, a::Int32, v::Vector{Int32})
+    @inbounds for i in eachindex(vres)
+        vres[i] += Int64(a) * Int64(v[i])
     end
-    nothing
 end
 
+function add_mul_v2!(vres::Vector{Int64}, a::Int64, v::Vector{Int32})
+    @inbounds for i in eachindex(vres)
+        vres[i] += a * Int64(v[i])
+    end
+end
 @code_native debuginfo = :none add_mul([1, 2], UInt32(1), UInt32[3, 4])
 
 function reduce_dense_row_by_sparse_row_no_remainder!(
@@ -105,7 +109,7 @@ end
             Val(2)
         )
 
-@code_native debuginfo = :none add_mul!(UInt64[1, 2, 3, 4], UInt32(8), UInt32[3, 1, 0, 10])
+@code_native debuginfo = :none add_mul_v2!(Int64[1, 2, 3, 4], Int64(8), Int32[3, 1, 0, 10])
 
 @code_native debuginfo = :none reduce_dense_row_by_sparse_row_no_remainder_2!(
     UInt64[1, 2, 3, 4],
