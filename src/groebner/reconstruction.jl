@@ -1,4 +1,4 @@
-# Rational reconstruction and Chinese remainder theorem (CRT) reconstruction
+# Rational reconstruction and Chinese mod_p theorem (CRT) reconstruction
 
 """
 Returns the bound for rational reconstruction (see `rational_reconstruction!`)
@@ -114,7 +114,7 @@ end
 # CRT
 
 """
-Implements the linear Chinese remainder lifting algorithm. Computes the unique
+Implements the linear Chinese mod_p lifting algorithm. Computes the unique
 `x` such that
         
     x ≡ a1 mod m1

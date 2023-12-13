@@ -103,6 +103,7 @@ mutable struct MacaulayMatrix{T <: Coeff}
     # A vector of random elements from the ground field, which is used to
     # compute hashes of matrix rows
     buffer_hash_vector::Vector{T}
+    sentinels::Vector{Int8}
 end
 
 # The number of allocated (not necessarily filled) rows and columns in the
@@ -154,7 +155,8 @@ end
         Vector{Int}(),
         Vector{MonomIdx}(),
         Vector{MonomIdx}(),
-        Vector{T}()
+        Vector{T}(),
+        Vector{Int8}()
     )
 end
 

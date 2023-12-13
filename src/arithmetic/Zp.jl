@@ -76,13 +76,13 @@ end
 
 # TODO: move to linear algebra
 # a modulo p (addition specialization)
-@inline function remainder(a::T, mod::SpecializedBuiltinArithmeticZp{T, true}) where {T}
+@inline function mod_p(a::T, mod::SpecializedBuiltinArithmeticZp{T, true}) where {T}
     x = _mul_high(a, mod.multiplier)
     x = convert(T, convert(T, (convert(T, a - x) >>> 1)) + x)
     a - (x >>> mod.shift) * mod.divisor
 end
 # a modulo p (no addition specialization)
-@inline function remainder(a::T, mod::SpecializedBuiltinArithmeticZp{T, false}) where {T}
+@inline function mod_p(a::T, mod::SpecializedBuiltinArithmeticZp{T, false}) where {T}
     x = _mul_high(a, mod.multiplier)
     a - (x >>> mod.shift) * mod.divisor
 end

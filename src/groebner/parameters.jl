@@ -88,7 +88,9 @@ mutable struct AlgorithmParameters{
 
     # Use multi-threading.
     # This does nothing currently.
-    threading::Bool
+    threaded::Symbol
+    nworkers::Int
+    threadalgo::Symbol
 
     # Random number generator
     seed::UInt64
@@ -184,7 +186,20 @@ function AlgorithmParameters(
         end
     end
     #
-    threading = false
+    threaded = kwargs.threaded
+    if !(_threaded[])
+        if threaded === :yes
+            @log level = 1_000 """
+            You have explicitly provided the keyword argument `threaded = :yes`,
+            however, the multi-threading is disabled globally in Groebner.jl due
+            to the set environment variable GROEBNER_NO_THREADED=0
+
+            Consider enabling threading by setting GROEBNER_NO_THREADED to 1"""
+        end
+        threaded = :no
+    end
+    nworkers = kwargs.nworkers
+    threadalgo = kwargs.threadalgo
     #
     modular_strategy = kwargs.modular
     if modular_strategy === :auto
@@ -212,6 +227,9 @@ function AlgorithmParameters(
     certify_check = $certify_check
     check = $(kwargs.check)
     linalg = $linalg_algorithm
+    threaded = $threaded
+    nworkers = $nworkers
+    threadalgo = $threadalgo
     arithmetic = $arithmetic
     reduced = $reduced
     homogenize = $homogenize
@@ -221,7 +239,6 @@ function AlgorithmParameters(
     modular_strategy = $modular_strategy
     majority_threshold = $majority_threshold
     crt_algorithm = $crt_algorithm
-    threading = $threading
     seed = $seed
     rng = $rng
     sweep = $sweep
@@ -245,7 +262,9 @@ function AlgorithmParameters(
         modular_strategy,
         majority_threshold,
         crt_algorithm,
-        threading,
+        threaded,
+        nworkers,
+        threadalgo,
         useed,
         rng,
         sweep,
@@ -272,7 +291,9 @@ function params_mod_p(params::AlgorithmParameters, prime::Integer)
         params.modular_strategy,
         params.majority_threshold,
         params.crt_algorithm,
-        params.threading,
+        params.threaded,
+        params.nworkers,
+        params.threadalgo,
         params.seed,
         params.rng,
         params.sweep,

@@ -1,0 +1,581 @@
+julia> gb = Groebner.groebner(s, loglevel=-5, linalg=:deterministic, threaded=:yes)
+┌ Debug: Selecting monomial representation.
+│ Given hint hint=none. Keyword argument monoms=auto 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\input-output\input-output.jl:90
+┌ Debug: Frontend: abstractalgebra
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\input-output\input-output.jl:78
+┌ Debug: Input: 3 polynomials over zp in 3 variables 
+│ Ordering: degrevlex
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\input-output\input-output.jl:79
+┌ Debug: Internal representation:
+│ monomials are Main.Groebner.PackedTuple1{UInt64, UInt8}
+│ coefficients are UInt64
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\input-output\input-output.jl:82
+┌ Debug: Converting input polynomials to internal representation..
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\input-output\input-output.jl:192
+┌ Debug: Done converting input polynomials to internal representation.
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\input-output\input-output.jl:195
+┌ Debug: Removing zero polynomials
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\input-output\input-output.jl:203
+┌ Debug: Selected parameters:
+│ target_ord = Main.Groebner.DegRevLex{Nothing}(nothing, false)
+│ computation_ord = Main.Groebner.DegRevLex{Nothing}(nothing, false)
+│ original_ord = Main.Groebner.DegRevLex{Nothing}(nothing, false)
+│ heuristic_check = true
+│ randomized_check = true
+│ certify_check = false
+│ check = true
+│ linalg = Main.Groebner.LinearAlgebra(:deterministic, :sparse)
+│ threaded = yes
+│ arithmetic = Main.Groebner.SpecializedBuiltinArithmeticZp{UInt64, true}(0x0000000200000005, 0x1e, 0x000000007fffffff)
+│ reduced = true
+│ homogenize = false
+│ maxpairs = 9223372036854775807
+│ selection_strategy = normal
+│ ground = zp
+│ modular_strategy = learn_and_apply
+│ majority_threshold = 1
+│ crt_algorithm = simultaneous
+│ seed = 42
+│ rng = Random.Xoshiro(0xa379de7eeeb2a4e8, 0x953dccb6b532b3af, 0xf597b8ff8cfd652a, 0xccd7337c571680d1)    
+│ sweep = false
+│ statistics = no
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\groebner\parameters.jl:216
+┌ Debug: Internal ordering:
+│ Main.Groebner._DegRevLex{true}([1, 2, 3])
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\input-output\input-output.jl:289
+┌ Debug: Backend: F4 over Z_2147483647
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\groebner\groebner.jl:80
+┌ Debug: Initializing structs..
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:27
+┌ Debug: Initial hashtable size is 1024
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:30
+┌ Debug: Using division masks: true
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\hashtable.jl:111
+┌ Debug: Sorting polynomials by their leading terms in non-decreasing order
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\sorting.jl:32
+┌ Debug: Normalizing polynomials in the basis        
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\basis.jl:218
+┌ Debug: Entering F4.
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:674
+┌ Debug: Normalizing polynomials in the basis        
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\basis.jl:218
+┌ Debug: Processing initial polynomials, generating first critical pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:684
+┌ Debug: Out of 3 polynomials, 3 are non-redundant   
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:687
+┌ Debug: Generated 2 critical pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:688
+┌ Debug: F4: iteration 1
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:694
+┌ Debug: F4: available 2 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:695
+┌ Debug: Selected 1 pairs of degree 3 from pairset, 1 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:481
+┌ Debug: After normal selection: available 1 pairs   
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:728
+┌ Debug: Finding reducers in the basis...
+│   basis.nnonredundant = 3
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:115
+┌ Debug: deterministic_sparse_linear_algebra!
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:234
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}        
+│ 2 x 4 with 5 nnz (62.5%)
+│ A: 1 x 1 with 1 nnz (100.0%) (REF: true, RREF: true)
+│ B: 1 x 3 with 2 nnz (66.67%)
+│ C: 1 x 1 with 1 nnz (100.0%)
+│ D: 1 x 3 with 1 nnz (33.33%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠈⠀⠀│⠀⠀⠈⠈⠀
+│ ─────⠀─────
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⢀⠀⠀│⠀⠀⠀⠀⢀
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:235
+┌ Debug: Matrix before
+│   nblocks = 1
+│   rem = 0
+│   rowsperblock = 1
+│   nlow = 1
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:843
+Vector{Int32}[[1, 4]]
+┌ Debug: 
+│   block_start = 1
+│   block_end = 1
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:853
+┌ Debug: Matrix after
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:864
+Vector{UInt64}[[0x0000000000000001, 0x000000005ffffffe, 0x000000001fffffff]]
+Vector{Int32}[[2, 3, 4]]
+Vector{Int32}[[1, 2, 3], #undef, #undef, #undef]     
+┌ Debug: Matrix after x2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:918
+Vector{UInt64}[[0x0000000000000001, 0x000000005ffffffe, 0x000000001fffffff]]
+Vector{Int32}[[1, 2, 3], [2, 3, 4], #undef, #undef]  
+┌ Debug: After interreduction
+│   new_pivots = 1
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:1211
+Vector{Int32}[[1, 2, 3], [2, 3, 4], #undef, #undef]  
+Vector{Int32}[[2, 3, 4], #undef, #undef]
+┌ Debug: F4: iteration 2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:694
+┌ Debug: F4: available 3 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:695
+┌ Debug: Selected 1 pairs of degree 3 from pairset, 2 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:481
+┌ Debug: After normal selection: available 2 pairs   
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:728
+┌ Debug: Finding reducers in the basis...
+│   basis.nnonredundant = 4
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:115
+┌ Debug: deterministic_sparse_linear_algebra!        
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:234
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
+│ 4 x 5 with 10 nnz (50.0%)
+│ A: 3 x 3 with 3 nnz (33.33%) (REF: true, RREF: true)
+│ B: 3 x 2 with 4 nnz (66.67%)
+│ C: 1 x 3 with 3 nnz (100.0%)
+│ D: 1 x 2 with 0 nnz (0.0%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠀⠄⠀⠀⠀│⠀⠀⠀⠄⠀
+│ ⠀⠀⠈⠠⠀│⠀⠀⠀⠄⠨
+│ ─────⠀─────
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⡀⢀⢀⠀│⠀⠀⠀⠀⠀
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:235
+┌ Debug: Matrix before
+│   nblocks = 1
+│   rem = 0
+│   rowsperblock = 1
+│   nlow = 1
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:843
+Vector{Int32}[[1, 2, 3]]
+┌ Debug: 
+│   block_start = 1
+│   block_end = 1
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:853
+┌ Debug: Matrix after
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:864
+Vector{UInt64}[[0x0000000000000001, 0x000000005ffffffe, 0x000000001fffffff]]
+Vector{Int32}[[1, 2, 3]]
+Vector{Int32}[[1, 4], [2, 5], [3, 4, 5], #undef, #undef]
+┌ Debug: Matrix after x2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:918
+Vector{UInt64}[[0x0000000000000001, 0x000000005ffffffe, 0x000000001fffffff]]
+Vector{Int32}[[1, 4], [2, 5], [3, 4, 5], #undef, #undef]
+┌ Debug: After interreduction
+│   new_pivots = 0
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:1211
+Vector{Int32}[[1, 4], [2, 5], [3, 4, 5], #undef, #undef]
+Vector{Int32}[[1, 2, 3], #undef]
+┌ Debug: F4: iteration 3
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:694
+┌ Debug: F4: available 2 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:695
+┌ Debug: Selected 2 pairs of degree 4 from pairset, 0 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:481
+┌ Debug: After normal selection: available 0 pairs   
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:728
+┌ Debug: Finding reducers in the basis...
+│   basis.nnonredundant = 4
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:115
+┌ Debug: deterministic_sparse_linear_algebra!        
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:234
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}        
+│ 6 x 10 with 15 nnz (25.0%)
+│ A: 4 x 4 with 5 nnz (31.25%) (REF: true, RREF: false)
+│ B: 4 x 6 with 5 nnz (20.83%)
+│ C: 2 x 4 with 3 nnz (37.5%)
+│ D: 2 x 6 with 2 nnz (16.67%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠀⠂⡀⡀⠀│⠀⠀⡀⠐⠀
+│ ⠀⠀⠀⠁⠄│⠀⠀⠉⠀⠠
+│ ─────⠀─────
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⡀⠂⠀⡀│⠀⡀⠀⠀⠂
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:235
+┌ Debug: Matrix before
+│   nblocks = 2
+│   rem = 0
+│   rowsperblock = 1
+│   nlow = 2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:843
+Vector{Int32}[[2, 9], [1, 4, 5]]
+┌ Debug: 
+│   block_start = 1
+│   block_end = 1
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:853
+┌ Debug: 
+│   block_start = 2
+│   block_end = 2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:853
+┌ Debug: Matrix after
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:864
+Vector{UInt64}[[0x0000000000000001, 0x0000000055555554], [0x0000000000000001, 0x000000002aaaaaad, 0x000000002aaaaaa7]]
+Vector{Int32}[[7, 9], [5, 8, 10]]
+Vector{Int32}[[1, 8], [2, 3, 6], [3, 6, 7], [4, 10], 
+#undef, #undef, #undef, #undef, #undef, #undef]      
+┌ Debug: Matrix after x2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:918
+Vector{UInt64}[[0x0000000000000001, 0x0000000055555554], [0x0000000000000001, 0x000000002aaaaaad, 0x000000002aaaaaa7]]
+Vector{Int32}[[1, 8], [2, 3, 6], [3, 6, 7], [4, 10], 
+[5, 8, 10], #undef, [7, 9], #undef, #undef, #undef]  
+┌ Debug: After interreduction
+│   new_pivots = 2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:1211
+Vector{Int32}[[1, 8], [2, 3, 6], [3, 6, 7], [4, 10], 
+[5, 8, 10], #undef, [7, 9], #undef, #undef, #undef]  
+Vector{Int32}[[7, 9], [5, 8, 10], #undef, #undef, #undef, #undef]
+┌ Debug: F4: iteration 4
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:694
+┌ Debug: F4: available 3 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:695
+┌ Debug: Selected 3 pairs of degree 3 from pairset, 0 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:481
+┌ Debug: After normal selection: available 0 pairs   
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:728
+┌ Debug: Finding reducers in the basis...
+│   basis.nnonredundant = 5
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:115
+┌ Debug: deterministic_sparse_linear_algebra!        
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:234
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}        
+│ 8 x 10 with 19 nnz (23.75%)
+│ A: 5 x 5 with 6 nnz (24.0%) (REF: true, RREF: false)
+│ B: 5 x 5 with 6 nnz (24.0%)
+│ C: 3 x 5 with 4 nnz (26.67%)
+│ D: 3 x 5 with 3 nnz (20.0%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠐⠠⠀⠀⠄│⠀⠀⠀⠀⠐
+│ ⠀⠀⠈⠂⠄│⠀⠈⠀⠄⠱
+│ ─────⠀─────
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⢀⠠⠈⡀⠀│⠀⠀⠈⠄⠠
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:235
+┌ Debug: Matrix before
+│   nblocks = 3
+│   rem = 0
+│   rowsperblock = 1
+│   nlow = 3
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:843
+Vector{Int32}[[3, 7], [2, 8, 10], [1, 4]]
+┌ Debug: 
+│   block_start = 1
+│   block_end = 1
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:853
+┌ Debug: 
+│   block_start = 2
+│   block_end = 2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:853
+┌ Debug: 
+│   block_start = 3
+│   block_end = 3
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:853
+┌ Debug: Matrix after
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:864
+Vector{UInt64}[[0x0000000000000001, 0x000000006aaaaaaa, 0x000000005ffffffe], [0x0000000000000001, 0x000000002aaaaaad, 0x000000002aaaaaa7], #undef]
+Vector{Int32}[[6, 7, 9], [2, 8, 10], [1, 4]]
+Vector{Int32}[[1, 10], [2, 5], [3, 6, 9], [4, 10], [5, 8, 10], #undef, #undef, #undef, #undef, #undef]    
+┌ Debug: Matrix after x2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:918
+Vector{UInt64}[[0x0000000000000001, 0x000000006aaaaaaa, 0x000000005ffffffe], [0x0000000000000001, 0x000000002aaaaaad, 0x000000002aaaaaa7], #undef]
+Vector{Int32}[[1, 10], [2, 5], [3, 6, 9], [4, 10], [5, 8, 10], [6, 7, 9], #undef, #undef, #undef, #undef] 
+┌ Debug: After interreduction
+│   new_pivots = 1
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:1211
+Vector{Int32}[[1, 10], [2, 5], [3, 6, 9], [4, 10], [5, 8, 10], [6, 7, 9], #undef, #undef, #undef, #undef] 
+Vector{Int32}[[6, 7, 9], [2, 8, 10], [1, 4], #undef, 
+#undef]
+┌ Debug: F4: iteration 5
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:694
+┌ Debug: F4: available 3 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:695
+┌ Debug: Selected 3 pairs of degree 3 from pairset, 0 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:481
+┌ Debug: After normal selection: available 0 pairs   
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:728
+┌ Debug: Finding reducers in the basis...
+│   basis.nnonredundant = 6
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:115
+┌ Debug: deterministic_sparse_linear_algebra!        
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:234
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}        
+│ 13 x 16 with 35 nnz (16.83%)
+│ A: 10 x 10 with 15 nnz (15.0%) (REF: true, RREF: false)
+│ B: 10 x 6 with 11 nnz (18.33%)
+│ C: 3 x 10 with 8 nnz (26.67%)
+│ D: 3 x 6 with 1 nnz (5.56%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠑⠤⡠⠉⡂│⠀⠀⠠⠀⡄
+│ ⠀⠀⠈⠒⢄│⠀⠀⢊⠘⢢
+│ ─────⠀─────
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⡠⢁⠄⡠⠈│⠀⠁⠀⠀⠀
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:235
+┌ Debug: Matrix before
+│   nblocks = 3
+│   rem = 0
+│   rowsperblock = 1
+│   nlow = 3
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:843
+Vector{Int32}[[3, 11, 10], [2, 5, 8], [1, 4, 7]]     
+┌ Debug: 
+│   block_start = 1
+│   block_end = 1
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:853
+┌ Debug: 
+│   block_start = 2
+│   block_end = 2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:853
+┌ Debug: 
+│   block_start = 3
+│   block_end = 3
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:853
+┌ Debug: Matrix after
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:864
+Vector{UInt64}[[0x0000000000000001, 0x000000000000001e, 0x000000007fffffed, 0x000000003fffffda], [0x0000000000000001, 0x000000002aaaaaad, 0x000000002aaaaaa7], 
+#undef]
+Vector{Int32}[[11, 13, 14, 16], [2, 5, 8], [1, 4, 7]]Vector{Int32}[[1, 7, 8], [2, 9], [3, 6, 13], [4, 15], [5, 9, 15], [6, 13, 14], [7, 12, 14], [8, 15], [9, 16], [10, 13, 16], #undef, #undef, #undef, #undef, #undef, #undef]
+┌ Debug: Matrix after x2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:918
+Vector{UInt64}[[0x0000000000000001, 0x000000000000001e, 0x000000007fffffed, 0x000000003fffffda], [0x0000000000000001, 0x0000000073333335], #undef]
+Vector{Int32}[[1, 7, 8], [2, 9], [3, 6, 13], [4, 15], [5, 9, 15], [6, 13, 14], [7, 12, 14], [8, 15], [9, 16], [10, 13, 16], [11, 13, 14, 16], #undef, #undef, #undef, [15, 16], #undef]
+┌ Debug: After interreduction
+│   new_pivots = 2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:1211
+Vector{Int32}[[1, 7, 8], [2, 9], [3, 6, 13], [4, 15], [5, 9, 15], [6, 13, 14], [7, 12, 14], [8, 15], [9, 16], [10, 13, 16], [11, 13, 14, 16], #undef, #undef, #undef, [15, 16], #undef]
+Vector{Int32}[[15, 16], [11, 13, 14, 16], [1, 4, 7], 
+#undef, #undef, #undef]
+┌ Debug: F4: iteration 6
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:694
+┌ Debug: F4: available 3 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:695
+┌ Debug: Selected 2 pairs of degree 2 from pairset, 1 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:481
+┌ Debug: After normal selection: available 1 pairs   
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:728
+┌ Debug: Finding reducers in the basis...
+│   basis.nnonredundant = 6
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:115
+┌ Debug: deterministic_sparse_linear_algebra!        
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:234
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}        
+│ 4 x 5 with 9 nnz (45.0%)
+│ A: 2 x 2 with 2 nnz (50.0%) (REF: true, RREF: true)│ B: 2 x 3 with 3 nnz (50.0%)
+│ C: 2 x 2 with 2 nnz (50.0%)
+│ D: 2 x 3 with 2 nnz (33.33%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠀⠠⠀⠀⠀│⠀⠀⠀⠀⠠
+│ ⠀⠀⠀⠂⠀│⠀⠀⠐⠀⠐
+│ ─────⠀─────
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⢀⠀⠂⠀│⠀⠀⢀⠐⠀
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:235
+┌ Debug: Matrix before
+│   nblocks = 2
+│   rem = 0
+│   rowsperblock = 1
+│   nlow = 2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:843
+Vector{Int32}[[2, 4], [1, 3]]
+┌ Debug: 
+│   block_start = 1
+│   block_end = 1
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:853
+┌ Debug: 
+│   block_start = 2
+│   block_end = 2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:853
+┌ Debug: Matrix after
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:864
+Vector{UInt64}[[0x0000000000000001, 0x0000000043333332, 0x000000005ffffffe], [0x0000000000000001, 0x000000000e38e38d]]
+Vector{Int32}[[3, 4, 5], [3, 5]]
+Vector{Int32}[[1, 5], [2, 3, 5], #undef, #undef, #undef]
+┌ Debug: Matrix after x2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:918
+Vector{UInt64}[[0x0000000000000001, 0x0000000043333332, 0x000000005ffffffe], [0x0000000000000001, 0x000000000b96a674]]
+Vector{Int32}[[1, 5], [2, 3, 5], [3, 4, 5], [4, 5], #undef]
+┌ Debug: After interreduction
+│   new_pivots = 2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:1211
+Vector{Int32}[[1, 5], [2, 3, 5], [3, 5], [4, 5], #undef]
+Vector{Int32}[[4, 5], [3, 5], #undef]
+┌ Debug: F4: iteration 7
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:694
+┌ Debug: F4: available 4 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:695
+┌ Debug: Selected 3 pairs of degree 2 from pairset, 1 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:481
+┌ Debug: After normal selection: available 1 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:728
+┌ Debug: Finding reducers in the basis...
+│   basis.nnonredundant = 4
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:115
+┌ Debug: deterministic_sparse_linear_algebra!        
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:234
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}        
+│ 10 x 8 with 22 nnz (27.5%)
+│ A: 7 x 7 with 13 nnz (26.53%) (REF: true, RREF: false)
+│ B: 7 x 1 with 3 nnz (42.86%)
+│ C: 3 x 7 with 6 nnz (28.57%)
+│ D: 3 x 1 with 0 nnz (0.0%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠐⢄⠠⠲⡀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠈⠢⡁│⠀⠀⠀⠀⢰
+│ ─────⠀─────
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⢀⠌⠀⡌⠀│⠀⠀⠀⠀⠀
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:235
+┌ Debug: Matrix before
+│   nblocks = 3
+│   rem = 0
+│   rowsperblock = 1
+│   nlow = 3
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:843
+Vector{Int32}[[3, 6], [2, 5], [1, 5]]
+┌ Debug: 
+│   block_start = 1
+│   block_end = 1
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:853
+┌ Debug: 
+│   block_start = 2
+│   block_end = 2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:853
+┌ Debug: 
+│   block_start = 3
+│   block_end = 3
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:853
+┌ Debug: Matrix after
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:864
+Vector{UInt64}[[0x0000000000000001], [0x0000000000000001], #undef]
+Vector{Int32}[[8], [8], [1, 5]]
+Vector{Int32}[[1, 5, 6], [2, 4, 6], [3, 7], [4, 7], [5, 8], [6, 8], [7, 8], #undef]
+┌ Debug: Matrix after x2
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:918
+Vector{UInt64}[[0x0000000000000001], [0x0000000000000001], #undef]
+Vector{Int32}[[1, 5, 6], [2, 4, 6], [3, 7], [4, 7], [5, 8], [6, 8], [7, 8], [8]]
+┌ Debug: After interreduction
+│   new_pivots = 1
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:1211
+Vector{Int32}[[1, 5, 6], [2, 4, 6], [3, 7], [4, 7], [5, 8], [6, 8], [7, 8], [8]]
+Vector{Int32}[[8]]
+┌ Debug: F4: iteration 8
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:694
+┌ Debug: F4: available 1 pairs
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:695
+┌ Debug: Selected 1 pairs of degree 3 from pairset, 0 pairs left
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:481
+┌ Debug: After normal selection: available 0 pairs   
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:728
+┌ Debug: Finding reducers in the basis...
+│   basis.nnonredundant = 1
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:115
+┌ Debug: deterministic_sparse_linear_algebra!        
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:234
+┌ Debug: Main.Groebner.MacaulayMatrix{UInt64}
+│ 6 x 5 with 10 nnz (33.33%)
+│ A: 5 x 5 with 6 nnz (24.0%) (REF: true, RREF: false)
+│ B: 5 x 0 with 0 nnz (NaN%)
+│ C: 1 x 5 with 4 nnz (80.0%)
+│ D: 1 x 0 with 0 nnz (NaN%)
+│ 
+│ RREF flag: false
+│ 
+│ Sparsity pattern:
+│ 
+│ ⠐⠰⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⠀⠀⠈⠂⠄│⠀⠀⠀⠀⠀
+│ ─────⠀─────
+│ ⠀⠀⠀⠀⠀│⠀⠀⠀⠀⠀
+│ ⢀⠀⢀⡀⡀│⠀⠀⠀⠀⠀
+│ 
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:235
+┌ Debug: Matrix before
+│   nblocks = 1
+│   rem = 0
+│   rowsperblock = 1
+│   nlow = 1
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:843
+Vector{Int32}[[1, 3, 4, 5]]
+┌ Debug: 
+│   block_start = 1
+│   block_end = 1
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:853
+┌ Debug: Matrix after
+└ @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:864
+Vector{UInt64}[[0x0000000000000001]]
+Vector{Int32}[[1, 3, 4, 5]]
+Vector{Int32}[[1, 2], [2], [3], [4], [5]]
+ERROR: AssertionError: length(nnz_column_indices) == 
+length(nnz_coeffs)
+Stacktrace:
+  [1] macro expansion
+    @ c:\data\projects\gbgb\Groebner.jl\src\utils\invariants.jl:26 [inlined]
+  [2] macro expansion
+    @ c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:879 [inlined]
+  [3] reduce_matrix_lower_part_threaded_lock_free!(matrix::Main.Groebner.MacaulayMatrix{UInt64}, basis::Main.Groebner.Basis{UInt64}, arithmetic::Main.Groebner.SpecializedBuiltinArithmeticZp{UInt64, true})        
+    @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\timeit.jl:101
+  [4] deterministic_sparse_linear_algebra_threaded!(matrix::Main.Groebner.MacaulayMatrix{UInt64}, basis::Main.Groebner.Basis{UInt64}, linalg::Main.Groebner.LinearAlgebra, arithmetic::Main.Groebner.SpecializedBuiltinArithmeticZp{UInt64, true})
+    @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:237
+  [5] linear_algebra!(matrix::Main.Groebner.MacaulayMatrix{UInt64}, basis::Main.Groebner.Basis{UInt64}, linalg::Main.Groebner.LinearAlgebra, threaded::Symbol, 
+arithmetic::Main.Groebner.SpecializedBuiltinArithmeticZp{UInt64, true}, rng::Random.Xoshiro)
+    @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:168
+  [6] #linear_algebra!#280
+    @ c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:98 [inlined]
+  [7] linear_algebra! (repeats 2 times)
+    @ c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:68 [inlined]
+  [8] macro expansion
+    @ c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:84 [inlined]
+  [9] reduction!
+    @ c:\data\projects\gbgb\Groebner.jl\src\utils\timeit.jl:101 [inlined]
+ [10] macro expansion
+    @ c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:733 [inlined]
+ [11] f4!(ring::Main.Groebner.PolyRing{Main.Groebner._DegRevLex{true}}, basis::Main.Groebner.Basis{UInt64}, pairset::Main.Groebner.Pairset{UInt32}, hashtable::Main.Groebner.MonomialHashtable{Main.Groebner.PackedTuple1{UInt64, UInt8}, Main.Groebner._DegRevLex{true}}, tracer::Main.Groebner.TinyTraceF4, params::Main.Groebner.AlgorithmParameters{Main.Groebner.DegRevLex{Nothing}, Main.Groebner.DegRevLex{Nothing}, Main.Groebner.DegRevLex{Nothing}, Main.Groebner.SpecializedBuiltinArithmeticZp{UInt64, true}})
+    @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\timeit.jl:101
+ [12] macro expansion
+    @ c:\data\projects\gbgb\Groebner.jl\src\groebner\groebner.jl:85 [inlined]
+ [13] _groebner(ring::Main.Groebner.PolyRing{Main.Groebner._DegRevLex{true}}, monoms::Vector{Vector{Main.Groebner.PackedTuple1{UInt64, UInt8}}}, coeffs::Vector{Vector{UInt64}}, params::Main.Groebner.AlgorithmParameters{Main.Groebner.DegRevLex{Nothing}, Main.Groebner.DegRevLex{Nothing}, Main.Groebner.DegRevLex{Nothing}, Main.Groebner.SpecializedBuiltinArithmeticZp{UInt64, true}})
+    @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\timeit.jl:101
+ [14] _groebner(polynomials::Vector{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.GFElem{Int64}}}, kws::Main.Groebner.KeywordsHandler{Main.Groebner.InputOrdering}, representation::Main.Groebner.PolynomialRepresentation)
+    @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\groebner\groebner.jl:53
+ [15] _groebner(polynomials::Vector{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.GFElem{Int64}}}, kws::Main.Groebner.KeywordsHandler{Main.Groebner.InputOrdering})
+    @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\groebner\groebner.jl:12
+ [16] groebner(polynomials::Vector{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.GFElem{Int64}}}; options::Base.Pairs{Symbol, Any, Tuple{Symbol, Symbol, Symbol}, NamedTuple{(:loglevel, :linalg, :threaded), Tuple{Int64, Symbol, Symbol}}})
+    @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\interface.jl:100
+ [17] top-level scope
+    @ REPL[23]:1

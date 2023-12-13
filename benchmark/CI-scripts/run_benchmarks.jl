@@ -49,7 +49,19 @@ push!(
     suite,
     (
         problem_name="groebner, AA, GF(2^31-1), katsura 10",
-        result=compute_gb(Groebner.katsuran(10, ordering=:degrevlex, ground=GF(2^31 - 1)))
+        result=compute_gb(
+            Groebner.katsuran(10, ordering=:degrevlex, ground=GF(2^31 - 1)),
+            5
+        )
+    )
+)
+push!(
+    suite,
+    (
+        problem_name="groebner, AA, GF(2^27+29), katsura 10",
+        result=compute_gb(
+            Groebner.katsuran(10, ordering=:degrevlex, ground=GF(2^27 + 29), 5)
+        )
     )
 )
 push!(

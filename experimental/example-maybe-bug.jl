@@ -3,17 +3,79 @@ using AbstractAlgebra, BenchmarkTools # , Groebner
 R, (x1, x2, x3) = PolynomialRing(GF(2^27 + 29), ["x1", "x2", "x3"], ordering=:degrevlex)
 R, (x1, x2, x3) = PolynomialRing(GF(2^31 - 1), ["x1", "x2", "x3"], ordering=:degrevlex)
 
-s = [x1 * x2^2 + 2, x1 * x3 + 3, x2 * x3 + 4 * x1 - 5]
-gb = Groebner.groebner(s, loglevel=-5)
-gb
+s = [x1 * x2^5 + 2, x1^3 * x3 + 3, x2^2 * x3^3 + 4 * x1^4 - 5]
+gb1 = Groebner.groebner(
+    s,
+    loglevel=-5,
+    linalg=:deterministic,
+    threaded=:yes,
+    threadalgo=:lock_free,
+    nworkers=3
+);
+gb2 = Groebner.groebner(
+    s,
+    loglevel=-5,
+    linalg=:deterministic,
+    threaded=:yes,
+    threadalgo=:compare_and_swap,
+    nworkers=3
+);
+gb3 = Groebner.groebner(s, loglevel=-5, linalg=:deterministic, threaded=:no);
+gb1 == gb2 == gb3
 
 p1 = 2^31 - 1
 p2 = 2^29 + 11
 p3 = 2^27 + 29
 p4 = 2^25 + 35
-s = Groebner.eco11(ordering=:degrevlex, ground=AbstractAlgebra.GF(p4))
+s = Groebner.katsuran(10, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))
 
-@time gb1 = Groebner.groebner(s);
+Groebner.logging_enabled() = false
+Groebner.invariants_enabled() = false
+@time gb1 = Groebner.groebner(
+    s,
+    linalg=:deterministic,
+    threaded=:yes,
+    threadalgo=:compare_and_swap,
+    loglevel=0,
+    nworkers=1
+);
+@time gb2 = Groebner.groebner(s, loglevel=0, linalg=:deterministic, threaded=:no);
+gb1 == gb2
+
+BenchmarkTools.DEFAULT_PARAMETERS.samples = 3
+systems = [
+    ("kat7", Groebner.katsuran(7, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
+    ("kat8", Groebner.katsuran(8, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
+    ("kat9", Groebner.katsuran(9, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
+    ("kat10", Groebner.katsuran(10, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
+    ("cyc6", Groebner.cyclicn(6, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
+    ("cyc7", Groebner.cyclicn(7, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
+    ("cyc8", Groebner.cyclicn(8, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
+    ("eco10", Groebner.eco10(ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
+    ("eco11", Groebner.eco11(ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
+    ("eco12", Groebner.eco12(ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
+    ("noon6", Groebner.noonn(6, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
+    ("noon7", Groebner.noonn(7, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2)))
+]
+for (name, s) in systems
+    @info "$name: lock_free / compare_and_swap / single_thread"
+    gb1 = @btime Groebner.groebner(
+        $s,
+        linalg=:deterministic,
+        threaded=:yes,
+        loglevel=0,
+        threadalgo=:lock_free
+    )
+    gb2 = @btime Groebner.groebner(
+        $s,
+        linalg=:deterministic,
+        threaded=:yes,
+        loglevel=0,
+        threadalgo=:compare_and_swap
+    )
+    gb3 = @btime Groebner.groebner($s, loglevel=0, linalg=:deterministic, threaded=:no)
+    @assert gb1 == gb2 == gb3
+end
 
 @time trace, gb2 = Groebner.groebner_learn(s);
 

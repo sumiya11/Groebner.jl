@@ -3,11 +3,13 @@
 using Test
 using TestSetExtensions
 using InteractiveUtils
+using Base.Threads
 
 const MAX_ACCEPTABLE_RELATIVE_DEVIATION = 0.1
 const IGNORE_SMALL_ABSOLUTE_DEVIATION = 1e-3
 
 @info "Start benchmarking.."
+@info "Using $(nthreads()) threads in Groebner.jl"
 
 # Run benchmarks on the latest stable version of Groebner.jl
 dir_stable = (@__DIR__) * "/run-on-stable"
