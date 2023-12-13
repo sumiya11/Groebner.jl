@@ -4,21 +4,8 @@ R, (x1, x2, x3) = PolynomialRing(GF(2^27 + 29), ["x1", "x2", "x3"], ordering=:de
 R, (x1, x2, x3) = PolynomialRing(GF(2^31 - 1), ["x1", "x2", "x3"], ordering=:degrevlex)
 
 s = [x1 * x2^5 + 2, x1^3 * x3 + 3, x2^2 * x3^3 + 4 * x1^4 - 5]
-gb1 = Groebner.groebner(
-    s,
-    loglevel=-3,
-    linalg=:randomized,
-    threaded=:yes,
-    nworkers=4,
-    threadalgo=:compare_and_swap
-);
-gb2 = Groebner.groebner(
-    s,
-    loglevel=-5,
-    linalg=:randomized,
-    threaded=:no,
-    threadalgo=:compare_and_swap
-);
+gb1 = Groebner.groebner(s, loglevel=-3, linalg=:randomized, threaded=:yes);
+gb2 = Groebner.groebner(s, loglevel=-5, linalg=:randomized, threaded=:no);
 gb3 = Groebner.groebner(s, loglevel=-5, linalg=:deterministic, threaded=:no);
 gb1 == gb2 == gb3
 
@@ -31,8 +18,8 @@ s = Groebner.katsuran(11, ordering=:degrevlex, ground=AbstractAlgebra.GF(p3))
 Groebner.logging_enabled() = false
 Groebner.invariants_enabled() = false
 
-@time gb1 = Groebner.groebner(s, linalg=:randomized, threaded=:yes);
-@profview gb2 = Groebner.groebner(s, linalg=:randomized, threaded=:no);
+@profview gb1 = Groebner.groebner(s, linalg=:randomized, threaded=:yes);
+@time gb2 = Groebner.groebner(s, linalg=:randomized, threaded=:no);
 
 gb1 == gb2
 
