@@ -32,7 +32,7 @@ systems = [
     ("noon8", Groebner.noonn(8, ordering=:degrevlex, ground=AbstractAlgebra.GF(p)))
 ]
 
-table = Matrix{Any}(undef, (length(systems), 3))
+table = Matrix{Any}(undef, (length(systems), 4))
 
 function benchmark_system(system, trials=5; kwargs...)
     timings = []
@@ -48,27 +48,22 @@ end
 for (i, (name, s)) in enumerate(systems)
     @info """
     $name:
-    lock_free / compare_and_swap / single_thread"""
-    gb1, t1 =
-        benchmark_system(s; linalg=:deterministic, threaded=:yes, threadalgo=:lock_free)
-    gb2, t2 = benchmark_system(
-        s;
-        linalg=:deterministic,
-        threaded=:yes,
-        threadalgo=:compare_and_swap
-    )
-    gb3, t3 = benchmark_system(s; linalg=:deterministic, threaded=:no)
+    linalg #1 / linalg #1 threaded / linalg #2 (default) / linalg #2 threaded"""
+    gb1, t1 = benchmark_system(s; linalg=:deterministic, threaded=:no)
+    gb2, t2 = benchmark_system(s; linalg=:deterministic, threaded=:yes)
+    gb3, t3 = benchmark_system(s; linalg=:randomized, threaded=:no)
+    gb4, t4 = benchmark_system(s; linalg=:randomized, threaded=:yes)
 
-    (t1, t2, t3) = map(t -> BenchmarkTools.prettytime(t * 1e9), (t1, t2, t3))
-    table[i, :] .= (t1, t2, t3)
-    println("$t1 / $t2 / $t3")
+    (t1, t2, t3, t4) = map(t -> BenchmarkTools.prettytime(t * 1e9), (t1, t2, t3, t4))
+    table[i, :] .= (t1, t2, t3, t4)
+    println("$t1 / $t2 / $t3 / $t4")
 
-    @assert gb1 == gb2 == gb3
+    @assert gb1 == gb2 == gb3 == gb4
 end
 
 pretty_table(
     table,
-    header=["lock_free", "compare_and_swap", "single_thread"],
+    header=["linalg #1", "linalg #1 threaded", "linalg #2 (default)", "linalg #2 threaded"],
     tf=tf_markdown,
     row_labels=map(first, systems)
 )
