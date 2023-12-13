@@ -8,7 +8,8 @@ The `polynomials` must be an array of polynomials from `AbstractAlgebra.jl`,
 `Nemo.jl`, or `DynamicPolynomials.jl`. For `AbstractAlgebra.jl` and `Nemo.jl`,
 the coefficients of polynomials must be either in `GF(p)` or in `QQ`.
 
-This function is thread-safe.
+This function is thread-safe. Groebner.jl may also use multi-threading
+internally. See the option `threaded` below.
 
 ## Possible Options
 
@@ -23,8 +24,8 @@ The `groebner` routine takes the following optional arguments:
     - `DegRevLex(args...)` for degree reverse lexicographic, 
     - `WeightedOrdering(args...)` for weighted ordering, 
     - `ProductOrdering(args...)` for block ordering, 
-    - `MatrixOrdering(args...)` for matrix ordering. 
-  For details and examples see the corresponding documentation page.
+    - `MatrixOrdering(args...)` for matrix ordering. For details and examples
+  see the corresponding documentation page.
 - `certify`: Certify the obtained basis. When this option is `false`, the
     algorithm is randomized, and the result is correct with high probability.
     When this option is `true`, the result is guaranteed to be correct in case
@@ -33,6 +34,13 @@ The `groebner` routine takes the following optional arguments:
     - `:auto`: for the automatic choice (default),
     - `:deterministic` for deterministic sparse linear algebra, 
     - `:randomized` for probabilistic sparse linear algebra.
+- `threaded`: The use of multi-threading. Available options are: 
+    - `:auto`: for the automatic choice (default),
+    - `:no`: do not use multi-threading, 
+    - `:yes`: use multi-threading.
+    Additionally, you can set the environment variable `GROEBNER_NO_THREADED` to
+    `1` to disable all multi-threading in Groebner.jl. In this case, the
+    environment variable takes precedence over the `threaded` option.
 - `monoms`: Monomial representation used in the computations. The algorithm
     tries to automatically choose the most suitable monomial representation.
     Otherwise, set `monoms` to one of the following: 

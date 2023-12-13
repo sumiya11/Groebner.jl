@@ -40,7 +40,8 @@ import AbstractAlgebra
 import AbstractAlgebra: base_ring, elem_type
 
 import Base: *
-import Base.Threads: nthreads, threadid, @spawn
+import Base.Threads
+import Base.Threads: nthreads, threadid
 import Base.MultiplicativeInverses: UnsignedMultiplicativeInverse
 
 import Combinatorics
@@ -101,6 +102,8 @@ include("utils/invariants.jl")
 include("utils/timeit.jl")
 # Provides the macro `@stat` for collecting statistics
 include("utils/statistics.jl")
+
+# include("utils/versioninfo.jl")
 
 # Minimalistic plotting with Unicode
 include("utils/plots.jl")

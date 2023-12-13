@@ -84,30 +84,18 @@ function linear_algebra!(
     end
 
     # Multi-threading is disabled by default!
-    threaded = if params.threaded === :yes
+    threaded = if params.threaded === :yes && nthreads() > 1
         :yes
     elseif params.threaded === :auto
         :no
     else
         :no
     end
-    nworkers = params.nworkers
-    threadalgo = params.threadalgo
 
     flag = if !isnothing(trace)
-        linear_algebra!(
-            trace,
-            matrix,
-            basis,
-            linalg,
-            threaded,
-            nworkers,
-            threadalgo,
-            arithmetic,
-            rng
-        )
+        linear_algebra_with_trace!(trace, matrix, basis, linalg, threaded, arithmetic, rng)
     else
-        linear_algebra!(matrix, basis, linalg, threaded, nworkers, threadalgo, arithmetic, rng)
+        linear_algebra!(matrix, basis, linalg, threaded, arithmetic, rng)
     end
 
     flag
@@ -172,26 +160,21 @@ function linear_algebra!(
     basis::Basis,
     linalg::LinearAlgebra,
     threaded::Symbol,
-    nworkers::Int,
-    threadalgo::Symbol,
     arithmetic::AbstractArithmetic,
     rng::AbstractRNG
 )
     flag = if linalg.algorithm === :deterministic
         if threaded === :yes
-            deterministic_sparse_linear_algebra_threaded!(
-                matrix,
-                basis,
-                linalg,
-                arithmetic,
-                nworkers,
-                threadalgo
-            )
+            deterministic_sparse_linear_algebra_threaded!(matrix, basis, linalg, arithmetic)
         else
             deterministic_sparse_linear_algebra!(matrix, basis, linalg, arithmetic)
         end
     elseif linalg.algorithm === :randomized
-        randomized_sparse_linear_algebra!(matrix, basis, linalg, arithmetic, rng)
+        if threaded === :yes
+            randomized_sparse_linear_algebra_threaded!(matrix, basis, linalg, arithmetic, rng)
+        else
+            randomized_sparse_linear_algebra!(matrix, basis, linalg, arithmetic, rng)
+        end
     elseif linalg.algorithm === :experimental_1
         if linalg.sparsity === :sparse
             direct_rref_sparse_linear_algebra!(matrix, basis, linalg, arithmetic)
@@ -209,14 +192,12 @@ end
 
 # Linear algebra with a learned trace of computation
 # TODO: rename to linear_algebra_use_trace! or something
-function linear_algebra!(
+function linear_algebra_with_trace!(
     trace::TraceF4,
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
     threaded::Symbol,
-    nworkers::Int,
-    threadalgo::Symbol,
     arithmetic::AbstractArithmetic,
     rng::AbstractRNG
 )
@@ -251,19 +232,17 @@ function deterministic_sparse_linear_algebra_threaded!(
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
-    arithmetic::AbstractArithmetic,
-    nworkers::Int,
-    threadalgo::Symbol
+    arithmetic::AbstractArithmetic
 )
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
     @log level = -3 "deterministic_sparse_linear_algebra!"
     @log level = -3 repr_matrix(matrix)
     # Reduce CD with AB
-    if threadalgo == :lock_free
-        reduce_matrix_lower_part_threaded_lock_free!(matrix, basis, arithmetic, nworkers)
+    if false
+        reduce_matrix_lower_part_threaded_lock_free!(matrix, basis, arithmetic)
     else
-        reduce_matrix_lower_part_threaded_cas!(matrix, basis, arithmetic, nworkers)
+        reduce_matrix_lower_part_threaded_cas!(matrix, basis, arithmetic)
     end
     # Interreduce CD
     interreduce_matrix_pivots!(matrix, basis, arithmetic)
@@ -283,6 +262,24 @@ function randomized_sparse_linear_algebra!(
     @log level = -3 repr_matrix(matrix)
     # Reduce CD with AB
     randomized_reduce_matrix_lower_part!(matrix, basis, arithmetic, rng)
+    # Interreduce CD
+    interreduce_matrix_pivots!(matrix, basis, arithmetic)
+    true
+end
+
+function randomized_sparse_linear_algebra_threaded!(
+    matrix::MacaulayMatrix,
+    basis::Basis,
+    linalg::LinearAlgebra,
+    arithmetic::AbstractArithmetic,
+    rng::AbstractRNG
+)
+    sort_matrix_upper_rows!(matrix) # for the AB part
+    sort_matrix_lower_rows!(matrix) # for the CD part
+    @log level = -3 "randomized_sparse_linear_algebra_threaded!"
+    @log level = -3 repr_matrix(matrix)
+    # Reduce CD with AB
+    randomized_reduce_matrix_lower_part_threaded_cas!(matrix, basis, arithmetic, rng)
     # Interreduce CD
     interreduce_matrix_pivots!(matrix, basis, arithmetic)
     true
@@ -878,20 +875,19 @@ end
 @timeit function reduce_matrix_lower_part_threaded_cas!(
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
-    arithmetic::A,
-    nworkers::Int
+    arithmetic::A
 ) where {C <: Coeff, A <: AbstractArithmetic}
     _, ncols = size(matrix)
     nup, nlow = nrows_filled(matrix)
 
     # Calculate the size of the block
-    nblocks = iszero(nworkers) ? nthreads() - 1 : nworkers
+    nblocks = nthreads()
     nblocks = min(nblocks, nlow)
     # nblocks = 1
     rem = nlow % nblocks == 0 ? 0 : 1
     rowsperblock = div(nlow, nblocks) + rem
 
-    @log level = -3 "" nworkers nblocks rem rowsperblock nlow
+    @log level = -3 "" nblocks rem rowsperblock nlow
     # println(matrix.lower_rows)
 
     # Prepare the matrix
@@ -905,30 +901,37 @@ end
         matrix.sentinels[matrix.upper_rows[i][1]] = 1
     end
 
-    @sync begin
-        for i in 2:nblocks
-            block_start = 1 + (i - 1) * rowsperblock
-            block_end = min(nlow, i * rowsperblock)
-            block_start > nlow && continue
-            @log level = -1 "" block_start block_end
-            @invariant 1 <= block_start <= block_end <= nlow
-            @spawn _reduce_matrix_lower_part_threaded_cas_worker!(
-                matrix,
-                basis,
-                arithmetic,
-                row_index_to_coeffs,
-                block_start,
-                block_end
-            )
-        end
-        @spawn _reduce_matrix_lower_part_threaded_cas_worker!(
+    tasks = Vector{Task}(undef, nblocks)
+
+    for i in 2:nblocks
+        block_start = 1 + (i - 1) * rowsperblock
+        block_end = min(nlow, i * rowsperblock)
+        block_start > nlow && continue
+        @log level = -3 "" block_start block_end
+        @invariant 1 <= block_start <= block_end <= nlow
+        tasks[i] = Base.Threads.@spawn _reduce_matrix_lower_part_threaded_cas_worker!(
             matrix,
             basis,
             arithmetic,
             row_index_to_coeffs,
-            1,
-            rowsperblock
+            block_start,
+            block_end
         )
+    end
+
+    _reduce_matrix_lower_part_threaded_cas_worker!(
+        matrix,
+        basis,
+        arithmetic,
+        row_index_to_coeffs,
+        1,
+        rowsperblock
+    )
+
+    for i in 1:nblocks
+        if isassigned(tasks, i)
+            fetch(tasks[i])
+        end
     end
 
     true
@@ -999,20 +1002,19 @@ end
 @timeit function reduce_matrix_lower_part_threaded_lock_free!(
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
-    arithmetic::A,
-    nworkers::Int
+    arithmetic::A
 ) where {C <: Coeff, A <: AbstractArithmetic}
     _, ncols = size(matrix)
     _, nlow = nrows_filled(matrix)
 
     # Calculate the size of the block
-    nblocks = iszero(nworkers) ? nthreads() - 1 : nworkers
+    nblocks = nthreads()
     nblocks = min(nblocks, nlow)
     # nblocks = 1
     rem = nlow % nblocks == 0 ? 0 : 1
     rowsperblock = div(nlow, nblocks) + rem
 
-    @log level = -3 "" nworkers nblocks rem rowsperblock nlow
+    @log level = -3 "" nblocks rem rowsperblock nlow
     # println(matrix.lower_rows)
 
     # Prepare the matrix
@@ -1023,36 +1025,38 @@ end
         matrix.sentinels[i] = 0
     end
 
-    @sync begin
-        for i in 2:nblocks
-            block_start = 1 + (i - 1) * rowsperblock
-            block_end = min(nlow, i * rowsperblock)
-            block_start > nlow && continue
-            @log level = -1 "" block_start block_end
-            @invariant 1 <= block_start <= block_end <= nlow
-            @spawn _reduce_matrix_lower_part_threaded_lock_free_worker!(
-                matrix,
-                basis,
-                arithmetic,
-                row_index_to_coeffs,
-                block_start,
-                block_end
-            )
-        end
-        @spawn _reduce_matrix_lower_part_threaded_lock_free_worker!(
+    tasks = Vector{Task}(undef, nblocks)
+
+    for i in 2:nblocks
+        block_start = 1 + (i - 1) * rowsperblock
+        block_end = min(nlow, i * rowsperblock)
+        block_start > nlow && continue
+        @log level = -3 "" block_start block_end
+        @invariant 1 <= block_start <= block_end <= nlow
+        tasks[i] = Base.Threads.@spawn _reduce_matrix_lower_part_threaded_lock_free_worker!(
             matrix,
             basis,
             arithmetic,
             row_index_to_coeffs,
-            1,
-            rowsperblock
+            block_start,
+            block_end
         )
     end
 
-    # @log level = -1 "Matrix after"
-    # println(matrix.some_coeffs)
-    # println(matrix.lower_rows)
-    # println(matrix.pivots)
+    _reduce_matrix_lower_part_threaded_lock_free_worker!(
+        matrix,
+        basis,
+        arithmetic,
+        row_index_to_coeffs,
+        1,
+        rowsperblock
+    )
+
+    for i in 1:nblocks
+        if isassigned(tasks, i)
+            fetch(tasks[i])
+        end
+    end
 
     row = zeros(C, ncols)
     new_column_indices, new_coeffs = new_empty_sparse_row(C)
@@ -1648,6 +1652,11 @@ function randomized_reduce_matrix_lower_part!(
     new_column_indices, new_coeffs = new_empty_sparse_row(C)
     rows_multipliers = zeros(C, rowsperblock)
 
+    @log level = -3 "Before"
+    @log level = -3 "" nblocks rowsperblock
+    # println(matrix.lower_rows)
+    # println(pivots)
+
     for i in 1:nblocks
         nrowsupper = nlow > i * rowsperblock ? i * rowsperblock : nlow
         nrowstotal = nrowsupper - (i - 1) * rowsperblock
@@ -1696,6 +1705,9 @@ function randomized_reduce_matrix_lower_part!(
             zeroed && break
             new_pivots_count += 1
 
+            # @warn "new row" i new_pivots_count
+            # println(new_coeffs)
+
             normalize_row!(new_coeffs, arithmetic)
             @invariant length(new_column_indices) == length(new_coeffs)
 
@@ -1707,6 +1719,158 @@ function randomized_reduce_matrix_lower_part!(
             new_column_indices, new_coeffs = new_empty_sparse_row(C)
         end
     end
+
+    @log level = -3 "After"
+    # println(matrix.some_coeffs)
+    # println(pivots)
+
+    true
+end
+
+function randomized_reduce_matrix_lower_part_threaded_cas!(
+    matrix::MacaulayMatrix{C},
+    basis::Basis{C},
+    arithmetic::A,
+    rng::AbstractRNG
+) where {C <: Coeff, A <: AbstractArithmetic}
+    _, ncols = size(matrix)
+    nup, nlow = nrows_filled(matrix)
+
+    nblocks = nblocks_in_randomized(nlow)
+    rem = nlow % nblocks == 0 ? 0 : 1
+    rowsperblock = div(nlow, nblocks) + rem
+
+    # println(matrix.lower_rows)
+
+    # Allocate the buffers
+    # row_buffers = [zeros(C, ncols) for _ in 1:nthreads()]
+    # new_row_buffers = [new_empty_sparse_row(C) for _ in 1:nthreads()]
+    # rows_multipliers_buffers = [zeros(C, rowsperblock) for _ in 1:nthreads()]
+    # thread_local_rngs = [copy(rng) for _ in 1:nthreads()]
+
+    # Prepare the matrix
+    pivots, row_index_to_coeffs = absolute_index_pivots!(matrix)
+    resize!(matrix.some_coeffs, nlow)
+    resize!(matrix.sentinels, ncols)
+    sentinels = matrix.sentinels
+    @inbounds for i in 1:ncols
+        sentinels[i] = 0
+    end
+    for i in 1:nup
+        sentinels[matrix.upper_rows[i][1]] = 1
+    end
+
+    @log level = -3 "Before"
+    @log level = -3 "" nblocks rowsperblock
+    @log level = -3 "" sentinels
+    # println(matrix.lower_rows)
+    # println(pivots)
+
+    Base.Threads.@threads for i in 1:nblocks
+        nrowsupper = min(i * rowsperblock, nlow)
+        nrowstotal = nrowsupper - (i - 1) * rowsperblock
+        nrowstotal == 0 && continue
+
+        # t_id = threadid()
+        # rows_multipliers = rows_multipliers_buffers[t_id]
+        # row = row_buffers[t_id]
+        # new_column_indices, new_coeffs = new_row_buffers[t_id]
+        # rng = thread_local_rngs[t_id]
+        row = zeros(C, ncols)
+        new_column_indices, new_coeffs = new_empty_sparse_row(C)
+        rows_multipliers = zeros(C, rowsperblock)
+        local_rng = copy(rng)
+
+        new_pivots_count = 0
+        @inbounds while new_pivots_count < nrowstotal
+            # Produce a random linear combination of several rows from the lower
+            # part of the matrix
+            for j in 1:nrowstotal
+                # TODO: does not work for the rationals
+                # TODO: can vectorize random number generation
+                rows_multipliers[j] = mod_p(rand(local_rng, C), arithmetic)
+            end
+            row .= C(0)
+            first_nnz_col = ncols
+
+            for k in 1:nrowstotal
+                rowidx = (i - 1) * rowsperblock + k
+                nnz_column_indices = matrix.lower_rows[rowidx]
+                nnz_coeffs = basis.coeffs[row_index_to_coeffs[rowidx]]
+                @invariant length(nnz_column_indices) == length(nnz_coeffs)
+
+                first_nnz_col = min(first_nnz_col, nnz_column_indices[1])
+                for l in 1:length(nnz_coeffs)
+                    colidx = nnz_column_indices[l]
+                    row[colidx] =
+                        mod_p(row[colidx] + rows_multipliers[k] * nnz_coeffs[l], arithmetic)
+                end
+            end
+
+            success = false
+            while !success
+
+                # Reduce the combination by rows from the upper part of the matrix
+                zeroed = reduce_dense_row_by_pivots_sparse!(
+                    new_column_indices,
+                    new_coeffs,
+                    row,
+                    matrix,
+                    basis,
+                    pivots,
+                    first_nnz_col,
+                    ncols,
+                    arithmetic,
+                    tmp_pos=-1
+                )
+
+                if zeroed
+                    # println("zeroed!")
+                    new_pivots_count = nrowstotal
+                    break
+                end
+
+                @invariant length(new_column_indices) == length(new_coeffs)
+
+                # @warn "new row" i new_pivots_count
+                # println(new_coeffs)
+
+                old, success = UnsafeAtomics.cas!(
+                    pointer(sentinels, new_column_indices[1]),
+                    Int8(0),
+                    Int8(1),
+                    UnsafeAtomics.seq_cst,
+                    UnsafeAtomics.seq_cst
+                )
+
+                # println("success $success")
+
+                if success
+                    @invariant iszero(old)
+
+                    new_pivots_count += 1
+                    absolute_row_index = (i - 1) * rowsperblock + new_pivots_count
+                    # println(
+                    #     "New $new_pivots_count, $absolute_row_index; pivot -> $(new_column_indices[1])"
+                    # )
+
+                    normalize_row!(new_coeffs, arithmetic)
+                    matrix.some_coeffs[absolute_row_index] = new_coeffs
+                    matrix.lower_to_coeffs[new_column_indices[1]] = absolute_row_index
+                    pivots[new_column_indices[1]] = new_column_indices
+                else
+                    first_nnz_col = new_column_indices[1]
+                end
+            end
+
+            new_column_indices, new_coeffs = new_empty_sparse_row(C)
+        end
+    end
+
+    @log level = -3 "After"
+    # println(matrix.some_coeffs)
+    # println(pivots)
+    @log level = -3 "" sentinels
 
     true
 end

@@ -20,8 +20,6 @@ const _supported_kw_args = (
         selection   = :auto,
         modular     = :auto,
         threaded    = :auto,
-        nworkers    = nthreads() - 1,
-        threadalgo  = :lock_free,
         sweep       = false,
         homogenize  = :auto,
         statistics  = :no,
@@ -77,8 +75,6 @@ struct KeywordsHandler{Ord}
     certify::Bool
     linalg::Symbol
     threaded::Symbol
-    nworkers::Int
-    threadalgo::Symbol
     monoms::Symbol
     seed::Int
     loglevel::Int
@@ -119,8 +115,6 @@ struct KeywordsHandler{Ord}
         Not recognized threading option: $threaded
         Possible choices for keyword "threaded" are:
         `:auto`, `:no`, `:yes`"""
-        nworkers = get(kws, :nworkers, get(default_kw_args, :nworkers, nthreads() - 1))
-        threadalgo = get(kws, :threadalgo, get(default_kw_args, :threadalgo, :compare_and_swap))
 
         monoms = get(kws, :monoms, get(default_kw_args, :monoms, :dense))
         @assert monoms in (:auto, :dense, :packed, :sparse) """
@@ -183,8 +177,6 @@ struct KeywordsHandler{Ord}
             certify,
             linalg,
             threaded,
-            nworkers,
-            threadalgo,
             monoms,
             seed,
             loglevel,

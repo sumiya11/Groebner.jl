@@ -2,7 +2,7 @@ using Base.Threads
 
 @testset "groebner multi-threading Zp" begin
     if Groebner._threaded[]
-        @info "Testing multi-threading with $(nthreads()) threads"
+        @info "Testing multi-threading using $(nthreads()) threads"
 
         R, (x, y, z) = GF(2^31 - 1)["x", "y", "z"]
 
@@ -18,12 +18,13 @@ using Base.Threads
               Groebner.groebner(s, threaded=:auto) ==
               [z^1000 + 3, y^3000 + 2, x^(2^10) + 1]
 
-        linalgs = [:deterministic, :randomized]
-        threadeds = [:yes, :no, :auto]
-        grid = [(linalg=l, threaded=t) for l in linalgs for t in threadeds]
+        linalg = [:deterministic, :randomized]
+        threaded = [:yes, :no, :auto]
+        grid = [(linalg=l, threaded=t) for l in linalg for t in threaded]
         for system in [
             Groebner.katsuran(3, ordering=:lex, ground=GF(2^31 - 1)),
             Groebner.katsuran(4, ordering=:lex, ground=GF(2^20 + 7)),
+            Groebner.katsuran(7, ordering=:degrevlex, ground=GF(2^31 - 1)),
             Groebner.eco5(ordering=:deglex, ground=GF(2^20 + 7)),
             Groebner.eco5(ordering=:degrevlex, ground=GF(2^20 + 7)),
             Groebner.cyclicn(5, ordering=:degrevlex, ground=GF(2^20 + 7)),
@@ -46,6 +47,6 @@ using Base.Threads
         @info "Skipping multi-threading tests"
 
         R, (x, y, z) = GF(2^31 - 1)["x", "y", "z"]
-        @test_throws AssertionError Groebner.groebner([x], threaded=:yes)
+        Groebner.groebner([x], threaded=:yes)
     end
 end

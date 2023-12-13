@@ -6,19 +6,18 @@ R, (x1, x2, x3) = PolynomialRing(GF(2^31 - 1), ["x1", "x2", "x3"], ordering=:deg
 s = [x1 * x2^5 + 2, x1^3 * x3 + 3, x2^2 * x3^3 + 4 * x1^4 - 5]
 gb1 = Groebner.groebner(
     s,
-    loglevel=-5,
-    linalg=:deterministic,
+    loglevel=-3,
+    linalg=:randomized,
     threaded=:yes,
-    threadalgo=:lock_free,
-    nworkers=3
+    nworkers=4,
+    threadalgo=:compare_and_swap
 );
 gb2 = Groebner.groebner(
     s,
     loglevel=-5,
-    linalg=:deterministic,
-    threaded=:yes,
-    threadalgo=:compare_and_swap,
-    nworkers=3
+    linalg=:randomized,
+    threaded=:no,
+    threadalgo=:compare_and_swap
 );
 gb3 = Groebner.groebner(s, loglevel=-5, linalg=:deterministic, threaded=:no);
 gb1 == gb2 == gb3
@@ -27,19 +26,14 @@ p1 = 2^31 - 1
 p2 = 2^29 + 11
 p3 = 2^27 + 29
 p4 = 2^25 + 35
-s = Groebner.katsuran(10, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))
+s = Groebner.katsuran(11, ordering=:degrevlex, ground=AbstractAlgebra.GF(p3))
 
 Groebner.logging_enabled() = false
 Groebner.invariants_enabled() = false
-@time gb1 = Groebner.groebner(
-    s,
-    linalg=:deterministic,
-    threaded=:yes,
-    threadalgo=:compare_and_swap,
-    loglevel=0,
-    nworkers=1
-);
-@time gb2 = Groebner.groebner(s, loglevel=0, linalg=:deterministic, threaded=:no);
+
+@time gb1 = Groebner.groebner(s, linalg=:randomized, threaded=:yes);
+@profview gb2 = Groebner.groebner(s, linalg=:randomized, threaded=:no);
+
 gb1 == gb2
 
 BenchmarkTools.DEFAULT_PARAMETERS.samples = 3
@@ -58,23 +52,12 @@ systems = [
     ("noon7", Groebner.noonn(7, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2)))
 ]
 for (name, s) in systems
-    @info "$name: lock_free / compare_and_swap / single_thread"
-    gb1 = @btime Groebner.groebner(
-        $s,
-        linalg=:deterministic,
-        threaded=:yes,
-        loglevel=0,
-        threadalgo=:lock_free
-    )
-    gb2 = @btime Groebner.groebner(
-        $s,
-        linalg=:deterministic,
-        threaded=:yes,
-        loglevel=0,
-        threadalgo=:compare_and_swap
-    )
-    gb3 = @btime Groebner.groebner($s, loglevel=0, linalg=:deterministic, threaded=:no)
-    @assert gb1 == gb2 == gb3
+    @info "$name: randomized thr. / randomized / deterministic thr. / deterministic"
+    gb1 = @btime Groebner.groebner($s, linalg=:randomized, threaded=:yes)
+    gb2 = @btime Groebner.groebner($s, linalg=:randomized, threaded=:no)
+    gb3 = @btime Groebner.groebner($s, linalg=:deterministic, threaded=:yes)
+    gb4 = @btime Groebner.groebner($s, loglevel=0, linalg=:deterministic)
+    @assert gb1 == gb2 == gb3 == gb4
 end
 
 @time trace, gb2 = Groebner.groebner_learn(s);

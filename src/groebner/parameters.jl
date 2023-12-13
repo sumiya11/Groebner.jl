@@ -89,8 +89,6 @@ mutable struct AlgorithmParameters{
     # Use multi-threading.
     # This does nothing currently.
     threaded::Symbol
-    nworkers::Int
-    threadalgo::Symbol
 
     # Random number generator
     seed::UInt64
@@ -198,8 +196,6 @@ function AlgorithmParameters(
         end
         threaded = :no
     end
-    nworkers = kwargs.nworkers
-    threadalgo = kwargs.threadalgo
     #
     modular_strategy = kwargs.modular
     if modular_strategy === :auto
@@ -228,8 +224,6 @@ function AlgorithmParameters(
     check = $(kwargs.check)
     linalg = $linalg_algorithm
     threaded = $threaded
-    nworkers = $nworkers
-    threadalgo = $threadalgo
     arithmetic = $arithmetic
     reduced = $reduced
     homogenize = $homogenize
@@ -263,8 +257,6 @@ function AlgorithmParameters(
         majority_threshold,
         crt_algorithm,
         threaded,
-        nworkers,
-        threadalgo,
         useed,
         rng,
         sweep,
@@ -292,8 +284,6 @@ function params_mod_p(params::AlgorithmParameters, prime::Integer)
         params.majority_threshold,
         params.crt_algorithm,
         params.threaded,
-        params.nworkers,
-        params.threadalgo,
         params.seed,
         params.rng,
         params.sweep,
