@@ -61,7 +61,7 @@ function benchmark_set_2()
 end
 
 function dummy_system(ground_field)
-    ring, (x, y) = AbstractAlgebra.PolynomialRing(ground_field, ["x", "y"])
+    ring, (x, y) = AbstractAlgebra.polynomial_ring(ground_field, ["x", "y"])
     ("dummy", [x^2 + y^2 - 1, x + y])
 end
 

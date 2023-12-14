@@ -53,14 +53,16 @@ const _supported_kw_args = (
         loglevel    = _default_loglevel,
         homogenize  = :auto,
         sweep       = true,
-        statistics  = :no
+        statistics  = :no,
+        threaded    = :auto,
     ),
     groebner_apply! = (
         seed        = 42,
         monoms      = :auto,
         loglevel    = _default_loglevel,
         sweep       = true,
-        statistics  = :no
+        statistics  = :no,
+        threaded    = :auto,
     )
 )
 #! format: on

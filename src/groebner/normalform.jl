@@ -1,3 +1,4 @@
+# Backend for `normalform`
 
 function _normalform(polynomials, to_be_reduced, kws::KeywordsHandler)
     polynomial_repr =

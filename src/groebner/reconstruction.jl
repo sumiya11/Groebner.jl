@@ -1,9 +1,14 @@
-# Rational reconstruction and Chinese mod_p theorem (CRT) reconstruction
+# Rational reconstruction and Chinese Remainder theorem (CRT) reconstruction
+
+###
+# Rational reconstruction
 
 """
-Returns the bound for rational reconstruction (see `rational_reconstruction!`)
-based on the bitsize of the modulo. As soon as the numerator in rational
-reconstruction exceeds this bound, the gcd iteration stops
+    rational_reconstruction_bound
+
+Returns the bound for rational reconstruction based on the bitsize of the
+modulo. As soon as the numerator in rational reconstruction exceeds this bound,
+the gcd iteration stops.
 """
 function rational_reconstruction_bound(modulo::BigInt)
     setprecision(2 * Base.GMP.MPZ.sizeinbase(modulo, 2)) do
@@ -114,8 +119,10 @@ end
 # CRT
 
 """
-Implements the linear Chinese mod_p lifting algorithm. Computes the unique
-`x` such that
+    CRT!
+
+Implements the Chinese Remainder lifting algorithm. Computes the unique `x` such
+that
         
     x ≡ a1 mod m1
     x ≡ a2 mod m2
@@ -146,8 +153,18 @@ function CRT!(
 
     Base.GMP.MPZ.add!(buf, n1, n2)
     Base.GMP.MPZ.fdiv_r!(buf, M)
+
+    nothing
 end
 
+"""
+    CRT_precompute!
+
+Given the two moduli `m1` and `m2`, precomputes the multipliers `c1`, `c2` and
+the modulo `M` for CRT.
+
+`n1` and `n2` are additional buffers.
+"""
 function CRT_precompute!(
     M::BigInt,
     n1::BigInt,
@@ -163,6 +180,25 @@ function CRT_precompute!(
     Base.GMP.MPZ.gcdext!(n1, c1, c2, n2, m1)
     Base.GMP.MPZ.mul_ui!(c1, m2)
     Base.GMP.MPZ.mul!(c2, m1)
+
+    nothing
+end
+
+function CRT!(
+    M::BigInt,
+    buf::BigInt,
+    n1::BigInt,
+    n2::BigInt,
+    a1::BigInt,
+    c1::BigInt,
+    a2::BigInt,
+    c2::BigInt
+)
+    Base.GMP.MPZ.mul!(n1, c2, a2)
+    Base.GMP.MPZ.mul!(n2, c1, a1)
+
+    Base.GMP.MPZ.add!(buf, n1, n2)
+    Base.GMP.MPZ.fdiv_r!(buf, M)
 
     nothing
 end
@@ -185,46 +221,7 @@ function CRT_precompute!(
     nothing
 end
 
-function CRT!(
-    M::BigInt,
-    buf::BigInt,
-    n1::BigInt,
-    n2::BigInt,
-    a1::BigInt,
-    c1::BigInt,
-    a2::BigInt,
-    c2::BigInt
-)
-    Base.GMP.MPZ.mul!(n1, c2, a2)
-    Base.GMP.MPZ.mul!(n2, c1, a1)
-
-    Base.GMP.MPZ.add!(buf, n1, n2)
-    Base.GMP.MPZ.fdiv_r!(buf, M)
-end
-
-function CRT_precompute!(
-    M::BigInt,
-    n1::BigInt,
-    n2::BigInt,
-    ci::Vector{BigInt},
-    moduli::Vector{UInt}
-)
-    n3, n4 = BigInt(), BigInt()
-    Base.GMP.MPZ.set_ui!(M, moduli[1])
-    @inbounds for i in 2:length(moduli)
-        Base.GMP.MPZ.mul_ui!(M, moduli[i])
-    end
-
-    @inbounds for i in 1:length(moduli)
-        Base.GMP.MPZ.set_ui!(n2, moduli[i])
-        Base.GMP.MPZ.tdiv_q!(ci[i], M, n2)
-        Base.GMP.MPZ.gcdext!(n2, n3, n4, ci[i], n2)
-        Base.GMP.MPZ.mul!(ci[i], n3)
-    end
-
-    nothing
-end
-
+# CRT for multiple remainders
 function CRT!(
     M::BigInt,
     buf::BigInt,
@@ -243,4 +240,31 @@ function CRT!(
 
     Base.GMP.MPZ.set!(buf, n1)
     Base.GMP.MPZ.fdiv_r!(buf, M)
+
+    nothing
+end
+
+function CRT_precompute!(
+    M::BigInt,
+    n1::BigInt,
+    n2::BigInt,
+    ci::Vector{BigInt},
+    moduli::Vector{UInt}
+)
+    @invariant length(ci) == length(moduli)
+
+    n3, n4 = BigInt(), BigInt()
+    Base.GMP.MPZ.set_ui!(M, moduli[1])
+    @inbounds for i in 2:length(moduli)
+        Base.GMP.MPZ.mul_ui!(M, moduli[i])
+    end
+
+    @inbounds for i in 1:length(moduli)
+        Base.GMP.MPZ.set_ui!(n2, moduli[i])
+        Base.GMP.MPZ.tdiv_q!(ci[i], M, n2)
+        Base.GMP.MPZ.gcdext!(n2, n3, n4, ci[i], n2)
+        Base.GMP.MPZ.mul!(ci[i], n3)
+    end
+
+    nothing
 end

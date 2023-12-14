@@ -237,7 +237,7 @@ The Groebner basis of the above with $t > x > y$ in lexicographic order is
 
 ```julia:impl1
 using AbstractAlgebra
-_, (t, x, y) = PolynomialRing(QQ, ["t", "x", "y"], ordering=:lex)
+_, (t, x, y) = polynomial_ring(QQ, ["t", "x", "y"], ordering=:lex)
 
 groebner([t^2*y - 2t + y, t^2*x + t^2 + x - 1])
 ```
@@ -257,7 +257,7 @@ Groebner bases can be used to solve systems *exactly*, given the number of solut
 In this section we assume the usual lexicographic ordering of variables and consider the case with three variables (i.e, $x > y > z$). Same method generalizes naturally for $n$ indeterminates.
 
 ```julia:sys0
-_, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"], ordering=:lex);
+_, (x, y, z) = polynomial_ring(QQ, ["x", "y", "z"], ordering=:lex);
 ```
 
 To illustrate the method, we consider the following polynomial system to solve
@@ -316,7 +316,7 @@ F = \{p^5 - n, p^10 - d, p^25 - q\}
 The idea is to construct a more useful set of constraints using a Groebner basis
 
 ```julia:coins1
-_, (p, n, d, q) = PolynomialRing(QQ, ["p","n","d","q"], ordering=:deglex)
+_, (p, n, d, q) = polynomial_ring(QQ, ["p","n","d","q"], ordering=:deglex)
 
 F = [p^5 - n, p^10 - d, p^25 - q]   # initial constraints
 

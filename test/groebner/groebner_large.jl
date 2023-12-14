@@ -2,7 +2,7 @@ using AbstractAlgebra
 using Primes
 
 @testset "groebner modular-hard problems" begin
-    R, (x1, x2, x3, x4) = PolynomialRing(QQ, ["x1", "x2", "x3", "x4"], ordering=:degrevlex)
+    R, (x1, x2, x3, x4) = polynomial_ring(QQ, ["x1", "x2", "x3", "x4"], ordering=:degrevlex)
 
     ###########################################################################
 

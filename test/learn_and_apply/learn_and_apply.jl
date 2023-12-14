@@ -4,8 +4,8 @@ params = (loglevel=0, sweep=true)
 
 @testset "learn & apply, same field" begin
     K = AbstractAlgebra.GF(2^31 - 1)
-    R, (x, y) = PolynomialRing(K, ["x", "y"], ordering=:degrevlex)
-    R2, xs = PolynomialRing(K, ["x$i" for i in 1:30], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(K, ["x", "y"], ordering=:degrevlex)
+    R2, xs = polynomial_ring(K, ["x$i" for i in 1:30], ordering=:degrevlex)
 
     @test_throws DomainError Groebner.groebner_learn([R(0), R(0)]; params...)
 
@@ -60,9 +60,9 @@ end
 @testset "learn & apply, different modulo" begin
     # Some small tests and corner cases
     K, K2, K3 = GF(5), GF(7), GF(11)
-    R, (x, y) = PolynomialRing(K, ["x", "y"], ordering=:degrevlex)
-    R2, (x2, y2) = PolynomialRing(K2, ["x", "y"], ordering=:degrevlex)
-    R3, (x3, y3) = PolynomialRing(K3, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(K, ["x", "y"], ordering=:degrevlex)
+    R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], ordering=:degrevlex)
+    R3, (x3, y3) = polynomial_ring(K3, ["x", "y"], ordering=:degrevlex)
     system = [x^4 + 2y^3 + 3x^2 + 4y, 4y^4 + 3x^3 + 2y^2 + 1x]
     system2 = map(f -> map_coefficients(c -> K2(data(c)), f), system)
 
@@ -95,8 +95,8 @@ end
     # Going from small characteristic to large is not allowed
     # NOTE: it should be allowed
     K1, K2 = GF(2^31 - 1), GF(2^60 + 33)
-    R, (x, y) = PolynomialRing(K1, ["x", "y"], ordering=:degrevlex)
-    R2, (x2, y2) = PolynomialRing(K2, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(K1, ["x", "y"], ordering=:degrevlex)
+    R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], ordering=:degrevlex)
     system = [x + 1, y - 1]
     system2 = map(f -> map_coefficients(c -> K2(data(c)), f), system)
     graph, gb_1 = Groebner.groebner_learn(system; params...)
@@ -104,16 +104,16 @@ end
 
     # Going from one monomial ordering to another is not allowed
     K1, K2 = GF(2^31 - 1), GF(2^60 + 33)
-    R, (x, y) = PolynomialRing(K1, ["x", "y"], ordering=:lex)
-    R2, (x2, y2) = PolynomialRing(K2, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(K1, ["x", "y"], ordering=:lex)
+    R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], ordering=:degrevlex)
     system = [x + 1, y - 1]
     system2 = [x2 + 1, y2 - 1]
     graph, gb_1 = Groebner.groebner_learn(system; params...)
     @test_throws DomainError Groebner.groebner_apply!(graph, system2; params...)
 
     K1, K2 = GF(2^31 - 1), GF(2^60 + 33)
-    R, (x, y) = PolynomialRing(K1, ["x", "y"], ordering=:lex)
-    R2, (x2, y2) = PolynomialRing(K2, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(K1, ["x", "y"], ordering=:lex)
+    R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], ordering=:degrevlex)
     system = [x + 1, y - 1]
     system2 = [x2 + 1, y2 - 1]
     graph, gb_1 = Groebner.groebner_learn(system; params...)
@@ -126,7 +126,7 @@ end
 
     # NOTE: these systems are only relatively very large.
     # We should also test for larger systems and larger primes!!
-    R, (x, y) = PolynomialRing(ZZ, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(ZZ, ["x", "y"], ordering=:degrevlex)
     cases = [
         (system=[x, R(0)],),
         (system=[R(1)],),
@@ -191,7 +191,7 @@ end
     end
 
     K1 = GF(2^31 - 1)
-    R, (x, y) = PolynomialRing(ZZ, ["x", "y"], ordering=:lex)
+    R, (x, y) = polynomial_ring(ZZ, ["x", "y"], ordering=:lex)
     system = [BigInt(2)^1000 * x + (BigInt(2)^1001 + 1) * y + 1]
     system_zp = map(f -> map_coefficients(c -> K1(BigInt(c)), f), system)
     graph, gb_1 =
@@ -206,7 +206,7 @@ end
 
 @testset "learn & apply, orderings" begin
     K = GF(2^31 - 1)
-    R, (x, y) = PolynomialRing(K, ["x", "y"], ordering=:lex)
+    R, (x, y) = polynomial_ring(K, ["x", "y"], ordering=:lex)
 
     ord_1 = Groebner.Lex()
     graph_1, gb_1 = Groebner.groebner_learn([x + 2y + 3, y], ordering=ord_1)
@@ -224,7 +224,7 @@ end
 
     K = GF(2^31 - 1)
     n = 10
-    R, x = PolynomialRing(K, [["x$i" for i in 1:n]...], ordering=:degrevlex)
+    R, x = polynomial_ring(K, [["x$i" for i in 1:n]...], ordering=:degrevlex)
     F = (x .+ (1:n) .* circshift(x, 1)) .^ 2
     # F = [(x1 + xn)^2, (x2 + 2 x1)^2, ..., (xn + n x_{n-1})^2]
     for i in 0:(2n)
@@ -254,7 +254,7 @@ end
 
 @testset "learn & apply, tricky" begin
     for K in [GF(2^31 - 1), GF(2^62 + 135)]
-        R, (x, y) = PolynomialRing(K, ["x", "y"], ordering=:degrevlex)
+        R, (x, y) = polynomial_ring(K, ["x", "y"], ordering=:degrevlex)
 
         s = [x^100 * y + y^100, x * y^100 + y]
         graph, gb_1 = Groebner.groebner_learn(s; params...)
@@ -277,7 +277,7 @@ end
     end
 
     K = AbstractAlgebra.GF(2^31 - 1)
-    R, (x, y) = PolynomialRing(K, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(K, ["x", "y"], ordering=:degrevlex)
 
     # s-poly of x + 1 and x*y + 7y is y - 7y.
     system_1 = [x + 1, x * y + 7y]

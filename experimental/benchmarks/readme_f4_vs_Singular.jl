@@ -23,7 +23,7 @@ function benchmark_system_singular(system)
     modulo = AbstractAlgebra.characteristic(R)
     n = AbstractAlgebra.nvars(R)
     ground_s = Singular.N_ZpField(modulo)
-    R_s, _ = Singular.PolynomialRing(ground_s, ["x$i" for i in 1:n], ordering=:degrevlex)
+    R_s, _ = Singular.polynomial_ring(ground_s, ["x$i" for i in 1:n], ordering=:degrevlex)
 
     system_s = map(
         f -> AbstractAlgebra.change_base_ring(

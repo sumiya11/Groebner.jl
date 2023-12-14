@@ -75,7 +75,7 @@ import UnsafeAtomics
 # Groebner is multi-threaded by default.
 # 1. Set the environment variable GROEBNER_NO_THREADED to 1 to disable all
 #    multi-threading in Groebner
-# 2. Assuming GROEBNER_NO_THREADED=0, you can also use the keyword argument
+# 2. Assuming GROEBNER_NO_THREADED=0, you can use the keyword argument
 #    `threaded` provided by some of the functions in the interface to fine-tune
 #    the threading.
 const _threaded = Ref(true)

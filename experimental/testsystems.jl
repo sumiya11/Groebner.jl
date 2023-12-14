@@ -10,7 +10,7 @@
 # `A faster way to count the solutions of inhomogeneous systems of algebraic equations, with applications to cyclic n-roots', 
 # in J. Symbolic Computation (1991) 12, pp 329–336.
 function cyclicn(n; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
-    _, z = np.PolynomialRing(ground, ["z$i" for i in 1:n], ordering=ordering)
+    _, z = np.polynomial_ring(ground, ["z$i" for i in 1:n], ordering=ordering)
     [
         (
             sum(prod(z[(k - 1) % n + 1] for k in j:(j + m)) for j in 1:n) for m in 0:(n - 2)
@@ -24,7 +24,7 @@ end
 # The root-n system
 # (not to be confused with cyclic-n system)!!
 function rootn(n; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
-    _, xs = np.PolynomialRing(ground, ["x$i" for i in 1:n], ordering=ordering)
+    _, xs = np.polynomial_ring(ground, ["x$i" for i in 1:n], ordering=ordering)
     ans = [sum(map(prod, Combinatorics.combinations(xs, i))) for i in 1:n]
     ans[end] -= (-1)^(n - 1)
     ans
@@ -34,7 +34,7 @@ end
 
 # The reimer-n system
 function reimern(n; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
-    _, xs = np.PolynomialRing(ground, ["x$i" for i in 1:n])
+    _, xs = np.polynomial_ring(ground, ["x$i" for i in 1:n])
     [sum((-1)^(i + 1) * 2 * xs[i]^j for i in 1:n) - 1 for j in 2:(n + 1)]
 end
 
@@ -45,7 +45,7 @@ end
 # S. Katsura, W. Fukuda, S. Inawashiro, N.M. Fujiki and R. Gebauer,
 #  Cell Biophysics, Vol 11, pages 309–319, 1987.
 function katsuran(n; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
-    _, x = np.PolynomialRing(ground, ["x$i" for i in 0:n], ordering=ordering)
+    _, x = np.polynomial_ring(ground, ["x$i" for i in 0:n], ordering=ordering)
     [
         (
             sum(x[abs(l) + 1] * x[abs(m - l) + 1] for l = (-n):n if abs(m - l) <= n) -
@@ -62,7 +62,7 @@ end
 function noonn(n; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
     without(x, k) = x[1:end .!= k]
 
-    R, xs = np.PolynomialRing(ground, ["x$i" for i in 1:n], ordering=ordering)
+    R, xs = np.polynomial_ring(ground, ["x$i" for i in 1:n], ordering=ordering)
     fs = zeros(R, n)
     for i in 1:n
         other = without(xs, i)
@@ -79,7 +79,7 @@ end
 # https://gitlab.lip6.fr/eder/msolve-examples/-/raw/master/zero-dimensional/henrion5.ms
 function henrion5(; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
     _, (f1, f2, f3, f4, f5, t) =
-        np.PolynomialRing(ground, ["f1", "f2", "f3", "f4", "f5", "t"], ordering=ordering)
+        np.polynomial_ring(ground, ["f1", "f2", "f3", "f4", "f5", "t"], ordering=ordering)
     [
         2 * f1 * f2 * f3 * f4 * f5 - 9823275,
         ground(21) // 5 * f1 * f2 * f4 * f5 +
@@ -118,7 +118,7 @@ end
 # https://gitlab.lip6.fr/eder/msolve-examples/-/raw/master/zero-dimensional/henrion6.ms
 function henrion6(; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
     _, (f1, f2, f3, f4, f5, f6) =
-        np.PolynomialRing(ground, ["f1", "f2", "f3", "f4", "f5", "f6"], ordering=ordering)
+        np.polynomial_ring(ground, ["f1", "f2", "f3", "f4", "f5", "f6"], ordering=ordering)
 
     [
         2 * f1 * f2 * f3 * f4 * f5 * f6 - 1404728325,
@@ -187,7 +187,7 @@ end
 # Source:
 # https://gitlab.lip6.fr/eder/msolve-examples/-/raw/master/zero-dimensional/henrion7.ms
 function henrion7(; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
-    _, (f1, f2, f3, f4, f5, f6, f7) = np.PolynomialRing(
+    _, (f1, f2, f3, f4, f5, f6, f7) = np.polynomial_ring(
         ground,
         ["f1", "f2", "f3", "f4", "f5", "f6", "f7"],
         ordering=ordering
@@ -325,7 +325,7 @@ end
 
 function eco5(; np=AbstractAlgebra, ground=np.GF(2^31 - 1), ordering=:lex)
     _, (x1, x2, x3, x4, x5) =
-        np.PolynomialRing(ground, ["x$i" for i in 1:5], ordering=ordering)
+        np.polynomial_ring(ground, ["x$i" for i in 1:5], ordering=ordering)
     [
         (x1 + x1 * x2 + x2 * x3 + x3 * x4) * x5 - 1,
         (x2 + x1 * x3 + x2 * x4) * x5 - 2,
@@ -337,7 +337,7 @@ end
 
 function eco7(; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
     _, (x1, x2, x3, x4, x5, x6, x7) =
-        np.PolynomialRing(ground, ["x$i" for i in 1:7], ordering=ordering)
+        np.polynomial_ring(ground, ["x$i" for i in 1:7], ordering=ordering)
     [
         (x1 + x1 * x2 + x2 * x3 + x3 * x4 + x4 * x5 + x5 * x6) * x7 - 1,
         (x2 + x1 * x3 + x2 * x4 + x3 * x5 + x4 * x6) * x7 - 2,
@@ -351,7 +351,7 @@ end
 
 function eco10(; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
     _, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9) =
-        np.PolynomialRing(ground, ["x$i" for i in 1:11], ordering=ordering)
+        np.polynomial_ring(ground, ["x$i" for i in 1:11], ordering=ordering)
     [
         x0 * x1 * x9 +
         x1 * x2 * x9 +
@@ -390,7 +390,7 @@ end
 
 function eco11(; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
     _, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) =
-        np.PolynomialRing(ground, ["x$i" for i in 1:11], ordering=ordering)
+        np.polynomial_ring(ground, ["x$i" for i in 1:11], ordering=ordering)
     [
         x0 * x1 * x10 +
         x1 * x2 * x10 +
@@ -443,7 +443,7 @@ end
 
 function eco12(; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
     _, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11) =
-        np.PolynomialRing(ground, ["x$i" for i in 1:12], ordering=ordering)
+        np.polynomial_ring(ground, ["x$i" for i in 1:12], ordering=ordering)
     [
         x0 * x1 * x11 +
         x1 * x2 * x11 +
@@ -507,7 +507,7 @@ end
 
 function eco13(; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
     _, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12) =
-        np.PolynomialRing(ground, ["x$i" for i in 1:13], ordering=ordering)
+        np.polynomial_ring(ground, ["x$i" for i in 1:13], ordering=ordering)
     [
         x0 * x1 * x12 +
         x1 * x2 * x12 +
@@ -585,7 +585,7 @@ end
 
 function ku10(; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
     _, (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) =
-        np.PolynomialRing(ground, ["x$i" for i in 1:10], ordering=ordering)
+        np.polynomial_ring(ground, ["x$i" for i in 1:10], ordering=ordering)
     [
         5 * x1 * x2 + 5 * x1 + 3 * x2 + 55,
         7 * x2 * x3 + 9 * x2 + 9 * x3 + 19,
@@ -602,7 +602,7 @@ end
 
 function kinema(; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
     _, (z1, z2, z3, z4, z5, z6, z7, z8, z9) =
-        np.PolynomialRing(ground, ["z$i" for i in 1:9], ordering=ordering)
+        np.polynomial_ring(ground, ["z$i" for i in 1:9], ordering=ordering)
     [
         z1^2 + z2^2 + z3^2 - 12 * z1 - 68
         z4^2 + z5^2 + z6^2 - 12 * z5 - 68
@@ -618,7 +618,7 @@ end
 
 function sparse5(; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
     _, (x1, x2, x3, x4, x5) =
-        np.PolynomialRing(ground, ["x$i" for i in 1:5], ordering=ordering)
+        np.polynomial_ring(ground, ["x$i" for i in 1:5], ordering=ordering)
     [
         x1^2 * x2^2 * x3^2 * x4^2 * x5^2 +
         3 * x1^2 +
@@ -665,7 +665,7 @@ end
 
 function s9_1(; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
     _, (a, b, c, d, e, f, g, h) =
-        np.PolynomialRing(ground, ["x$i" for i in 1:8], ordering=ordering)
+        np.polynomial_ring(ground, ["x$i" for i in 1:8], ordering=ordering)
     [
         -e * g - 2 * d * h,
         9 * e + 4 * b,
@@ -679,7 +679,7 @@ function s9_1(; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
 end
 
 function ojika4(; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
-    _, (x1, x2, x3) = np.PolynomialRing(ground, ["x$i" for i in 1:3], ordering=ordering)
+    _, (x1, x2, x3) = np.polynomial_ring(ground, ["x$i" for i in 1:3], ordering=ordering)
     [
         x1 + x3 * x1^3 + x1 * x3 * x2^2 - x1 * x3,
         10 * x2 - 2 * x2 * x3 * x1^2 - x3 * x2^3 - x2 * x3,
@@ -692,7 +692,7 @@ function ojika4(; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
 end
 
 function ojika3_d1R2(; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
-    _, (x1, x2, x3) = np.PolynomialRing(ground, ["x$i" for i in 1:3], ordering=ordering)
+    _, (x1, x2, x3) = np.polynomial_ring(ground, ["x$i" for i in 1:3], ordering=ordering)
     [
         x1^3 * x3 + x1 * x3 * x2^2 - x1 * x3 + x1,
         -2 * x1^2 * x3 * x2 - x3 * x2^3 - x3 * x2 + 10 * x2,
@@ -705,7 +705,7 @@ function ojika3_d1R2(; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
 end
 
 function ojika4_d1R2_d2R5(; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
-    _, (x1, x2, x3) = np.PolynomialRing(ground, ["x$i" for i in 1:3], ordering=ordering)
+    _, (x1, x2, x3) = np.polynomial_ring(ground, ["x$i" for i in 1:3], ordering=ordering)
     [
         x1^3 * x3 + x1 * x3 * x2^2 - x1 * x3 + x1,
         -2 * x1^2 * x3 * x2 - x3 * x2^3 - x3 * x2 + 10 * x2,
@@ -739,7 +739,7 @@ function generate_set(
     ordering;
     np=AbstractAlgebra
 )
-    R, _ = np.PolynomialRing(ground, ["x$i" for i in 1:nvariables], ordering=ordering)
+    R, _ = np.polynomial_ring(ground, ["x$i" for i in 1:nvariables], ordering=ordering)
 
     filter!(
         !iszero,
@@ -766,7 +766,7 @@ function generate_set(
     np=AbstractAlgebra
 ) where {T <: AbstractAlgebra.Rationals}
     semiground = np.GF(2^31 - 1)
-    R, _ = np.PolynomialRing(semiground, ["x$i" for i in 1:nvariables], ordering=ordering)
+    R, _ = np.polynomial_ring(semiground, ["x$i" for i in 1:nvariables], ordering=ordering)
 
     csz = BigInt(csz)
     zzbase = BigInt(9223372036854775837)
@@ -809,7 +809,7 @@ change_ordering(f, ordering) = change_ordering([f], ordering)
 # changes the ordering of set of polynomials `fs` into `ordering`
 function change_ordering(fs::AbstractArray, ordering)
     R = parent(first(fs))
-    Rord, _ = AbstractAlgebra.PolynomialRing(
+    Rord, _ = AbstractAlgebra.polynomial_ring(
         base_ring(R),
         string.(AbstractAlgebra.gens(R)),
         ordering=ordering

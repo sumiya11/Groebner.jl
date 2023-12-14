@@ -16,7 +16,7 @@ function generate_benchmark_source_for_groebner(
         "GF($(characteristic(field)))"
     end
     vars_repr_quoted = map(s -> "$s", map(string, gens(ring)))
-    ring_repr = """ring, ($vars_repr) = PolynomialRing(
+    ring_repr = """ring, ($vars_repr) = polynomial_ring(
         $field_repr, 
         $vars_repr_quoted, 
         ordering=:degrevlex

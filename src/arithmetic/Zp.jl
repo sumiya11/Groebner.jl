@@ -6,58 +6,48 @@ abstract type AbstractArithmetic end
 # All implementations of arithmetic in Zp are a subtype of this
 abstract type AbstractArithmeticZp <: AbstractArithmetic end
 
-# Modular arithmetic based on the Julia builtin classes in
-# `Base.MultiplicativeInverses`. Used for primes smaller than 2^32.
-struct BuiltinArithmeticZp{T <: Unsigned} <: AbstractArithmeticZp
-    # magic contains is a precomputed multiplicative inverse of the divisor
+###
+# ArithmeticZp
+
+less_than_half(p, ::Type{T}) where {T} = p < (typemax(T) >> ((8 >> 1) * sizeof(T)))
+
+# Modular arithmetic based on builtin classes in `Base.MultiplicativeInverses`
+struct ArithmeticZp{T <: Unsigned} <: AbstractArithmeticZp
+    # magic contains the precomputed multiplicative inverse of the divisor
     magic::UnsignedMultiplicativeInverse{T}
-    function BuiltinArithmeticZp(p::T) where {T <: Unsigned}
+
+    function ArithmeticZp(p::T) where {T <: Unsigned}
+        @invariant less_than_half(p, T)
         new{T}(UnsignedMultiplicativeInverse{T}(p))
     end
 end
 
-divisor(arithm::BuiltinArithmeticZp) = arithm.magic.divisor
+divisor(arithm::ArithmeticZp) = arithm.magic.divisor
 
-function n_reserved_bits(arithm::BuiltinArithmeticZp{T}) where {T <: Unsigned}
-    res = 1 + leading_zeros(divisor(arithm)) - (8 >> 1) * sizeof(T)
-    @invariant res >= 0
-    res
-end
+###
+# SpecializedArithmeticZp
 
-function skip(arithm::BuiltinArithmeticZp{T}) where {T <: Unsigned}
-    T(1) << (2 * n_reserved_bits(arithm) - 2)
-end
-
-# Same as the built-in one, by specializes on the type of the prime number and
-# stores the fields inline. This implementation is preferred for primes up to 64
-# bits.
-struct SpecializedBuiltinArithmeticZp{T <: Unsigned, Add} <: AbstractArithmeticZp
+# Same as ArithmeticZp, but stores the fields inline and additionally
+# specializes on magic.add
+struct SpecializedArithmeticZp{T <: Unsigned, Add} <: AbstractArithmeticZp
     multiplier::T
     shift::UInt8
     divisor::T
-    function SpecializedBuiltinArithmeticZp(
+
+    function SpecializedArithmeticZp(p::T) where {T <: Unsigned}
+        @invariant less_than_half(p, T)
+        uinv = UnsignedMultiplicativeInverse(p)
+        SpecializedArithmeticZp(uinv)
+    end
+
+    function SpecializedArithmeticZp(
         uinv::UnsignedMultiplicativeInverse{T}
     ) where {T <: Unsigned}
         new{T, uinv.add}(uinv.multiplier, uinv.shift, uinv.divisor)
     end
-    function SpecializedBuiltinArithmeticZp(p::T) where {T <: Unsigned}
-        uinv = UnsignedMultiplicativeInverse(p)
-        SpecializedBuiltinArithmeticZp(uinv)
-    end
 end
 
-divisor(arithm::SpecializedBuiltinArithmeticZp) = arithm.divisor
-
-function n_reserved_bits(arithm::SpecializedBuiltinArithmeticZp{T}) where {T <: Unsigned}
-    # +1 thanks to unsigned representation
-    res = 1 + leading_zeros(divisor(arithm)) - (8 >> 1) * sizeof(T)
-    @invariant res >= 0
-    res
-end
-
-function skip(arithm::SpecializedBuiltinArithmeticZp{T}) where {T <: Unsigned}
-    T(1) << (2 * n_reserved_bits(arithm) - 2)
-end
+divisor(arithm::SpecializedArithmeticZp) = arithm.divisor
 
 # Returns the higher half of the product a*b
 function _mul_high(a::T, b::T) where {T <: Union{Signed, Unsigned}}
@@ -74,15 +64,63 @@ function _mul_high(a::UInt128, b::UInt128)
     a1b1 + (a1b2 >>> shift) + (a2b1 >>> shift) + carry
 end
 
-# TODO: move to linear algebra
 # a modulo p (addition specialization)
-@inline function mod_p(a::T, mod::SpecializedBuiltinArithmeticZp{T, true}) where {T}
+function mod_p(a::T, mod::SpecializedArithmeticZp{T, true}) where {T}
     x = _mul_high(a, mod.multiplier)
     x = convert(T, convert(T, (convert(T, a - x) >>> 1)) + x)
     a - (x >>> mod.shift) * mod.divisor
 end
 # a modulo p (no addition specialization)
-@inline function mod_p(a::T, mod::SpecializedBuiltinArithmeticZp{T, false}) where {T}
+function mod_p(a::T, mod::SpecializedArithmeticZp{T, false}) where {T}
+    x = _mul_high(a, mod.multiplier)
+    a - (x >>> mod.shift) * mod.divisor
+end
+
+###
+# UseSpareBitsArithmeticZp
+
+# Same as SpecializedArithmeticZp, but also exploits the case when the
+# representation of the squared modulo in type T has spare leading bits
+struct UseSpareBitsArithmeticZp{T <: Unsigned, Add} <: AbstractArithmeticZp
+    multiplier::T
+    shift::UInt8
+    divisor::T
+
+    function UseSpareBitsArithmeticZp(p::T) where {T <: Unsigned}
+        @invariant less_than_half(p, T)
+        uinv = UnsignedMultiplicativeInverse(p)
+        UseSpareBitsArithmeticZp(uinv)
+    end
+
+    function UseSpareBitsArithmeticZp(
+        uinv::UnsignedMultiplicativeInverse{T}
+    ) where {T <: Unsigned}
+        new{T, uinv.add}(uinv.multiplier, uinv.shift, uinv.divisor)
+    end
+end
+
+divisor(arithm::UseSpareBitsArithmeticZp) = arithm.divisor
+
+function n_spare_bits(arithm::UseSpareBitsArithmeticZp{T}) where {T <: Unsigned}
+    res = leading_zeros(divisor(arithm)) - (8 >> 1) * sizeof(T)
+    @invariant res >= 0
+    res
+end
+
+function n_safe_consecutive_additions(
+    arithm::UseSpareBitsArithmeticZp{T}
+) where {T <: Unsigned}
+    T(1) << (2 * n_spare_bits(arithm) - 1)
+end
+
+# a modulo p (addition specialization)
+function mod_p(a::T, mod::UseSpareBitsArithmeticZp{T, true}) where {T}
+    x = _mul_high(a, mod.multiplier)
+    x = convert(T, convert(T, (convert(T, a - x) >>> 1)) + x)
+    a - (x >>> mod.shift) * mod.divisor
+end
+# a modulo p (no addition specialization)
+function mod_p(a::T, mod::UseSpareBitsArithmeticZp{T, false}) where {T}
     x = _mul_high(a, mod.multiplier)
     a - (x >>> mod.shift) * mod.divisor
 end
@@ -90,6 +128,15 @@ end
 ###
 # Selection of arithmetic
 
-function select_arithmetic(characteristic, ::Type{CoeffType}) where {CoeffType <: CoeffFF}
-    SpecializedBuiltinArithmeticZp(convert(CoeffType, characteristic))
+function select_arithmetic(
+    characteristic::Integer,
+    ::Type{CoeffType}
+) where {CoeffType <: CoeffFF}
+    @assert characteristic < typemax(CoeffType)
+    # If more than 2 bits are available, that is, characteristic < 2^29
+    if 2 < (leading_zeros(characteristic) - (8 >> 1) * sizeof(CoeffType))
+        UseSpareBitsArithmeticZp(convert(CoeffType, characteristic))
+    else
+        SpecializedArithmeticZp(convert(CoeffType, characteristic))
+    end
 end

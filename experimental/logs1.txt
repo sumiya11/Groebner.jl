@@ -29,7 +29,7 @@ UInt8}
 │ threaded = no
 │ nworkers = 0
 │ threadalgo = lock_free
-│ arithmetic = Main.Groebner.SpecializedBuiltinArithmeticZp{UInt64, false}(0x003fffff18000349, 0x11, 0x000000000800001d)
+│ arithmetic = Main.Groebner.SpecializedArithmeticZp{UInt64, false}(0x003fffff18000349, 0x11, 0x000000000800001d)
 │ reduced = true
 │ homogenize = false
 │ maxpairs = 9223372036854775807

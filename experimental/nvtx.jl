@@ -1,11 +1,13 @@
-using NVTX, Groebner, AbstractAlgebra, Base.Threads
+using Base.Threads
 
-NVTX.@annotate function work()
-    sleep(1)
-end
-
-NVTX.@range "A loop" begin
-    Threads.@threads for i in 1:5
-        work()
+function work()
+    s = 0
+    for i in 1:1000
+        s += fetch(@spawn sum(rand(2^11)))
     end
+    s
 end
+
+work()
+
+@profview work()

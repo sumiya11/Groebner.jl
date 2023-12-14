@@ -88,7 +88,7 @@ flag, gb_2 = Groebner.groebner_apply!(graph, G_zp)
     end
 end
 
-R, x = PolynomialRing(Nemo.GF(2^31 - 1), ["x$i" for i in 1:15], ordering=:degrevlex)
+R, x = polynomial_ring(Nemo.GF(2^31 - 1), ["x$i" for i in 1:15], ordering=:degrevlex)
 
 f = [a^rand(1:3) * b^rand(1:3) + c^rand(1:2) for a in x for b in x for c in x];
 

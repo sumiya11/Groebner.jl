@@ -22,7 +22,7 @@ function groebner_formal_parametric(F)
     np = length(ps)
 
     # univariatize the ring of parameters
-    R1u, u = PolynomialRing(base_ring(R1), "u")
+    R1u, u = polynomial_ring(base_ring(R1), "u")
     # maximal degree
     d = 10
     seq = [d^(i - 1) for i in 1:np]
@@ -87,7 +87,7 @@ function groebner_formal_parametric(F)
     ]
 end
 
-R1, (a, b) = PolynomialRing(QQ, ["a", "b"])
+R1, (a, b) = polynomial_ring(QQ, ["a", "b"])
 R, (x, y) = R1["x", "y"]
 
 f1 = x + a + b

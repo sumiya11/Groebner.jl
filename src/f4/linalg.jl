@@ -83,14 +83,16 @@ function linear_algebra!(
         linalg = params.linalg
     end
 
-    # Multi-threading is disabled by default!
     threaded = if params.threaded === :yes && nthreads() > 1
         :yes
     elseif params.threaded === :auto
+        # Multi-threading is disabled by default!
         :no
     else
         :no
     end
+
+    @log level = -2 "Calling linear algebra with" linalg threaded arithmetic
 
     flag = if !isnothing(trace)
         linear_algebra_with_trace!(trace, matrix, basis, linalg, threaded, arithmetic, rng)
@@ -530,9 +532,6 @@ function reduce_dense_row_by_sparse_row!(
     @invariant length(indices) == length(coeffs)
 
     @inbounds mul = divisor(arithmetic) - row[indices[1]]
-    # On our benchmarks, usually,
-    #   length(row) / length(indices)
-    # roughly varies from 10 to 100
     @inbounds for j in 1:length(indices)
         idx = indices[j]
         row[idx] = mod_p(row[idx] + mul * coeffs[j], arithmetic)
@@ -551,9 +550,6 @@ function reduce_dense_row_by_sparse_row_no_mod_p!(
     @invariant length(indices) == length(coeffs)
 
     @inbounds mul = divisor(arithmetic) - row[indices[1]]
-    # On our benchmarks, usually,
-    #   length(row) / length(indices)
-    # roughly varies from 10 to 100
     @inbounds for j in 1:length(indices)
         idx = indices[j]
         row[idx] = row[idx] + mul * coeffs[j]
@@ -569,7 +565,6 @@ function dense_row_mod_p!(
     to::Int=length(row)
 ) where {T, A <: AbstractArithmeticZp}
     @inbounds for i in from:to
-        iszero(row[i]) && continue
         row[i] = mod_p(row[i], arithmetic)
     end
     nothing
@@ -771,8 +766,6 @@ end
 
         # If the row is fully reduced
         zeroed && continue
-
-        # println("row $i not reduced to zero!")
 
         @invariant length(new_coeffs) == length(new_column_indices)
         normalize_row!(new_coeffs, arithmetic)
@@ -1408,6 +1401,8 @@ end
     resize!(matrix.lower_rows, new_pivots)
     resize!(not_reduced_to_zero, new_pivots)
 
+    @log level = -3 "After interreduction" new_pivots
+
     true, any_zeroed, not_reduced_to_zero
 end
 
@@ -1652,11 +1647,6 @@ function randomized_reduce_matrix_lower_part!(
     new_column_indices, new_coeffs = new_empty_sparse_row(C)
     rows_multipliers = zeros(C, rowsperblock)
 
-    @log level = -3 "Before"
-    @log level = -3 "" nblocks rowsperblock
-    # println(matrix.lower_rows)
-    # println(pivots)
-
     for i in 1:nblocks
         nrowsupper = nlow > i * rowsperblock ? i * rowsperblock : nlow
         nrowstotal = nrowsupper - (i - 1) * rowsperblock
@@ -1705,9 +1695,6 @@ function randomized_reduce_matrix_lower_part!(
             zeroed && break
             new_pivots_count += 1
 
-            # @warn "new row" i new_pivots_count
-            # println(new_coeffs)
-
             normalize_row!(new_coeffs, arithmetic)
             @invariant length(new_column_indices) == length(new_coeffs)
 
@@ -1719,10 +1706,6 @@ function randomized_reduce_matrix_lower_part!(
             new_column_indices, new_coeffs = new_empty_sparse_row(C)
         end
     end
-
-    @log level = -3 "After"
-    # println(matrix.some_coeffs)
-    # println(pivots)
 
     true
 end
@@ -1766,7 +1749,7 @@ function randomized_reduce_matrix_lower_part_threaded_cas!(
     # println(matrix.lower_rows)
     # println(pivots)
 
-    Base.Threads.@threads for i in 1:nblocks
+    Base.Threads.@threads :static for i in 1:nblocks
         nrowsupper = min(i * rowsperblock, nlow)
         nrowstotal = nrowsupper - (i - 1) * rowsperblock
         nrowstotal == 0 && continue
@@ -2177,7 +2160,7 @@ function absolute_index_pivots_in_interreduction!(matrix::MacaulayMatrix, basis:
 end
 
 # TODO: this function desperately needs a docstring!
-function reduce_dense_row_by_pivots_sparse_v2!(
+function reduce_dense_row_by_pivots_sparse!(
     new_column_indices::Vector{I},
     new_coeffs::Vector{C},
     row::Vector{C},
@@ -2186,12 +2169,12 @@ function reduce_dense_row_by_pivots_sparse_v2!(
     pivots::Vector{Vector{I}},
     start_column::Integer,
     end_column::Integer,
-    arithmetic::A,
+    arithmetic::UseSpareBitsArithmeticZp,
     active_reducers=nothing;
     tmp_pos::Integer=-1,
     exact_column_mapping::Bool=false,
     computing_rref::Bool=false
-) where {I, C <: Coeff, A <: AbstractArithmeticZp}
+) where {I, C <: CoeffFF}
     _, ncols = size(matrix)
     nleft, _ = ncols_filled(matrix)
 
@@ -2200,8 +2183,8 @@ function reduce_dense_row_by_pivots_sparse_v2!(
     # The index of the first nonzero element in the reduced row
     new_pivot = -1
 
-    j = 0
-    nskip = skip(arithmetic)
+    n_adds = 0
+    n_safe = n_safe_consecutive_additions(arithmetic)
 
     @inbounds for i in start_column:end_column
         # if the element is zero - no reduction is needed
@@ -2242,13 +2225,13 @@ function reduce_dense_row_by_pivots_sparse_v2!(
 
         reduce_dense_row_by_sparse_row_no_mod_p!(row, indices, coeffs, arithmetic)
 
-        j += 1
-        if iszero(j % nskip)
+        n_adds += 1
+        if iszero(n_adds % n_safe)
             dense_row_mod_p!(row, arithmetic, i, end_column)
         end
         row[i] = zero(row[i])
 
-        # @invariant iszero(row[i])
+        @invariant iszero(row[i])
     end
 
     # all reduced to zero!
@@ -2491,6 +2474,20 @@ end
 ###
 # Re-enumerating columns in the matrix and other auxiliaries
 # TODO: probably move this out of here?
+
+@timeit function transform_polynomial_multiple_to_matrix_row!(
+    matrix::MacaulayMatrix,
+    symbolic_ht::MonomialHashtable{M},
+    basis_ht::MonomialHashtable{M},
+    htmp::MonomHash,
+    etmp::M,
+    poly::Vector{MonomIdx}
+) where {M <: Monom}
+    row = similar(poly)
+    resize_hashtable_if_needed!(symbolic_ht, length(poly))
+
+    insert_multiplied_poly_in_hashtable!(row, htmp, etmp, poly, basis_ht, symbolic_ht)
+end
 
 function column_to_monom_mapping!(matrix::MacaulayMatrix, symbol_ht::MonomialHashtable)
     # monoms from symbolic table represent one column in the matrix

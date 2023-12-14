@@ -42,7 +42,7 @@ m, n = length(names), length(fields)
 boot = 10
 table = Array{Any, 2}(undef, n, m)
 for (i, field) in enumerate(fields)
-    R, (x, y) = PolynomialRing(field, ["x", "y"])
+    R, (x, y) = polynomial_ring(field, ["x", "y"])
     cases = [
         (Groebner.noonn(2, ground=field, ordering=:degrevlex)),
         (Groebner.noonn(3, ground=field, ordering=:degrevlex)),

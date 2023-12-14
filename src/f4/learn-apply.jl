@@ -94,7 +94,8 @@ function f4_reducegb_learn!(
     # as matrix upper rows
     @inbounds for i in 1:(basis.nnonredundant) #
         row_idx = matrix.nrows_filled_upper += 1
-        uprows[row_idx] = multiplied_poly_to_matrix_row!(
+        uprows[row_idx] = transform_polynomial_multiple_to_matrix_row!(
+            matrix,
             symbol_ht,
             ht,
             MonomHash(0),
@@ -378,8 +379,14 @@ function symbolic_preprocessing!(
         etmp = hashtable.monoms[mult_idx]
         rpoly = basis.monoms[poly_idx]
 
-        matrix.lower_rows[i] =
-            multiplied_poly_to_matrix_row!(symbol_ht, hashtable, h, etmp, rpoly)
+        matrix.lower_rows[i] = transform_polynomial_multiple_to_matrix_row!(
+            matrix,
+            symbol_ht,
+            hashtable,
+            h,
+            etmp,
+            rpoly
+        )
 
         hv = symbol_ht.hashdata[matrix.lower_rows[i][1]]
         symbol_ht.hashdata[matrix.lower_rows[i][1]] =
@@ -396,8 +403,14 @@ function symbolic_preprocessing!(
         etmp = hashtable.monoms[mult_idx]
         rpoly = basis.monoms[poly_idx]
 
-        matrix.upper_rows[i] =
-            multiplied_poly_to_matrix_row!(symbol_ht, hashtable, h, etmp, rpoly)
+        matrix.upper_rows[i] = transform_polynomial_multiple_to_matrix_row!(
+            matrix,
+            symbol_ht,
+            hashtable,
+            h,
+            etmp,
+            rpoly
+        )
 
         hv = symbol_ht.hashdata[matrix.upper_rows[i][1]]
         symbol_ht.hashdata[matrix.upper_rows[i][1]] =
@@ -467,8 +480,14 @@ function reducegb_f4_apply!(
         # iszero(h) && continue
 
         # vidx = insert_in_hashtable!(symbol_ht, etmp)
-        matrix.upper_rows[i] =
-            multiplied_poly_to_matrix_row!(symbol_ht, hashtable, h, etmp, rpoly)
+        matrix.upper_rows[i] = transform_polynomial_multiple_to_matrix_row!(
+            matrix,
+            symbol_ht,
+            hashtable,
+            h,
+            etmp,
+            rpoly
+        )
 
         matrix.upper_to_coeffs[i] = poly_idx
     end

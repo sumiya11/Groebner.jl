@@ -161,7 +161,8 @@ function reducegb_f4!(
     # as matrix upper rows
     @inbounds for i in 1:(basis.nnonredundant) #
         row_idx = matrix.nrows_filled_upper += 1
-        uprows[row_idx] = multiplied_poly_to_matrix_row!(
+        uprows[row_idx] = transform_polynomial_multiple_to_matrix_row!(
+            matrix,
             symbol_ht,
             ht,
             MonomHash(0),
@@ -240,8 +241,14 @@ function select_tobereduced!(
 
         gen = tobereduced.monoms[i]
         h = MonomHash(0)
-        matrix.lower_rows[row_idx] =
-            multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, gen)
+        matrix.lower_rows[row_idx] = transform_polynomial_multiple_to_matrix_row!(
+            matrix,
+            symbol_ht,
+            ht,
+            h,
+            etmp,
+            gen
+        )
         matrix.lower_to_coeffs[row_idx] = i
         # TODO: not really needed here
         matrix.lower_to_mult[row_idx] = insert_in_hashtable!(ht, etmp)
@@ -331,7 +338,7 @@ function find_multiplied_reducer!(
     @inbounds h = symbol_ht.hashdata[vidx].hash - ht.hashdata[rpoly[1]].hash
 
     matrix.upper_rows[matrix.nrows_filled_upper + 1] =
-        multiplied_poly_to_matrix_row!(symbol_ht, ht, h, etmp, rpoly)
+        transform_polynomial_multiple_to_matrix_row!(matrix, symbol_ht, ht, h, etmp, rpoly)
     @inbounds matrix.upper_to_coeffs[matrix.nrows_filled_upper + 1] = basis.nonredundant[i]
     # TODO: this line is here with the sole purpose -- to support tracing.
     # Probably want to factor it out.
@@ -545,8 +552,14 @@ function add_critical_pairs_to_matrix!(
 
         # add row as a reducer
         row_idx = matrix.nrows_filled_upper += 1
-        uprows[row_idx] =
-            multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly_monoms)
+        uprows[row_idx] = transform_polynomial_multiple_to_matrix_row!(
+            matrix,
+            symbol_ht,
+            ht,
+            htmp,
+            etmp,
+            poly_monoms
+        )
         # map upper row to index in basis
         matrix.upper_to_coeffs[row_idx] = prev
         matrix.upper_to_mult[row_idx] = insert_in_hashtable!(ht, etmp)
@@ -582,8 +595,14 @@ function add_critical_pairs_to_matrix!(
 
             # add row to be reduced
             row_idx = matrix.nrows_filled_lower += 1
-            lowrows[row_idx] =
-                multiplied_poly_to_matrix_row!(symbol_ht, ht, htmp, etmp, poly_monoms)
+            lowrows[row_idx] = transform_polynomial_multiple_to_matrix_row!(
+                matrix,
+                symbol_ht,
+                ht,
+                htmp,
+                etmp,
+                poly_monoms
+            )
             # map lower row to index in basis
             matrix.lower_to_coeffs[row_idx] = prev
             matrix.lower_to_mult[row_idx] = insert_in_hashtable!(ht, etmp)

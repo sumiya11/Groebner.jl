@@ -104,6 +104,10 @@ mutable struct MacaulayMatrix{T <: Coeff}
     # compute hashes of matrix rows
     buffer_hash_vector::Vector{T}
     sentinels::Vector{Int8}
+
+    use_preallocated_buffers::Bool
+    preallocated_buffer1_load::Int
+    preallocated_buffer1::Vector{Vector{ColumnLabel}}
 end
 
 # The number of allocated (not necessarily filled) rows and columns in the
@@ -156,7 +160,10 @@ end
         Vector{MonomIdx}(),
         Vector{MonomIdx}(),
         Vector{T}(),
-        Vector{Int8}()
+        Vector{Int8}(),
+        false,
+        0,
+        Vector{Vector{ColumnLabel}}()
     )
 end
 
@@ -259,6 +266,7 @@ function reinitialize_matrix!(matrix::MacaulayMatrix, size::Int)
     matrix.nrows_filled_upper = 0
     matrix.nrows_filled_lower = 0
     matrix.npivots = 0
+    matrix.preallocated_buffer1_load = 0
     matrix
 end
 
@@ -272,3 +280,29 @@ function resize_matrix_upper_part_if_needed!(matrix::MacaulayMatrix, new_size::I
     end
     nothing
 end
+
+###
+
+# # Returns a Vector{ColumnLabel} of length at least length(vec). This vector can
+# # be then used as a single row of the matrix, and it is guaranteed that the
+# # underlying memory is not shared for the duration of a single F4 iteration.
+# function allocate_matrix_row_similar!(matrix::MacaulayMatrix, vec::Vector{MonomIdx})
+#     !matrix.use_preallocated_buffers && return similar(vec)
+
+#     # TODO: This is broken
+#     load = matrix.preallocated_buffer1_load
+#     if load <= length(matrix.preallocated_buffer1)
+#         resize!(matrix.preallocated_buffer1, 2 * (length(matrix.preallocated_buffer1) + 1))
+#     end
+#     @invariant load < length(matrix.preallocated_buffer1)
+
+#     load += 1
+#     matrix.preallocated_buffer1_load = load
+#     newvec = if isassigned(matrix.preallocated_buffer1, load)
+#         resize!(matrix.preallocated_buffer1[load], length(vec))
+#     else
+#         matrix.preallocated_buffer1[load] = Vector{ColumnLabel}(undef, length(vec))
+#     end
+
+#     newvec
+# end
