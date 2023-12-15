@@ -903,7 +903,6 @@ end
     rowsperblock = div(nlow, nblocks) + rem
 
     @log level = -3 "" nblocks rem rowsperblock nlow
-    # println(matrix.lower_rows)
 
     # Prepare the matrix
     pivots, row_index_to_coeffs = absolute_index_pivots!(matrix)
@@ -922,7 +921,6 @@ end
         block_start = 1 + (i - 1) * rowsperblock
         block_end = min(nlow, i * rowsperblock)
         block_start > nlow && continue
-        @log level = -3 "" block_start block_end
         @invariant 1 <= block_start <= block_end <= nlow
         tasks[i] = Base.Threads.@spawn _reduce_matrix_lower_part_threaded_cas_worker!(
             matrix,
@@ -955,16 +953,16 @@ end
 function _reduce_matrix_lower_part_threaded_lock_free_worker!(
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
-    arithmetic::A,
+    arithmetic::AbstractArithmetic{CoeffType, AccumType},
     row_index_to_coeffs,
     block_start::Int,
     block_end::Int
-) where {C <: Coeff, A <: AbstractArithmetic}
+) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
     pivots = matrix.pivots
 
-    row = zeros(C, ncols)
-    new_column_indices, new_coeffs = new_empty_sparse_row(C)
+    row = zeros(AccumType, ncols)
+    new_column_indices, new_coeffs = new_empty_sparse_row(CoeffType)
 
     @inbounds for i in block_start:block_end
         # Select the row from the lower part of the matrix to be reduced
@@ -1006,31 +1004,26 @@ function _reduce_matrix_lower_part_threaded_lock_free_worker!(
         matrix.some_coeffs[i] = new_coeffs
         matrix.lower_rows[i] = new_column_indices
         matrix.sentinels[i] = 1
-        # pivots[new_column_indices[1]] = new_column_indices
-        # Set a reference to the coefficients of this row in the matrix
-        # matrix.lower_to_coeffs[new_column_indices[1]] = i
 
-        new_column_indices, new_coeffs = new_empty_sparse_row(C)
+        new_column_indices, new_coeffs = new_empty_sparse_row(CoeffType)
     end
 end
 
 @timeit function reduce_matrix_lower_part_threaded_lock_free!(
-    matrix::MacaulayMatrix{C},
-    basis::Basis{C},
-    arithmetic::A
-) where {C <: Coeff, A <: AbstractArithmetic}
+    matrix::MacaulayMatrix{CoeffType},
+    basis::Basis{CoeffType},
+    arithmetic::AbstractArithmetic{AccumType,CoeffType}
+) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
     _, nlow = nrows_filled(matrix)
 
-    # Calculate the size of the block
+    # Calculate the size of the block in threading
     nblocks = nthreads()
     nblocks = min(nblocks, nlow)
-    # nblocks = 1
     rem = nlow % nblocks == 0 ? 0 : 1
     rowsperblock = div(nlow, nblocks) + rem
 
     @log level = -3 "" nblocks rem rowsperblock nlow
-    # println(matrix.lower_rows)
 
     # Prepare the matrix
     pivots, row_index_to_coeffs = absolute_index_pivots!(matrix)
@@ -1046,7 +1039,6 @@ end
         block_start = 1 + (i - 1) * rowsperblock
         block_end = min(nlow, i * rowsperblock)
         block_start > nlow && continue
-        @log level = -3 "" block_start block_end
         @invariant 1 <= block_start <= block_end <= nlow
         tasks[i] = Base.Threads.@spawn _reduce_matrix_lower_part_threaded_lock_free_worker!(
             matrix,
@@ -1073,8 +1065,8 @@ end
         end
     end
 
-    row = zeros(C, ncols)
-    new_column_indices, new_coeffs = new_empty_sparse_row(C)
+    row = zeros(AccumType, ncols)
+    new_column_indices, new_coeffs = new_empty_sparse_row(CoeffType)
     @inbounds for i in 1:nlow
         if iszero(matrix.sentinels[i])
             continue
@@ -1119,21 +1111,17 @@ end
         # Set a reference to the coefficients of this row in the matrix
         matrix.lower_to_coeffs[new_column_indices[1]] = i
 
-        new_column_indices, new_coeffs = new_empty_sparse_row(C)
+        new_column_indices, new_coeffs = new_empty_sparse_row(CoeffType)
     end
-
-    # @log level = -1 "Matrix after x2"
-    # println(matrix.some_coeffs)
-    # println(pivots)
 
     true
 end
 
 @timeit function reduce_matrix_lower_part_sparsedense!(
-    matrix::MacaulayMatrix{C},
-    basis::Basis{C},
-    arithmetic::A
-) where {C <: Coeff, A <: AbstractArithmetic}
+    matrix::MacaulayMatrix{CoeffType},
+    basis::Basis{CoeffType},
+    arithmetic::AbstractArithmetic{AccumType, CoeffType}
+) where {CoeffType <: Coeff, AccumType <: Coeff}
     nleft, nright = ncols_filled(matrix)
     _, nlower = nrows_filled(matrix)
 
@@ -1141,7 +1129,7 @@ end
     resize!(matrix.D_coeffs_dense, nlow)
 
     # Allocate the buffers
-    row1 = zeros(C, nleft)
+    row1 = zeros(AccumType, nleft)
 
     @inbounds for i in 1:nlower
         row2 = zeros(C, nright)
