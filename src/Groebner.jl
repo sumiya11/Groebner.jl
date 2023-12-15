@@ -10,8 +10,8 @@ module Groebner
 """
     invariants_enabled() -> Bool
 
-Specifies if custom asserts and invariants are checked.
-If `false`, then all checks are disabled, and entail no runtime overhead.
+Specifies if custom asserts and invariants are checked. If `false`, then all
+checks are disabled, and entail no runtime overhead.
 
 It is useful to enable this when debugging the Groebner package.
 
@@ -22,12 +22,22 @@ invariants_enabled() = false
 """
     logging_enabled() -> Bool
 
-Specifies if custom logging is enabled.
-If `false`, then all logging is disabled, and entails no runtime overhead.
+Specifies if logging is enabled. If `false`, then all logging in Groebner is
+disabled, and entails no runtime overhead.
 
 See also `@log` in `src/utils/logging.jl`.
 """
 logging_enabled() = true
+
+"""
+    performance_counters_enabled() -> Bool
+
+If performance-tracking macro `@timeit` should be enabled in Groebner. 
+
+When this is `false`, all performance counters in Groebner are disabled and
+entail **(almost)** no runtime overhead.
+"""
+performance_counters_enabled() = false
 
 ###
 # Imports
@@ -38,6 +48,8 @@ logging_enabled() = true
 # AbstractAlgebra.jl, Nemo.jl (Oscar.jl) and MultivariatePolynomials.jl.
 import AbstractAlgebra
 import AbstractAlgebra: base_ring, elem_type
+
+import Atomix
 
 import Base: *
 import Base.Threads
@@ -66,8 +78,6 @@ import Random
 import Random: AbstractRNG
 
 import SIMD
-
-import UnsafeAtomics
 
 ###
 # Initialization

@@ -50,7 +50,7 @@
     # We do not need normalization in some cases, e.g., when computing the
     # normal forms
     if normalize_input
-        normalize_basis!(ring, basis)
+        normalize_basis!(basis, params.arithmetic)
     end
 
     basis, pairset, hashtable, permutation
@@ -691,7 +691,7 @@ end
     # @invariant pairset_well_formed(:input_f4!, pairset, basis, ht)
 
     @log level = -3 "Entering F4."
-    normalize_basis!(ring, basis)
+    normalize_basis!(basis, params.arithmetic)
 
     matrix = initialize_matrix(ring, C)
 
@@ -790,7 +790,7 @@ end
         reducegb_f4!(ring, basis, matrix, hashtable, symbol_ht, params)
     end
 
-    standardize_basis!(ring, basis, hashtable, hashtable.ord)
+    standardize_basis!(ring, basis, hashtable, hashtable.ord, params.arithmetic)
 
     # @invariant hashtable_well_formed(:output_f4!, ring, hashtable)
     @invariant basis_well_formed(:output_f4!, ring, basis, hashtable)

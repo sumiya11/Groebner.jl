@@ -117,9 +117,9 @@ function randomized_correctness_check!(
         ring_ff, gb_ff = reduce_modulo_p!(state.buffer, ring, gb_zz, prime, deepcopy=false)
         # Check that initial ideal contains in the computed groebner basis modulo a
         # random prime
-        arithmetic = select_arithmetic(prime, CoeffModular)
+        arithmetic = select_arithmetic(prime, CoeffModular, :auto)
         # TODO: Why is this here? F4 normalizes the basis on entry
-        normalize_basis!(ring_ff, gb_ff)
+        normalize_basis!(gb_ff, arithmetic)
         f4_normalform!(ring_ff, gb_ff, input_ff, hashtable, arithmetic)
         for i in 1:(input_ff.nprocessed)
             # meaning that something is not reduced

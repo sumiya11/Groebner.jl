@@ -8,7 +8,7 @@ end
 function extract_ring(orig_polys::Vector{<:AbstractPolynomialLike{T}}) where {T}
     nv = Groebner.MultivariatePolynomials.nvariables(orig_polys)
     ord = DegLex()
-    PolyRing{typeof(ord)}(nv, ord, UInt(0))
+    PolyRing{typeof(ord), UInt}(nv, ord, UInt(0))
 end
 
 function _check_input(polynomials::Vector{<:AbstractPolynomialLike{T}}, kws) where {T}

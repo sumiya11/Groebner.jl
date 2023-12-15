@@ -42,7 +42,8 @@ function standardize_basis_in_learn!(
     ring::PolyRing,
     basis::Basis,
     ht::MonomialHashtable,
-    ord::Any
+    ord::Any,
+    arithmetic
 )
     @inbounds for i in 1:(basis.nnonredundant)
         idx = basis.nonredundant[i]
@@ -59,7 +60,7 @@ function standardize_basis_in_learn!(
     resize!(basis.isredundant, basis.nprocessed)
     perm = sort_polys_by_lead_increasing!(basis, ht, ord=ord)
     trace.output_sort_indices = perm
-    normalize_basis!(ring, basis)
+    normalize_basis!(basis, arithmetic)
 end
 
 function reduction_learn!(
@@ -183,7 +184,7 @@ end
     @assert params.reduced === true
 
     @log level = -3 "Entering F4 Learn phase."
-    normalize_basis!(ring, basis)
+    normalize_basis!(basis, params.arithmetic)
 
     matrix = initialize_matrix(ring, C)
 
@@ -264,7 +265,14 @@ end
     @log level = -3 "Finalizing computation trace"
     finalize_trace!(trace)
 
-    standardize_basis_in_learn!(trace, ring, basis, hashtable, hashtable.ord)
+    standardize_basis_in_learn!(
+        trace,
+        ring,
+        basis,
+        hashtable,
+        hashtable.ord,
+        params.arithmetic
+    )
 
     @log level = -6 "After learn standardization" basis
 
@@ -535,7 +543,7 @@ function reducegb_f4_apply!(
     true
 end
 
-function standardize_basis_in_apply!(ring::PolyRing, trace::TraceF4)
+function standardize_basis_in_apply!(ring::PolyRing, trace::TraceF4, arithmetic)
     basis = trace.gb_basis
     buf = trace.buf_basis
     basis.size = basis.nprocessed = basis.nfilled = basis.nnonredundant
@@ -546,7 +554,7 @@ function standardize_basis_in_apply!(ring::PolyRing, trace::TraceF4)
     end
     buf.nprocessed = buf.nnonredundant = 0
     buf.nfilled = trace.input_basis.nfilled
-    normalize_basis!(ring, basis)
+    normalize_basis!(basis, arithmetic)
 end
 
 @timeit function f4_apply!(
@@ -558,22 +566,23 @@ end
     @invariant basis_well_formed(:input_f4_apply!, ring, basis, trace.hashtable)
     @assert params.reduced == true
 
-    normalize_basis!(ring, basis)
+    normalize_basis!(basis, params.arithmetic)
 
     iters_total = length(trace.matrix_infos) - 1
     iters = 0
     hashtable = trace.hashtable
 
+    symbol_ht = initialize_secondary_hashtable(hashtable)
     matrix = initialize_matrix(ring, C)
-    @log level = -5 "Applying modulo $(ring.ch)"
+    @log level = -5 "Applying F4 modulo $(ring.ch)"
+    @log level = -5 "Using parameters" params.arithmetic
+    @invariant ring.ch == divisor(params.arithmetic)
 
     update_basis!(basis, hashtable)
 
     while iters < iters_total
         iters += 1
         @log level = -5 "F4 Apply iteration $iters"
-
-        symbol_ht = initialize_secondary_hashtable(hashtable)
 
         symbolic_preprocessing!(trace, iters, basis, matrix, hashtable, symbol_ht)
 
@@ -584,6 +593,8 @@ end
         end
 
         update_basis!(basis, hashtable)
+
+        reinitialize_hashtable!(symbol_ht)
 
         @log_memory_locals
     end
@@ -607,7 +618,7 @@ end
         end
     end
 
-    standardize_basis_in_apply!(ring, trace)
+    standardize_basis_in_apply!(ring, trace, params.arithmetic)
     basis = trace.gb_basis
 
     @invariant basis_well_formed(:output_f4_apply!, ring, basis, hashtable)

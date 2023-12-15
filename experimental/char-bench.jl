@@ -2,8 +2,8 @@ using BenchmarkTools, AbstractAlgebra, PrettyTables, Groebner
 using Base.Threads, Primes
 
 prms = vcat(
-    [Primes.prevprime(BigInt(2)^i) for i in 64:-1:59],
-    [Primes.prevprime(2^i) for i in 32:-1:25]
+    [Primes.prevprime(BigInt(2)^i) for i in 63:-1:59],
+    [Primes.prevprime(2^i) for i in 31:-1:26]
 )
 
 Groebner.logging_enabled() = false

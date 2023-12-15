@@ -19,6 +19,9 @@
             AbstractAlgebra.polynomial_ring(AbstractAlgebra.GF(2^31 - 1), ["x", "y"])
         arr = [x^2 * y + 1, x * y^2 + 1]
         gb = groebner(arr, ordering=DegRevLex())
+
+        trace, gb = groebner_learn(arr, ordering=DegRevLex())
+        flag, gb = groebner_apply!(trace, arr, ordering=DegRevLex())
     end
 end
 
