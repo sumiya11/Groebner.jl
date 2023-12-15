@@ -57,7 +57,8 @@ function _groebner_learn(polynomials, kws, representation)
     Terms: $(term_sorting_permutations)
     Polynomials: $(trace.input_permutation)"""
     # @print_performance_counters
-    trace, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
+    WrappedTraceF4(trace),
+    convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
 end
 
 function _groebner_learn(
@@ -80,8 +81,17 @@ end
 ###
 # Apply stage
 
-function _groebner_apply!(trace::TraceF4, polynomials, kws::KeywordsHandler)
+# Specialization for a single input
+function _groebner_apply!(
+    wrapped_trace::WrappedTraceF4,
+    polynomials::AbstractVector,
+    kws::KeywordsHandler
+)
+    trace = get_trace!(wrapped_trace, polynomials)
+    @log level = -5 "Selected trace" trace.representation.coefftype
+
     ring = extract_coeffs_raw!(trace, trace.representation, polynomials, kws)
+
     # TODO: this is a bit hacky
     params = AlgorithmParameters(
         ring,
@@ -90,21 +100,63 @@ function _groebner_apply!(trace::TraceF4, polynomials, kws::KeywordsHandler)
         orderings=(trace.params.original_ord, trace.params.target_ord)
     )
     ring = PolyRing(trace.ring.nvars, trace.ring.ord, ring.ch)
+
     flag, gb_monoms, gb_coeffs = _groebner_apply!(ring, trace, params)
+
     if trace.params.homogenize
         ring, gb_monoms, gb_coeffs =
             dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
     end
     # @print_performance_counters
     !flag && return (flag, polynomials)
+
     flag, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
+end
+# Specialization for a batch of several inputs
+function _groebner_apply!(
+    wrapped_trace::WrappedTraceF4,
+    batch::NTuple{N, T},
+    kws::KeywordsHandler
+) where {N, T <: AbstractVector}
+    trace = get_trace!(wrapped_trace, batch)
+    @log level = -5 "Selected trace" trace.representation.coefftype
+
+    ring = extract_coeffs_in_batch_raw!(trace, trace.representation, batch, kws)
+
+    # TODO: this is a bit hacky
+    params = AlgorithmParameters(
+        ring,
+        trace.representation,
+        kws,
+        orderings=(trace.params.original_ord, trace.params.target_ord)
+    )
+    ring = PolyRing(trace.ring.nvars, trace.ring.ord, ring.ch)
+
+    flag, gb_monoms, gb_coeffs = _groebner_apply!(ring, trace, params)
+
+    if trace.params.homogenize
+        ring, gb_monoms, gb_coeffs =
+            dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
+    end
+    # @print_performance_counters
+    !flag && return flag, batch
+
+    gb_coeffs_unpacked = unpack_composite_coefficients(gb_coeffs)
+
+    flag,
+    ntuple(
+        i -> convert_to_output(ring, batch[i], gb_monoms, gb_coeffs_unpacked[i], params),
+        N
+    )
 end
 
 function _groebner_apply!(ring, trace, params)
     @log level = -1 "Groebner Apply phase"
     @log level = -2 "Applying modulo $(ring.ch)"
+
     flag = f4_apply!(trace, ring, trace.buf_basis, params)
     gb_monoms, gb_coeffs = export_basis_data(trace.gb_basis, trace.hashtable)
+
     # Check once again that the sizes coincide
     length(gb_monoms) != length(gb_coeffs) && return false, gb_monoms, gb_coeffs
     @inbounds for i in 1:length(gb_monoms)

@@ -28,7 +28,7 @@
 │ certify_check = false
 │ check = true
 │ linalg = Main.Groebner.LinearAlgebra(:randomized, :sparse)
-│ arithmetic = Main.Groebner.SpecializedBuiltinArithmeticZp{UInt64, true}(0x0000000200000005, 0x1e, 0x000000007fffffff)
+│ arithmetic = Main.Groebner.SpecializedArithmeticZp{UInt64, true}(0x0000000200000005, 0x1e, 0x000000007fffffff)
 │ reduced = true
 │ homogenize = false
 │ maxpairs = 9223372036854775807

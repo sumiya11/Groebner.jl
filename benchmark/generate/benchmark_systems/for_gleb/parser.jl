@@ -11,7 +11,7 @@ function read_SEAIJRC()
         @info "First line" head
         headv = map(x -> Symbol(x), split(head, ", "))
         e = Meta.parse(join(headv, ","))
-        R, xs = eval(:((R, $e) = Nemo.PolynomialRing(Nemo.QQ, $headv)))
+        R, xs = eval(:((R, $e) = Nemo.polynomial_ring(Nemo.QQ, $headv)))
         @info "Created ring" R xs
         rrr = split(body, ",")
         for (i, s) in enumerate(rrr)
@@ -33,7 +33,7 @@ function read_SIWR()
         body = readline(f)
         headv = map(x -> Symbol(x), split(head, ", "))
         e = Meta.parse(join(headv, ","))
-        R, xs = eval(:((R, $e) = Nemo.PolynomialRing(Nemo.QQ, $headv)))
+        R, xs = eval(:((R, $e) = Nemo.polynomial_ring(Nemo.QQ, $headv)))
         @info "Created ring" R xs
         rrr = split(body, ",")
         for (i, s) in enumerate(rrr)
@@ -57,7 +57,7 @@ function read_MAPK()
         @info "First line" head
         headv = map(x -> Symbol(x), split(head, ", "))
         e = Meta.parse(join(headv, ","))
-        R, xs = eval(:((R, $e) = Nemo.PolynomialRing(Nemo.QQ, $headv)))
+        R, xs = eval(:((R, $e) = Nemo.polynomial_ring(Nemo.QQ, $headv)))
         @info "Created ring" R xs
         rrr = split(body, ",")
         l = length(rrr)
@@ -100,7 +100,7 @@ function read_MAPK_include()
     @info "First line" head
     headv = map(x -> Symbol(x), split(head, ", "))
     e = Meta.parse(join(headv, ","))
-    R, xs = eval(:((R, $e) = Nemo.PolynomialRing(Nemo.QQ, $headv)))
+    R, xs = eval(:((R, $e) = Nemo.polynomial_ring(Nemo.QQ, $headv)))
 
     collect(include(apath))
 end
@@ -109,7 +109,7 @@ function parse_include(filename)
     head = "x, y, z"
     headv = map(x -> Symbol(x), split(head, ", "))
     e = Meta.parse("x, y, z")
-    R, xs = eval(:((R, $e) = Nemo.PolynomialRing(Nemo.QQ, $headv)))
+    R, xs = eval(:((R, $e) = Nemo.polynomial_ring(Nemo.QQ, $headv)))
 
     include(abspath("benchmark\\data\\$filename"))
 end

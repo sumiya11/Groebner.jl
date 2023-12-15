@@ -11,6 +11,6 @@ function _autoreduce(
     matrix = initialize_matrix(ring, C)
     symbol_ht = initialize_secondary_hashtable(hashtable)
     reducegb_f4!(ring, basis, matrix, hashtable, symbol_ht, params)
-    standardize_basis!(ring, basis, hashtable, hashtable.ord)
+    standardize_basis!(ring, basis, hashtable, hashtable.ord, params.arithmetic)
     export_basis_data(basis, hashtable)
 end

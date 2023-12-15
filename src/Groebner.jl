@@ -10,8 +10,8 @@ module Groebner
 """
     invariants_enabled() -> Bool
 
-Specifies if custom asserts and invariants are checked.
-If `false`, then all checks are disabled, and entail no runtime overhead.
+Specifies if custom asserts and invariants are checked. If `false`, then all
+checks are disabled, and entail no runtime overhead.
 
 It is useful to enable this when debugging the Groebner package.
 
@@ -22,12 +22,22 @@ invariants_enabled() = false
 """
     logging_enabled() -> Bool
 
-Specifies if custom logging is enabled.
-If `false`, then all logging is disabled, and entails no runtime overhead.
+Specifies if logging is enabled. If `false`, then all logging in Groebner is
+disabled, and entails no runtime overhead.
 
 See also `@log` in `src/utils/logging.jl`.
 """
 logging_enabled() = true
+
+"""
+    performance_counters_enabled() -> Bool
+
+If performance-tracking macro `@timeit` should be enabled in Groebner. 
+
+When this is `false`, all performance counters in Groebner are disabled and
+entail **(almost)** no runtime overhead.
+"""
+performance_counters_enabled() = false
 
 ###
 # Imports
@@ -38,6 +48,8 @@ logging_enabled() = true
 # AbstractAlgebra.jl, Nemo.jl (Oscar.jl) and MultivariatePolynomials.jl.
 import AbstractAlgebra
 import AbstractAlgebra: base_ring, elem_type
+
+import Atomix
 
 import Base: *
 import Base.Threads
@@ -67,15 +79,13 @@ import SIMD
 
 import TimerOutputs
 
-import UnsafeAtomics
-
 ###
 # Initialization
 
 # Groebner is multi-threaded by default.
 # 1. Set the environment variable GROEBNER_NO_THREADED to 1 to disable all
 #    multi-threading in Groebner
-# 2. Assuming GROEBNER_NO_THREADED=0, you can also use the keyword argument
+# 2. Assuming GROEBNER_NO_THREADED=0, you can use the keyword argument
 #    `threaded` provided by some of the functions in the interface to fine-tune
 #    the threading.
 const _threaded = Ref(true)

@@ -1,15 +1,18 @@
 # Tracing for f4
 
-mutable struct TraceF4{C <: Coeff, M <: Monom, Ord1, Ord2}
+###
+# The main struct
+
+mutable struct TraceF4{C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
     stopwatch_start::UInt64
 
-    ring::PolyRing{Ord1}
+    ring::PolyRing{Ord1, C2}
     original_ord::Ord2
     input_signature::Vector{Int}
 
-    input_basis::Basis{C}
-    buf_basis::Basis{C}
-    gb_basis::Basis{C}
+    input_basis::Basis{C1}
+    buf_basis::Basis{C1}
+    gb_basis::Basis{C1}
 
     hashtable::MonomialHashtable{M, Ord1}
 
@@ -80,6 +83,59 @@ function initialize_trace_f4(
     )
 end
 
+function copy_trace(
+    trace::TraceF4{C1, C3, M, Ord1, Ord2},
+    ::Type{C2};
+    deepcopy=false
+) where {C1 <: Coeff, C3 <: Coeff, M <: Monom, Ord1, Ord2, C2 <: Coeff}
+    new_coeffs = Vector{Vector{C2}}()
+    new_input_basis = copy_basis(trace.input_basis, new_coeffs, deepcopy=deepcopy)
+
+    new_buf_basis_coeffs = Vector{Vector{C2}}(undef, length(trace.buf_basis.coeffs))
+    for i in 1:length(trace.buf_basis.coeffs)
+        !isassigned(trace.buf_basis.coeffs, i) && continue
+        new_buf_basis_coeffs[i] = Vector{C2}(undef, length(trace.buf_basis.coeffs[i]))
+    end
+    new_buf_basis = copy_basis(trace.buf_basis, new_buf_basis_coeffs, deepcopy=deepcopy)
+
+    new_gb_basis_coeffs = Vector{Vector{C2}}(undef, length(trace.gb_basis.coeffs))
+    for i in 1:length(trace.gb_basis.coeffs)
+        !isassigned(trace.gb_basis.coeffs, i) && continue
+        new_gb_basis_coeffs[i] = Vector{C2}(undef, length(trace.gb_basis.coeffs[i]))
+    end
+    new_gb_basis = copy_basis(trace.gb_basis, new_gb_basis_coeffs, deepcopy=deepcopy)
+
+    new_representation = PolynomialRepresentation(trace.representation.monomtype, C2)
+    new_ring = PolyRing(trace.ring.nvars, trace.ring.ord, zero(C2))
+
+    TraceF4(
+        trace.stopwatch_start,
+        new_ring,
+        trace.original_ord,
+        trace.input_signature,
+        new_input_basis,
+        new_buf_basis,
+        new_gb_basis,
+        trace.hashtable,
+        trace.input_permutation,
+        trace.term_sorting_permutations,
+        trace.term_homogenizing_permutations,
+        trace.matrix_infos,
+        trace.matrix_nonzeroed_rows,
+        trace.matrix_upper_rows,
+        trace.matrix_lower_rows,
+        trace.matrix_sorted_columns,
+        trace.critical_pair_sequence,
+        trace.output_nonredundant_indices,
+        trace.nonredundant_indices_before_reduce,
+        trace.output_sort_indices,
+        trace.params,
+        trace.sweep_output,
+        new_representation,
+        trace.homogenize
+    )
+end
+
 function finalize_trace!(trace::TraceF4)
     # TODO: trim array sizes
     trace.buf_basis = deepcopy_basis(trace.gb_basis)
@@ -91,7 +147,68 @@ function finalize_trace!(trace::TraceF4)
 end
 
 ###
+# Wrapper around the tracer
+
+mutable struct WrappedTraceF4
+    recorded_traces::Dict{Any, Any}
+
+    function WrappedTraceF4(
+        trace::TraceF4{C1, C2, M, Ord1, Ord2}
+    ) where {C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
+        recorded_traces = Dict{Any, Any}(C1 => trace)
+        new(recorded_traces)
+    end
+end
+
+function get_default_trace(wrapped_trace::WrappedTraceF4)
+    if length(wrapped_trace.recorded_traces) == 1
+        # there is only one trace stored
+        first(values(wrapped_trace.recorded_traces))
+    end
+    for id in keys(wrapped_trace.recorded_traces)
+        if id <: Integer
+            return wrapped_trace.recorded_traces[id]
+        end
+    end
+    first(values(wrapped_trace.recorded_traces))
+end
+
+function get_trace!(wrapped_trace::WrappedTraceF4, ::AbstractVector)
+    get_default_trace(wrapped_trace)
+end
+
+function get_trace!(
+    wrapped_trace::WrappedTraceF4,
+    ::NTuple{N, T}
+) where {N, T <: AbstractVector}
+    for id in keys(wrapped_trace.recorded_traces)
+        if id <: NTuple{N, U} where {U <: Integer}
+            return wrapped_trace.recorded_traces[id]
+        end
+    end
+    # create a new suitable trace
+    default_trace = get_default_trace(wrapped_trace)
+    coefftype = default_trace.representation.coefftype
+    new_coefftype = CompositeInt{N, coefftype}
+    new_trace = copy_trace(default_trace, new_coefftype, deepcopy=false)
+    wrapped_trace.recorded_traces[new_coefftype] = new_trace
+    return new_trace
+end
+
+###
 # Printing the trace
+
+function Base.show(io::IO, ::MIME"text/plain", wrapped_trace::WrappedTraceF4)
+    println(
+        io,
+        "Recorded $(length(wrapped_trace.recorded_traces)) traces. Printing the first one..\n"
+    )
+    show(io, MIME("text/plain"), first(values(wrapped_trace.recorded_traces)))
+end
+
+function Base.show(io::IO, wrapped_trace::WrappedTraceF4)
+    Base.show(io, MIME("text/plain"), wrapped_trace)
+end
 
 function Base.show(io::IO, ::MIME"text/plain", trace::TraceF4)
     sz = round((Base.summarysize(trace) / 2^20), digits=2)

@@ -20,7 +20,7 @@
             c,
             """
             Coefficient $c in the output basis cannot be converted exactly to $T. 
-            Using big arithmetic in the input should fix this."""
+            Using big arithmetic in the input could fix this."""
         )
     )
 end
@@ -34,14 +34,20 @@ end
 
 Polynomial ring of computation.
 """
-mutable struct PolyRing{Ord <: Union{AbstractMonomialOrdering, AbstractInternalOrdering}}
+mutable struct PolyRing{
+    Ord <: Union{AbstractMonomialOrdering, AbstractInternalOrdering},
+    C <: Union{CoeffFF, CompositeCoeffFF}
+}
     # Number of variables
     nvars::Int
     # Monomial ordering
     ord::Ord
     # Characteristic of the coefficient ring
-    ch::UInt
+    ch::C
 end
+
+###
+# Selecting polynomial representation
 
 """
     PolynomialRepresentation
@@ -64,12 +70,12 @@ Additionally, `hint` can be specified to one of the following:
 - `:large_exponents`: use at least 32 bits per exponent.
 """
 function select_polynomial_representation(
-    polynomials,
+    polynomials::AbstractVector,
     kws::KeywordsHandler;
     hint::Symbol=:none
 )
     if !(hint in (:none, :large_exponents))
-        @log level = 1000 "The given hint=$hint was discarded"
+        @log level = 1_000 "The given hint=$hint was discarded"
     end
     frontend, npolys, char, nvars, ordering = peek_at_polynomials(polynomials)
     monomtype = select_monomtype(char, npolys, nvars, ordering, kws, hint)
@@ -87,7 +93,9 @@ function select_polynomial_representation(
 end
 
 function select_monomtype(char, npolys, nvars, ordering, kws, hint)
-    @log level = -1 "Selecting monomial representation.\nGiven hint hint=$hint. Keyword argument monoms=$(kws.monoms)"
+    @log level = -1 """
+    Selecting monomial representation.
+    Given hint hint=$hint. Keyword argument monoms=$(kws.monoms)"""
     if hint === :large_exponents
         @log level = -1 "As hint=$hint was provided, using 64 bits per single exponent"
         # use 64 bits if large exponents detected
@@ -95,7 +103,9 @@ function select_monomtype(char, npolys, nvars, ordering, kws, hint)
         @assert is_supported_ordering(desired_monom_type, kws.ordering)
         return desired_monom_type
     end
-    # TODO: explain this condition
+
+    # If homogenization is requested, or if a part of the ordering is
+    # lexicographical, the ideal will potentially be homogenized later.
     if kws.homogenize === :yes || (
         kws.homogenize === :auto && (
             kws.ordering isa Lex ||
@@ -103,75 +113,124 @@ function select_monomtype(char, npolys, nvars, ordering, kws, hint)
             (ordering == :lex && kws.ordering isa InputOrdering)
         )
     )
-        @log level = -1 "As homogenize=:yes/:auto was provided, representing monomials as exponent vectors"
+        @log level = -1 """
+        As homogenize=:yes/:auto was provided, 
+        representing monomials as dense exponent vectors"""
         desired_monom_type = ExponentVector{UInt32}
         @assert is_supported_ordering(desired_monom_type, kws.ordering)
         return desired_monom_type
     end
-    E = UInt8
-    variables_per_word = div(sizeof(UInt), sizeof(E))
+
+    ExponentSize = UInt8
+    variables_per_word = div(sizeof(UInt), sizeof(ExponentSize))
     # if dense representation is requested
     if kws.monoms === :dense
-        @assert is_supported_ordering(ExponentVector{E}, kws.ordering)
-        return ExponentVector{E}
+        @assert is_supported_ordering(ExponentVector{ExponentSize}, kws.ordering)
+        return ExponentVector{ExponentSize}
     end
     # if sparse representation is requested
     if kws.monoms === :sparse
-        if is_supported_ordering(SparseExponentVector{E, nvars, Int}, kws.ordering)
-            return SparseExponentVector{E, nvars, Int}
+        if is_supported_ordering(
+            SparseExponentVector{ExponentSize, nvars, Int},
+            kws.ordering
+        )
+            return SparseExponentVector{ExponentSize, nvars, Int}
         end
         @log level = 1 """
-        The given monomial ordering $(kws.ordering) is not implemented for $(kws.monoms) monomials.
-        Falling back to dense representation."""
+        The given monomial ordering $(kws.ordering) is not implemented for
+        $(kws.monoms) monomial representation. Falling back to other monomial
+        representations."""
     end
     # if packed representation is requested
     if kws.monoms === :packed
-        if is_supported_ordering(PackedTuple1{UInt64, E}, kws.ordering)
+        if is_supported_ordering(PackedTuple1{UInt64, ExponentSize}, kws.ordering)
             if nvars < variables_per_word
-                return PackedTuple1{UInt64, E}
+                return PackedTuple1{UInt64, ExponentSize}
             elseif nvars < 2 * variables_per_word
-                return PackedTuple2{UInt64, E}
+                return PackedTuple2{UInt64, ExponentSize}
             elseif nvars < 3 * variables_per_word
-                return PackedTuple3{UInt64, E}
+                return PackedTuple3{UInt64, ExponentSize}
             end
             @log level = 1 """
-            Unable to use $(kws.monoms) monomials, too many variables ($nvars).
-            Falling back to dense monomial representation."""
+            Unable to use $(kws.monoms) monomial representation, too many
+            variables ($nvars). Falling back to dense monomial
+            representation."""
         else
             @log level = 1 """
-            The given monomial ordering $(kws.ordering) is not implemented for $(kws.monoms) monomials.
-            Falling back to dense representation."""
+            The given monomial ordering $(kws.ordering) is not implemented for
+            $(kws.monoms) monomial representation. Falling back to dense
+            representation."""
         end
     end
+    # in the automatic choice, we always prefer packed representations
     if kws.monoms === :auto
         # TODO: also check that ring.ord is supported
-        if is_supported_ordering(PackedTuple1{UInt64, E}, kws.ordering)
+        if is_supported_ordering(PackedTuple1{UInt64, ExponentSize}, kws.ordering)
             if nvars < variables_per_word
-                return PackedTuple1{UInt64, E}
+                return PackedTuple1{UInt64, ExponentSize}
             elseif nvars < 2 * variables_per_word
-                return PackedTuple2{UInt64, E}
+                return PackedTuple2{UInt64, ExponentSize}
             elseif nvars < 3 * variables_per_word
-                return PackedTuple3{UInt64, E}
+                return PackedTuple3{UInt64, ExponentSize}
             end
         end
     end
-    ExponentVector{E}
+
+    ExponentVector{ExponentSize}
+end
+
+function get_tight_signed_int_type(x::T) where {T <: Integer}
+    if x < typemax(Int8)
+        return Int8
+    elseif typemax(Int8) < x < typemax(Int16)
+        return Int16
+    elseif typemax(Int16) <= x < typemax(Int32)
+        return Int32
+    elseif typemax(Int32) <= x < typemax(Int64)
+        return Int64
+    else
+        return Int128
+    end
 end
 
 function select_coefftype(char, npolys, nvars, ordering, kws, hint)
-    if !iszero(char)
-        if char >= typemax(UInt64)
-            __throw_input_not_supported(char, "The coefficient field order is too large.")
-        end
-        if char > 2^32
-            UInt128
+    @log level = -1 """
+    Selecting coefficient representation.
+    Given hint hint=$hint. Keyword argument arithmetic=$(kws.arithmetic)"""
+
+    if iszero(char)
+        return Rational{BigInt}
+    end
+    @assert char > 0
+
+    if char >= typemax(UInt64)
+        __throw_input_not_supported(
+            char,
+            "The coefficient field characteristic is too large."
+        )
+    end
+
+    store_coeffs_tight = kws.coeffstight
+    tight_signed_type = get_tight_signed_int_type(char)
+
+    # If the requested arithmetic requires a signed representation
+    if kws.arithmetic === :signed
+        if store_coeffs_tight
+            return tight_signed_type
         else
-            UInt64
+            return widen(tight_signed_type)
         end
+    end
+
+    if store_coeffs_tight
+        unsigned(tight_signed_type)
     else
-        Rational{BigInt}
+        unsigned(widen(tight_signed_type))
     end
 end
+
+###
+# Converting to selected polynomial representation
 
 """
     convert_to_internal(representation, polynomials, kws)
@@ -230,6 +289,9 @@ function extract_polys(
     end
     var_to_index, monoms, coeffs
 end
+
+###
+# Converting polynomials from internal representation to original types
 
 iszero_coeffs(v) = isempty(v)
 iszero_monoms(v) = isempty(v)
@@ -297,4 +359,42 @@ function set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
     permutations = sort_input_terms_to_change_ordering!(monoms, coeffs, internal_ord)
     @log level = -7 "Reordered terms:" monoms coeffs
     ring, permutations
+end
+
+###
+# Utilities
+
+function unpack_composite_coefficients(
+    composite_coeffs::Vector{Vector{CompositeInt{2, T}}}
+) where {T <: CoeffFF}
+    coeffs_part_1 = Vector{Vector{T}}(undef, length(composite_coeffs))
+    coeffs_part_2 = Vector{Vector{T}}(undef, length(composite_coeffs))
+    @inbounds for i in 1:length(composite_coeffs)
+        coeffs_part_1[i] = Vector{T}(undef, length(composite_coeffs[i]))
+        coeffs_part_2[i] = Vector{T}(undef, length(composite_coeffs[i]))
+        for j in 1:length(composite_coeffs[i])
+            a1, a2 = unpack_composite_integer(composite_coeffs[i][j])
+            coeffs_part_1[i][j] = a1
+            coeffs_part_2[i][j] = a2
+        end
+    end
+    coeffs_part_1, coeffs_part_2
+end
+
+function unpack_composite_coefficients(
+    composite_coeffs::Vector{Vector{CompositeInt{N, T}}}
+) where {N, T <: CoeffFF}
+    coeffs_part_i = ntuple(_ -> Vector{Vector{T}}(undef, length(composite_coeffs)), N)
+    @inbounds for i in 1:length(composite_coeffs)
+        for k in 1:N
+            coeffs_part_i[k][i] = Vector{T}(undef, length(composite_coeffs[i]))
+        end
+        for j in 1:length(composite_coeffs[i])
+            ai = unpack_composite_integer(composite_coeffs[i][j])
+            for k in 1:N
+                coeffs_part_i[k][i][j] = ai[k]
+            end
+        end
+    end
+    coeffs_part_i
 end

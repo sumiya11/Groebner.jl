@@ -1,19 +1,24 @@
 # Arithmetic in the rationals.
 
 # All implementations of arithmetic in Q are a subtype of this 
-abstract type AbstractArithmeticQQ <: AbstractArithmetic end
+abstract type AbstractArithmeticQQ{AccumType, CoeffType} <:
+              AbstractArithmetic{AccumType, CoeffType} where {AccumType, CoeffType} end
 
 # Standard arithmetic that uses Base.GMP.MPQ
-struct BuiltinArithmeticQQ <: AbstractArithmeticQQ
+struct BuiltinArithmeticQQ{AccumType, CoeffType} <:
+       AbstractArithmeticQQ{AccumType, CoeffType}
     buf1::BigInt
     buf2::Rational{BigInt}
     function BuiltinArithmeticQQ()
-        new(BigInt(0), Rational{BigInt}(0))
+        new{Rational{BigInt}, Rational{BigInt}}(BigInt(0), Rational{BigInt}(0))
     end
 end
 
-default_arithmetic_qq() = BuiltinArithmeticQQ()
-
-function select_arithmetic(characteristic, ::Type{CoeffType}) where {CoeffType <: CoeffQQ}
+function select_arithmetic(
+    characteristic,
+    ::Type{CoeffType},
+    hint::Symbol,
+    _
+) where {CoeffType <: CoeffQQ}
     BuiltinArithmeticQQ()
 end

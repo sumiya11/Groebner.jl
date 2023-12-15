@@ -9,15 +9,19 @@
         # all calls in this block will be precompiled, regardless of whether
         # they belong to your package or not (on Julia 1.8 and higher)
         R, (x, y) =
-            AbstractAlgebra.PolynomialRing(AbstractAlgebra.QQ, ["x", "y"], ordering=:lex)
+            AbstractAlgebra.polynomial_ring(AbstractAlgebra.QQ, ["x", "y"], ordering=:lex)
         arr = [x, y]
         gb = groebner(arr)
         isgroebner(arr)
         normalform(arr, arr)
 
-        R, (x, y) = AbstractAlgebra.PolynomialRing(AbstractAlgebra.GF(2^31 - 1), ["x", "y"])
+        R, (x, y) =
+            AbstractAlgebra.polynomial_ring(AbstractAlgebra.GF(2^31 - 1), ["x", "y"])
         arr = [x^2 * y + 1, x * y^2 + 1]
         gb = groebner(arr, ordering=DegRevLex())
+
+        trace, gb = groebner_learn(arr, ordering=DegRevLex())
+        flag, gb = groebner_apply!(trace, arr, ordering=DegRevLex())
     end
 end
 

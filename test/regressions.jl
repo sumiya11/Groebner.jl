@@ -1,6 +1,6 @@
 
 @testset "regression, SI.jl normalform" begin
-    R, (x, y, z) = PolynomialRing(GF(2^31 - 1), ["x", "y", "z"])
+    R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"])
 
     @test Groebner.normalform([x], R(0)) == R(0)
     @test Groebner.normalform([x], R(1)) == R(1)
@@ -10,7 +10,7 @@
 end
 
 @testset "regression, ordering of empty" begin
-    R, (x, y) = PolynomialRing(GF(2^31 - 1), ["x", "y"], ordering=:lex)
+    R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], ordering=:lex)
 
     ord = Groebner.DegRevLex()
     gb1 = Groebner.groebner([x, y], ordering=ord)
@@ -113,7 +113,7 @@ end
 end
 
 @testset "regression, column order in normalform" begin
-    P, (x1, x2) = PolynomialRing(GF(1119649), ["x1", "x2"])
+    P, (x1, x2) = polynomial_ring(GF(1119649), ["x1", "x2"])
 
     gb = [x1 + 1]
     f = x1 + x2^2

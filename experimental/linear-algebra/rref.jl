@@ -12,7 +12,7 @@ function get_all_monoms_up_to_total_degree(ring, vars, degree)
     unique!(res)
 end
 
-R, xi = PolynomialRing(GF(2^31 - 1), ["x$i" for i in 1:4], ordering=:degrevlex)
+R, xi = polynomial_ring(GF(2^31 - 1), ["x$i" for i in 1:4], ordering=:degrevlex)
 
 m = get_all_monoms_up_to_total_degree(R, xi, 4)
 system = Vector{eltype(m)}()
@@ -23,7 +23,7 @@ end
 si = system
 @time gb = Groebner.groebner(si, linalg=:randomized, loglevel=-3);
 
-R, (x, y, z) = PolynomialRing(GF(2^31 - 1), ["x", "y", "z"], ordering=:degrevlex)
+R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"], ordering=:degrevlex)
 s = [x * y^2 + 2z^2 + 1, x^2 * z + 3y]
 si = s
 @time gb1 = Groebner.groebner(si, linalg=:auto, loglevel=-3);
@@ -35,7 +35,7 @@ g = GF(2^31 - 1)
 o = :degrevlex
 si = Groebner.cyclicn(5, ordering=:degrevlex, ground=GF(2^31 - 1));
 
-# R, x = PolynomialRing(GF(2^31 - 1), [["x$i" for i in 1:6]...], ordering=:degrevlex)
+# R, x = polynomial_ring(GF(2^31 - 1), [["x$i" for i in 1:6]...], ordering=:degrevlex)
 # m = get_all_monoms_up_to_total_degree(R, gens(R), 5);
 # length(m)
 # S = map(i -> sum(rand(m, div(length(m), 2))), 1:7);

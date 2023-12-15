@@ -138,7 +138,7 @@ function extract_sparse_row!(indices, coeffs, row::Vector{T}, from::Int, to::Int
     nothing
 end
 
-function reduce_dense_row_by_sparse_row!(
+function reduce_dense_row_by_sparse_row_mod_p!(
     row::Vector{T},
     indices::Vector{Int},
     coeffs::Vector{T}
@@ -151,7 +151,7 @@ function reduce_dense_row_by_sparse_row!(
     nothing
 end
 
-function reduce_dense_row_by_dense_row!(row::Vector{T}, b, startcol) where {T}
+function reduce_dense_row_by_dense_row_mod_p!(row::Vector{T}, b, startcol) where {T}
     @inbounds mul = (typemax(T) - 1) - row[startcol]
     @inbounds for j in startcol:length(row)
         row[j] = row[j] + mul * b[j] * b[j]
@@ -186,7 +186,7 @@ function reduce_low_row!(row, m, i)
 
         red_inds = pivots[i]
         red_vals = coeffs[i]
-        reduce_dense_row_by_sparse_row!(row, red_inds, red_vals)
+        reduce_dense_row_by_sparse_row_mod_p!(row, red_inds, red_vals)
     end
     nnzcount == 0, firstnnz, nnzcount
 end
@@ -235,7 +235,7 @@ function interreduce_upper_rows!(m::F4matrix{T}) where {T}
         load_sparse_row!(row, nnz_ind, nnz_val)
         for j in 1:(length(nnz_ind) - 1)
             kij = nnz_val[j]
-            indices = m.reduce_dense_row_by_sparse_row!(row, indices, coeffs)
+            indices = m.reduce_dense_row_by_sparse_row_mod_p!(row, indices, coeffs)
             extract_sparse_row!(indices, coeffs, row, 1, 1)
         end
     end

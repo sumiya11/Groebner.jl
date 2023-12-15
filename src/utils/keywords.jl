@@ -14,6 +14,8 @@ const _supported_kw_args = (
         certify     = false,
         linalg      = :randomized,
         monoms      = :auto,
+        arithmetic  = :auto,
+        coeffstight = false,
         seed        = 42,
         loglevel    = _default_loglevel,
         maxpairs    = typemax(Int),   # NOTE: maybe use Inf?
@@ -50,17 +52,21 @@ const _supported_kw_args = (
         seed        = 42,
         ordering    = InputOrdering(),
         monoms      = :auto,
+        arithmetic  = :auto,
         loglevel    = _default_loglevel,
         homogenize  = :auto,
         sweep       = true,
-        statistics  = :no
+        statistics  = :no,
+        threaded    = :auto,
     ),
     groebner_apply! = (
         seed        = 42,
         monoms      = :auto,
+        arithmetic  = :auto,
         loglevel    = _default_loglevel,
         sweep       = true,
-        statistics  = :no
+        statistics  = :no,
+        threaded    = :auto,
     )
 )
 #! format: on
@@ -76,6 +82,8 @@ struct KeywordsHandler{Ord}
     linalg::Symbol
     threaded::Symbol
     monoms::Symbol
+    arithmetic::Symbol
+    coeffstight::Bool
     seed::Int
     loglevel::Int
     maxpairs::Int
@@ -122,6 +130,13 @@ struct KeywordsHandler{Ord}
         Possible choices for keyword "monoms" are:
         `:auto`, `:dense`, `:packed`, `:sparse`"""
 
+        arithmetic = get(kws, :arithmetic, get(default_kw_args, :arithmetic, :auto))
+        @assert arithmetic in (:auto, :delayed, :signed, :basic) """
+        Not recognized arithmetic: $arithmetic
+        Possible choices for keyword "arithmetic" are:
+        `:auto`, `:delayed`, `:signed`, `:basic`"""
+        coeffstight = get(kws, :coeffstight, get(default_kw_args, :coeffstight, false))
+
         seed = get(kws, :seed, get(default_kw_args, :seed, 42))
         loglevel = get(kws, :loglevel, get(default_kw_args, :loglevel, 0))
         @assert loglevel isa Integer """
@@ -154,7 +169,7 @@ struct KeywordsHandler{Ord}
         Possible choices for keyword "statistics" are:
         `:no`, `:timings`, `:stats`, `:all`"""
 
-        # @log level = -1 """
+        # @log level = -2 """
         #   In $function_key, using keywords: 
         #   reduced    = $reduced, 
         #   ordering   = $ordering, 
@@ -178,6 +193,8 @@ struct KeywordsHandler{Ord}
             linalg,
             threaded,
             monoms,
+            arithmetic,
+            coeffstight,
             seed,
             loglevel,
             maxpairs,

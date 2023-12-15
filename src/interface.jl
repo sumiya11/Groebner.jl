@@ -31,13 +31,13 @@ The `groebner` routine takes the following optional arguments:
     When this option is `true`, the result is guaranteed to be correct in case
     the ideal is homogeneous (default is `false`). 
 - `linalg`: Linear algebra backend. Available options are: 
-    - `:auto`: for the automatic choice (default),
+    - `:auto` for the automatic choice (default),
     - `:deterministic` for deterministic sparse linear algebra, 
     - `:randomized` for probabilistic sparse linear algebra.
 - `threaded`: The use of multi-threading. Available options are: 
-    - `:auto`: for the automatic choice (default),
-    - `:no`: do not use multi-threading, 
-    - `:yes`: use multi-threading.
+    - `:auto` for the automatic choice (default),
+    - `:no` never use multi-threading, 
+    - `:yes` allow the use of multi-threading.
     Additionally, you can set the environment variable `GROEBNER_NO_THREADED` to
     `1` to disable all multi-threading in Groebner.jl. In this case, the
     environment variable takes precedence over the `threaded` option.
@@ -91,13 +91,15 @@ R, (x, y) = QQ["x", "y"]
 groebner([x*y^2 + x, y*x^2 + y])
 ```
 
-Or, in another monomial ordering:
+Or, say, in another monomial ordering:
 
 ```jldoctest
 groebner([x*y^2 + x, y*x^2 + y], ordering=Lex(y, x))
 ```
 """
 function groebner(polynomials::AbstractVector; options...)
+    Base.require_one_based_indexing(polynomials)
+
     keywords = KeywordsHandler(:groebner, options)
 
     setup_logging(keywords)
@@ -113,8 +115,8 @@ end
 
 Computes a Groebner basis of `polynomials` and emits the computation trace.
 
-The trace can be then used to speed up the computation of subsequent Groebner
-bases, which should be the specializations of the same ideal as the one
+The trace can be used to speed up the computation of subsequent Groebner bases,
+which should be the specializations of the same ideal as the one
 `groebner_learn` has been applied to.
 
 The input `polynomials` must be an array of polynomials over a finite field.
@@ -158,8 +160,33 @@ success, gb_2 = groebner_apply!(trace, [2_x*_y^2 + 3_x, 4_y*_x^2 + 5_y])
 @assert success
 @assert gb_2 == groebner([2_x*_y^2 + 3_x, 4_y*_x^2 + 5_y])
 ```
+
+Using `groebner_apply!` in batches:
+
+```jldoctest
+using Groebner, AbstractAlgebra
+R, (x, y) = GF(2^31-1)["x", "y"]
+
+# Learn
+trace, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
+
+# Create rings with some other moduli
+R2, (x2, y2) = GF(2^30+3)["x", "y"]
+R3, (x3, y3) = GF(2^27+29)["x", "y"]
+
+# Two specializations of the same ideal
+batch = ([2x2*y2^2 + 3x2, 4y2*x2^2 + 5y2], [4x3*y3^2 + 4x3, 5y3*x3^2 + 7y3])
+
+# Apply for two sets of polynomials at once
+success, (gb_2, gb_3) = groebner_apply!(trace, batch)
+
+@assert success
+@assert (gb_2, gb_3) == map(groebner, batch)
+```
 """
 function groebner_learn(polynomials::AbstractVector; options...)
+    Base.require_one_based_indexing(polynomials)
+
     keywords = KeywordsHandler(:groebner_learn, options)
 
     setup_logging(keywords)
@@ -170,61 +197,50 @@ end
 
 """
     groebner_apply!(trace, polynomials; options...)
+    groebner_apply!(trace, batch::Tuple{Vector, Vector}; options...)
 
 Computes a Groebner basis of `polynomials` using the given computation `trace`.
+It is possible to provide a tuple of two input arrays to compute two Groebner
+bases simultaneously.
 
 The input `polynomials` must be an array of polynomials over a finite field.
 
-This function is *not* thread-safe.
+This function is **not** thread-safe.
 
 See also `groebner_learn`.
 
 ## Example
 
-Using `groebner_learn` and `groebner_apply!` over the same ground field:
-
-```jldoctest
-using Groebner, AbstractAlgebra
-R, (x, y) = GF(2^31-1)["x", "y"]
-
-# Learn
-trace, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
-
-# Apply (same ground field, different coefficients)
-success, gb_2 = groebner_apply!(trace, [2x*y^2 + 3x, 4y*x^2 + 5y])
-
-@assert success
-```
-
-Using `groebner_learn` and `groebner_apply!` over different ground fields:
-
-```jldoctest
-using Groebner, AbstractAlgebra
-R, (x, y) = GF(2^31-1)["x", "y"]
-
-# Learn
-trace, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
-
-# Create a ring with a different modulo
-_R, (_x, _y) = GF(2^30+3)["x", "y"]
-
-# Apply (with a different modulo)
-success, gb_2 = groebner_apply!(trace, [2_x*_y^2 + 3_x, 4_y*_x^2 + 5_y])
-
-@assert success
-@assert gb_2 == groebner([2_x*_y^2 + 3_x, 4_y*_x^2 + 5_y])
-```
+For examples, see the documentation of `groebner_learn`.
 """
 function groebner_apply! end
 
 # Specialization for a single input
 function groebner_apply!(trace, polynomials::AbstractVector; options...)
+    Base.require_one_based_indexing(polynomials)
+
     keywords = KeywordsHandler(:groebner_apply!, options)
 
     setup_logging(keywords)
     setup_statistics(keywords)
 
     _groebner_apply!(trace, polynomials, keywords)::Tuple{Bool, typeof(polynomials)}
+end
+# Specialization for a batch of inputs
+function groebner_apply!(
+    trace,
+    batch::NTuple{N, T};
+    options...
+) where {N, T <: AbstractVector}
+    @assert N in (2, 4) "The batch size must be one of the following: 2, 4"
+    all(Base.require_one_based_indexing, batch)
+
+    keywords = KeywordsHandler(:groebner_apply!, options)
+
+    setup_logging(keywords)
+    setup_statistics(keywords)
+
+    _groebner_apply!(trace, batch, keywords)::Tuple{Bool, typeof(batch)}
 end
 
 """
@@ -277,6 +293,8 @@ isgroebner([x*y^2 + x, y*x^2 + y])
 ```
 """
 function isgroebner(polynomials::AbstractVector; options...)
+    Base.require_one_based_indexing(polynomials)
+
     keywords = KeywordsHandler(:isgroebner, options)
 
     setup_logging(keywords)
@@ -324,6 +342,9 @@ normalform([y^2 + x, x^2 + y], x^2 + y^2 + 1)
 ```
 """
 function normalform(basis::AbstractVector, to_be_reduced::AbstractVector; options...)
+    Base.require_one_based_indexing(basis)
+    Base.require_one_based_indexing(to_be_reduced)
+
     keywords = KeywordsHandler(:normalform, options)
 
     setup_logging(keywords)
@@ -363,6 +384,8 @@ kbase([y^2 + x, x^2 + y])
 ```
 """
 function kbase(basis::AbstractVector; options...)
+    Base.require_one_based_indexing(basis)
+
     keywords = KeywordsHandler(:kbase, options)
 
     setup_logging(keywords)

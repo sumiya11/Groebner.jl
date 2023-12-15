@@ -44,7 +44,7 @@ Pkg.add("AbstractAlgebra") # hide
 ```julia:aaimport
 using AbstractAlgebra
 
-R, (x, y, z) = PolynomialRing(GF(2^31 - 1), ["x", "y", "z"])
+R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"])
 polys = [x^2 + y + z, x*y + z];
 ```
 

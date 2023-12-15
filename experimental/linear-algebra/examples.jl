@@ -476,7 +476,7 @@ end
 
 #########
 
-R, (x1, x2, x3, x4) = PolynomialRing(QQ, ["x1", "x2", "x3", "x4"], ordering=:deglex)
+R, (x1, x2, x3, x4) = polynomial_ring(QQ, ["x1", "x2", "x3", "x4"], ordering=:deglex)
 
 F = x3 * (x1 + x2^2)^2 * (x1 + x2) * (x1 * x2 + 1)
 @info length(F) total_degree(F) degrees(F)
@@ -487,7 +487,7 @@ factor(F2)
 
 ##########
 
-R, (x, y, z) = PolynomialRing(GF(2^31 - 1), ["x", "y", "z"], ordering=:deglex)
+R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"], ordering=:deglex)
 
 A = x^2 + (y + 1) * z * x + 2
 A2 = evaluate(A, [x, y, 3])

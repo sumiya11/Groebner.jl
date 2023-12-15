@@ -11,17 +11,35 @@ function add_mul_v2!(vres::Vector{Int64}, a::Int64, v::Vector{Int32})
         vres[i] += a * Int64(v[i])
     end
 end
-@code_native debuginfo = :none add_mul([1, 2], UInt32(1), UInt32[3, 4])
+@code_native debuginfo = :none add_mul!([1, 2], Int32(1), Int32[3, 4])
 
-function reduce_dense_row_by_sparse_row_no_remainder!(
+function reduce_dense_row_by_sparse_row_no_remainder_v11!(
     row::Vector{T},
     indices::Vector{I},
     coeffs,
-    mul
+    mul,
+    m
 ) where {I, T}
     @inbounds for j in 1:length(indices)
         idx = indices[j]
-        row[idx] = row[idx] + mul * coeffs[j]
+        a = row[idx] + T(mul) * T(coeffs[j])
+        row[idx] = Groebner.mod_p(a, m)
+    end
+
+    row
+end
+
+function reduce_dense_row_by_sparse_row_no_remainder_v22!(
+    row::Vector{T},
+    indices::Vector{I},
+    coeffs,
+    mul,
+    m
+) where {I, T}
+    @inbounds for j in 1:length(indices)
+        idx = indices[j]
+        a = row[idx] + T(mul) * T(coeffs[j])
+        row[idx] = a % m
     end
 
     row
@@ -37,19 +55,43 @@ function reduce_dense_row_by_sparse_row_no_remainder_2!(
     @inbounds for j in 1:N:length(indices)
         idx1 = indices[j]
         idx2 = indices[j + 1]
-        # idx3 = indices[j + 2]
-        # idx4 = indices[j + 3]
+        idx3 = indices[j + 2]
+        idx4 = indices[j + 3]
+        idx5 = indices[j + 4]
+        idx6 = indices[j + 5]
+        idx7 = indices[j + 6]
+        idx8 = indices[j + 7]
+
         # c1, c2, c3, c4 = coeffs[j], coeffs[j + 1], coeffs[j + 2], coeffs[j + 3]
         c1, c2 = coeffs[j], coeffs[j + 1]
+        c3, c4 = coeffs[j + 2], coeffs[j + 3]
+        c5, c6 = coeffs[j + 4], coeffs[j + 5]
+        c7, c8 = coeffs[j + 6], coeffs[j + 7]
+
         # b1, b2, b3, b4 = row[idx1], row[idx2], row[idx3], row[idx4]
         b1, b2 = row[idx1], row[idx2]
+        b3, b4 = row[idx3], row[idx4]
+        b5, b6 = row[idx5], row[idx6]
+        b7, b8 = row[idx7], row[idx8]
+
         a1 = b1 + T(mul) * T(c1)
         a2 = b2 + T(mul) * T(c2)
-        # a3 = b3 + T(mul) * T(c3)
-        # a4 = b4 + T(mul) * T(c4)
+        a3 = b3 + T(mul) * T(c3)
+        a4 = b4 + T(mul) * T(c4)
+        a5 = b5 + T(mul) * T(c5)
+        a6 = b6 + T(mul) * T(c6)
+        a7 = b7 + T(mul) * T(c7)
+        a8 = b8 + T(mul) * T(c8)
+
         # (a1, a2, a3, a4) = (b1, b2, b3, b4) .+ T(mul) .* (T(c1), T(c2), T(c3), T(c4))
         row[idx1] = a1
         row[idx2] = a2
+        row[idx3] = a3
+        row[idx4] = a4
+        row[idx5] = a5
+        row[idx6] = a6
+        row[idx7] = a7
+        row[idx8] = a8
         # row[idx3] = a3
         # row[idx4] = a4
     end
@@ -127,26 +169,35 @@ function reduce_dense_row_by_sparse_row_no_remainder_vec_2!(
     row
 end
 
-@assert reduce_dense_row_by_sparse_row_no_remainder!(
-            UInt64[1, 2, 3, 4],
-            [1, 2, 3, 4],
-            UInt32[3, 1, 0, 10],
-            UInt32(8)
-        ) ==
-        reduce_dense_row_by_sparse_row_no_remainder_vec!(
-            UInt64[1, 2, 3, 4],
-            [1, 2, 3, 4],
-            UInt64[3, 1, 0, 10],
-            UInt64(8),
-            Val(2)
-        ) ==
-        reduce_dense_row_by_sparse_row_no_remainder_2!(
-            UInt64[1, 2, 3, 4],
-            [1, 2, 3, 4],
-            UInt32[3, 1, 0, 10],
-            UInt32(8),
-            Val(2)
-        )
+# @assert reduce_dense_row_by_sparse_row_no_remainder!(
+#             UInt64[1, 2, 3, 4],
+#             [1, 2, 3, 4],
+#             UInt32[3, 1, 0, 10],
+#             UInt32(8)
+#         ) ==
+#         reduce_dense_row_by_sparse_row_no_remainder_vec!(
+#             UInt64[1, 2, 3, 4],
+#             [1, 2, 3, 4],
+#             UInt64[3, 1, 0, 10],
+#             UInt64(8),
+#             Val(2)
+#         ) ==
+#         reduce_dense_row_by_sparse_row_no_remainder_2!(
+#             UInt64[1, 2, 3, 4],
+#             [1, 2, 3, 4],
+#             UInt32[3, 1, 0, 10],
+#             UInt32(8),
+#             Val(2)
+#         )
+
+m = Groebner.SpecializedArithmeticZp(UInt64(2^30 + 3))
+@code_native debuginfo = :none reduce_dense_row_by_sparse_row_no_remainder_v11!(
+    UInt64[1, 2, 3, 4],
+    [1, 2, 3, 4],
+    UInt64[3, 1, 0, 10],
+    UInt64(8),
+    m
+)
 
 reduce_dense_row_by_sparse_row_no_remainder_vec!(
     UInt64[1, 2, 3, 4, 1],
@@ -158,14 +209,6 @@ reduce_dense_row_by_sparse_row_no_remainder_vec!(
 
 @code_native debuginfo = :none add_mul_v2!(Int64[1, 2, 3, 4], Int64(8), Int32[3, 1, 0, 10])
 
-@code_native debuginfo = :none reduce_dense_row_by_sparse_row_no_remainder_2!(
-    UInt64[1, 2, 3, 4],
-    [1, 2, 3, 4],
-    UInt64[3, 1, 0, 10],
-    UInt64(8),
-    Val(2)
-)
-
 @code_native debuginfo = :none reduce_dense_row_by_sparse_row_no_remainder_vec_2!(
     UInt64[1, 2, 3, 4],
     [1, 2, 3, 4],
@@ -174,20 +217,20 @@ reduce_dense_row_by_sparse_row_no_remainder_vec!(
     Val(4)
 )
 
-n = 10 * 2^10
+n = 2^10
 k = n >> 5
-@benchmark reduce_dense_row_by_sparse_row_no_remainder!(v1, i2, v2, c) setup = begin
+@benchmark reduce_dense_row_by_sparse_row_no_remainder_v11!(v1, i2, v2, c, m) setup = begin
     v1 = rand(UInt, n)
-    c = rand(UInt64)
-    v2 = rand(UInt64, k)
+    c = rand(UInt32)
+    v2 = rand(UInt32, k)
     i2 = rand(Int(1):Int(n), k)
 end
 
-@benchmark reduce_dense_row_by_sparse_row_no_remainder_2!(v1, i2, v2, c, Val(2)) setup =
+@benchmark reduce_dense_row_by_sparse_row_no_remainder_2!(v1, i2, v2, c, Val(8)) setup =
     begin
         v1 = rand(UInt, n)
-        c = rand(UInt64)
-        v2 = rand(UInt64, k)
+        c = rand(UInt32)
+        v2 = rand(UInt32, k)
         i2 = rand(Int(1):Int(n), k)
     end
 

@@ -1,6 +1,6 @@
 function homogenize(fs)
     ring = parent(fs[1])
-    newring, hom_vars = PolynomialRing(
+    newring, hom_vars = polynomial_ring(
         base_ring(ring),
         vcat("X0", map(string, gens(ring))),
         ordering=ordering(ring)
@@ -22,7 +22,7 @@ end
 
 function dehomogenize(Fs)
     ring = parent(Fs[1])
-    newring, dehom_vars = PolynomialRing(
+    newring, dehom_vars = polynomial_ring(
         base_ring(ring),
         map(string, gens(ring)[2:end]),
         ordering=ordering(ring)
@@ -42,7 +42,7 @@ begin
 
     kat_hom = homogenize(kat)
     xs = gens(parent(kat_hom[1]))
-    new_ring, new_xs = PolynomialRing(K, vcat("t", map(string, xs)))
+    new_ring, new_xs = polynomial_ring(K, vcat("t", map(string, xs)))
 
     kat_hom_true = map(f -> evaluate(f, new_xs[2:end]), kat_hom)
     kat_hom_true = vcat(kat_hom_true, new_xs[1] * new_xs[2] - 1)

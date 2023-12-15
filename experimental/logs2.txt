@@ -29,7 +29,7 @@ UInt8}
 │ threaded = yes
 │ nworkers = 0
 │ threadalgo = compare_and_swap
-│ arithmetic = Main.Groebner.SpecializedBuiltinArithmeticZp{UInt64, false}(0x003fffff18000349, 0x11, 0x000000000800001d)
+│ arithmetic = Main.Groebner.SpecializedArithmeticZp{UInt64, false}(0x003fffff18000349, 0x11, 0x000000000800001d)
 │ reduced = true
 │ homogenize = false
 │ maxpairs = 9223372036854775807
@@ -224,13 +224,13 @@ ERROR: AssertionError: length(nnz_column_indices) == length(nnz_coeffs)
 Stacktrace:
   [1] macro expansion
     @ c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:1402 [inlined]
-  [2] interreduce_matrix_pivots!(matrix::Main.Groebner.MacaulayMatrix{UInt64}, basis::Main.Groebner.Basis{UInt64}, arithmetic::Main.Groebner.SpecializedBuiltinArithmeticZp{UInt64, false}; reversed_rows::Bool)
+  [2] interreduce_matrix_pivots!(matrix::Main.Groebner.MacaulayMatrix{UInt64}, basis::Main.Groebner.Basis{UInt64}, arithmetic::Main.Groebner.SpecializedArithmeticZp{UInt64, false}; reversed_rows::Bool)
     @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\timeit.jl:101
   [3] interreduce_matrix_pivots!
     @ c:\data\projects\gbgb\Groebner.jl\src\utils\timeit.jl:98 [inlined]
-  [4] randomized_sparse_linear_algebra_threaded!(matrix::Main.Groebner.MacaulayMatrix{UInt64}, basis::Main.Groebner.Basis{UInt64}, linalg::Main.Groebner.LinearAlgebra, nworkers::Int64, arithmetic::Main.Groebner.SpecializedBuiltinArithmeticZp{UInt64, false}, rng::Random.Xoshiro)
+  [4] randomized_sparse_linear_algebra_threaded!(matrix::Main.Groebner.MacaulayMatrix{UInt64}, basis::Main.Groebner.Basis{UInt64}, linalg::Main.Groebner.LinearAlgebra, nworkers::Int64, arithmetic::Main.Groebner.SpecializedArithmeticZp{UInt64, false}, rng::Random.Xoshiro)
     @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:323
-  [5] linear_algebra!(matrix::Main.Groebner.MacaulayMatrix{UInt64}, basis::Main.Groebner.Basis{UInt64}, linalg::Main.Groebner.LinearAlgebra, threaded::Symbol, nworkers::Int64, threadalgo::Symbol, arithmetic::Main.Groebner.SpecializedBuiltinArithmeticZp{UInt64, false}, rng::Random.Xoshiro)
+  [5] linear_algebra!(matrix::Main.Groebner.MacaulayMatrix{UInt64}, basis::Main.Groebner.Basis{UInt64}, linalg::Main.Groebner.LinearAlgebra, threaded::Symbol, nworkers::Int64, threadalgo::Symbol, arithmetic::Main.Groebner.SpecializedArithmeticZp{UInt64, false}, rng::Random.Xoshiro)
     @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:195
   [6] #linear_algebra!#280
     @ c:\data\projects\gbgb\Groebner.jl\src\f4\linalg.jl:110 [inlined]
@@ -242,11 +242,11 @@ Stacktrace:
     @ c:\data\projects\gbgb\Groebner.jl\src\utils\timeit.jl:101 [inlined]
  [10] macro expansion
     @ c:\data\projects\gbgb\Groebner.jl\src\f4\f4.jl:733 [inlined]
- [11] f4!(ring::Main.Groebner.PolyRing{Main.Groebner._DegRevLex{true}}, basis::Main.Groebner.Basis{UInt64}, pairset::Main.Groebner.Pairset{UInt32}, hashtable::Main.Groebner.MonomialHashtable{Main.Groebner.PackedTuple1{UInt64, UInt8}, Main.Groebner._DegRevLex{true}}, tracer::Main.Groebner.TinyTraceF4, params::Main.Groebner.AlgorithmParameters{Main.Groebner.DegRevLex{Nothing}, Main.Groebner.DegRevLex{Nothing}, Main.Groebner.DegRevLex{Nothing}, Main.Groebner.SpecializedBuiltinArithmeticZp{UInt64, false}})   
+ [11] f4!(ring::Main.Groebner.PolyRing{Main.Groebner._DegRevLex{true}}, basis::Main.Groebner.Basis{UInt64}, pairset::Main.Groebner.Pairset{UInt32}, hashtable::Main.Groebner.MonomialHashtable{Main.Groebner.PackedTuple1{UInt64, UInt8}, Main.Groebner._DegRevLex{true}}, tracer::Main.Groebner.TinyTraceF4, params::Main.Groebner.AlgorithmParameters{Main.Groebner.DegRevLex{Nothing}, Main.Groebner.DegRevLex{Nothing}, Main.Groebner.DegRevLex{Nothing}, Main.Groebner.SpecializedArithmeticZp{UInt64, false}})   
     @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\timeit.jl:101
  [12] macro expansion
     @ c:\data\projects\gbgb\Groebner.jl\src\groebner\groebner.jl:85 [inlined]
- [13] _groebner(ring::Main.Groebner.PolyRing{Main.Groebner._DegRevLex{true}}, monoms::Vector{Vector{Main.Groebner.PackedTuple1{UInt64, UInt8}}}, coeffs::Vector{Vector{UInt64}}, params::Main.Groebner.AlgorithmParameters{Main.Groebner.DegRevLex{Nothing}, Main.Groebner.DegRevLex{Nothing}, Main.Groebner.DegRevLex{Nothing}, Main.Groebner.SpecializedBuiltinArithmeticZp{UInt64, false}})
+ [13] _groebner(ring::Main.Groebner.PolyRing{Main.Groebner._DegRevLex{true}}, monoms::Vector{Vector{Main.Groebner.PackedTuple1{UInt64, UInt8}}}, coeffs::Vector{Vector{UInt64}}, params::Main.Groebner.AlgorithmParameters{Main.Groebner.DegRevLex{Nothing}, Main.Groebner.DegRevLex{Nothing}, Main.Groebner.DegRevLex{Nothing}, Main.Groebner.SpecializedArithmeticZp{UInt64, false}})
     @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\utils\timeit.jl:101
  [14] _groebner(polynomials::Vector{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.GFElem{Int64}}}, kws::Main.Groebner.KeywordsHandler{Main.Groebner.InputOrdering}, representation::Main.Groebner.PolynomialRepresentation)
     @ Main.Groebner c:\data\projects\gbgb\Groebner.jl\src\groebner\groebner.jl:53

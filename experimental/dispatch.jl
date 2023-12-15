@@ -1,6 +1,6 @@
 using AbstractAlgebra, AllocCheck, BenchmarkTools
 
-R, (x, y, z) = PolynomialRing(GF(2^31 - 1), ["x", "y", "z"], ordering=:degrevlex)
+R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"], ordering=:degrevlex)
 
 s = [x * y^2 + z, x^2 * z + y]
 S = Groebner.katsuran(9, ground=GF(2^31 - 1), ordering=:degrevlex)

@@ -32,6 +32,9 @@ end
     # High-level monomial arithmetic and term orders
     @includetests ["monoms/monom_arithmetic", "monoms/monom_orders"]
 
+    # Basic tests for addition in Zp
+    @includetests ["arithmetic/Zp"]
+
     # Consistency of input-output
     @includetests ["input-output/AbstractAlgebra"]
     # Crt and rational reconstructions

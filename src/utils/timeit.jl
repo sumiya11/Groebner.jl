@@ -11,16 +11,6 @@
 # overhead). Thus, it is fine to leave the @timeit statements in the source
 # code, since they do not affect performance when inactive.
 
-"""
-    performance_counters_enabled() -> Bool
-
-If performance-tracking macro `@timeit` should be enabled in Groebner. 
-
-When this is `false`, all performance counters in Groebner are disabled and
-entail no runtime overhead.
-"""
-performance_counters_enabled() = false
-
 const _groebner_timer = TimerOutputs.TimerOutput()
 
 @noinline __throw_timeit_error() = throw(ArgumentError("""

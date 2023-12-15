@@ -125,11 +125,13 @@ function AlgorithmParameters(
         computation_ord = ordering
         original_ord = ring.ord
     end
-    #
+
+    # The levels of correctness checks. By default, we always check correctness
+    # modulo a "random" prime
     heuristic_check = true
     randomized_check = true
     certify_check = kwargs.certify
-    # 
+
     homogenize = if kwargs.homogenize === :yes
         true
     else
@@ -145,10 +147,10 @@ function AlgorithmParameters(
             false
         end
     end
-    #
+
     linalg = kwargs.linalg
-    # Default linear algebra algorithm is randomized
     if linalg === :auto
+        # Default linear algebra algorithm is randomized
         linalg = :randomized
     end
     if !iszero(ring.ch) && linalg === :randomized
@@ -156,34 +158,42 @@ function AlgorithmParameters(
         # too small. 
         # TODO: In the future, it would be good to adapt randomized linear
         # algebra to this case by taking more random samples
-        if ring.ch < 5000
-            @log level = -1 """
-            The field characteristic is too small.
+        if ring.ch < 500
+            @log level = 1_000 """
+            The field characteristic is too small ($(ring.ch)).
             Switching from randomized linear algebra to a deterministic one."""
             linalg = :deterministic
         end
     end
+    # Default linear algebra algorithm is sparse
     linalg_sparsity = :sparse
     linalg_algorithm = LinearAlgebra(linalg, linalg_sparsity)
 
-    arithmetic = select_arithmetic(ring.ch, representation.coefftype)
+    store_coeffs_tight = kwargs.coeffstight
+    arithmetic = select_arithmetic(
+        ring.ch,
+        representation.coefftype,
+        kwargs.arithmetic,
+        store_coeffs_tight
+    )
+
     ground = :zp
     if iszero(ring.ch)
         ground = :qq
     end
-    #
+
     reduced = kwargs.reduced
     maxpairs = kwargs.maxpairs
-    #
+
     selection_strategy = kwargs.selection
     if selection_strategy === :auto
         if target_ord isa Union{Lex, ProductOrdering}
-            selection_strategy = :normal # :sugar
+            selection_strategy = :normal # TODO :sugar
         else
             selection_strategy = :normal
         end
     end
-    #
+
     threaded = kwargs.threaded
     if !(_threaded[])
         if threaded === :yes
@@ -196,7 +206,8 @@ function AlgorithmParameters(
         end
         threaded = :no
     end
-    #
+
+    # By default, modular computation uses learn & apply
     modular_strategy = kwargs.modular
     if modular_strategy === :auto
         modular_strategy = :learn_and_apply
@@ -204,11 +215,11 @@ function AlgorithmParameters(
 
     majority_threshold = 1
     crt_algorithm = :simultaneous
-    #
+
     seed = kwargs.seed
     rng = _default_rng_type(seed)
     useed = UInt64(seed)
-    #
+
     sweep = kwargs.sweep
 
     statistics = kwargs.statistics
@@ -275,7 +286,7 @@ function params_mod_p(params::AlgorithmParameters, prime::Integer)
         params.homogenize,
         params.check,
         params.linalg,
-        select_arithmetic(prime, CoeffModular),
+        select_arithmetic(prime, CoeffModular, :auto),
         params.reduced,
         params.maxpairs,
         params.selection_strategy,

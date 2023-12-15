@@ -582,16 +582,3 @@ function insert_multiplied_poly_in_hashtable!(
 
     row
 end
-
-@timeit function multiplied_poly_to_matrix_row!(
-    symbolic_ht::MonomialHashtable,
-    basis_ht::MonomialHashtable{M},
-    htmp::MonomHash,
-    etmp::M,
-    poly::Vector{MonomIdx}
-) where {M <: Monom}
-    row = similar(poly)
-    resize_hashtable_if_needed!(symbolic_ht, length(poly))
-
-    insert_multiplied_poly_in_hashtable!(row, htmp, etmp, poly, basis_ht, symbolic_ht)
-end
