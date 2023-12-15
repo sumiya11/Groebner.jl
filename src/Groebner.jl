@@ -57,8 +57,6 @@ import MultivariatePolynomials: AbstractPolynomial, AbstractPolynomialLike
 import PrettyTables
 using Printf
 
-import TimerOutputs
-
 import Primes
 import Primes: nextprime
 
@@ -66,6 +64,8 @@ import Random
 import Random: AbstractRNG
 
 import SIMD
+
+import TimerOutputs
 
 import UnsafeAtomics
 
