@@ -1,4 +1,4 @@
-using AbstractAlgebra, BenchmarkTools, Base.Threads, Profile # , Groebner
+using AbstractAlgebra, BenchmarkTools, Base.Threads, Profile, Primes # , Groebner
 
 macro my_profview(ex)
     :((VSCodeServer.Profile).clear();
@@ -13,14 +13,33 @@ end
 @show ENV["JULIA_NUM_THREADS"]
 
 R, (x1, x2, x3) = polynomial_ring(GF(2^27 + 29), ["x1", "x2", "x3"], ordering=:degrevlex)
-R, (x1, x2, x3) = polynomial_ring(GF(2^30 + 3), ["x1", "x2", "x3"], ordering=:degrevlex)
+R, (x1, x2, x3) =
+    polynomial_ring(GF(nextprime(2^31 - 1)), ["x1", "x2", "x3"], ordering=:degrevlex)
 
 s = [x1 * x2^10 + 2, x1^11 * x3^3 + 3, x2^6 * x3 + 4 * x1^4 - 5]
+# s = Groebner.katsuran(9, ordering=:degrevlex, ground=AbstractAlgebra.GF(2^31 + 11))
 
-gb1 = Groebner.groebner(s, arithmetic=:signed, loglevel=-3)
-gb2 = Groebner.groebner(s, arithmetic=:auto, coeffstight=true, loglevel=-3)
+gb2 = Groebner.groebner(s, arithmetic=:signed, loglevel=-3);
+gb3 = Groebner.groebner(s, arithmetic=:delayed, loglevel=-3);
+gb4 = Groebner.groebner(s, arithmetic=:basic, loglevel=-3);
 
-gb1 == gb2
+gb2 == gb3 == gb4
+
+gb6 = Groebner.groebner(s, arithmetic=:signed, coeffstight=true, loglevel=-3);
+@my_profview Groebner.groebner(s, arithmetic=:signed);
+gb7 = Groebner.groebner(s, arithmetic=:delayed, coeffstight=true, loglevel=-3);
+gb8 = Groebner.groebner(s, arithmetic=:basic, coeffstight=true, loglevel=-3);
+
+@btime Groebner.groebner($s, arithmetic=:signed);
+@btime Groebner.groebner($s, arithmetic=:delayed);
+@btime Groebner.groebner($s, arithmetic=:basic);
+
+@btime Groebner.groebner($s, arithmetic=:signed, coeffstight=true);
+@btime Groebner.groebner($s, arithmetic=:delayed, coeffstight=true);
+@btime Groebner.groebner($s, arithmetic=:basic, coeffstight=true);
+
+gb2 == gb3 == gb4
+gb2 == gb3 == gb4 == gb6 == gb7 == gb8
 
 trace, gb1 = Groebner.groebner_learn(s);
 
@@ -34,15 +53,60 @@ m = Groebner.DelayedArithmeticZp(Primes.prevprime(UInt(p6), 33))
 
 @code_native debuginfo = :none Groebner.dense_row_mod_p!(UInt[1, 2, 3], m)
 
-s = Groebner.katsuran(11, ordering=:degrevlex, ground=AbstractAlgebra.GF(2^30 + 3))
+########
 
-@time trace, gb1 = Groebner.groebner_learn(s);
+s = Groebner.katsuran(9, ordering=:degrevlex, ground=AbstractAlgebra.GF(2^31 - 1))
 
-@time Groebner.groebner_apply!(trace, s);
+@time trace0, gb0 = Groebner.groebner_learn(s, loglevel=-3);
+@time trace1, gb1 = Groebner.groebner_learn(s, loglevel=-3, arithmetic=:signed);
+@time trace2, gb2 =
+    Groebner.groebner_learn(s, loglevel=-3, arithmetic=:signed, coeffstight=true);
+gb0 == gb1 == gb2
 
-@time Groebner.groebner_apply!(trace, ((s, s)));
+flag, gb3 = Groebner.groebner_apply!(trace0, s, loglevel=-3);
+flag, gb4 = Groebner.groebner_apply!(trace1, s, loglevel=-3, arithmetic=:signed);
+flag, gb5 =
+    Groebner.groebner_apply!(trace2, s, loglevel=-3, arithmetic=:signed, coeffstight=true);
 
-@time Groebner.groebner_apply!(trace, ((s, s, s, s)));
+gb0 == gb3 == gb4 == gb5
+
+flag, (gb6, gb7) = Groebner.groebner_apply!(trace0, (s, s), loglevel=-3);
+flag, (gb8, gb9, gb10, gb11) = Groebner.groebner_apply!(trace0, (s, s, s, s), loglevel=-3);
+flag, (gb12, gb13, gb14, gb15, gb00, gb01, gb02, gb03) = Groebner.groebner_apply!(
+    trace2,
+    (s, s, s, s, s, s, s, s),
+    arithmetic=:signed,
+    coeffstight=true,
+    loglevel=-3
+);
+
+gb0 == gb6 == gb7 == gb8 == gb9 == gb10 == gb11
+gb0 == gb12 == gb13 == gb14 == gb15
+
+@btime Groebner.groebner_apply!($trace0, $s);
+@btime Groebner.groebner_apply!($trace0, $((s, s)));
+@btime Groebner.groebner_apply!($trace0, $((s, s, s, s)));
+
+@btime Groebner.groebner_apply!($trace1, $s, arithmetic=:signed);
+@btime Groebner.groebner_apply!($trace1, $((s, s)), arithmetic=:signed);
+@btime Groebner.groebner_apply!($trace1, $((s, s, s, s)), arithmetic=:signed);
+
+@btime Groebner.groebner_apply!($trace2, $s, arithmetic=:signed, coeffstight=true);
+@btime Groebner.groebner_apply!($trace2, $((s, s)), arithmetic=:signed, coeffstight=true);
+@btime Groebner.groebner_apply!($trace2, $((s, s)), arithmetic=:signed, coeffstight=true);
+
+@btime Groebner.groebner_apply!(
+    $trace2,
+    $((s, s, s, s, s, s, s, s)),
+    arithmetic=:signed,
+    coeffstight=true
+);
+
+@my_profview for _ in 1:10
+    Groebner.groebner_apply!(trace2, (s, s, s, s), arithmetic=:signed, coeffstight=true)
+end
+
+########
 
 @time Groebner.groebner(s);
 @my_profview Groebner.groebner(s)
@@ -172,19 +236,34 @@ function widenn(a::Groebner.CompositeInt{N, UInt32}) where {N}
 end
 
 function reduce_dense_row_by_sparse_row_mod_p!(
-    row::Vector{T},
+    row::Vector{A},
     indices::Vector{I},
-    coeffs::Vector{T2},
-    arithmetic
-) where {T, I, T2}
-    @inbounds mul = arithmetic
-    @inbounds for j in 1:length(indices)
-        idx = indices[j]
-        row[idx] = row[idx] + widenn(mul) * widenn(coeffs[j])
-    end
+    coeffs::Vector{T},
+    p2::A
+) where {T, I, A <: NTuple{N, C}} where {N, C}
+    @inbounds mul::T = coeffs[1]
 
-    nothing
+    @fastmath @inbounds for j in 1:length(indices)
+        idx = indices[j]
+        a = row[idx] .- C.(mul) .* C.(coeffs[j])
+        # a = a .+ ((a .>> 63) .& p2)
+        row[idx] = a
+    end
 end
+
+N = 8
+x = [ntuple(i -> i, N) for _ in 1:1_000];
+i = Int32.(collect(1:20:1000));
+c = [Int32.(ntuple(i -> i, N)) for _ in 1:50];
+
+@btime reduce_dense_row_by_sparse_row_mod_p!($x, $i, $c, $(ntuple(i -> i, N)))
+
+@code_native debuginfo = :none reduce_dense_row_by_sparse_row_mod_p!(
+    x,
+    i,
+    c,
+    (ntuple(i -> i, N))
+)
 
 function reduce_dense_row_mod!(row::Vector{T}, arithmetic) where {T}
     @inbounds for j in 1:length(row)
@@ -327,14 +406,42 @@ mod(b - mul * c, p)
 
 T = Int64
 p = T(2^30 + 3)
-m = Groebner.SignedArithmeticZp(p, Int64)
+m = Groebner.SignedArithmeticZp(Int64, Int32, p)
+
+function reduce_dense_row_by_sparse_row_v2!(
+    row::Vector{A},
+    indices::Vector{I},
+    coeffs::Vector{T},
+    arithmetic::Groebner.SignedArithmeticZp{A, T}
+) where {I, A, T}
+    p2 = arithmetic.p2
+    @inbounds mul = row[indices[1]] % T
+
+    @fastmath @inbounds for j in 1:length(indices)
+        idx = indices[j]
+        a = row[idx] - A(mul) * A(coeffs[j])
+        a = a + signbit(a) * p2
+        row[idx] = a
+    end
+
+    nothing
+end
 
 @code_native debuginfo = :none Groebner.reduce_dense_row_by_sparse_row!(
     T[1],
     Int32[1],
-    Int[1],
+    Int32[1],
     m
 )
+
+@code_native debuginfo = :none reduce_dense_row_by_sparse_row_v2!(
+    T[1],
+    Int32[1],
+    Int32[1],
+    m
+)
+
+1
 
 #=
 LBB0_2:                                # %L25

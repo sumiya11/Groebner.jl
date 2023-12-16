@@ -68,7 +68,7 @@ The `groebner` routine takes the following optional arguments:
     - `:auto`, for the automatic choice (default).
 - `statistics`: After the function exits, print some runtime statistics.
   Possible options are:
-  - `:no`, do not print anything (default),
+  - `:no`, print nothing (default),
   - `:timings`, print the table with timings and allocations. Note that
     `Groebner.performance_counters_enabled()` must be set to `true` for this to
     have effect.
@@ -197,15 +197,15 @@ end
 
 """
     groebner_apply!(trace, polynomials; options...)
-    groebner_apply!(trace, batch::Tuple{Vector, Vector}; options...)
+    groebner_apply!(trace, batch::NTuple{N, Vector}; options...)
 
 Computes a Groebner basis of `polynomials` using the given computation `trace`.
-It is possible to provide a tuple of two input arrays to compute two Groebner
-bases simultaneously.
-
 The input `polynomials` must be an array of polynomials over a finite field.
 
-This function is **not** thread-safe.
+It is possible to input a tuple of `N` arrays to compute `N` Groebner bases
+simultaneously, which could be more efficient than computing them separately.
+
+This function is **not** thread-safe, since it may mutate the `trace`.
 
 See also `groebner_learn`.
 
@@ -232,7 +232,7 @@ function groebner_apply!(
     batch::NTuple{N, T};
     options...
 ) where {N, T <: AbstractVector}
-    @assert N in (2, 4) "The batch size must be one of the following: 2, 4"
+    @assert N in (1, 2, 4, 8) "The batch size must be one of the following: 1, 2, 4, 8"
     all(Base.require_one_based_indexing, batch)
 
     keywords = KeywordsHandler(:groebner_apply!, options)

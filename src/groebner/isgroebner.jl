@@ -52,7 +52,7 @@ end
     prime = next_check_prime!(luckyprimes)
     @log level = -2 "Reducing input generators modulo $prime"
     ring_ff, basis_ff = reduce_modulo_p!(buffer, ring, basis_zz, prime, deepcopy=true)
-    arithmetic = select_arithmetic(prime, CoeffModular, :auto)
+    arithmetic = select_arithmetic(prime, CoeffModular, :auto, false)
     flag = f4_isgroebner!(ring_ff, basis_ff, pairset, hashtable, arithmetic)
     flag
 end

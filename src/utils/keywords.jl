@@ -15,7 +15,7 @@ const _supported_kw_args = (
         linalg      = :randomized,
         monoms      = :auto,
         arithmetic  = :auto,
-        coeffstight = false,
+        coeffstight = true,
         seed        = 42,
         loglevel    = _default_loglevel,
         maxpairs    = typemax(Int),   # NOTE: maybe use Inf?
@@ -53,6 +53,7 @@ const _supported_kw_args = (
         ordering    = InputOrdering(),
         monoms      = :auto,
         arithmetic  = :auto,
+        coeffstight = true,
         loglevel    = _default_loglevel,
         homogenize  = :auto,
         sweep       = true,
@@ -63,6 +64,7 @@ const _supported_kw_args = (
         seed        = 42,
         monoms      = :auto,
         arithmetic  = :auto,
+        coeffstight = true,
         loglevel    = _default_loglevel,
         sweep       = true,
         statistics  = :no,
@@ -135,7 +137,7 @@ struct KeywordsHandler{Ord}
         Not recognized arithmetic: $arithmetic
         Possible choices for keyword "arithmetic" are:
         `:auto`, `:delayed`, `:signed`, `:basic`"""
-        coeffstight = get(kws, :coeffstight, get(default_kw_args, :coeffstight, false))
+        coeffstight = get(kws, :coeffstight, get(default_kw_args, :coeffstight, true))
 
         seed = get(kws, :seed, get(default_kw_args, :seed, 42))
         loglevel = get(kws, :loglevel, get(default_kw_args, :loglevel, 0))

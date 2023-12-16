@@ -2,7 +2,7 @@
 
 # All implementations of arithmetic in Q are a subtype of this 
 abstract type AbstractArithmeticQQ{AccumType, CoeffType} <:
-              AbstractArithmetic{AccumType, CoeffType} where {AccumType, CoeffType} end
+              AbstractArithmetic{AccumType, CoeffType} end
 
 # Standard arithmetic that uses Base.GMP.MPQ
 struct BuiltinArithmeticQQ{AccumType, CoeffType} <:

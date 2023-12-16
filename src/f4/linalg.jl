@@ -492,9 +492,9 @@ end
 # Normalize the row to have the leading coefficient equal to 1
 function normalize_row!(
     row::Vector{T},
-    arithmetic::AbstractArithmeticZp,
+    arithmetic::AbstractArithmeticZp{A, T},
     first_nnz_index::Int=1
-) where {T <: Union{CoeffFF, CompositeCoeffFF}}
+) where {A <: Union{CoeffFF, CompositeCoeffFF}, T <: Union{CoeffFF, CompositeCoeffFF}}
     @invariant @inbounds !iszero(row[first_nnz_index])
 
     lead = row[first_nnz_index]
@@ -502,10 +502,10 @@ function normalize_row!(
         return row
     end
 
-    @inbounds pinv = inv_mod_p(lead, arithmetic)
+    @inbounds pinv = inv_mod_p(A(lead), arithmetic) % T
     @inbounds row[1] = one(T)
     @inbounds for i in 2:length(row)
-        row[i] = mod_p(row[i] * pinv, arithmetic)
+        row[i] = mod_p(A(row[i]) * A(pinv), arithmetic) % T
     end
 
     row
@@ -592,6 +592,27 @@ function reduce_dense_row_by_sparse_row!(
         a = row[idx] - A(mul) * A(coeffs[j])
         a = a + ((a >> (8 * sizeof(A) - 1)) & p2)
         row[idx] = a
+    end
+
+    nothing
+end
+
+function reduce_dense_row_by_sparse_row!(
+    row::Vector{CompositeInt{N, A}},
+    indices::Vector{I},
+    coeffs::Vector{CompositeInt{N, T}},
+    arithmetic::SignedCompositeArithmeticZp{CompositeInt{N, A}, CompositeInt{N, T}}
+) where {I, A <: CoeffFF, T <: CoeffFF, N}
+    @invariant isone(coeffs[1])
+    @invariant length(indices) == length(coeffs)
+
+    p2 = arithmetic.p2s
+    @inbounds mul = row[indices[1]].data .% T
+    @fastmath @inbounds for j in 1:length(indices)
+        idx = indices[j]
+        a = row[idx].data .- A.(mul) .* A.(coeffs[j].data)
+        a = a .+ ((a .>> (8 * sizeof(A) - 1)) .& p2.data)
+        row[idx] = CompositeInt(a)
     end
 
     nothing
@@ -716,6 +737,31 @@ function extract_sparse_row!(
     j - 1
 end
 
+function extract_sparse_row!(
+    indices::Vector{I},
+    coeffs::Vector{T},
+    row::Vector{T},
+    from::J,
+    to::J
+) where {I, J, T <: Coeff}
+    # NOTE: also assumes the provided sparse row has the necessary capacity
+    # allocated
+    @invariant length(indices) == length(coeffs)
+    @invariant 1 <= from <= to <= length(row)
+
+    z = zero(T)
+    j = 1
+    @inbounds for i in from:to
+        if row[i] != z
+            indices[j] = i
+            coeffs[j] = row[i]
+            j += 1
+        end
+    end
+
+    j - 1
+end
+
 # TODO: not really important atm
 # function extract_sparse_row_2!(vals::Vector{UInt}, dense::Vector{UInt})
 #     j = 1
@@ -803,7 +849,7 @@ end
         # Set a reference to the coefficients of this row in the matrix
         matrix.lower_to_coeffs[new_column_indices[1]] = i
 
-        new_column_indices, new_coeffs = new_empty_sparse_row(C)
+        new_column_indices, new_coeffs = new_empty_sparse_row(CoeffType)
     end
 
     true
@@ -864,7 +910,7 @@ function _reduce_matrix_lower_part_threaded_cas_worker!(
 
             # Set a reference to the coefficients of this row in the matrix
             old, success = Atomix.replace!(
-                Atomix.IndexableRef(sentinels, (new_column_indices[1],)),
+                Atomix.IndexableRef(sentinels, (Int(new_column_indices[1]),)),
                 Int8(0),
                 Int8(1),
                 Atomix.seq_cst,
@@ -883,7 +929,7 @@ function _reduce_matrix_lower_part_threaded_cas_worker!(
             end
         end
 
-        new_column_indices, new_coeffs = new_empty_sparse_row(C)
+        new_column_indices, new_coeffs = new_empty_sparse_row(CoeffType)
     end
 end
 
@@ -951,8 +997,8 @@ end
 end
 
 function _reduce_matrix_lower_part_threaded_lock_free_worker!(
-    matrix::MacaulayMatrix{C},
-    basis::Basis{C},
+    matrix::MacaulayMatrix{CoeffType},
+    basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{CoeffType, AccumType},
     row_index_to_coeffs,
     block_start::Int,
@@ -1012,7 +1058,7 @@ end
 @timeit function reduce_matrix_lower_part_threaded_lock_free!(
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
-    arithmetic::AbstractArithmetic{AccumType,CoeffType}
+    arithmetic::AbstractArithmetic{AccumType, CoeffType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
     _, nlow = nrows_filled(matrix)
@@ -1132,7 +1178,7 @@ end
     row1 = zeros(AccumType, nleft)
 
     @inbounds for i in 1:nlower
-        row2 = zeros(C, nright)
+        row2 = zeros(CoeffType, nright)
         # Select the row from the lower part of the matrix to be reduced
         nnz_column_indices = matrix.lower_rows[i]
         # Locate the array of coefficients of this row.
@@ -1665,7 +1711,7 @@ function randomized_reduce_matrix_lower_part!(
             for j in 1:nrowstotal
                 rows_multipliers[j] = mod_p(rand(rng, AccumType), arithmetic)
             end
-            row .= C(0)
+            row .= AccumType(0)
             first_nnz_col = ncols
 
             for k in 1:nrowstotal
@@ -1745,19 +1791,23 @@ function randomized_reduce_matrix_lower_part_threaded_cas!(
         sentinels[matrix.upper_rows[i][1]] = 1
     end
 
-    Base.Threads.@threads for i in 1:nblocks
+    rows_multipliers_buffers = map(_ -> zeros(AccumType, rowsperblock), 1:nthreads())
+    row_buffers = map(_ -> zeros(AccumType, ncols), 1:nthreads())
+    # thread_local_rngs = map(_ -> copy(rng), 1:nthreads())
+
+    Base.Threads.@threads :static for i in 1:nblocks
         nrowsupper = min(i * rowsperblock, nlow)
         nrowstotal = nrowsupper - (i - 1) * rowsperblock
         nrowstotal == 0 && continue
 
-        # t_id = threadid()
-        # rows_multipliers = rows_multipliers_buffers[t_id]
-        # row = row_buffers[t_id]
+        t_id = threadid()
+        rows_multipliers = rows_multipliers_buffers[t_id]
+        row = row_buffers[t_id]
         # new_column_indices, new_coeffs = new_row_buffers[t_id]
         # rng = thread_local_rngs[t_id]
-        row = zeros(AccumType, ncols)
+        # row = zeros(AccumType, ncols)
         new_column_indices, new_coeffs = new_empty_sparse_row(CoeffType)
-        rows_multipliers = zeros(AccumType, rowsperblock)
+        # rows_multipliers = zeros(AccumType, rowsperblock)
         local_rng = copy(rng)
 
         new_pivots_count = 0
@@ -1811,11 +1861,11 @@ function randomized_reduce_matrix_lower_part_threaded_cas!(
                 @invariant length(new_column_indices) == length(new_coeffs)
 
                 old, success = Atomix.replace!(
-                    Atomix.IndexableRef(sentinels, (new_column_indices[1],)),
+                    Atomix.IndexableRef(sentinels, (Int(new_column_indices[1]),)),
                     Int8(0),
                     Int8(1),
-                    Atomix.seq_cst,
-                    Atomix.seq_cst
+                    Atomix.acquire_release,
+                    Atomix.monotonic
                 )
 
                 if success
@@ -2150,18 +2200,18 @@ end
 function reduce_dense_row_by_pivots_sparse!(
     new_column_indices::Vector{I},
     new_coeffs::Vector{C},
-    row::Vector{C},
+    row::Vector{A},
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
     pivots::Vector{Vector{I}},
     start_column::Integer,
     end_column::Integer,
-    arithmetic::A,
+    arithmetic::AbstractArithmeticZp{A, C},
     active_reducers=nothing;
     tmp_pos::Integer=-1,
     exact_column_mapping::Bool=false,
     computing_rref::Bool=false
-) where {I, C <: Coeff, A <: AbstractArithmeticZp}
+) where {I, C <: Union{CoeffFF, CompositeCoeffFF}, A <: Union{CoeffFF, CompositeCoeffFF}}
     _, ncols = size(matrix)
     nleft, _ = ncols_filled(matrix)
 
@@ -2233,18 +2283,18 @@ end
 function reduce_dense_row_by_pivots_sparse!(
     new_column_indices::Vector{I},
     new_coeffs::Vector{C},
-    row::Vector{C},
+    row::Vector{A},
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
     pivots::Vector{Vector{I}},
     start_column::Integer,
     end_column::Integer,
-    arithmetic::DelayedArithmeticZp,
+    arithmetic::DelayedArithmeticZp{A, C},
     active_reducers=nothing;
     tmp_pos::Integer=-1,
     exact_column_mapping::Bool=false,
     computing_rref::Bool=false
-) where {I, C <: CoeffFF}
+) where {I, C <: CoeffFF, A <: CoeffFF}
     _, ncols = size(matrix)
     nleft, _ = ncols_filled(matrix)
 
@@ -2326,18 +2376,18 @@ end
 function reduce_dense_row_by_pivots_sparse!(
     new_column_indices::Vector{I},
     new_coeffs::Vector{C},
-    row::Vector{C},
+    row::Vector{A},
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
     pivots::Vector{Vector{I}},
     start_column::Integer,
     end_column::Integer,
-    arithmetic::A,
+    arithmetic::Union{SignedArithmeticZp{A, C}, SignedCompositeArithmeticZp{A, C}},
     active_reducers=nothing;
     tmp_pos::Integer=-1,
     exact_column_mapping::Bool=false,
     computing_rref::Bool=false
-) where {I, C <: Coeff, A <: SignedArithmeticZp}
+) where {I, C <: Union{CoeffFF, CompositeCoeffFF}, A <: Union{CoeffFF, CompositeCoeffFF}}
     _, ncols = size(matrix)
     nleft, _ = ncols_filled(matrix)
 
@@ -2420,12 +2470,12 @@ function reduce_dense_row_by_pivots_sparse!(
     pivots::Vector{Vector{I}},
     start_column::Integer,
     end_column::Integer,
-    arithmetic::A,
+    arithmetic::AbstractArithmeticQQ,
     active_reducers=nothing;
     tmp_pos::Integer=-1,
     exact_column_mapping::Bool=false,
     computing_rref::Bool=false
-) where {I, C <: Coeff, A <: AbstractArithmeticQQ}
+) where {I, C <: Coeff}
     _, ncols = size(matrix)
     nleft, _ = ncols_filled(matrix)
 

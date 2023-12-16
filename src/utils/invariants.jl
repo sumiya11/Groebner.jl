@@ -2,6 +2,11 @@
 #
 # Provides the @invariant macro
 
+# Invokes undefined behavior in LLVM.
+function unreachable()
+    Base.llvmcall("unreachable", Cvoid, Tuple{})
+end
+
 """
     @invariant expr
 

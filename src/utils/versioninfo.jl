@@ -2,6 +2,8 @@
 # The license is Simplified "2-clause" BSD License
 # https://github.com/Nemocas/Nemo.jl/blob/master/LICENSE.md
 
+# NOTE: Currently not used
+
 import Pkg
 import LibGit2
 import Dates

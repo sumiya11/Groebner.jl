@@ -5,7 +5,7 @@ abstract type AbstractArithmetic{AccumType, CoeffType} end
 
 # All implementations of arithmetic in Zp are a subtype of this
 abstract type AbstractArithmeticZp{AccumType, CoeffType} <:
-              AbstractArithmetic{AccumType, CoeffType} where {AccumType, CoeffType} end
+              AbstractArithmetic{AccumType, CoeffType} end
 
 ###
 # ArithmeticZp
@@ -16,6 +16,8 @@ less_than_half(p, ::Type{T}) where {T} = p < (typemax(T) >> ((8 >> 1) * sizeof(T
 struct ArithmeticZp{AccumType, CoeffType} <: AbstractArithmeticZp{AccumType, CoeffType}
     # magic contains the precomputed multiplicative inverse of the divisor
     magic::UnsignedMultiplicativeInverse{AccumType}
+
+    ArithmeticZp(::Type{A}, ::Type{C}, p) where {A, C} = ArithmeticZp(A, C, C(p))
 
     function ArithmeticZp(
         ::Type{AccumType},
@@ -45,6 +47,9 @@ struct SpecializedArithmeticZp{AccumType, CoeffType, Add} <:
     multiplier::AccumType
     shift::UInt8
     divisor::AccumType
+
+    SpecializedArithmeticZp(::Type{A}, ::Type{C}, p) where {A, C} =
+        SpecializedArithmeticZp(A, C, C(p))
 
     function SpecializedArithmeticZp(
         ::Type{AccumType},
@@ -113,6 +118,9 @@ struct DelayedArithmeticZp{AccumType, CoeffType, Add} <:
     shift::UInt8
     divisor::AccumType
 
+    DelayedArithmeticZp(::Type{A}, ::Type{C}, p) where {A, C} =
+        DelayedArithmeticZp(A, C, C(p))
+
     function DelayedArithmeticZp(
         ::Type{AccumType},
         ::Type{CoeffType},
@@ -145,13 +153,13 @@ function n_safe_consecutive_additions(arithm::DelayedArithmeticZp{T}) where {T <
 end
 
 # a modulo p (addition specialization)
-function mod_p(a::T, mod::DelayedArithmeticZp{T, true}) where {T}
+function mod_p(a::A, mod::DelayedArithmeticZp{A, T, true}) where {A, T}
     x = _mul_high(a, mod.multiplier)
-    x = convert(T, convert(T, (convert(T, a - x) >>> 1)) + x)
+    x = convert(A, convert(A, (convert(A, a - x) >>> 1)) + x)
     a - (x >>> mod.shift) * mod.divisor
 end
 # a modulo p (no addition specialization)
-function mod_p(a::T, mod::DelayedArithmeticZp{T, false}) where {T}
+function mod_p(a::A, mod::DelayedArithmeticZp{A, T, false}) where {A, T}
     x = _mul_high(a, mod.multiplier)
     a - (x >>> mod.shift) * mod.divisor
 end
@@ -167,8 +175,8 @@ struct CompositeArithmeticZp{AccumType, CoeffType, TT} <:
     arithmetics::TT
 
     function CompositeArithmeticZp(
-        ::CompositeInt{2, AccumType},
-        ::CompositeInt{2, CoeffType},
+        ::Type{CompositeInt{2, AccumType}},
+        ::Type{CompositeInt{2, CoeffType}},
         p::CompositeInt{2, CoeffType}
     ) where {AccumType <: CoeffFF, CoeffType <: CoeffFF}
         a1 = SpecializedArithmeticZp(AccumType, CoeffType, p.data[1])
@@ -181,11 +189,11 @@ struct CompositeArithmeticZp{AccumType, CoeffType, TT} <:
     end
 
     function CompositeArithmeticZp(
-        ::CompositeInt{4, AccumType},
-        ::CompositeInt{4, CoeffType},
+        ::Type{CompositeInt{4, AccumType}},
+        ::Type{CompositeInt{4, CoeffType}},
         p::CompositeInt{4, CoeffType}
     ) where {AccumType <: CoeffFF, CoeffType <: CoeffFF}
-        a1, a2, a3, a4 = map(SpecializedArithmeticZp, p.data)
+        a1, a2, a3, a4 = map(a -> SpecializedArithmeticZp(AccumType, CoeffType, a), p.data)
         new{
             CompositeInt{4, AccumType},
             CompositeInt{4, CoeffType},
@@ -221,29 +229,90 @@ struct SignedArithmeticZp{AccumType, CoeffType} <:
        AbstractArithmeticZp{AccumType, CoeffType}
     p::AccumType
     p2::AccumType # = p*p
-    magic::Base.MultiplicativeInverses.SignedMultiplicativeInverse{AccumType}
+
+    multiplier::AccumType
+    addmul::Int8
+    shift::UInt8
+
+    SignedArithmeticZp(::Type{A}, ::Type{C}, p) where {A, C} =
+        SignedArithmeticZp(A, C, C(p))
 
     function SignedArithmeticZp(
         ::Type{AccumType},
-        Type{CoeffType},
+        ::Type{CoeffType},
         p::CoeffType
     ) where {AccumType <: CoeffFF, CoeffType <: CoeffFF}
         pa = convert(AccumType, p)
-        magic = Base.MultiplicativeInverses.SignedMultiplicativeInverse{AccumType}(pa)
-        new{AccumType, CoeffType}(pa, pa * pa, magic)
+        magic = Base.MultiplicativeInverses.SignedMultiplicativeInverse(pa)
+        new{AccumType, CoeffType}(pa, pa * pa, magic.multiplier, magic.addmul, magic.shift)
     end
 end
 
 divisor(arithm::SignedArithmeticZp) = arithm.p
 
-function mod_p(a::T, arithm::SignedArithmeticZp{T}) where {T}
-    res = a % arithm.magic
-    ifelse(res > divisor(arithm), res - divisor(arithm), res)
+function mod_p(a::T, mod::SignedArithmeticZp{T}) where {T}
+    x = _mul_high(a, mod.multiplier)
+    x += a * mod.addmul
+    d = (signbit(x) + (x >> mod.shift)) % T
+    res = a - d * mod.p
+    res = ifelse(res >= T(0), res, res + mod.p)
+    ifelse(res > divisor(mod), res - divisor(mod), res)
 end
 
 function inv_mod_p(a::T, arithm::SignedArithmeticZp{T}) where {T}
     res = invmod(a, divisor(arithm))
     ifelse(res > divisor(arithm), res - divisor(arithm), res)
+end
+
+###
+# SignedCompositeArithmeticZp
+
+# Operates on several integers at once and targets vectorization
+struct SignedCompositeArithmeticZp{AccumType, CoeffType, T, N} <:
+       AbstractArithmeticZp{AccumType, CoeffType}
+    ps::CompositeInt{N, T}
+    p2s::CompositeInt{N, T}
+
+    multipliers::CompositeInt{N, T}
+    addmuls::CompositeInt{N, Int8}
+    shifts::CompositeInt{N, UInt8}
+
+    function SignedCompositeArithmeticZp(
+        ::Type{CompositeInt{N, AT}},
+        ::Type{CompositeInt{N, CT}},
+        ps::CompositeInt{N, CT}
+    ) where {N, AT <: CoeffFF, CT <: CoeffFF}
+        arithms = map(pj -> SignedArithmeticZp(AT, CT, pj), ps.data)
+        multipliers = map(a -> a.multiplier, arithms)
+        addmuls = map(a -> a.addmul, arithms)
+        shifts = map(a -> a.shift, arithms)
+        p2s = CompositeInt{N, AT}(ps) * CompositeInt{N, AT}(ps)
+        new{CompositeInt{N, AT}, CompositeInt{N, CT}, AT, N}(
+            CompositeInt{N, AT}(ps),
+            p2s,
+            CompositeInt(multipliers),
+            CompositeInt(addmuls),
+            CompositeInt(shifts)
+        )
+    end
+end
+
+divisor(arithm::SignedCompositeArithmeticZp) = arithm.ps
+
+function mod_p(
+    a::CompositeInt{N, T},
+    arithm::SignedCompositeArithmeticZp{CompositeInt{N, T}, U, W, N}
+) where {N, T, U, W}
+    x = _mul_high.(a.data, arithm.multipliers.data)
+    x = x .+ a.data .* arithm.addmuls.data
+    d = (signbit.(x) .+ (x .>> arithm.shifts.data)) .% T
+    res = a.data .- d .* arithm.ps.data
+    res = ifelse.(res .>= T(0), res, res .+ arithm.ps.data)
+    CompositeInt(ifelse.(res .> arithm.ps.data, res .- arithm.ps.data, res))
+end
+
+function inv_mod_p(a::T, arithm::SignedCompositeArithmeticZp{T}) where {T}
+    CompositeInt(invmod.(a.data, arithm.ps.data))
 end
 
 ###
@@ -257,14 +326,14 @@ coefficients `CoeffType`, and the `hint` from the user, returns the most
 suitable algorithm for doing arithmetic in Z/Zp.
 """
 function select_arithmetic(
-    characteristic::Integer,
+    characteristic,
     ::Type{CoeffType},
     hint::Symbol,
     store_coeffs_tight::Bool
 ) where {CoeffType <: Union{CoeffFF, CompositeCoeffFF}}
     # NOTE: characteristic is guaranteed to be representable by CoeffType. Maybe
     # change the type of characteristic to CoeffType?
-    @assert characteristic < typemax(CoeffType)
+    @assert characteristic <= typemax(CoeffType)
 
     # The type that would act as an accumulator for coefficients of type
     # CoeffType. Usually, this type should be a bit wider than CoeffType
@@ -276,23 +345,35 @@ function select_arithmetic(
         CoeffType
     end
 
+    if CoeffType <: CompositeCoeffFF
+        if hint === :signed
+            return SignedCompositeArithmeticZp(
+                AccumType,
+                CoeffType,
+                CoeffType(characteristic)
+            )
+        else
+            return CompositeArithmeticZp(AccumType, CoeffType, CoeffType(characteristic))
+        end
+    end
+
     if hint === :signed
-        return SignedArithmeticZp(AccumType, CoeffType, convert(AccumType, characteristic))
+        return SignedArithmeticZp(AccumType, CoeffType, characteristic)
     end
 
     if hint === :delayed
-        return DelayedArithmeticZp(AccumType, CoeffType, convert(AccumType, characteristic))
+        if iszero(leading_zeros(characteristic) - (8 >> 1) * sizeof(AccumType))
+            @log level = 1_000 "Cannot use $hint arithmetic with characteristic $characteristic"
+            @assert false
+        end
+        return DelayedArithmeticZp(AccumType, CoeffType, characteristic)
     end
 
     if hint === :basic
-        SpecializedArithmeticZp(AccumType, CoeffType, convert(AccumType, characteristic))
+        SpecializedArithmeticZp(AccumType, CoeffType, characteristic)
     end
 
     if hint === :auto
-        if CoeffType <: CompositeCoeffFF
-            return CompositeArithmeticZp(AccumType, CoeffType, characteristic)
-        end
-
         @assert CoeffType <: Unsigned
 
         # Use delayed modular arithmetic if the prime is one of the following:
@@ -309,13 +390,9 @@ function select_arithmetic(
                 convert(AccumType, characteristic)
             )
         else
-            return SpecializedArithmeticZp(
-                AccumType,
-                CoeffType,
-                convert(AccumType, characteristic)
-            )
+            return SpecializedArithmeticZp(AccumType, CoeffType, characteristic)
         end
     end
 
-    SpecializedArithmeticZp(AccumType, CoeffType, convert(AccumType, characteristic))
+    SpecializedArithmeticZp(AccumType, CoeffType, characteristic)
 end

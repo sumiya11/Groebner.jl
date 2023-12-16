@@ -15,32 +15,35 @@ hexapod = [1000000*a^2*t1^2+1000000*a^2*t2^2+1000000*a^2*t3^2+1000000*b^2*t1^2+1
 #! format: on
 
 systems = [
-    ("kat5", Groebner.katsuran(5, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
-    ("kat6", Groebner.katsuran(6, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
-    ("kat7", Groebner.katsuran(7, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
-    ("kat8", Groebner.katsuran(8, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
-    ("kat9", Groebner.katsuran(9, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
-    ("kat10", Groebner.katsuran(10, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
-    ("hen5", Groebner.henrion5(ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
-    ("reim4", Groebner.reimern(4, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
-    ("reim5", Groebner.reimern(5, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
-    ("cyc4", Groebner.cyclicn(4, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
-    ("cyc5", Groebner.cyclicn(5, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
-    ("cyc6", Groebner.cyclicn(6, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
-    ("cyc7", Groebner.cyclicn(7, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
-    ("cyc8", Groebner.cyclicn(8, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
-    ("eco10", Groebner.eco10(ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
-    ("eco11", Groebner.eco11(ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
-    ("eco12", Groebner.eco12(ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
-    ("noon4", Groebner.noonn(4, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
-    ("noon5", Groebner.noonn(5, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
-    ("noon6", Groebner.noonn(6, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
-    ("noon7", Groebner.noonn(7, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
-    ("noon8", Groebner.noonn(8, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
-    ("hexapod", hexapod)
+    # ("kat5", Groebner.katsuran(5, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    # ("kat6", Groebner.katsuran(6, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    # ("kat7", Groebner.katsuran(7, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    # ("kat8", Groebner.katsuran(8, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    # ("kat9", Groebner.katsuran(9, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    # ("kat10", Groebner.katsuran(10, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    # ("kat11", Groebner.katsuran(11, ordering=:degrevlex, ground=AbstractAlgebra.GF(p)))
+    ("kat12", Groebner.katsuran(12, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    # ("hen5", Groebner.henrion5(ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    # ("reim4", Groebner.reimern(4, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    # ("reim5", Groebner.reimern(5, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    # ("cyc4", Groebner.cyclicn(4, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    # ("cyc5", Groebner.cyclicn(5, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    # ("cyc6", Groebner.cyclicn(6, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    # ("cyc7", Groebner.cyclicn(7, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    # ("cyc8", Groebner.cyclicn(8, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    # ("eco10", Groebner.eco10(ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    # ("eco11", Groebner.eco11(ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    # ("eco12", Groebner.eco12(ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    ("eco13", Groebner.eco13(ordering=:degrevlex, ground=AbstractAlgebra.GF(p)))
+    # ("noon4", Groebner.noonn(4, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    # ("noon5", Groebner.noonn(5, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    # ("noon6", Groebner.noonn(6, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    # ("noon7", Groebner.noonn(7, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    # ("noon8", Groebner.noonn(8, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))),
+    # ("hexapod", hexapod)
 ]
 
-table = Matrix{Any}(undef, (length(systems), 4))
+table = Matrix{Any}(undef, (length(systems), 2))
 
 function benchmark_system(system, trials=5; kwargs...)
     timings = []
@@ -57,22 +60,24 @@ for (i, (name, s)) in enumerate(systems)
     @info """
     $name:
     linalg #1 / linalg #1 threaded / linalg #2 (default) / linalg #2 threaded"""
-    gb1, ti1 = benchmark_system(s; linalg=:deterministic, threaded=:no)
-    gb2, ti2 = benchmark_system(s; linalg=:deterministic, threaded=:yes)
+    # gb1, ti1 = benchmark_system(s; linalg=:deterministic, threaded=:no)
+    # gb2, ti2 = benchmark_system(s; linalg=:deterministic, threaded=:yes)
     gb3, ti3 = benchmark_system(s; linalg=:randomized, threaded=:no)
     gb4, ti4 = benchmark_system(s; linalg=:randomized, threaded=:yes)
 
-    (ti1, ti2, ti3, ti4) =
-        map(t -> BenchmarkTools.prettytime(t * 1e9), (ti1, ti2, ti3, ti4))
-    table[i, :] .= (ti1, ti2, ti3, ti4)
-    println("$ti1 / $ti2 / $ti3 / $ti4")
+    (ti3, ti4) = map(t -> BenchmarkTools.prettytime(t * 1e9), (ti3, ti4))
+    # table[i, :] .= (ti1, ti2, ti3, ti4)
+    table[i, :] .= (ti3, ti4)
+    println("$ti3 / $ti4")
 
-    @assert gb1 == gb2 == gb3 == gb4
+    # @assert gb1 == gb2 == gb3 == gb4
+    @assert gb3 == gb4
 end
 
 pretty_table(
     table,
-    header=["linalg #1", "linalg #1 threaded", "linalg #2 (default)", "linalg #2 threaded"],
+    # header=["linalg #1", "linalg #1 threaded", "linalg #2 (default)", "linalg #2 threaded"],
+    header=["linalg #2 (default)", "linalg #2 threaded"],
     tf=tf_markdown,
     row_labels=map(first, systems)
 )
@@ -80,27 +85,27 @@ pretty_table(
 #=
 |         |  linalg #1 | linalg #1 threaded | linalg #2 (default) | linalg #2 threaded |
 |---------|------------|--------------------|---------------------|--------------------|
-|    kat5 |   1.435 ms |           1.325 ms |          547.100 μs |         855.700 μs |
-|    kat6 |   2.456 ms |           3.146 ms |            1.709 ms |           2.179 ms |
-|    kat7 |  12.759 ms |           9.484 ms |            6.647 ms |           6.648 ms |
-|    kat8 |  76.593 ms |          43.593 ms |           25.981 ms |          22.833 ms |
-|    kat9 | 534.610 ms |         262.078 ms |          126.060 ms |          93.090 ms |
-|   kat10 |    4.553 s |            2.032 s |          709.215 ms |         450.237 ms |
-|    hen5 |   2.047 ms |           2.835 ms |            1.776 ms |           2.538 ms |
-|   reim4 |  13.356 ms |          18.100 ms |           14.044 ms |          18.906 ms |
-|   reim5 | 719.158 ms |         707.738 ms |          637.063 ms |         639.548 ms |
-|    cyc4 |  99.200 μs |         259.700 μs |          105.400 μs |         168.300 μs |
-|    cyc5 | 681.000 μs |           1.110 ms |          619.700 μs |         897.500 μs |
-|    cyc6 |   3.149 ms |           4.636 ms |            2.488 ms |           3.347 ms |
-|    cyc7 | 152.065 ms |         100.933 ms |           74.816 ms |          61.060 ms |
-|    cyc8 |    3.512 s |            2.064 s |             1.068 s |         768.843 ms |
-|   eco10 | 131.248 ms |          82.306 ms |           54.571 ms |          50.196 ms |
-|   eco11 | 915.857 ms |         511.648 ms |          283.292 ms |         230.956 ms |
-|   eco12 |    7.624 s |            3.862 s |             1.805 s |            1.372 s |
-|   noon4 | 540.900 μs |           1.001 ms |          565.700 μs |         861.800 μs |
-|   noon5 |   3.320 ms |           4.484 ms |            3.215 ms |           3.957 ms |
-|   noon6 |  19.383 ms |          19.045 ms |           18.735 ms |          18.887 ms |
-|   noon7 | 129.403 ms |         112.976 ms |          123.975 ms |         111.059 ms |
-|   noon8 |    1.075 s |         855.434 ms |             1.031 s |         873.569 ms |
-| hexapod |   4.296 ms |           4.843 ms |            3.444 ms |           4.146 ms |
+|    kat5 | 649.900 μs |           1.170 ms |          594.000 μs |         881.500 μs |
+|    kat6 |   2.537 ms |           3.185 ms |            1.711 ms |           2.243 ms |
+|    kat7 |  15.282 ms |          12.524 ms |            8.027 ms |           6.787 ms |
+|    kat8 |  78.290 ms |          44.962 ms |           26.484 ms |          21.662 ms |
+|    kat9 | 534.722 ms |         260.607 ms |          126.397 ms |          94.352 ms |
+|   kat10 |    4.623 s |            2.205 s |          756.419 ms |         472.633 ms |
+|    hen5 |   2.232 ms |           2.883 ms |            1.948 ms |           2.209 ms |
+|   reim4 |  15.097 ms |          18.618 ms |           12.829 ms |          15.887 ms |
+|   reim5 | 761.353 ms |         730.773 ms |          672.574 ms |         654.266 ms |
+|    cyc4 | 118.600 μs |         366.000 μs |          119.800 μs |         220.800 μs |
+|    cyc5 | 665.000 μs |           1.187 ms |          663.300 μs |         958.200 μs |
+|    cyc6 |   2.980 ms |           5.121 ms |            2.595 ms |           3.339 ms |
+|    cyc7 | 158.597 ms |         117.256 ms |           78.787 ms |          66.732 ms |
+|    cyc8 |    3.498 s |            2.074 s |             1.080 s |         794.454 ms |
+|   eco10 | 130.946 ms |          82.692 ms |           54.565 ms |          50.291 ms |
+|   eco11 | 917.577 ms |         506.479 ms |          281.912 ms |         233.156 ms |
+|   eco12 |    7.901 s |            3.888 s |             1.801 s |            1.360 s |
+|   noon4 | 572.000 μs |           1.193 ms |          609.300 μs |         955.800 μs |
+|   noon5 |   3.485 ms |           4.406 ms |            3.247 ms |           4.047 ms |
+|   noon6 |  19.640 ms |          20.017 ms |           19.235 ms |          19.568 ms |
+|   noon7 | 132.158 ms |         111.749 ms |          126.367 ms |         114.704 ms |
+|   noon8 |    1.069 s |         858.967 ms |             1.066 s |         894.792 ms |
+| hexapod |   4.124 ms |           4.974 ms |            3.343 ms |           4.365 ms |
 =#

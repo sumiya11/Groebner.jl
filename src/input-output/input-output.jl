@@ -180,16 +180,36 @@ function select_monomtype(char, npolys, nvars, ordering, kws, hint)
 end
 
 function get_tight_signed_int_type(x::T) where {T <: Integer}
-    if x < typemax(Int8)
+    if x <= typemax(Int8)
         return Int8
-    elseif typemax(Int8) < x < typemax(Int16)
+    elseif typemax(Int8) < x <= typemax(Int16)
         return Int16
-    elseif typemax(Int16) <= x < typemax(Int32)
+    elseif typemax(Int16) < x <= typemax(Int32)
         return Int32
-    elseif typemax(Int32) <= x < typemax(Int64)
+    elseif typemax(Int32) < x <= typemax(Int64)
         return Int64
-    else
+    elseif x <= typemax(Int128)
         return Int128
+    else
+        unreachable()
+        return Int64
+    end
+end
+
+function get_tight_unsigned_int_type(x::T) where {T <: Integer}
+    if x <= typemax(UInt8)
+        return UInt8
+    elseif typemax(UInt8) < x <= typemax(UInt16)
+        return UInt16
+    elseif typemax(UInt16) < x <= typemax(UInt32)
+        return UInt32
+    elseif typemax(UInt32) < x <= typemax(UInt64)
+        return UInt64
+    elseif x <= typemax(UInt128)
+        return UInt128
+    else
+        unreachable()
+        return Int64
     end
 end
 
@@ -203,7 +223,7 @@ function select_coefftype(char, npolys, nvars, ordering, kws, hint)
     end
     @assert char > 0
 
-    if char >= typemax(UInt64)
+    if char > typemax(UInt64)
         __throw_input_not_supported(
             char,
             "The coefficient field characteristic is too large."
@@ -215,17 +235,23 @@ function select_coefftype(char, npolys, nvars, ordering, kws, hint)
 
     # If the requested arithmetic requires a signed representation
     if kws.arithmetic === :signed
-        if store_coeffs_tight
+        # TODO: a hack
+        if typemax(Int32) < char < typemax(UInt32) ||
+           typemax(Int64) < char < typemax(UInt64)
+            @log level = 1_000 "Cannot use $(kws.arithmetic) arithmetic with characteristic $char"
+            @assert false
+        elseif store_coeffs_tight
             return tight_signed_type
         else
             return widen(tight_signed_type)
         end
     end
 
+    tight_unsigned_type = get_tight_unsigned_int_type(char)
     if store_coeffs_tight
-        unsigned(tight_signed_type)
+        tight_unsigned_type
     else
-        unsigned(widen(tight_signed_type))
+        widen(tight_unsigned_type)
     end
 end
 
@@ -236,7 +262,7 @@ end
     convert_to_internal(representation, polynomials, kws)
 
 Converts elements of the given array `polynomials` into an internal polynomial
-representation specified by `representation`.
+representation specified by the given `representation`.
 
 Returns a tuple (`ring`, `var_to_index`, `monoms`, `coeffs`).
 """

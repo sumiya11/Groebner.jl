@@ -253,7 +253,7 @@ function extract_coeffs_in_batch_raw!(
     kws::KeywordsHandler
 ) where {N, T <: AbstractVector}
     rings = map(extract_ring, batch)
-    chars = CompositeInt(map(ring -> ring.ch, rings))
+    chars = (representation.coefftype)(map(ring -> ring.ch, rings))
 
     for (ring_, polys) in zip(rings, batch)
         !is_input_compatible_in_apply(trace, ring_, polys, kws) &&

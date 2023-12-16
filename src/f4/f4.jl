@@ -33,7 +33,7 @@
     # Pairset for storing critical pairs of basis elements,
     # Hashtable for hashing monomials stored in the basis
     basis = initialize_basis(ring, length(monoms), C)
-    pairset = initialize_pairset(entrytype(M))
+    pairset = initialize_pairset(monom_entrytype(M))
     hashtable = initialize_hashtable(ring, params.rng, M, tablesize)
 
     # Filling the basis and hashtable with the given inputs

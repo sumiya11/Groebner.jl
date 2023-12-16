@@ -1,12 +1,11 @@
-# Defines PackedTupleI types for I = 1,2,...,N
+# Packed monomial representation
 
-# PackedTupleI{T, B} implements the interface of a vector
-# of small nonegative integers with O(1) vector sum queries. 
-# 
-# PackedTupleI{T, B} is implemented as a sequence of I integer numbers,
-# each integer {T} packs a fixed amount of small numbers {B} together.
+# Defines PackedTupleI types for I = 1,2,...,N
 #
-# PackedTupleI always stores the sum of vector explicitly.
+# PackedTupleI implements the interface of a vector of small nonegative integers
+# with O(1) vector sum queries. It is used to implement packed monomials.
+#
+# PackedTupleI always stores the sum of the vector explicitly.
 # PackedTupleI always stores in degree-reverse-lex favorable order.
 
 abstract type AbstractPackedTuple{T <: Unsigned, B <: Unsigned} end

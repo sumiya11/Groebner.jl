@@ -221,16 +221,16 @@ end
 # Normalize each element of the basis by dividing it by its leading coefficient
 @timeit function normalize_basis!(
     basis::Basis{C},
-    arithmetic::A
-) where {C <: Union{CoeffFF, CompositeCoeffFF}, A <: AbstractArithmeticZp}
+    arithmetic::AbstractArithmeticZp{A, C}
+) where {A <: Union{CoeffFF, CompositeCoeffFF}, C <: Union{CoeffFF, CompositeCoeffFF}}
     @log level = -5 "Normalizing polynomials in the basis"
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.nfilled)
         !isassigned(cfs, i) && continue   # TODO: this is kind of bad
-        mul = inv_mod_p(cfs[i][1], arithmetic)
+        mul = inv_mod_p(A(cfs[i][1]), arithmetic)
         cfs[i][1] = one(C)
         for j in 2:length(cfs[i])
-            cfs[i][j] = mod_p(cfs[i][j] * mul, arithmetic)
+            cfs[i][j] = mod_p(A(cfs[i][j]) * A(mul), arithmetic) % C
         end
         @invariant isone(cfs[i][1])
     end
@@ -240,8 +240,8 @@ end
 # Normalize each element of the basis by dividing it by its leading coefficient
 function normalize_basis!(
     basis::Basis{C},
-    arithmetic::A
-) where {C <: CoeffQQ, A <: AbstractArithmeticQQ}
+    arithmetic::AbstractArithmeticQQ
+) where {C <: CoeffQQ}
     @log level = -5 "Normalizing polynomials in the basis"
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.nfilled)
@@ -268,7 +268,7 @@ end
     update_ht::MonomialHashtable{M},
     idx::Int
 ) where {C <: Coeff, M <: Monom}
-    pr = entrytype(M)
+    pr = monom_entrytype(M)
     pl, bl = pairset.load, idx
     ps = pairset.pairs
     lcms = pairset.lcms
@@ -399,7 +399,7 @@ function is_redundant!(
     update_ht::MonomialHashtable{M},
     idx::Int
 ) where {M}
-    pt = entrytype(M)
+    pt = monom_entrytype(M)
     resize_hashtable_if_needed!(update_ht, 0)
 
     # lead of new polynomial

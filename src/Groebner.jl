@@ -85,9 +85,8 @@ import TimerOutputs
 # Groebner is multi-threaded by default.
 # 1. Set the environment variable GROEBNER_NO_THREADED to 1 to disable all
 #    multi-threading in Groebner
-# 2. Assuming GROEBNER_NO_THREADED=0, you can use the keyword argument
-#    `threaded` provided by some of the functions in the interface to fine-tune
-#    the threading.
+# 2. If GROEBNER_NO_THREADED=0, the keyword argument `threaded` provided by some
+#    of the functions in the interface can be used to turn on/off the threading.
 const _threaded = Ref(true)
 
 function __init__()
@@ -102,8 +101,6 @@ end
 ###
 # Includes
 
-# For printing some logging info to console nicely
-include("utils/prettyprinting.jl")
 # Provides the `@log` macro for logging stuff
 include("utils/logging.jl")
 # Provides the `@invariant` macro
@@ -137,6 +134,7 @@ include("monomials/packedtuples.jl")
 include("monomials/sparsevector.jl")
 
 # Defines some type aliases for Groebner
+include("arithmetic/CompositeInt.jl")
 include("utils/types.jl")
 
 # Fast arithmetic modulo a prime

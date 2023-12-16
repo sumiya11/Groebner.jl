@@ -56,6 +56,7 @@ mutable struct AlgorithmParameters{
     # This can hold buffers or precomputed multiplicative inverses to speed up
     # the arithmetic in the ground field
     arithmetic::Arithmetic
+    store_coeffs_tight::Bool
 
     # If reduced Groebner basis is needed
     reduced::Bool
@@ -236,6 +237,7 @@ function AlgorithmParameters(
     linalg = $linalg_algorithm
     threaded = $threaded
     arithmetic = $arithmetic
+    store_coeffs_tight = $store_coeffs_tight
     reduced = $reduced
     homogenize = $homogenize
     maxpairs = $maxpairs
@@ -260,6 +262,7 @@ function AlgorithmParameters(
         kwargs.check,
         linalg_algorithm,
         arithmetic,
+        store_coeffs_tight,
         reduced,
         maxpairs,
         selection_strategy,
@@ -286,7 +289,8 @@ function params_mod_p(params::AlgorithmParameters, prime::Integer)
         params.homogenize,
         params.check,
         params.linalg,
-        select_arithmetic(prime, CoeffModular, :auto),
+        select_arithmetic(prime, CoeffModular, :auto, params.store_coeffs_tight),
+        params.store_coeffs_tight,
         params.reduced,
         params.maxpairs,
         params.selection_strategy,

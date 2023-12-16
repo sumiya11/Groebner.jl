@@ -170,6 +170,7 @@ function get_default_trace(wrapped_trace::WrappedTraceF4)
             return wrapped_trace.recorded_traces[id]
         end
     end
+    @assert false # unreachable
     first(values(wrapped_trace.recorded_traces))
 end
 
@@ -181,18 +182,20 @@ function get_trace!(
     wrapped_trace::WrappedTraceF4,
     ::NTuple{N, T}
 ) where {N, T <: AbstractVector}
+    # First, try to find a suitable trace
     for id in keys(wrapped_trace.recorded_traces)
         if id <: NTuple{N, U} where {U <: Integer}
             return wrapped_trace.recorded_traces[id]
         end
     end
-    # create a new suitable trace
+
+    # Otherwise, create a new trace based on one of the existing ones
     default_trace = get_default_trace(wrapped_trace)
     coefftype = default_trace.representation.coefftype
     new_coefftype = CompositeInt{N, coefftype}
     new_trace = copy_trace(default_trace, new_coefftype, deepcopy=false)
     wrapped_trace.recorded_traces[new_coefftype] = new_trace
-    return new_trace
+    new_trace
 end
 
 ###
@@ -201,9 +204,9 @@ end
 function Base.show(io::IO, ::MIME"text/plain", wrapped_trace::WrappedTraceF4)
     println(
         io,
-        "Recorded $(length(wrapped_trace.recorded_traces)) traces. Printing the first one..\n"
+        "Recorded $(length(wrapped_trace.recorded_traces)) traces. Printing only the main one.\n"
     )
-    show(io, MIME("text/plain"), first(values(wrapped_trace.recorded_traces)))
+    show(io, MIME("text/plain"), get_default_trace())
 end
 
 function Base.show(io::IO, wrapped_trace::WrappedTraceF4)
@@ -240,6 +243,7 @@ function Base.show(io::IO, ::MIME"text/plain", trace::TraceF4)
         Sweep output: $(trace.sweep_output)
         Use homogenization: $(trace.homogenize)
         Permute input: $(permute_input)
+        Arithmetic type: $(typeof(trace.params.arithmetic))
         """
     )
 

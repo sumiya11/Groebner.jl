@@ -10,7 +10,7 @@ const ExponentVector{T} = Vector{T} where {T <: Integer}
 # Checks if there is a risk of exponent overflow. If overflow if possible,
 # throws a MonomialDegreeOverflow.
 function _monom_overflow_check(e::ExponentVector{T}) where {T}
-    # ExponentVector overflows if its total degree overflows
+    # ExponentVector overflows if the total degree overflows
     _monom_overflow_check(totaldeg(e), T)
 end
 
@@ -25,17 +25,15 @@ totaldeg(pv::ExponentVector) = @inbounds pv[1]
 # The type of an entry of a ExponentVector{T}. Note that this is not necessarily
 # equal to T.
 # NOTE: this may be a bit awkward
-entrytype(::Type{ExponentVector{T}}) where {T} = MonomHash
-entrytype(p::ExponentVector{T}) where {T} = entrytype(typeof(p))
+monom_entrytype(::Type{ExponentVector{T}}) where {T} = MonomHash
+monom_entrytype(p::ExponentVector{T}) where {T} = monom_entrytype(typeof(p))
 
 copy_monom(pv::ExponentVector) = Base.copy(pv)
 
-# Constructs a constant monomial of type ExponentVector{T} with the max_vars_in_monom for
-# n variables.
+# Constructs a constant monomial with the room for n variables.
 construct_const_monom(::Type{ExponentVector{T}}, n::Integer) where {T} = zeros(T, n + 1)
 
-# Constructs a monomial of type ExponentVector{T} with the partial degrees taken
-# from the vector `ev`
+# Constructs a monomial with the variable degrees taken from the vector `ev`
 function construct_monom(::Type{ExponentVector{T}}, ev::Vector{U}) where {T, U}
     v = Vector{T}(undef, length(ev) + 1)
     s = zero(T)
@@ -48,7 +46,7 @@ function construct_monom(::Type{ExponentVector{T}}, ev::Vector{U}) where {T, U}
     ExponentVector{T}(v)
 end
 
-# Returns a dense vector of partial degrees that correspond to the monomial `pv`.
+# Returns a vector of variable degrees that correspond to the monomial `pv`.
 function monom_to_dense_vector!(tmp::Vector{M}, pv::ExponentVector{T}) where {M, T}
     @assert length(tmp) == length(pv) - 1
     @inbounds tmp[1:end] = pv[2:end]
@@ -101,6 +99,7 @@ function monom_isless(ea::ExponentVector, eb::ExponentVector, ::_DegRevLex{true}
     end
 end
 
+# DegRevLex monomial comparison, but on a range of variables
 function monom_isless(
     ea::ExponentVector{T},
     eb::ExponentVector{T},

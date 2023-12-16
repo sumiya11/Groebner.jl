@@ -10,40 +10,6 @@ end
 Base.showerror(io::IO, e::MonomialDegreeOverflow) = print(io, e.msg)
 
 ###
-# Composite integer
-
-struct CompositeInt{N, T}
-    data::NTuple{N, T}
-end
-
-unpack_composite_integer(a::CompositeInt{N, T}) where {N, T} = a.data
-
-Base.isless(ci::CompositeInt{N, T}, x::U) where {N, T, U} = all(<(x), ci.data)
-
-Base.iszero(ci::CompositeInt) = all(iszero, ci.data)
-Base.isone(ci::CompositeInt)  = all(isone, ci.data)
-
-Base.zero(::Type{CompositeInt{N, T}}) where {N, T} = CompositeInt(ntuple(_ -> zero(T), N))
-Base.one(::Type{CompositeInt{N, T}}) where {N, T} = CompositeInt(ntuple(_ -> one(T), N))
-
-Base.:+(a::CompositeInt{N, T}, b::CompositeInt{N, T}) where {N, T} =
-    CompositeInt(a.data .+ b.data)
-
-Base.:-(a::CompositeInt{N, T}, b::CompositeInt{N, T}) where {N, T} =
-    CompositeInt(a.data .- b.data)
-
-Base.:*(a::CompositeInt{N, T}, b::CompositeInt{N, T}) where {N, T} =
-    CompositeInt(a.data .* b.data)
-
-function Base.muladd(
-    c::CompositeInt{N, T},
-    a::CompositeInt{N, T},
-    b::CompositeInt{N, T}
-) where {N, T}
-    CompositeInt(c.data .* a.data .+ b.data)
-end
-
-###
 # All supported coefficient types
 
 # CoeffFF is a supertype of polynomial coefficients modulo a prime

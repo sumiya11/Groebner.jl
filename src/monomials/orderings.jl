@@ -1,4 +1,4 @@
-# Monomial orderings supported by this package.
+# All supported monomial orderings.
 #
 # The orderings in this file are exported, and exist mostly for communicating
 # with the user. These orderings are converted to an internal representation at

@@ -1,10 +1,9 @@
+# Systems used for testing and benchmarking
+
 #! format: off
 # Syntax formatting is off in this file.
 
-# Systems used for testing and benchmarking
-
 # The cyclic-n system
-# (not to be confused with root-n system)!!
 #
 # Göran Björck and Ralf Fröberg: 
 # `A faster way to count the solutions of inhomogeneous systems of algebraic equations, with applications to cyclic n-roots', 
@@ -19,14 +18,6 @@ function cyclicn(n; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
     ]
 end
 
-#------------------------------------------------------------------------------
-
-function chandra5()
-    
-end
-
-#------------------------------------------------------------------------------
-
 # The root-n system
 # (not to be confused with cyclic-n system)!!
 function rootn(n; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
@@ -36,15 +27,11 @@ function rootn(n; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
     ans
 end
 
-#------------------------------------------------------------------------------
-
 # The reimer-n system
 function reimern(n; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
     _, xs = np.polynomial_ring(ground, ["x$i" for i in 1:n])
     [sum((-1)^(i + 1) * 2 * xs[i]^j for i in 1:n) - 1 for j in 2:(n + 1)]
 end
-
-#------------------------------------------------------------------------------
 
 # The katsura-n system
 #
@@ -61,8 +48,6 @@ function katsuran(n; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
     ]
 end
 
-#------------------------------------------------------------------------------
-
 # The noon-n system
 # 
 function noonn(n; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
@@ -76,8 +61,6 @@ function noonn(n; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
     end
     fs
 end
-
-#------------------------------------------------------------------------------
 
 # The henrion-5 system
 #
@@ -341,9 +324,8 @@ function henrion8(; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
         ]
 end
 
-#------------------------------------------------------------------------------
-
-# Eco-n systems:
+#
+# Eco-n systems
 
 function eco5(; np=AbstractAlgebra, ground=np.GF(2^31 - 1), ordering=:lex)
     _, (x1, x2, x3, x4, x5) =
@@ -623,7 +605,8 @@ function eco14(; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
 ]
 end
 
-#------------------------------------------------------------------------------
+###
+# Some other tiny systems
 
 function ku10(; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
     _, (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) =
@@ -759,8 +742,6 @@ function ojika4_d1R2_d2R5(; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
     ]
 end
 
-#------------------------------------------------------------------------------
-
 # generate a random polynomial system with:
 # . `nvariables` variables, 
 # . monomial exponents in range `exps`,
@@ -842,19 +823,4 @@ function generate_set(
     s = map(f -> np.map_coefficients(c -> numerator(c), f), s)
     s = map(f -> np.change_coefficient_ring(np.ZZ, f), s)
     s
-end
-
-#------------------------------------------------------------------------------
-
-change_ordering(f, ordering) = change_ordering([f], ordering)
-
-# changes the ordering of set of polynomials `fs` into `ordering`
-function change_ordering(fs::AbstractArray, ordering)
-    R = parent(first(fs))
-    Rord, _ = AbstractAlgebra.polynomial_ring(
-        base_ring(R),
-        string.(AbstractAlgebra.gens(R)),
-        ordering=ordering
-    )
-    map(f -> AbstractAlgebra.change_base_ring(base_ring(R), f, parent=Rord), fs)
 end

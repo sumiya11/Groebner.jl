@@ -21,7 +21,7 @@
         gb = groebner(arr, ordering=DegRevLex())
 
         trace, gb = groebner_learn(arr, ordering=DegRevLex())
-        flag, gb = groebner_apply!(trace, arr, ordering=DegRevLex())
+        flag, gb = groebner_apply!(trace, arr)
     end
 end
 
