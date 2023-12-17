@@ -1,3 +1,0 @@
-[deps]
-BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
-StrideArrays = "d1fa6d79-ef01-42a6-86c9-f7c551f8593b"

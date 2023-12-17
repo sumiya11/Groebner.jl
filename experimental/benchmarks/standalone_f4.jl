@@ -1,14 +1,13 @@
 
-include("../../src/Groebner.jl")
-
 if !isdefined(Main, :Groebner)
-    import Groebner
+    using Groebner
 end
 
-import AbstractAlgebra
+import AbstractAlgebra, Primes
 using BenchmarkTools
 using Logging
-global_logger(ConsoleLogger(stderr, Logging.Error))
+
+Groebner.invariants_enabled() = false
 
 # BenchmarkTools.DEFAULT_PARAMETERS.seconds = 6
 BenchmarkTools.DEFAULT_PARAMETERS.samples = 3
@@ -20,11 +19,7 @@ function benchmark_system_my(system)
     system = Groebner.change_ordering(system, :degrevlex)
     Groebner.groebner([system[1]])
 
-    # gb = Groebner.groebner(system)
-    # println("length = $(length(gb))")
-    # println("degree = $(maximum(AbstractAlgebra.total_degree, gb))")
-
-    @time Groebner.groebner(system)
+    @btime Groebner.groebner($system)
 end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
@@ -47,8 +42,15 @@ function run_f4_ff_degrevlex_benchmarks(ground)
     end
 end
 
+p1 = 2^31 - 1
+p2 = 2^29 + 11
+p3 = 2^27 + 29
+s = Groebner.katsuran(11, ordering=:degrevlex, ground=AbstractAlgebra.GF(p3))
+
+@profview gb1 = Groebner.groebner(s);
+
 println()
-ground = AbstractAlgebra.GF(2^31 - 1)
+ground = AbstractAlgebra.GF(1048583)
 run_f4_ff_degrevlex_benchmarks(ground)
 
 #=

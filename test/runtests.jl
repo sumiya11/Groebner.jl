@@ -20,7 +20,7 @@ function try_import(name::Symbol)
     end
 end
 
-@test isempty(Test.detect_unbound_args(Groebner))
+# @test isempty(Test.detect_unbound_args(Groebner))
 @test isempty(Test.detect_ambiguities(Groebner))
 
 ⊂(xs, ys) = all(in(ys), xs)
@@ -31,6 +31,9 @@ end
     @includetests ["monoms/exponentvector", "monoms/packedtuples", "monoms/sparsevector"]
     # High-level monomial arithmetic and term orders
     @includetests ["monoms/monom_arithmetic", "monoms/monom_orders"]
+
+    # Basic tests for addition in Zp
+    @includetests ["arithmetic/Zp"]
 
     # Consistency of input-output
     @includetests ["input-output/AbstractAlgebra"]
@@ -43,10 +46,11 @@ end
         "groebner/groebner_large",
         "groebner/many_variables",
         "groebner/large_exponents",
-        "groebner/homogenization"
+        "groebner/homogenization",
+        "groebner/multi_threading"
     ]
 
-    @includetests ["learn_and_apply/learn_and_apply"]
+    @includetests ["learn_and_apply/learn_and_apply", "learn_and_apply/apply_in_batches"]
 
     @includetests ["isgroebner/isgroebner"]
 

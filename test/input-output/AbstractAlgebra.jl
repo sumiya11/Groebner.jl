@@ -2,14 +2,14 @@ using AbstractAlgebra
 import Primes
 
 @testset "AbstractAlgebra.jl, univariate" begin
-    R, x = PolynomialRing(GF(2^62 + 135), "x")
+    R, x = polynomial_ring(GF(2^62 + 135), "x")
     @test Groebner.groebner([R(2)]) == [R(1)]
     @test Groebner.groebner([R(0), R(0)]) == [R(0)]
     @test Groebner.groebner([R(0), R(3), R(0)]) == [R(1)]
 
     for ground in [GF(2^31 - 1), GF(2^62 + 135), QQ]
         for gb_ord in [Groebner.Lex(), Groebner.DegLex(), Groebner.DegRevLex()]
-            R, x = PolynomialRing(ground, "x")
+            R, x = polynomial_ring(ground, "x")
             @test Groebner.groebner([x^2 - 4, x + 2], ordering=gb_ord) == [x + 2]
         end
     end
@@ -39,7 +39,7 @@ end
     ]
 
     for aaord in aa_orderings_to_test
-        R, (x, y) = AbstractAlgebra.PolynomialRing(
+        R, (x, y) = AbstractAlgebra.polynomial_ring(
             AbstractAlgebra.GF(5),
             ["x", "y"],
             ordering=aaord
@@ -59,10 +59,10 @@ end
 
     for ord in aa_orderings_to_test
         for ground in aa_grounds_to_test
-            R, (x,) = PolynomialRing(ground, ["x"], ordering=ord)
+            R, (x,) = polynomial_ring(ground, ["x"], ordering=ord)
             @test parent(first(Groebner.groebner([x]))) == R
 
-            R, (x, y) = PolynomialRing(ground, ["x", "y"], ordering=ord)
+            R, (x, y) = polynomial_ring(ground, ["x", "y"], ordering=ord)
             fs = [x^2 * y + 3, (2^31 - 5) * x - (2^31 - 4) * y]
             gb = Groebner.groebner(fs)
             @test parent(gb[1]) == R
@@ -82,7 +82,7 @@ end
     # Test for different Groebner.jl orderings
     aa_ord = :lex
     for ground in aa_grounds_to_test
-        R, (x,) = PolynomialRing(ground, ["x"], ordering=aa_ord)
+        R, (x,) = polynomial_ring(ground, ["x"], ordering=aa_ord)
         for case in [
             Groebner.Lex(),
             Groebner.DegLex(),
@@ -95,7 +95,7 @@ end
             @test gb == [x^2]
         end
 
-        R, (x, y) = PolynomialRing(ground, ["x", "y"], ordering=aa_ord)
+        R, (x, y) = polynomial_ring(ground, ["x", "y"], ordering=aa_ord)
         fs = [x^2 + 3, y - 1]
         for case in [
             Groebner.Lex(),

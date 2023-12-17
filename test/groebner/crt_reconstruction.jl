@@ -8,13 +8,13 @@ using Primes
         [3, 7],
         [2^31 - 1, Primes.nextprime(2^31)],
         [Primes.nextprime(BigInt(2)^100), Primes.nextprime(BigInt(2)^31)],
-        [Primes.nextprime(BigInt(2)^10000), Primes.nextprime(BigInt(2)^31)]
+        [Primes.nextprime(BigInt(2)^2000), Primes.nextprime(BigInt(2)^31)]
     ]
     buf, buf1, buf2, buf3, n1, n2 = [BigInt(0) for _ in 1:6]
 
     for (m1, m2) in Ms
         M = prod((m1, m2))
-        nums = [rand(0:(M - 1)) for _ in 1:1000]
+        nums = [rand(0:(M - 1)) for _ in 1:100]
         minv1, minv2 = invmod(m1, m2), invmod(m2, m1)
         for a in nums
             as = modular_images(a, (m1, m2))

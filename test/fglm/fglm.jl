@@ -3,9 +3,9 @@
 using AbstractAlgebra
 
 @testset "fglm finite field" begin
-    R, (x, y) = PolynomialRing(GF(2^31 - 1), ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], ordering=:degrevlex)
 
-    noon = Groebner.change_ordering(Groebner.noonn(2, ground=GF(2^31 - 1)), :degrevlex)
+    noon = Groebner.noonn(2, ordering=:degrevlex)
     gb = Groebner.groebner(noon, ordering=Groebner.DegRevLex())
     @test AbstractAlgebra.ordering(AbstractAlgebra.parent(gb[1])) == :degrevlex
     x1, x2 = gens(parent(first(Groebner.fglm(gb))))
@@ -50,7 +50,7 @@ using AbstractAlgebra
 end
 
 @testset "fglm rationals" begin
-    R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"], ordering=:degrevlex)
+    R, (x, y, z) = polynomial_ring(QQ, ["x", "y", "z"], ordering=:degrevlex)
 
     gb = [
         z^2 - (9 // 490) * y - 201 // 980 * z + 13 // 980,

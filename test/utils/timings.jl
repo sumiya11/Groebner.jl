@@ -1,7 +1,7 @@
 # How do we test the output printed to stdout?..
 
 function test_timings()
-    R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"])
+    R, (x, y, z) = polynomial_ring(QQ, ["x", "y", "z"])
     f = [x * y + z, x * z + y]
 
     gb = [y^2 - z^2, x * z + y, x * y + z]

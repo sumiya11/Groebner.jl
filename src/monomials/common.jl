@@ -1,8 +1,8 @@
 # Some common utilities for monomial implementations.
 #
-# Also provides a description of functions that a monomial type must implement. 
-# For an example, see the implementation of an exponent vector in
-# monoms/exponentvector.jl
+# Also provides a description of functions that a monomial type must implement
+# to be usable in Groebner. For an example implementation, see the exponent
+# vector in monoms/exponentvector.jl
 
 ###
 # Monomial interface
@@ -17,7 +17,7 @@ function construct_const_monom end
 """
     construct_monom(::Type{Monom}, vector::Vector)
 
-Constructs a monomial of type `Monom` with the partial degrees read from the
+Constructs a monomial of type `Monom` with the variable degrees read from the
 given `vector`.
 """
 function construct_monom end
@@ -25,7 +25,7 @@ function construct_monom end
 """
     monom_to_dense_vector!(tmp::Vector, monom::Monom)
 
-Writes the partial degree of the monomial `monom` to dense vector `tmp` and
+Writes the variable degrees of the monomial `monom` to dense vector `tmp` and
 returns `tmp`.
 """
 function monom_to_dense_vector! end
@@ -99,4 +99,4 @@ function _monom_overflow_check(deg::Integer, B)
 end
 
 # Returns the type of the monomial entry
-entrytype(monomtype) = MonomHash
+monom_entrytype(monomtype) = MonomHash

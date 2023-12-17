@@ -12,7 +12,7 @@ function read_MQ_GF(filename)
         ne = parse(Int, line3[(findfirst(':', line3) + 1):end])
 
         R, xs =
-            AbstractAlgebra.PolynomialRing(AbstractAlgebra.GF(ch), nv, ordering=:degrevlex)
+            AbstractAlgebra.polynomial_ring(AbstractAlgebra.GF(ch), nv, ordering=:degrevlex)
         @info "Created ring" R xs
 
         labels = sort!(union([x * y for x in xs for y in xs], xs, [R(1)]), rev=true)

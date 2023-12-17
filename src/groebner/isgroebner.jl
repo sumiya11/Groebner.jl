@@ -1,3 +1,4 @@
+# Backend for `isgroebner`
 
 function _isgroebner(polynomials, kws::KeywordsHandler)
     polynomial_repr =
@@ -21,7 +22,7 @@ end
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     params
-) where {M <: Monom, C <: CoeffFF}
+) where {M <: Monom, C <: CoeffZp}
     basis, pairset, hashtable = initialize_structs(ring, monoms, coeffs, params)
     f4_isgroebner!(ring, basis, pairset, hashtable, params.arithmetic)
 end
@@ -52,7 +53,7 @@ end
     prime = next_check_prime!(luckyprimes)
     @log level = -2 "Reducing input generators modulo $prime"
     ring_ff, basis_ff = reduce_modulo_p!(buffer, ring, basis_zz, prime, deepcopy=true)
-    arithmetic = select_arithmetic(prime, CoeffModular)
+    arithmetic = select_arithmetic(CoeffModular, prime, :auto, false)
     flag = f4_isgroebner!(ring_ff, basis_ff, pairset, hashtable, arithmetic)
     flag
 end

@@ -21,7 +21,7 @@ R,
     b_4,
     b_5,
     b_6
-) = PolynomialRing(
+) = polynomial_ring(
     QQ,
     [
         "a_21",

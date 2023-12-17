@@ -1,16 +1,12 @@
-# Lucky primes are prime numbers used in modular computation. 
-#
+# Lucky primes for modular computation 
+
 # The sequence of lucky primes is increasing and deterministic, and starts with
 # the FIRST_LUCKY_PRIME. Groebner basis is computed modulo a lucky prime, and
 # the correctness of the computed basis is checked modulo some another prime.
 
-# There are currently 50,697,537 primes between FIRST_LUCKY_PRIME and
-# FIRST_CHECK_PRIME. This limits us to about 
-#   50,697,537*log2(2^30)*log10(2) ~ 4 * 10^8 
-# decimal digits of coefficient size. Hence, we are able to more or
-# less safely handle coefficients of up to 10^8 digits.
-const FIRST_LUCKY_PRIME = 2^31 - 1
-const FIRST_CHECK_PRIME = 2^30 + 3
+# TODO: precompute the first k primes..
+const FIRST_LUCKY_PRIME = 2^30 + 3 # 2^31-1
+const FIRST_CHECK_PRIME = 2^27 - 39 # 2^30 + 3
 
 @noinline function __too_large_coefficient_error(modulo)
     throw(

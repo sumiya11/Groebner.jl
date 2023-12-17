@@ -1,8 +1,8 @@
 
 @testset "normalform" begin
-    R, x = PolynomialRing(GF(2^31 - 1), "x")
+    R, x = polynomial_ring(GF(2^31 - 1), "x")
 
-    R, (x, y, z) = PolynomialRing(GF(2^31 - 1), ["x", "y", "z"])
+    R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"])
 
     # Regression test, Structural Identifiability
     @test Groebner.normalform([x], R(0)) == R(0)
@@ -22,7 +22,7 @@
     @test Groebner.normalform(G, x^2 + y^2) == y - y * x - 1
     @test Groebner.normalform(G, y^3) == Groebner.normalform(G, y^4) == y
 
-    R, (x, y, z) = PolynomialRing(GF(2^31 - 1), ["x", "y", "z"], ordering=:degrevlex)
+    R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"], ordering=:degrevlex)
     G = [x^2 + y, y^2 + x]
     @test Groebner.normalform(G, x^2 + y^2) == -x - y
 
@@ -30,24 +30,24 @@
 end
 
 @testset "normalform many variables" begin
-    R, xs = PolynomialRing(QQ, ["x$i" for i in 1:63])
+    R, xs = polynomial_ring(QQ, ["x$i" for i in 1:63])
     GB = Groebner.groebner(xs)
     @test GB == reverse(xs)
     @test Groebner.normalform(GB, xs[1]) == R(0)
 
-    R, xs = PolynomialRing(QQ, ["x$i" for i in 1:220])
+    R, xs = polynomial_ring(QQ, ["x$i" for i in 1:220])
     GB = Groebner.groebner(xs)
     @test GB == reverse(xs)
     @test Groebner.normalform(GB, xs[1]) == R(0)
 
-    R, xs = PolynomialRing(QQ, ["x$i" for i in 1:1025])
+    R, xs = polynomial_ring(QQ, ["x$i" for i in 1:1025])
     GB = Groebner.groebner(xs)
     @test GB == reverse(xs)
     @test Groebner.normalform(GB, xs) == zeros(R, length(xs))
 end
 
 @testset "normalform orderings" begin
-    R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"])
+    R, (x, y, z) = polynomial_ring(QQ, ["x", "y", "z"])
 
     @test Groebner.normalform([x + y], [x, y]) == [-y, y]
     @test Groebner.normalform([x + y^2], [x, y], ordering=Groebner.DegLex()) == [x, y]
@@ -57,7 +57,7 @@ end
 
 @testset "normalform of an array" begin
     for field in [GF(17), GF(2^31 - 1), QQ]
-        R, (x, y) = PolynomialRing(field, ["x", "y"])
+        R, (x, y) = polynomial_ring(field, ["x", "y"])
         gb = [x, y]
         @test Groebner.normalform(gb, [x, y + 1]) == [R(0), R(1)]
         @test Groebner.normalform(gb, [y + 1, x]) == [R(1), R(0)]

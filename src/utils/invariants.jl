@@ -30,3 +30,11 @@ macro invariant(arg)
     end
     esc(expr)
 end
+
+macro unreachable()
+    @invariant false
+end
+
+# Invokes undefined behavior in LLVM. 
+# Only use when able to prove that this is never getting called.
+unreachable_unsafe() = Base.llvmcall("unreachable", Cvoid, Tuple{})

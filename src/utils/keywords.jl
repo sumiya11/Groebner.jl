@@ -12,13 +12,15 @@ const _supported_kw_args = (
         reduced     = true,
         ordering    = InputOrdering(),
         certify     = false,
-        linalg      = :randomized,
+        linalg      = :auto,
         monoms      = :auto,
+        arithmetic  = :auto,
         seed        = 42,
         loglevel    = _default_loglevel,
         maxpairs    = typemax(Int),   # NOTE: maybe use Inf?
         selection   = :auto,
         modular     = :auto,
+        threaded    = :auto,
         sweep       = false,
         homogenize  = :auto,
         statistics  = :no,
@@ -49,17 +51,22 @@ const _supported_kw_args = (
         seed        = 42,
         ordering    = InputOrdering(),
         monoms      = :auto,
+        arithmetic  = :auto,
         loglevel    = _default_loglevel,
         homogenize  = :auto,
         sweep       = true,
-        statistics  = :no
+        statistics  = :no,
+        threaded    = :auto,
     ),
     groebner_apply! = (
         seed        = 42,
+        ordering    = InputOrdering(),
         monoms      = :auto,
+        arithmetic  = :auto,
         loglevel    = _default_loglevel,
         sweep       = true,
-        statistics  = :no
+        statistics  = :no,
+        threaded    = :auto,
     )
 )
 #! format: on
@@ -73,7 +80,9 @@ struct KeywordsHandler{Ord}
     ordering::Ord
     certify::Bool
     linalg::Symbol
+    threaded::Symbol
     monoms::Symbol
+    arithmetic::Symbol
     seed::Int
     loglevel::Int
     maxpairs::Int
@@ -108,11 +117,23 @@ struct KeywordsHandler{Ord}
         Possible choices for keyword "linalg" are:
         `:auto`, `:randomized`, `:deterministic`"""
 
+        threaded = get(kws, :threaded, get(default_kw_args, :threaded, :auto))
+        @assert threaded in (:auto, :no, :yes, :force_yes) """
+        Not recognized threading option: $threaded
+        Possible choices for keyword "threaded" are:
+        `:auto`, `:no`, `:yes`"""
+
         monoms = get(kws, :monoms, get(default_kw_args, :monoms, :dense))
         @assert monoms in (:auto, :dense, :packed, :sparse) """
         Not recognized monomial representation: $monoms
         Possible choices for keyword "monoms" are:
         `:auto`, `:dense`, `:packed`, `:sparse`"""
+
+        arithmetic = get(kws, :arithmetic, get(default_kw_args, :arithmetic, :auto))
+        @assert arithmetic in (:auto, :delayed, :signed, :basic) """
+        Not recognized arithmetic: $arithmetic
+        Possible choices for keyword "arithmetic" are:
+        `:auto`, `:delayed`, `:signed`, `:basic`"""
 
         seed = get(kws, :seed, get(default_kw_args, :seed, 42))
         loglevel = get(kws, :loglevel, get(default_kw_args, :loglevel, 0))
@@ -146,7 +167,7 @@ struct KeywordsHandler{Ord}
         Possible choices for keyword "statistics" are:
         `:no`, `:timings`, `:stats`, `:all`"""
 
-        # @log level = -1 """
+        # @log level = -2 """
         #   In $function_key, using keywords: 
         #   reduced    = $reduced, 
         #   ordering   = $ordering, 
@@ -168,7 +189,9 @@ struct KeywordsHandler{Ord}
             ordering,
             certify,
             linalg,
+            threaded,
             monoms,
+            arithmetic,
             seed,
             loglevel,
             maxpairs,

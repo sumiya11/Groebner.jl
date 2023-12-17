@@ -1,6 +1,7 @@
 import Pkg
-Pkg.add("Groebner")
-Pkg.update("Groebner")
+Pkg.status()
+Pkg.add(url="https://github.com/sumiya11/Groebner.jl")
+# Pkg.update("Groebner")
 
 include("../run_benchmarks.jl")
 

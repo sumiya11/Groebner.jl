@@ -1,3 +1,5 @@
+# Sparse monomial implementation
+#
 # SparseExponentVector{T, N} is a sparse vector of integers of type T that
 # implements the interface of a monomial of N variables.
 

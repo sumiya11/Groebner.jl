@@ -1,14 +1,17 @@
 # Pairset and Basis
 
+# Pairset is a list of critical pairs (SPairs).
+
 # Basis is a structure that stores a list of polynomials. Each polynomial is
 # represented with a sorted vector of monomials and a vector of coefficients.
 # Monomials and coefficients are stored in the basis separately. Each monomial
 # is represented with an integer -- an index to a bucket in the hashtable (see
 # f4/hashtable.jl).
 
-# Pairset is a list of critical pairs (SPairs).
+###
+# Pairset
 
-# S-pair{Degree}, or a pair of polynomials,
+# S-pair{Degree}, or, a pair of polynomials,
 struct SPair{Degree}
     # First polynomial given by its index in the basis array
     poly1::Int32
@@ -55,6 +58,9 @@ function resize_lcms_if_needed!(ps::Pairset, nfilled::Int)
     end
     nothing
 end
+
+###
+# Basis
 
 # The type of the sugar degree
 const SugarCube = Int
@@ -212,26 +218,30 @@ function resize_basis_if_needed!(basis::Basis{T}, to_add::Int) where {T}
     nothing
 end
 
-# Normalize each element of the input basis
-# by dividing it by leading coefficient
-@timeit function normalize_basis!(ring, basis::Basis{<:CoeffFF})
+# Normalize each element of the basis by dividing it by its leading coefficient
+@timeit function normalize_basis!(
+    basis::Basis{C},
+    arithmetic::AbstractArithmeticZp{A, C}
+) where {A <: Union{CoeffZp, CompositeCoeffZp}, C <: Union{CoeffZp, CompositeCoeffZp}}
     @log level = -5 "Normalizing polynomials in the basis"
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.nfilled)
         !isassigned(cfs, i) && continue   # TODO: this is kind of bad
-        ch = ring.ch
-        mul = invmod(cfs[i][1], ch) % ch
+        mul = inv_mod_p(A(cfs[i][1]), arithmetic)
+        cfs[i][1] = one(C)
         for j in 2:length(cfs[i])
-            cfs[i][j] = (cfs[i][j] * mul) % ch
+            cfs[i][j] = mod_p(A(cfs[i][j]) * A(mul), arithmetic) % C
         end
-        cfs[i][1] = one(cfs[i][1])
+        @invariant isone(cfs[i][1])
     end
     basis
 end
 
-# Normalize each element of the input basis
-# by dividing it by leading coefficient
-function normalize_basis!(ring, basis::Basis{<:CoeffQQ})
+# Normalize each element of the basis by dividing it by its leading coefficient
+function normalize_basis!(
+    basis::Basis{C},
+    arithmetic::AbstractArithmeticQQ
+) where {C <: CoeffQQ}
     @log level = -5 "Normalizing polynomials in the basis"
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.nfilled)
@@ -258,7 +268,7 @@ end
     update_ht::MonomialHashtable{M},
     idx::Int
 ) where {C <: Coeff, M <: Monom}
-    pr = entrytype(M)
+    pr = monom_entrytype(M)
     pl, bl = pairset.load, idx
     ps = pairset.pairs
     lcms = pairset.lcms
@@ -389,7 +399,7 @@ function is_redundant!(
     update_ht::MonomialHashtable{M},
     idx::Int
 ) where {M}
-    pt = entrytype(M)
+    pt = monom_entrytype(M)
     resize_hashtable_if_needed!(update_ht, 0)
 
     # lead of new polynomial
@@ -531,7 +541,13 @@ end
 # f4 must produce a `Basis` object which satisfies several conditions.
 # This functions standardizes the given basis so that conditions hold.
 # (see f4/f4.jl)
-@timeit function standardize_basis!(ring, basis::Basis, ht::MonomialHashtable, ord)
+@timeit function standardize_basis!(
+    ring,
+    basis::Basis,
+    ht::MonomialHashtable,
+    ord,
+    arithmetic
+)
     @inbounds for i in 1:(basis.nnonredundant)
         idx = basis.nonredundant[i]
         basis.nonredundant[i] = i
@@ -547,7 +563,7 @@ end
     resize!(basis.isredundant, basis.nprocessed)
     resize!(basis.sugar_cubes, basis.nprocessed)
     sort_polys_by_lead_increasing!(basis, ht, ord=ord)
-    normalize_basis!(ring, basis)
+    normalize_basis!(basis, arithmetic)
 end
 
 # Returns the exponent vectors of polynomials in the basis

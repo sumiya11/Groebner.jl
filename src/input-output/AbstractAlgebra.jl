@@ -87,7 +87,7 @@ function extract_ring(polynomials)
     # type unstable:
     ordT = ordering_sym2typed(ord)
     ch   = AbstractAlgebra.characteristic(R)
-    PolyRing{typeof(ordT)}(nv, ordT, UInt(ch))
+    PolyRing{typeof(ordT), UInt}(nv, ordT, UInt(ch))
 end
 
 function extract_coeffs(
@@ -153,45 +153,52 @@ end
 ###
 # Process input polynomials on the apply stage
 
-function _is_input_ring_compatible_in_apply(trace, ring, kws)
+function is_ring_compatible_in_apply(trace, ring, kws)
     @log level = -7 "" trace.original_ord ring.ord
     if trace.original_ord != ring.ord
-        @log level = 1000 """
-        On apply stage the monomial ordering of input is different from the one used on the learn stage
-        Apply stage (current): $(ring.ord)
-        Learn stage: $(trace.original_ord)"""
+        @log level = 1_000 """
+        In apply, the monomial ordering is different from the one used in learn.
+        Apply ordering: $(ring.ord)
+        Learn ordering: $(trace.original_ord)"""
+        return false
+    end
+    if trace.ring.nvars != ring.nvars + 2 * trace.homogenize
+        @log level = 1_000 """
+        In apply, the polynomial ring has $(ring.nvars) variables, but in learn there were $(trace.ring.nvars) variables 
+        (used homogenization in learn: $(trace.homogenize)."""
         return false
     end
     if trace.sweep_output != kws.sweep
-        @log level = 1000 "Input sweep option ($(kws.sweep)) is different from the one used on the learn stage ($(trace.sweep_output))."
+        @log level = 1_000 "Input sweep option ($(kws.sweep)) is different from the one used in learn ($(trace.sweep_output))."
         return false
     end
-    @log level = -1 "On apply stage the argument monoms=$(kws.monoms) was ignored"
+    if !(kws.monoms === :auto)
+        @log level = 1 "In apply, the argument monoms=$(kws.monoms) was ignored"
+    end
     if trace.ring.ch != ring.ch
-        # Not an error, just debug message
         @log level = -1 """
-        On apply stage the ground field characteristic is $(ring.ch), 
-        the learn stage used different characteristic $(trace.ring.ch)"""
-    end
-    if trace.ring.ch < 2^32 && ring.ch >= 2^32
-        @log level = 1000 """
-        On apply stage the ground field characteristic is $(ring.ch), which is too large compared to the learn stage. 
-        The learn stage used characteristic $(trace.ring.ch).
-
-        Please consider learning with a larger characteristic and trying this again, or submitting a GitHub issue :^)."""
-        return false
+        In apply, the ground field characteristic is $(ring.ch), 
+        the learn used a different characteristic: $(trace.ring.ch)"""
+        # not an error!
     end
     true
 end
 
-function _is_input_compatible_in_apply(trace, ring, polynomials, kws)
+function is_input_compatible_in_apply(trace, ring, polynomials, kws)
     trace_signature = trace.input_signature
     homogenized = trace.homogenize
+    if kws.ordering != InputOrdering()
+        # @log level = 1_000 "In apply, the given option ordering=$(kws.ordering) has no effect and was discarded"
+    end
+    if !is_ring_compatible_in_apply(trace, ring, kws)
+        @log level = 1_000 "The ring of input does not seem to be compatible with the learned trace."
+        return false
+    end
     if !(
         length(trace_signature) + count(iszero, polynomials) ==
         length(polynomials) + homogenized
     )
-        @log level = 1000 "The number of input polynomials on the apply stage ($(length(polynomials))) is different from the number on the learn stage ($(length(trace_signature) + count(iszero, polynomials) - homogenized))."
+        @log level = 1_000 "The number of input polynomials in apply ($(length(polynomials))) is different from the number seen in learn ($(length(trace_signature) + count(iszero, polynomials) - homogenized))."
         return false
     end
     true
@@ -203,25 +210,19 @@ function extract_coeffs_raw!(
     polys::Vector{T},
     kws::KeywordsHandler
 ) where {T}
-    # write new coefficients directly to trace.basis
     ring = extract_ring(polys)
-    if !_is_input_ring_compatible_in_apply(trace, ring, kws)
-        __throw_input_not_supported(
-            ring,
-            "Input does not seem to be compatible with the learned trace."
-        )
-    end
-    if !_is_input_compatible_in_apply(trace, ring, polys, kws)
-        __throw_input_not_supported(
-            ring,
-            "Input does not seem to be compatible with the learned trace."
-        )
-    end
+    !is_input_compatible_in_apply(trace, ring, polys, kws) && __throw_input_not_supported(
+        ring,
+        "Input does not seem to be compatible with the learned trace."
+    )
+
     basis = trace.buf_basis
     input_polys_perm = trace.input_permutation
     term_perms = trace.term_sorting_permutations
     homog_term_perm = trace.term_homogenizing_permutations
     CoeffType = representation.coefftype
+
+    # write new coefficients directly to trace.buf_basis
     _extract_coeffs_raw!(
         basis,
         input_polys_perm,
@@ -230,15 +231,72 @@ function extract_coeffs_raw!(
         polys,
         CoeffType
     )
+
+    # a hack for homogenized inputs
     if trace.homogenize
-        @assert length(basis.coeffs[length(polys) + 1]) == 2
+        @assert length(basis.monoms[length(polys) + 1]) ==
+                length(basis.coeffs[length(polys) + 1]) ==
+                2
+        # TODO: !! incorrect if there are zeros in the input
+        @invariant !iszero(ring.ch)
         C = eltype(basis.coeffs[length(polys) + 1][1])
         basis.coeffs[length(polys) + 1][1] = one(C)
         basis.coeffs[length(polys) + 1][2] =
             iszero(ring.ch) ? -one(C) : (ring.ch - one(ring.ch))
     end
+
     @log level = -6 "Extracted coefficients from $(length(polys)) polynomials." basis
     @log level = -8 "Extracted coefficients" basis.coeffs
+    ring
+end
+
+function extract_coeffs_in_batch_raw!(
+    trace,
+    representation::PolynomialRepresentation,
+    batch::NTuple{N, T},
+    kws::KeywordsHandler
+) where {N, T <: AbstractVector}
+    rings = map(extract_ring, batch)
+    chars = (representation.coefftype)(map(ring -> ring.ch, rings))
+
+    for (ring_, polys) in zip(rings, batch)
+        !is_input_compatible_in_apply(trace, ring_, polys, kws) &&
+            __throw_input_not_supported(
+                ring_,
+                "Input does not seem to be compatible with the learned trace."
+            )
+    end
+
+    basis = trace.buf_basis
+    input_polys_perm = trace.input_permutation
+    term_perms = trace.term_sorting_permutations
+    homog_term_perm = trace.term_homogenizing_permutations
+    CoeffType = representation.coefftype
+
+    # write new coefficients directly to trace.buf_basis
+    _extract_coeffs_in_batch_raw!(
+        basis,
+        input_polys_perm,
+        term_perms,
+        homog_term_perm,
+        batch,
+        CoeffType
+    )
+
+    # a hack for homogenized inputs
+    if trace.homogenize
+        @assert length(basis.monoms[length(batch[1]) + 1]) ==
+                length(basis.coeffs[length(batch[1]) + 1]) ==
+                2
+        basis.coeffs[length(batch[1]) + 1][1] = one(CoeffType)
+        basis.coeffs[length(batch[1]) + 1][2] = chars - one(CoeffType)
+    end
+
+    @log level = -6 "Extracted coefficients from $(map(length, batch)) polynomials." basis
+    @log level = -8 "Extracted coefficients" basis.coeffs
+
+    ring = PolyRing(rings[1].nvars, trace.ring.ord, chars)
+    trace.ring = ring
     ring
 end
 
@@ -291,6 +349,73 @@ function _extract_coeffs_raw!(
     end
     nothing
 end
+
+function _extract_coeffs_in_batch_raw!(
+    basis,
+    input_polys_perm::Vector{Int},
+    term_perms::Vector{Vector{Int}},
+    homog_term_perms::Vector{Vector{Int}},
+    batch::NTuple{N, T},
+    ::Type{CoeffsType}
+) where {N, CoeffsType <: Coeff, T <: AbstractVector}
+    permute_input_terms = !isempty(term_perms)
+    permute_homogenizing_terms = !isempty(homog_term_perms)
+    for polys in batch
+        if !(basis.nfilled == count(!iszero, polys) + permute_homogenizing_terms)
+            @log level = 1000 "Input on apply stage contains too many zeroes polynomials. Error will follow."
+            __throw_input_not_supported(
+                "Potential coefficient cancellation in input on apply stage.",
+                false
+            )
+        end
+    end
+
+    batch = map(polys -> filter(!iszero, polys), batch)
+    @assert length(unique(length, batch)) == 1
+
+    @log level = -2 """
+    Permuting input terms: $permute_input_terms
+    Permuting for homogenization: $permute_homogenizing_terms"""
+    @log level = -7 """Permutations:
+      Of polynomials: $input_polys_perm
+      Of terms (change of ordering): $term_perms
+      Of terms (homogenization): $homog_term_perms"""
+
+    @inbounds for i in 1:length(batch[1])
+        basis_cfs = basis.coeffs[i]
+        poly_index = input_polys_perm[i]
+
+        for batch_idx in 1:length(batch)
+            if !(length(batch[batch_idx][poly_index]) == length(basis_cfs))
+                __throw_input_not_supported(
+                    "Potential coefficient cancellation in input polynomial at index $i on apply stage.",
+                    poly
+                )
+            end
+        end
+
+        for j in 1:length(batch[1][poly_index])
+            coeff_index = j
+            if permute_input_terms
+                coeff_index = term_perms[poly_index][coeff_index]
+            end
+            if permute_homogenizing_terms
+                coeff_index = homog_term_perms[poly_index][coeff_index]
+            end
+            basis_cfs[j] = CoeffsType(
+                ntuple(
+                    batch_index -> AbstractAlgebra.data(
+                        AbstractAlgebra.coeff(batch[batch_index][poly_index], coeff_index)
+                    ),
+                    length(batch)
+                )
+            )
+        end
+    end
+    nothing
+end
+
+###
 
 # specialization for multivariate polynomials
 function extract_coeffs_qq(representation, ring::PolyRing, poly)

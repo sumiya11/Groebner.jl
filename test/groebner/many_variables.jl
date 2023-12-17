@@ -1,6 +1,6 @@
 
 function n_variable_set(n)
-    R, x = PolynomialRing(QQ, ["x$i" for i in 1:n])
+    R, x = polynomial_ring(QQ, ["x$i" for i in 1:n])
     f = [sum(prod(x[i:(n - k)], init=1) for i in 1:(k + 1)) for k in 0:(n - 1)]
     f
 end
@@ -37,7 +37,7 @@ end
     # up to 511
     for n in [128, 256, 257, 511]
         @info "Variables:" n
-        R, x = PolynomialRing(QQ, ["x$i" for i in 1:n])
+        R, x = polynomial_ring(QQ, ["x$i" for i in 1:n])
         f = x
         Groebner.groebner(f)
     end

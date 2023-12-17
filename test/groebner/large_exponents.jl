@@ -2,7 +2,7 @@
 # degrees of 2^31
 
 @testset "handling large exponents" begin
-    R, (x, y) = PolynomialRing(QQ, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(QQ, ["x", "y"], ordering=:degrevlex)
 
     # up to 2^8-1
     for (i, d) in enumerate(4:2:255)

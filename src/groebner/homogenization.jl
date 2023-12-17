@@ -1,3 +1,4 @@
+# Homogenization & saturation
 
 function maximum_totaldeg(ring::PolyRing, monoms::Vector{Vector{T}}) where {T}
     D = zero(T)
@@ -227,7 +228,7 @@ function saturate_generators_by_variable!(
     new_poly_monoms[2] = const_monom
     new_poly_coeffs = Vector{C}(undef, 2)
     new_poly_coeffs[1] = one(C)
-    # TODO: minus one in the current ground field
+    # NOTE: minus one in the current ground field
     new_poly_coeffs[2] = iszero(ring.ch) ? -one(C) : (ring.ch - one(ring.ch))
     push!(new_monoms, new_poly_monoms)
     push!(coeffs, new_poly_coeffs)
@@ -243,6 +244,8 @@ function saturate_generators_by_variable!(
     $monoms
     Saturated monomials: 
     $new_monoms
+    Saturated coefficients:
+    $coeffs
     """
     new_ring, new_monoms, coeffs
 end

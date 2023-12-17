@@ -30,6 +30,7 @@ function sort_polys_by_lead_increasing!(
     ord::Ord=hashtable.ord
 ) where {Ord <: AbstractInternalOrdering}
     @log level = -4 "Sorting polynomials by their leading terms in non-decreasing order"
+
     b_monoms = basis.monoms
     h_monoms = hashtable.monoms
     permutation = collect(1:(basis.nfilled))
@@ -39,16 +40,19 @@ function sort_polys_by_lead_increasing!(
             @inbounds(h_monoms[b_monoms[y][1]]),
             ord
         )
+
     # NOTE: stable sort to preserve the order of polynomials with the same lead
     sort!(permutation, lt=cmps, alg=Base.Sort.DEFAULT_STABLE)
+
     # use array assignment insted of elemewise assignment
-    # (seems to compile to faster code)
+    # (seems to compile to better code)
     basis.monoms[1:(basis.nfilled)] = basis.monoms[permutation]
     basis.coeffs[1:(basis.nfilled)] = basis.coeffs[permutation]
     @inbounds for a in abc
         @invariant length(a) >= length(permutation)
         a[1:(basis.nfilled)] = a[permutation]
     end
+
     permutation
 end
 
@@ -70,10 +74,7 @@ function is_sorted_by_lead_increasing(
 end
 
 # Sorts critical pairs from the pairset in the range from..from+sz by the total
-# degree of their lcms in increasing order
-#
-# Used in update once per one f4 iteration to sort pairs in pairset; Also used
-# in normal selection strategy also once per iteration
+# degree of their lcms in a non-decreasing order
 function sort_pairset_by_degree!(ps::Pairset, from::Int, sz::Int)
     sort_part!(ps.pairs, from, from + sz, by=pair -> pair.deg)
 end
@@ -100,7 +101,7 @@ function sort_pairset_by_sugar!(
     sugar
 end
 
-# Sorts the first `npairs` pairs from `pairset` in the non-decreasing order of
+# Sorts the first `npairs` pairs from `pairset` in a non-decreasing order of
 # their lcms by the given monomial ordering
 function sort_pairset_by_lcm!(pairset::Pairset, npairs::Int, hashtable::MonomialHashtable)
     monoms = hashtable.monoms
@@ -113,7 +114,6 @@ function sort_pairset_by_lcm!(pairset::Pairset, npairs::Int, hashtable::Monomial
     sort_part!(pairset.pairs, 1, npairs, lt=cmps)
 end
 
-# Sorts polynomials by their position in the current basis (identity sort)
 function sort_generators_by_position!(polys::Vector{Int}, load::Int)
     sort_part!(polys, 1, load)
 end
@@ -135,7 +135,9 @@ function matrix_row_decreasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: Colum
     if va < vb
         return true
     end
-    # Unreachable.
+
+    @unreachable
+
     # If there are two rows in the upper part of the matrix with the same
     # leading term, something went wrong
     @invariant false

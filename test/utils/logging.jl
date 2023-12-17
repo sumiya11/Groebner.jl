@@ -1,7 +1,7 @@
 using Logging
 
 @testset "logging" begin
-    R, (x, y, z) = PolynomialRing(QQ, ["x", "y", "z"])
+    R, (x, y, z) = polynomial_ring(QQ, ["x", "y", "z"])
     f = [x * y + z, x * z + y]
     gb = [y^2 - z^2, x * z + y, x * y + z]
 

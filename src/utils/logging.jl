@@ -103,21 +103,10 @@ const _groebner_logger = Ref{GroebnerLogger}(GroebnerLogger())
 
 # Updates the global logging parameters in the Groebner module. 
 function update_logger(; loglevel=nothing)
+    # Do nothing if logging is disabled
     !logging_enabled() && return nothing
-    # Don't change anything if run from a worker thread.
-    # Maybe throw a warning?
+    # Do nothing if run from a worker thread
     threadid() != 1 && return nothing
-    # if stream !== nothing
-    #     prev_logger = _default_logger[]
-    #     _default_logger[] = Logging.ConsoleLogger(
-    #         stream,
-    #         prev_logger.min_level,
-    #         meta_formatter=meta_formatter_groebner
-    #         # NOTE: the use of this keyword argument leads to fails on Julia
-    #         # v1.6
-    #         # show_limited=prev_logger.show_limited
-    #     )
-    # end
     if loglevel !== nothing
         _groebner_logger[] = Groebner.GroebnerLogger(stderr, Logging.LogLevel(loglevel))
     end
@@ -134,7 +123,7 @@ const _default_message_loglevel = Logging.Info
 
 # Parses the arguments to the @log macro and returns a tuple of expressions that
 # would evaluate to (loglevel, msg1, msg2, ...).
-function pruneargs(file, line, args)
+function log_macro_pruneargs(file, line, args)
     length(args) < 1 &&
         __throw_log_macro_error(file, line, "Argument list must be non-empty")
     level = _default_message_loglevel
@@ -153,7 +142,7 @@ end
 
 macro log(args...)
     file, line = String(__source__.file), Int(__source__.line)
-    level, msgs = pruneargs(file, line, args)
+    level, msgs = log_macro_pruneargs(file, line, args)
     esc(:(
         if $(@__MODULE__).logging_enabled()
             if threadid() == 1

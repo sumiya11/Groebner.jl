@@ -1,4 +1,4 @@
-# Select parameters for Groebner basis computation
+# Select parameters in Groebner basis computation
 
 # It seems there is no Xoshiro rng in Julia v < 1.8.
 # Use Random.Xoshiro, if available, as it is a bit faster.
@@ -56,6 +56,7 @@ mutable struct AlgorithmParameters{
     # This can hold buffers or precomputed multiplicative inverses to speed up
     # the arithmetic in the ground field
     arithmetic::Arithmetic
+    using_wide_type_for_coeffs::Bool
 
     # If reduced Groebner basis is needed
     reduced::Bool
@@ -88,7 +89,7 @@ mutable struct AlgorithmParameters{
 
     # Use multi-threading.
     # This does nothing currently.
-    threading::Bool
+    threaded::Symbol
 
     # Random number generator
     seed::UInt64
@@ -125,11 +126,13 @@ function AlgorithmParameters(
         computation_ord = ordering
         original_ord = ring.ord
     end
-    #
+
+    # The levels of correctness checks. By default, we always check correctness
+    # modulo a "random" prime
     heuristic_check = true
     randomized_check = true
     certify_check = kwargs.certify
-    # 
+
     homogenize = if kwargs.homogenize === :yes
         true
     else
@@ -145,59 +148,84 @@ function AlgorithmParameters(
             false
         end
     end
-    #
+
     linalg = kwargs.linalg
-    # Default linear algebra algorithm is randomized
-    if linalg === :auto
-        linalg = :randomized
-    end
     if !iszero(ring.ch) && linalg === :randomized
         # Do not use randomized linear algebra if the field characteristic is
         # too small. 
         # TODO: In the future, it would be good to adapt randomized linear
         # algebra to this case by taking more random samples
-        if ring.ch < 5000
-            @log level = -1 """
-            The field characteristic is too small.
+        if ring.ch < 500
+            @log level = 1_000 """
+            The field characteristic is too small ($(ring.ch)).
             Switching from randomized linear algebra to a deterministic one."""
             linalg = :deterministic
         end
     end
+    if linalg === :auto
+        # Default linear algebra algorithm is randomized
+        linalg = :randomized
+    end
+    # Default linear algebra algorithm is sparse
     linalg_sparsity = :sparse
     linalg_algorithm = LinearAlgebra(linalg, linalg_sparsity)
 
-    arithmetic = select_arithmetic(ring.ch, representation.coefftype)
+    arithmetic = select_arithmetic(
+        representation.coefftype,
+        ring.ch,
+        kwargs.arithmetic,
+        representation.using_wide_type_for_coeffs
+    )
+
     ground = :zp
     if iszero(ring.ch)
         ground = :qq
     end
-    #
+
     reduced = kwargs.reduced
     maxpairs = kwargs.maxpairs
-    #
+
     selection_strategy = kwargs.selection
     if selection_strategy === :auto
         if target_ord isa Union{Lex, ProductOrdering}
-            selection_strategy = :normal # :sugar
+            selection_strategy = :normal # TODO :sugar
         else
             selection_strategy = :normal
         end
     end
-    #
-    threading = false
-    #
+
+    threaded = kwargs.threaded
+    if !(_threaded[])
+        if threaded === :yes
+            @log level = 1_000 """
+            You have explicitly provided the keyword argument `threaded = :yes`,
+            however, the multi-threading is disabled globally in Groebner.jl due
+            to the set environment variable GROEBNER_NO_THREADED=0
+
+            Consider enabling threading by setting GROEBNER_NO_THREADED to 1"""
+        end
+        threaded = :no
+    end
+
+    # By default, modular computation uses learn & apply
     modular_strategy = kwargs.modular
     if modular_strategy === :auto
         modular_strategy = :learn_and_apply
     end
+    if !reduced
+        @log level = -1 """
+        The option reduced=$reduced was passed in the input, 
+        falling back to classic multi-modular algorithm."""
+        modular_strategy = :classic_modular
+    end
 
     majority_threshold = 1
     crt_algorithm = :simultaneous
-    #
+
     seed = kwargs.seed
     rng = _default_rng_type(seed)
     useed = UInt64(seed)
-    #
+
     sweep = kwargs.sweep
 
     statistics = kwargs.statistics
@@ -212,7 +240,9 @@ function AlgorithmParameters(
     certify_check = $certify_check
     check = $(kwargs.check)
     linalg = $linalg_algorithm
+    threaded = $threaded
     arithmetic = $arithmetic
+    using_wide_type_for_coeffs = $(representation.using_wide_type_for_coeffs)
     reduced = $reduced
     homogenize = $homogenize
     maxpairs = $maxpairs
@@ -221,7 +251,6 @@ function AlgorithmParameters(
     modular_strategy = $modular_strategy
     majority_threshold = $majority_threshold
     crt_algorithm = $crt_algorithm
-    threading = $threading
     seed = $seed
     rng = $rng
     sweep = $sweep
@@ -238,6 +267,7 @@ function AlgorithmParameters(
         kwargs.check,
         linalg_algorithm,
         arithmetic,
+        representation.using_wide_type_for_coeffs,
         reduced,
         maxpairs,
         selection_strategy,
@@ -245,7 +275,7 @@ function AlgorithmParameters(
         modular_strategy,
         majority_threshold,
         crt_algorithm,
-        threading,
+        threaded,
         useed,
         rng,
         sweep,
@@ -253,7 +283,16 @@ function AlgorithmParameters(
     )
 end
 
-function params_mod_p(params::AlgorithmParameters, prime::Integer)
+function params_mod_p(
+    params::AlgorithmParameters,
+    prime::C;
+    using_wide_type_for_coeffs=nothing
+) where {C <: Coeff}
+    is_wide_type_coeffs = if !isnothing(using_wide_type_for_coeffs)
+        using_wide_type_for_coeffs
+    else
+        params.using_wide_type_for_coeffs
+    end
     AlgorithmParameters(
         params.target_ord,
         params.computation_ord,
@@ -264,7 +303,8 @@ function params_mod_p(params::AlgorithmParameters, prime::Integer)
         params.homogenize,
         params.check,
         params.linalg,
-        select_arithmetic(prime, CoeffModular),
+        select_arithmetic(C, prime, :auto, is_wide_type_coeffs),
+        is_wide_type_coeffs,
         params.reduced,
         params.maxpairs,
         params.selection_strategy,
@@ -272,7 +312,7 @@ function params_mod_p(params::AlgorithmParameters, prime::Integer)
         params.modular_strategy,
         params.majority_threshold,
         params.crt_algorithm,
-        params.threading,
+        params.threaded,
         params.seed,
         params.rng,
         params.sweep,

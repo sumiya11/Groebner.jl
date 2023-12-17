@@ -36,7 +36,7 @@ R,
     b_6,
     b_7,
     b_8
-) = PolynomialRing(
+) = polynomial_ring(
     GF(2^31 - 1),
     [
         "a_21",

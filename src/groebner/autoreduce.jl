@@ -1,5 +1,5 @@
+# Autoreducing a set of polynomials
 
-# autoreduce for Finite fields
 function _autoreduce(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
@@ -10,7 +10,7 @@ function _autoreduce(
     update_basis!(basis, hashtable)
     matrix = initialize_matrix(ring, C)
     symbol_ht = initialize_secondary_hashtable(hashtable)
-    reducegb_f4!(ring, basis, matrix, hashtable, symbol_ht, params)
-    standardize_basis!(ring, basis, hashtable, hashtable.ord)
+    autoreduce_f4!(ring, basis, matrix, hashtable, symbol_ht, params)
+    standardize_basis!(ring, basis, hashtable, hashtable.ord, params.arithmetic)
     export_basis_data(basis, hashtable)
 end

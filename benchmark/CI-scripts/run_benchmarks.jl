@@ -49,14 +49,37 @@ push!(
     suite,
     (
         problem_name="groebner, AA, GF(2^31-1), katsura 10",
-        result=compute_gb(Groebner.katsuran(10, ordering=:degrevlex, ground=GF(2^31 - 1)))
+        result=compute_gb(
+            Groebner.katsuran(10, ordering=:degrevlex, ground=GF(2^31 - 1)),
+            5
+        )
+    )
+)
+push!(
+    suite,
+    (
+        problem_name="groebner, AA, GF(2^27+29), katsura 10",
+        result=compute_gb(
+            Groebner.katsuran(10, ordering=:degrevlex, ground=GF(2^27 + 29)),
+            5
+        )
+    )
+)
+push!(
+    suite,
+    (
+        problem_name="groebner, AA, GF(2^27+29), cyclic 8",
+        result=compute_gb(
+            Groebner.cyclicn(8, ordering=:degrevlex, ground=GF(2^27 + 29)),
+            5
+        )
     )
 )
 push!(
     suite,
     (
         problem_name="groebner, AA, GF(2^31-1), cyclic 8",
-        result=compute_gb(Groebner.cyclicn(8, ordering=:degrevlex, ground=GF(2^31 - 1)))
+        result=compute_gb(Groebner.cyclicn(8, ordering=:degrevlex, ground=GF(2^31 - 1)), 5)
     )
 )
 push!(
@@ -112,6 +135,15 @@ push!(
 push!(
     suite,
     (
+        problem_name="groebner_apply!, AA, GF(2^27+29), katsura 10",
+        result=learn_and_apply(
+            Groebner.katsuran(10, ordering=:degrevlex, ground=GF(2^27 + 29))
+        )
+    )
+)
+push!(
+    suite,
+    (
         problem_name="groebner_apply!, Nemo, GF(2^31-1), katsura 10",
         result=learn_and_apply(
             Groebner.katsuran(10, ordering=:degrevlex, ground=Nemo.GF(2^31 - 1))
@@ -158,7 +190,7 @@ push!(
 
 function multimodular_gb_problem(nbits; np=AbstractAlgebra)
     R, (x1, x2, x3, x4) =
-        PolynomialRing(np.QQ, ["x1", "x2", "x3", "x4"], ordering=:degrevlex)
+        polynomial_ring(np.QQ, ["x1", "x2", "x3", "x4"], ordering=:degrevlex)
     nbits_per_prime = 31
     nprimes = max(div(nbits, nbits_per_prime), 1)
     N = prod(map(BigInt, Primes.nextprimes(2^31 - 100, nprimes)))

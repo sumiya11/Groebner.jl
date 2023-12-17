@@ -8,7 +8,8 @@ The `polynomials` must be an array of polynomials from `AbstractAlgebra.jl`,
 `Nemo.jl`, or `DynamicPolynomials.jl`. For `AbstractAlgebra.jl` and `Nemo.jl`,
 the coefficients of polynomials must be either in `GF(p)` or in `QQ`.
 
-This function is thread-safe.
+This function is thread-safe. Groebner.jl may also use multi-threading
+internally. See the option `threaded` below.
 
 ## Possible Options
 
@@ -23,16 +24,23 @@ The `groebner` routine takes the following optional arguments:
     - `DegRevLex(args...)` for degree reverse lexicographic, 
     - `WeightedOrdering(args...)` for weighted ordering, 
     - `ProductOrdering(args...)` for block ordering, 
-    - `MatrixOrdering(args...)` for matrix ordering. 
-  For details and examples see the corresponding documentation page.
+    - `MatrixOrdering(args...)` for matrix ordering. For details and examples
+  see the corresponding documentation page.
 - `certify`: Certify the obtained basis. When this option is `false`, the
     algorithm is randomized, and the result is correct with high probability.
     When this option is `true`, the result is guaranteed to be correct in case
     the ideal is homogeneous (default is `false`). 
 - `linalg`: Linear algebra backend. Available options are: 
-    - `:auto`: for the automatic choice (default),
+    - `:auto` for the automatic choice (default),
     - `:deterministic` for deterministic sparse linear algebra, 
     - `:randomized` for probabilistic sparse linear algebra.
+- `threaded`: The use of multi-threading. Available options are: 
+    - `:auto` for the automatic choice (default),
+    - `:no` never use multi-threading, 
+    - `:yes` allow the use of multi-threading.
+    Additionally, you can set the environment variable `GROEBNER_NO_THREADED` to
+    `1` to disable all multi-threading in Groebner.jl. In this case, the
+    environment variable takes precedence over the `threaded` option.
 - `monoms`: Monomial representation used in the computations. The algorithm
     tries to automatically choose the most suitable monomial representation.
     Otherwise, set `monoms` to one of the following: 
@@ -60,7 +68,7 @@ The `groebner` routine takes the following optional arguments:
     - `:auto`, for the automatic choice (default).
 - `statistics`: After the function exits, print some runtime statistics.
   Possible options are:
-  - `:no`, do not print anything (default),
+  - `:no`, print nothing (default),
   - `:timings`, print the table with timings and allocations. Note that
     `Groebner.performance_counters_enabled()` must be set to `true` for this to
     have effect.
@@ -83,13 +91,15 @@ R, (x, y) = QQ["x", "y"]
 groebner([x*y^2 + x, y*x^2 + y])
 ```
 
-Or, in another monomial ordering:
+Or, say, in another monomial ordering:
 
 ```jldoctest
 groebner([x*y^2 + x, y*x^2 + y], ordering=Lex(y, x))
 ```
 """
 function groebner(polynomials::AbstractVector; options...)
+    Base.require_one_based_indexing(polynomials)
+
     keywords = KeywordsHandler(:groebner, options)
 
     setup_logging(keywords)
@@ -103,11 +113,11 @@ end
 """
     groebner_learn(polynomials; options...)
 
-Computes a Groebner basis of `polynomials` and emits the computation trace.
+Computes a Groebner basis of `polynomials` and emits the trace.
 
-The trace can be then used to speed up the computation of subsequent Groebner
-bases, which should be the specializations of the same ideal as the one
-`groebner_learn` has been applied to.
+The trace can be used to speed up the computation of subsequent Groebner bases,
+which should be specializations of the same ideal `groebner_learn` has been
+applied to.
 
 The input `polynomials` must be an array of polynomials over a finite field.
 
@@ -127,9 +137,9 @@ R, (x, y) = GF(2^31-1)["x", "y"]
 trace, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
 
 # Apply (same ground field, different coefficients)
-success, gb_2 = groebner_apply!(trace, [2x*y^2 + 3x, 4y*x^2 + 5y])
+flag, gb_2 = groebner_apply!(trace, [2x*y^2 + 3x, 4y*x^2 + 5y])
 
-@assert success
+@assert flag
 ```
 
 Using `groebner_learn` and `groebner_apply!` over different ground fields:
@@ -139,19 +149,48 @@ using Groebner, AbstractAlgebra
 R, (x, y) = GF(2^31-1)["x", "y"]
 
 # Learn
-trace, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
+trace, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y], ordering=DegRevLex())
 
 # Create a ring with a different modulo
-_R, (_x, _y) = GF(2^30+3)["x", "y"]
+R2, (x2, y2) = GF(2^30+3)["x", "y"]
 
 # Apply (with a different modulo)
-success, gb_2 = groebner_apply!(trace, [2_x*_y^2 + 3_x, 4_y*_x^2 + 5_y])
+flag, gb_2 = groebner_apply!(
+    trace, 
+    [2x2*y2^2 + 3x2, 4y2*x2^2 + 5y2], 
+    ordering=DegRevLex()
+)
 
-@assert success
-@assert gb_2 == groebner([2_x*_y^2 + 3_x, 4_y*_x^2 + 5_y])
+@assert flag
+@assert gb_2 == groebner([2x2*y2^2 + 3x2, 4y2*x2^2 + 5y2], ordering=DegRevLex())
+```
+
+Using `groebner_apply!` in batches (works only in `:degrevlex` at the moment):
+
+```jldoctest
+using Groebner, AbstractAlgebra
+R, (x, y) = polynomial_ring(GF(2^31-1), ["x", "y"], ordering=:degrevlex)
+
+# Learn
+trace, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
+
+# Create rings with some other moduli
+R2, (x2, y2) = polynomial_ring(GF(2^30+3), ["x", "y"], ordering=:degrevlex)
+R3, (x3, y3) = polynomial_ring(GF(2^27+29), ["x", "y"], ordering=:degrevlex)
+
+# Two specializations of the same ideal
+batch = ([2x2*y2^2 + 3x2, 4y2*x2^2 + 5y2], [4x3*y3^2 + 4x3, 5y3*x3^2 + 7y3])
+
+# Apply for two sets of polynomials at once
+flag, (gb_2, gb_3) = groebner_apply!(trace, batch)
+
+@assert flag
+@assert (gb_2, gb_3) == map(groebner, batch)
 ```
 """
 function groebner_learn(polynomials::AbstractVector; options...)
+    Base.require_one_based_indexing(polynomials)
+
     keywords = KeywordsHandler(:groebner_learn, options)
 
     setup_logging(keywords)
@@ -162,61 +201,55 @@ end
 
 """
     groebner_apply!(trace, polynomials; options...)
+    groebner_apply!(trace, batch::NTuple{N, Vector}; options...)
 
-Computes a Groebner basis of `polynomials` using the given computation `trace`.
+Computes a Groebner basis of `polynomials` using the given `trace`. The input
+`polynomials` must be an array of polynomials over a finite field.
 
-The input `polynomials` must be an array of polynomials over a finite field.
+It is possible to input a tuple of `N` arrays to compute `N` Groebner bases
+simultaneously, which could be more efficient than computing them separately.
 
-This function is *not* thread-safe.
+This function is **not** thread-safe, since it mutates the `trace`.
 
 See also `groebner_learn`.
 
+## Possible Options
+
+The `groebner_apply!` routine automatically inherits most of its parameters from
+the given `trace`.
+
 ## Example
 
-Using `groebner_learn` and `groebner_apply!` over the same ground field:
-
-```jldoctest
-using Groebner, AbstractAlgebra
-R, (x, y) = GF(2^31-1)["x", "y"]
-
-# Learn
-trace, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
-
-# Apply (same ground field, different coefficients)
-success, gb_2 = groebner_apply!(trace, [2x*y^2 + 3x, 4y*x^2 + 5y])
-
-@assert success
-```
-
-Using `groebner_learn` and `groebner_apply!` over different ground fields:
-
-```jldoctest
-using Groebner, AbstractAlgebra
-R, (x, y) = GF(2^31-1)["x", "y"]
-
-# Learn
-trace, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
-
-# Create a ring with a different modulo
-_R, (_x, _y) = GF(2^30+3)["x", "y"]
-
-# Apply (with a different modulo)
-success, gb_2 = groebner_apply!(trace, [2_x*_y^2 + 3_x, 4_y*_x^2 + 5_y])
-
-@assert success
-@assert gb_2 == groebner([2_x*_y^2 + 3_x, 4_y*_x^2 + 5_y])
-```
+For examples, see the documentation of `groebner_learn`.
 """
 function groebner_apply! end
 
 # Specialization for a single input
 function groebner_apply!(trace, polynomials::AbstractVector; options...)
+    Base.require_one_based_indexing(polynomials)
+
     keywords = KeywordsHandler(:groebner_apply!, options)
 
     setup_logging(keywords)
     setup_statistics(keywords)
 
     _groebner_apply!(trace, polynomials, keywords)::Tuple{Bool, typeof(polynomials)}
+end
+# Specialization for a batch of inputs
+function groebner_apply!(
+    trace,
+    batch::NTuple{N, T}; # deliberately not using ::Tuple{T, Vararg{T, Nminus1}}
+    options...
+) where {N, T <: AbstractVector}
+    @assert N in (1, 2, 4, 8, 16) "The batch size must be one of the following: 1, 2, 4, 8, 16"
+    all(Base.require_one_based_indexing, batch)
+
+    keywords = KeywordsHandler(:groebner_apply!, options)
+
+    setup_logging(keywords)
+    setup_statistics(keywords)
+
+    _groebner_apply!(trace, batch, keywords)::Tuple{Bool, typeof(batch)}
 end
 
 """
@@ -269,6 +302,8 @@ isgroebner([x*y^2 + x, y*x^2 + y])
 ```
 """
 function isgroebner(polynomials::AbstractVector; options...)
+    Base.require_one_based_indexing(polynomials)
+
     keywords = KeywordsHandler(:isgroebner, options)
 
     setup_logging(keywords)
@@ -316,6 +351,9 @@ normalform([y^2 + x, x^2 + y], x^2 + y^2 + 1)
 ```
 """
 function normalform(basis::AbstractVector, to_be_reduced::AbstractVector; options...)
+    Base.require_one_based_indexing(basis)
+    Base.require_one_based_indexing(to_be_reduced)
+
     keywords = KeywordsHandler(:normalform, options)
 
     setup_logging(keywords)
@@ -355,6 +393,8 @@ kbase([y^2 + x, x^2 + y])
 ```
 """
 function kbase(basis::AbstractVector; options...)
+    Base.require_one_based_indexing(basis)
+
     keywords = KeywordsHandler(:kbase, options)
 
     setup_logging(keywords)

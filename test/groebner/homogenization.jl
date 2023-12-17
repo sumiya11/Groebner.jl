@@ -4,13 +4,13 @@ import Random
 
 @testset "homogenization, basic" begin
     for field in [GF(113), GF(2^62 + 135), QQ]
-        R, x = PolynomialRing(field, "x")
+        R, x = polynomial_ring(field, "x")
         @test Groebner.groebner([x^2 - 1, (x + 1) * x^2], homogenize=:yes) == [x + 1]
         @test Groebner.groebner([x^2 - 1, (x + 1) * x^2], homogenize=:no) == [x + 1]
         @test Groebner.groebner([x^2 - 1, (x + 1) * x^2], homogenize=:auto) == [x + 1]
 
         for ordering in [:lex, :deglex, :degrevlex]
-            R, (x, y) = PolynomialRing(field, ["x", "y"], ordering=ordering)
+            R, (x, y) = polynomial_ring(field, ["x", "y"], ordering=ordering)
 
             @test Groebner.groebner([R(3)], homogenize=:yes) == [R(1)]
             @test Groebner.groebner([R(0)], homogenize=:yes) == [R(0)]
@@ -42,7 +42,7 @@ end
     for field in [GF(113), GF(2^62 + 135), QQ]
         # Test that the basis obtained with the use of homogenization
         # *coincides* with the one obtained without it
-        R, (x, y, z) = PolynomialRing(field, ["x", "y", "z"])
+        R, (x, y, z) = polynomial_ring(field, ["x", "y", "z"])
         for case in [
             (system=[R(1)], ord=Groebner.Lex()),
             (system=[R(5)], ord=Groebner.DegRevLex()),

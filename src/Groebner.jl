@@ -4,11 +4,14 @@ module Groebner
 # Groebner works over integers modulo a prime and over the rationals. At its
 # heart, Groebner implements F4, multi-modular techniques, and tracing.
 
+###
+# Global switches
+
 """
     invariants_enabled() -> Bool
 
-Specifies if custom asserts and invariants are checked.
-If `false`, then all checks are disabled, and entail no runtime overhead.
+Specifies if custom asserts and invariants are checked. If `false`, then all
+checks are disabled, and entail no runtime overhead.
 
 It is useful to enable this when debugging the Groebner package.
 
@@ -19,12 +22,25 @@ invariants_enabled() = false
 """
     logging_enabled() -> Bool
 
-Specifies if custom logging is enabled.
-If `false`, then all logging is disabled, and entails no runtime overhead.
+Specifies if logging is enabled. If `false`, then all logging in Groebner is
+disabled, and entails no runtime overhead.
 
 See also `@log` in `src/utils/logging.jl`.
 """
 logging_enabled() = true
+
+"""
+    performance_counters_enabled() -> Bool
+
+If performance-tracking macro `@timeit` should be enabled in Groebner. 
+
+When this is `false`, all performance counters in Groebner are disabled and
+entail **(almost)** no runtime overhead.
+"""
+performance_counters_enabled() = false
+
+###
+# Imports
 
 # Groebner does not provide a polynomial implementation of its own but relies on
 # existing symbolic computation packages in Julia for communicating with the
@@ -33,8 +49,11 @@ logging_enabled() = true
 import AbstractAlgebra
 import AbstractAlgebra: base_ring, elem_type
 
+import Atomix
+
 import Base: *
-import Base.Threads: Atomic, threadid, atomic_xchg!
+import Base.Threads
+import Base.Threads: nthreads, threadid
 import Base.MultiplicativeInverses: UnsignedMultiplicativeInverse
 
 import Combinatorics
@@ -50,23 +69,38 @@ import MultivariatePolynomials: AbstractPolynomial, AbstractPolynomialLike
 import PrettyTables
 using Printf
 
-import TimerOutputs
-
 import Primes
 import Primes: nextprime
 
 import Random
 import Random: AbstractRNG
 
-using SIMD
+import SIMD
+
+import TimerOutputs
+
+###
+# Initialization
+
+# Groebner is multi-threaded by default.
+# 1. Set the environment variable GROEBNER_NO_THREADED to 1 to disable all
+#    multi-threading in Groebner
+# 2. If GROEBNER_NO_THREADED=0, the keyword argument `threaded` provided by some
+#    of the functions in the interface can be used to turn on/off the threading.
+const _threaded = Ref(true)
 
 function __init__()
+    # Setup the global logger
     update_logger(loglevel=Logging.Info)
+
+    _threaded[] = !(get(ENV, "GROEBNER_NO_THREADED", "") == "1")
+
     nothing
 end
 
-# For printing some logging info to console nicely
-include("utils/prettyprinting.jl")
+###
+# Includes
+
 # Provides the `@log` macro for logging stuff
 include("utils/logging.jl")
 # Provides the `@invariant` macro
@@ -75,6 +109,8 @@ include("utils/invariants.jl")
 include("utils/timeit.jl")
 # Provides the macro `@stat` for collecting statistics
 include("utils/statistics.jl")
+
+# include("utils/versioninfo.jl")
 
 # Minimalistic plotting with Unicode
 include("utils/plots.jl")
@@ -98,6 +134,7 @@ include("monomials/packedtuples.jl")
 include("monomials/sparsevector.jl")
 
 # Defines some type aliases for Groebner
+include("arithmetic/CompositeInt.jl")
 include("utils/types.jl")
 
 # Fast arithmetic modulo a prime
@@ -166,6 +203,9 @@ include("interface.jl")
 
 using PrecompileTools
 include("precompile.jl")
+
+###
+# Exports
 
 export groebner, groebner_learn, groebner_apply!
 export isgroebner

@@ -115,7 +115,7 @@ function fglm_f4!(
         end
     end
 
-    standardize_basis!(ring, newbasis, ht, ord)
+    standardize_basis!(ring, newbasis, ht, ord, params.arithmetic)
 
     linbasis = extract_linear_basis(ring, matrix)
     newbasis, linbasis, ht
