@@ -111,7 +111,7 @@ function reduce_by_pivot_simultaneous!(
     rightexps,
     rightcfs,
     arithmetic
-) where {T <: CoeffFF}
+) where {T <: CoeffZp}
 
     # mul = -densecoeffs[i]
     # actually.. not bad!
@@ -136,7 +136,7 @@ function normalize_double_row_sparse!(
     leftcfs::Vector{T},
     rightcfs,
     arithmetic
-) where {T <: CoeffFF}
+) where {T <: CoeffZp}
     pinv = mod_p(invmod(leftcfs[1], divisor(arithmetic)), arithmetic)
     @inbounds for i in 2:length(leftcfs)
         leftcfs[i] = mod_p(leftcfs[i] * pinv, arithmetic)

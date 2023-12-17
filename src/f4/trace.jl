@@ -183,12 +183,9 @@ function get_trace!(wrapped_trace::WrappedTraceF4, polynomials::AbstractVector, 
     coefftype = trace.representation.coefftype
     ring = extract_ring(polynomials)
     if (
-        !trace.representation.using_smallest_type_for_coeffs &&
+        trace.representation.using_wide_type_for_coeffs &&
         less_than_half(ring.ch, coefftype)
-    ) || (
-        trace.representation.using_smallest_type_for_coeffs &&
-        ring.ch <= typemax(coefftype)
-    )
+    ) || (!trace.representation.using_wide_type_for_coeffs && ring.ch <= typemax(coefftype))
         return trace
     end
 

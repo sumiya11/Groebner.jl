@@ -75,7 +75,7 @@ end
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters
-) where {M <: Monom, C <: CoeffFF}
+) where {M <: Monom, C <: CoeffZp}
     # NOTE: we can mutate ring, monoms, and coeffs here.
     @log level = -1 "Backend: F4 over Z_$(ring.ch)"
     # NOTE: the sorting of input polynomials is not deterministic across
@@ -268,7 +268,7 @@ function _groebner_learn_and_apply(
                 params_zp_4x = params_mod_p(
                     params,
                     CompositeInt{4, Int32}(prime_4x),
-                    using_smallest_type_for_coeffs=true
+                    using_wide_type_for_coeffs=false
                 )
                 @log level = -1 "!!!! Here!" params_zp_4x
                 # println(basis_ff_4x.coeffs)

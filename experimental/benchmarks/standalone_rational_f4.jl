@@ -11,7 +11,6 @@ global_logger(ConsoleLogger(stderr, Logging.Error))
 BenchmarkTools.DEFAULT_PARAMETERS.samples = 5
 
 function benchmark_system_my(system)
-    system = Groebner.change_ordering(system, :degrevlex)
     Groebner.groebner([system[1]])
 
     # gb = Groebner.groebner(system)
@@ -23,25 +22,24 @@ function benchmark_system_my(system)
 end
 
 function benchmark_system_my_certify(system)
-    system = Groebner.change_ordering(system, :degrevlex)
     Groebner.groebner([system[1]])
 
     # gb = Groebner.groebner(system)
     # println("length = $(length(gb))")
     # println("degree = $(maximum(AbstractAlgebra.total_degree, gb))")
 
-    @btime gb = Groebner.groebner($system, reduced=false, linalg=:prob)
+    @btime gb = Groebner.groebner($system)
     # gb = Groebner.groebner(system, reduced=false)
 end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
-        ("siwr", read_SIWR()),
-        ("sear", read_SEAIJRC()),
-        ("root 11", Groebner.rootn(11, ground=ground)),
-        ("noon 7", Groebner.noonn(7, ground=ground)),
-        ("eco 10", Groebner.eco10(ground=ground)),
-        ("katsura 8", Groebner.katsuran(8, ground=ground))
+        # ("siwr", read_SIWR()),
+        # ("sear", read_SEAIJRC()),
+        ("root 11", Groebner.rootn(11, ground=ground, ordering=:degrevlex)),
+        ("noon 7", Groebner.noonn(7, ground=ground, ordering=:degrevlex)),
+        ("eco 10", Groebner.eco10(ground=ground, ordering=:degrevlex)),
+        ("katsura 8", Groebner.katsuran(8, ground=ground, ordering=:degrevlex))
     ]
 
     println()

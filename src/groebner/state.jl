@@ -61,7 +61,7 @@ mutable struct GroebnerState{T1 <: CoeffZZ, T2 <: CoeffQQ, T3}
     buffer::CoefficientBuffer
     function GroebnerState{T1, T2, T3}(
         params
-    ) where {T1 <: CoeffZZ, T2 <: CoeffQQ, T3 <: CoeffFF}
+    ) where {T1 <: CoeffZZ, T2 <: CoeffQQ, T3 <: CoeffZp}
         new(
             Vector{Vector{T1}}(),
             Vector{Vector{T1}}(),
@@ -76,11 +76,6 @@ mutable struct GroebnerState{T1 <: CoeffZZ, T2 <: CoeffQQ, T3}
             CoefficientBuffer()
         )
     end
-end
-
-# TODO :)
-function majority_vote!(state, basis_ff, tracer, params)
-    true
 end
 
 function common_denominator!(den::BigInt, coeffs::Vector{T}) where {T <: CoeffQQ}
@@ -159,7 +154,7 @@ function reduce_modulo_p!(
     coeffs_zz::Vector{Vector{T1}},
     coeffs_ff::Vector{Vector{T2}},
     prime::T2
-) where {T1 <: CoeffZZ, T2 <: CoeffFF}
+) where {T1 <: CoeffZZ, T2 <: CoeffZp}
     p   = coeffbuff.reducebuf1
     buf = coeffbuff.reducebuf2
     c   = coeffbuff.reducebuf3
@@ -182,7 +177,7 @@ function reduce_modulo_p!(
     ring,
     coeffs_zz::Vector{Vector{T1}},
     prime::T2
-) where {T1 <: CoeffZZ, T2 <: CoeffFF}
+) where {T1 <: CoeffZZ, T2 <: CoeffZp}
     coeffs_ff = [Vector{CoeffModular}(undef, length(c)) for c in coeffs_zz]
     ring_ff, coeffs_ff = reduce_modulo_p!(ring, coeffbuff, coeffs_zz, coeffs_ff, prime)
     ring_ff, coeffs_ff

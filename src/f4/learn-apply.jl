@@ -442,7 +442,7 @@ function symbolic_preprocessing!(
     matrix.nrows_filled_upper = nup
 end
 
-function reducegb_f4_apply!(
+function autoreduce_f4_apply!(
     trace::TraceF4,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -606,7 +606,7 @@ end
     if params.reduced
         @log level = -5 "Autoreducing the final basis.."
         symbol_ht = initialize_secondary_hashtable(hashtable)
-        flag = reducegb_f4_apply!(
+        flag = autoreduce_f4_apply!(
             trace,
             basis,
             matrix,

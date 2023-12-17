@@ -222,7 +222,7 @@ end
 @timeit function normalize_basis!(
     basis::Basis{C},
     arithmetic::AbstractArithmeticZp{A, C}
-) where {A <: Union{CoeffFF, CompositeCoeffFF}, C <: Union{CoeffFF, CompositeCoeffFF}}
+) where {A <: Union{CoeffZp, CompositeCoeffZp}, C <: Union{CoeffZp, CompositeCoeffZp}}
     @log level = -5 "Normalizing polynomials in the basis"
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.nfilled)

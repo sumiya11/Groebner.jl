@@ -141,7 +141,7 @@ end
 end
 
 # Performs autoreduction of basis elements inplace
-function reducegb_f4!(
+function autoreduce_f4!(
     ring::PolyRing,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -787,7 +787,7 @@ end
 
     if params.reduced
         @log level = -4 "Autoreducing the final basis.."
-        reducegb_f4!(ring, basis, matrix, hashtable, symbol_ht, params)
+        autoreduce_f4!(ring, basis, matrix, hashtable, symbol_ht, params)
     end
 
     standardize_basis!(ring, basis, hashtable, hashtable.ord, params.arithmetic)

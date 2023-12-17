@@ -156,6 +156,7 @@ function linear_algebra_isgroebner!(
 end
 
 ###
+# Dispatching between linear algebra algorithms
 
 function linear_algebra!(
     matrix::MacaulayMatrix,
@@ -193,7 +194,6 @@ function linear_algebra!(
 end
 
 # Linear algebra with a learned trace of computation
-# TODO: rename to linear_algebra_use_trace! or something
 function linear_algebra_with_trace!(
     trace::TraceF4,
     matrix::MacaulayMatrix,
@@ -479,10 +479,10 @@ end
 
 function dense_row_mod_p!(
     row::Vector{T},
-    arithmetic::AbstractArithmeticZp,
+    arithmetic::AbstractArithmeticZp{T},
     from::Int=1,
     to::Int=length(row)
-) where {T <: Union{CoeffFF, CompositeCoeffFF}}
+) where {T <: Union{CoeffZp, CompositeCoeffZp}}
     # NOTE: This loop is usually successfully vectorized by the compiler for all
     # kinds of arithmetic. Still, the resulting native code may be not optimal
     @fastmath @inbounds for i in from:to
@@ -496,13 +496,11 @@ function normalize_row!(
     row::Vector{T},
     arithmetic::AbstractArithmeticZp{A, T},
     first_nnz_index::Int=1
-) where {A <: Union{CoeffFF, CompositeCoeffFF}, T <: Union{CoeffFF, CompositeCoeffFF}}
+) where {A <: Union{CoeffZp, CompositeCoeffZp}, T <: Union{CoeffZp, CompositeCoeffZp}}
     @invariant @inbounds !iszero(row[first_nnz_index])
 
     lead = row[first_nnz_index]
-    @inbounds if isone(lead)
-        return row
-    end
+    isone(lead) && return row
 
     @inbounds pinv = inv_mod_p(A(lead), arithmetic) % T
     @inbounds row[1] = one(T)
@@ -516,15 +514,13 @@ end
 # Normalize the row to have the leading coefficient equal to 1
 function normalize_row!(
     row::Vector{T},
-    arithmetic::AbstractArithmeticQQ,
+    arithmetic::AbstractArithmeticQQ{T},
     first_nnz_index::Int=1
 ) where {T <: CoeffQQ}
     @invariant @inbounds !iszero(row[first_nnz_index])
 
     lead = row[first_nnz_index]
-    @inbounds if isone(lead)
-        return row
-    end
+    isone(lead) && return row
 
     @inbounds pinv = inv(lead)
     @inbounds row[1] = one(T)
@@ -535,20 +531,21 @@ function normalize_row!(
     row
 end
 
-# Linear combination of dense vector and sparse vector modulo a prime
+# Linear combination of dense vector and sparse vector modulo a prime.
+# The most generic version.
 function reduce_dense_row_by_sparse_row_mod_p!(
     row::Vector{A},
     indices::Vector{I},
     coeffs::Vector{T},
     arithmetic::AbstractArithmeticZp
-) where {I, A <: Union{CoeffFF, CompositeCoeffFF}, T <: Union{CoeffFF, CompositeCoeffFF}}
+) where {I, A <: Union{CoeffZp, CompositeCoeffZp}, T <: Union{CoeffZp, CompositeCoeffZp}}
     @invariant isone(coeffs[1])
     @invariant length(indices) == length(coeffs)
 
     @inbounds mul = divisor(arithmetic) - row[indices[1]]
     @inbounds for j in 1:length(indices)
         idx = indices[j]
-        # if A === T, then the type cast must compile out
+        # if A === T, then the type cast is a no-op
         a = row[idx] + A(mul) * A(coeffs[j])
         row[idx] = mod_p(a, arithmetic)
     end
@@ -556,19 +553,21 @@ function reduce_dense_row_by_sparse_row_mod_p!(
     nothing
 end
 
-# Linear combination of dense vector and sparse vector
+# Linear combination of dense vector and sparse vector.
+# The most generic version.
 function reduce_dense_row_by_sparse_row!(
     row::Vector{A},
     indices::Vector{I},
     coeffs::Vector{T},
     arithmetic::AbstractArithmeticZp
-) where {I, A <: Union{CoeffFF, CompositeCoeffFF}, T <: Union{CoeffFF, CompositeCoeffFF}}
+) where {I, A <: Union{CoeffZp, CompositeCoeffZp}, T <: Union{CoeffZp, CompositeCoeffZp}}
     @invariant isone(coeffs[1])
     @invariant length(indices) == length(coeffs)
 
     @inbounds mul = divisor(arithmetic) - row[indices[1]]
     @inbounds for j in 1:length(indices)
         idx = indices[j]
+        # if A === T, then the type cast is a no-op
         a = row[idx] + A(mul) * A(coeffs[j])
         row[idx] = a
     end
@@ -576,19 +575,21 @@ function reduce_dense_row_by_sparse_row!(
     nothing
 end
 
-# Specialization for SignedArithmeticZp
+# Linear combination of dense vector and sparse vector.
+# Specialization for SignedArithmeticZp.
 function reduce_dense_row_by_sparse_row!(
     row::Vector{A},
     indices::Vector{I},
     coeffs::Vector{T},
     arithmetic::SignedArithmeticZp{A, T}
-) where {I, A <: CoeffFF, T <: CoeffFF}
+) where {I, A <: CoeffZp, T <: CoeffZp}
     @invariant isone(coeffs[1])
     @invariant length(indices) == length(coeffs)
 
-    p2 = arithmetic.p2
     # NOTE: mul is guaranteed to be < typemax(T)
+    p2 = arithmetic.p2
     @inbounds mul = row[indices[1]] % T
+
     @fastmath @inbounds for j in 1:length(indices)
         idx = indices[j]
         a = row[idx] - A(mul) * A(coeffs[j])
@@ -599,17 +600,21 @@ function reduce_dense_row_by_sparse_row!(
     nothing
 end
 
+# Linear combination of dense vector and sparse vector.
+# Specialization for SignedCompositeArithmeticZp.
 function reduce_dense_row_by_sparse_row!(
     row::Vector{CompositeInt{N, A}},
     indices::Vector{I},
     coeffs::Vector{CompositeInt{N, T}},
     arithmetic::SignedCompositeArithmeticZp{CompositeInt{N, A}, CompositeInt{N, T}}
-) where {I, A <: CoeffFF, T <: CoeffFF, N}
+) where {I, A <: CoeffZp, T <: CoeffZp, N}
     @invariant isone(coeffs[1])
     @invariant length(indices) == length(coeffs)
 
+    # NOTE: mul is guaranteed to be < typemax(T)
     p2 = arithmetic.p2s
     @inbounds mul = row[indices[1]].data .% T
+
     @fastmath @inbounds for j in 1:length(indices)
         idx = indices[j]
         a = row[idx].data .- A.(mul) .* A.(coeffs[j].data)
@@ -620,13 +625,14 @@ function reduce_dense_row_by_sparse_row!(
     nothing
 end
 
-# Linear combination of dense vector and sparse vector
+# Linear combination of dense vector and sparse vector.
+# Specialization for AbstractArithmeticQQ.
 function reduce_dense_row_by_sparse_row!(
     row::Vector{T},
     indices::Vector{I},
     coeffs::Vector{T},
-    arithmetic::A
-) where {I, T <: CoeffQQ, A <: AbstractArithmeticQQ}
+    arithmetic::AbstractArithmeticQQ{T}
+) where {I, T <: CoeffQQ}
     @invariant isone(coeffs[1])
     @invariant length(indices) == length(coeffs)
 
@@ -645,7 +651,7 @@ function reduce_dense_row_by_dense_row_mod_p!(
     row2::Vector{T},
     mul::T,
     arithmetic::AbstractArithmeticZp
-) where {T <: Union{CoeffFF, CompositeCoeffFF}}
+) where {T <: Union{CoeffZp, CompositeCoeffZp}}
     @invariant length(row1) == length(row2)
 
     @inbounds mul = divisor(arithmetic) - mul
@@ -673,13 +679,13 @@ function reduce_dense_row_by_dense_row_mod_p!(
     nothing
 end
 
-# Load the coefficients from `coeffs` into dense `row` at `indices`. Zero the
-# entries of `row` before that.
+# Load the contiguous coefficients from `coeffs` into dense `row` at `indices`.
+# Zero the entries of `row` before that.
 function load_sparse_row!(
     row::Vector{A},
     indices::Vector{I},
     coeffs::Vector{T}
-) where {I, A <: Union{CoeffFF, CompositeCoeffFF}, T <: Union{CoeffFF, CompositeCoeffFF}}
+) where {I, A <: Union{CoeffZp, CompositeCoeffZp}, T <: Union{CoeffZp, CompositeCoeffZp}}
     @invariant length(indices) == length(coeffs)
 
     @inbounds for i in 1:length(row)
@@ -693,8 +699,8 @@ function load_sparse_row!(
     nothing
 end
 
-# Load the coefficients from `coeffs` into dense `row` at `indices`. Zero the
-# entries of `row` before that.
+# Load the contiguous coefficients from `coeffs` into dense `row` at `indices`.
+# Zero the entries of `row` before that.
 function load_sparse_row!(
     row::Vector{T},
     indices::Vector{I},
@@ -720,7 +726,7 @@ function extract_sparse_row!(
     from::J,
     to::J
 ) where {I, J, T <: Coeff, A <: Coeff}
-    # NOTE: also assumes the provided sparse row has the necessary capacity
+    # NOTE: also assumes that the provided sparse row has the necessary capacity
     # allocated
     @invariant length(indices) == length(coeffs)
     @invariant 1 <= from <= to <= length(row)
@@ -739,6 +745,10 @@ function extract_sparse_row!(
     j - 1
 end
 
+# Traverses the dense `row` at positions `from..to` and extracts all nonzero
+# entries to the given sparse row. Returns the number of extracted nonzero
+# elements.
+# Specialization with eltype(coeffs) == eltype(row)
 function extract_sparse_row!(
     indices::Vector{I},
     coeffs::Vector{T},
@@ -746,7 +756,7 @@ function extract_sparse_row!(
     from::J,
     to::J
 ) where {I, J, T <: Coeff}
-    # NOTE: also assumes the provided sparse row has the necessary capacity
+    # NOTE: also assumes that the provided sparse row has the necessary capacity
     # allocated
     @invariant length(indices) == length(coeffs)
     @invariant 1 <= from <= to <= length(row)
@@ -785,7 +795,7 @@ end
 ###
 # Linear algebra, low level
 
-# Given a matrix of the form, where A is in REF,
+# Given a matrix of the following form, where A is in REF,
 #   A B
 #   C D
 # reduces the lower part CD with respect to the upper part AB.
@@ -916,7 +926,7 @@ function _reduce_matrix_lower_part_threaded_cas_worker!(
                 Int8(0),
                 Int8(1),
                 Atomix.seq_cst,
-                Atomix.seq_cst
+                Atomix.monotonic
             )
 
             if success
@@ -2213,7 +2223,7 @@ function reduce_dense_row_by_pivots_sparse!(
     tmp_pos::Integer=-1,
     exact_column_mapping::Bool=false,
     computing_rref::Bool=false
-) where {I, C <: Union{CoeffFF, CompositeCoeffFF}, A <: Union{CoeffFF, CompositeCoeffFF}}
+) where {I, C <: Union{CoeffZp, CompositeCoeffZp}, A <: Union{CoeffZp, CompositeCoeffZp}}
     _, ncols = size(matrix)
     nleft, _ = ncols_filled(matrix)
 
@@ -2296,7 +2306,7 @@ function reduce_dense_row_by_pivots_sparse!(
     tmp_pos::Integer=-1,
     exact_column_mapping::Bool=false,
     computing_rref::Bool=false
-) where {I, C <: CoeffFF, A <: CoeffFF}
+) where {I, C <: CoeffZp, A <: CoeffZp}
     _, ncols = size(matrix)
     nleft, _ = ncols_filled(matrix)
 
@@ -2389,7 +2399,7 @@ function reduce_dense_row_by_pivots_sparse!(
     tmp_pos::Integer=-1,
     exact_column_mapping::Bool=false,
     computing_rref::Bool=false
-) where {I, C <: Union{CoeffFF, CompositeCoeffFF}, A <: Union{CoeffFF, CompositeCoeffFF}}
+) where {I, C <: Union{CoeffZp, CompositeCoeffZp}, A <: Union{CoeffZp, CompositeCoeffZp}}
     _, ncols = size(matrix)
     nleft, _ = ncols_filled(matrix)
 

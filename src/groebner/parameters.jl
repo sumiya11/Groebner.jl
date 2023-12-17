@@ -1,4 +1,4 @@
-# Select parameters for Groebner basis computation
+# Select parameters in Groebner basis computation
 
 # It seems there is no Xoshiro rng in Julia v < 1.8.
 # Use Random.Xoshiro, if available, as it is a bit faster.
@@ -56,7 +56,7 @@ mutable struct AlgorithmParameters{
     # This can hold buffers or precomputed multiplicative inverses to speed up
     # the arithmetic in the ground field
     arithmetic::Arithmetic
-    using_smallest_type_for_coeffs::Bool
+    using_wide_type_for_coeffs::Bool
 
     # If reduced Groebner basis is needed
     reduced::Bool
@@ -171,10 +171,10 @@ function AlgorithmParameters(
     linalg_algorithm = LinearAlgebra(linalg, linalg_sparsity)
 
     arithmetic = select_arithmetic(
-        ring.ch,
         representation.coefftype,
+        ring.ch,
         kwargs.arithmetic,
-        representation.using_smallest_type_for_coeffs
+        representation.using_wide_type_for_coeffs
     )
 
     ground = :zp
@@ -242,7 +242,7 @@ function AlgorithmParameters(
     linalg = $linalg_algorithm
     threaded = $threaded
     arithmetic = $arithmetic
-    using_smallest_type_for_coeffs = $(representation.using_smallest_type_for_coeffs)
+    using_wide_type_for_coeffs = $(representation.using_wide_type_for_coeffs)
     reduced = $reduced
     homogenize = $homogenize
     maxpairs = $maxpairs
@@ -267,7 +267,7 @@ function AlgorithmParameters(
         kwargs.check,
         linalg_algorithm,
         arithmetic,
-        representation.using_smallest_type_for_coeffs,
+        representation.using_wide_type_for_coeffs,
         reduced,
         maxpairs,
         selection_strategy,
@@ -286,12 +286,12 @@ end
 function params_mod_p(
     params::AlgorithmParameters,
     prime::C;
-    using_smallest_type_for_coeffs=nothing
+    using_wide_type_for_coeffs=nothing
 ) where {C <: Coeff}
-    smallest_type_for_coeffs = if !isnothing(using_smallest_type_for_coeffs)
-        using_smallest_type_for_coeffs
+    is_wide_type_coeffs = if !isnothing(using_wide_type_for_coeffs)
+        using_wide_type_for_coeffs
     else
-        params.using_smallest_type_for_coeffs
+        params.using_wide_type_for_coeffs
     end
     AlgorithmParameters(
         params.target_ord,
@@ -303,8 +303,8 @@ function params_mod_p(
         params.homogenize,
         params.check,
         params.linalg,
-        select_arithmetic(prime, C, :auto, smallest_type_for_coeffs),
-        smallest_type_for_coeffs,
+        select_arithmetic(C, prime, :auto, is_wide_type_coeffs),
+        is_wide_type_coeffs,
         params.reduced,
         params.maxpairs,
         params.selection_strategy,

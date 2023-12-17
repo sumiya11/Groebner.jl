@@ -36,7 +36,7 @@ Polynomial ring of computation.
 """
 mutable struct PolyRing{
     Ord <: Union{AbstractMonomialOrdering, AbstractInternalOrdering},
-    C <: Union{CoeffFF, CompositeCoeffFF}
+    C <: Union{CoeffZp, CompositeCoeffZp}
 }
     # Number of variables
     nvars::Int
@@ -57,10 +57,10 @@ Internal representation of polynomials.
 struct PolynomialRepresentation
     monomtype::Type
     coefftype::Type
-    # NOTE: If this field is true, then any implementation of the arithmetic in
+    # NOTE: If this field is false, then any implementation of the arithmetic in
     # Z/Zp must cast the coefficients into a wider integer type before
     # performing any arithmetic operations to avoid the risk of overflow.
-    using_smallest_type_for_coeffs::Bool
+    using_wide_type_for_coeffs::Bool
 end
 
 """
@@ -83,7 +83,8 @@ function select_polynomial_representation(
     end
     frontend, npolys, char, nvars, ordering = peek_at_polynomials(polynomials)
     monomtype = select_monomtype(char, npolys, nvars, ordering, kws, hint)
-    coefftype = select_coefftype(char, npolys, nvars, ordering, kws, hint)
+    coefftype, using_wide_type_for_coeffs =
+        select_coefftype(char, npolys, nvars, ordering, kws, hint)
     basering = iszero(char) ? :qq : :zp
     @log level = -1 "Frontend: $frontend"
     @log level = -1 """
@@ -92,8 +93,9 @@ function select_polynomial_representation(
     @log level = -1 """
     Internal representation: 
     monomials are $monomtype
-    coefficients are $coefftype"""
-    PolynomialRepresentation(monomtype, coefftype, false)
+    coefficients are $coefftype
+    wide type for coefficients: $using_wide_type_for_coeffs"""
+    PolynomialRepresentation(monomtype, coefftype, using_wide_type_for_coeffs)
 end
 
 function select_monomtype(char, npolys, nvars, ordering, kws, hint)
@@ -223,7 +225,7 @@ function select_coefftype(char, npolys, nvars, ordering, kws, hint)
     Given hint hint=$hint. Keyword argument arithmetic=$(kws.arithmetic)"""
 
     if iszero(char)
-        return Rational{BigInt}
+        return Rational{BigInt}, true
     end
     @assert char > 0
 
@@ -234,7 +236,7 @@ function select_coefftype(char, npolys, nvars, ordering, kws, hint)
         )
     end
 
-    using_smallest_type_for_coeffs = false
+    using_wide_type_for_coeffs = true
     tight_signed_type = get_tight_signed_int_type(char)
 
     # If the requested arithmetic requires a signed representation
@@ -243,19 +245,19 @@ function select_coefftype(char, npolys, nvars, ordering, kws, hint)
            typemax(Int64) < char < typemax(UInt64)
             @log level = 1_000 "Cannot use $(kws.arithmetic) arithmetic with characteristic $char"
             @assert false
-        elseif using_smallest_type_for_coeffs
-            return tight_signed_type
+        elseif !using_wide_type_for_coeffs
+            return tight_signed_type, using_wide_type_for_coeffs
         else
-            return widen(tight_signed_type)
+            return widen(tight_signed_type), using_wide_type_for_coeffs
         end
     end
 
     tight_unsigned_type = get_tight_unsigned_int_type(char)
-    if using_smallest_type_for_coeffs
+    if !using_wide_type_for_coeffs
         tight_unsigned_type
     else
         widen(tight_unsigned_type)
-    end
+    end, using_wide_type_for_coeffs
 end
 
 ###
@@ -395,7 +397,7 @@ end
 
 function unpack_composite_coefficients(
     composite_coeffs::Vector{Vector{CompositeInt{2, T}}}
-) where {T <: CoeffFF}
+) where {T <: CoeffZp}
     coeffs_part_1 = Vector{Vector{T}}(undef, length(composite_coeffs))
     coeffs_part_2 = Vector{Vector{T}}(undef, length(composite_coeffs))
     # TODO: Transpose this loop
@@ -413,7 +415,7 @@ end
 
 function unpack_composite_coefficients(
     composite_coeffs::Vector{Vector{CompositeInt{N, T}}}
-) where {N, T <: CoeffFF}
+) where {N, T <: CoeffZp}
     coeffs_part_i = ntuple(_ -> Vector{Vector{T}}(undef, length(composite_coeffs)), N)
     @inbounds for i in 1:length(composite_coeffs)
         for k in 1:N

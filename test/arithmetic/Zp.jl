@@ -24,10 +24,11 @@
         Groebner.SignedArithmeticZp(signed(A), signed(C), signed(modulo)),
         Groebner.SpecializedArithmeticZp(A, C, modulo)
     ]
-        for _ in 1:10
+        for _ in 1:1000
             T = typeof(Groebner.divisor(arithmetic))
             x = rand(T)
             @test Groebner.mod_p(T(x), arithmetic) == Base.mod(x, T(modulo))
+            @test Groebner.inv_mod_p(T(x), arithmetic) == Base.invmod(T(x), T(modulo))
         end
     end
 end

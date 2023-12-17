@@ -1,4 +1,4 @@
-# Exposes learn and apply strategy to user
+# Backends for `groebner_learn` & `groebner_apply!`
 
 ###
 # Learn stage
@@ -66,7 +66,7 @@ function _groebner_learn(
     monoms,
     coeffs::Vector{Vector{C}},
     params
-) where {C <: CoeffFF}
+) where {C <: CoeffZp}
     @log level = -2 "Groebner learn phase over Z_p"
     # Initialize F4 structs
     trace, basis, pairset, hashtable =

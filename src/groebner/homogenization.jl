@@ -1,3 +1,4 @@
+# Homogenization & saturation
 
 function maximum_totaldeg(ring::PolyRing, monoms::Vector{Vector{T}}) where {T}
     D = zero(T)

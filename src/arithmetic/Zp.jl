@@ -1,9 +1,21 @@
 # Arithmetic in Zp.
 
-# All implementations of arithmetic are a subtype of this
+# All implementations of arithmetic are a subtype of this.
+#
+# The arithmetic is parametrized by the type of the accumulator and the type of
+# the coefficient. Generally, AccumType should be picked so that the result of
+#   a + b*c
+# is representable exactly in AccumType for feasible  a,b,c of type CoeffType. 
+# One common example is AccumType = UInt64 and CoeffType = UInt32
 abstract type AbstractArithmetic{AccumType, CoeffType} end
 
-# All implementations of arithmetic in Zp are a subtype of this
+# All implementations of arithmetic in Zp are a subtype of this.
+#
+# Implementations of AbstractArithmeticZp need to implement three functions to
+# be usable in F4:
+# - divisor(arithmetic)      : returns the prime number p that defines Z/pZ
+# - mod_p(x, arithmetic)     : returns x modulo p
+# - inv_mod_p(x, arithmetic) : returns x^(-1) modulo p
 abstract type AbstractArithmeticZp{AccumType, CoeffType} <:
               AbstractArithmetic{AccumType, CoeffType} end
 
@@ -12,7 +24,7 @@ abstract type AbstractArithmeticZp{AccumType, CoeffType} <:
 
 less_than_half(p, ::Type{T}) where {T} = p < (typemax(T) >> ((8 >> 1) * sizeof(T)))
 
-# Modular arithmetic based on builtin classes in `Base.MultiplicativeInverses`
+# Modular arithmetic based on builtin classes in `Base.MultiplicativeInverses`. 
 struct ArithmeticZp{AccumType, CoeffType} <: AbstractArithmeticZp{AccumType, CoeffType}
     # magic contains the precomputed multiplicative inverse of the divisor
     magic::UnsignedMultiplicativeInverse{AccumType}
@@ -23,8 +35,9 @@ struct ArithmeticZp{AccumType, CoeffType} <: AbstractArithmeticZp{AccumType, Coe
         ::Type{AccumType},
         ::Type{CoeffType},
         p::CoeffType
-    ) where {AccumType <: CoeffFF, CoeffType <: CoeffFF}
+    ) where {AccumType <: CoeffZp, CoeffType <: CoeffZp}
         @invariant less_than_half(p, AccumType)
+        @invariant Primes.isprime(p)
         new{AccumType, CoeffType}(
             UnsignedMultiplicativeInverse{AccumType}(convert(AccumType, p))
         )
@@ -42,6 +55,9 @@ inv_mod_p(a::T, arithm::ArithmeticZp{T}) where {T} = invmod(a, divisor(arithm))
 
 # Same as ArithmeticZp, but stores the fields inline and additionally
 # specializes on magic.add
+# NOTE: can specialize even further if we only consider the primes such that
+# shift = 0. However, the number of such primes is perhaps < 100 in the range
+# 1..2^64 
 struct SpecializedArithmeticZp{AccumType, CoeffType, Add} <:
        AbstractArithmeticZp{AccumType, CoeffType}
     multiplier::AccumType
@@ -55,8 +71,9 @@ struct SpecializedArithmeticZp{AccumType, CoeffType, Add} <:
         ::Type{AccumType},
         ::Type{CoeffType},
         p::CoeffType
-    ) where {AccumType <: CoeffFF, CoeffType <: CoeffFF}
+    ) where {AccumType <: CoeffZp, CoeffType <: CoeffZp}
         @invariant less_than_half(p, AccumType)
+        @invariant Primes.isprime(p)
         uinv = UnsignedMultiplicativeInverse{AccumType}(convert(AccumType, p))
         SpecializedArithmeticZp(AccumType, CoeffType, uinv)
     end
@@ -65,7 +82,7 @@ struct SpecializedArithmeticZp{AccumType, CoeffType, Add} <:
         ::Type{AccumType},
         ::Type{CoeffType},
         uinv::UnsignedMultiplicativeInverse{AccumType}
-    ) where {AccumType <: CoeffFF, CoeffType <: CoeffFF}
+    ) where {AccumType <: CoeffZp, CoeffType <: CoeffZp}
         new{AccumType, CoeffType, uinv.add}(uinv.multiplier, uinv.shift, uinv.divisor)
     end
 end
@@ -87,11 +104,11 @@ function _mul_high(a::UInt128, b::UInt128)
     a1b1 + (a1b2 >>> shift) + (a2b1 >>> shift) + carry
 end
 
-# NOTE: the compiler usually fails to simd this for T = UInt32 and T = UInt64.
-# However, with T = UInt8 and T = UInt16, it uses the simd mulhi instructions
-# such as pmulhuw.
+# NOTE: the compiler usually fails to simd this operation for T = UInt32 and T =
+# UInt64. However, with T = UInt8 and T = UInt16, it uses the simd mulhi
+# instructions such as pmulhuw.
 # Our attempts to emulate pmulhuw for T = UInt32 while preserving the
-# performance and portability were not successful.
+# performance and portability were not very promising.
 #
 # a modulo p (addition specialization)
 function mod_p(a::T, mod::SpecializedArithmeticZp{T, C, true}) where {T, C}
@@ -110,8 +127,8 @@ inv_mod_p(a::T, arithm::SpecializedArithmeticZp{T}) where {T} = invmod(a, diviso
 ###
 # DelayedArithmeticZp
 
-# Same as SpecializedArithmeticZp, but also exploits the case when the
-# representation of the modulo has spare leading bits
+# Exploits the case when the representation of the prime has spare leading bits
+# and thus delays reduction modulo a prime
 struct DelayedArithmeticZp{AccumType, CoeffType, Add} <:
        AbstractArithmeticZp{AccumType, CoeffType}
     multiplier::AccumType
@@ -125,9 +142,10 @@ struct DelayedArithmeticZp{AccumType, CoeffType, Add} <:
         ::Type{AccumType},
         ::Type{CoeffType},
         p::CoeffType
-    ) where {AccumType <: CoeffFF, CoeffType <: CoeffFF}
+    ) where {AccumType <: CoeffZp, CoeffType <: CoeffZp}
         @invariant less_than_half(p, AccumType)
         @invariant leading_zeros(p) > 0
+        @invariant Primes.isprime(p)
         uinv = UnsignedMultiplicativeInverse{AccumType}(convert(AccumType, p))
         DelayedArithmeticZp(AccumType, CoeffType, uinv)
     end
@@ -136,7 +154,7 @@ struct DelayedArithmeticZp{AccumType, CoeffType, Add} <:
         ::Type{AccumType},
         ::Type{CoeffType},
         uinv::UnsignedMultiplicativeInverse{AccumType}
-    ) where {AccumType <: CoeffFF, CoeffType <: CoeffFF}
+    ) where {AccumType <: CoeffZp, CoeffType <: CoeffZp}
         new{AccumType, CoeffType, uinv.add}(uinv.multiplier, uinv.shift, uinv.divisor)
     end
 end
@@ -170,7 +188,7 @@ inv_mod_p(a::T, arithm::DelayedArithmeticZp{T}) where {T} = invmod(a, divisor(ar
 ###
 # CompositeArithmeticZp
 
-# Operates on several integers at once
+# Can operate on several integers at once
 struct CompositeArithmeticZp{AccumType, CoeffType, TT} <:
        AbstractArithmeticZp{AccumType, CoeffType}
     arithmetics::TT
@@ -179,7 +197,7 @@ struct CompositeArithmeticZp{AccumType, CoeffType, TT} <:
         ::Type{CompositeInt{2, AccumType}},
         ::Type{CompositeInt{2, CoeffType}},
         p::CompositeInt{2, CoeffType}
-    ) where {AccumType <: CoeffFF, CoeffType <: CoeffFF}
+    ) where {AccumType <: CoeffZp, CoeffType <: CoeffZp}
         a1 = SpecializedArithmeticZp(AccumType, CoeffType, p.data[1])
         a2 = SpecializedArithmeticZp(AccumType, CoeffType, p.data[2])
         new{
@@ -190,21 +208,24 @@ struct CompositeArithmeticZp{AccumType, CoeffType, TT} <:
     end
 
     function CompositeArithmeticZp(
-        ::Type{CompositeInt{4, AccumType}},
-        ::Type{CompositeInt{4, CoeffType}},
-        p::CompositeInt{4, CoeffType}
-    ) where {AccumType <: CoeffFF, CoeffType <: CoeffFF}
-        a1, a2, a3, a4 = map(a -> SpecializedArithmeticZp(AccumType, CoeffType, a), p.data)
+        ::Type{CompositeInt{N, AccumType}},
+        ::Type{CompositeInt{N, CoeffType}},
+        p::CompositeInt{N, CoeffType}
+    ) where {N, AccumType <: CoeffZp, CoeffType <: CoeffZp}
+        ai = ntuple(i -> SpecializedArithmeticZp(AccumType, CoeffType, p.data[i]), N)
         new{
-            CompositeInt{4, AccumType},
-            CompositeInt{4, CoeffType},
-            Tuple{typeof(a1), typeof(a2), typeof(a3), typeof(a4)}
-        }((a1, a2, a3, a4))
+            CompositeInt{N, AccumType},
+            CompositeInt{N, CoeffType},
+            Tuple{map(typeof, ai)...}
+        }(
+            ai
+        )
     end
 end
 
 divisor(arithm::CompositeArithmeticZp) = CompositeInt(map(divisor, arithm.arithmetics))
 
+# No chance vectorizing this!
 function mod_p(a::CompositeInt{2, T}, arithm::CompositeArithmeticZp) where {T}
     a1 = mod_p(a.data[1], arithm.arithmetics[1])
     a2 = mod_p(a.data[2], arithm.arithmetics[2])
@@ -226,6 +247,7 @@ end
 ###
 # SignedArithmeticZp
 
+# Uses signed types and exploits the trick with adding p^2 to negative values
 struct SignedArithmeticZp{AccumType, CoeffType} <:
        AbstractArithmeticZp{AccumType, CoeffType}
     p::AccumType
@@ -242,7 +264,8 @@ struct SignedArithmeticZp{AccumType, CoeffType} <:
         ::Type{AccumType},
         ::Type{CoeffType},
         p::CoeffType
-    ) where {AccumType <: CoeffFF, CoeffType <: CoeffFF}
+    ) where {AccumType <: CoeffZp, CoeffType <: CoeffZp}
+        @invariant Primes.isprime(p)
         pa = convert(AccumType, p)
         magic = Base.MultiplicativeInverses.SignedMultiplicativeInverse(pa)
         new{AccumType, CoeffType}(pa, pa * pa, magic.multiplier, magic.addmul, magic.shift)
@@ -256,19 +279,17 @@ function mod_p(a::T, mod::SignedArithmeticZp{T}) where {T}
     x += a * mod.addmul
     d = (signbit(x) + (x >> mod.shift)) % T
     res = a - d * mod.p
-    res = ifelse(res >= T(0), res, res + mod.p)
-    ifelse(res > divisor(mod), res - divisor(mod), res)
+    ifelse(res >= zero(T), res, res + mod.p)
 end
 
 function inv_mod_p(a::T, arithm::SignedArithmeticZp{T}) where {T}
-    res = invmod(a, divisor(arithm))
-    ifelse(res > divisor(arithm), res - divisor(arithm), res)
+    invmod(a, divisor(arithm))
 end
 
 ###
 # SignedCompositeArithmeticZp
 
-# Operates on several integers at once and targets vectorization
+# Operates on several integers at once, uses signed representation
 struct SignedCompositeArithmeticZp{AccumType, CoeffType, T, N} <:
        AbstractArithmeticZp{AccumType, CoeffType}
     ps::CompositeInt{N, T}
@@ -282,7 +303,7 @@ struct SignedCompositeArithmeticZp{AccumType, CoeffType, T, N} <:
         ::Type{CompositeInt{N, AT}},
         ::Type{CompositeInt{N, CT}},
         ps::CompositeInt{N, CT}
-    ) where {N, AT <: CoeffFF, CT <: CoeffFF}
+    ) where {N, AT <: CoeffZp, CT <: CoeffZp}
         arithms = map(pj -> SignedArithmeticZp(AT, CT, pj), ps.data)
         multipliers = map(a -> a.multiplier, arithms)
         addmuls = map(a -> a.addmul, arithms)
@@ -327,26 +348,29 @@ coefficients `CoeffType`, and the `hint` from the user, returns the most
 suitable algorithm for doing arithmetic in Z/Zp.
 """
 function select_arithmetic(
-    characteristic,
     ::Type{CoeffType},
+    characteristic::CharType,
     hint::Symbol,
-    using_smallest_type_for_coeffs::Bool
-) where {CoeffType <: Union{CoeffFF, CompositeCoeffFF}}
-    # NOTE: characteristic is guaranteed to be representable by CoeffType. Maybe
-    # change the type of characteristic to CoeffType?
+    using_wide_type_for_coeffs::Bool
+) where {
+    CoeffType <: Union{CoeffZp, CompositeCoeffZp},
+    CharType <: Union{CoeffZp, CompositeCoeffZp}
+}
+    # We guarantee that the characteristic is representable by CoeffType. 
+    # Maybe change the type of characteristic to CoeffType?
     @assert characteristic <= typemax(CoeffType)
 
-    # The type that would act as an accumulator for coefficients of type
-    # CoeffType. Usually, this type should be a bit wider than CoeffType
-    AccumType = if using_smallest_type_for_coeffs
-        # If the coefficients are stored tightly, 
-        # say, using UInt32 with characteristic = 2^31-1
-        widen(CoeffType)
-    else
+    # The type that would act as an accumulator. Usually, this type should be a
+    # bit wider than CoeffType
+    AccumType = if using_wide_type_for_coeffs
         CoeffType
+    else
+        # If the coefficients are stored tightly, say, using UInt32 paired with
+        # characteristic = 2^31-1, then we need a bigger accumulator
+        widen(CoeffType)
     end
 
-    if CoeffType <: CompositeCoeffFF
+    if CoeffType <: CompositeCoeffZp
         if hint === :signed || CoeffType <: CompositeInt{N, T} where {N, T <: Signed}
             return SignedCompositeArithmeticZp(
                 AccumType,
@@ -384,7 +408,8 @@ function select_arithmetic(
         # The trade-offs are a bit shifted for large moduli that are > 2^32. It
         # looks like it rarely pays off to use delayed modular arithmetic in
         # such cases
-        if 4 < (leading_zeros(CoeffType(characteristic)) - (8 >> 1) * sizeof(AccumType))
+        if !(AccumType === UInt128) &&
+           4 < (leading_zeros(CoeffType(characteristic)) - (8 >> 1) * sizeof(AccumType))
             return DelayedArithmeticZp(
                 AccumType,
                 CoeffType,

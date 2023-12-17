@@ -12,10 +12,10 @@ Base.showerror(io::IO, e::MonomialDegreeOverflow) = print(io, e.msg)
 ###
 # All supported coefficient types
 
-# CoeffFF is a supertype of polynomial coefficients modulo a prime
-const CoeffFF = Union{Unsigned, Signed}
+# CoeffZp is a supertype of polynomial coefficients modulo a prime
+const CoeffZp = Union{Unsigned, Signed}
 
-const CompositeCoeffFF = CompositeInt{N, T} where {N, T <: CoeffFF}
+const CompositeCoeffZp = CompositeInt{N, T} where {N, T <: CoeffZp}
 
 # CoeffQQ is a supertype of polynomial coefficients in the rationals
 const CoeffQQ = Union{Rational{BigInt}}
@@ -27,11 +27,11 @@ const CoeffQQ = Union{Rational{BigInt}}
 const CoeffZZ = Union{BigInt}
 
 # All supported coefficient types in F4.
-const Coeff = Union{CoeffFF, CompositeCoeffFF, CoeffQQ, CoeffZZ}
+const Coeff = Union{CoeffZp, CompositeCoeffZp, CoeffQQ, CoeffZZ}
 
 # Coefficient type used in a single run of classic modular computation
 const CoeffModular = UInt64
-@assert CoeffModular <: CoeffFF
+@assert CoeffModular <: CoeffZp
 
 ###
 # All supported monomial implementations in F4

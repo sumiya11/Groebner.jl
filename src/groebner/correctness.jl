@@ -1,3 +1,4 @@
+# Checking correctness in modular computation
 
 @noinline __not_a_basis_error(basis, msg) = throw(DomainError(basis, msg))
 
@@ -117,7 +118,7 @@ function randomized_correctness_check!(
         ring_ff, gb_ff = reduce_modulo_p!(state.buffer, ring, gb_zz, prime, deepcopy=false)
         # Check that initial ideal contains in the computed groebner basis modulo a
         # random prime
-        arithmetic = select_arithmetic(prime, CoeffModular, :auto, false)
+        arithmetic = select_arithmetic(CoeffModular, prime, :auto, false)
         # TODO: Why is this here? F4 normalizes the basis on entry
         normalize_basis!(gb_ff, arithmetic)
         f4_normalform!(ring_ff, gb_ff, input_ff, hashtable, arithmetic)
@@ -156,5 +157,10 @@ function certify_correctness_check!(state, ring, input_qq, gb_ff, hashtable, par
         @log level = -2 "Not all of S-polynomials reduce to zero"
         return false
     end
+    true
+end
+
+# TODO :)
+function majority_vote!(state, basis_ff, tracer, params)
     true
 end
