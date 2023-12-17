@@ -53,5 +53,5 @@ close(io)
 3)
 
 ```julia
-versioninfo()
+using InteractiveUtils; versioninfo()
 ```
