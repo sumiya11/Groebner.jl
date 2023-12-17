@@ -1,0 +1,60 @@
+	.text
+	.file	"reduce_dense_row_by_sparse_row!"
+	.globl	"julia_reduce_dense_row_by_sparse_row!_231" # -- Begin function julia_reduce_dense_row_by_sparse_row!_231
+	.p2align	4, 0x90
+	.type	"julia_reduce_dense_row_by_sparse_row!_231",@function
+"julia_reduce_dense_row_by_sparse_row!_231": # @"julia_reduce_dense_row_by_sparse_row!_231"
+	.cfi_startproc
+# %bb.0:                                # %top
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset %rbp, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register %rbp
+	pushq	%rsi
+	.cfi_offset %rsi, -24
+	movq	8(%rdx), %r10
+	testq	%r10, %r10
+	je	.LBB0_4
+# %bb.1:                                # %L33.preheader
+	movq	(%rdx), %r11
+	movl	(%r11), %esi
+	movslq	%esi, %rax
+	movq	(%rcx), %rcx
+	shlq	$5, %rax
+	vmovdqu	-32(%rax,%rcx), %ymm0
+	movq	(%r8), %rax
+	vmovdqu	32(%r9), %ymm1
+	movl	$1, %edx
+	vpxor	%xmm2, %xmm2, %xmm2
+	.p2align	4, 0x90
+.LBB0_2:                                # %L33
+                                        # =>This Inner Loop Header: Depth=1
+	movslq	%esi, %rsi
+	shlq	$5, %rsi
+	vmovdqu	-32(%rsi,%rcx), %ymm3
+	vpmovzxdq	(%rax), %ymm4           # ymm4 = mem[0],zero,mem[1],zero,mem[2],zero,mem[3],zero
+	vpmuldq	%ymm4, %ymm0, %ymm4
+	vpsubq	%ymm4, %ymm3, %ymm3
+	vpcmpgtq	%ymm3, %ymm2, %ymm4
+	vpand	%ymm1, %ymm4, %ymm4
+	vpaddq	%ymm3, %ymm4, %ymm3
+	vmovdqu	%ymm3, -32(%rsi,%rcx)
+	cmpq	%rdx, %r10
+	je	.LBB0_4
+# %bb.3:                                # %L33.L33_crit_edge
+                                        #   in Loop: Header=BB0_2 Depth=1
+	movl	(%r11,%rdx,4), %esi
+	incq	%rdx
+	addq	$16, %rax
+	jmp	.LBB0_2
+.LBB0_4:                                # %L105
+	popq	%rsi
+	popq	%rbp
+	vzeroupper
+	retq
+.Lfunc_end0:
+	.size	"julia_reduce_dense_row_by_sparse_row!_231", .Lfunc_end0-"julia_reduce_dense_row_by_sparse_row!_231"
+	.cfi_endproc
+                                        # -- End function
+	.section	".note.GNU-stack","",@progbits
