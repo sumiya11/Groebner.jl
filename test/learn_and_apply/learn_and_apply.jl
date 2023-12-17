@@ -104,7 +104,7 @@ end
     R, (x, y) = polynomial_ring(K1, ["x", "y"], ordering=:degrevlex)
     R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], ordering=:degrevlex)
     system2 = [(2^49 + 1) * x2 - 1, (2^50) * y2 + (2^56 + 99)]
-    system = map(f -> map_coefficients(c -> K1(data(c)), f), system)
+    system = map(f -> map_coefficients(c -> K1(data(c)), f), system2)
     trace, gb_1 = Groebner.groebner_learn(system; params...)
     flag, gb_2 = Groebner.groebner_apply!(trace, system2; params...)
     @test gb_2 == [y2 + (2^56 + 99) // K2(2^50), x2 - 1 // K2(2^49 + 1)]
