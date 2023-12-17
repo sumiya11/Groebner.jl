@@ -3,7 +3,7 @@
 1)
 
 ```julia
-using Groebner
+using Groebner, InteractiveUtils
 
 io = open("llvm_vec4.txt", "w")
 code_llvm(
@@ -28,7 +28,7 @@ close(io)
 2)
 
 ```julia
-using Groebner
+using Groebner, InteractiveUtils
 
 io = open("native_vec4.txt", "w")
 code_native(
