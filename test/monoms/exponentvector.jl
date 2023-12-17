@@ -7,7 +7,7 @@
     @test ev == UInt64.([10, 1, 2, 3, 0, 4])
     @test typeof(Groebner.totaldeg(ev)) === UInt64
     @test Groebner.totaldeg(ev) == UInt64(10)
-    @test Groebner.entrytype(ev) === Groebner.MonomHash
+    @test Groebner.monom_entrytype(ev) === Groebner.MonomHash
     tmp = similar(x)
     @test Groebner.monom_to_dense_vector!(tmp, ev) == x
     @test tmp == x
@@ -18,7 +18,7 @@
     @test ev == UInt32.([10, 1, 2, 3, 0, 4])
     @test typeof(Groebner.totaldeg(ev)) === UInt32
     @test Groebner.totaldeg(ev) == UInt32(10)
-    @test Groebner.entrytype(ev) === Groebner.MonomHash
+    @test Groebner.monom_entrytype(ev) === Groebner.MonomHash
 
     for T in (UInt64, UInt32, UInt16, UInt8)
         for k in 1:10
@@ -28,7 +28,7 @@
             tmp = similar(x)
             @test x == Groebner.monom_to_dense_vector!(tmp, ev)
             @test x == tmp
-            @test Groebner.entrytype(ev) === Groebner.MonomHash
+            @test Groebner.monom_entrytype(ev) === Groebner.MonomHash
         end
     end
 end

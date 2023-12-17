@@ -12,10 +12,9 @@ const _supported_kw_args = (
         reduced     = true,
         ordering    = InputOrdering(),
         certify     = false,
-        linalg      = :randomized,
+        linalg      = :auto,
         monoms      = :auto,
         arithmetic  = :auto,
-        coeffstight = true,
         seed        = 42,
         loglevel    = _default_loglevel,
         maxpairs    = typemax(Int),   # NOTE: maybe use Inf?
@@ -53,7 +52,6 @@ const _supported_kw_args = (
         ordering    = InputOrdering(),
         monoms      = :auto,
         arithmetic  = :auto,
-        coeffstight = true,
         loglevel    = _default_loglevel,
         homogenize  = :auto,
         sweep       = true,
@@ -62,9 +60,9 @@ const _supported_kw_args = (
     ),
     groebner_apply! = (
         seed        = 42,
+        ordering    = InputOrdering(),
         monoms      = :auto,
         arithmetic  = :auto,
-        coeffstight = true,
         loglevel    = _default_loglevel,
         sweep       = true,
         statistics  = :no,
@@ -85,7 +83,6 @@ struct KeywordsHandler{Ord}
     threaded::Symbol
     monoms::Symbol
     arithmetic::Symbol
-    coeffstight::Bool
     seed::Int
     loglevel::Int
     maxpairs::Int
@@ -137,7 +134,6 @@ struct KeywordsHandler{Ord}
         Not recognized arithmetic: $arithmetic
         Possible choices for keyword "arithmetic" are:
         `:auto`, `:delayed`, `:signed`, `:basic`"""
-        coeffstight = get(kws, :coeffstight, get(default_kw_args, :coeffstight, true))
 
         seed = get(kws, :seed, get(default_kw_args, :seed, 42))
         loglevel = get(kws, :loglevel, get(default_kw_args, :loglevel, 0))
@@ -196,7 +192,6 @@ struct KeywordsHandler{Ord}
             threaded,
             monoms,
             arithmetic,
-            coeffstight,
             seed,
             loglevel,
             maxpairs,

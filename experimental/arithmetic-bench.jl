@@ -1,8 +1,8 @@
 using BenchmarkTools, AbstractAlgebra, PrettyTables, Groebner
 using Base.Threads, Primes
 
-arithm = [:basic, :delayed]
-coeffstight = [false]
+arithm = [:basic, :signed]
+coeffstight = [true]
 prms = [2^25 + 35, 2^27 + 29, 2^28 + 3, 2^29 + 11, 2^30 + 3]
 
 Groebner.logging_enabled() = false

@@ -57,6 +57,10 @@ Internal representation of polynomials.
 struct PolynomialRepresentation
     monomtype::Type
     coefftype::Type
+    # NOTE: If this field is true, then any implementation of the arithmetic in
+    # Z/Zp must cast the coefficients into a wider integer type before
+    # performing any arithmetic operations to avoid the risk of overflow.
+    using_smallest_type_for_coeffs::Bool
 end
 
 """
@@ -89,7 +93,7 @@ function select_polynomial_representation(
     Internal representation: 
     monomials are $monomtype
     coefficients are $coefftype"""
-    PolynomialRepresentation(monomtype, coefftype)
+    PolynomialRepresentation(monomtype, coefftype, false)
 end
 
 function select_monomtype(char, npolys, nvars, ordering, kws, hint)
@@ -208,7 +212,7 @@ function get_tight_unsigned_int_type(x::T) where {T <: Integer}
     elseif x <= typemax(UInt128)
         return UInt128
     else
-        unreachable()
+        @unreachable
         return Int64
     end
 end
@@ -230,17 +234,16 @@ function select_coefftype(char, npolys, nvars, ordering, kws, hint)
         )
     end
 
-    store_coeffs_tight = kws.coeffstight
+    using_smallest_type_for_coeffs = false
     tight_signed_type = get_tight_signed_int_type(char)
 
     # If the requested arithmetic requires a signed representation
     if kws.arithmetic === :signed
-        # TODO: a hack
         if typemax(Int32) < char < typemax(UInt32) ||
            typemax(Int64) < char < typemax(UInt64)
             @log level = 1_000 "Cannot use $(kws.arithmetic) arithmetic with characteristic $char"
             @assert false
-        elseif store_coeffs_tight
+        elseif using_smallest_type_for_coeffs
             return tight_signed_type
         else
             return widen(tight_signed_type)
@@ -248,7 +251,7 @@ function select_coefftype(char, npolys, nvars, ordering, kws, hint)
     end
 
     tight_unsigned_type = get_tight_unsigned_int_type(char)
-    if store_coeffs_tight
+    if using_smallest_type_for_coeffs
         tight_unsigned_type
     else
         widen(tight_unsigned_type)
@@ -395,6 +398,7 @@ function unpack_composite_coefficients(
 ) where {T <: CoeffFF}
     coeffs_part_1 = Vector{Vector{T}}(undef, length(composite_coeffs))
     coeffs_part_2 = Vector{Vector{T}}(undef, length(composite_coeffs))
+    # TODO: Transpose this loop
     @inbounds for i in 1:length(composite_coeffs)
         coeffs_part_1[i] = Vector{T}(undef, length(composite_coeffs[i]))
         coeffs_part_2[i] = Vector{T}(undef, length(composite_coeffs[i]))

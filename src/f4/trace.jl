@@ -78,7 +78,7 @@ function initialize_trace_f4(
         Vector{Int}(),
         params,
         params.sweep,
-        PolynomialRepresentation(ExponentVector{UInt64}, UInt64),
+        PolynomialRepresentation(ExponentVector{UInt64}, UInt64, false),
         params.homogenize
     )
 end
@@ -105,7 +105,7 @@ function copy_trace(
     end
     new_gb_basis = copy_basis(trace.gb_basis, new_gb_basis_coeffs, deepcopy=deepcopy)
 
-    new_representation = PolynomialRepresentation(trace.representation.monomtype, C2)
+    new_representation = PolynomialRepresentation(trace.representation.monomtype, C2, true)
     new_ring = PolyRing(trace.ring.nvars, trace.ring.ord, zero(C2))
 
     TraceF4(
@@ -147,7 +147,7 @@ function finalize_trace!(trace::TraceF4)
 end
 
 ###
-# Wrapper around the tracer
+# A wrapper around the tracer
 
 mutable struct WrappedTraceF4
     recorded_traces::Dict{Any, Any}
@@ -155,46 +155,112 @@ mutable struct WrappedTraceF4
     function WrappedTraceF4(
         trace::TraceF4{C1, C2, M, Ord1, Ord2}
     ) where {C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
-        recorded_traces = Dict{Any, Any}(C1 => trace)
+        recorded_traces = Dict{Any, Any}((C1, 42) => trace)
         new(recorded_traces)
     end
 end
 
 function get_default_trace(wrapped_trace::WrappedTraceF4)
     if length(wrapped_trace.recorded_traces) == 1
-        # there is only one trace stored
+        # if there is only one trace stored
         first(values(wrapped_trace.recorded_traces))
     end
+
     for id in keys(wrapped_trace.recorded_traces)
-        if id <: Integer
+        if id[1] <: Integer && id[2] == 42
             return wrapped_trace.recorded_traces[id]
         end
     end
-    @assert false # unreachable
+
+    @unreachable
     first(values(wrapped_trace.recorded_traces))
 end
 
-function get_trace!(wrapped_trace::WrappedTraceF4, ::AbstractVector)
-    get_default_trace(wrapped_trace)
+function get_trace!(wrapped_trace::WrappedTraceF4, polynomials::AbstractVector, kwargs)
+    trace = get_default_trace(wrapped_trace)
+
+    # Fast path for the case when there exists a suitable trace
+    coefftype = trace.representation.coefftype
+    ring = extract_ring(polynomials)
+    if (
+        !trace.representation.using_smallest_type_for_coeffs &&
+        less_than_half(ring.ch, coefftype)
+    ) || (
+        trace.representation.using_smallest_type_for_coeffs &&
+        ring.ch <= typemax(coefftype)
+    )
+        return trace
+    end
+
+    for id in keys(wrapped_trace.recorded_traces)
+        if id[1] <: Integer && ring.ch <= typemax(id[1])
+            return wrapped_trace.recorded_traces[id]
+        end
+    end
+
+    # Handle the case when a wider coefficient type is required
+    new_coefftype = get_tight_unsigned_int_type(ring.ch)
+    @log level = -2 "Creating a new trace with coefficient type $new_coefftype"
+    new_trace = copy_trace(trace, new_coefftype, deepcopy=false)
+    wrapped_trace.recorded_traces[(new_coefftype, 0)] = new_trace
+
+    new_trace
 end
 
 function get_trace!(
     wrapped_trace::WrappedTraceF4,
-    ::NTuple{N, T}
+    batch::NTuple{N, T},
+    kwargs
 ) where {N, T <: AbstractVector}
-    # First, try to find a suitable trace
+    # First, determine a suitable coefficient type for the given polynomials and
+    # the learned trace
+    default_trace = get_default_trace(wrapped_trace)
+    coefftype = default_trace.representation.coefftype
+
+    rings = map(extract_ring, batch)
+    chars = map(ring -> ring.ch, rings)
+    @log level = -2 """
+    Determining a suitable coefficient type for the apply stage with characteristics $chars.
+    On the learn stage, the coefficients were of type $coefftype, 
+    and the $(typeof(default_trace.params.arithmetic)) arithmetic was used."""
+
+    tight_signed_type = mapreduce(get_tight_signed_int_type, promote_type, chars)
+    tight_unsigned_type = mapreduce(get_tight_unsigned_int_type, promote_type, chars)
+
+    # The type of coefficients that will be used
+    new_coefftype = if tight_signed_type == signed(tight_unsigned_type)
+        tight_signed_type
+    else
+        @log level = 1 """
+        In the given batch of polynomials, the coefficient fields have
+        characteristics $(chars) that do not fit into $(signed(tight_unsigned_type)),
+        which may affect performance negatively.
+
+        For best performance, use characteristics representable by $(Int32).
+        Alternatively, please consider submitting a Github issue.
+        """
+        tight_unsigned_type
+    end
+    composite_coefftype = CompositeInt{N, new_coefftype}
+
+    @log level = -2 """
+    Will be storing polynomial coefficients as $composite_coefftype on the apply stage."""
+
+    # Try to find a suitable trace among the existing ones
     for id in keys(wrapped_trace.recorded_traces)
-        if id <: NTuple{N, U} where {U <: Integer}
+        if id[1] <: composite_coefftype
+            @log level = -2 "Re-using an existing trace with id = $id"
             return wrapped_trace.recorded_traces[id]
         end
     end
 
     # Otherwise, create a new trace based on one of the existing ones
     default_trace = get_default_trace(wrapped_trace)
-    coefftype = default_trace.representation.coefftype
-    new_coefftype = CompositeInt{N, coefftype}
-    new_trace = copy_trace(default_trace, new_coefftype, deepcopy=false)
-    wrapped_trace.recorded_traces[new_coefftype] = new_trace
+    new_trace = copy_trace(default_trace, composite_coefftype, deepcopy=false)
+    wrapped_trace.recorded_traces[(composite_coefftype, 1)] = new_trace
+
+    # NOTE: the returned trace may be in a invalid state, and needs to be filled
+    # with the coefficients of the input polynomials
     new_trace
 end
 
@@ -204,9 +270,9 @@ end
 function Base.show(io::IO, ::MIME"text/plain", wrapped_trace::WrappedTraceF4)
     println(
         io,
-        "Recorded $(length(wrapped_trace.recorded_traces)) traces. Printing only the main one.\n"
+        "Recorded traces count: $(length(wrapped_trace.recorded_traces)). Printing the main one.\n"
     )
-    show(io, MIME("text/plain"), get_default_trace())
+    show(io, MIME("text/plain"), get_default_trace(wrapped_trace))
 end
 
 function Base.show(io::IO, wrapped_trace::WrappedTraceF4)

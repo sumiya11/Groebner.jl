@@ -20,5 +20,6 @@ function select_arithmetic(
     hint::Symbol,
     _
 ) where {CoeffType <: CoeffQQ}
+    @assert iszero(characteristic)
     BuiltinArithmeticQQ()
 end

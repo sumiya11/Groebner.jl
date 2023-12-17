@@ -5,8 +5,8 @@
 # the correctness of the computed basis is checked modulo some another prime.
 
 # TODO: precompute the first k primes..
-const FIRST_LUCKY_PRIME = 2^31 - 1 # 2^30 + 3
-const FIRST_CHECK_PRIME = 2^30 + 3 # 2^27 - 39
+const FIRST_LUCKY_PRIME = 2^30 + 3 # 2^31-1
+const FIRST_CHECK_PRIME = 2^27 - 39 # 2^30 + 3
 
 @noinline function __too_large_coefficient_error(modulo)
     throw(

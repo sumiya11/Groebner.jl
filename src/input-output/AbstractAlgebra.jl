@@ -153,32 +153,33 @@ end
 ###
 # Process input polynomials on the apply stage
 
-function is_input_ring_compatible_in_apply(trace, ring, kws)
+function is_ring_compatible_in_apply(trace, ring, kws)
     @log level = -7 "" trace.original_ord ring.ord
     if trace.original_ord != ring.ord
-        @log level = 1000 """
-        On apply stage the monomial ordering of input is different from the one used on the learn stage
-        Apply stage (current): $(ring.ord)
-        Learn stage: $(trace.original_ord)"""
+        @log level = 1_000 """
+        In apply, the monomial ordering is different from the one used in learn.
+        Apply ordering: $(ring.ord)
+        Learn ordering: $(trace.original_ord)"""
+        return false
+    end
+    if trace.ring.nvars != ring.nvars + 2 * trace.homogenize
+        @log level = 1_000 """
+        In apply, the polynomial ring has $(ring.nvars) variables, but in learn there were $(trace.ring.nvars) variables 
+        (used homogenization in learn: $(trace.homogenize)."""
         return false
     end
     if trace.sweep_output != kws.sweep
-        @log level = 1000 "Input sweep option ($(kws.sweep)) is different from the one used on the learn stage ($(trace.sweep_output))."
+        @log level = 1_000 "Input sweep option ($(kws.sweep)) is different from the one used in learn ($(trace.sweep_output))."
         return false
     end
-    @log level = -1 "On apply stage the argument monoms=$(kws.monoms) was ignored"
+    if !(kws.monoms === :auto)
+        @log level = 1 "In apply, the argument monoms=$(kws.monoms) was ignored"
+    end
     if trace.ring.ch != ring.ch
         @log level = -1 """
-        On apply stage the ground field characteristic is $(ring.ch), 
-        the learn stage used different characteristic $(trace.ring.ch)"""
-    end
-    if trace.ring.ch < 2^32 && !(ring.ch < 2^32)
-        @log level = 1000 """
-        On apply stage the ground field characteristic is $(ring.ch), which is too large compared to the learn stage. 
-        The learn stage used characteristic $(trace.ring.ch).
-
-        Please consider learning with a larger characteristic and trying this again, or submitting a GitHub issue :^)."""
-        return false
+        In apply, the ground field characteristic is $(ring.ch), 
+        the learn used a different characteristic: $(trace.ring.ch)"""
+        # not an error!
     end
     true
 end
@@ -186,15 +187,18 @@ end
 function is_input_compatible_in_apply(trace, ring, polynomials, kws)
     trace_signature = trace.input_signature
     homogenized = trace.homogenize
-    if !is_input_ring_compatible_in_apply(trace, ring, kws)
-        @warn level = 1_000 "Input ring does not seem to be compatible with the learned trace."
+    if kws.ordering != InputOrdering()
+        # @log level = 1_000 "In apply, the given option ordering=$(kws.ordering) has no effect and was discarded"
+    end
+    if !is_ring_compatible_in_apply(trace, ring, kws)
+        @log level = 1_000 "The ring of input does not seem to be compatible with the learned trace."
         return false
     end
     if !(
         length(trace_signature) + count(iszero, polynomials) ==
         length(polynomials) + homogenized
     )
-        @log level = 1_000 "The number of input polynomials on the apply stage ($(length(polynomials))) is different from the number on the learn stage ($(length(trace_signature) + count(iszero, polynomials) - homogenized))."
+        @log level = 1_000 "The number of input polynomials in apply ($(length(polynomials))) is different from the number seen in learn ($(length(trace_signature) + count(iszero, polynomials) - homogenized))."
         return false
     end
     true
@@ -282,10 +286,10 @@ function extract_coeffs_in_batch_raw!(
     # a hack for homogenized inputs
     if trace.homogenize
         @assert length(basis.monoms[length(batch[1]) + 1]) ==
-                length(basis.coeffs[length(polys[1]) + 1]) ==
+                length(basis.coeffs[length(batch[1]) + 1]) ==
                 2
-        basis.coeffs[length(polys[1]) + 1][1] = one(CoeffType)
-        basis.coeffs[length(polys[1]) + 1][2] = chars - one(CoeffType)
+        basis.coeffs[length(batch[1]) + 1][1] = one(CoeffType)
+        basis.coeffs[length(batch[1]) + 1][2] = chars - one(CoeffType)
     end
 
     @log level = -6 "Extracted coefficients from $(map(length, batch)) polynomials." basis
@@ -410,6 +414,8 @@ function _extract_coeffs_in_batch_raw!(
     end
     nothing
 end
+
+###
 
 # specialization for multivariate polynomials
 function extract_coeffs_qq(representation, ring::PolyRing, poly)

@@ -483,7 +483,9 @@ function dense_row_mod_p!(
     from::Int=1,
     to::Int=length(row)
 ) where {T <: Union{CoeffFF, CompositeCoeffFF}}
-    @inbounds for i in from:to
+    # NOTE: This loop is usually successfully vectorized by the compiler for all
+    # kinds of arithmetic. Still, the resulting native code may be not optimal
+    @fastmath @inbounds for i in from:to
         row[i] = mod_p(row[i], arithmetic)
     end
     nothing

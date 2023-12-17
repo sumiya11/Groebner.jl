@@ -1,6 +1,7 @@
 using AbstractAlgebra
 using Combinatorics
 import Random
+import Primes
 
 @testset "groebner simple" begin
     R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], ordering=:degrevlex)
@@ -66,6 +67,87 @@ end
     fs = [x^2 * y^2, 2 * x * y^2 + 3 * x * y]
     gb = Groebner.groebner(fs, reduced=false)
     @test gb ≂ [x * y^2 + 1073741825 * x * y, x^2 * y]
+end
+
+@testset "groebner different chars." begin
+    # Large fields
+    fields = [
+        GF(2^20 + 7),
+        GF(2^29 - 3),
+        GF(2^29 + 11),
+        GF(2^30 - 35),
+        GF(2^30 + 3),
+        GF(2^31 - 1),
+        GF(2^31 + 11),
+        GF(2^32 + 15)
+    ]
+    fields = vcat(fields, map(GF, Primes.nextprimes(2^20, 10)))
+    for field in fields
+        R, (x, y) = field["x", "y"]
+
+        @test Groebner.groebner([R(3), R(4)]) == [R(1)]
+        @test Groebner.groebner([x - 3, y + 3]) == [y + 3, x - 3]
+        noon = Groebner.noonn(5, ground=field, ordering=:degrevlex)
+        gb = Groebner.groebner(noon)
+        @test Groebner.isgroebner(gb) && all(iszero, Groebner.normalform(gb, noon))
+
+        trace, gb00 = Groebner.groebner_learn(gb)
+        flag, gb01 = Groebner.groebner_apply!(trace, gb)
+        @test gb == gb00 == gb01 && flag
+    end
+
+    # Larger fields
+    fields = [
+        GF(BigInt(2)^40 + 15),
+        GF(BigInt(2)^63 - 25),
+        GF(BigInt(2)^63 + 29),
+        GF(BigInt(2)^64 - 59)
+    ]
+    for field in fields
+        R, (x, y) = field["x", "y"]
+
+        @test Groebner.groebner([R(3), R(4)]) == [R(1)]
+        @test Groebner.groebner([x - 3, y + 3]) == [y + 3, x - 3]
+        noon = Groebner.noonn(5, ground=field, ordering=:degrevlex)
+        gb = Groebner.groebner(noon)
+        @test Groebner.isgroebner(gb) && all(iszero, Groebner.normalform(gb, noon))
+
+        trace, gb00 = Groebner.groebner_learn(gb)
+        flag, gb01 = Groebner.groebner_apply!(trace, gb)
+        @test gb == gb00 == gb01 && flag
+    end
+
+    # Smaller fields
+    fields = map(GF, [113, 127, 131, 251, 257, 32749, 32771, 65521, 65537])
+    for field in fields
+        R, (x, y) = field["x", "y"]
+
+        @test Groebner.groebner([R(3), R(4)]) == [R(1)]
+        @test Groebner.groebner([x - 3, y + 3]) == [y + 3, x - 3]
+        noon = Groebner.noonn(5, ground=field, ordering=:degrevlex)
+        gb = Groebner.groebner(noon)
+        @test Groebner.isgroebner(gb) && all(iszero, Groebner.normalform(gb, noon))
+
+        trace, gb00 = Groebner.groebner_learn(gb)
+        flag, gb01 = Groebner.groebner_apply!(trace, gb)
+        @test gb == gb00 == gb01 && flag
+    end
+
+    # Tiny fields
+    fields = map(GF, [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41])
+    for field in fields
+        R, (x, y) = field["x", "y"]
+
+        @test Groebner.groebner([R(3), R(4)]) == [R(1)]
+        @test Groebner.groebner([x - 3, y + 3]) == [y + 3, x - 3]
+        noon = Groebner.noonn(5, ground=field, ordering=:degrevlex)
+        gb = Groebner.groebner(noon)
+        @test Groebner.isgroebner(gb) && all(iszero, Groebner.normalform(gb, noon))
+
+        trace, gb00 = Groebner.groebner_learn(gb)
+        flag, gb01 = Groebner.groebner_apply!(trace, gb)
+        @test gb == gb00 == gb01 && flag
+    end
 end
 
 @testset "groebner modular" begin

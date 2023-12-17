@@ -56,7 +56,7 @@ struct SpecializedArithmeticZp{AccumType, CoeffType, Add} <:
         ::Type{CoeffType},
         p::CoeffType
     ) where {AccumType <: CoeffFF, CoeffType <: CoeffFF}
-        @invariant less_than_half(p, T)
+        @invariant less_than_half(p, AccumType)
         uinv = UnsignedMultiplicativeInverse{AccumType}(convert(AccumType, p))
         SpecializedArithmeticZp(AccumType, CoeffType, uinv)
     end
@@ -126,7 +126,8 @@ struct DelayedArithmeticZp{AccumType, CoeffType, Add} <:
         ::Type{CoeffType},
         p::CoeffType
     ) where {AccumType <: CoeffFF, CoeffType <: CoeffFF}
-        @invariant less_than_half(p, T)
+        @invariant less_than_half(p, AccumType)
+        @invariant leading_zeros(p) > 0
         uinv = UnsignedMultiplicativeInverse{AccumType}(convert(AccumType, p))
         DelayedArithmeticZp(AccumType, CoeffType, uinv)
     end
@@ -329,7 +330,7 @@ function select_arithmetic(
     characteristic,
     ::Type{CoeffType},
     hint::Symbol,
-    store_coeffs_tight::Bool
+    using_smallest_type_for_coeffs::Bool
 ) where {CoeffType <: Union{CoeffFF, CompositeCoeffFF}}
     # NOTE: characteristic is guaranteed to be representable by CoeffType. Maybe
     # change the type of characteristic to CoeffType?
@@ -337,7 +338,7 @@ function select_arithmetic(
 
     # The type that would act as an accumulator for coefficients of type
     # CoeffType. Usually, this type should be a bit wider than CoeffType
-    AccumType = if store_coeffs_tight
+    AccumType = if using_smallest_type_for_coeffs
         # If the coefficients are stored tightly, 
         # say, using UInt32 with characteristic = 2^31-1
         widen(CoeffType)
@@ -346,7 +347,7 @@ function select_arithmetic(
     end
 
     if CoeffType <: CompositeCoeffFF
-        if hint === :signed
+        if hint === :signed || CoeffType <: CompositeInt{N, T} where {N, T <: Signed}
             return SignedCompositeArithmeticZp(
                 AccumType,
                 CoeffType,
@@ -377,13 +378,13 @@ function select_arithmetic(
         @assert CoeffType <: Unsigned
 
         # Use delayed modular arithmetic if the prime is one of the following:
-        #   2^16 < prime < 2^29
-        #   2^8  < prime < 2^13
-        #          prime < 2^5
+        #   2^16 <= prime < 2^28
+        #   2^8  <= prime < 2^12
+        #          prime < 2^4
         # The trade-offs are a bit shifted for large moduli that are > 2^32. It
         # looks like it rarely pays off to use delayed modular arithmetic in
         # such cases
-        if 2 < (leading_zeros(characteristic) - (8 >> 1) * sizeof(AccumType))
+        if 4 < (leading_zeros(CoeffType(characteristic)) - (8 >> 1) * sizeof(AccumType))
             return DelayedArithmeticZp(
                 AccumType,
                 CoeffType,

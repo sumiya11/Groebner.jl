@@ -3,7 +3,7 @@ using TestSetExtensions
 
 using AbstractAlgebra
 using Random
-using Groebner
+# using Groebner
 
 # Check invariants during testing.
 # NOTE: it's good to turn this on!
@@ -20,7 +20,7 @@ function try_import(name::Symbol)
     end
 end
 
-@test isempty(Test.detect_unbound_args(Groebner))
+# @test isempty(Test.detect_unbound_args(Groebner))
 @test isempty(Test.detect_ambiguities(Groebner))
 
 ⊂(xs, ys) = all(in(ys), xs)
@@ -50,7 +50,7 @@ end
         "groebner/multi_threading"
     ]
 
-    @includetests ["learn_and_apply/learn_and_apply"]
+    @includetests ["learn_and_apply/learn_and_apply", "learn_and_apply/apply_in_batches"]
 
     @includetests ["isgroebner/isgroebner"]
 

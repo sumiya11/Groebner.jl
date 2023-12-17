@@ -121,7 +121,7 @@ using Primes
 end
 
 @testset "groebner, hard-coded answer" begin
-    noon = Groebner.change_ordering(Groebner.noonn(4, ground=QQ), :degrevlex)
+    noon = Groebner.noonn(4, ground=QQ, ordering=:degrevlex)
     (x1, x2, x3, x4) = gens(parent(first(noon)))
 
     gb = Groebner.groebner(noon)
@@ -319,7 +319,7 @@ end
 
     @test gb == map(f -> divexact(f, leading_coefficient(f)), sing_ans)
 
-    noon = Groebner.change_ordering(Groebner.noonn(5, ground=QQ), :degrevlex)
+    noon = Groebner.noonn(5, ordering=:degrevlex)
     (x1, x2, x3, x4, x5) = gens(parent(first(noon)))
 
     gb = Groebner.groebner(noon)
@@ -1513,7 +1513,7 @@ end
 
     @test gb == map(f -> divexact(f, leading_coefficient(f)), sing_ans)
 
-    kat = Groebner.change_ordering(Groebner.katsuran(6, ground=QQ), :degrevlex)
+    kat = Groebner.katsuran(6, ordering=:degrevlex)
     (x1, x2, x3, x4, x5, x6, x7) = gens(parent(first(kat)))
 
     gb = Groebner.groebner(kat)

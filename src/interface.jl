@@ -113,11 +113,11 @@ end
 """
     groebner_learn(polynomials; options...)
 
-Computes a Groebner basis of `polynomials` and emits the computation trace.
+Computes a Groebner basis of `polynomials` and emits the trace.
 
 The trace can be used to speed up the computation of subsequent Groebner bases,
-which should be the specializations of the same ideal as the one
-`groebner_learn` has been applied to.
+which should be specializations of the same ideal `groebner_learn` has been
+applied to.
 
 The input `polynomials` must be an array of polynomials over a finite field.
 
@@ -137,9 +137,9 @@ R, (x, y) = GF(2^31-1)["x", "y"]
 trace, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
 
 # Apply (same ground field, different coefficients)
-success, gb_2 = groebner_apply!(trace, [2x*y^2 + 3x, 4y*x^2 + 5y])
+flag, gb_2 = groebner_apply!(trace, [2x*y^2 + 3x, 4y*x^2 + 5y])
 
-@assert success
+@assert flag
 ```
 
 Using `groebner_learn` and `groebner_apply!` over different ground fields:
@@ -149,38 +149,42 @@ using Groebner, AbstractAlgebra
 R, (x, y) = GF(2^31-1)["x", "y"]
 
 # Learn
-trace, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
+trace, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y], ordering=DegRevLex())
 
 # Create a ring with a different modulo
-_R, (_x, _y) = GF(2^30+3)["x", "y"]
+R2, (x2, y2) = GF(2^30+3)["x", "y"]
 
 # Apply (with a different modulo)
-success, gb_2 = groebner_apply!(trace, [2_x*_y^2 + 3_x, 4_y*_x^2 + 5_y])
+flag, gb_2 = groebner_apply!(
+    trace, 
+    [2x2*y2^2 + 3x2, 4y2*x2^2 + 5y2], 
+    ordering=DegRevLex()
+)
 
-@assert success
-@assert gb_2 == groebner([2_x*_y^2 + 3_x, 4_y*_x^2 + 5_y])
+@assert flag
+@assert gb_2 == groebner([2x2*y2^2 + 3x2, 4y2*x2^2 + 5y2], ordering=DegRevLex())
 ```
 
-Using `groebner_apply!` in batches:
+Using `groebner_apply!` in batches (works only in `:degrevlex` at the moment):
 
 ```jldoctest
 using Groebner, AbstractAlgebra
-R, (x, y) = GF(2^31-1)["x", "y"]
+R, (x, y) = polynomial_ring(GF(2^31-1), ["x", "y"], ordering=:degrevlex)
 
 # Learn
 trace, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
 
 # Create rings with some other moduli
-R2, (x2, y2) = GF(2^30+3)["x", "y"]
-R3, (x3, y3) = GF(2^27+29)["x", "y"]
+R2, (x2, y2) = polynomial_ring(GF(2^30+3), ["x", "y"], ordering=:degrevlex)
+R3, (x3, y3) = polynomial_ring(GF(2^27+29), ["x", "y"], ordering=:degrevlex)
 
 # Two specializations of the same ideal
 batch = ([2x2*y2^2 + 3x2, 4y2*x2^2 + 5y2], [4x3*y3^2 + 4x3, 5y3*x3^2 + 7y3])
 
 # Apply for two sets of polynomials at once
-success, (gb_2, gb_3) = groebner_apply!(trace, batch)
+flag, (gb_2, gb_3) = groebner_apply!(trace, batch)
 
-@assert success
+@assert flag
 @assert (gb_2, gb_3) == map(groebner, batch)
 ```
 """
@@ -199,15 +203,20 @@ end
     groebner_apply!(trace, polynomials; options...)
     groebner_apply!(trace, batch::NTuple{N, Vector}; options...)
 
-Computes a Groebner basis of `polynomials` using the given computation `trace`.
-The input `polynomials` must be an array of polynomials over a finite field.
+Computes a Groebner basis of `polynomials` using the given `trace`. The input
+`polynomials` must be an array of polynomials over a finite field.
 
 It is possible to input a tuple of `N` arrays to compute `N` Groebner bases
 simultaneously, which could be more efficient than computing them separately.
 
-This function is **not** thread-safe, since it may mutate the `trace`.
+This function is **not** thread-safe, since it mutates the `trace`.
 
 See also `groebner_learn`.
+
+## Possible Options
+
+The `groebner_apply!` routine automatically inherits most of its parameters from
+the given `trace`.
 
 ## Example
 
@@ -229,10 +238,10 @@ end
 # Specialization for a batch of inputs
 function groebner_apply!(
     trace,
-    batch::NTuple{N, T};
+    batch::NTuple{N, T}; # deliberately not using ::Tuple{T, Vararg{T, Nminus1}}
     options...
 ) where {N, T <: AbstractVector}
-    @assert N in (1, 2, 4, 8) "The batch size must be one of the following: 1, 2, 4, 8"
+    @assert N in (1, 2, 4, 8, 16) "The batch size must be one of the following: 1, 2, 4, 8, 16"
     all(Base.require_one_based_indexing, batch)
 
     keywords = KeywordsHandler(:groebner_apply!, options)

@@ -5,7 +5,7 @@ using AbstractAlgebra
 @testset "fglm finite field" begin
     R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], ordering=:degrevlex)
 
-    noon = Groebner.change_ordering(Groebner.noonn(2, ground=GF(2^31 - 1)), :degrevlex)
+    noon = Groebner.noonn(2, ordering=:degrevlex)
     gb = Groebner.groebner(noon, ordering=Groebner.DegRevLex())
     @test AbstractAlgebra.ordering(AbstractAlgebra.parent(gb[1])) == :degrevlex
     x1, x2 = gens(parent(first(Groebner.fglm(gb))))

@@ -56,7 +56,7 @@ mutable struct AlgorithmParameters{
     # This can hold buffers or precomputed multiplicative inverses to speed up
     # the arithmetic in the ground field
     arithmetic::Arithmetic
-    store_coeffs_tight::Bool
+    using_smallest_type_for_coeffs::Bool
 
     # If reduced Groebner basis is needed
     reduced::Bool
@@ -150,10 +150,6 @@ function AlgorithmParameters(
     end
 
     linalg = kwargs.linalg
-    if linalg === :auto
-        # Default linear algebra algorithm is randomized
-        linalg = :randomized
-    end
     if !iszero(ring.ch) && linalg === :randomized
         # Do not use randomized linear algebra if the field characteristic is
         # too small. 
@@ -166,16 +162,19 @@ function AlgorithmParameters(
             linalg = :deterministic
         end
     end
+    if linalg === :auto
+        # Default linear algebra algorithm is randomized
+        linalg = :randomized
+    end
     # Default linear algebra algorithm is sparse
     linalg_sparsity = :sparse
     linalg_algorithm = LinearAlgebra(linalg, linalg_sparsity)
 
-    store_coeffs_tight = kwargs.coeffstight
     arithmetic = select_arithmetic(
         ring.ch,
         representation.coefftype,
         kwargs.arithmetic,
-        store_coeffs_tight
+        representation.using_smallest_type_for_coeffs
     )
 
     ground = :zp
@@ -213,6 +212,12 @@ function AlgorithmParameters(
     if modular_strategy === :auto
         modular_strategy = :learn_and_apply
     end
+    if !reduced
+        @log level = -1 """
+        The option reduced=$reduced was passed in the input, 
+        falling back to classic multi-modular algorithm."""
+        modular_strategy = :classic_modular
+    end
 
     majority_threshold = 1
     crt_algorithm = :simultaneous
@@ -237,7 +242,7 @@ function AlgorithmParameters(
     linalg = $linalg_algorithm
     threaded = $threaded
     arithmetic = $arithmetic
-    store_coeffs_tight = $store_coeffs_tight
+    using_smallest_type_for_coeffs = $(representation.using_smallest_type_for_coeffs)
     reduced = $reduced
     homogenize = $homogenize
     maxpairs = $maxpairs
@@ -262,7 +267,7 @@ function AlgorithmParameters(
         kwargs.check,
         linalg_algorithm,
         arithmetic,
-        store_coeffs_tight,
+        representation.using_smallest_type_for_coeffs,
         reduced,
         maxpairs,
         selection_strategy,
@@ -278,7 +283,16 @@ function AlgorithmParameters(
     )
 end
 
-function params_mod_p(params::AlgorithmParameters, prime::Integer)
+function params_mod_p(
+    params::AlgorithmParameters,
+    prime::C;
+    using_smallest_type_for_coeffs=nothing
+) where {C <: Coeff}
+    smallest_type_for_coeffs = if !isnothing(using_smallest_type_for_coeffs)
+        using_smallest_type_for_coeffs
+    else
+        params.using_smallest_type_for_coeffs
+    end
     AlgorithmParameters(
         params.target_ord,
         params.computation_ord,
@@ -289,8 +303,8 @@ function params_mod_p(params::AlgorithmParameters, prime::Integer)
         params.homogenize,
         params.check,
         params.linalg,
-        select_arithmetic(prime, CoeffModular, :auto, params.store_coeffs_tight),
-        params.store_coeffs_tight,
+        select_arithmetic(prime, C, :auto, smallest_type_for_coeffs),
+        smallest_type_for_coeffs,
         params.reduced,
         params.maxpairs,
         params.selection_strategy,

@@ -78,7 +78,7 @@ mutable struct GroebnerState{T1 <: CoeffZZ, T2 <: CoeffQQ, T3}
     end
 end
 
-# TODO
+# TODO :)
 function majority_vote!(state, basis_ff, tracer, params)
     true
 end
@@ -141,6 +141,18 @@ function clear_denominators!(
     copy_basis(basis, coeffs_zz, deepcopy=deepcopy)
 end
 
+# Reduce x modulo a prime
+function reduce_mod_p!(buf::BigInt, x::BigInt, prime::Unsigned, prime_big::BigInt)
+    if Base.GMP.MPZ.cmp_ui(x, 0) < 0
+        Base.GMP.MPZ.fdiv_q!(buf, x, prime_big)
+        Base.GMP.MPZ.neg!(buf)
+        Base.GMP.MPZ.mul_ui!(buf, prime)
+        Base.GMP.MPZ.add!(x, buf)
+    end
+    Base.GMP.MPZ.tdiv_r!(buf, x, prime_big)
+    buf
+end
+
 function reduce_modulo_p!(
     ring,
     coeffbuff::CoefficientBuffer,
@@ -153,17 +165,11 @@ function reduce_modulo_p!(
     c   = coeffbuff.reducebuf3
     Base.GMP.MPZ.set_ui!(p, prime)
 
-    for i in 1:length(coeffs_zz)
+    @inbounds for i in 1:length(coeffs_zz)
         cfs_zz_i = coeffs_zz[i]
         for j in 1:length(cfs_zz_i)
             Base.GMP.MPZ.set!(c, cfs_zz_i[j])
-            if Base.GMP.MPZ.cmp_ui(c, 0) < 0
-                Base.GMP.MPZ.fdiv_q!(buf, c, p)
-                Base.GMP.MPZ.neg!(buf)
-                Base.GMP.MPZ.mul_ui!(buf, prime)
-                Base.GMP.MPZ.add!(c, buf)
-            end
-            Base.GMP.MPZ.tdiv_r!(buf, c, p)
+            reduce_mod_p!(buf, c, prime, p)
             coeffs_ff[i][j] = CoeffModular(buf)
         end
     end
@@ -191,6 +197,41 @@ function reduce_modulo_p!(
 )
     ring_ff, coeffs_ff = reduce_modulo_p!(buffer, ring, basis.coeffs, prime)
     ring_ff, copy_basis(basis, coeffs_ff, deepcopy=deepcopy)
+end
+
+function reduce_modulo_p_in_batch!(
+    coeffbuff::CoefficientBuffer,
+    ring::PolyRing,
+    basis::Basis{C},
+    prime_xn::NTuple{N, T};
+    deepcopy=true
+) where {C, N, T}
+    coeffs_zz = basis.coeffs
+    coeffs_ff_xn = [Vector{CompositeInt{N, T}}(undef, length(c)) for c in coeffs_zz]
+
+    p = coeffbuff.reducebuf1
+    buf = coeffbuff.reducebuf2
+    xn = map(_ -> BigInt(0), 1:N)
+    c = coeffbuff.reducebuf3
+    prime_big_xn = map(BigInt, prime_xn)
+
+    @inbounds for i in 1:length(coeffs_zz)
+        cfs_zz_i = coeffs_zz[i]
+        for j in 1:length(cfs_zz_i)
+            for k in 1:N
+                Base.GMP.MPZ.set!(xn[k], cfs_zz_i[j])
+            end
+            data = ntuple(
+                k -> T(reduce_mod_p!(buf, xn[k], UInt(prime_xn[k]), prime_big_xn[k])),
+                N
+            )
+            coeffs_ff_xn[i][j] = CompositeInt{N, T}(data)
+        end
+    end
+    ring_ff_4x = PolyRing(ring.nvars, ring.ord, CompositeInt{N, T}(prime_xn))
+    basis_ff_4x = copy_basis(basis, coeffs_ff_xn, deepcopy=deepcopy)
+
+    ring_ff_4x, basis_ff_4x
 end
 
 # Resizes the state so that it has enough space to store the GB coefficients

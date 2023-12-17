@@ -89,7 +89,7 @@ end
     gb = Groebner.groebner(root6, ordering=Groebner.DegRevLex())
     @test length(Groebner.kbase(gb)) == 720
 
-    noon2 = Groebner.change_ordering(Groebner.noonn(2), :degrevlex)
+    noon2 = Groebner.noonn(2), ordering=:degrevlex)
     R = parent(first(noon2))
     (x1, x2) = gens(R)
     gb = Groebner.groebner(noon2, ordering=Groebner.DegRevLex())

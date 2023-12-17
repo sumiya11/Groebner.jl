@@ -576,7 +576,9 @@ end
     matrix = initialize_matrix(ring, C)
     @log level = -5 "Applying F4 modulo $(ring.ch)"
     @log level = -5 "Using parameters" params.arithmetic
-    @invariant ring.ch == divisor(params.arithmetic)
+    @invariant (
+        _T = typeof(divisor(params.arithmetic)); _T(ring.ch) == divisor(params.arithmetic)
+    )
 
     update_basis!(basis, hashtable)
 

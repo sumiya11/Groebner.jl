@@ -2,7 +2,7 @@ using AbstractAlgebra, BenchmarkTools, Base.Threads, Profile, Primes # , Groebne
 
 macro my_profview(ex)
     :((VSCodeServer.Profile).clear();
-    VSCodeServer.Profile.init(n=10^8, delay=0.00001);
+    VSCodeServer.Profile.init(n=10^8, delay=0.0001);
     VSCodeServer.Profile.start_timer();
     $ex;
     VSCodeServer.Profile.stop_timer();
@@ -11,6 +11,16 @@ end
 
 @info "" nthreads()
 @show ENV["JULIA_NUM_THREADS"]
+
+R, (x1, x2, x3) = polynomial_ring(QQ, ["x1", "x2", "x3"], ordering=:degrevlex)
+
+k = Groebner.noonn(9, ordering=:degrevlex)
+
+gb2 = Groebner.groebner([x1 + BigInt(2)^70 * x2], loglevel=-6);
+
+@time gb2 = Groebner.groebner(k);
+
+###
 
 R, (x1, x2, x3) = polynomial_ring(GF(2^27 + 29), ["x1", "x2", "x3"], ordering=:degrevlex)
 R, (x1, x2, x3) =
@@ -49,21 +59,60 @@ trace, gb1 = Groebner.groebner_learn(s);
 
 gb1 == gb2 == gb3 == gb4
 
-m = Groebner.DelayedArithmeticZp(Primes.prevprime(UInt(p6), 33))
+m = Groebner.DelayedArithmeticZp(UInt64, UInt64, Primes.prevprime(2^31 - 1))
 
 @code_native debuginfo = :none Groebner.dense_row_mod_p!(UInt[1, 2, 3], m)
 
 ########
 
-s = Groebner.katsuran(9, ordering=:degrevlex, ground=AbstractAlgebra.GF(2^31 - 1))
+Groebner.logging_enabled() = false
 
-@time trace0, gb0 = Groebner.groebner_learn(s, loglevel=-3);
+p1, p2, p3, p4, p5, p6, p7, p8 = Primes.nextprimes(2^30 + 3, 8)
+s1 = Groebner.katsuran(11, ordering=:degrevlex, ground=GF(p1));
+s2 = Groebner.katsuran(11, ordering=:degrevlex, ground=GF(p2));
+s3 = Groebner.katsuran(11, ordering=:degrevlex, ground=GF(p3));
+s4 = Groebner.katsuran(11, ordering=:degrevlex, ground=GF(p4));
+s5 = Groebner.katsuran(11, ordering=:degrevlex, ground=GF(p5));
+
+trace, gb = Groebner.groebner_learn(s1);
+
+flag, gb1 = Groebner.groebner_apply!(trace, s1);
+@assert flag && Groebner.groebner(s1) == gb1
+
+flag, (gb2, gb3, gb4, gb5) = Groebner.groebner_apply!(trace, (s2, s3, s4, s5));
+@assert flag &&
+        Groebner.groebner(s2) == gb2 &&
+        Groebner.groebner(s3) == gb3 &&
+        Groebner.groebner(s4) == gb4 &&
+        Groebner.groebner(s5) == gb5
+
+@btime Groebner.groebner_apply!($trace, $s1);
+@btime Groebner.groebner_apply!($trace, $((s2, s3, s4, s5)));
+@btime Groebner.groebner_apply!($trace, $((s2, s3, s4, s5, s2, s3, s4, s5)));
+@btime Groebner.groebner_apply!(
+    $trace,
+    $((s2, s3, s4, s5, s2, s3, s4, s5, s2, s3, s4, s5, s2, s3, s4, s5))
+);
+
+@my_profview for _ in 1:5
+    Groebner.groebner_apply!(trace, ((s2, s3, s4, s5)))
+end
+
+########
+
+success, gb1 = Groebner.groebner_apply!(trace, s, loglevel=-3);
+
 @time trace1, gb1 = Groebner.groebner_learn(s, loglevel=-3, arithmetic=:signed);
 @time trace2, gb2 =
     Groebner.groebner_learn(s, loglevel=-3, arithmetic=:signed, coeffstight=true);
 gb0 == gb1 == gb2
 
-flag, gb3 = Groebner.groebner_apply!(trace0, s, loglevel=-3);
+flag, (gb3, gb4, gb5, gb6) = Groebner.groebner_apply!(trace0, (s, s, s, s), loglevel=-3);
+
+Groebner.groebner(s) == gb3 == gb4 == gb5 == gb6
+
+@my_profview Groebner.groebner(s, arithmetic=:delayed);
+
 flag, gb4 = Groebner.groebner_apply!(trace1, s, loglevel=-3, arithmetic=:signed);
 flag, gb5 =
     Groebner.groebner_apply!(trace2, s, loglevel=-3, arithmetic=:signed, coeffstight=true);
