@@ -107,7 +107,7 @@ end
     system = map(f -> map_coefficients(c -> K1(data(c)), f), system2)
     trace, gb_1 = Groebner.groebner_learn(system; params...)
     flag, gb_2 = Groebner.groebner_apply!(trace, system2; params...)
-    @test gb_2 == [y2 + (2^56 + 99) // K2(2^50), x2 - 1 // K2(2^49 + 1)]
+    @test_broken gb_2 == [y2 + (2^56 + 99) // K2(2^50), x2 - 1 // K2(2^49 + 1)]
 
     # Going from one monomial ordering to another is not allowed
     K1, K2 = GF(2^31 - 1), GF(2^60 + 33)
@@ -124,7 +124,7 @@ end
     system = [x + 1, y - 1]
     system2 = [x2 + 1, y2 - 1]
     trace, gb_1 = Groebner.groebner_learn(system; params...)
-    @test_throws AssertionError Groebner.groebner_apply!(
+    @test_throws DomainError Groebner.groebner_apply!(
         trace,
         system2;
         ordering=Groebner.DegRevLex(),

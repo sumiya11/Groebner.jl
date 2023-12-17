@@ -187,6 +187,38 @@ flag, (gb_2, gb_3) = groebner_apply!(trace, batch)
 @assert flag
 @assert (gb_2, gb_3) == map(groebner, batch)
 ```
+
+Perhaps, in a more involved example, we will compute Groebner bases of the
+Katsura-9 system:
+
+```jldoctest
+using Groebner, AbstractAlgebra, BenchmarkTools
+
+# Create the system
+kat = Groebner.katsuran(9, ground=ZZ, ordering=:degrevlex)
+
+# Reduce the coefficients modulo 5 different primes
+kat_0 = map(f -> map_coefficients(c -> GF(2^30 + 3)(c), f), kat)
+kat_1 = map(f -> map_coefficients(c -> GF(2^30 + 7)(c), f), kat)
+kat_2 = map(f -> map_coefficients(c -> GF(2^30 + 9)(c), f), kat)
+kat_3 = map(f -> map_coefficients(c -> GF(2^30 + 15)(c), f), kat)
+kat_4 = map(f -> map_coefficients(c -> GF(2^30 + 19)(c), f), kat)
+
+# Learn the trace
+trace, gb_0 = groebner_learn(kat_0);
+
+# Compare the performance of applying with 1 input and with 4 different inputs:
+
+# Apply for one system
+@btime groebner_apply!(\$trace, \$kat_1);
+#  46.824 ms (19260 allocations: 24.48 MiB)
+
+# Apply for a batch of four systems
+@btime groebner_apply!(\$trace, \$(kat_1, kat_2, kat_3, kat_4));
+#  72.813 ms (23722 allocations: 59.44 MiB)
+```
+
+Observe the better amortized performance of the batched `groebner_apply!`.
 """
 function groebner_learn(polynomials::AbstractVector; options...)
     Base.require_one_based_indexing(polynomials)

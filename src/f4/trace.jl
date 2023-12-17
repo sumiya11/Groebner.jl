@@ -105,7 +105,7 @@ function copy_trace(
     end
     new_gb_basis = copy_basis(trace.gb_basis, new_gb_basis_coeffs, deepcopy=deepcopy)
 
-    new_representation = PolynomialRepresentation(trace.representation.monomtype, C2, true)
+    new_representation = PolynomialRepresentation(trace.representation.monomtype, C2, false)
     new_ring = PolyRing(trace.ring.nvars, trace.ring.ord, zero(C2))
 
     TraceF4(
