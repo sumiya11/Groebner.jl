@@ -30,8 +30,8 @@ close(io)
 ```julia
 using Groebner
 
-io = open("llvm_vec4.txt", "w")
-code_llvm(
+io = open("native_vec4.txt", "w")
+code_native(
     io,
     Groebner.reduce_dense_row_by_sparse_row!,
     Tuple{
