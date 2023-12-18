@@ -24,8 +24,8 @@ mutable struct TraceF4{C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
     # Information about the non-redundant rows of the matrix
     matrix_infos::Vector{NamedTuple{(:nup, :nlow, :ncols), Tuple{Int64, Int64, Int64}}}
     matrix_nonzeroed_rows::Vector{Vector{Int}}
-    matrix_upper_rows::Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}
-    matrix_lower_rows::Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}
+    matrix_upper_rows::Vector{Tuple{Vector{Int}, Vector{MonomId}}}
+    matrix_lower_rows::Vector{Tuple{Vector{Int}, Vector{MonomId}}}
     matrix_sorted_columns::Vector{Vector{Int}}
 
     critical_pair_sequence::Vector{Tuple{Int, Int}}
@@ -61,7 +61,7 @@ function initialize_trace_f4(
         params.original_ord,
         input_signature,
         input_basis,
-        deepcopy_basis(gb_basis),
+        basis_deepcopy(gb_basis),
         gb_basis,
         hashtable,
         permutation,
@@ -69,8 +69,8 @@ function initialize_trace_f4(
         Vector{Vector{Int}}(),
         Vector{NamedTuple{(:nup, :nlow, :ncols), Tuple{Int64, Int64, Int64}}}(),
         Vector{Vector{Int}}(),
-        Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}(),
-        Vector{Tuple{Vector{Int}, Vector{MonomIdx}}}(),
+        Vector{Tuple{Vector{Int}, Vector{MonomId}}}(),
+        Vector{Tuple{Vector{Int}, Vector{MonomId}}}(),
         Vector{Vector{Int}}(),
         Vector{Tuple{Int, Int}}(),
         Vector{Int}(),
@@ -83,27 +83,77 @@ function initialize_trace_f4(
     )
 end
 
-function copy_trace(
+function trace_deepcopy(
+    trace::TraceF4{C1, C3, M, Ord1, Ord2}
+) where {C1 <: Coeff, C3 <: Coeff, M <: Monom, Ord1, Ord2}
+    TraceF4(
+        trace.stopwatch_start,
+        PolyRing(trace.ring.nvars, trace.ring.ord, trace.ring.ch),
+        deepcopy(trace.original_ord),
+        copy(trace.input_signature),
+        basis_deepcopy(trace.input_basis),
+        basis_deepcopy(trace.buf_basis),
+        basis_deepcopy(trace.gb_basis),
+        # we are assuming that the hashtable is frozen at this point!
+        # maybe set a flag in the hashtable?
+        deepcopy(trace.hashtable),
+        copy(trace.input_permutation),
+        map(copy, trace.term_sorting_permutations),
+        map(copy, trace.term_homogenizing_permutations),
+        # matrix information must not be mutated no matter what
+        trace.matrix_infos,
+        trace.matrix_nonzeroed_rows,
+        trace.matrix_upper_rows,
+        trace.matrix_lower_rows,
+        map(copy, trace.matrix_sorted_columns),
+        copy(trace.critical_pair_sequence),
+        copy(trace.output_nonredundant_indices),
+        copy(trace.nonredundant_indices_before_reduce),
+        copy(trace.output_sort_indices),
+        deepcopy(trace.params),
+        trace.sweep_output,
+        PolynomialRepresentation(
+            trace.representation.monomtype,
+            trace.representation.coefftype,
+            trace.representation.using_wide_type_for_coeffs
+        ),
+        trace.homogenize
+    )
+end
+
+function trace_copy(
     trace::TraceF4{C1, C3, M, Ord1, Ord2},
     ::Type{C2};
     deepcopy=false
 ) where {C1 <: Coeff, C3 <: Coeff, M <: Monom, Ord1, Ord2, C2 <: Coeff}
     new_coeffs = Vector{Vector{C2}}()
-    new_input_basis = copy_basis(trace.input_basis, new_coeffs, deepcopy=deepcopy)
+    new_input_basis = if deepcopy
+        basis_deep_copy_with_new_coeffs(trace.input_basis, new_coeffs)
+    else
+        basis_shallow_copy_with_new_coeffs(trace.input_basis, new_coeffs)
+    end
 
     new_buf_basis_coeffs = Vector{Vector{C2}}(undef, length(trace.buf_basis.coeffs))
     for i in 1:length(trace.buf_basis.coeffs)
         !isassigned(trace.buf_basis.coeffs, i) && continue
         new_buf_basis_coeffs[i] = Vector{C2}(undef, length(trace.buf_basis.coeffs[i]))
     end
-    new_buf_basis = copy_basis(trace.buf_basis, new_buf_basis_coeffs, deepcopy=deepcopy)
+    new_buf_basis = if deepcopy
+        basis_deep_copy_with_new_coeffs(trace.buf_basis, new_buf_basis_coeffs)
+    else
+        basis_shallow_copy_with_new_coeffs(trace.buf_basis, new_buf_basis_coeffs)
+    end
 
     new_gb_basis_coeffs = Vector{Vector{C2}}(undef, length(trace.gb_basis.coeffs))
     for i in 1:length(trace.gb_basis.coeffs)
         !isassigned(trace.gb_basis.coeffs, i) && continue
         new_gb_basis_coeffs[i] = Vector{C2}(undef, length(trace.gb_basis.coeffs[i]))
     end
-    new_gb_basis = copy_basis(trace.gb_basis, new_gb_basis_coeffs, deepcopy=deepcopy)
+    new_gb_basis = if deepcopy
+        basis_deep_copy_with_new_coeffs(trace.gb_basis, new_gb_basis_coeffs)
+    else
+        basis_shallow_copy_with_new_coeffs(trace.gb_basis, new_gb_basis_coeffs)
+    end
 
     new_representation = PolynomialRepresentation(trace.representation.monomtype, C2, false)
     new_ring = PolyRing(trace.ring.nvars, trace.ring.ord, zero(C2))
@@ -124,7 +174,7 @@ function copy_trace(
         trace.matrix_nonzeroed_rows,
         trace.matrix_upper_rows,
         trace.matrix_lower_rows,
-        trace.matrix_sorted_columns,
+        copy(trace.matrix_sorted_columns),
         trace.critical_pair_sequence,
         trace.output_nonredundant_indices,
         trace.nonredundant_indices_before_reduce,
@@ -138,7 +188,7 @@ end
 
 function finalize_trace!(trace::TraceF4)
     # TODO: trim array sizes
-    trace.buf_basis = deepcopy_basis(trace.gb_basis)
+    trace.buf_basis = basis_deepcopy(trace.gb_basis)
     trace.buf_basis.nnonredundant = trace.input_basis.nnonredundant
     trace.buf_basis.nprocessed = trace.input_basis.nprocessed
     trace.buf_basis.nfilled = trace.input_basis.nfilled
@@ -198,7 +248,7 @@ function get_trace!(wrapped_trace::WrappedTraceF4, polynomials::AbstractVector, 
     # Handle the case when a wider coefficient type is required
     new_coefftype = get_tight_unsigned_int_type(ring.ch)
     @log level = -2 "Creating a new trace with coefficient type $new_coefftype"
-    new_trace = copy_trace(trace, new_coefftype, deepcopy=false)
+    new_trace = trace_copy(trace, new_coefftype, deepcopy=false)
     wrapped_trace.recorded_traces[(new_coefftype, 0)] = new_trace
 
     new_trace
@@ -253,7 +303,7 @@ function get_trace!(
 
     # Otherwise, create a new trace based on one of the existing ones
     default_trace = get_default_trace(wrapped_trace)
-    new_trace = copy_trace(default_trace, composite_coefftype, deepcopy=false)
+    new_trace = trace_copy(default_trace, composite_coefftype, deepcopy=false)
     wrapped_trace.recorded_traces[(composite_coefftype, 1)] = new_trace
 
     # NOTE: the returned trace may be in a invalid state, and needs to be filled

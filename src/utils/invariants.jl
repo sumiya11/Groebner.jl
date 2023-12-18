@@ -37,4 +37,4 @@ end
 
 # Invokes undefined behavior in LLVM. 
 # Only use when able to prove that this is never getting called.
-unreachable_unsafe() = Base.llvmcall("unreachable", Cvoid, Tuple{})
+unsafe_unreachable() = Base.llvmcall("unreachable", Cvoid, Tuple{})

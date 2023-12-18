@@ -35,7 +35,6 @@ n = Groebner.noonn(3)
 Groebner.groebner(n, ordering=Groebner.DegRevLex());
 
 @time gb = Groebner.groebner(system, ordering=Groebner.DegRevLex());
-@time gb = Groebner.groebner(system, ordering=Groebner.DegRevLex(), maxpairs=1000);
 
 GC.gc()
 

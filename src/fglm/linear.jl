@@ -267,7 +267,7 @@ function extract_sparse_row(row)
 end
 
 function extract_sparse_row(row::Vector{C}, np, k) where {C}
-    newrow = Vector{MonomIdx}(undef, k)
+    newrow = Vector{MonomId}(undef, k)
     newcfs = Vector{C}(undef, k)
 
     # store new row in sparse format
@@ -287,7 +287,7 @@ end
 function linear_relation!(
     ring,
     matrix::DoubleMacaulayMatrix,
-    monom::MonomIdx,
+    monom::MonomId,
     vector::Basis{C},
     ht,
     arithmetic

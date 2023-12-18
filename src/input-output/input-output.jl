@@ -197,7 +197,7 @@ function get_tight_signed_int_type(x::T) where {T <: Integer}
     elseif x <= typemax(Int128)
         return Int128
     else
-        unreachable()
+        @unreachable
         return Int64
     end
 end
@@ -268,8 +268,6 @@ end
 
 Converts elements of the given array `polynomials` into an internal polynomial
 representation specified by the given `representation`.
-
-Returns a tuple (`ring`, `var_to_index`, `monoms`, `coeffs`).
 """
 @timeit function convert_to_internal(
     representation::PolynomialRepresentation,
@@ -321,40 +319,6 @@ function extract_polys(
     var_to_index, monoms, coeffs
 end
 
-###
-# Converting polynomials from internal representation to original types
-
-iszero_coeffs(v) = isempty(v)
-iszero_monoms(v) = isempty(v)
-
-zero_coeffs(::Type{T}, ring::PolyRing) where {T} = Vector{T}()
-zero_monoms(::Type{T}, ring::PolyRing) where {T} = Vector{T}()
-
-"""
-    convert_to_output(ring, polynomials, monoms, coeffs, params)
-
-Converts polynomials in internal representation given by arrays `monoms` and
-`coeffs` into polynomials in the output format (using `polynomials` as a
-reference).
-"""
-@timeit function convert_to_output(
-    ring::PolyRing,
-    polynomials,
-    monoms::Vector{Vector{M}},
-    coeffs::Vector{Vector{C}},
-    params::AlgorithmParameters
-) where {M <: Monom, C <: Coeff}
-    @assert !isempty(polynomials)
-    @log level = -2 "Converting polynomials from internal representation to output format"
-    # NOTE: Internal polynomials must not be modified.
-    if isempty(monoms)
-        @log level = -7 "Output is empty, appending an empty placeholder polynomial"
-        push!(monoms, zero_monoms(M, ring))
-        push!(coeffs, zero_coeffs(C, ring))
-    end
-    _convert_to_output(ring, polynomials, monoms, coeffs, params)
-end
-
 function remove_zeros_from_input!(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
@@ -393,7 +357,41 @@ function set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
 end
 
 ###
-# Utilities
+# Converting polynomials from internal representation to the original types
+
+iszero_coeffs(v) = isempty(v)
+iszero_monoms(v) = isempty(v)
+
+zero_coeffs(::Type{T}, ring::PolyRing) where {T} = Vector{T}()
+zero_monoms(::Type{T}, ring::PolyRing) where {T} = Vector{T}()
+
+"""
+    convert_to_output(ring, polynomials, monoms, coeffs, params)
+
+Converts polynomials in internal representation given by arrays `monoms` and
+`coeffs` into polynomials in the output format (using `polynomials` as a
+reference).
+"""
+@timeit function convert_to_output(
+    ring::PolyRing,
+    polynomials,
+    monoms::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    params::AlgorithmParameters
+) where {M <: Monom, C <: Coeff}
+    @assert !isempty(polynomials)
+    @log level = -2 "Converting polynomials from internal representation to output format"
+    # NOTE: Internal polynomials must not be modified.
+    if isempty(monoms)
+        @log level = -7 "Output is empty, appending an empty placeholder polynomial"
+        push!(monoms, zero_monoms(M, ring))
+        push!(coeffs, zero_coeffs(C, ring))
+    end
+    _convert_to_output(ring, polynomials, monoms, coeffs, params)
+end
+
+###
+# Utilities for composite coefficients
 
 function unpack_composite_coefficients(
     composite_coeffs::Vector{Vector{CompositeInt{2, T}}}

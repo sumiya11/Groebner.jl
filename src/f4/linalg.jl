@@ -83,16 +83,20 @@ function linear_algebra!(
         linalg = params.linalg
     end
 
-    threaded = if params.threaded === :yes && nthreads() > 1
+    threaded = if params.threaded_f4 === :yes && nthreads() > 1
         :yes
-    elseif params.threaded === :auto
+    elseif params.threaded_multimodular === :yes &&
+           linalg.algorithm === :learn &&
+           nthreads() > 1
+        :yes
+    elseif params.threaded_f4 === :auto
         # Multi-threading is disabled by default!
         :no
     else
         :no
     end
 
-    @log level = -2 "Calling linear algebra with" linalg threaded arithmetic
+    @log level = -4 "Calling linear algebra with" linalg threaded arithmetic
 
     flag = if !isnothing(trace)
         linear_algebra_with_trace!(trace, matrix, basis, linalg, threaded, arithmetic, rng)
@@ -204,7 +208,11 @@ function linear_algebra_with_trace!(
     rng::AbstractRNG
 )
     flag = if linalg.algorithm === :learn
-        learn_sparse_linear_algebra!(trace, matrix, basis, arithmetic)
+        if false && threaded === :yes
+            learn_sparse_linear_algebra_threaded!(trace, matrix, basis, arithmetic)
+        else
+            learn_sparse_linear_algebra!(trace, matrix, basis, arithmetic)
+        end
     else
         @assert linalg.algorithm === :apply
         apply_sparse_linear_algebra!(trace, matrix, basis, arithmetic)
@@ -359,6 +367,24 @@ function learn_sparse_linear_algebra!(
     @log level = -3 repr_matrix(matrix)
     # Reduce CD with AB
     learn_reduce_matrix_lower_part!(trace, matrix, basis, arithmetic)
+    # Interreduce CD
+    interreduce_matrix_pivots!(matrix, basis, arithmetic)
+
+    true
+end
+
+function learn_sparse_linear_algebra_threaded!(
+    trace::TraceF4,
+    matrix::MacaulayMatrix,
+    basis::Basis,
+    arithmetic::AbstractArithmetic
+)
+    sort_matrix_upper_rows!(matrix) # for the AB part
+    sort_matrix_lower_rows!(matrix) # for the CD part
+    @log level = -3 "learn_sparse_linear_algebra!"
+    @log level = -3 repr_matrix(matrix)
+    # Reduce CD with AB
+    learn_reduce_matrix_lower_part_threaded!(trace, matrix, basis, arithmetic)
     # Interreduce CD
     interreduce_matrix_pivots!(matrix, basis, arithmetic)
 
@@ -2410,6 +2436,9 @@ function reduce_dense_row_by_pivots_sparse!(
 
     @inbounds for i in start_column:end_column
         # if the element is zero - no reduction is needed
+        if iszero(row[i])
+            continue
+        end
         row[i] = mod_p(row[i], arithmetic)
         if iszero(row[i])
             continue
@@ -2620,9 +2649,9 @@ function learn_reduce_matrix_lower_part!(
     # Allocate the buffers
     row = zeros(AccumType, ncols)
     not_reduced_to_zero = Vector{Int}()
-    useful_reducers = Set{Tuple{Int, Int, MonomIdx}}()
+    useful_reducers = Set{Tuple{Int, Int, MonomId}}()
     new_column_indices, new_coeffs = new_empty_sparse_row(CoeffType)
-    reducer_rows = Tuple{Int, Int, MonomIdx}[]
+    reducer_rows = Tuple{Int, Int, MonomId}[]
 
     @inbounds for i in 1:nlow
         nnz_column_indices = matrix.lower_rows[i]
@@ -2688,6 +2717,128 @@ function learn_reduce_matrix_lower_part!(
     true
 end
 
+function learn_reduce_matrix_lower_part_threaded!(
+    trace::TraceF4,
+    matrix::MacaulayMatrix{CoeffType},
+    basis::Basis{CoeffType},
+    arithmetic::AbstractArithmetic{AccumType, CoeffType}
+) where {CoeffType <: Coeff, AccumType <: Coeff}
+    if nthreads() == 1
+        @log level = 0 """
+        Using multi-threaded linear algebra while nthreads() == 1. 
+        Something probably went wrong."""
+    end
+
+    _, ncols = size(matrix)
+    nup, nlow = nrows_filled(matrix)
+
+    # Prepare the matrix
+    pivots, row_idx_to_coeffs = absolute_index_pivots!(matrix)
+    resize!(matrix.some_coeffs, nlow)
+
+    # Allocate the buffers
+    resize!(matrix.sentinels, ncols)
+    sentinels = matrix.sentinels
+    @inbounds for i in 1:ncols
+        sentinels[i] = 0
+    end
+    for i in 1:nup
+        sentinels[matrix.upper_rows[i][1]] = 1
+    end
+
+    row_buffers = map(_ -> zeros(AccumType, ncols), 1:nthreads())
+    useful_reducers_buffers = map(_ -> Set{Tuple{Int, Int, MonomId}}(), 1:nthreads())
+    not_reduced_to_zero = zeros(Int8, nlow)
+
+    @inbounds Base.Threads.@threads :static for i in 1:nlow
+        nnz_column_indices = matrix.lower_rows[i]
+        nnz_coeffs = basis.coeffs[row_idx_to_coeffs[i]]
+
+        row = row_buffers[threadid()]
+        useful_reducers = useful_reducers_buffers[threadid()]
+        new_column_indices, new_coeffs = new_empty_sparse_row(CoeffType)
+
+        load_sparse_row!(row, nnz_column_indices, nnz_coeffs)
+
+        # Additionally record the indices of rows that participated in reduction
+        # of the given row
+        first_nnz_col = nnz_column_indices[1]
+
+        success = false
+        while !success
+            # Reduce the combination by rows from the upper part of the matrix
+            zeroed = reduce_dense_row_by_pivots_sparse!(
+                new_column_indices,
+                new_coeffs,
+                row,
+                matrix,
+                basis,
+                pivots,
+                first_nnz_col,
+                ncols,
+                arithmetic,
+                useful_reducers,
+                tmp_pos=-1
+            )
+
+            if zeroed
+                break
+            end
+
+            # NOTE: we are not recording reducers from the lower part of the matrix
+            not_reduced_to_zero[i] = 1
+
+            @invariant length(new_column_indices) == length(new_coeffs)
+
+            old, success = Atomix.replace!(
+                Atomix.IndexableRef(sentinels, (Int(new_column_indices[1]),)),
+                Int8(0),
+                Int8(1),
+                Atomix.acquire_release,
+                Atomix.monotonic
+            )
+
+            if success
+                @invariant iszero(old)
+
+                normalize_row!(new_coeffs, arithmetic)
+                matrix.some_coeffs[i] = new_coeffs
+                matrix.lower_to_coeffs[new_column_indices[1]] = i
+                pivots[new_column_indices[1]] = new_column_indices
+            else
+                first_nnz_col = new_column_indices[1]
+            end
+        end
+
+        new_column_indices, new_coeffs = new_empty_sparse_row(CoeffType)
+    end
+
+    # Update the tracer information
+    # NOTE: we sort reducers by their original position in the array of pivots.
+    # This way, the rows are already sorted at the apply stage.
+    useful_reducers_sorted =
+        sort(collect(reduce(union!, useful_reducers_buffers)), by=reducer -> reducer[1])
+    push!(
+        trace.matrix_infos,
+        (nup=matrix.nrows_filled_upper, nlow=matrix.nrows_filled_lower, ncols=ncols)
+    )
+    not_reduced_to_zero_indices = findall(!iszero, not_reduced_to_zero)
+    push!(trace.matrix_nonzeroed_rows, not_reduced_to_zero_indices)
+    push!(
+        trace.matrix_upper_rows,
+        (map(f -> f[2], useful_reducers_sorted), map(f -> f[3], useful_reducers_sorted))
+    )
+    push!(
+        trace.matrix_lower_rows,
+        (
+            row_idx_to_coeffs[not_reduced_to_zero_indices],
+            matrix.lower_to_mult[not_reduced_to_zero_indices]
+        )
+    )
+
+    true
+end
+
 ###
 # Re-enumerating columns in the matrix and other auxiliaries
 # TODO: probably move this out of here?
@@ -2698,7 +2849,7 @@ end
     basis_ht::MonomialHashtable{M},
     htmp::MonomHash,
     etmp::M,
-    poly::Vector{MonomIdx}
+    poly::Vector{MonomId}
 ) where {M <: Monom}
     row = similar(poly)
     resize_hashtable_if_needed!(symbolic_ht, length(poly))
@@ -2711,7 +2862,7 @@ function column_to_monom_mapping!(matrix::MacaulayMatrix, symbol_ht::MonomialHas
     hdata = symbol_ht.hashdata
     load = symbol_ht.load
 
-    column_to_monom = Vector{MonomIdx}(undef, load - 1)
+    column_to_monom = Vector{MonomId}(undef, load - 1)
     j = 1
     # number of pivotal cols
     k = 0
@@ -2808,7 +2959,7 @@ function insert_in_basis_hashtable_pivots(
     row::Vector{ColumnLabel},
     ht::MonomialHashtable{M},
     symbol_ht::MonomialHashtable{M},
-    column_to_monom::Vector{MonomIdx}
+    column_to_monom::Vector{MonomId}
 ) where {M <: Monom}
     resize_hashtable_if_needed!(ht, length(row))
 

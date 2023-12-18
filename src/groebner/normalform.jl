@@ -74,7 +74,7 @@ end
 ) where {M <: Monom, C <: Coeff}
     @log level = -3 "Initializing structs for F4"
     basis, _, hashtable = initialize_structs(ring, monoms, coeffs, params)
-    tobereduced = initialize_basis_using_existing_hashtable(
+    tobereduced = basis_initialize_using_existing_hashtable(
         ring,
         monoms_to_be_reduced,
         coeffs_to_be_reduced,

@@ -1,7 +1,7 @@
 
 mutable struct NextMonomials{Ord}
     # monomials to check
-    monoms::Vector{MonomIdx}
+    monoms::Vector{MonomId}
     load::Int
     done::Dict{Int, Int}
     ord::Ord
@@ -12,13 +12,13 @@ Base.isempty(m::NextMonomials) = m.load == 0
 function initialize_nextmonomials(ht::MonomialHashtable{M}, ord) where {M}
     zz = construct_const_monom(M, ht.nvars)
     vidx = insert_in_hashtable!(ht, zz)
-    monoms = Vector{MonomIdx}(undef, 2^3)
+    monoms = Vector{MonomId}(undef, 2^3)
     monoms[1] = vidx
     load = 1
-    NextMonomials{typeof(ord)}(monoms, load, Dict{MonomIdx, Int}(vidx => 1), ord)
+    NextMonomials{typeof(ord)}(monoms, load, Dict{MonomId, Int}(vidx => 1), ord)
 end
 
-function insertnexts!(m::NextMonomials, ht::MonomialHashtable{M}, monom::MonomIdx) where {M}
+function insertnexts!(m::NextMonomials, ht::MonomialHashtable{M}, monom::MonomId) where {M}
     while m.load + ht.nvars >= length(m.monoms)
         resize!(m.monoms, length(m.monoms) * 2)
     end
@@ -82,10 +82,10 @@ function fglm_f4!(
     ord::AbstractInternalOrdering,
     params
 ) where {C <: Coeff}
-    newbasis = initialize_basis(ring, basis.nfilled, C)
+    newbasis = basis_initialize(ring, basis.nfilled, C)
     nextmonoms = initialize_nextmonomials(ht, ord)
     matrix = initialize_double_matrix(basis)
-    staircase = MonomIdx[]
+    staircase = MonomId[]
 
     while !isempty(nextmonoms)
         monom = nextmonomial!(nextmonoms)
@@ -94,7 +94,7 @@ function fglm_f4!(
             continue
         end
 
-        tobereduced = initialize_basis(ring, [[monom]], [C[1]])
+        tobereduced = basis_initialize(ring, [[monom]], [C[1]])
         tobereduced.nfilled = 1
 
         # compute normal form
@@ -133,7 +133,7 @@ function fglm_f4(
 end
 
 function extract_linear_basis(ring, matrix::DoubleMacaulayMatrix{C}) where {C}
-    exps = Vector{Vector{MonomIdx}}(undef, matrix.nrrows)
+    exps = Vector{Vector{MonomId}}(undef, matrix.nrrows)
     coeffs = Vector{Vector{C}}(undef, matrix.nrrows)
 
     for i in 1:(matrix.nrrows)
@@ -144,7 +144,7 @@ function extract_linear_basis(ring, matrix::DoubleMacaulayMatrix{C}) where {C}
         end
     end
 
-    linbasis = initialize_basis(ring, exps, coeffs)
+    linbasis = basis_initialize(ring, exps, coeffs)
 
     linbasis.nprocessed = length(exps)
     linbasis.nnonredundant = length(exps)

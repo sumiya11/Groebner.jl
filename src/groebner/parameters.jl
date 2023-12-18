@@ -88,8 +88,8 @@ mutable struct AlgorithmParameters{
     crt_algorithm::Symbol
 
     # Use multi-threading.
-    # This does nothing currently.
-    threaded::Symbol
+    threaded_f4::Symbol
+    threaded_multimodular::Symbol
 
     # Random number generator
     seed::UInt64
@@ -199,12 +199,21 @@ function AlgorithmParameters(
         if threaded === :yes
             @log level = 1_000 """
             You have explicitly provided the keyword argument `threaded = :yes`,
-            however, the multi-threading is disabled globally in Groebner.jl due
-            to the set environment variable GROEBNER_NO_THREADED=0
+            however, multi-threading is disabled globally in Groebner.jl due to
+            the environment variable GROEBNER_NO_THREADED=0
 
             Consider enabling threading by setting GROEBNER_NO_THREADED to 1"""
         end
         threaded = :no
+    end
+
+    if ground === :zp
+        threaded_f4 = threaded
+        threaded_multimodular = :no
+    else
+        @assert ground === :qq
+        threaded_f4 = :no
+        threaded_multimodular = threaded
     end
 
     # By default, modular computation uses learn & apply
@@ -240,7 +249,8 @@ function AlgorithmParameters(
     certify_check = $certify_check
     check = $(kwargs.check)
     linalg = $linalg_algorithm
-    threaded = $threaded
+    threaded_f4 = $threaded_f4
+    threaded_multimodular = $threaded_multimodular
     arithmetic = $arithmetic
     using_wide_type_for_coeffs = $(representation.using_wide_type_for_coeffs)
     reduced = $reduced
@@ -275,7 +285,8 @@ function AlgorithmParameters(
         modular_strategy,
         majority_threshold,
         crt_algorithm,
-        threaded,
+        threaded_f4,
+        threaded_multimodular,
         useed,
         rng,
         sweep,
@@ -312,7 +323,8 @@ function params_mod_p(
         params.modular_strategy,
         params.majority_threshold,
         params.crt_algorithm,
-        params.threaded,
+        params.threaded_f4,
+        params.threaded_multimodular,
         params.seed,
         params.rng,
         params.sweep,

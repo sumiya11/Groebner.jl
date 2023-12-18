@@ -283,7 +283,7 @@ function sort_input_terms_to_change_ordering!(
 end
 
 function sort_monom_indices_decreasing!(
-    monoms::Vector{MonomIdx},
+    monoms::Vector{MonomId},
     cnt::Integer,
     hashtable::MonomialHashtable,
     ord::AbstractInternalOrdering
@@ -296,7 +296,7 @@ function sort_monom_indices_decreasing!(
 end
 
 function sort_term_indices_decreasing!(
-    monoms::Vector{MonomIdx},
+    monoms::Vector{MonomId},
     coeffs::Vector{C},
     hashtable::MonomialHashtable,
     ord::AbstractInternalOrdering

@@ -85,7 +85,7 @@ function _timeit_expr(m, label, expr)
     # statements such as @label and @goto 
     timed_expr = TimerOutputs._timer_expr(m, false, _groebner_timer, label, expr)
     quote
-        if $(@__MODULE__).performance_counters_enabled()
+        if $m.performance_counters_enabled()
             $timed_expr
         else
             $expr

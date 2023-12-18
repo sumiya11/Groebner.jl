@@ -18,7 +18,7 @@ struct SPair{Degree}
     # Second polynomial -//-
     poly2::Int32
     # Index of lcm(lead(poly1), lead(poly2)) in the hashtable
-    lcm::MonomIdx
+    lcm::MonomId
     # Total degree of lcm
     deg::Degree
 end
@@ -27,15 +27,15 @@ end
 mutable struct Pairset{Degree}
     pairs::Vector{SPair{Degree}}
     # A buffer of monomials represented with indices to a hashtable
-    lcms::Vector{MonomIdx}
+    lcms::Vector{MonomId}
     # Number of filled pairs, initially zero
     load::Int
 end
 
 # Initializes and returns a pairset with max_vars_in_monom for `initial_size` pairs.
-function initialize_pairset(::Type{Degree}; initial_size=2^6) where {Degree}
+function pairset_initialize(::Type{Degree}; initial_size=2^6) where {Degree}
     pairs = Vector{SPair{Degree}}(undef, initial_size)
-    lcms = Vector{MonomIdx}(undef, 0)
+    lcms = Vector{MonomId}(undef, 0)
     Pairset(pairs, lcms, 0)
 end
 
@@ -43,7 +43,7 @@ Base.isempty(ps::Pairset) = ps.load == 0
 
 # Checks if it is possible to add `to_add` number of pairs to the pairset, and
 # resizes the pairset if not
-function resize_pairset_if_needed!(ps::Pairset, to_add::Int)
+function pairset_resize_if_needed!(ps::Pairset, to_add::Int)
     newsize = length(ps.pairs)
     while ps.load + to_add > newsize
         newsize = max(2 * newsize, ps.load + to_add)
@@ -52,7 +52,7 @@ function resize_pairset_if_needed!(ps::Pairset, to_add::Int)
     nothing
 end
 
-function resize_lcms_if_needed!(ps::Pairset, nfilled::Int)
+function pairset_resize_lcms_if_needed!(ps::Pairset, nfilled::Int)
     if length(ps.lcms) < nfilled + 1
         resize!(ps.lcms, floor(Int, nfilled * 1.1) + 1)
     end
@@ -69,7 +69,7 @@ const SugarCube = Int
 mutable struct Basis{C <: Coeff}
     # Vector of polynomials, each polynomial is a vector of monomials,
     # each monomial is represented with its index in hashtable
-    monoms::Vector{Vector{MonomIdx}}
+    monoms::Vector{Vector{MonomId}}
     # Polynomial coefficients
     coeffs::Vector{Vector{C}}
 
@@ -94,13 +94,13 @@ mutable struct Basis{C <: Coeff}
 end
 
 # Initialize basis for `ngens` elements with coefficient of type T
-function initialize_basis(ring::PolyRing, ngens::Int, ::Type{T}) where {T <: Coeff}
+function basis_initialize(ring::PolyRing, ngens::Int, ::Type{T}) where {T <: Coeff}
     sz = ngens # * 2
     ndone = 0
     nfilled = 0
     nlead = 0
 
-    monoms = Vector{Vector{MonomIdx}}(undef, sz)
+    monoms = Vector{Vector{MonomId}}(undef, sz)
     coeffs = Vector{Vector{T}}(undef, sz)
     isred = zeros(Bool, sz)
     nonred = Vector{Int}(undef, sz)
@@ -110,10 +110,10 @@ function initialize_basis(ring::PolyRing, ngens::Int, ::Type{T}) where {T <: Coe
     Basis(monoms, coeffs, sz, ndone, nfilled, isred, nonred, lead, nlead, sugar_cubes)
 end
 
-# initialize basis with the given hashed monomials and coefficients.
-function initialize_basis(
+# initialize basis with the given (already hashed) monomials and coefficients.
+function basis_initialize(
     ring::PolyRing,
-    hashedexps::Vector{Vector{MonomIdx}},
+    hashedexps::Vector{Vector{MonomId}},
     coeffs::Vector{Vector{T}}
 ) where {T <: Coeff}
     sz = length(hashedexps)
@@ -129,80 +129,82 @@ function initialize_basis(
     Basis(hashedexps, coeffs, sz, ndone, nfilled, isred, nonred, lead, nlead, sugar_cubes)
 end
 
-function repr_basis(basis::Basis{T}) where {T}
-    s = """
-    $(typeof(basis))
-    Filled / Processed / Non-redundant : $(basis.nfilled) / $(basis.nprocessed) / $(basis.nnonredundant)
-    Size allocated: $(basis.size)"""
-    s
-end
+###
+# Basis utils
 
-function copy_basis(
+function basis_shallow_copy_with_new_coeffs(
     basis::Basis{C},
-    new_coeffs::Vector{Vector{T}};
-    deepcopy=true
+    new_coeffs::Vector{Vector{T}}
 ) where {C <: Coeff, T <: Coeff}
-    if deepcopy
-        basis = _deepcopy_basis(basis, new_coeffs)
-    end
-    monoms = basis.monoms
-    coeffs = new_coeffs
-    isred = basis.isredundant
-    nonred = basis.nonredundant
-    divmasks = basis.divmasks
-    sugar_cubes = basis.sugar_cubes
     Basis(
-        monoms,
-        coeffs,
+        basis.monoms,
+        new_coeffs,
         basis.size,
         basis.nprocessed,
         basis.nfilled,
-        isred,
-        nonred,
-        divmasks,
+        basis.isredundant,
+        basis.nonredundant,
+        basis.divmasks,
         basis.nnonredundant,
-        sugar_cubes
+        basis.sugar_cubes
     )
 end
 
-function _deepcopy_basis(basis::Basis{T}, new_coeffs::Vector{Vector{C}}) where {T, C}
-    monoms = Vector{Vector{MonomIdx}}(undef, basis.size)
-    @inbounds for i in 1:(basis.nfilled)
-        monoms[i] = Vector{MonomIdx}(undef, length(basis.monoms[i]))
+function basis_deep_copy_with_new_coeffs(
+    basis::Basis{C},
+    new_coeffs::Vector{Vector{T}}
+) where {C <: Coeff, T <: Coeff}
+    # Assume that MonomId is trivially copiable    
+    @invariant isbitstype(MonomId)
+
+    monoms = Vector{Vector{MonomId}}(undef, length(basis.monoms))
+    @inbounds for i in 1:length(basis.monoms)
+        !isassigned(basis.monoms, i) && continue
+        monoms[i] = Vector{MonomId}(undef, length(basis.monoms[i]))
         for j in 1:length(basis.monoms[i])
             monoms[i][j] = basis.monoms[i][j]
         end
     end
-    isred = copy(basis.isredundant)
-    nonred = copy(basis.nonredundant)
-    lead = copy(basis.divmasks)
-    sugar_cubes = copy(basis.sugar_cubes)
+
     Basis(
         monoms,
         new_coeffs,
         basis.size,
         basis.nprocessed,
         basis.nfilled,
-        isred,
-        nonred,
-        lead,
+        copy(basis.isredundant),
+        copy(basis.nonredundant),
+        copy(basis.divmasks),
         basis.nnonredundant,
-        sugar_cubes
+        copy(basis.sugar_cubes)
     )
 end
 
-function deepcopy_basis(basis::Basis{T}) where {T}
-    new_coeffs = Vector{Vector{T}}(undef, basis.size)
-    @inbounds for i in 1:(basis.nfilled)
-        new_coeffs[i] = Vector{T}(undef, length(basis.coeffs[i]))
-        for j in 1:length(basis.coeffs[i])
-            new_coeffs[i][j] = copy(basis.coeffs[i][j])
+function basis_deepcopy(basis::Basis{C}) where {C <: Coeff}
+    coeffs = Vector{Vector{C}}(undef, length(basis.coeffs))
+
+    if isbitstype(C) # For Z/pZ
+        @inbounds for i in 1:length(basis.coeffs)
+            !isassigned(basis.coeffs, i) && continue
+            coeffs[i] = Vector{C}(undef, length(basis.coeffs[i]))
+            for j in 1:length(basis.coeffs[i])
+                coeffs[i][j] = basis.coeffs[i][j]
+            end
+        end
+    else    # For Z and Q
+        @inbounds for i in 1:length(basis.coeffs)
+            !isassigned(basis.coeffs, i) && continue
+            coeffs[i] = Vector{C}(undef, length(basis.coeffs[i]))
+            for j in 1:length(basis.coeffs[i])
+                # We cannot just use copy, since we mutate BigInts
+                coeffs[i][j] = deepcopy(basis.coeffs[i][j])
+            end
         end
     end
-    _deepcopy_basis(basis, new_coeffs)
+
+    basis_deep_copy_with_new_coeffs(basis, coeffs)
 end
 
-# 
 function resize_basis_if_needed!(basis::Basis{T}, to_add::Int) where {T}
     while basis.nprocessed + to_add >= basis.size
         basis.size = max(basis.size * 2, basis.nprocessed + to_add)
@@ -218,7 +220,7 @@ function resize_basis_if_needed!(basis::Basis{T}, to_add::Int) where {T}
     nothing
 end
 
-# Normalize each element of the basis by dividing it by its leading coefficient
+# Normalize each element of the basis to have leading coefficient equal to 1
 @timeit function normalize_basis!(
     basis::Basis{C},
     arithmetic::AbstractArithmeticZp{A, C}
@@ -285,9 +287,9 @@ end
             ps[newidx] = SPair(Int32(i), Int32(idx), lcms[i], pr(deg))
         else
             # lcm == 0 will mark redundancy of an S-pair
-            lcms[i] = MonomIdx(0)
-            # ps[newidx] = SPair(i, idx, MonomIdx(0), pr(deg))
-            ps[newidx] = SPair{pr}(Int32(i), Int32(idx), MonomIdx(0), typemax(pr))
+            lcms[i] = MonomId(0)
+            # ps[newidx] = SPair(i, idx, MonomId(0), pr(deg))
+            ps[newidx] = SPair{pr}(Int32(i), Int32(idx), MonomId(0), typemax(pr))
         end
     end
 
@@ -305,7 +307,7 @@ end
         # and has a greater degree than newly generated one then
         if ps[i].deg > m && is_monom_divisible(ps[i].lcm, new_lead, ht)
             # mark an existing pair redundant
-            ps[i] = SPair{pr}(ps[i].poly1, ps[i].poly2, MonomIdx(0), ps[i].deg)
+            ps[i] = SPair{pr}(ps[i].poly1, ps[i].poly2, MonomId(0), ps[i].deg)
         end
     end
 
@@ -458,7 +460,7 @@ end
     # make sure pairset and update hashtable have enough
     # space to store new pairs
     # note: we create too big array, can be fixed
-    resize_pairset_if_needed!(pairset, npairs)
+    pairset_resize_if_needed!(pairset, npairs)
     pairset_size = length(pairset.pairs)
 
     # update pairset,
@@ -466,7 +468,7 @@ end
     @inbounds for i in (basis.nprocessed + 1):(basis.nfilled)
         # check redundancy of new polynomial
         is_redundant!(pairset, basis, ht, update_ht, i) && continue
-        resize_lcms_if_needed!(pairset, basis.nfilled)
+        pairset_resize_lcms_if_needed!(pairset, basis.nfilled)
         # if not redundant, then add new S-pairs to pairset
         update_pairset!(pairset, basis, ht, update_ht, i)
     end
@@ -490,7 +492,7 @@ function fill_data!(
 
         nterms = length(coeffs[i])
         basis.coeffs[i] = coeffs[i]
-        basis.monoms[i] = Vector{MonomIdx}(undef, nterms)
+        basis.monoms[i] = Vector{MonomId}(undef, nterms)
         poly = basis.monoms[i]
         @inbounds for j in 1:nterms
             poly[j] = insert_in_hashtable!(ht, exponents[i][j])
@@ -603,7 +605,7 @@ function insert_lcms_in_basis_hashtable!(
     ht::MonomialHashtable{M},
     update_ht::MonomialHashtable{M},
     basis::Basis,
-    plcm::Vector{MonomIdx},
+    plcm::Vector{MonomId},
     ifirst::Int,
     ilast::Int
 ) where {M}
@@ -662,7 +664,7 @@ function insert_lcms_in_basis_hashtable!(
         ht.hashdata[ht.load + 1] = Hashvalue(0, h, uhd[ll].divmask, uhd[ll].deg)
 
         ht.load += 1
-        ps[m] = SPair{typeof(ps[m].deg)}(ps[m].poly1, ps[m].poly2, MonomIdx(pos), ps[m].deg)
+        ps[m] = SPair{typeof(ps[m].deg)}(ps[m].poly1, ps[m].poly2, MonomId(pos), ps[m].deg)
         m += 1
         l += 1
     end

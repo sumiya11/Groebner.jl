@@ -37,15 +37,19 @@ function _groebner_learn(polynomials, kws, representation)
         @log level = -2 "Input consisting of zero polynomials. Error will follow"
         throw(DomainError("Input consisting of zero polynomials."))
     end
+
     params = AlgorithmParameters(ring, representation, kws)
     ring, term_sorting_permutations =
         set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
     term_homogenizing_permutation = Vector{Vector{Int}}()
+
     if params.homogenize
         term_homogenizing_permutation, ring, monoms, coeffs =
             homogenize_generators!(ring, monoms, coeffs, params)
     end
+
     trace, gb_monoms, gb_coeffs = _groebner_learn(ring, monoms, coeffs, params)
+
     if params.homogenize
         trace.term_homogenizing_permutations = term_homogenizing_permutation
         ring, gb_monoms, gb_coeffs =
@@ -56,7 +60,10 @@ function _groebner_learn(polynomials, kws, representation)
     @log level = -7 """Sorting permutations:
     Terms: $(term_sorting_permutations)
     Polynomials: $(trace.input_permutation)"""
-    # @print_performance_counters
+
+    print_performance_counters(params.statistics)
+    print_statistics(params.statistics)
+
     WrappedTraceF4(trace),
     convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
 end
@@ -110,6 +117,9 @@ function _groebner_apply!(
     # @print_performance_counters
     !flag && return (flag, polynomials)
 
+    print_performance_counters(params.statistics)
+    print_statistics(params.statistics)
+
     flag, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
 end
 # Specialization for a batch of several inputs
@@ -142,6 +152,9 @@ function _groebner_apply!(
     !flag && return flag, batch
 
     gb_coeffs_unpacked = unpack_composite_coefficients(gb_coeffs)
+
+    print_performance_counters(params.statistics)
+    print_statistics(params.statistics)
 
     flag,
     ntuple(

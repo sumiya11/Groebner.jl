@@ -32,8 +32,8 @@
     # Basis for storing basis elements,
     # Pairset for storing critical pairs of basis elements,
     # Hashtable for hashing monomials stored in the basis
-    basis = initialize_basis(ring, length(monoms), C)
-    pairset = initialize_pairset(monom_entrytype(M))
+    basis = basis_initialize(ring, length(monoms), C)
+    pairset = pairset_initialize(monom_entrytype(M))
     hashtable = initialize_hashtable(ring, params.rng, M, tablesize)
 
     # Filling the basis and hashtable with the given inputs
@@ -57,13 +57,13 @@
 end
 
 # Same as initialize_structs, but uses an existing hashtable
-function initialize_basis_using_existing_hashtable(
+function basis_initialize_using_existing_hashtable(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     present_ht::MonomialHashtable;
 ) where {M, C <: Coeff}
-    basis = initialize_basis(ring, length(monoms), C)
+    basis = basis_initialize(ring, length(monoms), C)
     fill_data!(basis, present_ht, monoms, coeffs)
     basis
 end
@@ -118,10 +118,10 @@ end
     #    for each monomial.
     # NOTE: note that the size of hashtable grows as polynomials with new
     # monomials are added to the matrix, and the loop accounts for that
-    i = MonomIdx(symbol_ht.offset)
+    i = MonomId(symbol_ht.offset)
     @inbounds while i <= symbol_ht.load
         if symbol_ht.hashdata[i].idx != NON_PIVOT_COLUMN
-            i += MonomIdx(1)
+            i += MonomId(1)
             continue
         end
         resize_matrix_upper_part_if_needed!(matrix, matrix.nrows_filled_upper + 1)
@@ -131,7 +131,7 @@ end
             Hashvalue(UNKNOWN_PIVOT_COLUMN, hashval.hash, hashval.divmask, hashval.deg)
         matrix.ncols_left += 1
         find_multiplied_reducer!(basis, matrix, ht, symbol_ht, i)
-        i += MonomIdx(1)
+        i += MonomId(1)
     end
 
     # Shrink the matrix
@@ -297,7 +297,7 @@ function find_multiplied_reducer!(
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable,
-    vidx::MonomIdx;
+    vidx::MonomId;
     sugar::Bool=false
 )
     e = symbol_ht.monoms[vidx]

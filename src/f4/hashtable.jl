@@ -1,12 +1,8 @@
 # Monomial hashtable.
 
-# This hashtable implementation assumes that the hash function is linear. (each
-# monomial implementation must implement linear hash function)
-
 # The hashtable size is always the power of two. The hashtable size is doubled
-# each time the load factor exceeds ht_resize_threshold (see below).
-# ht_resize_threshold can be a bit smaller than 0.5, since the number of hits
-# greatly exceeds the number of misses usually
+# each time the load factor exceeds a threshold, which can be a bit smaller than
+# 0.5, since the number of hits greatly exceeds the number of misses usually.
 
 # Some monomial implementations are mutable, and some are not. In order to
 # maintain generic code that will work for both, we usually write something
@@ -16,12 +12,15 @@
 # m3. That allows us to write more or less independently of the monomial
 # implementation.
 
+# NOTE: This hashtable implementation assumes that the hash function is linear.
+
 # Hash of a monomial in the hashtable
-# NOTE: Changing the type to one of different size will cause errors in hashing
 const MonomHash = UInt32
 
-# Index of a monomial in the hashtable
-const MonomIdx = Int32
+# The idenfifier of a monomial. This idenfifier is guaranteed to be unique
+# within a particular hashtable. This allows one to use this idenfifier when
+# working with monomials
+const MonomId = Int32
 
 # Division mask of a monomial
 const DivisionMask = UInt32
@@ -38,12 +37,12 @@ struct Hashvalue
     deg::MonomHash
 end
 
-# Open addressing, linear scan, hashtable.
+# Hashtable implements open addressing with linear scan.
 mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractInternalOrdering}
     #= Data =#
     monoms::Vector{M}
-    # Maps monomial hash to its position in the `monoms` array
-    hashtable::Vector{MonomIdx}
+    # Maps monomial id to its position in the `monoms` array
+    hashtable::Vector{MonomId}
     # Stores hashes, division masks, and other valuable info for each hashtable
     # enrty
     hashdata::Vector{Hashvalue}
@@ -70,6 +69,10 @@ mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractInternalOrdering}
     # Elements currently added
     load::Int
     offset::Int
+
+    # If the hashtable is frozen, any operation that tries to modify it will
+    # result in an error. However, at the moment, we cannot guarantee that :(
+    frozen::Bool
 end
 
 ###
@@ -89,7 +92,7 @@ function initialize_hashtable(
 ) where {Ord <: AbstractInternalOrdering, T}
     exponents = Vector{MonomT}(undef, initial_size)
     hashdata = Vector{Hashvalue}(undef, initial_size)
-    hashtable = zeros(MonomIdx, initial_size)
+    hashtable = zeros(MonomId, initial_size)
 
     nvars = ring.nvars
     ord = ring.ord
@@ -136,13 +139,14 @@ function initialize_hashtable(
         ndivbits,
         size,
         load,
-        offset
+        offset,
+        false
     )
 end
 
 function copy_hashtable(ht::MonomialHashtable)
     exps = Vector{M}(undef, ht.size)
-    table = Vector{MonomIdx}(undef, ht.size)
+    table = Vector{MonomId}(undef, ht.size)
     data = Vector{Hashvalue}(undef, ht.size)
     exps[1] = construct_const_monom(M, ht.nvars)
 
@@ -165,7 +169,8 @@ function copy_hashtable(ht::MonomialHashtable)
         ht.ndivbits,
         ht.size,
         ht.load,
-        ht.offset
+        ht.offset,
+        ht.frozen
     )
 end
 
@@ -178,7 +183,7 @@ end
 
     exponents = Vector{M}(undef, initial_size)
     hashdata = Vector{Hashvalue}(undef, initial_size)
-    hashtable = zeros(MonomIdx, initial_size)
+    hashtable = zeros(MonomId, initial_size)
 
     # preserve ring info
     nvars = ht.nvars
@@ -211,11 +216,14 @@ end
         ndivbits,
         size,
         load,
-        offset
+        offset,
+        false
     )
 end
 
 function reinitialize_hashtable!(ht::MonomialHashtable{M}) where {M}
+    @invariant !ht.frozen
+
     initial_size = 2^6
 
     # Reinitialize counters
@@ -230,7 +238,7 @@ function reinitialize_hashtable!(ht::MonomialHashtable{M}) where {M}
     resize!(ht.hashtable, ht.size)
     hashtable = ht.hashtable
     @inbounds for i in 1:(ht.size)
-        hashtable[i] = zero(MonomIdx)
+        hashtable[i] = zero(MonomId)
     end
 
     ht.monoms[1] = construct_const_monom(M, ht.nvars)
@@ -266,6 +274,8 @@ function resize_hashtable_if_needed!(ht::MonomialHashtable, added::Int)
         newsize *= 2
     end
     if newsize != ht.size
+        @invariant !ht.frozen
+
         ht.size = newsize
         @assert ispow2(ht.size)
 
@@ -273,7 +283,7 @@ function resize_hashtable_if_needed!(ht::MonomialHashtable, added::Int)
         resize!(ht.monoms, ht.size)
         resize!(ht.hashtable, ht.size)
         @inbounds for i in 1:(ht.size)
-            ht.hashtable[i] = zero(MonomIdx)
+            ht.hashtable[i] = zero(MonomId)
         end
 
         mod = MonomHash(ht.size - 1)
@@ -344,8 +354,10 @@ function insert_in_hashtable!(ht::MonomialHashtable{M}, e::M) where {M <: Monom}
         return vidx
     end
 
+    @invariant !ht.frozen
+
     # add its position to hashtable, and insert exponent to that position
-    vidx = MonomIdx(ht.load + 1)
+    vidx = MonomId(ht.load + 1)
     @inbounds ht.hashtable[hidx] = vidx
     @inbounds ht.monoms[vidx] = copy_monom(e)
     divmask = monom_divmask(e, DivisionMask, ht.ndivvars, ht.divmap, ht.ndivbits)
@@ -366,6 +378,8 @@ end
 # Having `ht` filled with monomials from input polys,
 # computes ht.divmap and divmask for each of already stored monomials
 function fill_divmask!(ht::MonomialHashtable)
+    @invariant !ht.frozen
+
     ndivvars = ht.ndivvars
 
     min_exp = Vector{UInt64}(undef, ndivvars)
@@ -417,7 +431,7 @@ end
 # Monomial arithmetic
 
 # h1 divisible by h2
-function is_monom_divisible(h1::MonomIdx, h2::MonomIdx, ht::MonomialHashtable)
+function is_monom_divisible(h1::MonomId, h2::MonomId, ht::MonomialHashtable)
     @inbounds if ht.use_divmask
         if !is_divmask_divisible(ht.hashdata[h1].divmask, ht.hashdata[h2].divmask)
             return false
@@ -429,7 +443,7 @@ function is_monom_divisible(h1::MonomIdx, h2::MonomIdx, ht::MonomialHashtable)
 end
 
 # checks that gcd(g1, h2) is one
-function is_gcd_const(h1::MonomIdx, h2::MonomIdx, ht::MonomialHashtable)
+function is_gcd_const(h1::MonomId, h2::MonomId, ht::MonomialHashtable)
     @inbounds e1 = ht.monoms[h1]
     @inbounds e2 = ht.monoms[h2]
     is_gcd_const(e1, e2)
@@ -438,8 +452,8 @@ end
 # computes lcm of he1 and he2 as exponent vectors from ht1
 # and inserts it in ht2
 function get_lcm(
-    he1::MonomIdx,
-    he2::MonomIdx,
+    he1::MonomId,
+    he2::MonomId,
     ht1::MonomialHashtable{M},
     ht2::MonomialHashtable{M}
 ) where {M}
@@ -457,10 +471,10 @@ end
 
 # compare pairwise divisibility of lcms from a[first:last] with lcm
 function check_monomial_division_in_update(
-    a::Vector{MonomIdx},
+    a::Vector{MonomId},
     first::Int,
     last::Int,
-    lcm::MonomIdx,
+    lcm::MonomId,
     ht::MonomialHashtable{M}
 ) where {M <: Monom}
 
@@ -497,10 +511,10 @@ end
 # with hash `htmp` to hashtable `symbol_ht`,
 # and substitute hashes in row
 function insert_multiplied_poly_in_hashtable!(
-    row::Vector{MonomIdx},
+    row::Vector{MonomId},
     htmp::MonomHash,
     etmp::M,
-    poly::Vector{MonomIdx},
+    poly::Vector{MonomId},
     ht::MonomialHashtable{M},
     symbol_ht::MonomialHashtable{M}
 ) where {M <: Monom}
@@ -559,6 +573,8 @@ function insert_multiplied_poly_in_hashtable!(
             @goto Letsgo
         end
         # miss
+
+        @invariant !symbol_ht.frozen
 
         # add multiplied exponent to hash table        
         sexps[lastidx] = copy_monom(enew)

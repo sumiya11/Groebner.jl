@@ -35,7 +35,7 @@ logging_enabled() = true
 If performance-tracking macro `@timeit` should be enabled in Groebner. 
 
 When this is `false`, all performance counters in Groebner are disabled and
-entail **(almost)** no runtime overhead.
+entail no runtime overhead.
 """
 performance_counters_enabled() = false
 

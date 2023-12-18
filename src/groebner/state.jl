@@ -95,10 +95,10 @@ function clear_denominators!(
     coeffs_zz::Vector{Vector{C1}},
     coeffs_qq::Vector{Vector{C2}}
 ) where {C1 <: CoeffZZ, C2 <: CoeffQQ}
-    @assert length(coeffs_zz) == length(coeffs_qq)
+    @invariant length(coeffs_zz) == length(coeffs_qq)
     den, buf = buffer.scalebuf1, buffer.scalebuf2
     @inbounds for i in 1:length(coeffs_qq)
-        @assert length(coeffs_zz[i]) == length(coeffs_qq[i])
+        @invariant length(coeffs_zz[i]) == length(coeffs_qq[i])
         den = common_denominator!(den, coeffs_qq[i])
         sz  = Base.GMP.MPZ.sizeinbase(den, 2)
         for j in 1:length(coeffs_qq[i])
@@ -133,7 +133,11 @@ function clear_denominators!(
     deepcopy=false
 ) where {T <: CoeffQQ}
     coeffs_zz = clear_denominators!(buffer, basis.coeffs)
-    copy_basis(basis, coeffs_zz, deepcopy=deepcopy)
+    if deepcopy
+        basis_deep_copy_with_new_coeffs(basis, coeffs_zz)
+    else
+        basis_shallow_copy_with_new_coeffs(basis, coeffs_zz)
+    end
 end
 
 # Reduce x modulo a prime
@@ -191,15 +195,19 @@ function reduce_modulo_p!(
     deepcopy=true
 )
     ring_ff, coeffs_ff = reduce_modulo_p!(buffer, ring, basis.coeffs, prime)
-    ring_ff, copy_basis(basis, coeffs_ff, deepcopy=deepcopy)
+    new_basis = if deepcopy
+        basis_deep_copy_with_new_coeffs(basis, coeffs_ff)
+    else
+        basis_shallow_copy_with_new_coeffs(basis, coeffs_ff)
+    end
+    ring_ff, new_basis
 end
 
 function reduce_modulo_p_in_batch!(
     coeffbuff::CoefficientBuffer,
     ring::PolyRing,
     basis::Basis{C},
-    prime_xn::NTuple{N, T};
-    deepcopy=true
+    prime_xn::NTuple{N, T}
 ) where {C, N, T}
     coeffs_zz = basis.coeffs
     coeffs_ff_xn = [Vector{CompositeInt{N, T}}(undef, length(c)) for c in coeffs_zz]
@@ -224,7 +232,7 @@ function reduce_modulo_p_in_batch!(
         end
     end
     ring_ff_4x = PolyRing(ring.nvars, ring.ord, CompositeInt{N, T}(prime_xn))
-    basis_ff_4x = copy_basis(basis, coeffs_ff_xn, deepcopy=deepcopy)
+    basis_ff_4x = basis_deep_copy_with_new_coeffs(basis, coeffs_ff_xn)
 
     ring_ff_4x, basis_ff_4x
 end

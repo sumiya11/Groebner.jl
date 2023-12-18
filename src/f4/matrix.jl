@@ -68,7 +68,7 @@ mutable struct MacaulayMatrix{T <: Coeff}
     D_coeffs_dense::Vector{Vector{T}}
 
     # Maps the columns of the matrix to corresponding monomial labels
-    column_to_monom::Vector{MonomIdx}
+    column_to_monom::Vector{MonomId}
 
     # If the AB part of the matrix is in Row-Reduced-Echelon-Form.
     # Generally, this field is `false`, and AB is only in Row-Echelon-Form.
@@ -97,8 +97,8 @@ mutable struct MacaulayMatrix{T <: Coeff}
     lower_to_coeffs::Vector{Int}
 
     # Index of the row --> monomial multiplier
-    upper_to_mult::Vector{MonomIdx}
-    lower_to_mult::Vector{MonomIdx}
+    upper_to_mult::Vector{MonomId}
+    lower_to_mult::Vector{MonomId}
 
     # A vector of random elements from the ground field, which is used to
     # compute hashes of matrix rows
@@ -146,7 +146,7 @@ end
         Vector{Vector{T}}(),
         Vector{Vector{T}}(),
         Vector{Vector{T}}(),
-        Vector{MonomIdx}(),
+        Vector{MonomId}(),
         false,
         0,
         0,
@@ -157,8 +157,8 @@ end
         Vector{Int}(),
         Vector{Int}(),
         Vector{Int}(),
-        Vector{MonomIdx}(),
-        Vector{MonomIdx}(),
+        Vector{MonomId}(),
+        Vector{MonomId}(),
         Vector{T}(),
         Vector{Int8}(),
         false,
@@ -286,7 +286,7 @@ end
 # # Returns a Vector{ColumnLabel} of length at least length(vec). This vector can
 # # be then used as a single row of the matrix, and it is guaranteed that the
 # # underlying memory is not shared for the duration of a single F4 iteration.
-# function allocate_matrix_row_similar!(matrix::MacaulayMatrix, vec::Vector{MonomIdx})
+# function allocate_matrix_row_similar!(matrix::MacaulayMatrix, vec::Vector{MonomId})
 #     !matrix.use_preallocated_buffers && return similar(vec)
 
 #     # TODO: This is broken

@@ -27,7 +27,7 @@ function initialize_structs_with_trace(
 
     trace = initialize_trace_f4(
         ring,
-        deepcopy_basis(basis),
+        basis_deepcopy(basis),
         basis,
         hashtable,
         permutation,
@@ -427,7 +427,7 @@ function symbolic_preprocessing!(
         matrix.upper_to_coeffs[i] = poly_idx
     end
 
-    i = MonomIdx(symbol_ht.offset)
+    i = MonomId(symbol_ht.offset)
     @inbounds while i <= symbol_ht.load
         # not a reducer
         if iszero(symbol_ht.hashdata[i].idx)
@@ -435,7 +435,7 @@ function symbolic_preprocessing!(
             symbol_ht.hashdata[i] =
                 Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
         end
-        i += MonomIdx(1)
+        i += MonomId(1)
     end
 
     matrix.nrows_filled_lower = nlow

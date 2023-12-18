@@ -43,4 +43,31 @@ import Primes
     @test [gb5, gb6, gb7, gb8] == true_gb[3:6]
     @test [gb9, gb10, gb11, gb12, gb13, gb14, gb15, gb16] == true_gb[3:10]
     @test collect(gbs) == true_gb[3:18]
+
+    function test_learn_apply(system, primes)
+        @assert length(primes) > 4
+        systems_zp = map(p -> map(f -> map_coefficients(c -> GF(p)(c), f), system), primes)
+
+        trace, gb_0 = Groebner.groebner_learn(systems_zp[1])
+
+        flag, gb = Groebner.groebner_apply!(trace, systems_zp[2])
+        @test gb == Groebner.groebner(systems_zp[2])
+
+        flag, (gb,) = Groebner.groebner_apply!(trace, (systems_zp[2],))
+        @test gb == Groebner.groebner(systems_zp[2])
+
+        flag, gbs = Groebner.groebner_apply!(trace, (systems_zp[2:5]...,))
+        @test collect(gbs) == map(Groebner.groebner, systems_zp[2:5])
+    end
+
+    kat = Groebner.katsuran(8, ground=ZZ, ordering=:degrevlex)
+    cyc = Groebner.cyclicn(6, ground=ZZ, ordering=:degrevlex)
+
+    ps1 = Primes.nextprimes(2^30, 5)
+    ps2 = [2^31 - 1, 2^30 + 3, 2^32 + 15, 2^40 + 15, 2^30 + 3]
+
+    test_learn_apply(kat, ps1)
+    test_learn_apply(kat, ps2)
+    test_learn_apply(cyc, ps2)
+
 end
