@@ -129,6 +129,18 @@ function basis_initialize(
     Basis(hashedexps, coeffs, sz, ndone, nfilled, isred, nonred, lead, nlead, sugar_cubes)
 end
 
+# Same as f4_initialize_structs, but uses an existing hashtable
+function basis_initialize_using_existing_hashtable(
+    ring::PolyRing,
+    monoms::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    present_ht::MonomialHashtable;
+) where {M, C <: Coeff}
+    basis = basis_initialize(ring, length(monoms), C)
+    fill_data!(basis, present_ht, monoms, coeffs)
+    basis
+end
+
 ###
 # Basis utils
 
@@ -205,7 +217,7 @@ function basis_deepcopy(basis::Basis{C}) where {C <: Coeff}
     basis_deep_copy_with_new_coeffs(basis, coeffs)
 end
 
-function resize_basis_if_needed!(basis::Basis{T}, to_add::Int) where {T}
+function basis_resize_if_needed!(basis::Basis{T}, to_add::Int) where {T}
     while basis.nprocessed + to_add >= basis.size
         basis.size = max(basis.size * 2, basis.nprocessed + to_add)
         resize!(basis.monoms, basis.size)
@@ -221,7 +233,7 @@ function resize_basis_if_needed!(basis::Basis{T}, to_add::Int) where {T}
 end
 
 # Normalize each element of the basis to have leading coefficient equal to 1
-@timeit function normalize_basis!(
+@timeit function basis_normalize!(
     basis::Basis{C},
     arithmetic::AbstractArithmeticZp{A, C}
 ) where {A <: Union{CoeffZp, CompositeCoeffZp}, C <: Union{CoeffZp, CompositeCoeffZp}}
@@ -240,7 +252,7 @@ end
 end
 
 # Normalize each element of the basis by dividing it by its leading coefficient
-function normalize_basis!(
+function basis_normalize!(
     basis::Basis{C},
     arithmetic::AbstractArithmeticQQ
 ) where {C <: CoeffQQ}
@@ -263,7 +275,7 @@ end
 #
 # NOTE: discarding redundant critical pairs is unaffected by the current
 # selection strategy
-@timeit function update_pairset!(
+@timeit function pairset_update!(
     pairset::Pairset,
     basis::Basis{C},
     ht::MonomialHashtable{M},
@@ -368,7 +380,7 @@ end
 end
 
 # Updates information about redundant generators in the basis
-@timeit function update_basis!(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
+@timeit function basis_update!(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
     k = 1
     lead = basis.divmasks
     nonred = basis.nonredundant
@@ -394,7 +406,7 @@ end
 end
 
 # Checks if element of basis at position idx is redundant
-function is_redundant!(
+function basis_is_new_polynomial_redundant!(
     pairset::Pairset,
     basis::Basis,
     ht::MonomialHashtable{M},
@@ -433,51 +445,6 @@ function is_redundant!(
     return false
 end
 
-# Updates basis and pairset.
-# 
-# New elements added to the basis from the f4 matrix 
-# (the ones with indices from basis.nprocessed+1 to basis.nfilled)
-# are checked for being redundant.
-#
-# Then, pairset is updated with the new S-pairs formed
-# from the added elements
-#
-# Always checks new elements redundancy.
-@timeit function update!(
-    pairset::Pairset,
-    basis::Basis,
-    ht::MonomialHashtable{M},
-    update_ht::MonomialHashtable{M}
-) where {M <: Monom}
-    # total number of elements in the basis (old + new)
-    npivs = basis.nfilled
-    # number of potential critical pairs to add
-    npairs = basis.nprocessed * npivs + div((npivs + 1) * npivs, 2)
-
-    @invariant basis.nfilled >= basis.nprocessed
-    @stat new_basis_elements = basis.nfilled - basis.nprocessed
-
-    # make sure pairset and update hashtable have enough
-    # space to store new pairs
-    # note: we create too big array, can be fixed
-    pairset_resize_if_needed!(pairset, npairs)
-    pairset_size = length(pairset.pairs)
-
-    # update pairset,
-    # for each new element in basis
-    @inbounds for i in (basis.nprocessed + 1):(basis.nfilled)
-        # check redundancy of new polynomial
-        is_redundant!(pairset, basis, ht, update_ht, i) && continue
-        pairset_resize_lcms_if_needed!(pairset, basis.nfilled)
-        # if not redundant, then add new S-pairs to pairset
-        update_pairset!(pairset, basis, ht, update_ht, i)
-    end
-
-    # update basis
-    update_basis!(basis, ht)
-    pairset_size
-end
-
 # given input exponent and coefficient vectors hashes exponents into `ht`
 # and then constructs hashed polynomials for `basis`
 function fill_data!(
@@ -497,15 +464,12 @@ function fill_data!(
         @inbounds for j in 1:nterms
             poly[j] = insert_in_hashtable!(ht, exponents[i][j])
         end
-
-        # sort terms (not needed)
-        # beautifuly coefficients (not needed)
     end
 
     basis.nfilled = ngens
 end
 
-function sweep_redundant!(basis::Basis, hashtable)
+function basis_sweep_redundant!(basis::Basis, hashtable)
     # here -- assert that basis is in fact a Groebner basis.
     # NOTE: maybe sort generators for more effective sweeping?
     @inbounds for i in 1:(basis.nprocessed)
@@ -524,9 +488,8 @@ function sweep_redundant!(basis::Basis, hashtable)
     nothing
 end
 
-# Remove redundant elements from the basis
-# by moving all non-redundant up front
-function mark_redundant!(basis::Basis)
+# Remove redundant elements from the basis by moving all non-redundant up front
+function basis_mark_redundant_elements!(basis::Basis)
     j = 1
     @inbounds for i in 1:(basis.nnonredundant)
         if !basis.isredundant[basis.nonredundant[i]]
@@ -540,10 +503,7 @@ function mark_redundant!(basis::Basis)
     basis
 end
 
-# f4 must produce a `Basis` object which satisfies several conditions.
-# This functions standardizes the given basis so that conditions hold.
-# (see f4/f4.jl)
-@timeit function standardize_basis!(
+@timeit function basis_standardize!(
     ring,
     basis::Basis,
     ht::MonomialHashtable,
@@ -565,29 +525,32 @@ end
     resize!(basis.isredundant, basis.nprocessed)
     resize!(basis.sugar_cubes, basis.nprocessed)
     sort_polys_by_lead_increasing!(basis, ht, ord=ord)
-    normalize_basis!(basis, arithmetic)
+    basis_normalize!(basis, arithmetic)
 end
 
-# Returns the exponent vectors of polynomials in the basis
-function hash_to_exponents(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
-    exps = Vector{Vector{M}}(undef, basis.nnonredundant)
+# Returns the monomials of the polynomials in the basis
+function get_monoms_by_identifiers(
+    basis::Basis,
+    ht::MonomialHashtable{M}
+) where {M <: Monom}
+    monoms = Vector{Vector{M}}(undef, basis.nnonredundant)
     @inbounds for i in 1:(basis.nnonredundant)
         idx = basis.nonredundant[i]
         poly = basis.monoms[idx]
-        exps[i] = Vector{M}(undef, length(poly))
+        monoms[i] = Vector{M}(undef, length(poly))
         for j in 1:length(poly)
-            exps[i][j] = ht.monoms[poly[j]]
+            monoms[i][j] = ht.monoms[poly[j]]
         end
     end
-    exps
+    monoms
 end
 
-# Returns the exponent vectors and the coefficients of polynomials in the basis
-@timeit function export_basis_data(
+# Returns the monomials and the coefficients of polynomials in the basis
+@timeit function basis_export_data(
     basis::Basis{C},
     ht::MonomialHashtable{M}
 ) where {M <: Monom, C <: Coeff}
-    exps = hash_to_exponents(basis, ht)
+    exps = get_monoms_by_identifiers(basis, ht)
     coeffs = Vector{Vector{C}}(undef, basis.nnonredundant)
     @inbounds for i in 1:(basis.nnonredundant)
         idx = basis.nonredundant[i]
@@ -656,6 +619,8 @@ function insert_lcms_in_basis_hashtable!(
             l += 1
             @goto Letsgo
         end
+
+        @invariant !ht.frozen
 
         ht.hashtable[k] = pos = ht.load + 1
 

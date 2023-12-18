@@ -29,7 +29,7 @@ end
     basiscoeffs::Vector{Vector{C}},
     params
 ) where {M, C <: Coeff}
-    basis, pairset, ht = initialize_structs(ring, basisexps, basiscoeffs, params)
+    basis, pairset, ht = f4_initialize_structs(ring, basisexps, basiscoeffs, params)
     basis, linbasis, ht = fglm_f4!(ring, basis, ht, ring.ord, params)
-    export_basis_data(linbasis, ht)
+    basis_export_data(linbasis, ht)
 end

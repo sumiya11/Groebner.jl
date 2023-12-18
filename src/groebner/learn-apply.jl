@@ -77,11 +77,11 @@ function _groebner_learn(
     @log level = -2 "Groebner learn phase over Z_p"
     # Initialize F4 structs
     trace, basis, pairset, hashtable =
-        initialize_structs_with_trace(ring, monoms, coeffs, params)
+        f4_initialize_structs_with_trace(ring, monoms, coeffs, params)
     @log level = -5 "Before F4:" basis
     f4_learn!(trace, ring, trace.gb_basis, pairset, hashtable, params)
     @log level = -5 "After F4:" basis
-    gb_monoms, gb_coeffs = export_basis_data(trace.gb_basis, trace.hashtable)
+    gb_monoms, gb_coeffs = basis_export_data(trace.gb_basis, trace.hashtable)
     trace, gb_monoms, gb_coeffs
 end
 
@@ -169,7 +169,7 @@ function _groebner_apply!(ring, trace, params)
 
     flag = f4_apply!(trace, ring, trace.buf_basis, params)
 
-    gb_monoms, gb_coeffs = export_basis_data(trace.gb_basis, trace.hashtable)
+    gb_monoms, gb_coeffs = basis_export_data(trace.gb_basis, trace.hashtable)
 
     # Check once again that the sizes coincide
     length(gb_monoms) != length(gb_coeffs) && return false, gb_monoms, gb_coeffs

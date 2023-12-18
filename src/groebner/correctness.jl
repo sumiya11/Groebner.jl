@@ -119,7 +119,7 @@ function randomized_correctness_check!(
     # random prime
     arithmetic = select_arithmetic(CoeffModular, prime, :auto, false)
     # TODO: Why is this here? F4 normalizes the basis on entry
-    normalize_basis!(gb_ff, arithmetic)
+    basis_normalize!(gb_ff, arithmetic)
     f4_normalform!(ring_ff, gb_ff, input_ff, hashtable, arithmetic)
     for i in 1:(input_ff.nprocessed)
         # meaning that something is not reduced

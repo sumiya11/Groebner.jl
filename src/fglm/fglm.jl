@@ -58,7 +58,7 @@ function add_generator!(basis::Basis{C}, matrix, relation, ht, ord) where {C <: 
 
     sort_term_indices_decreasing!(rexps, rcoeffs, ht, ord)
 
-    resize_basis_if_needed!(basis, 1)
+    basis_resize_if_needed!(basis, 1)
     basis.nprocessed += 1
     basis.nnonredundant += 1
     basis.nonredundant[basis.nnonredundant] = basis.nnonredundant
@@ -115,7 +115,7 @@ function fglm_f4!(
         end
     end
 
-    standardize_basis!(ring, newbasis, ht, ord, params.arithmetic)
+    basis_standardize!(ring, newbasis, ht, ord, params.arithmetic)
 
     linbasis = extract_linear_basis(ring, matrix)
     newbasis, linbasis, ht
@@ -127,9 +127,9 @@ function fglm_f4(
     basiscoeffs::Vector{Vector{C}},
     params
 ) where {M, C <: Coeff}
-    basis, pairset, ht = initialize_structs(ring, basisexps, basiscoeffs, params)
+    basis, pairset, ht = f4_initialize_structs(ring, basisexps, basiscoeffs, params)
     basis, linbasis, ht = fglm_f4!(ring, basis, ht, ring.ord, params)
-    export_basis_data(basis, ht)
+    basis_export_data(basis, ht)
 end
 
 function extract_linear_basis(ring, matrix::DoubleMacaulayMatrix{C}) where {C}

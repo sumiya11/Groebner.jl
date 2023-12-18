@@ -420,7 +420,7 @@ function linear_algebra_autoreduce_basis!(
     arithmetic::AbstractArithmetic
 )
     sort_matrix_upper_rows!(matrix)
-    deterministic_sparse_interreduction!(matrix, basis, arithmetic)
+    deterministic_sparse_interf4_reduction!(matrix, basis, arithmetic)
     true
 end
 
@@ -434,56 +434,56 @@ function linear_algebra_autoreduce_basis!(
     sort_matrix_upper_rows!(matrix)
 
     if linalg.algorithm === :learn
-        learn_deterministic_sparse_interreduction!(trace, matrix, basis, arithmetic)
+        learn_deterministic_sparse_interf4_reduction!(trace, matrix, basis, arithmetic)
     else
         @assert linalg.algorithm === :apply
-        apply_deterministic_sparse_interreduction!(trace, matrix, basis, arithmetic)
+        apply_deterministic_sparse_interf4_reduction!(trace, matrix, basis, arithmetic)
     end
 
     true
 end
 
-function deterministic_sparse_interreduction!(
+function deterministic_sparse_interf4_reduction!(
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
 )
-    @log level = -3 "deterministic_sparse_interreduction!"
+    @log level = -3 "deterministic_sparse_interf4_reduction!"
     @log level = -3 repr_matrix(matrix)
     # Prepare the matrix
-    absolute_index_pivots_in_interreduction!(matrix, basis)
+    absolute_index_pivots_in_interf4_reduction!(matrix, basis)
     # Interreduce AB
     interreduce_matrix_pivots!(matrix, basis, arithmetic, reversed_rows=true)
 
     true
 end
 
-function learn_deterministic_sparse_interreduction!(
+function learn_deterministic_sparse_interf4_reduction!(
     trace::TraceF4,
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
 )
-    @log level = -3 "learn_deterministic_sparse_interreduction!"
+    @log level = -3 "learn_deterministic_sparse_interf4_reduction!"
     @log level = -3 repr_matrix(matrix)
     # Prepare the matrix
-    absolute_index_pivots_in_interreduction!(matrix, basis)
+    absolute_index_pivots_in_interf4_reduction!(matrix, basis)
     # Interreduce AB
     learn_interreduce_matrix_pivots!(trace, matrix, basis, arithmetic, reversed_rows=true)
 
     true
 end
 
-function apply_deterministic_sparse_interreduction!(
+function apply_deterministic_sparse_interf4_reduction!(
     trace::TraceF4,
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
 )
-    @log level = -3 "apply_deterministic_sparse_interreduction!"
+    @log level = -3 "apply_deterministic_sparse_interf4_reduction!"
     @log level = -3 repr_matrix(matrix)
     # Prepare the matrix
-    absolute_index_pivots_in_interreduction!(matrix, basis)
+    absolute_index_pivots_in_interf4_reduction!(matrix, basis)
     # Interreduce AB
     flag = apply_interreduce_matrix_pivots!(
         trace,
@@ -2212,7 +2212,7 @@ function absolute_index_pivots!(matrix::MacaulayMatrix)
     pivots, lower_to_coeffs
 end
 
-function absolute_index_pivots_in_interreduction!(matrix::MacaulayMatrix, basis::Basis)
+function absolute_index_pivots_in_interf4_reduction!(matrix::MacaulayMatrix, basis::Basis)
     _, ncols = size(matrix)
     nup, nlow = nrows_filled(matrix)
 
@@ -2841,7 +2841,6 @@ end
 
 ###
 # Re-enumerating columns in the matrix and other auxiliaries
-# TODO: probably move this out of here?
 
 @timeit function transform_polynomial_multiple_to_matrix_row!(
     matrix::MacaulayMatrix,
@@ -2858,6 +2857,8 @@ end
 end
 
 function column_to_monom_mapping!(matrix::MacaulayMatrix, symbol_ht::MonomialHashtable)
+    @invariant !symbol_ht.frozen
+
     # monoms from symbolic table represent one column in the matrix
     hdata = symbol_ht.hashdata
     load = symbol_ht.load
@@ -2914,7 +2915,7 @@ function convert_rows_to_basis_elements!(
 )
     # We mutate the basis directly by adding new elements
 
-    resize_basis_if_needed!(basis, matrix.npivots)
+    basis_resize_if_needed!(basis, matrix.npivots)
     rows = matrix.lower_rows
     crs = basis.nprocessed
 
@@ -2935,7 +2936,7 @@ function convert_rows_to_basis_elements_nf!(
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable
 )
-    resize_basis_if_needed!(basis, matrix.npivots)
+    basis_resize_if_needed!(basis, matrix.npivots)
 
     @inbounds for i in 1:(matrix.npivots)
         basis.nprocessed += 1
@@ -3000,6 +3001,8 @@ function insert_in_basis_hashtable_pivots(
             l += 1
             @goto Letsgo
         end
+
+        @invariant !ht.frozen
 
         bhash[k] = pos = lastidx
         row[l] = pos

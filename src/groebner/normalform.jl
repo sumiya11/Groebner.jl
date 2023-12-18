@@ -73,7 +73,7 @@ end
     params
 ) where {M <: Monom, C <: Coeff}
     @log level = -3 "Initializing structs for F4"
-    basis, _, hashtable = initialize_structs(ring, monoms, coeffs, params)
+    basis, _, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
     tobereduced = basis_initialize_using_existing_hashtable(
         ring,
         monoms_to_be_reduced,
@@ -86,5 +86,5 @@ end
       To be reduced: $tobereduced
       """
     f4_normalform!(ring, basis, tobereduced, hashtable, params.arithmetic)
-    export_basis_data(tobereduced, hashtable)
+    basis_export_data(tobereduced, hashtable)
 end

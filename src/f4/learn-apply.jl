@@ -7,8 +7,8 @@
 ###
 # F4 learn stage
 
-# Same as initialize_structs, but also initializes a trace
-function initialize_structs_with_trace(
+# Same as f4_initialize_structs, but also initializes a trace
+function f4_initialize_structs_with_trace(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -16,7 +16,7 @@ function initialize_structs_with_trace(
     normalize_input=true,
     sort_input=true
 ) where {M <: Monom, C <: Coeff}
-    basis, pairset, hashtable, permutation = initialize_structs(
+    basis, pairset, hashtable, permutation = f4_initialize_structs(
         ring,
         monoms,
         coeffs,
@@ -60,7 +60,7 @@ function standardize_basis_in_learn!(
     resize!(basis.isredundant, basis.nprocessed)
     perm = sort_polys_by_lead_increasing!(basis, ht, ord=ord)
     trace.output_sort_indices = perm
-    normalize_basis!(basis, arithmetic)
+    basis_normalize!(basis, arithmetic)
 end
 
 function reduction_learn!(
@@ -184,7 +184,7 @@ end
     @assert params.reduced === true
 
     @log level = -3 "Entering F4 Learn phase."
-    normalize_basis!(basis, params.arithmetic)
+    basis_normalize!(basis, params.arithmetic)
 
     matrix = initialize_matrix(ring, C)
 
@@ -194,7 +194,7 @@ end
 
     # add the first batch of critical pairs to the pairset
     @log level = -3 "Processing initial polynomials, generating first critical pairs"
-    pairset_size = update!(pairset, basis, hashtable, update_ht)
+    pairset_size = f4_update!(pairset, basis, hashtable, update_ht)
     @log level = -3 "Out of $(basis.nfilled) polynomials, $(basis.nprocessed) are non-redundant"
     @log level = -3 "Generated $(pairset.load) critical pairs"
 
@@ -207,7 +207,7 @@ end
         @log level = -3 "F4: iteration $i"
         @log level = -3 "F4: available $(pairset.load) pairs"
 
-        degree_i, npairs_i = select_critical_pairs!(
+        degree_i, npairs_i = f4_select_critical_pairs!(
             pairset,
             basis,
             matrix,
@@ -228,7 +228,7 @@ end
         # update the current basis with polynomials produced from reduction,
         # does not copy,
         # checks for redundancy
-        pairset_size = update!(pairset, basis, hashtable, update_ht)
+        pairset_size = f4_update!(pairset, basis, hashtable, update_ht)
 
         @log level = -6 "After update learn" basis
         # clear symbolic hashtable
@@ -247,11 +247,11 @@ end
 
     if params.sweep
         @log level = -3 "Sweeping redundant elements in the basis"
-        sweep_redundant!(basis, hashtable)
+        basis_sweep_redundant!(basis, hashtable)
     end
 
     # mark redundant elements
-    mark_redundant!(basis)
+    basis_mark_redundant_elements!(basis)
     @log level = -3 "Filtered elements marked redundant"
 
     @log level = -6 "Before autoreduction" basis
@@ -263,7 +263,7 @@ end
     end
 
     @log level = -3 "Finalizing computation trace"
-    finalize_trace!(trace)
+    trace_finalize!(trace)
 
     standardize_basis_in_learn!(
         trace,
@@ -554,7 +554,7 @@ function standardize_basis_in_apply!(ring::PolyRing, trace::TraceF4, arithmetic)
     end
     buf.nprocessed = buf.nnonredundant = 0
     buf.nfilled = trace.input_basis.nfilled
-    normalize_basis!(basis, arithmetic)
+    basis_normalize!(basis, arithmetic)
 end
 
 @timeit function f4_apply!(
@@ -566,7 +566,7 @@ end
     @invariant basis_well_formed(:input_f4_apply!, ring, basis, trace.hashtable)
     @assert params.reduced == true
 
-    normalize_basis!(basis, params.arithmetic)
+    basis_normalize!(basis, params.arithmetic)
 
     iters_total = length(trace.matrix_infos) - 1
     iters = 0
@@ -580,7 +580,7 @@ end
         _T = typeof(divisor(params.arithmetic)); _T(ring.ch) == divisor(params.arithmetic)
     )
 
-    update_basis!(basis, hashtable)
+    basis_update!(basis, hashtable)
 
     while iters < iters_total
         iters += 1
@@ -594,14 +594,14 @@ end
             return false
         end
 
-        update_basis!(basis, hashtable)
+        basis_update!(basis, hashtable)
 
         reinitialize_hashtable!(symbol_ht)
 
         @log_memory_locals
     end
 
-    # mark_redundant!(basis)
+    # basis_mark_redundant_elements!(basis)
 
     if params.reduced
         @log level = -5 "Autoreducing the final basis.."

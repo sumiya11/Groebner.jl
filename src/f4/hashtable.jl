@@ -71,7 +71,7 @@ mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractInternalOrdering}
     offset::Int
 
     # If the hashtable is frozen, any operation that tries to modify it will
-    # result in an error. However, at the moment, we cannot guarantee that :(
+    # result in an error.
     frozen::Bool
 end
 

@@ -16,7 +16,7 @@
 #
 # If `normalize_input=true` is provided, also normalizes the polynomials. 
 # If `sort_input=true` is provided, also sorts the polynomials.
-@timeit function initialize_structs(
+@timeit function f4_initialize_structs(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -50,26 +50,14 @@
     # We do not need normalization in some cases, e.g., when computing the
     # normal forms
     if normalize_input
-        normalize_basis!(basis, params.arithmetic)
+        basis_normalize!(basis, params.arithmetic)
     end
 
     basis, pairset, hashtable, permutation
 end
 
-# Same as initialize_structs, but uses an existing hashtable
-function basis_initialize_using_existing_hashtable(
-    ring::PolyRing,
-    monoms::Vector{Vector{M}},
-    coeffs::Vector{Vector{C}},
-    present_ht::MonomialHashtable;
-) where {M, C <: Coeff}
-    basis = basis_initialize(ring, length(monoms), C)
-    fill_data!(basis, present_ht, monoms, coeffs)
-    basis
-end
-
 # F4 reduction
-@timeit function reduction!(
+@timeit function f4_reduction!(
     ring::PolyRing,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -77,8 +65,7 @@ end
     symbol_ht::MonomialHashtable,
     params::AlgorithmParameters
 )
-    # Construct a mapping from monomials to matrix columns and re-enumerate
-    # matrix columns
+    # Re-enumerate matrix columns
     column_to_monom_mapping!(matrix, symbol_ht)
     # Call the linear algebra backend
     linear_algebra!(matrix, basis, params)
@@ -86,17 +73,40 @@ end
     convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 end
 
-# F4 symbolic preprocessing
-@timeit function symbolic_preprocessing!(
+# F4 update
+@timeit function f4_update!(
+    pairset::Pairset,
     basis::Basis,
-    matrix::MacaulayMatrix,
-    ht::MonomialHashtable,
-    symbol_ht::MonomialHashtable,
-    params::AlgorithmParameters
-)
-    symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
+    ht::MonomialHashtable{M},
+    update_ht::MonomialHashtable{M}
+) where {M <: Monom}
+    # total number of elements in the basis (old + new)
+    npivs = basis.nfilled
+    # number of potential critical pairs to add
+    npairs = basis.nprocessed * npivs + div((npivs + 1) * npivs, 2)
+
+    @invariant basis.nfilled >= basis.nprocessed
+    @stat new_basis_elements = basis.nfilled - basis.nprocessed
+
+    # make sure the pairset has enough space
+    pairset_resize_if_needed!(pairset, npairs)
+    pairset_size = length(pairset.pairs)
+
+    # update pairset:
+    # for each new element in basis..
+    @inbounds for i in (basis.nprocessed + 1):(basis.nfilled)
+        # ..check redundancy of new polynomial..
+        basis_is_new_polynomial_redundant!(pairset, basis, ht, update_ht, i) && continue
+        pairset_resize_lcms_if_needed!(pairset, basis.nfilled)
+        # ..if not redundant, then add new S-pairs to pairset
+        pairset_update!(pairset, basis, ht, update_ht, i)
+    end
+
+    basis_update!(basis, ht)
+    pairset_size
 end
 
+# F4 symbolic preprocessing
 @timeit function symbolic_preprocessing!(
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -141,7 +151,7 @@ end
 end
 
 # Performs autoreduction of basis elements inplace
-function autoreduce_f4!(
+function f4_autoreduce!(
     ring::PolyRing,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -219,7 +229,7 @@ function autoreduce_f4!(
     basis.nnonredundant = k
 end
 
-function select_tobereduced!(
+function f4_select_tobereduced!(
     basis::Basis,
     tobereduced::Basis,
     matrix::MacaulayMatrix,
@@ -288,10 +298,9 @@ function find_lead_monom_that_divides(i, monom, basis, ht)
     i
 end
 
-# Finds a polynomial from the `basis` 
-# with leading term that divides monomial `vidx`. 
-# If such polynomial was found, 
-# writes the divisor polynomial to the hashtable `symbol_ht` 
+# Finds a polynomial from the `basis` with leading term that divides monomial
+# `vidx`. If such a polynomial has been found, writes a multiple of it to the
+# hashtable `symbol_ht` 
 function find_multiplied_reducer!(
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -340,7 +349,7 @@ function find_multiplied_reducer!(
     matrix.upper_rows[matrix.nrows_filled_upper + 1] =
         transform_polynomial_multiple_to_matrix_row!(matrix, symbol_ht, ht, h, etmp, rpoly)
     @inbounds matrix.upper_to_coeffs[matrix.nrows_filled_upper + 1] = basis.nonredundant[i]
-    # TODO: this line is here with the sole purpose -- to support tracing.
+    # TODO: this line is here with one sole purpose -- to support tracing.
     # Probably want to factor it out.
     matrix.upper_to_mult[matrix.nrows_filled_upper + 1] = insert_in_hashtable!(ht, etmp)
     # if sugar
@@ -425,14 +434,7 @@ function discard_normal!(
 end
 
 # F4 critical pair selection.
-#
-# Selects critical pairs from the pairset and adds the corresponding polynomials
-# to the matrix
-#
-# If `maxpairs=N` is provided, the number of critical pairs is limited by `N`
-# (modulo some technical details).
-# If `select_all=true` is provided, selects all critical pairs.
-@timeit function select_critical_pairs!(
+@timeit function f4_select_critical_pairs!(
     pairset::Pairset,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -500,9 +502,7 @@ function add_critical_pairs_to_matrix!(
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable
 )
-    # 
-    #
-    #
+
     #
     reinitialize_matrix!(matrix, npairs)
     pairs = pairset.pairs
@@ -618,6 +618,7 @@ function add_critical_pairs_to_matrix!(
     resize!(matrix.lower_rows, matrix.nrows_filled_lower)
 end
 
+# move to basis.jl
 function basis_well_formed(key, ring, basis, hashtable)
     if key in (:input_f4!, :input_f4_learn!, :input_f4_apply!)
         (isempty(basis.monoms) || isempty(basis.coeffs)) && return false
@@ -666,10 +667,10 @@ end
 # uses `tracer` to record information useful in subsequent runs.
 #
 # Input ivariants:
-# - divmasks in the ht are set,
+# - divmasks in the hashtable are set and correct,
 # - basis is filled so that
-#     basis.nfilled is the actual number of set elements,
-#     basis.nprocessed  = 0,
+#     basis.nfilled is the actual number of elements set,
+#     basis.nprocessed     = 0,
 #     basis.nnonredundant  = 0,
 # - basis contains no zero polynomials (!!!).
 #
@@ -691,7 +692,7 @@ end
     # @invariant pairset_well_formed(:input_f4!, pairset, basis, ht)
 
     @log level = -3 "Entering F4."
-    normalize_basis!(basis, params.arithmetic)
+    basis_normalize!(basis, params.arithmetic)
 
     matrix = initialize_matrix(ring, C)
 
@@ -701,7 +702,7 @@ end
 
     # add the first batch of critical pairs to the pairset
     @log level = -4 "Processing initial polynomials, generating first critical pairs"
-    pairset_size = update!(pairset, basis, hashtable, update_ht)
+    pairset_size = f4_update!(pairset, basis, hashtable, update_ht)
     update_tracer_pairset!(tracer, pairset_size)
     @log level = -4 "Out of $(basis.nfilled) polynomials, $(basis.nprocessed) are non-redundant"
     @log level = -4 "Generated $(pairset.load) critical pairs"
@@ -735,7 +736,7 @@ end
         # selects pairs for reduction from pairset following normal strategy
         # (minimal lcm degrees are selected),
         # and puts these into the matrix rows
-        select_critical_pairs!(
+        f4_select_critical_pairs!(
             pairset,
             basis,
             matrix,
@@ -746,17 +747,17 @@ end
         )
         @log level = -3 "After normal selection: available $(pairset.load) pairs"
 
-        symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht, params)
+        symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
 
         # reduces polys and obtains new potential basis elements
-        reduction!(ring, basis, matrix, hashtable, symbol_ht, params)
+        f4_reduction!(ring, basis, matrix, hashtable, symbol_ht, params)
 
         update_tracer_iteration!(tracer, matrix.npivots == 0)
 
         # update the current basis with polynomials produced from reduction,
         # does not copy,
         # checks for redundancy
-        pairset_size = update!(pairset, basis, hashtable, update_ht)
+        pairset_size = f4_update!(pairset, basis, hashtable, update_ht)
         update_tracer_pairset!(tracer, pairset_size)
 
         # clear symbolic hashtable
@@ -780,17 +781,17 @@ end
 
     if params.sweep
         @log level = -4 "Sweeping redundant elements in the basis"
-        sweep_redundant!(basis, hashtable)
+        basis_sweep_redundant!(basis, hashtable)
     end
 
-    mark_redundant!(basis)
+    basis_mark_redundant_elements!(basis)
 
     if params.reduced
         @log level = -4 "Autoreducing the final basis.."
-        autoreduce_f4!(ring, basis, matrix, hashtable, symbol_ht, params)
+        f4_autoreduce!(ring, basis, matrix, hashtable, symbol_ht, params)
     end
 
-    standardize_basis!(ring, basis, hashtable, hashtable.ord, params.arithmetic)
+    basis_standardize!(ring, basis, hashtable, hashtable.ord, params.arithmetic)
 
     # @invariant hashtable_well_formed(:output_f4!, ring, hashtable)
     @invariant basis_well_formed(:output_f4!, ring, basis, hashtable)
@@ -811,10 +812,10 @@ end
     symbol_ht = initialize_secondary_hashtable(hashtable)
     update_ht = initialize_secondary_hashtable(hashtable)
     @log level = -3 "Forming S-polynomials"
-    update!(pairset, basis, hashtable, update_ht)
+    f4_update!(pairset, basis, hashtable, update_ht)
     isempty(pairset) && return true
     # Fill the F4 matrix
-    select_critical_pairs!(
+    f4_select_critical_pairs!(
         pairset,
         basis,
         matrix,
@@ -841,7 +842,7 @@ end
     matrix = initialize_matrix(ring, C)
     symbol_ht = initialize_secondary_hashtable(ht)
     # Fill the matrix
-    select_tobereduced!(basis, tobereduced, matrix, symbol_ht, ht)
+    f4_select_tobereduced!(basis, tobereduced, matrix, symbol_ht, ht)
     symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
     column_to_monom_mapping!(matrix, symbol_ht)
     # Reduce the matrix

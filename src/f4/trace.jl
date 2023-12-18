@@ -1,4 +1,4 @@
-# Tracing for f4
+# Tracing in f4
 
 ###
 # The main struct
@@ -186,13 +186,15 @@ function trace_copy(
     )
 end
 
-function finalize_trace!(trace::TraceF4)
+function trace_finalize!(trace::TraceF4)
     # TODO: trim array sizes
     trace.buf_basis = basis_deepcopy(trace.gb_basis)
     trace.buf_basis.nnonredundant = trace.input_basis.nnonredundant
     trace.buf_basis.nprocessed = trace.input_basis.nprocessed
     trace.buf_basis.nfilled = trace.input_basis.nfilled
     trace.stopwatch_start = time_ns() - trace.stopwatch_start
+    # Freeze the hashtable
+    trace.hashtable.frozen = true
     nothing
 end
 

@@ -23,7 +23,7 @@ end
     coeffs::Vector{Vector{C}},
     params
 ) where {M <: Monom, C <: CoeffZp}
-    basis, pairset, hashtable = initialize_structs(ring, monoms, coeffs, params)
+    basis, pairset, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
     f4_isgroebner!(ring, basis, pairset, hashtable, params.arithmetic)
 end
 
@@ -35,7 +35,7 @@ end
     params
 ) where {M <: Monom, C <: CoeffQQ}
     buffer = CoefficientBuffer()
-    basis, pairset, hashtable = initialize_structs(ring, monoms, coeffs, params)
+    basis, pairset, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
     # If an honest computation over the rationals is needed
     if params.certify_check
         @log level = -2 """

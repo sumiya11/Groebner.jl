@@ -21,7 +21,7 @@ k = [
     x1 * x2 * x3 + x1 * x2 + x2 * x3 + 11
 ]
 
-k = Groebner.katsuran(9, ground=QQ, ordering=:degrevlex)
+k = Groebner.cyclicn(8, ground=QQ, ordering=:degrevlex)
 
 k_zp = map(f -> map_coefficients(c -> GF(2^30 + 3)(c), f), k)
 
@@ -29,7 +29,7 @@ k_zp = map(f -> map_coefficients(c -> GF(2^30 + 3)(c), f), k)
 @time Groebner.groebner_learn(k_zp, threaded=:yes);
 
 @time gb1 = Groebner.groebner(k, threaded=:no);
-@my_profview Groebner.groebner(k, threaded=:yes);
+@time Groebner.groebner(k, threaded=:yes);
 @time for i in 1:10
     gb2 = Groebner.groebner(k, threaded=:yes)
     @assert gb2 == gb1
@@ -193,10 +193,13 @@ p5 = 2^27 - 39
 p6 = 2^26 - 5
 p7 = 2^25 - 39
 for p in (p1, p2, p3, p4, p5, p6, p7)
-    s = Groebner.katsuran(9, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))
+    s = Groebner.katsuran(8, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))
     @info "p < 2^$(floor(Int, log(2, p)+1))"
     @btime Groebner.groebner($s)
 end
+
+Groebner.invariants_enabled() = false
+Groebner.logging_enabled() = false
 
 BenchmarkTools.DEFAULT_PARAMETERS.samples = 3
 systems = [
@@ -215,10 +218,9 @@ systems = [
 ]
 for (name, s) in systems
     @info "$name: randomized thr. / randomized / deterministic thr. / deterministic"
-    gb1 = @btime Groebner.groebner($s, linalg=:randomized, threaded=:yes)
-    gb2 = @btime Groebner.groebner($s, linalg=:randomized, threaded=:no)
-    gb3 = @btime Groebner.groebner($s, linalg=:deterministic, threaded=:yes)
-    gb4 = @btime Groebner.groebner($s, loglevel=0, linalg=:deterministic)
+    gb1 = @btime Groebner.groebner($s, threaded=:yes)
+    gb2 = @btime Groebner.groebner($s, threaded=:no)
+    gb4 = @btime Groebner.groebner($s, linalg=:deterministic)
     @assert gb1 == gb2 == gb3 == gb4
 end
 
