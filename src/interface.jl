@@ -113,7 +113,7 @@ end
 """
     groebner_learn(polynomials; options...)
 
-Computes a Groebner basis of `polynomials` and emits the trace.
+Computes a Groebner basis of `polynomials` and emits the computation trace.
 
 The trace can be used to speed up the computation of subsequent Groebner bases,
 which should be specializations of the same ideal `groebner_learn` has been
@@ -136,7 +136,7 @@ R, (x, y) = GF(2^31-1)["x", "y"]
 # Learn
 trace, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
 
-# Apply (same ground field, different coefficients)
+# Apply (same support, different coefficients)
 flag, gb_2 = groebner_apply!(trace, [2x*y^2 + 3x, 4y*x^2 + 5y])
 
 @assert flag
@@ -154,7 +154,7 @@ trace, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y], ordering=DegRevLex())
 # Create a ring with a different modulo
 R2, (x2, y2) = GF(2^30+3)["x", "y"]
 
-# Apply (with a different modulo)
+# Apply (different modulo)
 flag, gb_2 = groebner_apply!(
     trace, 
     [2x2*y2^2 + 3x2, 4y2*x2^2 + 5y2], 
