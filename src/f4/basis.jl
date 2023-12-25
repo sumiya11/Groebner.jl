@@ -12,7 +12,7 @@
 # Pairset
 
 # S-pair{Degree}, or, a pair of polynomials,
-struct SPair{Degree}
+struct CriticalPair{Degree}
     # First polynomial given by its index in the basis array
     poly1::Int32
     # Second polynomial -//-
@@ -25,7 +25,7 @@ end
 
 # Stores S-Pairs and some additional info.
 mutable struct Pairset{Degree}
-    pairs::Vector{SPair{Degree}}
+    pairs::Vector{CriticalPair{Degree}}
     # A buffer of monomials represented with indices to a hashtable
     lcms::Vector{MonomId}
     # Number of filled pairs, initially zero
@@ -34,7 +34,7 @@ end
 
 # Initializes and returns a pairset with max_vars_in_monom for `initial_size` pairs.
 function pairset_initialize(::Type{Degree}; initial_size=2^6) where {Degree}
-    pairs = Vector{SPair{Degree}}(undef, initial_size)
+    pairs = Vector{CriticalPair{Degree}}(undef, initial_size)
     lcms = Vector{MonomId}(undef, 0)
     Pairset(pairs, lcms, 0)
 end
@@ -296,12 +296,12 @@ end
            !is_gcd_const(ht.monoms[basis.monoms[i][1]], ht.monoms[new_lead])
             lcms[i] = get_lcm(basis.monoms[i][1], new_lead, ht, update_ht)
             deg = update_ht.hashdata[lcms[i]].deg
-            ps[newidx] = SPair(Int32(i), Int32(idx), lcms[i], pr(deg))
+            ps[newidx] = CriticalPair(Int32(i), Int32(idx), lcms[i], pr(deg))
         else
             # lcm == 0 will mark redundancy of an S-pair
             lcms[i] = MonomId(0)
-            # ps[newidx] = SPair(i, idx, MonomId(0), pr(deg))
-            ps[newidx] = SPair{pr}(Int32(i), Int32(idx), MonomId(0), typemax(pr))
+            # ps[newidx] = CriticalPair(i, idx, MonomId(0), pr(deg))
+            ps[newidx] = CriticalPair{pr}(Int32(i), Int32(idx), MonomId(0), typemax(pr))
         end
     end
 
@@ -319,7 +319,7 @@ end
         # and has a greater degree than newly generated one then
         if ps[i].deg > m && is_monom_divisible(ps[i].lcm, new_lead, ht)
             # mark an existing pair redundant
-            ps[i] = SPair{pr}(ps[i].poly1, ps[i].poly2, MonomId(0), ps[i].deg)
+            ps[i] = CriticalPair{pr}(ps[i].poly1, ps[i].poly2, MonomId(0), ps[i].deg)
         end
     end
 
@@ -431,8 +431,12 @@ function basis_is_new_polynomial_redundant!(
             # add new S-pair corresponding to Spoly(i, idx)
             lcm_new = get_lcm(lead_i, lead_new, ht, ht)
             psidx = pairset.load + 1
-            ps[psidx] =
-                SPair{pt}(Int32(i), Int32(idx), lcm_new, pt(ht.hashdata[lcm_new].deg))
+            ps[psidx] = CriticalPair{pt}(
+                Int32(i),
+                Int32(idx),
+                lcm_new,
+                pt(ht.hashdata[lcm_new].deg)
+            )
 
             # mark redundant
             basis.isredundant[idx] = true
@@ -614,7 +618,7 @@ function insert_lcms_in_basis_hashtable!(
                 continue
             end
 
-            ps[m] = SPair{typeof(ps[m].deg)}(ps[m].poly1, ps[m].poly2, hm, ps[m].deg)
+            ps[m] = CriticalPair{typeof(ps[m].deg)}(ps[m].poly1, ps[m].poly2, hm, ps[m].deg)
             m += 1
             l += 1
             @goto Letsgo
@@ -629,7 +633,12 @@ function insert_lcms_in_basis_hashtable!(
         ht.hashdata[ht.load + 1] = Hashvalue(0, h, uhd[ll].divmask, uhd[ll].deg)
 
         ht.load += 1
-        ps[m] = SPair{typeof(ps[m].deg)}(ps[m].poly1, ps[m].poly2, MonomId(pos), ps[m].deg)
+        ps[m] = CriticalPair{typeof(ps[m].deg)}(
+            ps[m].poly1,
+            ps[m].poly2,
+            MonomId(pos),
+            ps[m].deg
+        )
         m += 1
         l += 1
     end

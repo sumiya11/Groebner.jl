@@ -10,10 +10,10 @@ mutable struct TraceF4{C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
     original_ord::Ord2
     input_signature::Vector{Int}
 
+    # Buffers for storing basis elements
     input_basis::Basis{C1}
     buf_basis::Basis{C1}
     gb_basis::Basis{C1}
-
     hashtable::MonomialHashtable{M, Ord1}
 
     # Permutation of input polynomials and their terms, if needed
@@ -40,7 +40,7 @@ mutable struct TraceF4{C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
     homogenize::Bool
 end
 
-function initialize_trace_f4(
+function trace_initialize(
     ring::PolyRing,
     input_basis::Basis,
     gb_basis::Basis,
@@ -86,6 +86,7 @@ end
 function trace_deepcopy(
     trace::TraceF4{C1, C3, M, Ord1, Ord2}
 ) where {C1 <: Coeff, C3 <: Coeff, M <: Monom, Ord1, Ord2}
+    # NOTE: does not provide the same guarantees as Base.deepcopy
     TraceF4(
         trace.stopwatch_start,
         PolyRing(trace.ring.nvars, trace.ring.ord, trace.ring.ch),
@@ -199,7 +200,7 @@ function trace_finalize!(trace::TraceF4)
 end
 
 ###
-# A wrapper around the tracer
+# A wrapper around the tracer exposed to the user
 
 mutable struct WrappedTraceF4
     recorded_traces::Dict{Any, Any}
@@ -208,8 +209,25 @@ mutable struct WrappedTraceF4
         trace::TraceF4{C1, C2, M, Ord1, Ord2}
     ) where {C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
         recorded_traces = Dict{Any, Any}((C1, 42) => trace)
-        new(recorded_traces)
+        WrappedTraceF4(recorded_traces)
     end
+
+    function WrappedTraceF4(d::Dict{A, B}) where {A, B}
+        new(d)
+    end
+end
+
+"""
+    trace_deepcopy(trace)
+
+Returns a deep copy of `trace`. The original object and the copy can be safely
+used in `groebner_apply!` in multi-threaded programs.
+"""
+function trace_deepcopy(wrapped_trace::WrappedTraceF4)
+    # NOTE: does not provide the same guarantees as Base.deepcopy
+    WrappedTraceF4(
+        Dict(deepcopy(k) => trace_deepcopy(v) for (k, v) in wrapped_trace.recorded_traces)
+    )
 end
 
 function get_default_trace(wrapped_trace::WrappedTraceF4)

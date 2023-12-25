@@ -79,6 +79,7 @@ mutable struct AlgorithmParameters{
     # - :classic_modular
     # - :learn_and_apply
     modular_strategy::Symbol
+    batched::Bool
 
     # In modular computation of the basis, compute (at least!) this many bases
     # modulo different primes until a consensus in majority vote is reached
@@ -227,6 +228,7 @@ function AlgorithmParameters(
         falling back to classic multi-modular algorithm."""
         modular_strategy = :classic_modular
     end
+    batched = kwargs.batched
 
     majority_threshold = 1
     crt_algorithm = :simultaneous
@@ -259,6 +261,7 @@ function AlgorithmParameters(
     selection_strategy = $selection_strategy
     ground = $ground
     modular_strategy = $modular_strategy
+    batched = $batched
     majority_threshold = $majority_threshold
     crt_algorithm = $crt_algorithm
     seed = $seed
@@ -283,6 +286,7 @@ function AlgorithmParameters(
         selection_strategy,
         ground,
         modular_strategy,
+        batched,
         majority_threshold,
         crt_algorithm,
         threaded_f4,
@@ -321,6 +325,7 @@ function params_mod_p(
         params.selection_strategy,
         params.ground,
         params.modular_strategy,
+        params.batched,
         params.majority_threshold,
         params.crt_algorithm,
         params.threaded_f4,

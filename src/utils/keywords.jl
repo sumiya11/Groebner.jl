@@ -24,6 +24,7 @@ const _supported_kw_args = (
         sweep       = false,
         homogenize  = :auto,
         statistics  = :no,
+        batched     = true,
     ),
     normalform = (
         check       = false,
@@ -88,6 +89,7 @@ struct KeywordsHandler{Ord}
     maxpairs::Int
     selection::Symbol
     modular::Symbol
+    batched::Bool
     check::Bool
     sweep::Bool
     homogenize::Symbol
@@ -150,6 +152,8 @@ struct KeywordsHandler{Ord}
         Possible choices for keyword "modular" are:
         `:auto`, `:classic_modular`, `:learn_and_apply`"""
 
+        batched = get(kws, :batched, get(default_kw_args, :batched, true))
+
         selection = get(kws, :selection, get(default_kw_args, :selection, :auto))
         @assert selection in (:auto, :normal, :sugar, :be_divided_and_perish)
 
@@ -197,6 +201,7 @@ struct KeywordsHandler{Ord}
             maxpairs,
             selection,
             modular,
+            batched,
             check,
             sweep,
             homogenize,

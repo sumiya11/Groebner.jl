@@ -157,7 +157,7 @@ function _groebner_learn_and_apply(
 
     @log level = -5 "Before F4" basis_ff
     params_zp = params_mod_p(params, prime)
-    trace = initialize_trace_f4(
+    trace = trace_initialize(
         ring_ff,
         basis_deepcopy(basis_ff),
         basis_ff,
@@ -256,7 +256,7 @@ function _groebner_learn_and_apply(
     while !correct_basis
         @log level = -2 "Iteration # $iters of modular Groebner, batchsize: $batchsize"
 
-        if iszero(batchsize % 4)
+        if iszero(batchsize % 4) && params.batched
             for j in 1:4:batchsize
                 prime_4x = ntuple(_ -> Int32(next_lucky_prime!(luckyprimes)), 4)
                 @log level = -3 "The lucky primes are $prime_4x"
@@ -438,7 +438,7 @@ function _groebner_learn_and_apply_threaded(
 
     @log level = -5 "Before F4" basis_ff
     params_zp = params_mod_p(params, prime)
-    trace = initialize_trace_f4(
+    trace = trace_initialize(
         ring_ff,
         basis_deepcopy(basis_ff),
         basis_ff,

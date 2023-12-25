@@ -25,14 +25,8 @@ function f4_initialize_structs_with_trace(
         sort_input=sort_input
     )
 
-    trace = initialize_trace_f4(
-        ring,
-        basis_deepcopy(basis),
-        basis,
-        hashtable,
-        permutation,
-        params
-    )
+    trace =
+        trace_initialize(ring, basis_deepcopy(basis), basis, hashtable, permutation, params)
 
     trace, basis, pairset, hashtable, permutation
 end
