@@ -74,7 +74,7 @@ function linear_algebra!(
 )
     @invariant matrix_well_formed(:linear_algebra!, matrix)
 
-    @stat matrix_block_sizes = block_sizes(matrix)
+    @stat matrix_block_sizes = matrix_block_sizes(matrix)
     @stat matrix_nnz = sum(i -> length(matrix.upper_rows[i]), 1:length(matrix.upper_rows))
 
     rng = params.rng
@@ -90,8 +90,8 @@ function linear_algebra!(
            nthreads() > 1
         :yes
     elseif params.threaded_f4 === :auto
-        # Multi-threading is disabled by default!
-        :no
+        # Multi-threading is enabled by default!
+        :yes
     else
         :no
     end
@@ -139,7 +139,7 @@ function linear_algebra_normalform!(
 
     sort_matrix_upper_rows!(matrix)
     @log level = -3 "linear_algebra_normalform!"
-    @log level = -3 repr_matrix(matrix)
+    @log level = -3 matrix_string_repr(matrix)
 
     reduce_matrix_lower_part_invariant_pivots!(matrix, basis, arithmetic)
 end
@@ -154,13 +154,30 @@ function linear_algebra_isgroebner!(
     sort_matrix_upper_rows!(matrix)
     sort_matrix_lower_rows!(matrix)
     @log level = -3 "linear_algebra_isgroebner!"
-    @log level = -3 repr_matrix(matrix)
+    @log level = -3 matrix_string_repr(matrix)
 
     reduce_matrix_lower_part_any_nonzero!(matrix, basis, arithmetic)
 end
 
 ###
 # Dispatching between linear algebra algorithms
+
+function should_use_threading(matrix, linalg, threaded)
+    @assert threaded !== :auto
+    nup, nlow, nleft, nright = matrix_block_sizes(matrix)
+    if threaded === :yes
+        # Opt for single thread for small matrices
+        if nlow < 2 * nthreads()
+            false
+        elseif nleft + nright < 1_000
+            false
+        else
+            true
+        end
+    else
+        false
+    end
+end
 
 function linear_algebra!(
     matrix::MacaulayMatrix,
@@ -171,13 +188,13 @@ function linear_algebra!(
     rng::AbstractRNG
 )
     flag = if linalg.algorithm === :deterministic
-        if threaded === :yes
+        if should_use_threading(matrix, linalg, threaded)
             deterministic_sparse_linear_algebra_threaded!(matrix, basis, linalg, arithmetic)
         else
             deterministic_sparse_linear_algebra!(matrix, basis, linalg, arithmetic)
         end
     elseif linalg.algorithm === :randomized
-        if threaded === :yes
+        if should_use_threading(matrix, linalg, threaded)
             randomized_sparse_linear_algebra_threaded!(matrix, basis, linalg, arithmetic, rng)
         else
             randomized_sparse_linear_algebra!(matrix, basis, linalg, arithmetic, rng)
@@ -230,7 +247,7 @@ function deterministic_sparse_linear_algebra!(
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
     @log level = -3 "deterministic_sparse_linear_algebra!"
-    @log level = -3 repr_matrix(matrix)
+    @log level = -3 matrix_string_repr(matrix)
     # Reduce CD with AB
     reduce_matrix_lower_part!(matrix, basis, arithmetic)
     # Interreduce CD
@@ -247,7 +264,7 @@ function deterministic_sparse_linear_algebra_threaded!(
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
     @log level = -3 "deterministic_sparse_linear_algebra!"
-    @log level = -3 repr_matrix(matrix)
+    @log level = -3 matrix_string_repr(matrix)
     # Reduce CD with AB
     if false
         reduce_matrix_lower_part_threaded_lock_free!(matrix, basis, arithmetic)
@@ -269,7 +286,7 @@ function randomized_sparse_linear_algebra!(
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
     @log level = -3 "randomized_sparse_linear_algebra!"
-    @log level = -3 repr_matrix(matrix)
+    @log level = -3 matrix_string_repr(matrix)
     # Reduce CD with AB
     randomized_reduce_matrix_lower_part!(matrix, basis, arithmetic, rng)
     # Interreduce CD
@@ -287,9 +304,18 @@ function randomized_sparse_linear_algebra_threaded!(
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
     @log level = -3 "randomized_sparse_linear_algebra_threaded!"
-    @log level = -3 repr_matrix(matrix)
+    @log level = -3 matrix_string_repr(matrix)
     # Reduce CD with AB
-    randomized_reduce_matrix_lower_part_threaded_cas!(matrix, basis, arithmetic, rng)
+    if true
+        randomized_reduce_matrix_lower_part_threaded_cas!(matrix, basis, arithmetic, rng)
+    else
+        randomized_reduce_matrix_lower_part_threaded_cas_fair!(
+            matrix,
+            basis,
+            arithmetic,
+            rng
+        )
+    end
     # Interreduce CD
     interreduce_matrix_pivots!(matrix, basis, arithmetic)
     true
@@ -305,7 +331,7 @@ function randomized_hashcolumns_sparse_linear_algebra!(
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
     @log level = -3 "randomized_hashcolumns_sparse_linear_algebra!"
-    @log level = -3 repr_matrix(matrix)
+    @log level = -3 matrix_string_repr(matrix)
     # Reduce CD with AB
     randomized_hashcolumns_reduce_matrix_lower_part!(matrix, basis, arithmetic, rng)
     # Interreduce CD
@@ -323,7 +349,7 @@ function direct_rref_sparse_linear_algebra!(
     sort_matrix_lower_rows!(matrix) # for the CD part
 
     @log level = -3 "direct_rref_sparse_linear_algebra!"
-    @log level = -3 repr_matrix(matrix)
+    @log level = -3 matrix_string_repr(matrix)
 
     # Produce the RREF of AB
     interreduce_matrix_upper_part!(matrix, basis, arithmetic)
@@ -344,7 +370,7 @@ function direct_rref_sparsedense_linear_algebra!(
     sort_matrix_lower_rows!(matrix) # for the CD part
 
     @log level = -3 "direct_rref_sparse_linear_algebra!"
-    @log level = -3 repr_matrix(matrix)
+    @log level = -3 matrix_string_repr(matrix)
 
     # Produce the RREF of AB
     interreduce_matrix_upper_part_sparsedense!(matrix, basis, arithmetic)
@@ -364,7 +390,7 @@ function learn_sparse_linear_algebra!(
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
     @log level = -3 "learn_sparse_linear_algebra!"
-    @log level = -3 repr_matrix(matrix)
+    @log level = -3 matrix_string_repr(matrix)
     # Reduce CD with AB
     learn_reduce_matrix_lower_part!(trace, matrix, basis, arithmetic)
     # Interreduce CD
@@ -382,7 +408,7 @@ function learn_sparse_linear_algebra_threaded!(
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
     @log level = -3 "learn_sparse_linear_algebra!"
-    @log level = -3 repr_matrix(matrix)
+    @log level = -3 matrix_string_repr(matrix)
     # Reduce CD with AB
     learn_reduce_matrix_lower_part_threaded!(trace, matrix, basis, arithmetic)
     # Interreduce CD
@@ -401,7 +427,7 @@ function apply_sparse_linear_algebra!(
     # have already been collected in the right order
     sort_matrix_lower_rows!(matrix) # for the CD part
     @log level = -3 "apply_sparse_linear_algebra!"
-    @log level = -3 repr_matrix(matrix)
+    @log level = -3 matrix_string_repr(matrix)
     # Reduce CD with AB
     flag = apply_reduce_matrix_lower_part!(trace, matrix, basis, arithmetic)
     if !flag
@@ -449,7 +475,7 @@ function deterministic_sparse_interf4_reduction!(
     arithmetic::AbstractArithmetic
 )
     @log level = -3 "deterministic_sparse_interf4_reduction!"
-    @log level = -3 repr_matrix(matrix)
+    @log level = -3 matrix_string_repr(matrix)
     # Prepare the matrix
     absolute_index_pivots_in_interf4_reduction!(matrix, basis)
     # Interreduce AB
@@ -465,7 +491,7 @@ function learn_deterministic_sparse_interf4_reduction!(
     arithmetic::AbstractArithmetic
 )
     @log level = -3 "learn_deterministic_sparse_interf4_reduction!"
-    @log level = -3 repr_matrix(matrix)
+    @log level = -3 matrix_string_repr(matrix)
     # Prepare the matrix
     absolute_index_pivots_in_interf4_reduction!(matrix, basis)
     # Interreduce AB
@@ -481,7 +507,7 @@ function apply_deterministic_sparse_interf4_reduction!(
     arithmetic::AbstractArithmetic
 )
     @log level = -3 "apply_deterministic_sparse_interf4_reduction!"
-    @log level = -3 repr_matrix(matrix)
+    @log level = -3 matrix_string_repr(matrix)
     # Prepare the matrix
     absolute_index_pivots_in_interf4_reduction!(matrix, basis)
     # Interreduce AB
@@ -834,7 +860,7 @@ end
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
-    _, nlow = nrows_filled(matrix)
+    _, nlow = matrix_nrows_filled(matrix)
 
     # Prepare the matrix
     pivots, row_index_to_coeffs = absolute_index_pivots!(matrix)
@@ -977,7 +1003,7 @@ end
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
-    nup, nlow = nrows_filled(matrix)
+    nup, nlow = matrix_nrows_filled(matrix)
 
     # Calculate the size of the block
     nblocks = nthreads()
@@ -1099,7 +1125,7 @@ end
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
-    _, nlow = nrows_filled(matrix)
+    _, nlow = matrix_nrows_filled(matrix)
 
     # Calculate the size of the block in threading
     nblocks = nthreads()
@@ -1206,8 +1232,8 @@ end
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
-    nleft, nright = ncols_filled(matrix)
-    _, nlower = nrows_filled(matrix)
+    nleft, nright = matrix_ncols_filled(matrix)
+    _, nlower = matrix_nrows_filled(matrix)
 
     # Prepare the matrix
     resize!(matrix.D_coeffs_dense, nlow)
@@ -1271,7 +1297,7 @@ end
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
-    nup, _ = nrows_filled(matrix)
+    nup, _ = matrix_nrows_filled(matrix)
 
     # Prepare the matrix
     resize!(matrix.upper_coeffs, nup)
@@ -1336,8 +1362,8 @@ end
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     nrows, ncols = size(matrix)
-    nleft, nright = ncols_filled(matrix)
-    nup, _ = nrows_filled(matrix)
+    nleft, nright = matrix_ncols_filled(matrix)
+    nup, _ = matrix_nrows_filled(matrix)
 
     # Prepare the matrix
     pivots = Vector{Vector{ColumnLabel}}(undef, ncols)
@@ -1416,8 +1442,8 @@ end
     reversed_rows::Bool=false
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
-    nleft, nright = ncols_filled(matrix)
-    nupper, _ = nrows_filled(matrix)
+    nleft, nright = matrix_ncols_filled(matrix)
+    nupper, _ = matrix_nrows_filled(matrix)
 
     # Prepare the matrix
     resize!(matrix.lower_rows, nright)
@@ -1503,8 +1529,8 @@ end
     reversed_rows::Bool=false
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
-    nleft, nright = ncols_filled(matrix)
-    _, nlower = nrows_filled(matrix)
+    nleft, nright = matrix_ncols_filled(matrix)
+    _, nlower = matrix_nrows_filled(matrix)
 
     # Prepare the matrix
     resize!(matrix.lower_to_coeffs, ncols)
@@ -1602,7 +1628,7 @@ function reduce_matrix_lower_part_invariant_pivots!(
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
-    _, nlow = nrows_filled(matrix)
+    _, nlow = matrix_nrows_filled(matrix)
 
     # Prepare the matrix
     pivots, row_idx_to_coeffs = absolute_index_pivots!(matrix)
@@ -1656,7 +1682,7 @@ function reduce_matrix_lower_part_any_nonzero!(
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
-    _, nlow = nrows_filled(matrix)
+    _, nlow = matrix_nrows_filled(matrix)
 
     # Prepare the matrix
     pivots, row_idx_to_coeffs = absolute_index_pivots!(matrix)
@@ -1717,7 +1743,7 @@ function randomized_reduce_matrix_lower_part!(
     rng::AbstractRNG
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
-    _, nlow = nrows_filled(matrix)
+    _, nlow = matrix_nrows_filled(matrix)
 
     # Prepare the matrix
     pivots, row_idx_to_coeffs = absolute_index_pivots!(matrix)
@@ -1811,7 +1837,7 @@ function randomized_reduce_matrix_lower_part_threaded_cas!(
     rng::AbstractRNG
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
-    nup, nlow = nrows_filled(matrix)
+    nup, nlow = matrix_nrows_filled(matrix)
 
     nblocks = nblocks_in_randomized(nlow)
     rem = nlow % nblocks == 0 ? 0 : 1
@@ -1833,7 +1859,7 @@ function randomized_reduce_matrix_lower_part_threaded_cas!(
     row_buffers = map(_ -> zeros(AccumType, ncols), 1:nthreads())
     # thread_local_rngs = map(_ -> copy(rng), 1:nthreads())
 
-    Base.Threads.@threads :static for i in 1:nblocks
+    @inbounds Base.Threads.@threads :static for i in 1:nblocks
         nrowsupper = min(i * rowsperblock, nlow)
         nrowstotal = nrowsupper - (i - 1) * rowsperblock
         nrowstotal == 0 && continue
@@ -1935,8 +1961,8 @@ function randomized_hashcolumns_reduce_matrix_lower_part!(
     rng::AbstractRNG
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
-    nup, nlow = nrows_filled(matrix)
-    nleft, nright = ncols_filled(matrix)
+    nup, nlow = matrix_nrows_filled(matrix)
+    nleft, nright = matrix_ncols_filled(matrix)
 
     # Prepare the matrix
     pivots, row_index_to_coeffs = absolute_index_pivots!(matrix)
@@ -2090,7 +2116,7 @@ function apply_reduce_matrix_lower_part!(
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
-    _, nlow = nrows_filled(matrix)
+    _, nlow = matrix_nrows_filled(matrix)
 
     # Prepare the matrix
     pivots, row_index_to_coeffs = absolute_index_pivots!(matrix)
@@ -2161,7 +2187,7 @@ function learn_interreduce_matrix_pivots!(
 
     # Update the computation trace
     _, ncols = size(matrix)
-    nup, nlow = nrows_filled(matrix)
+    nup, nlow = matrix_nrows_filled(matrix)
     push!(
         trace.matrix_infos,
         (nup=matrix.nrows_filled_upper, nlow=matrix.nrows_filled_lower, ncols=ncols)
@@ -2193,7 +2219,7 @@ end
 
 function absolute_index_pivots!(matrix::MacaulayMatrix)
     _, ncols = size(matrix)
-    nup, nlow = nrows_filled(matrix)
+    nup, nlow = matrix_nrows_filled(matrix)
 
     pivots = Vector{Vector{ColumnLabel}}(undef, ncols)
     @inbounds for i in 1:nup
@@ -2214,7 +2240,7 @@ end
 
 function absolute_index_pivots_in_interf4_reduction!(matrix::MacaulayMatrix, basis::Basis)
     _, ncols = size(matrix)
-    nup, nlow = nrows_filled(matrix)
+    nup, nlow = matrix_nrows_filled(matrix)
 
     resize!(matrix.lower_rows, ncols)
     resize!(matrix.upper_to_coeffs, ncols)
@@ -2251,7 +2277,7 @@ function reduce_dense_row_by_pivots_sparse!(
     computing_rref::Bool=false
 ) where {I, C <: Union{CoeffZp, CompositeCoeffZp}, A <: Union{CoeffZp, CompositeCoeffZp}}
     _, ncols = size(matrix)
-    nleft, _ = ncols_filled(matrix)
+    nleft, _ = matrix_ncols_filled(matrix)
 
     # The number of nonzeros in the reduced row
     nonzeros = 0
@@ -2334,7 +2360,7 @@ function reduce_dense_row_by_pivots_sparse!(
     computing_rref::Bool=false
 ) where {I, C <: CoeffZp, A <: CoeffZp}
     _, ncols = size(matrix)
-    nleft, _ = ncols_filled(matrix)
+    nleft, _ = matrix_ncols_filled(matrix)
 
     # The number of nonzeros in the reduced row
     nonzeros = 0
@@ -2427,7 +2453,7 @@ function reduce_dense_row_by_pivots_sparse!(
     computing_rref::Bool=false
 ) where {I, C <: Union{CoeffZp, CompositeCoeffZp}, A <: Union{CoeffZp, CompositeCoeffZp}}
     _, ncols = size(matrix)
-    nleft, _ = ncols_filled(matrix)
+    nleft, _ = matrix_ncols_filled(matrix)
 
     # The number of nonzeros in the reduced row
     nonzeros = 0
@@ -2518,7 +2544,7 @@ function reduce_dense_row_by_pivots_sparse!(
     computing_rref::Bool=false
 ) where {I, C <: Coeff}
     _, ncols = size(matrix)
-    nleft, _ = ncols_filled(matrix)
+    nleft, _ = matrix_ncols_filled(matrix)
 
     # The number of nonzeros in the reduced row
     nonzeros = 0
@@ -2640,7 +2666,7 @@ function learn_reduce_matrix_lower_part!(
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
-    nup, nlow = nrows_filled(matrix)
+    nup, nlow = matrix_nrows_filled(matrix)
 
     # Prepare the matrix
     pivots, row_idx_to_coeffs = absolute_index_pivots!(matrix)
@@ -2725,12 +2751,12 @@ function learn_reduce_matrix_lower_part_threaded!(
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     if nthreads() == 1
         @log level = 0 """
-        Using multi-threaded linear algebra while nthreads() == 1. 
+        Using multi-threaded linear algebra with nthreads() == 1. 
         Something probably went wrong."""
     end
 
     _, ncols = size(matrix)
-    nup, nlow = nrows_filled(matrix)
+    nup, nlow = matrix_nrows_filled(matrix)
 
     # Prepare the matrix
     pivots, row_idx_to_coeffs = absolute_index_pivots!(matrix)
@@ -2754,18 +2780,17 @@ function learn_reduce_matrix_lower_part_threaded!(
         nnz_column_indices = matrix.lower_rows[i]
         nnz_coeffs = basis.coeffs[row_idx_to_coeffs[i]]
 
-        row = row_buffers[threadid()]
-        useful_reducers = useful_reducers_buffers[threadid()]
+        t_id = threadid()
+        row = row_buffers[t_id]
+        useful_reducers = useful_reducers_buffers[t_id]
         new_column_indices, new_coeffs = new_empty_sparse_row(CoeffType)
 
         load_sparse_row!(row, nnz_column_indices, nnz_coeffs)
 
-        # Additionally record the indices of rows that participated in reduction
-        # of the given row
-        first_nnz_col = nnz_column_indices[1]
-
         success = false
         while !success
+            first_nnz_col = nnz_column_indices[1]
+
             # Reduce the combination by rows from the upper part of the matrix
             zeroed = reduce_dense_row_by_pivots_sparse!(
                 new_column_indices,
@@ -2785,9 +2810,6 @@ function learn_reduce_matrix_lower_part_threaded!(
                 break
             end
 
-            # NOTE: we are not recording reducers from the lower part of the matrix
-            not_reduced_to_zero[i] = 1
-
             @invariant length(new_column_indices) == length(new_coeffs)
 
             old, success = Atomix.replace!(
@@ -2805,8 +2827,12 @@ function learn_reduce_matrix_lower_part_threaded!(
                 matrix.some_coeffs[i] = new_coeffs
                 matrix.lower_to_coeffs[new_column_indices[1]] = i
                 pivots[new_column_indices[1]] = new_column_indices
+
+                # NOTE: we are not recording reducers from the lower part of the matrix
+                not_reduced_to_zero[i] = 1
             else
-                first_nnz_col = new_column_indices[1]
+                nnz_column_indices = new_column_indices
+                nnz_coeffs = new_coeffs
             end
         end
 

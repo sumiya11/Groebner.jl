@@ -1,3 +1,5 @@
+# ExponentVector{T} 
+
 # ExponentVector{T} is a dense vector of integers of type T that implements the
 # monomial interface.
 
@@ -11,16 +13,16 @@ const ExponentVector{T} = Vector{T} where {T <: Integer}
 # throws a MonomialDegreeOverflow.
 function _monom_overflow_check(e::ExponentVector{T}) where {T}
     # ExponentVector overflows if the total degree overflows
-    _monom_overflow_check(totaldeg(e), T)
+    _monom_overflow_check(monom_totaldeg(e), T)
 end
 
 # The maximum number of variables that this monomial implementation can
 # potentially store. 
-max_vars_in_monom(::Type{ExponentVector{T}}) where {T} = 2^32
-max_vars_in_monom(p::ExponentVector{T}) where {T} = max_vars_in_monom(typeof(p))
+monom_max_vars(::Type{ExponentVector{T}}) where {T} = 2^32
+monom_max_vars(p::ExponentVector{T}) where {T} = monom_max_vars(typeof(p))
 
 # The total degree of a monomial
-totaldeg(pv::ExponentVector) = @inbounds pv[1]
+monom_totaldeg(pv::ExponentVector) = @inbounds pv[1]
 
 # The type of an entry of a ExponentVector{T}. Note that this is not necessarily
 # equal to T.
@@ -28,13 +30,14 @@ totaldeg(pv::ExponentVector) = @inbounds pv[1]
 monom_entrytype(::Type{ExponentVector{T}}) where {T} = MonomHash
 monom_entrytype(p::ExponentVector{T}) where {T} = monom_entrytype(typeof(p))
 
-copy_monom(pv::ExponentVector) = Base.copy(pv)
+monom_copy(pv::ExponentVector) = Base.copy(pv)
 
 # Constructs a constant monomial with the room for n variables.
-construct_const_monom(::Type{ExponentVector{T}}, n::Integer) where {T} = zeros(T, n + 1)
+monom_construct_const_monom(::Type{ExponentVector{T}}, n::Integer) where {T} =
+    zeros(T, n + 1)
 
 # Constructs a monomial with the variable degrees taken from the vector `ev`
-function construct_monom(::Type{ExponentVector{T}}, ev::Vector{U}) where {T, U}
+function monom_construct_from_vector(::Type{ExponentVector{T}}, ev::Vector{U}) where {T, U}
     v = Vector{T}(undef, length(ev) + 1)
     s = zero(T)
     @inbounds for i in 1:length(ev)
@@ -47,7 +50,7 @@ function construct_monom(::Type{ExponentVector{T}}, ev::Vector{U}) where {T, U}
 end
 
 # Returns a vector of variable degrees that correspond to the monomial `pv`.
-function monom_to_dense_vector!(tmp::Vector{M}, pv::ExponentVector{T}) where {M, T}
+function monom_to_vector!(tmp::Vector{M}, pv::ExponentVector{T}) where {M, T}
     @assert length(tmp) == length(pv) - 1
     @inbounds tmp[1:end] = pv[2:end]
     tmp
@@ -55,7 +58,7 @@ end
 
 # Returns a monomial that can be used to compute hashes of monomials of type
 # ExponentVector{T}
-function construct_hash_vector(::Type{ExponentVector{T}}, n::Integer) where {T}
+function monom_construct_hash_vector(::Type{ExponentVector{T}}, n::Integer) where {T}
     rand(MonomHash, n + 1)
 end
 
@@ -73,7 +76,7 @@ end
 
 # Checks whether ExponentVector{T} provides an efficient comparator function for
 # the given monomial ordering of type `O`
-function is_supported_ordering(::Type{ExponentVector{T}}, ::O) where {T, O}
+function monom_is_supported_ordering(::Type{ExponentVector{T}}, ::O) where {T, O}
     # ExponentVector{T} supports efficient implementation of all monomial
     # orderings
     true
@@ -83,9 +86,9 @@ end
 function monom_isless(ea::ExponentVector, eb::ExponentVector, ::_DegRevLex{true})
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
-    if @inbounds totaldeg(ea) < totaldeg(eb)
+    if @inbounds monom_totaldeg(ea) < monom_totaldeg(eb)
         return true
-    elseif @inbounds totaldeg(ea) != totaldeg(eb)
+    elseif @inbounds monom_totaldeg(ea) != monom_totaldeg(eb)
         return false
     end
     i = length(ea)
@@ -134,9 +137,9 @@ end
 function monom_isless(ea::ExponentVector, eb::ExponentVector, ::_DegLex{true})
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
-    if @inbounds totaldeg(ea) < totaldeg(eb)
+    if @inbounds monom_totaldeg(ea) < monom_totaldeg(eb)
         return true
-    elseif @inbounds totaldeg(ea) != totaldeg(eb)
+    elseif @inbounds monom_totaldeg(ea) != monom_totaldeg(eb)
         return false
     end
     i = 2
@@ -251,7 +254,7 @@ end
 ###
 # Monomial-Monomial arithmetic
 
-# Returns the lcm of monomials ea and eb. Also writes the result to ec.
+# Returns the lcm of monomials. Also writes the result to ec.
 function monom_lcm!(
     ec::ExponentVector{T},
     ea::ExponentVector{T},
@@ -267,8 +270,8 @@ function monom_lcm!(
     ec
 end
 
-# Checks if the gcd of monomials ea and eb is constant.
-function is_gcd_const(ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
+# Checks if the gcd of monomials is constant.
+function monom_is_gcd_const(ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
     @invariant length(ea) == length(eb)
     @inbounds for i in 2:length(ea)
         if !iszero(ea[i]) && !iszero(eb[i])
@@ -278,7 +281,7 @@ function is_gcd_const(ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
     true
 end
 
-# Returns the product of monomials ea and eb. Also writes the result to ec.
+# Returns the product of monomials. Also writes the result to ec.
 function monom_product!(
     ec::ExponentVector{T},
     ea::ExponentVector{T},
@@ -292,7 +295,7 @@ function monom_product!(
     ec
 end
 
-# Returns the result of monomial division ea / eb. Also writes the result to ec.
+# Returns the result of monomial division. Also writes the result to ec.
 function monom_division!(
     ec::ExponentVector{T},
     ea::ExponentVector{T},
@@ -306,8 +309,8 @@ function monom_division!(
     ec
 end
 
-# Checks if monomial eb divides monomial ea.
-function is_monom_divisible(ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
+# Checks monomial divisibility
+function monom_is_divisible(ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
     @invariant length(ea) == length(eb)
     @inbounds for j in 1:length(ea)
         if ea[j] < eb[j]
@@ -317,9 +320,8 @@ function is_monom_divisible(ea::ExponentVector{T}, eb::ExponentVector{T}) where 
     true
 end
 
-# Checks if monomial eb divides monomial ea. Also writes the resulting divisor
-# to ec.
-function is_monom_divisible!(
+# Checks monomial divisibility, AND performs division
+function monom_is_divisible!(
     ec::ExponentVector{T},
     ea::ExponentVector{T},
     eb::ExponentVector{T}
@@ -334,8 +336,8 @@ function is_monom_divisible!(
     true, ec
 end
 
-# Checks monomials for elementwise equality
-function is_monom_elementwise_eq(ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
+# Checks monomials for element-wise equality
+function monom_is_equal(ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
     @invariant length(ea) == length(eb)
     @inbounds for i in 1:length(ea)
         if ea[i] != eb[i]
@@ -347,7 +349,6 @@ end
 
 ###
 # Monomial division masks.
-# See f4/hashtable.jl for details.
 
 # Constructs and returns the division mask of type Mask of the given monomial.
 function monom_divmask(

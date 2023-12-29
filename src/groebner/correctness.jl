@@ -28,6 +28,7 @@
         end
         @log level = -2 "Heuristic check passed!"
     end
+
     # Then check that a basis is also a basis modulo a prime
     if params.randomized_check
         if !randomized_correctness_check!(
@@ -40,6 +41,11 @@
             params
         )
             @log level = -2 "Randomized check failed."
+
+            # Freeze the hashtable.
+            # TODO: this is a strange place to do it, but OK for no
+            # hashtable.frozen = true
+
             return false
         end
         @log level = -2 "Randomized check passed!"
@@ -108,6 +114,7 @@ function randomized_correctness_check!(
     hashtable,
     params
 )
+    # NOTE: this function may modify the given hashtable!
     prime = next_check_prime!(lucky)
     @log level = -2 "Checking the correctness of reconstrcted basis modulo $prime"
     ring_ff, input_ff = reduce_modulo_p!(state.buffer, ring, input_zz, prime, deepcopy=true)

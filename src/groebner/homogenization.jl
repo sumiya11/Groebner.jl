@@ -3,7 +3,7 @@
 function maximum_totaldeg(ring::PolyRing, monoms::Vector{Vector{T}}) where {T}
     D = zero(T)
     @inbounds for i in 1:length(monoms)
-        d = totaldeg(monoms[i])
+        d = monom_totaldeg(monoms[i])
         D = max(d, D)
     end
     D
@@ -56,7 +56,7 @@ function homogenize_generators!(
         for j in 1:length(monoms[i])
             # `+ 1` since exponent vectors also store the total degree
             new_monoms[i][j] = Vector{T}(undef, new_nvars + 1)
-            d = totaldeg(monoms[i][j])
+            d = monom_totaldeg(monoms[i][j])
             @invariant d <= D
             new_monoms[i][j][1] = D
             new_monoms[i][j][end] = D - d
@@ -115,7 +115,7 @@ function dehomogenize_generators!(
             end
             new_monoms[i][j][1] = sum(new_monoms[i][j][2:end])
         end
-        # if all(monom -> iszero(totaldeg(monom)), new_monoms[i])
+        # if all(monom -> iszero(monom_totaldeg(monom)), new_monoms[i])
         #     push!(reduced_to_zero, i)
         # end
     end

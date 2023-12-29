@@ -50,7 +50,6 @@ function test_params(
                                                 println(err)
                                                 println("Rng:\n", rng)
                                                 println("Set:\n", set)
-                                                println("Gb:\n", gb)
                                                 rethrow(err)
                                             end
                                         end
@@ -79,7 +78,7 @@ end
     monoms     = [:auto, :dense, :packed]
     homogenize = [:yes, :auto]
     p          = prod(map(length, (nvariables, exps, nterms, npolys, grounds, orderings, coeffssize, linalgs, monoms, homogenize)))
-    @info "Producing $p random small tests for groebner"
+    @info "Producing $p random small tests for groebner. This may take a minute"
     test_params(
         rng,
         nvariables,

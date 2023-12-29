@@ -65,6 +65,9 @@ using Logging
 import MultivariatePolynomials
 import MultivariatePolynomials: AbstractPolynomial, AbstractPolynomialLike
 
+# At the moment, used only for rational reconstruction
+import Nemo
+
 # For printing the tables with statistics nicely
 import PrettyTables
 using Printf
@@ -74,8 +77,6 @@ import Primes: nextprime
 
 import Random
 import Random: AbstractRNG
-
-import SIMD
 
 import TimerOutputs
 
@@ -162,7 +163,7 @@ include("f4/trace.jl")
 include("f4/matrix.jl")
 # Linear algebra algorithms
 include("f4/linalg.jl")
-include("f4/sorting.jl")
+include("f4/sort.jl")
 # Additional tiny tracing
 include("f4/tiny-trace.jl")
 # All together combined in the F4 algorithm
@@ -170,11 +171,13 @@ include("f4/f4.jl")
 # Learn & apply add-on
 include("f4/learn-apply.jl")
 
+#= rational number reconstruction and CRT =#
+include("reconstruction/rational_reconstruction.jl")
+include("reconstruction/crt_reconstruction.jl")
+
 #= more high level functions =#
 # Lucky prime numbers
 include("groebner/lucky.jl")
-# Rational number reconstruction and CRT reconstruction
-include("groebner/reconstruction.jl")
 # GB state
 include("groebner/state.jl")
 # Correctness checks
@@ -189,7 +192,7 @@ include("groebner/isgroebner.jl")
 include("groebner/normalform.jl")
 # `autoreduce` backend (not exported)
 include("groebner/autoreduce.jl")
-# some tricks (which are used to compute in Lex and Block orderings)
+# some tricks (which are used to compute in Lex and Product orderings)
 include("groebner/homogenization.jl")
 
 #= generic fglm implementation =#

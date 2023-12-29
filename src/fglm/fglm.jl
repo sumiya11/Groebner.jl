@@ -10,7 +10,7 @@ end
 Base.isempty(m::NextMonomials) = m.load == 0
 
 function initialize_nextmonomials(ht::MonomialHashtable{M}, ord) where {M}
-    zz = construct_const_monom(M, ht.nvars)
+    zz = monom_construct_const_monom(M, ht.nvars)
     vidx = insert_in_hashtable!(ht, zz)
     monoms = Vector{MonomId}(undef, 2^3)
     monoms[1] = vidx
@@ -25,11 +25,11 @@ function insertnexts!(m::NextMonomials, ht::MonomialHashtable{M}, monom::MonomId
 
     emonom = ht.monoms[monom]
     for i in 1:(ht.nvars)
-        eprod = copy_monom(emonom)
+        eprod = monom_copy(emonom)
         tmp = Vector{UInt}(undef, ht.nvars)
-        edense = monom_to_dense_vector!(tmp, eprod)
+        edense = monom_to_vector!(tmp, eprod)
         edense[i] += 1
-        eprod = construct_monom(M, edense)
+        eprod = monom_construct_from_vector(M, edense)
         vidx = insert_in_hashtable!(ht, eprod)
 
         if !haskey(m.done, vidx)
@@ -68,7 +68,7 @@ end
 
 function divides_staircase(monom, staircase, ht)
     for m in staircase
-        if is_monom_divisible(monom, m, ht)
+        if monom_is_divisible(monom, m, ht)
             return true
         end
     end

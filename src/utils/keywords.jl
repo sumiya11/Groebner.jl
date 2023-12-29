@@ -25,6 +25,7 @@ const _supported_kw_args = (
         homogenize  = :auto,
         statistics  = :no,
         batched     = true,
+        use_flint   = true
     ),
     normalform = (
         check       = false,
@@ -94,6 +95,7 @@ struct KeywordsHandler{Ord}
     sweep::Bool
     homogenize::Symbol
     statistics::Symbol
+    use_flint::Bool
 
     function KeywordsHandler(function_key, kws)
         @assert haskey(_supported_kw_args, function_key)
@@ -153,6 +155,7 @@ struct KeywordsHandler{Ord}
         `:auto`, `:classic_modular`, `:learn_and_apply`"""
 
         batched = get(kws, :batched, get(default_kw_args, :batched, true))
+        use_flint = get(kws, :use_flint, get(default_kw_args, :use_flint, true))
 
         selection = get(kws, :selection, get(default_kw_args, :selection, :auto))
         @assert selection in (:auto, :normal, :sugar, :be_divided_and_perish)
@@ -205,7 +208,8 @@ struct KeywordsHandler{Ord}
             check,
             sweep,
             homogenize,
-            statistics
+            statistics,
+            use_flint
         )
     end
 end

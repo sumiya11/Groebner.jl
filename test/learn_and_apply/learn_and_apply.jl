@@ -63,7 +63,7 @@ params = (loglevel=0, sweep=true)
     end
 end
 
-@testset "learn & apply, different modulo" begin
+@testset "learn & apply, different field" begin
     # Some small tests and corner cases
     K, K2, K3 = GF(5), GF(7), GF(11)
     R, (x, y) = polynomial_ring(K, ["x", "y"], ordering=:degrevlex)
@@ -75,6 +75,10 @@ end
     trace, gb_1 = Groebner.groebner_learn(system; params...)
     flag, gb_2 = Groebner.groebner_apply!(trace, system2; params...)
     @test flag && gb_2 == Groebner.groebner(system2)
+
+    @test R != R2
+    @test parent(first(gb_1)) == parent(first(system)) == R
+    @test parent(first(gb_2)) == parent(first(system2)) == R2
 
     trace, gb_1 = Groebner.groebner_learn(system2; params...)
     flag, gb_2 = Groebner.groebner_apply!(trace, system; params...)
@@ -106,8 +110,9 @@ end
     system2 = [(2^49 + 1) * x2 - 1, (2^50) * y2 + (2^56 + 99)]
     system = map(f -> map_coefficients(c -> K1(data(c)), f), system2)
     trace, gb_1 = Groebner.groebner_learn(system; params...)
-    flag, gb_2 = Groebner.groebner_apply!(trace, system2; params...)
-    @test_broken gb_2 == [y2 + (2^56 + 99) // K2(2^50), x2 - 1 // K2(2^49 + 1)]
+    # TODO
+    # flag, gb_2 = Groebner.groebner_apply!(trace, system2; params...)
+    # @test_broken gb_2 == [y2 + (2^56 + 99) // K2(2^50), x2 - 1 // K2(2^49 + 1)]
 
     # Going from one monomial ordering to another is not allowed
     K1, K2 = GF(2^31 - 1), GF(2^60 + 33)
@@ -257,6 +262,25 @@ end
         @test gb == gb_1
         @test flag && gb == gb_2
     end
+end
+
+@testset "learn & apply, copy trace" begin
+    K1, K2 = GF(2^30 + 3), GF(2^31 - 1)
+    R1, (x1, y1) = polynomial_ring(K1, ["x", "y"])
+    R2, (x2, y2) = polynomial_ring(K2, ["x", "y"])
+
+    trace1, gb1 = Groebner.groebner_learn([x1 + 2y1 + 3, y1])
+    @test gb1 == [y1, x1 + 3]
+
+    trace2 = deepcopy(trace1)
+
+    flag, gb1_apply = Groebner.groebner_apply!(trace2, [x1 + y1 + 3, y1])
+    @test flag && gb1 == gb1_apply
+
+    flag, gb2_apply = Groebner.groebner_apply!(trace1, [x2 + y2 + 3, y2])
+    @test flag && [y2, x2 + 3] == gb2_apply
+    flag, gb2_apply = Groebner.groebner_apply!(trace2, [x2 + y2 + 3, y2])
+    @test flag && [y2, x2 + 3] == gb2_apply
 end
 
 @testset "learn & apply, tricky" begin

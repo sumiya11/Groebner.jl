@@ -3,9 +3,8 @@
 # Internal representations of monomial orderings that are actually used in the
 # computation. The user interface is defined in monomials/orderings.jl.
 #
-# Here, a user-defined ordering is compiled (or, either, just transformed) into
-# a corresponding internal ordering, which is then used in low-level
-# computations.
+# Here, a user-defined ordering is transformed into a corresponding internal
+# ordering, which is then used in low-level computations.
 
 # All internal orderings are a subtype of this
 abstract type AbstractInternalOrdering end

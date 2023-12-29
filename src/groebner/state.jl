@@ -593,7 +593,11 @@ end
 # numbers to state.gb_coeffs_qq inplace
 #
 # Returns true is the reconstrction is successfull, false otherwise.
-@timeit function full_rational_reconstruct!(state::GroebnerState, lucky::LuckyPrimes)
+@timeit function full_rational_reconstruct!(
+    state::GroebnerState,
+    lucky::LuckyPrimes,
+    use_flint::Bool
+)
     modulo = lucky.modulo
     @invariant modulo == prod(BigInt, lucky.primes)
 
@@ -611,17 +615,117 @@ end
 
     @invariant length(gb_coeffs_zz) == length(gb_coeffs_qq)
 
-    @inbounds for i in 1:length(gb_coeffs_zz)
-        @invariant length(gb_coeffs_zz[i]) == length(gb_coeffs_qq[i])
-        # Skip reconstrction of the first coefficient, it is equal to one in the
-        # reduced basis
-        for j in 2:length(gb_coeffs_zz[i])
-            if is_rational_reconstructed_mask[i][j]
-                continue
+    if use_flint
+        nemo_modulo = Nemo.ZZRingElem(modulo)
+
+        @inbounds for i in 1:length(gb_coeffs_zz)
+            @invariant length(gb_coeffs_zz[i]) == length(gb_coeffs_qq[i])
+            # Skip reconstrction of the first coefficient, it is equal to one in the
+            # reduced basis
+            for j in 2:length(gb_coeffs_zz[i])
+                if is_rational_reconstructed_mask[i][j]
+                    continue
+                end
+
+                cz = gb_coeffs_zz[i][j]
+                nemo_rem = Nemo.ZZRingElem(cz)
+                success, (num, den) = nemo_rational_reconstruction(nemo_rem, nemo_modulo)
+                gb_coeffs_qq[i][j] = Base.unsafe_rational(num, den)
+
+                !success && return false
             end
 
-            cz = gb_coeffs_zz[i][j]
-            cq = gb_coeffs_qq[i][j]
+            @invariant isone(gb_coeffs_qq[i][1])
+        end
+    else
+        @inbounds for i in 1:length(gb_coeffs_zz)
+            @invariant length(gb_coeffs_zz[i]) == length(gb_coeffs_qq[i])
+            # Skip reconstrction of the first coefficient, it is equal to one in the
+            # reduced basis
+            for j in 2:length(gb_coeffs_zz[i])
+                if is_rational_reconstructed_mask[i][j]
+                    continue
+                end
+
+                cz = gb_coeffs_zz[i][j]
+                cq = gb_coeffs_qq[i][j]
+                num, den = numerator(cq), denominator(cq)
+                success = rational_reconstruction!(
+                    num,
+                    den,
+                    bnd,
+                    buf,
+                    buf1,
+                    buf2,
+                    buf3,
+                    u1,
+                    u2,
+                    u3,
+                    v1,
+                    v2,
+                    v3,
+                    cz,
+                    modulo
+                )
+
+                !success && return false
+            end
+
+            @invariant isone(gb_coeffs_qq[i][1])
+        end
+    end
+
+    true
+end
+
+@timeit function partial_rational_reconstruct!(
+    state::GroebnerState,
+    lucky::LuckyPrimes,
+    indices_selection::Vector{Tuple{Int, Int}},
+    use_flint::Bool
+)
+    modulo = lucky.modulo
+    @invariant modulo == prod(BigInt, lucky.primes)
+
+    buffer = state.buffer
+    bnd = rational_reconstruction_bound(modulo)
+
+    buf, buf1 = buffer.reconstructbuf1, buffer.reconstructbuf2
+    buf2, buf3 = buffer.reconstructbuf3, buffer.reconstructbuf4
+    u1, u2 = buffer.reconstructbuf5, buffer.reconstructbuf6
+    u3, v1 = buffer.reconstructbuf7, buffer.reconstructbuf8
+    v2, v3 = buffer.reconstructbuf9, buffer.reconstructbuf10
+
+    selected_coeffs_zz = state.selected_coeffs_zz
+    selected_coeffs_qq = state.selected_coeffs_qq
+    gb_coeffs_qq = state.gb_coeffs_qq
+    is_rational_reconstructed_mask = state.is_rational_reconstructed_mask
+
+    if use_flint
+        nemo_modulo = Nemo.ZZRingElem(modulo)
+
+        @inbounds for i in 1:length(indices_selection)
+            i1, i2 = indices_selection[i]
+            cz = selected_coeffs_zz[i]
+            nemo_rem = Nemo.ZZRingElem(cz)
+
+            success, (num, den) = nemo_rational_reconstruction(nemo_rem, nemo_modulo)
+            selected_coeffs_qq[i] = Base.unsafe_rational(num, den)
+
+            !success && return false
+
+            # Mark that the coefficient is already reconstructed
+            is_rational_reconstructed_mask[i1][i2] = true
+            tnum, tden = numerator(gb_coeffs_qq[i1][i2]), denominator(gb_coeffs_qq[i1][i2])
+            Base.GMP.MPZ.set!(tnum, num)
+            Base.GMP.MPZ.set!(tden, den)
+        end
+    else
+        @inbounds for i in 1:length(indices_selection)
+            i1, i2 = indices_selection[i]
+
+            cz = selected_coeffs_zz[i]
+            cq = selected_coeffs_qq[i]
             num, den = numerator(cq), denominator(cq)
             success = rational_reconstruction!(
                 num,
@@ -642,67 +746,13 @@ end
             )
 
             !success && return false
+
+            # Mark that the coefficient is already reconstructed
+            is_rational_reconstructed_mask[i1][i2] = true
+            tnum, tden = numerator(gb_coeffs_qq[i1][i2]), denominator(gb_coeffs_qq[i1][i2])
+            Base.GMP.MPZ.set!(tnum, num)
+            Base.GMP.MPZ.set!(tden, den)
         end
-
-        @invariant isone(gb_coeffs_qq[i][1])
-    end
-
-    true
-end
-
-@timeit function partial_rational_reconstruct!(
-    state::GroebnerState,
-    lucky::LuckyPrimes,
-    indices_selection::Vector{Tuple{Int, Int}}
-)
-    modulo = lucky.modulo
-    @invariant modulo == prod(BigInt, lucky.primes)
-
-    buffer = state.buffer
-    bnd = rational_reconstruction_bound(modulo)
-
-    buf, buf1 = buffer.reconstructbuf1, buffer.reconstructbuf2
-    buf2, buf3 = buffer.reconstructbuf3, buffer.reconstructbuf4
-    u1, u2 = buffer.reconstructbuf5, buffer.reconstructbuf6
-    u3, v1 = buffer.reconstructbuf7, buffer.reconstructbuf8
-    v2, v3 = buffer.reconstructbuf9, buffer.reconstructbuf10
-
-    selected_coeffs_zz = state.selected_coeffs_zz
-    selected_coeffs_qq = state.selected_coeffs_qq
-    gb_coeffs_qq = state.gb_coeffs_qq
-    is_rational_reconstructed_mask = state.is_rational_reconstructed_mask
-
-    @inbounds for i in 1:length(indices_selection)
-        i1, i2 = indices_selection[i]
-
-        cz = selected_coeffs_zz[i]
-        cq = selected_coeffs_qq[i]
-        num, den = numerator(cq), denominator(cq)
-        success = rational_reconstruction!(
-            num,
-            den,
-            bnd,
-            buf,
-            buf1,
-            buf2,
-            buf3,
-            u1,
-            u2,
-            u3,
-            v1,
-            v2,
-            v3,
-            cz,
-            modulo
-        )
-
-        !success && return false
-
-        # Mark that the coefficient is already reconstructed
-        is_rational_reconstructed_mask[i1][i2] = true
-        tnum, tden = numerator(gb_coeffs_qq[i1][i2]), denominator(gb_coeffs_qq[i1][i2])
-        Base.GMP.MPZ.set!(tnum, num)
-        Base.GMP.MPZ.set!(tden, den)
     end
 
     true

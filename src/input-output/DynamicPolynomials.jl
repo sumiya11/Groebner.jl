@@ -1,3 +1,4 @@
+# Conversion from DynamicPolynomials.jl to internal representation and back.
 
 function peek_at_polynomials(polynomials::Vector{<:AbstractPolynomialLike{T}}) where {T}
     @assert !isempty(polynomials) "Input must not be empty"
@@ -77,7 +78,7 @@ function extract_monoms(
         end
         @inbounds for (j, t) in enumerate(monoms)
             et = exponents_wrt_vars(t, var2idx)
-            exps[i][j] = construct_monom(M, et)
+            exps[i][j] = monom_construct_from_vector(M, et)
         end
     end
     reversed_order, var2idx, exps
@@ -137,9 +138,8 @@ function _convert_to_output(
             continue
         end
         cfs::Vector{J} = convert_coeffs_to_output(gbcoeffs[i], J)
-        expvectors = [
-            map(Int, monom_to_dense_vector!(tmp, gbexps[i][j])) for j in 1:length(gbexps[i])
-        ]
+        expvectors =
+            [map(Int, monom_to_vector!(tmp, gbexps[i][j])) for j in 1:length(gbexps[i])]
         expvars = map(t -> t[1] * prod(map(^, origvars, t[2])), zip(cfs, expvectors))
         exported[i] = sum(expvars)
     end

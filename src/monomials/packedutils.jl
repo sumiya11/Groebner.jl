@@ -1,24 +1,20 @@
-# Utilities for packed monomial representation
+# Utilities for packed integers
 
-# How many integers of type B can be stored
-# in an integer of type T
-function elperchunk(T, B)
+# Functions here work on integers packed into a single integer of a wider type.
+
+# How many integers of type B can be stored in an integer of type T
+function packed_elperchunk(T, B)
     epc = div(sizeof(T), sizeof(B))
-    @assert epc * sizeof(B) == sizeof(T)
+    @invariant epc * sizeof(B) == sizeof(T)
     epc
 end
 
 # the size of total degree.
 # By default, does not differ from the size of other elements
-degsize(T, B, n) = sizeof(B)
-nchunks(T, B, n) = div((n - 1) * sizeof(B) + degsize(T, B, n), sizeof(T)) + 1
+packed_degsize(T, B, n) = sizeof(B)
+packed_nchunks(T, B, n) = div((n - 1) * sizeof(B) + packed_degsize(T, B, n), sizeof(T)) + 1
 
-# For an integer a::T that packs several integers of type B
-# unpacks and writes the stored integers into vector `b`.
-#
-# keep the number of Val(...) parametric types small,
-# otherwise these functions will be dispatched in runtime
-@generated function packedunpack!(
+@generated function packed_unpack!(
     b::AbstractVector{MH},
     a::T,
     ::Type{B},
@@ -38,9 +34,7 @@ nchunks(T, B, n) = div((n - 1) * sizeof(B) + degsize(T, B, n), sizeof(T)) + 1
     :($ans; return $b)
 end
 
-# For an integer a::T that packs several integers of type B
-# computes the dot product of a and vector `b`
-@generated function packeddot(
+@generated function packed_dot_product(
     a::T,
     b::AbstractVector{MH},
     ::Type{B},
@@ -62,9 +56,14 @@ end
     :($ans; return $x)
 end
 
-# For integers a::T and b::T that pack several integers of type B
-# checks that dot product of a and b is zero
-@generated function packedorth(a::T, b::T, ::Type{B}, ::Val{I}) where {T, B, I}
+# Keep the number of Val(...) parametric types small, otherwise these functions
+# will be dispatched in runtime
+@generated function packed_is_zero_dot_product(
+    a::T,
+    b::T,
+    ::Type{B},
+    ::Val{I}
+) where {T, B, I}
     ts, bs = sizeof(T), sizeof(B)
     @assert bs * div(ts, bs) == ts
     epc = div(ts, bs)
@@ -81,9 +80,8 @@ end
     :($ans; return $x)
 end
 
-# For integers a::T and b::T that pack several integers of type B
-# checks that a >= b lexicographically
-@generated function packedge(a::T, b::T, ::Type{B}, ::Val{I}) where {T, B, I}
+# a >= b
+@generated function packed_ge(a::T, b::T, ::Type{B}, ::Val{I}) where {T, B, I}
     ts, bs = sizeof(T), sizeof(B)
     @assert bs * div(ts, bs) == ts
     epc = div(ts, bs)
@@ -100,10 +98,7 @@ end
     :($ans; return $x)
 end
 
-# For integers a::T and b::T that pack several integers of type B
-# computes and returns
-# max.(a, b), sum(max.(a, b))
-@generated function packedmax(a::T, b::T, ::Type{B}, ::Val{I}) where {T, B, I}
+@generated function packed_max(a::T, b::T, ::Type{B}, ::Val{I}) where {T, B, I}
     ts, bs = sizeof(T), sizeof(B)
     @assert bs * div(ts, bs) == ts
     epc = div(ts, bs)

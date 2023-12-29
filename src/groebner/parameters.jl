@@ -104,6 +104,8 @@ mutable struct AlgorithmParameters{
     sweep::Bool
 
     statistics::Symbol
+
+    use_flint::Bool
 end
 
 function AlgorithmParameters(
@@ -241,6 +243,8 @@ function AlgorithmParameters(
 
     statistics = kwargs.statistics
 
+    use_flint = kwargs.use_flint
+
     @log level = -1 """
     Selected parameters:
     target_ord = $target_ord
@@ -267,7 +271,8 @@ function AlgorithmParameters(
     seed = $seed
     rng = $rng
     sweep = $sweep
-    statistics = $statistics"""
+    statistics = $statistics
+    use_flint = $use_flint"""
 
     AlgorithmParameters(
         target_ord,
@@ -294,7 +299,8 @@ function AlgorithmParameters(
         useed,
         rng,
         sweep,
-        statistics
+        statistics,
+        use_flint
     )
 end
 
@@ -333,6 +339,7 @@ function params_mod_p(
         params.seed,
         params.rng,
         params.sweep,
-        params.statistics
+        params.statistics,
+        params.use_flint
     )
 end

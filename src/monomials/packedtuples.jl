@@ -1,12 +1,11 @@
-# Packed monomial representation
+# PackedTupleN
 
-# Defines PackedTupleI types for I = 1,2,...,N
+# PackedTupleN implements the monomial interface.
+# PackedTupleN implements the interface of a vector of small nonegative integers
+# with O(1) sum queries.
 #
-# PackedTupleI implements the interface of a vector of small nonegative integers
-# with O(1) vector sum queries. It is used to implement packed monomials.
-#
-# PackedTupleI always stores the sum of the vector explicitly.
-# PackedTupleI always stores in degree-reverse-lex favorable order.
+# PackedTupleN always stores the sum of the vector explicitly.
+# PackedTupleN always stores in degree-reverse-lex favorable order.
 
 abstract type AbstractPackedTuple{T <: Unsigned, B <: Unsigned} end
 
@@ -25,13 +24,13 @@ struct PackedTuple3{T <: Unsigned, B <: Unsigned} <: AbstractPackedTuple{T, B}
     a3::T
 end
 
-# a `p` object can store max_vars_in_monom(p) integers at max. 
-max_vars_in_monom(p::AbstractPackedTuple) = max_vars_in_monom(typeof(p))
+# a `p` object can store monom_max_vars(p) integers at max. 
+monom_max_vars(p::AbstractPackedTuple) = monom_max_vars(typeof(p))
 
 # checks that there is no risk of overflow for `e`.
 # If overflow if probable, throws.
 function _monom_overflow_check(e::AbstractPackedTuple{T, B}) where {T, B}
-    _monom_overflow_check(totaldeg(e), B)
+    _monom_overflow_check(monom_totaldeg(e), B)
 end
 
 const _defined_packed_pairs = ((:PackedTuple1, 1), (:PackedTuple2, 2), (:PackedTuple3, 3))
@@ -50,42 +49,44 @@ for (op, n) in _defined_packed_pairs
         Base.eltype(::Type{$op{T, B}}) where {T, B} = MonomHash
     end
 
-    # define `max_vars_in_monom`
+    # define `monom_max_vars`
     @eval begin
-        max_vars_in_monom(::Type{$op{T, B}}) where {T, B} =
-            $n * div(sizeof(T), sizeof(B)) - 1
+        monom_max_vars(::Type{$op{T, B}}) where {T, B} = $n * div(sizeof(T), sizeof(B)) - 1
     end
 
-    # define `totaldeg`
+    # define `monom_totaldeg`
     @eval begin
-        @generated function totaldeg(pv::$op{T, B}) where {T, B}
+        @generated function monom_totaldeg(pv::$op{T, B}) where {T, B}
             d = 8 * (sizeof(T) - sizeof(B))
             :(pv.a1 >> $d)
         end
     end
 
-    # define `construct_hash_vector`
+    # define `monom_construct_hash_vector`
     @eval begin
-        function construct_hash_vector(::Type{$op{T, B}}, n::Integer) where {T, B}
+        function monom_construct_hash_vector(::Type{$op{T, B}}, n::Integer) where {T, B}
             rand(MonomHash, $n * div(sizeof(T), sizeof(B)))
         end
     end
 end
 
-copy_monom(pv::PackedTuple1{T, B}) where {T <: UInt64, B} = pv
-copy_monom(pv::PackedTuple2{T, B}) where {T <: UInt64, B} = pv
-copy_monom(pv::PackedTuple3{T, B}) where {T <: UInt64, B} = pv
+monom_copy(pv::PackedTuple1{T, B}) where {T <: UInt64, B} = pv
+monom_copy(pv::PackedTuple2{T, B}) where {T <: UInt64, B} = pv
+monom_copy(pv::PackedTuple3{T, B}) where {T <: UInt64, B} = pv
 
-copy_monom(pv::PackedTuple1{T, B}) where {T, B} = PackedTuple1{T, B}(pv.a1)
-copy_monom(pv::PackedTuple2{T, B}) where {T, B} = PackedTuple2{T, B}(pv.a1, pv.a2)
-copy_monom(pv::PackedTuple3{T, B}) where {T, B} = PackedTuple3{T, B}(pv.a1, pv.a2, pv.a3)
+monom_copy(pv::PackedTuple1{T, B}) where {T, B} = PackedTuple1{T, B}(pv.a1)
+monom_copy(pv::PackedTuple2{T, B}) where {T, B} = PackedTuple2{T, B}(pv.a1, pv.a2)
+monom_copy(pv::PackedTuple3{T, B}) where {T, B} = PackedTuple3{T, B}(pv.a1, pv.a2, pv.a3)
 
-# Creates an exponent vector of the given type from regular vector `ev`
-function construct_monom(::Type{PackedTuple1{T, B}}, ev::Vector{U}) where {T, B, U}
+# Creates a packed monomial of the given type from regular vector `ev`
+function monom_construct_from_vector(
+    ::Type{PackedTuple1{T, B}},
+    ev::Vector{U}
+) where {T, B, U}
     n = length(ev)
-    epc = elperchunk(T, B)
-    @assert n < epc
-    indent = sizeof(T) - degsize(T, B, n)
+    epc = packed_elperchunk(T, B)
+    @invariant n < epc
+    indent = sizeof(T) - packed_degsize(T, B, n)
     a1 = zero(T)
     s = zero(T)
     @inbounds for i in n:-1:1
@@ -99,15 +100,18 @@ function construct_monom(::Type{PackedTuple1{T, B}}, ev::Vector{U}) where {T, B,
     a1 |= s << (indent * 8)
     PackedTuple1{T, B}(a1)
 end
-function construct_monom(::Type{PackedTuple2{T, B}}, ev::Vector{U}) where {T, B, U}
+function monom_construct_from_vector(
+    ::Type{PackedTuple2{T, B}},
+    ev::Vector{U}
+) where {T, B, U}
     n = length(ev)
-    epc = elperchunk(T, B)
-    @assert n < 2 * epc
+    epc = packed_elperchunk(T, B)
+    @invariant n < 2 * epc
     if n < epc
-        small = construct_monom(PackedTuple1{T, B}, ev)
+        small = monom_construct_from_vector(PackedTuple1{T, B}, ev)
         return PackedTuple2{T, B}(small.a1, zero(T))
     end
-    indent = sizeof(T) - degsize(T, B, n)
+    indent = sizeof(T) - packed_degsize(T, B, n)
     a1, a2 = zero(T), zero(T)
     s = zero(T)
     @inbounds for i in n:-1:1
@@ -126,15 +130,18 @@ function construct_monom(::Type{PackedTuple2{T, B}}, ev::Vector{U}) where {T, B,
     a1 |= s << (indent * 8)
     PackedTuple2{T, B}(a1, a2)
 end
-function construct_monom(::Type{PackedTuple3{T, B}}, ev::Vector{U}) where {T, B, U}
+function monom_construct_from_vector(
+    ::Type{PackedTuple3{T, B}},
+    ev::Vector{U}
+) where {T, B, U}
     n = length(ev)
-    epc = elperchunk(T, B)
-    @assert n < 3 * epc
+    epc = packed_elperchunk(T, B)
+    @invariant n < 3 * epc
     if n < 2 * epc
-        small = construct_monom(PackedTuple2{T, B}, ev)
+        small = monom_construct_from_vector(PackedTuple2{T, B}, ev)
         return PackedTuple3{T, B}(small.a1, small.a2, zero(T))
     end
-    indent = sizeof(T) - degsize(T, B, n)
+    indent = sizeof(T) - packed_degsize(T, B, n)
     a1, a2, a3 = zero(T), zero(T), zero(T)
     s = zero(T)
     @inbounds for i in n:-1:1
@@ -157,29 +164,30 @@ function construct_monom(::Type{PackedTuple3{T, B}}, ev::Vector{U}) where {T, B,
     PackedTuple3{T, B}(a1, a2, a3)
 end
 
-# Creates a zero exponent vector of the given type of length n
-function construct_const_monom(::Type{PackedTuple1{T, B}}, n::Integer) where {T, B}
+# Creates a constant packed monomial of the given type of length n
+function monom_construct_const_monom(::Type{PackedTuple1{T, B}}, n::Integer) where {T, B}
+    @invariant n < packed_elperchunk(T, B)
     PackedTuple1{T, B}(zero(T))
 end
-function construct_const_monom(::Type{PackedTuple2{T, B}}, n::Integer) where {T, B}
+function monom_construct_const_monom(::Type{PackedTuple2{T, B}}, n::Integer) where {T, B}
+    @invariant n < 2 * packed_elperchunk(T, B)
     PackedTuple2{T, B}(zero(T), zero(T))
 end
-function construct_const_monom(::Type{PackedTuple3{T, B}}, n::Integer) where {T, B}
+function monom_construct_const_monom(::Type{PackedTuple3{T, B}}, n::Integer) where {T, B}
+    @invariant n < 3 * packed_elperchunk(T, B)
     PackedTuple3{T, B}(zero(T), zero(T), zero(T))
 end
 
-# Hash of exponent vector `x`
-# Must be linear in x:
-# monom_hash(x + y) = monom_hash(x) + monom_hash(x)
+# Hash of a packed monomial
 function monom_hash(x::PackedTuple1{T, B}, b::Vector{MH}) where {T, B, MH}
-    h = packeddot(x.a1, b, B, 1)
+    h = packed_dot_product(x.a1, b, B, 1)
     mod(h, MonomHash)
 end
 function monom_hash(x::PackedTuple2{T, B}, b::Vector{MH}) where {T, B, MH}
-    epc = elperchunk(T, B)
-    h = packeddot(x.a2, b, B, 0)
+    epc = packed_elperchunk(T, B)
+    h = packed_dot_product(x.a2, b, B, 0)
     h =
-        h + packeddot(
+        h + packed_dot_product(
             x.a1,
             view(b, (epc + 1):length(b)),
             B,
@@ -188,11 +196,11 @@ function monom_hash(x::PackedTuple2{T, B}, b::Vector{MH}) where {T, B, MH}
     mod(h, MonomHash)
 end
 function monom_hash(x::PackedTuple3{T, B}, b::Vector{MH}) where {T, B, MH}
-    epc = elperchunk(T, B)
-    h = packeddot(x.a3, b, B, 0)
-    h = h + packeddot(x.a2, view(b, (epc + 1):(2 * epc)), B, 0)
+    epc = packed_elperchunk(T, B)
+    h = packed_dot_product(x.a3, b, B, 0)
+    h = h + packed_dot_product(x.a2, view(b, (epc + 1):(2 * epc)), B, 0)
     h =
-        h + packeddot(
+        h + packed_dot_product(
             x.a1,
             view(b, (2 * epc + 1):length(b)),
             B,
@@ -201,79 +209,43 @@ function monom_hash(x::PackedTuple3{T, B}, b::Vector{MH}) where {T, B, MH}
     mod(h, MonomHash)
 end
 
-# Creates a regular vector from an exponent vector `pv` 
-# and writes the answer to `tmp`
-function monom_to_dense_vector!(tmp::Vector{I}, pv::PackedTuple1{T, B}) where {I, T, B}
-    epc = elperchunk(T, B)
+# Creates a regular vector from a packed monomial and writes result to `tmp`
+function monom_to_vector!(tmp::Vector{I}, pv::PackedTuple1{T, B}) where {I, T, B}
+    epc = packed_elperchunk(T, B)
     indent = epc - min(epc - 1, length(tmp))
-    packedunpack!(tmp, pv.a1, B, indent)
+    packed_unpack!(tmp, pv.a1, B, indent)
     tmp
 end
-function monom_to_dense_vector!(tmp::Vector{I}, pv::PackedTuple2{T, B}) where {I, T, B}
-    epc = elperchunk(T, B)
-    (length(tmp) < epc) && return monom_to_dense_vector!(tmp, PackedTuple1{T, B}(pv.a1))
+function monom_to_vector!(tmp::Vector{I}, pv::PackedTuple2{T, B}) where {I, T, B}
+    epc = packed_elperchunk(T, B)
+    (length(tmp) < epc) && return monom_to_vector!(tmp, PackedTuple1{T, B}(pv.a1))
     indent = 0
-    packedunpack!(tmp, pv.a2, B, indent)
+    packed_unpack!(tmp, pv.a2, B, indent)
     indent = epc - min(epc - 1, length(tmp) - epc)
-    packedunpack!(view(tmp, (epc + 1):length(tmp)), pv.a1, B, indent)
+    packed_unpack!(view(tmp, (epc + 1):length(tmp)), pv.a1, B, indent)
     tmp
 end
-function monom_to_dense_vector!(tmp::Vector{I}, pv::PackedTuple3{T, B}) where {I, T, B}
-    epc = elperchunk(T, B)
+function monom_to_vector!(tmp::Vector{I}, pv::PackedTuple3{T, B}) where {I, T, B}
+    epc = packed_elperchunk(T, B)
     (length(tmp) < 2 * epc) &&
-        return monom_to_dense_vector!(tmp, PackedTuple2{T, B}(pv.a1, pv.a2))
+        return monom_to_vector!(tmp, PackedTuple2{T, B}(pv.a1, pv.a2))
     indent = 0
-    packedunpack!(tmp, pv.a3, B, indent)
+    packed_unpack!(tmp, pv.a3, B, indent)
     indent = 0
-    packedunpack!(view(tmp, (epc + 1):(2 * epc)), pv.a2, B, indent)
+    packed_unpack!(view(tmp, (epc + 1):(2 * epc)), pv.a2, B, indent)
     indent = epc - min(epc - 1, length(tmp) - 2 * epc)
-    packedunpack!(view(tmp, (2 * epc + 1):length(tmp)), pv.a1, B, indent)
+    packed_unpack!(view(tmp, (2 * epc + 1):length(tmp)), pv.a1, B, indent)
     tmp
 end
 
 ###
-# Monomial orderings implementations 
-# for the `PackedTupleI` monomial implementation.
-# See monoms/orderings.jl for details.
+# Monomial orderings for the `PackedTupleI` monomial implementation.
 
-# Checks whether AbstractPackedTuple{T, B} provides a comparator function implementation
-# for the given monomial ordering of type `O`
-function is_supported_ordering(::Type{APP}, ::O) where {APP <: AbstractPackedTuple, O}
-    O <: Union{DegRevLex, InputOrdering}
-end
-
-function monom_isless(
-    ea::PackedTuple1{T, B},
-    eb::PackedTuple1{T, B},
-    ord::Ord
-) where {T, B, Ord <: AbstractInternalOrdering}
-    s = div(sizeof(T), sizeof(B)) - 1
-    tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
-    a = construct_monom(ExponentVector{T}, monom_to_dense_vector!(tmp1, ea))
-    b = construct_monom(ExponentVector{T}, monom_to_dense_vector!(tmp2, eb))
-    monom_isless(a, b, ord)
-end
-function monom_isless(
-    ea::PackedTuple2{T, B},
-    eb::PackedTuple2{T, B},
-    ord::Ord
-) where {T, B, Ord <: AbstractInternalOrdering}
-    s = 2 * div(sizeof(T), sizeof(B)) - 1
-    tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
-    a = construct_monom(ExponentVector{T}, monom_to_dense_vector!(tmp1, ea))
-    b = construct_monom(ExponentVector{T}, monom_to_dense_vector!(tmp2, eb))
-    monom_isless(a, b, ord)
-end
-function monom_isless(
-    ea::PackedTuple3{T, B},
-    eb::PackedTuple3{T, B},
-    ord::Ord
-) where {T, B, Ord <: AbstractInternalOrdering}
-    s = 3 * div(sizeof(T), sizeof(B)) - 1
-    tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
-    a = construct_monom(ExponentVector{T}, monom_to_dense_vector!(tmp1, ea))
-    b = construct_monom(ExponentVector{T}, monom_to_dense_vector!(tmp2, eb))
-    monom_isless(a, b, ord)
+function monom_is_supported_ordering(
+    ::Type{APP},
+    ::Ord
+) where {APP <: AbstractPackedTuple, Ord}
+    Ord <: Union{DegRevLex, InputOrdering}
 end
 
 # TODO: specialize for T == UInt64
@@ -282,7 +254,7 @@ function monom_isless(
     eb::PackedTuple1{T, B},
     ::_DegRevLex{true}
 ) where {T, B}
-    da, db = totaldeg(ea), totaldeg(eb)
+    da, db = monom_totaldeg(ea), monom_totaldeg(eb)
     if da < db
         return true
     end
@@ -302,7 +274,7 @@ function monom_isless(
     eb::PackedTuple2{T, B},
     ::_DegRevLex{true}
 ) where {T, B}
-    da, db = totaldeg(ea), totaldeg(eb)
+    da, db = monom_totaldeg(ea), monom_totaldeg(eb)
     if da < db
         return true
     end
@@ -322,7 +294,7 @@ function monom_isless(
     eb::PackedTuple3{T, B},
     ::_DegRevLex{true}
 ) where {T, B}
-    da, db = totaldeg(ea), totaldeg(eb)
+    da, db = monom_totaldeg(ea), monom_totaldeg(eb)
     if da < db
         return true
     end
@@ -341,6 +313,41 @@ function monom_isless(
     end
 end
 
+function monom_isless(
+    ea::PackedTuple1{T, B},
+    eb::PackedTuple1{T, B},
+    ord::Ord
+) where {T, B, Ord <: AbstractInternalOrdering}
+    # TODO: Perhaps this should error
+    s = div(sizeof(T), sizeof(B)) - 1
+    tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
+    a = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp1, ea))
+    b = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp2, eb))
+    monom_isless(a, b, ord)
+end
+function monom_isless(
+    ea::PackedTuple2{T, B},
+    eb::PackedTuple2{T, B},
+    ord::Ord
+) where {T, B, Ord <: AbstractInternalOrdering}
+    s = 2 * div(sizeof(T), sizeof(B)) - 1
+    tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
+    a = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp1, ea))
+    b = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp2, eb))
+    monom_isless(a, b, ord)
+end
+function monom_isless(
+    ea::PackedTuple3{T, B},
+    eb::PackedTuple3{T, B},
+    ord::Ord
+) where {T, B, Ord <: AbstractInternalOrdering}
+    s = 3 * div(sizeof(T), sizeof(B)) - 1
+    tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
+    a = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp1, ea))
+    b = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp2, eb))
+    monom_isless(a, b, ord)
+end
+
 ###
 # Monomial-Monomial arithmetic.
 
@@ -349,7 +356,7 @@ function monom_lcm!(
     ea::PackedTuple1{T, B},
     eb::PackedTuple1{T, B}
 ) where {T, B}
-    x, si = packedmax(ea.a1, eb.a1, B, Val(1))
+    x, si = packed_max(ea.a1, eb.a1, B, Val(1))
     x += si << ((sizeof(T) - sizeof(B)) * 8)
     ans = PackedTuple1{T, B}(x)
     _monom_overflow_check(ans)
@@ -360,8 +367,8 @@ function monom_lcm!(
     ea::PackedTuple2{T, B},
     eb::PackedTuple2{T, B}
 ) where {T, B}
-    x1, si1 = packedmax(ea.a1, eb.a1, B, Val(1))
-    x2, si2 = packedmax(ea.a2, eb.a2, B, Val(0))
+    x1, si1 = packed_max(ea.a1, eb.a1, B, Val(1))
+    x2, si2 = packed_max(ea.a2, eb.a2, B, Val(0))
     x1 = x1 + ((si1 + si2) << ((sizeof(T) - sizeof(B)) * 8))
     ans = PackedTuple2{T, B}(x1, x2)
     _monom_overflow_check(ans)
@@ -372,38 +379,38 @@ function monom_lcm!(
     ea::PackedTuple3{T, B},
     eb::PackedTuple3{T, B}
 ) where {T, B}
-    x1, si1 = packedmax(ea.a1, eb.a1, B, Val(1))
-    x2, si2 = packedmax(ea.a2, eb.a2, B, Val(0))
-    x3, si3 = packedmax(ea.a3, eb.a3, B, Val(0))
+    x1, si1 = packed_max(ea.a1, eb.a1, B, Val(1))
+    x2, si2 = packed_max(ea.a2, eb.a2, B, Val(0))
+    x3, si3 = packed_max(ea.a3, eb.a3, B, Val(0))
     x1 = x1 + ((si1 + si2 + si3) << ((sizeof(T) - sizeof(B)) * 8))
     ans = PackedTuple3{T, B}(x1, x2, x3)
     _monom_overflow_check(ans)
     ans
 end
 
-function is_gcd_const(ea::PackedTuple1{T, B}, eb::PackedTuple1{T, B}) where {T, B}
-    if !packedorth(ea.a1, eb.a1, B, Val(1))
+function monom_is_gcd_const(ea::PackedTuple1{T, B}, eb::PackedTuple1{T, B}) where {T, B}
+    if !packed_is_zero_dot_product(ea.a1, eb.a1, B, Val(1))
         return false
     end
     return true
 end
-function is_gcd_const(ea::PackedTuple2{T, B}, eb::PackedTuple2{T, B}) where {T, B}
-    if !packedorth(ea.a1, eb.a1, B, Val(1))
+function monom_is_gcd_const(ea::PackedTuple2{T, B}, eb::PackedTuple2{T, B}) where {T, B}
+    if !packed_is_zero_dot_product(ea.a1, eb.a1, B, Val(1))
         return false
     end
-    if !packedorth(ea.a2, eb.a2, B, Val(0))
+    if !packed_is_zero_dot_product(ea.a2, eb.a2, B, Val(0))
         return false
     end
     return true
 end
-function is_gcd_const(ea::PackedTuple3{T, B}, eb::PackedTuple3{T, B}) where {T, B}
-    if !packedorth(ea.a1, eb.a1, B, Val(1))
+function monom_is_gcd_const(ea::PackedTuple3{T, B}, eb::PackedTuple3{T, B}) where {T, B}
+    if !packed_is_zero_dot_product(ea.a1, eb.a1, B, Val(1))
         return false
     end
-    if !packedorth(ea.a2, eb.a2, B, Val(0))
+    if !packed_is_zero_dot_product(ea.a2, eb.a2, B, Val(0))
         return false
     end
-    if !packedorth(ea.a3, eb.a3, B, Val(0))
+    if !packed_is_zero_dot_product(ea.a3, eb.a3, B, Val(0))
         return false
     end
     return true
@@ -474,87 +481,77 @@ function monom_division!(
     ans
 end
 
-function is_monom_divisible(ea::PackedTuple1{T, B}, eb::PackedTuple1{T, B}) where {T, B}
-    if !packedge(ea.a1, eb.a1, B, Val(1))
+function monom_is_divisible(ea::PackedTuple1{T, B}, eb::PackedTuple1{T, B}) where {T, B}
+    if !packed_ge(ea.a1, eb.a1, B, Val(1))
         return false
     end
     return true
 end
-function is_monom_divisible(ea::PackedTuple2{T, B}, eb::PackedTuple2{T, B}) where {T, B}
-    if !packedge(ea.a1, eb.a1, B, Val(1))
+function monom_is_divisible(ea::PackedTuple2{T, B}, eb::PackedTuple2{T, B}) where {T, B}
+    if !packed_ge(ea.a1, eb.a1, B, Val(1))
         return false
     end
-    if !packedge(ea.a2, eb.a2, B, Val(0))
+    if !packed_ge(ea.a2, eb.a2, B, Val(0))
         return false
     end
     return true
 end
-function is_monom_divisible(ea::PackedTuple3{T, B}, eb::PackedTuple3{T, B}) where {T, B}
-    if !packedge(ea.a1, eb.a1, B, Val(1))
+function monom_is_divisible(ea::PackedTuple3{T, B}, eb::PackedTuple3{T, B}) where {T, B}
+    if !packed_ge(ea.a1, eb.a1, B, Val(1))
         return false
     end
-    if !packedge(ea.a2, eb.a2, B, Val(0))
+    if !packed_ge(ea.a2, eb.a2, B, Val(0))
         return false
     end
-    if !packedge(ea.a3, eb.a3, B, Val(0))
+    if !packed_ge(ea.a3, eb.a3, B, Val(0))
         return false
     end
     return true
 end
 
-function is_monom_divisible!(
+function monom_is_divisible!(
     ec::PackedTuple1{T, B},
     ea::PackedTuple1{T, B},
     eb::PackedTuple1{T, B}
 ) where {T, B}
-    ans = is_monom_divisible(ea, eb)
+    ans = monom_is_divisible(ea, eb)
     e = ec
     ans && (e = monom_division!(ec, ea, eb))
     ans, e
 end
-function is_monom_divisible!(
+function monom_is_divisible!(
     ec::PackedTuple2{T, B},
     ea::PackedTuple2{T, B},
     eb::PackedTuple2{T, B}
 ) where {T, B}
-    ans = is_monom_divisible(ea, eb)
+    ans = monom_is_divisible(ea, eb)
     e = ec
     ans && (e = monom_division!(ec, ea, eb))
     ans, e
 end
-function is_monom_divisible!(
+function monom_is_divisible!(
     ec::PackedTuple3{T, B},
     ea::PackedTuple3{T, B},
     eb::PackedTuple3{T, B}
 ) where {T, B}
-    ans = is_monom_divisible(ea, eb)
+    ans = monom_is_divisible(ea, eb)
     e = ec
     ans && (e = monom_division!(ec, ea, eb))
     ans, e
 end
 
-function is_monom_elementwise_eq(
-    ea::PackedTuple1{T, B},
-    eb::PackedTuple1{T, B}
-) where {T, B}
+function monom_is_equal(ea::PackedTuple1{T, B}, eb::PackedTuple1{T, B}) where {T, B}
     ea.a1 == eb.a1
 end
-function is_monom_elementwise_eq(
-    ea::PackedTuple2{T, B},
-    eb::PackedTuple2{T, B}
-) where {T, B}
+function monom_is_equal(ea::PackedTuple2{T, B}, eb::PackedTuple2{T, B}) where {T, B}
     ea.a1 == eb.a1 && ea.a2 == eb.a2
 end
-function is_monom_elementwise_eq(
-    ea::PackedTuple3{T, B},
-    eb::PackedTuple3{T, B}
-) where {T, B}
+function monom_is_equal(ea::PackedTuple3{T, B}, eb::PackedTuple3{T, B}) where {T, B}
     ea.a1 == eb.a1 && ea.a2 == eb.a2 && ea.a3 == eb.a3
 end
 
 ###
 # Monomial division masks.
-# See f4/hashtable.jl for details.
 
 function monom_divmask(
     e::PackedTuple1{T, B},
@@ -632,7 +629,7 @@ function monom_divmask(
     divmap,
     ndivbits
 ) where {T, B, Mask}
-    epc = elperchunk(T, B)
+    epc = packed_elperchunk(T, B)
 
     if ndivvars < 2 * epc
         return monom_divmask(PackedTuple2{T, B}(e.a1, e.a2), DM, ndivvars, divmap, ndivbits)

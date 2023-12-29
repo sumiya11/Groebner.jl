@@ -8,7 +8,7 @@ function _autoreduce(
 ) where {M <: Monom, C <: Coeff}
     basis, _, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
     basis_update!(basis, hashtable)
-    matrix = initialize_matrix(ring, C)
+    matrix = matrix_initialize(ring, C)
     symbol_ht = initialize_secondary_hashtable(hashtable)
     f4_autoreduce!(ring, basis, matrix, hashtable, symbol_ht, params)
     basis_standardize!(ring, basis, hashtable, hashtable.ord, params.arithmetic)

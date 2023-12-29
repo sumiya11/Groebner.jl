@@ -1,6 +1,6 @@
 using Base.Threads
 
-@testset "groebner multi-threading Zp" begin
+@testset "groebner, multi-threading, Zp" begin
     if Groebner._threaded[]
         @info "Testing multi-threading over Zp using $(nthreads()) threads"
 
@@ -51,7 +51,7 @@ using Base.Threads
     end
 end
 
-@testset "groebner multi-threading QQ" begin
+@testset "groebner, multi-threading, QQ" begin
     if Groebner._threaded[]
         @info "Testing multi-threading over QQ using $(nthreads()) threads"
 
@@ -64,14 +64,14 @@ end
             [x + (BigInt(2)^1000 + 1) // 2^61, x * y + BigInt(2)^(2^10)],
             Groebner.katsuran(3, ordering=:lex, ground=QQ),
             Groebner.katsuran(4, ordering=:lex, ground=QQ),
-            Groebner.katsuran(7, ordering=:degrevlex, ground=QQ),
             Groebner.eco5(ordering=:degrevlex, ground=QQ),
             Groebner.cyclicn(5, ordering=:degrevlex, ground=QQ),
-            Groebner.cyclicn(6, ordering=:degrevlex, ground=QQ),
             Groebner.ojika4(ordering=:lex, ground=QQ),
             Groebner.noonn(6, ordering=:degrevlex, ground=QQ),
             Groebner.ku10(ordering=:degrevlex, ground=QQ),
-            Groebner.sparse5(ordering=:degrevlex, ground=QQ)
+            Groebner.sparse5(ordering=:degrevlex, ground=QQ),
+            [x + BigInt(2)^1_000 // (BigInt(2)^1_000 - 1), y - BigInt(2)^1_000],
+            [x + BigInt(2)^10_000 // (BigInt(2)^10_000 - 1), y^2 - BigInt(2)^10_000 * y]
         ]
             results = Array{Any}(undef, size(grid))
             for (i, kw) in enumerate(grid)

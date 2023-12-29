@@ -106,7 +106,7 @@ function select_monomtype(char, npolys, nvars, ordering, kws, hint)
         @log level = -1 "As hint=$hint was provided, using 64 bits per single exponent"
         # use 64 bits if large exponents detected
         desired_monom_type = ExponentVector{UInt64}
-        @assert is_supported_ordering(desired_monom_type, kws.ordering)
+        @assert monom_is_supported_ordering(desired_monom_type, kws.ordering)
         return desired_monom_type
     end
 
@@ -123,7 +123,7 @@ function select_monomtype(char, npolys, nvars, ordering, kws, hint)
         As homogenize=:yes/:auto was provided, 
         representing monomials as dense exponent vectors"""
         desired_monom_type = ExponentVector{UInt32}
-        @assert is_supported_ordering(desired_monom_type, kws.ordering)
+        @assert monom_is_supported_ordering(desired_monom_type, kws.ordering)
         return desired_monom_type
     end
 
@@ -131,12 +131,12 @@ function select_monomtype(char, npolys, nvars, ordering, kws, hint)
     variables_per_word = div(sizeof(UInt), sizeof(ExponentSize))
     # if dense representation is requested
     if kws.monoms === :dense
-        @assert is_supported_ordering(ExponentVector{ExponentSize}, kws.ordering)
+        @assert monom_is_supported_ordering(ExponentVector{ExponentSize}, kws.ordering)
         return ExponentVector{ExponentSize}
     end
     # if sparse representation is requested
     if kws.monoms === :sparse
-        if is_supported_ordering(
+        if monom_is_supported_ordering(
             SparseExponentVector{ExponentSize, nvars, Int},
             kws.ordering
         )
@@ -149,7 +149,7 @@ function select_monomtype(char, npolys, nvars, ordering, kws, hint)
     end
     # if packed representation is requested
     if kws.monoms === :packed
-        if is_supported_ordering(PackedTuple1{UInt64, ExponentSize}, kws.ordering)
+        if monom_is_supported_ordering(PackedTuple1{UInt64, ExponentSize}, kws.ordering)
             if nvars < variables_per_word
                 return PackedTuple1{UInt64, ExponentSize}
             elseif nvars < 2 * variables_per_word
@@ -171,7 +171,7 @@ function select_monomtype(char, npolys, nvars, ordering, kws, hint)
     # in the automatic choice, we always prefer packed representations
     if kws.monoms === :auto
         # TODO: also check that ring.ord is supported
-        if is_supported_ordering(PackedTuple1{UInt64, ExponentSize}, kws.ordering)
+        if monom_is_supported_ordering(PackedTuple1{UInt64, ExponentSize}, kws.ordering)
             if nvars < variables_per_word
                 return PackedTuple1{UInt64, ExponentSize}
             elseif nvars < 2 * variables_per_word
@@ -357,7 +357,7 @@ function set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
 end
 
 ###
-# Converting polynomials from internal representation to the original types
+# Converting polynomials from internal representation back to original types
 
 iszero_coeffs(v) = isempty(v)
 iszero_monoms(v) = isempty(v)
@@ -403,7 +403,7 @@ function unpack_composite_coefficients(
         coeffs_part_1[i] = Vector{T}(undef, length(composite_coeffs[i]))
         coeffs_part_2[i] = Vector{T}(undef, length(composite_coeffs[i]))
         for j in 1:length(composite_coeffs[i])
-            a1, a2 = unpack_composite_integer(composite_coeffs[i][j])
+            a1, a2 = composite_int_unpack(composite_coeffs[i][j])
             coeffs_part_1[i][j] = a1
             coeffs_part_2[i][j] = a2
         end
@@ -420,7 +420,7 @@ function unpack_composite_coefficients(
             coeffs_part_i[k][i] = Vector{T}(undef, length(composite_coeffs[i]))
         end
         for j in 1:length(composite_coeffs[i])
-            ai = unpack_composite_integer(composite_coeffs[i][j])
+            ai = composite_int_unpack(composite_coeffs[i][j])
             for k in 1:N
                 coeffs_part_i[k][i][j] = ai[k]
             end

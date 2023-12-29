@@ -180,7 +180,7 @@ function _groebner_learn_and_apply(
     else
         full_simultaneous_crt_reconstruct!(state, luckyprimes)
     end
-    success_reconstruct = full_rational_reconstruct!(state, luckyprimes)
+    success_reconstruct = full_rational_reconstruct!(state, luckyprimes, params.use_flint)
     @log level = -5 "Reconstructed coefficients" state.gb_coeffs_qq
     @log level = -2 "Successfull reconstruction: $success_reconstruct"
 
@@ -328,8 +328,12 @@ function _groebner_learn_and_apply(
 
         @log level = -2 "Reconstructing coefficients to QQ"
         @log level = -4 "Reconstructing coefficients from Z_$(luckyprimes.modulo * prime) to QQ"
-        success_reconstruct =
-            partial_rational_reconstruct!(state, luckyprimes, indices_selection)
+        success_reconstruct = partial_rational_reconstruct!(
+            state,
+            luckyprimes,
+            indices_selection,
+            params.use_flint
+        )
         @log level = -2 "Reconstruction successfull: $success_reconstruct"
         @log level = -2 """
           Used $(length(luckyprimes.primes)) primes in total over $(iters + 1) iterations.
@@ -361,7 +365,8 @@ function _groebner_learn_and_apply(
         else
             full_simultaneous_crt_reconstruct!(state, luckyprimes)
         end
-        success_reconstruct = full_rational_reconstruct!(state, luckyprimes)
+        success_reconstruct =
+            full_rational_reconstruct!(state, luckyprimes, params.use_flint)
 
         if !success_reconstruct
             @log level = -2 "Full reconstruction failed"
@@ -461,7 +466,7 @@ function _groebner_learn_and_apply_threaded(
     else
         full_simultaneous_crt_reconstruct!(state, luckyprimes)
     end
-    success_reconstruct = full_rational_reconstruct!(state, luckyprimes)
+    success_reconstruct = full_rational_reconstruct!(state, luckyprimes, params.use_flint)
     @log level = -5 "Reconstructed coefficients" state.gb_coeffs_qq
     @log level = -2 "Successfull reconstruction: $success_reconstruct"
 
@@ -614,8 +619,12 @@ function _groebner_learn_and_apply_threaded(
 
         @log level = -2 "Reconstructing coefficients to QQ"
         @log level = -4 "Reconstructing coefficients from Z_$(luckyprimes.modulo * prime) to QQ"
-        success_reconstruct =
-            partial_rational_reconstruct!(state, luckyprimes, indices_selection)
+        success_reconstruct = partial_rational_reconstruct!(
+            state,
+            luckyprimes,
+            indices_selection,
+            params.use_flint
+        )
         @log level = -2 "Reconstruction successfull: $success_reconstruct"
         @log level = -2 """
           Used $(length(luckyprimes.primes)) primes in total over $(iters + 1) iterations.
@@ -647,7 +656,8 @@ function _groebner_learn_and_apply_threaded(
         else
             full_simultaneous_crt_reconstruct!(state, luckyprimes)
         end
-        success_reconstruct = full_rational_reconstruct!(state, luckyprimes)
+        success_reconstruct =
+            full_rational_reconstruct!(state, luckyprimes, params.use_flint)
 
         if !success_reconstruct
             @log level = -2 "Full reconstruction failed"
@@ -737,7 +747,7 @@ function _groebner_classic_modular(
     else
         full_simultaneous_crt_reconstruct!(state, luckyprimes)
     end
-    success_reconstruct = full_rational_reconstruct!(state, luckyprimes)
+    success_reconstruct = full_rational_reconstruct!(state, luckyprimes, params.use_flint)
     @log level = -5 "Reconstructed coefficients" state.gb_coeffs_qq
     @log level = -2 "Successfull reconstruction: $success_reconstruct"
 
@@ -844,8 +854,12 @@ function _groebner_classic_modular(
 
         @log level = -2 "Reconstructing coefficients to QQ"
         @log level = -4 "Reconstructing coefficients from Z_$(luckyprimes.modulo * prime) to QQ"
-        success_reconstruct =
-            partial_rational_reconstruct!(state, luckyprimes, indices_selection)
+        success_reconstruct = partial_rational_reconstruct!(
+            state,
+            luckyprimes,
+            indices_selection,
+            params.use_flint
+        )
         @log level = -2 "Reconstruction successfull: $success_reconstruct"
         @log level = -2 """
           Used $(length(luckyprimes.primes)) primes in total over $(iters + 1) iterations.
@@ -877,7 +891,8 @@ function _groebner_classic_modular(
         else
             full_simultaneous_crt_reconstruct!(state, luckyprimes)
         end
-        success_reconstruct = full_rational_reconstruct!(state, luckyprimes)
+        success_reconstruct =
+            full_rational_reconstruct!(state, luckyprimes, params.use_flint)
 
         if !success_reconstruct
             @log level = -2 "Full reconstruction failed"

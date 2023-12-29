@@ -1,14 +1,14 @@
 
-construct_monom = Groebner.construct_monom
-monom_to_dense_vector! = Groebner.monom_to_dense_vector!
-copy_monom = Groebner.copy_monom
+monom_construct_from_vector = Groebner.monom_construct_from_vector
+monom_to_vector! = Groebner.monom_to_vector!
+monom_copy = Groebner.monom_copy
 monom_product! = Groebner.monom_product!
 monom_division! = Groebner.monom_division!
 monom_lcm! = Groebner.monom_lcm!
-is_gcd_const = Groebner.is_gcd_const
-is_monom_divisible = Groebner.is_monom_divisible
-is_monom_divisible! = Groebner.is_monom_divisible!
-is_monom_elementwise_eq = Groebner.is_monom_elementwise_eq
+monom_is_gcd_const = Groebner.monom_is_gcd_const
+monom_is_divisible = Groebner.monom_is_divisible
+monom_is_divisible! = Groebner.monom_is_divisible!
+monom_is_equal = Groebner.monom_is_equal
 
 degree_types_to_test = [UInt64, UInt32]
 implementations_to_test = [
@@ -24,79 +24,79 @@ implementations_to_test = [
     for T in degree_types_to_test
         for EV in implementations_to_test
             MonomType = isconcretetype(EV) ? EV : EV{T}
-            a = construct_monom(MonomType, [0, 0])
-            b = construct_monom(MonomType, [0, 0])
-            c = copy_monom(a)
-            @test is_gcd_const(a, b)
+            a = monom_construct_from_vector(MonomType, [0, 0])
+            b = monom_construct_from_vector(MonomType, [0, 0])
+            c = monom_copy(a)
+            @test monom_is_gcd_const(a, b)
             c = monom_product!(c, a, b)
-            @test is_monom_elementwise_eq(c, a)
-            @test is_monom_elementwise_eq(c, b)
+            @test monom_is_equal(c, a)
+            @test monom_is_equal(c, b)
 
-            d = construct_monom(MonomType, [1, 2])
-            @test is_monom_elementwise_eq(a, b)
-            @test !is_monom_elementwise_eq(a, d)
-            @test is_gcd_const(d, a)
+            d = monom_construct_from_vector(MonomType, [1, 2])
+            @test monom_is_equal(a, b)
+            @test !monom_is_equal(a, d)
+            @test monom_is_gcd_const(d, a)
             c = monom_product!(c, a, d)
-            @test is_monom_elementwise_eq(c, d)
+            @test monom_is_equal(c, d)
             b = monom_product!(b, d, d)
             c = monom_product!(c, d, c)
-            @test is_monom_elementwise_eq(c, b)
+            @test monom_is_equal(c, b)
             d = monom_product!(d, d, d)
-            @test is_monom_elementwise_eq(c, d)
+            @test monom_is_equal(c, d)
 
-            a = construct_monom(MonomType, [2, 0])
-            b = construct_monom(MonomType, [0, 1])
-            @test !is_monom_divisible(a, b)
+            a = monom_construct_from_vector(MonomType, [2, 0])
+            b = monom_construct_from_vector(MonomType, [0, 1])
+            @test !monom_is_divisible(a, b)
 
-            a = construct_monom(MonomType, [0, 1, 3])
-            b = construct_monom(MonomType, [0, 0, 4])
-            @test !is_monom_divisible(a, b)
+            a = monom_construct_from_vector(MonomType, [0, 1, 3])
+            b = monom_construct_from_vector(MonomType, [0, 0, 4])
+            @test !monom_is_divisible(a, b)
 
             n = 6
-            if n > Groebner.max_vars_in_monom(MonomType)
+            if n > Groebner.monom_max_vars(MonomType)
                 continue
             end
-            a = construct_monom(MonomType, [1, 2, 0, 3, 0, 4])
-            b = construct_monom(MonomType, [0, 1, 0, 2, 0, 4])
-            c = construct_monom(MonomType, [1, 3, 0, 5, 0, 8])
-            d = construct_monom(MonomType, [1, 1, 0, 1, 0, 0])
-            e = construct_monom(MonomType, [1, 2, 0, 3, 0, 4])
-            tmp = copy_monom(a)
-            @test is_monom_divisible(a, b)
-            flag, tmp = is_monom_divisible!(tmp, a, b)
+            a = monom_construct_from_vector(MonomType, [1, 2, 0, 3, 0, 4])
+            b = monom_construct_from_vector(MonomType, [0, 1, 0, 2, 0, 4])
+            c = monom_construct_from_vector(MonomType, [1, 3, 0, 5, 0, 8])
+            d = monom_construct_from_vector(MonomType, [1, 1, 0, 1, 0, 0])
+            e = monom_construct_from_vector(MonomType, [1, 2, 0, 3, 0, 4])
+            tmp = monom_copy(a)
+            @test monom_is_divisible(a, b)
+            flag, tmp = monom_is_divisible!(tmp, a, b)
             @test flag
-            @test is_monom_elementwise_eq(tmp, d)
+            @test monom_is_equal(tmp, d)
             tmp = monom_product!(tmp, a, b)
-            @test is_monom_elementwise_eq(tmp, c)
+            @test monom_is_equal(tmp, c)
             tmp = monom_division!(tmp, a, b)
-            @test is_monom_elementwise_eq(tmp, d)
+            @test monom_is_equal(tmp, d)
             tmp = monom_lcm!(tmp, a, b)
-            @test is_monom_elementwise_eq(tmp, e)
-            @test !is_gcd_const(a, b)
-            @test is_monom_elementwise_eq(tmp, e)
+            @test monom_is_equal(tmp, e)
+            @test !monom_is_gcd_const(a, b)
+            @test monom_is_equal(tmp, e)
 
             n = 9
-            if n > Groebner.max_vars_in_monom(MonomType)
+            if n > Groebner.monom_max_vars(MonomType)
                 continue
             end
-            a = construct_monom(MonomType, [1, 2, 0, 3, 0, 4, 0, 5, 6])
-            b = construct_monom(MonomType, [0, 1, 0, 2, 0, 4, 0, 0, 2])
-            c = construct_monom(MonomType, [1, 3, 0, 5, 0, 8, 0, 5, 8])
-            d = construct_monom(MonomType, [1, 1, 0, 1, 0, 0, 0, 5, 4])
-            e = construct_monom(MonomType, [1, 2, 0, 3, 0, 4, 0, 5, 6])
-            tmp = copy_monom(a)
-            @test is_monom_divisible(a, b)
-            flag, tmp = is_monom_divisible!(tmp, a, b)
+            a = monom_construct_from_vector(MonomType, [1, 2, 0, 3, 0, 4, 0, 5, 6])
+            b = monom_construct_from_vector(MonomType, [0, 1, 0, 2, 0, 4, 0, 0, 2])
+            c = monom_construct_from_vector(MonomType, [1, 3, 0, 5, 0, 8, 0, 5, 8])
+            d = monom_construct_from_vector(MonomType, [1, 1, 0, 1, 0, 0, 0, 5, 4])
+            e = monom_construct_from_vector(MonomType, [1, 2, 0, 3, 0, 4, 0, 5, 6])
+            tmp = monom_copy(a)
+            @test monom_is_divisible(a, b)
+            flag, tmp = monom_is_divisible!(tmp, a, b)
             @test flag
-            @test is_monom_elementwise_eq(tmp, d)
+            @test monom_is_equal(tmp, d)
             tmp = monom_product!(tmp, a, b)
-            @test is_monom_elementwise_eq(tmp, c)
+            @test monom_is_equal(tmp, c)
             tmp = monom_division!(tmp, a, b)
-            @test is_monom_elementwise_eq(tmp, d)
+            @test monom_is_equal(tmp, d)
             tmp = monom_lcm!(tmp, a, b)
-            @test is_monom_elementwise_eq(tmp, e)
-            @test !is_gcd_const(a, b)
-            @test is_monom_elementwise_eq(tmp, e)
+            @test monom_is_equal(tmp, e)
+            @test !monom_is_gcd_const(a, b)
+            @test monom_is_equal(tmp, e)
         end
 
         # test that different implementations agree
@@ -108,7 +108,7 @@ implementations_to_test = [
                 implementations_to_test
             )
             implementations_to_test_local = filter(
-                MonomType -> Groebner.max_vars_in_monom(MonomType) >= k,
+                MonomType -> Groebner.monom_max_vars(MonomType) >= k,
                 implementations_to_test_spec
             )
 
@@ -117,24 +117,26 @@ implementations_to_test = [
             if sum(x) + sum(y) >= Groebner._monom_overflow_threshold(UInt8)
                 continue
             end
-            as = [construct_monom(MT, x) for MT in implementations_to_test_local]
-            bs = [construct_monom(MT, y) for MT in implementations_to_test_local]
+            as =
+                [monom_construct_from_vector(MT, x) for MT in implementations_to_test_local]
+            bs =
+                [monom_construct_from_vector(MT, y) for MT in implementations_to_test_local]
 
             results = []
             for (a, b) in zip(as, bs)
-                c = copy_monom(a)
+                c = monom_copy(a)
                 tmp1 = similar(x)
-                monom_to_dense_vector!(tmp1, c)
+                monom_to_vector!(tmp1, c)
                 c = monom_product!(c, a, b)
                 tmp2 = similar(x)
-                monom_to_dense_vector!(tmp2, c)
-                flag = is_monom_divisible(a, b)
-                _, a = is_monom_divisible!(a, c, b)
+                monom_to_vector!(tmp2, c)
+                flag = monom_is_divisible(a, b)
+                _, a = monom_is_divisible!(a, c, b)
                 tmp3 = similar(x)
-                monom_to_dense_vector!(tmp3, a)
-                _, c = is_monom_divisible!(c, c, c)
+                monom_to_vector!(tmp3, a)
+                _, c = monom_is_divisible!(c, c, c)
                 tmp4 = similar(x)
-                monom_to_dense_vector!(tmp4, a)
+                monom_to_vector!(tmp4, a)
                 push!(results, (tmp1, tmp2, flag, tmp3, tmp4))
             end
             @test length(unique(results)) == 1
@@ -205,10 +207,10 @@ end
                 MonomType = isconcretetype(EV) ? EV : EV{T}
 
                 n = nvars
-                if n > Groebner.max_vars_in_monom(MonomType)
+                if n > Groebner.monom_max_vars(MonomType)
                     continue
                 end
-                m = construct_monom(MonomType, monom)
+                m = monom_construct_from_vector(MonomType, monom)
                 ans = parse(Groebner.DivisionMask, mask, base=2)
                 dm = Groebner.monom_divmask(
                     m,
@@ -229,16 +231,16 @@ end
             for EV in implementations_to_test
                 MonomType = isconcretetype(EV) ? EV : EV{T}
                 n = rand(1:50)
-                if n > Groebner.max_vars_in_monom(MonomType)
+                if n > Groebner.monom_max_vars(MonomType)
                     continue
                 end
                 t = div(typemax(UInt8), 8 * n)
                 x, y = rand(1:max(t, 1), n), rand(1:max(t, 1), n)
-                a = construct_monom(MonomType, x)
-                b = construct_monom(MonomType, y)
-                c = Groebner.construct_const_monom(MonomType, n)
+                a = monom_construct_from_vector(MonomType, x)
+                b = monom_construct_from_vector(MonomType, y)
+                c = Groebner.monom_construct_const_monom(MonomType, n)
                 c = monom_product!(c, a, b)
-                h = Groebner.construct_hash_vector(MonomType, n)
+                h = Groebner.monom_construct_hash_vector(MonomType, n)
                 @test typeof(Groebner.monom_hash(a, h)) === Groebner.MonomHash
                 @test Groebner.monom_hash(a, h) + Groebner.monom_hash(b, h) ==
                       Groebner.monom_hash(c, h)

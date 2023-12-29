@@ -38,7 +38,10 @@ end
     # Consistency of input-output
     @includetests ["input-output/AbstractAlgebra"]
     # Crt and rational reconstructions
-    @includetests ["groebner/crt_reconstruction", "groebner/rational_reconstruction"]
+    @includetests [
+        "reconstruction/crt_reconstruction",
+        "reconstruction/rational_reconstruction"
+    ]
 
     @includetests [
         "groebner/groebner",

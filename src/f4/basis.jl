@@ -5,8 +5,8 @@
 # Basis is a structure that stores a list of polynomials. Each polynomial is
 # represented with a sorted vector of monomials and a vector of coefficients.
 # Monomials and coefficients are stored in the basis separately. Each monomial
-# is represented with an integer -- an index to a bucket in the hashtable (see
-# f4/hashtable.jl).
+# is represented with an integer -- a unique identifier that indexes a bucket in
+# the hashtable (see f4/hashtable.jl).
 
 ###
 # Pairset
@@ -32,7 +32,7 @@ mutable struct Pairset{Degree}
     load::Int
 end
 
-# Initializes and returns a pairset with max_vars_in_monom for `initial_size` pairs.
+# Initializes and returns a pairset with monom_max_vars for `initial_size` pairs.
 function pairset_initialize(::Type{Degree}; initial_size=2^6) where {Degree}
     pairs = Vector{CriticalPair{Degree}}(undef, initial_size)
     lcms = Vector{MonomId}(undef, 0)
@@ -293,7 +293,7 @@ end
     @inbounds for i in 1:(bl - 1)
         newidx = pl + i
         if !basis.isredundant[i] &&
-           !is_gcd_const(ht.monoms[basis.monoms[i][1]], ht.monoms[new_lead])
+           !monom_is_gcd_const(ht.monoms[basis.monoms[i][1]], ht.monoms[new_lead])
             lcms[i] = get_lcm(basis.monoms[i][1], new_lead, ht, update_ht)
             deg = update_ht.hashdata[lcms[i]].deg
             ps[newidx] = CriticalPair(Int32(i), Int32(idx), lcms[i], pr(deg))
@@ -317,7 +317,7 @@ end
 
         # if an existing pair is divisible by the lead of new poly
         # and has a greater degree than newly generated one then
-        if ps[i].deg > m && is_monom_divisible(ps[i].lcm, new_lead, ht)
+        if ps[i].deg > m && monom_is_divisible(ps[i].lcm, new_lead, ht)
             # mark an existing pair redundant
             ps[i] = CriticalPair{pr}(ps[i].poly1, ps[i].poly2, MonomId(0), ps[i].deg)
         end
@@ -370,7 +370,7 @@ end
     lml = basis.nnonredundant
     @inbounds for i in 1:lml
         if !basis.isredundant[nonred[i]]
-            if is_monom_divisible(basis.monoms[nonred[i]][1], new_lead, ht)
+            if monom_is_divisible(basis.monoms[nonred[i]][1], new_lead, ht)
                 basis.isredundant[nonred[i]] = true
             end
         end
@@ -427,7 +427,7 @@ function basis_is_new_polynomial_redundant!(
         # lead of new polynomial at index i > idx
         lead_i = basis.monoms[i][1]
 
-        if is_monom_divisible(lead_new, lead_i, ht)
+        if monom_is_divisible(lead_new, lead_i, ht)
             # add new S-pair corresponding to Spoly(i, idx)
             lcm_new = get_lcm(lead_i, lead_new, ht, ht)
             psidx = pairset.load + 1
@@ -482,9 +482,9 @@ function basis_sweep_redundant!(basis::Basis, hashtable)
             basis.isredundant[j] && continue
             lead_i = basis.monoms[i][1]
             lead_j = basis.monoms[j][1]
-            if is_monom_divisible(lead_i, lead_j, hashtable)
+            if monom_is_divisible(lead_i, lead_j, hashtable)
                 basis.isredundant[i] = true
-            elseif is_monom_divisible(lead_j, lead_i, hashtable)
+            elseif monom_is_divisible(lead_j, lead_i, hashtable)
                 basis.isredundant[j] = true
             end
         end
@@ -533,7 +533,7 @@ end
 end
 
 # Returns the monomials of the polynomials in the basis
-function get_monoms_by_identifiers(
+function basis_get_monoms_by_identifiers(
     basis::Basis,
     ht::MonomialHashtable{M}
 ) where {M <: Monom}
@@ -554,7 +554,7 @@ end
     basis::Basis{C},
     ht::MonomialHashtable{M}
 ) where {M <: Monom, C <: Coeff}
-    exps = get_monoms_by_identifiers(basis, ht)
+    exps = basis_get_monoms_by_identifiers(basis, ht)
     coeffs = Vector{Vector{C}}(undef, basis.nnonredundant)
     @inbounds for i in 1:(basis.nnonredundant)
         idx = basis.nonredundant[i]
@@ -593,7 +593,11 @@ function insert_lcms_in_basis_hashtable!(
             continue
         end
 
-        if is_gcd_const(monoms[ps[off + l].poly1][1], monoms[ps[off + 1].poly2][1], ht)
+        if monom_is_gcd_const(
+            monoms[ps[off + l].poly1][1],
+            monoms[ps[off + 1].poly2][1],
+            ht
+        )
             l += 1
             continue
         end
@@ -601,7 +605,7 @@ function insert_lcms_in_basis_hashtable!(
         ps[m] = ps[off + l]
 
         h = update_ht.hashdata[plcm[l]].hash
-        ht.monoms[ht.load + 1] = copy_monom(update_ht.monoms[plcm[l]])
+        ht.monoms[ht.load + 1] = monom_copy(update_ht.monoms[plcm[l]])
         n = ht.monoms[ht.load + 1]
 
         k = h

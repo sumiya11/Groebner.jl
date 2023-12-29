@@ -79,10 +79,10 @@ function f4_reducegb_learn!(
     symbol_ht::MonomialHashtable{M},
     params::AlgorithmParameters
 ) where {M <: Monom}
-    etmp = construct_const_monom(M, ht.nvars)
+    etmp = monom_construct_const_monom(M, ht.nvars)
     # etmp is now set to zero, and has zero hash
 
-    reinitialize_matrix!(matrix, basis.nnonredundant)
+    matrix_reinitialize!(matrix, basis.nnonredundant)
     uprows = matrix.upper_rows
 
     # add all non redundant elements from basis
@@ -143,7 +143,7 @@ function f4_reducegb_learn!(
     @label Letsgo
     @inbounds while i <= basis.nprocessed
         @inbounds for j in 1:k
-            if is_monom_divisible(
+            if monom_is_divisible(
                 basis.monoms[basis.nfilled - i + 1][1],
                 basis.monoms[basis.nonredundant[j]][1],
                 ht
@@ -180,7 +180,7 @@ end
     @log level = -3 "Entering F4 Learn phase."
     basis_normalize!(basis, params.arithmetic)
 
-    matrix = initialize_matrix(ring, C)
+    matrix = matrix_initialize(ring, C)
 
     # initialize hash tables for update and symbolic preprocessing steps
     update_ht = initialize_secondary_hashtable(hashtable)
@@ -227,7 +227,7 @@ end
         @log level = -6 "After update learn" basis
         # clear symbolic hashtable
         # clear matrix
-        matrix    = initialize_matrix(ring, C)
+        matrix    = matrix_initialize(ring, C)
         symbol_ht = initialize_secondary_hashtable(hashtable)
 
         if i > 10_000
@@ -462,7 +462,7 @@ function autoreduce_f4_apply!(
     matrix.nrows_filled_upper = nup
     matrix.nrows_filled_lower = nlow
 
-    etmp = construct_const_monom(M, hashtable.nvars)
+    etmp = monom_construct_const_monom(M, hashtable.nvars)
     # etmp is now set to zero, and has zero hash
 
     resize_hashtable_if_needed!(symbol_ht, nlow + nup + 2)
@@ -567,7 +567,7 @@ end
     hashtable = trace.hashtable
 
     symbol_ht = initialize_secondary_hashtable(hashtable)
-    matrix = initialize_matrix(ring, C)
+    matrix = matrix_initialize(ring, C)
     @log level = -5 "Applying F4 modulo $(ring.ch)"
     @log level = -5 "Using parameters" params.arithmetic
     @invariant (

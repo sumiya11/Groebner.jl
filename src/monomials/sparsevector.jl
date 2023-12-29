@@ -29,11 +29,11 @@ function resize_monom_if_needed!(ev, n)
     nothing
 end
 
-max_vars_in_monom(::Type{SparseExponentVector{T}}) where {T} = typemax(Int8)
-max_vars_in_monom(::Type{SparseExponentVector{T, N, I}}) where {T, N, I} = typemax(I)
-max_vars_in_monom(p::SparseExponentVector) = max_vars_in_monom(typeof(p))
+monom_max_vars(::Type{SparseExponentVector{T}}) where {T} = typemax(Int8)
+monom_max_vars(::Type{SparseExponentVector{T, N, I}}) where {T, N, I} = typemax(I)
+monom_max_vars(p::SparseExponentVector) = monom_max_vars(typeof(p))
 
-function totaldeg(ev::SparseExponentVector{T}) where {T}
+function monom_totaldeg(ev::SparseExponentVector{T}) where {T}
     s = zero(T)
     for v in ev.vals
         s += v
@@ -41,20 +41,23 @@ function totaldeg(ev::SparseExponentVector{T}) where {T}
     s
 end
 
-copy_monom(ev::SparseExponentVector{T, N, I}) where {T, N, I} =
+monom_copy(ev::SparseExponentVector{T, N, I}) where {T, N, I} =
     SparseExponentVector{T, N, I}(Base.copy(ev.inds), Base.copy(ev.vals))
 
-construct_const_monom(::Type{SparseExponentVector{T}}, n) where {T} =
-    construct_const_monom(SparseExponentVector{T, n, Int8}, n)
+monom_construct_const_monom(::Type{SparseExponentVector{T}}, n) where {T} =
+    monom_construct_const_monom(SparseExponentVector{T, n, Int8}, n)
 
-function construct_const_monom(::Type{SparseExponentVector{T, N, I}}, n) where {T, N, I}
+function monom_construct_const_monom(
+    ::Type{SparseExponentVector{T, N, I}},
+    n
+) where {T, N, I}
     SparseExponentVector{T, N, I}(Vector{I}(), Vector{T}())
 end
 
-construct_monom(::Type{SparseExponentVector{T}}, ev::Vector{U}) where {T, U} =
-    construct_monom(SparseExponentVector{T, length(ev), Int8}, ev)
+monom_construct_from_vector(::Type{SparseExponentVector{T}}, ev::Vector{U}) where {T, U} =
+    monom_construct_from_vector(SparseExponentVector{T, length(ev), Int8}, ev)
 
-function construct_monom(
+function monom_construct_from_vector(
     ::Type{SparseExponentVector{T, N, I}},
     ev::Vector{U}
 ) where {T, N, I, U}
@@ -68,7 +71,7 @@ function construct_monom(
     SparseExponentVector{T, N, I}(inds, vals)
 end
 
-function monom_to_dense_vector!(tmp::Vector{M}, pv::SparseExponentVector{T}) where {M, T}
+function monom_to_vector!(tmp::Vector{M}, pv::SparseExponentVector{T}) where {M, T}
     inds = pv.inds
     vals = pv.vals
     tmp .= zero(M)
@@ -78,10 +81,10 @@ function monom_to_dense_vector!(tmp::Vector{M}, pv::SparseExponentVector{T}) whe
     tmp
 end
 
-construct_hash_vector(::Type{SparseExponentVector{T}}, n::Integer) where {T} =
-    construct_hash_vector(SparseExponentVector{T, n, Int8}, n)
+monom_construct_hash_vector(::Type{SparseExponentVector{T}}, n::Integer) where {T} =
+    monom_construct_hash_vector(SparseExponentVector{T, n, Int8}, n)
 
-function construct_hash_vector(
+function monom_construct_hash_vector(
     ::Type{SparseExponentVector{T, N, I}},
     n::Integer
 ) where {T, N, I}
@@ -103,14 +106,14 @@ end
 # Monomial comparator functions. See monoms/orderings.jl for details.
 
 # SparseExponentVector supports only lex, deglex, and degrevlex
-function is_supported_ordering(
+function monom_is_supported_ordering(
     ::Type{SparseExponentVector{T, N, I}},
     ::O
 ) where {T, N, I, O <: Union{_Lex, _DegLex, _DegRevLex}}
     true
 end
 
-function is_supported_ordering(
+function monom_is_supported_ordering(
     ::Type{SparseExponentVector{T, N, I}},
     ::O
 ) where {T, N, I, O}
@@ -123,7 +126,7 @@ function monom_isless(
     eb::SparseExponentVector,
     ::_DegRevLex{true}
 )
-    tda, tdb = totaldeg(ea), totaldeg(eb)
+    tda, tdb = monom_totaldeg(ea), monom_totaldeg(eb)
     if tda < tdb
         return true
     elseif tda != tdb
@@ -154,7 +157,7 @@ end
 
 # DegLex exponent vector comparison
 function monom_isless(ea::SparseExponentVector, eb::SparseExponentVector, ::_DegLex{true})
-    tda, tdb = totaldeg(ea), totaldeg(eb)
+    tda, tdb = monom_totaldeg(ea), monom_totaldeg(eb)
     if tda < tdb
         return true
     elseif tda != tdb
@@ -191,8 +194,8 @@ function monom_isless(
     ord
 ) where {T, N}
     tmp1, tmp2 = Vector{T}(undef, N), Vector{T}(undef, N)
-    a = construct_monom(ExponentVector{T}, monom_to_dense_vector!(tmp1, ea))
-    b = construct_monom(ExponentVector{T}, monom_to_dense_vector!(tmp2, eb))
+    a = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp1, ea))
+    b = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp2, eb))
     monom_isless(a, b, ord)
 end
 
@@ -252,7 +255,10 @@ function monom_lcm!(
 end
 
 # Checks if the gcd of monomials ea and eb is constant.
-function is_gcd_const(ea::SparseExponentVector{T}, eb::SparseExponentVector{T}) where {T}
+function monom_is_gcd_const(
+    ea::SparseExponentVector{T},
+    eb::SparseExponentVector{T}
+) where {T}
     ainds, binds = ea.inds, eb.inds
     i, j = 1, 1
     an, bn = length(ainds), length(binds)
@@ -371,7 +377,7 @@ function monom_division!(
 end
 
 # Checks if monomial eb divides monomial ea.
-function is_monom_divisible(
+function monom_is_divisible(
     ea::SparseExponentVector{T},
     eb::SparseExponentVector{T}
 ) where {T}
@@ -399,12 +405,12 @@ end
 
 # Checks if monomial eb divides monomial ea.
 # Also writes the resulting divisor to ec.
-function is_monom_divisible!(
+function monom_is_divisible!(
     ec::SparseExponentVector{T},
     ea::SparseExponentVector{T},
     eb::SparseExponentVector{T}
 ) where {T}
-    flag = is_monom_divisible(ea, eb)
+    flag = monom_is_divisible(ea, eb)
     if flag
         monom_division!(ec, ea, eb)
     end
@@ -412,10 +418,7 @@ function is_monom_divisible!(
 end
 
 # Checks monomials for elementwise equality
-function is_monom_elementwise_eq(
-    ea::SparseExponentVector{T},
-    eb::SparseExponentVector{T}
-) where {T}
+function monom_is_equal(ea::SparseExponentVector{T}, eb::SparseExponentVector{T}) where {T}
     ea.inds == eb.inds && ea.vals == eb.vals
 end
 
@@ -432,7 +435,7 @@ function monom_divmask(
     ndivbits
 ) where {T, N, Mask}
     tmp = Vector{T}(undef, N)
-    monom_to_dense_vector!(tmp, e)
-    pushfirst!(tmp, totaldeg(e))
+    monom_to_vector!(tmp, e)
+    pushfirst!(tmp, monom_totaldeg(e))
     monom_divmask(tmp, DM, ndivvars, divmap, ndivbits)
 end

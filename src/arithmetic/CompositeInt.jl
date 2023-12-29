@@ -8,7 +8,7 @@ function CompositeInt{N, T}(a::CompositeInt{N, U}) where {N, T, U}
     CompositeInt{N, T}(a.data .% T)
 end
 
-unpack_composite_integer(a::CompositeInt{N, T}) where {N, T} = a.data
+composite_int_unpack(a::CompositeInt{N, T}) where {N, T} = a.data
 
 Base.typemax(::Type{CompositeInt{N, T}}) where {N, T} =
     CompositeInt(ntuple(_ -> typemax(T), N))

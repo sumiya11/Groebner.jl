@@ -98,7 +98,7 @@ function initialize_hashtable(
     ord = ring.ord
 
     # initialize hashing vector
-    hasher = construct_hash_vector(MonomT, nvars)
+    hasher = monom_construct_hash_vector(MonomT, nvars)
 
     # exponents[1:load] covers all stored exponents
     # , also exponents[1] is [0, 0, ..., 0] by default
@@ -124,7 +124,7 @@ function initialize_hashtable(
     divmap = Vector{DivisionMask}(undef, ndivvars * ndivbits)
 
     # first stored exponent used as buffer lately
-    exponents[1] = construct_const_monom(MonomT, nvars)
+    exponents[1] = monom_construct_const_monom(MonomT, nvars)
 
     MonomialHashtable(
         exponents,
@@ -148,10 +148,10 @@ function copy_hashtable(ht::MonomialHashtable)
     exps = Vector{M}(undef, ht.size)
     table = Vector{MonomId}(undef, ht.size)
     data = Vector{Hashvalue}(undef, ht.size)
-    exps[1] = construct_const_monom(M, ht.nvars)
+    exps[1] = monom_construct_const_monom(M, ht.nvars)
 
     @inbounds for i in 2:(ht.load)
-        exps[i] = copy_monom(ht.monoms[i])
+        exps[i] = monom_copy(ht.monoms[i])
         table[i] = ht.hashtable[i]
         data[i] = ht.hashdata[i]
     end
@@ -201,7 +201,7 @@ end
     size = initial_size
     offset = 2
 
-    exponents[1] = construct_const_monom(M, nvars)
+    exponents[1] = monom_construct_const_monom(M, nvars)
 
     MonomialHashtable(
         exponents,
@@ -241,7 +241,7 @@ function reinitialize_hashtable!(ht::MonomialHashtable{M}) where {M}
         hashtable[i] = zero(MonomId)
     end
 
-    ht.monoms[1] = construct_const_monom(M, ht.nvars)
+    ht.monoms[1] = monom_construct_const_monom(M, ht.nvars)
 
     nothing
 end
@@ -318,7 +318,7 @@ function ishashcollision(ht::MonomialHashtable, vidx, e, he)
         return true
     end
     # if not free and not same monomial
-    @inbounds if !is_monom_elementwise_eq(ht.monoms[vidx], e)
+    @inbounds if !monom_is_equal(ht.monoms[vidx], e)
         return true
     end
     false
@@ -359,9 +359,9 @@ function insert_in_hashtable!(ht::MonomialHashtable{M}, e::M) where {M <: Monom}
     # add its position to hashtable, and insert exponent to that position
     vidx = MonomId(ht.load + 1)
     @inbounds ht.hashtable[hidx] = vidx
-    @inbounds ht.monoms[vidx] = copy_monom(e)
+    @inbounds ht.monoms[vidx] = monom_copy(e)
     divmask = monom_divmask(e, DivisionMask, ht.ndivvars, ht.divmap, ht.ndivbits)
-    @inbounds ht.hashdata[vidx] = Hashvalue(0, he, divmask, totaldeg(e))
+    @inbounds ht.hashdata[vidx] = Hashvalue(0, he, divmask, monom_totaldeg(e))
 
     ht.load += 1
 
@@ -386,7 +386,7 @@ function fill_divmask!(ht::MonomialHashtable)
     max_exp = Vector{UInt64}(undef, ndivvars)
 
     e = Vector{UInt64}(undef, ht.nvars)
-    monom_to_dense_vector!(e, ht.monoms[ht.offset])
+    monom_to_vector!(e, ht.monoms[ht.offset])
 
     @inbounds for i in 1:ndivvars
         min_exp[i] = e[i]
@@ -394,7 +394,7 @@ function fill_divmask!(ht::MonomialHashtable)
     end
 
     @inbounds for i in (ht.offset):(ht.load)
-        monom_to_dense_vector!(e, ht.monoms[i])
+        monom_to_vector!(e, ht.monoms[i])
         for j in 1:ndivvars
             if e[j] > max_exp[j]
                 max_exp[j] = e[j]
@@ -421,7 +421,7 @@ function fill_divmask!(ht::MonomialHashtable)
         unmasked = ht.hashdata[vidx]
         e = ht.monoms[vidx]
         divmask = monom_divmask(e, DivisionMask, ht.ndivvars, ht.divmap, ht.ndivbits)
-        ht.hashdata[vidx] = Hashvalue(0, unmasked.hash, divmask, totaldeg(e))
+        ht.hashdata[vidx] = Hashvalue(0, unmasked.hash, divmask, monom_totaldeg(e))
     end
 
     nothing
@@ -431,7 +431,7 @@ end
 # Monomial arithmetic
 
 # h1 divisible by h2
-function is_monom_divisible(h1::MonomId, h2::MonomId, ht::MonomialHashtable)
+function monom_is_divisible(h1::MonomId, h2::MonomId, ht::MonomialHashtable)
     @inbounds if ht.use_divmask
         if !is_divmask_divisible(ht.hashdata[h1].divmask, ht.hashdata[h2].divmask)
             return false
@@ -439,14 +439,14 @@ function is_monom_divisible(h1::MonomId, h2::MonomId, ht::MonomialHashtable)
     end
     @inbounds e1 = ht.monoms[h1]
     @inbounds e2 = ht.monoms[h2]
-    is_monom_divisible(e1, e2)
+    monom_is_divisible(e1, e2)
 end
 
 # checks that gcd(g1, h2) is one
-function is_gcd_const(h1::MonomId, h2::MonomId, ht::MonomialHashtable)
+function monom_is_gcd_const(h1::MonomId, h2::MonomId, ht::MonomialHashtable)
     @inbounds e1 = ht.monoms[h1]
     @inbounds e2 = ht.monoms[h2]
-    is_gcd_const(e1, e2)
+    monom_is_gcd_const(e1, e2)
 end
 
 # computes lcm of he1 and he2 as exponent vectors from ht1
@@ -496,7 +496,7 @@ function check_monomial_division_in_update(
             continue
         end
         ea = ht.monoms[a[j]]
-        if !is_monom_divisible(ea, lcmexp)
+        if !monom_is_divisible(ea, lcmexp)
             j += 1
             continue
         end
@@ -577,7 +577,7 @@ function insert_multiplied_poly_in_hashtable!(
         @invariant !symbol_ht.frozen
 
         # add multiplied exponent to hash table        
-        sexps[lastidx] = copy_monom(enew)
+        sexps[lastidx] = monom_copy(enew)
         symbol_ht.hashtable[k] = lastidx
 
         # TODO: do not create divmask here!
@@ -589,7 +589,7 @@ function insert_multiplied_poly_in_hashtable!(
             symbol_ht.divmap,
             symbol_ht.ndivbits
         )
-        sdata[lastidx] = Hashvalue(0, h, divmask, totaldeg(enew))
+        sdata[lastidx] = Hashvalue(0, h, divmask, monom_totaldeg(enew))
 
         row[l] = lastidx
         l += 1

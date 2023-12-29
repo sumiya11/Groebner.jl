@@ -43,7 +43,6 @@ function test_params_nf(
                                     isempty(set1) && continue
 
                                     try
-                                        # TODO : add more tests
                                         gb = Groebner.groebner(set1, ordering=ord_groebner)
                                         f = rand(set1)
 
@@ -123,7 +122,7 @@ end
             )
         )
     )
-    @info "Producing $p tests for normal form"
+    @info "Producing $p tests for normal form. This may take a minute"
     test_params_nf(
         rng,
         nvariables,

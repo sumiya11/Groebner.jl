@@ -194,14 +194,17 @@ function trace_finalize!(trace::TraceF4)
     trace.buf_basis.nprocessed = trace.input_basis.nprocessed
     trace.buf_basis.nfilled = trace.input_basis.nfilled
     trace.stopwatch_start = time_ns() - trace.stopwatch_start
-    # Freeze the hashtable
-    trace.hashtable.frozen = true
     nothing
 end
 
 ###
 # A wrapper around the tracer exposed to the user
 
+"""
+    WrappedTraceF4
+
+
+"""
 mutable struct WrappedTraceF4
     recorded_traces::Dict{Any, Any}
 
@@ -220,11 +223,12 @@ end
 """
     trace_deepcopy(trace)
 
-Returns a deep copy of `trace`. The original object and the copy can be safely
-used in `groebner_apply!` in multi-threaded programs.
+Returns a deep copy of `trace`. 
+The original object and the copy are independent of each other.
+
+Does not provide the same guarantees as `Base.deepcopy``.
 """
 function trace_deepcopy(wrapped_trace::WrappedTraceF4)
-    # NOTE: does not provide the same guarantees as Base.deepcopy
     WrappedTraceF4(
         Dict(deepcopy(k) => trace_deepcopy(v) for (k, v) in wrapped_trace.recorded_traces)
     )

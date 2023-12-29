@@ -6,21 +6,20 @@
 #   | A  B |
 #   | C  D | 
 #
-# The sparsity structure of the matrix upon creation looks similar to:
+# The sparsity structure of the matrix upon creation may look similar to:
 #
 #           A          B
-#     ........... | ......
-#       ......... | ......
-#         ....... | ......
-#  A        ..... | ......
-#             ... |  .....
-#               . |   ....
-#     --------------------
-#            .... | ......
-#  C      ....... | ......
-#      .......... | ......
+#     ......... | ......
+#       ....... | ......
+#         ..... | ......
+#  A        ... | ......
+#             . |  .....
+#     ------------------
+#            .. | ......
+#  C      ..... | ......
+#      ........ | ......
 #
-# NOTE: Check out `repr_matrix` for printing this nice matrix representation in
+# NOTE: Check out `matrix_string_repr` for printing this nice matrix representation in
 # runtime.
 
 # The primary action on a MacaulayMatrix is computing
@@ -32,24 +31,23 @@
 #
 # Usually, by construction,
 # - Block A is already in row-echelon-form.
-# - Block A is the largest block, and is very sparse.
+# - Block A is the largest block, and is very-very sparse.
 # - Permuting columns is not allowed.
 
 # Each column in the matrix is associated with a single integer of this type.
 const ColumnLabel = Int32
 
 # Tags for matrix columns from different blocks. TODO: Use enum?
-const NON_PIVOT_COLUMN = 0      # not a pivot, column from block B
+const NON_PIVOT_COLUMN = 0      # not a pivot, column from the block B
 const UNKNOWN_PIVOT_COLUMN = 1  # maybe a pivot, undecided yet
-const PIVOT_COLUMN = 2          # a pivot, column from block A
+const PIVOT_COLUMN = 2          # a pivot, column from the block A
 
 mutable struct MacaulayMatrix{T <: Coeff}
-    # A row in the matrix is represented (usually) sparsely by two vectors:
-    # vector support and vector coefficients. The coefficients can be stored in
-    # different places:
-    # - Either as a pointer to a polynomial in the basis that has the same
-    #   coefficients.
-    # - Or stored explicitly in the matrix.
+    # A row in the matrix is represented (usually) sparsely by two vectors: the
+    # support and the coefficients. The coefficients can be stored in different
+    # places:
+    # - Either as a pointer to a polynomial in the basis
+    # - Or stored explicitly in the matrix, in this struct.
 
     # Supports of rows from the block AB
     upper_rows::Vector{Vector{ColumnLabel}}
@@ -87,7 +85,7 @@ mutable struct MacaulayMatrix{T <: Coeff}
     # discovered in the block CD after performing linear reduction by AB
     npivots::Int
     # Maps a column to a pivot row. We have `pivots[i][1] == i`.
-    # NOTE: `pivots[i]` may be undefined.
+    # NOTE: `pivots[i]` may be un-assigned. Always check with `isassigned` first
     pivots::Vector{Vector{ColumnLabel}}
     # A lightweight version of the above `pivots`, only for some specific cases.
     pivot_indices::Vector{Int}
@@ -112,7 +110,7 @@ end
 
 # The number of allocated (not necessarily filled) rows and columns in the
 # blocks in the matrix
-function block_sizes(matrix::MacaulayMatrix)
+function matrix_block_sizes(matrix::MacaulayMatrix)
     (
         length(matrix.upper_rows),
         length(matrix.lower_rows),
@@ -123,22 +121,22 @@ end
 
 # The total number of allocated (not necessarily filled) rows and columns
 function Base.size(matrix::MacaulayMatrix)
-    mup, mlow, nleft, nright = block_sizes(matrix)
+    mup, mlow, nleft, nright = matrix_block_sizes(matrix)
     (mup + mlow, nleft + nright)
 end
 
 # The number of actually filled rows in the matrix
-function nrows_filled(matrix::MacaulayMatrix)
+function matrix_nrows_filled(matrix::MacaulayMatrix)
     (matrix.nrows_filled_upper, matrix.nrows_filled_lower)
 end
 
 # The number of actually filled columns in the matrix
-function ncols_filled(matrix::MacaulayMatrix)
+function matrix_ncols_filled(matrix::MacaulayMatrix)
     (matrix.ncols_left, matrix.ncols_right)
 end
 
 # Initializes an empty matrix with coefficients of type T
-@timeit function initialize_matrix(ring::PolyRing, ::Type{T}) where {T <: Coeff}
+@timeit function matrix_initialize(ring::PolyRing, ::Type{T}) where {T <: Coeff}
     MacaulayMatrix(
         Vector{Vector{ColumnLabel}}(),
         Vector{Vector{ColumnLabel}}(),
@@ -169,10 +167,10 @@ end
 
 # Returns a string with human-readable information about the matrix. Currently,
 # used in logging (call, e.g., `groebner(system, loglevel=-3)`)
-function repr_matrix(matrix::MacaulayMatrix{T}) where {T}
+function matrix_string_repr(matrix::MacaulayMatrix{T}) where {T}
     m, n = size(matrix)
-    nupper, nlower = nrows_filled(matrix)
-    nleft, nright = ncols_filled(matrix)
+    nupper, nlower = matrix_nrows_filled(matrix)
+    nleft, nright = matrix_ncols_filled(matrix)
     m_A, n_A = nupper, nleft
     m_B, n_B = nupper, nright
     m_C, n_C = nlower, nleft
@@ -236,30 +234,29 @@ end
 # the entry to linear algebra backend.
 function matrix_well_formed(func_id::Symbol, matrix::MacaulayMatrix)
     # TODO: not much is checked at the moment, but it can be improved.
-    nupper, nlower = nrows_filled(matrix)
-    nleft, nright = ncols_filled(matrix)
+    nupper, nlower = matrix_nrows_filled(matrix)
+    nleft, nright = matrix_ncols_filled(matrix)
     # !(nupper == nleft) && return false
     true
 end
 
-function resize_matrix_upper_part!(matrix::MacaulayMatrix, size::Int)
+function matrix_resize_upper_part!(matrix::MacaulayMatrix, size::Int)
     resize!(matrix.upper_rows, size)
     resize!(matrix.upper_to_coeffs, size)
     resize!(matrix.upper_to_mult, size)
 end
 
-function resize_matrix_lower_part!(matrix::MacaulayMatrix, size::Int)
+function matrix_resize_lower_part!(matrix::MacaulayMatrix, size::Int)
     resize!(matrix.lower_rows, size)
     resize!(matrix.lower_to_coeffs, size)
     resize!(matrix.lower_to_mult, size)
 end
 
-# Refresh and partially initialize the matrix. After this, the matrix is ready
-# to be used in symbolic preprocessing
-function reinitialize_matrix!(matrix::MacaulayMatrix, size::Int)
+# Refresh and partially initialize the matrix
+function matrix_reinitialize!(matrix::MacaulayMatrix, size::Int)
     new_size = size * 2
-    resize_matrix_upper_part!(matrix, new_size)
-    resize_matrix_lower_part!(matrix, new_size)
+    matrix_resize_upper_part!(matrix, new_size)
+    matrix_resize_lower_part!(matrix, new_size)
     matrix.upper_part_is_rref = false
     matrix.ncols_left = 0
     matrix.ncols_right = 0
@@ -270,13 +267,13 @@ function reinitialize_matrix!(matrix::MacaulayMatrix, size::Int)
     matrix
 end
 
-function resize_matrix_upper_part_if_needed!(matrix::MacaulayMatrix, new_size::Int)
+function matrix_resize_upper_part_if_needed!(matrix::MacaulayMatrix, new_size::Int)
     current_size = length(matrix.upper_rows)
     while current_size < new_size
         current_size *= 2
     end
     if current_size > length(matrix.upper_rows)
-        resize_matrix_upper_part!(matrix, current_size)
+        matrix_resize_upper_part!(matrix, current_size)
     end
     nothing
 end

@@ -120,7 +120,7 @@ end
     symbol_load = symbol_ht.load
     ncols = matrix.ncols_left
 
-    resize_matrix_upper_part_if_needed!(matrix, ncols + symbol_load)
+    matrix_resize_upper_part_if_needed!(matrix, ncols + symbol_load)
 
     @log level = -5 "Finding reducers in the basis..." basis.nnonredundant
 
@@ -134,7 +134,7 @@ end
             i += MonomId(1)
             continue
         end
-        resize_matrix_upper_part_if_needed!(matrix, matrix.nrows_filled_upper + 1)
+        matrix_resize_upper_part_if_needed!(matrix, matrix.nrows_filled_upper + 1)
 
         hashval = symbol_ht.hashdata[i]
         symbol_ht.hashdata[i] =
@@ -161,10 +161,10 @@ function f4_autoreduce!(
 ) where {M}
     @log level = -5 "Entering autoreduction" basis
 
-    etmp = construct_const_monom(M, ht.nvars)
+    etmp = monom_construct_const_monom(M, ht.nvars)
     # etmp is now set to zero, and has zero hash
 
-    reinitialize_matrix!(matrix, basis.nnonredundant)
+    matrix_reinitialize!(matrix, basis.nnonredundant)
     uprows = matrix.upper_rows
 
     # add all non redundant elements from the basis
@@ -212,7 +212,7 @@ function f4_autoreduce!(
     @label Letsgo
     @inbounds while i <= basis.nprocessed
         @inbounds for j in 1:k
-            if is_monom_divisible(
+            if monom_is_divisible(
                 basis.monoms[basis.nfilled - i + 1][1],
                 basis.monoms[basis.nonredundant[j]][1],
                 ht
@@ -239,11 +239,11 @@ function f4_select_tobereduced!(
 
     # prepare to load all elems from tobereduced
     # to lower rows of the matrix
-    reinitialize_matrix!(matrix, max(basis.nfilled, tobereduced.nfilled))
+    matrix_reinitialize!(matrix, max(basis.nfilled, tobereduced.nfilled))
     resize!(matrix.lower_rows, tobereduced.nfilled)
     resize!(matrix.some_coeffs, tobereduced.nfilled)
 
-    etmp = construct_const_monom(M, ht.nvars)
+    etmp = monom_construct_const_monom(M, ht.nvars)
 
     @inbounds for i in 1:(tobereduced.nfilled)
         matrix.nrows_filled_lower += 1
@@ -290,7 +290,7 @@ end
 function find_lead_monom_that_divides(i, monom, basis, ht)
     @inbounds while i <= basis.nnonredundant
         lead_monom = ht.monoms[basis.monoms[basis.nonredundant[i]][1]]
-        if is_monom_divisible(monom, lead_monom)
+        if monom_is_divisible(monom, lead_monom)
             break
         end
         i += 1
@@ -337,7 +337,7 @@ function find_multiplied_reducer!(
     @inbounds rexp = ht.monoms[rpoly[1]]
 
     # precisely, etmp = e .- rexp 
-    flag, etmp = is_monom_divisible!(etmp, e, rexp)
+    flag, etmp = monom_is_divisible!(etmp, e, rexp)
     if !flag
         i += 1
         @goto Letsgo
@@ -355,7 +355,7 @@ function find_multiplied_reducer!(
     # if sugar
     #     # updates sugar
     #     poly = basis.nonredundant[i]
-    #     new_poly_sugar = totaldeg(etmp) + basis.sugar_cubes[poly]
+    #     new_poly_sugar = monom_totaldeg(etmp) + basis.sugar_cubes[poly]
     #     matrix.upper_to_sugar[matrix.nrows_filled_upper + 1] = new_poly_sugar
     # end
 
@@ -504,7 +504,7 @@ function add_critical_pairs_to_matrix!(
 )
 
     #
-    reinitialize_matrix!(matrix, npairs)
+    matrix_reinitialize!(matrix, npairs)
     pairs = pairset.pairs
     uprows = matrix.upper_rows
     lowrows = matrix.lower_rows
@@ -694,7 +694,7 @@ end
     @log level = -3 "Entering F4."
     basis_normalize!(basis, params.arithmetic)
 
-    matrix = initialize_matrix(ring, C)
+    matrix = matrix_initialize(ring, C)
 
     # initialize hash tables for update and symbolic preprocessing steps
     update_ht = initialize_secondary_hashtable(hashtable)
@@ -726,9 +726,9 @@ end
                 symbol_ht,
                 maxpairs=params.maxpairs
             )
-            # matrix    = initialize_matrix(ring, C)
+            # matrix    = matrix_initialize(ring, C)
             # symbol_ht = initialize_secondary_hashtable(hashtable)
-            reinitialize_matrix!(matrix, 0)
+            matrix_reinitialize!(matrix, 0)
             reinitialize_hashtable!(symbol_ht)
             continue
         end
@@ -762,9 +762,9 @@ end
 
         # clear symbolic hashtable
         # clear matrix
-        reinitialize_matrix!(matrix, 0)
+        matrix_reinitialize!(matrix, 0)
         reinitialize_hashtable!(symbol_ht)
-        # matrix    = initialize_matrix(ring, C)
+        # matrix    = matrix_initialize(ring, C)
         # symbol_ht = initialize_secondary_hashtable(hashtable)
 
         if i > 10_000
@@ -808,7 +808,7 @@ end
     hashtable::MonomialHashtable{M},
     arithmetic::A
 ) where {M <: Monom, C <: Coeff, A <: AbstractArithmetic}
-    matrix = initialize_matrix(ring, C)
+    matrix = matrix_initialize(ring, C)
     symbol_ht = initialize_secondary_hashtable(hashtable)
     update_ht = initialize_secondary_hashtable(hashtable)
     @log level = -3 "Forming S-polynomials"
@@ -839,7 +839,7 @@ end
     ht::MonomialHashtable,
     arithmetic::A
 ) where {C <: Coeff, A <: AbstractArithmetic}
-    matrix = initialize_matrix(ring, C)
+    matrix = matrix_initialize(ring, C)
     symbol_ht = initialize_secondary_hashtable(ht)
     # Fill the matrix
     f4_select_tobereduced!(basis, tobereduced, matrix, symbol_ht, ht)

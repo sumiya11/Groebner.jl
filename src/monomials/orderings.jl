@@ -42,12 +42,13 @@ struct InputOrdering <: AbstractMonomialOrdering end
     Lex(variables...)
 
 Lexicographical monomial ordering.
-*Dura Lex, sed Lex.*
 
 We use the definition from Chapter 1, Computational Commutative Algebra 1, by
 Martin Kreuzer, Lorenzo Robbiano. 
 
 DOI: https://doi.org/10.1007/978-3-540-70628-1.
+
+*Dura Lex, sed Lex.*
 
 ## Possible Options
 
