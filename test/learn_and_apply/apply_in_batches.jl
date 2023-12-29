@@ -69,5 +69,4 @@ import Primes
     test_learn_apply(kat, ps1)
     test_learn_apply(kat, ps2)
     test_learn_apply(cyc, ps2)
-
 end
