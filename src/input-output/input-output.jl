@@ -137,10 +137,10 @@ function select_monomtype(char, npolys, nvars, ordering, kws, hint)
     # if sparse representation is requested
     if kws.monoms === :sparse
         if monom_is_supported_ordering(
-            SparseExponentVector{ExponentSize, nvars, Int},
+            SparseExponentVector{ExponentSize, Int32, nvars},
             kws.ordering
         )
-            return SparseExponentVector{ExponentSize, nvars, Int}
+            return SparseExponentVector{ExponentSize, Int32, nvars}
         end
         @log level = 1 """
         The given monomial ordering $(kws.ordering) is not implemented for

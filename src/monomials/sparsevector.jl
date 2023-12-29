@@ -3,7 +3,9 @@
 # SparseExponentVector{T, N} is a sparse vector of integers of type T that
 # implements the interface of a monomial of N variables.
 
-struct SparseExponentVector{T <: Integer, N, I <: Integer}
+const _default_index_type = Int32
+
+struct SparseExponentVector{T <: Integer, I <: Integer, N}
     #=
     A monomial x_1^3 x_20 x_43^2 is stored as two vectors:
     inds = [1, 20, 43]
@@ -12,13 +14,15 @@ struct SparseExponentVector{T <: Integer, N, I <: Integer}
     inds::Vector{I}
     vals::Vector{T}
 
-    function SparseExponentVector{T, N, I}(inds::Vector{I}, vals::Vector{T}) where {T, N, I}
+    function SparseExponentVector{T, I, N}(inds::Vector{I}, vals::Vector{T}) where {T, I, N}
         @invariant length(inds) == length(vals)
-        new{T, N, I}(inds, vals)
+        @invariant length(inds) <= N
+        new{T, I, N}(inds, vals)
     end
 end
 
-function resize_monom_if_needed!(ev, n)
+function monom_resize_if_needed!(ev, n)
+    @invariant length(ev.inds) == length(ev.vals)
     if length(ev.inds) < n
         resize!(ev.inds, n)
         resize!(ev.vals, n)
@@ -29,38 +33,46 @@ function resize_monom_if_needed!(ev, n)
     nothing
 end
 
-monom_max_vars(::Type{SparseExponentVector{T}}) where {T} = typemax(Int8)
-monom_max_vars(::Type{SparseExponentVector{T, N, I}}) where {T, N, I} = typemax(I)
+monom_max_vars(::Type{SparseExponentVector{T}}) where {T} = typemax(_default_index_type)
+monom_max_vars(::Type{SparseExponentVector{T, I, N}}) where {T, I, N} = typemax(I)
 monom_max_vars(p::SparseExponentVector) = monom_max_vars(typeof(p))
 
 function monom_totaldeg(ev::SparseExponentVector{T}) where {T}
     s = zero(T)
     for v in ev.vals
         s += v
+        _monom_overflow_check(s, T)
     end
     s
 end
 
-monom_copy(ev::SparseExponentVector{T, N, I}) where {T, N, I} =
-    SparseExponentVector{T, N, I}(Base.copy(ev.inds), Base.copy(ev.vals))
+monom_copy(ev::SparseExponentVector{T, I, N}) where {T, I, N} =
+    SparseExponentVector{T, I, N}(Base.copy(ev.inds), Base.copy(ev.vals))
 
-monom_construct_const_monom(::Type{SparseExponentVector{T}}, n) where {T} =
-    monom_construct_const_monom(SparseExponentVector{T, n, Int8}, n)
-
-function monom_construct_const_monom(
-    ::Type{SparseExponentVector{T, N, I}},
-    n
-) where {T, N, I}
-    SparseExponentVector{T, N, I}(Vector{I}(), Vector{T}())
+function monom_construct_const_monom(::Type{SparseExponentVector{T}}, n) where {T}
+    monom_construct_const_monom(SparseExponentVector{T, _default_index_type, n}, n)
 end
 
-monom_construct_from_vector(::Type{SparseExponentVector{T}}, ev::Vector{U}) where {T, U} =
-    monom_construct_from_vector(SparseExponentVector{T, length(ev), Int8}, ev)
+function monom_construct_const_monom(
+    ::Type{SparseExponentVector{T, I, N}},
+    n
+) where {T, I, N}
+    SparseExponentVector{T, I, N}(Vector{I}(), Vector{T}())
+end
 
 function monom_construct_from_vector(
-    ::Type{SparseExponentVector{T, N, I}},
+    ::Type{SparseExponentVector{T}},
     ev::Vector{U}
-) where {T, N, I, U}
+) where {T, U}
+    n = length(ev)
+    monom_construct_from_vector(SparseExponentVector{T, _default_index_type, n}, ev)
+end
+
+function monom_construct_from_vector(
+    ::Type{SparseExponentVector{T, I, N}},
+    ev::Vector{U}
+) where {T, I, N, U}
+    @invariant length(ev) == N
     inds = map(I, findall(!iszero, ev))
     vals = Vector{T}(undef, length(inds))
     @inbounds for i in 1:length(inds)
@@ -68,7 +80,7 @@ function monom_construct_from_vector(
         _monom_overflow_check(c, T)
         vals[i] = c
     end
-    SparseExponentVector{T, N, I}(inds, vals)
+    SparseExponentVector{T, I, N}(inds, vals)
 end
 
 function monom_to_vector!(tmp::Vector{M}, pv::SparseExponentVector{T}) where {M, T}
@@ -81,13 +93,15 @@ function monom_to_vector!(tmp::Vector{M}, pv::SparseExponentVector{T}) where {M,
     tmp
 end
 
-monom_construct_hash_vector(::Type{SparseExponentVector{T}}, n::Integer) where {T} =
-    monom_construct_hash_vector(SparseExponentVector{T, n, Int8}, n)
+function monom_construct_hash_vector(::Type{SparseExponentVector{T}}, n::Integer) where {T}
+    monom_construct_hash_vector(SparseExponentVector{T, _default_index_type, n}, n)
+end
 
 function monom_construct_hash_vector(
-    ::Type{SparseExponentVector{T, N, I}},
+    ::Type{SparseExponentVector{T, I, N}},
     n::Integer
-) where {T, N, I}
+) where {T, I, N}
+    @invariant n == N
     rand(MonomHash, n)
 end
 
@@ -107,17 +121,10 @@ end
 
 # SparseExponentVector supports only lex, deglex, and degrevlex
 function monom_is_supported_ordering(
-    ::Type{SparseExponentVector{T, N, I}},
+    ::Type{SparseExponentVector{T, I, N}},
     ::O
-) where {T, N, I, O <: Union{_Lex, _DegLex, _DegRevLex}}
-    true
-end
-
-function monom_is_supported_ordering(
-    ::Type{SparseExponentVector{T, N, I}},
-    ::O
-) where {T, N, I, O}
-    false
+) where {T, I, N, O}
+    O <: Union{Lex, DegLex, DegRevLex, InputOrdering}
 end
 
 # DegRevLex exponent vector comparison
@@ -136,8 +143,7 @@ function monom_isless(
     ainds, binds = ea.inds, eb.inds
     avals, bvals = ea.vals, eb.vals
     i, j = length(ainds), length(binds)
-    # TODO: @inbounds
-    while i >= 1 && j >= 1
+    @inbounds while i >= 1 && j >= 1
         if ainds[i] < binds[j]
             return false
         elseif ainds[i] > binds[j]
@@ -171,7 +177,7 @@ function monom_isless(ea::SparseExponentVector, eb::SparseExponentVector, ::_Lex
     ainds, binds = ea.inds, eb.inds
     avals, bvals = ea.vals, eb.vals
     i = 1
-    while i <= length(ainds) && i <= length(binds)
+    @inbounds while i <= length(ainds) && i <= length(binds)
         if ainds[i] < binds[i]
             return false
         elseif ainds[i] > binds[i]
@@ -189,10 +195,11 @@ function monom_isless(ea::SparseExponentVector, eb::SparseExponentVector, ::_Lex
 end
 
 function monom_isless(
-    ea::SparseExponentVector{T, N},
-    eb::SparseExponentVector{T, N},
+    ea::SparseExponentVector{T, I, N},
+    eb::SparseExponentVector{T, I, N},
     ord
-) where {T, N}
+) where {T, I, N}
+    @unreachable
     tmp1, tmp2 = Vector{T}(undef, N), Vector{T}(undef, N)
     a = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp1, ea))
     b = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp2, eb))
@@ -209,18 +216,18 @@ end
 # Returns the lcm of monomials ea and eb.
 # Also writes the result to ec.
 function monom_lcm!(
-    ec::SparseExponentVector{T},
-    ea::SparseExponentVector{T},
-    eb::SparseExponentVector{T}
-) where {T}
+    ec::SparseExponentVector{T, I, N},
+    ea::SparseExponentVector{T, I, N},
+    eb::SparseExponentVector{T, I, N}
+) where {T, I, N}
     an, bn = length(ea.inds), length(eb.inds)
-    resize_monom_if_needed!(ec, an + bn)
+    monom_resize_if_needed!(ec, an + bn)
     ainds, binds = ea.inds, eb.inds
     avals, bvals = ea.vals, eb.vals
     cinds, cvals = ec.inds, ec.vals
     @invariant length(cinds) >= an + bn
     i, j, k = 1, 1, 1
-    while i <= an && j <= bn
+    @inbounds while i <= an && j <= bn
         ai, bj = ainds[i], binds[j]
         if ai == bj
             cvals[k] = max(avals[i], bvals[j])
@@ -238,19 +245,19 @@ function monom_lcm!(
         end
         k += 1
     end
-    while i <= an
+    @inbounds while i <= an
         cvals[k] = avals[i]
         cinds[k] = ainds[i]
         i += 1
         k += 1
     end
-    while j <= bn
+    @inbounds while j <= bn
         cvals[k] = bvals[j]
         cinds[k] = binds[j]
         j += 1
         k += 1
     end
-    resize_monom_if_needed!(ec, k - 1)
+    monom_resize_if_needed!(ec, k - 1)
     ec
 end
 
@@ -262,8 +269,7 @@ function monom_is_gcd_const(
     ainds, binds = ea.inds, eb.inds
     i, j = 1, 1
     an, bn = length(ainds), length(binds)
-    # TODO: @inbounds
-    while i <= an && j <= bn
+    @inbounds while i <= an && j <= bn
         if ainds[i] == binds[j]
             return false
         end
@@ -279,23 +285,19 @@ end
 # Returns the product of monomials ea and eb.
 # Also writes the result to ec.
 function monom_product!(
-    ec::SparseExponentVector{T},
-    ea::SparseExponentVector{T},
-    eb::SparseExponentVector{T}
-) where {T}
-    # # make sure that the last index in ea is smaller than that in eb
-    # if length(ea.inds) > length(eb.inds)
-    #     eb, ea = ea, eb
-    # end
-    # @invariant length(ea.inds) <= length(eb.inds)
+    ec::SparseExponentVector{T, I, N},
+    ea::SparseExponentVector{T, I, N},
+    eb::SparseExponentVector{T, I, N}
+) where {T, I, N}
     an, bn = length(ea.inds), length(eb.inds)
-    resize_monom_if_needed!(ec, an + bn)
+    monom_resize_if_needed!(ec, min(N, an + bn))
+
     ainds, binds = ea.inds, eb.inds
     avals, bvals = ea.vals, eb.vals
     cinds, cvals = ec.inds, ec.vals
-    @invariant length(cinds) >= an + bn
+
     i, j, k = 1, 1, 1
-    while i <= an && j <= bn
+    @inbounds while i <= an && j <= bn
         ai, bj = ainds[i], binds[j]
         if ai == bj
             cvals[k] = avals[i] + bvals[j]
@@ -315,19 +317,20 @@ function monom_product!(
         end
         k += 1
     end
-    while i <= an
+    @inbounds while i <= an
         cvals[k] = avals[i]
         cinds[k] = ainds[i]
         i += 1
         k += 1
     end
-    while j <= bn
+    @inbounds while j <= bn
         cvals[k] = bvals[j]
         cinds[k] = binds[j]
         j += 1
         k += 1
     end
-    resize_monom_if_needed!(ec, k - 1)
+
+    monom_resize_if_needed!(ec, k - 1)
     ec
 end
 
@@ -339,13 +342,13 @@ function monom_division!(
     eb::SparseExponentVector{T}
 ) where {T}
     an, bn = length(ea.inds), length(eb.inds)
-    resize_monom_if_needed!(ec, max(an, bn))
+    monom_resize_if_needed!(ec, max(an, bn))
     ainds, binds = ea.inds, eb.inds
     avals, bvals = ea.vals, eb.vals
     cinds, cvals = ec.inds, ec.vals
     @invariant length(cinds) >= max(an, bn)
     i, j, k = 1, 1, 1
-    while i <= an && j <= bn
+    @inbounds while i <= an && j <= bn
         ai, bj = ainds[i], binds[j]
         if ai == bj
             @invariant avals[i] >= bvals[j]
@@ -366,13 +369,13 @@ function monom_division!(
         end
     end
     @invariant j - 1 == bn
-    while i <= an
+    @inbounds while i <= an
         cvals[k] = avals[i]
         cinds[k] = ainds[i]
         i += 1
         k += 1
     end
-    resize_monom_if_needed!(ec, k - 1)
+    monom_resize_if_needed!(ec, k - 1)
     ec
 end
 
@@ -385,7 +388,7 @@ function monom_is_divisible(
     avals, bvals = ea.vals, eb.vals
     i, j, k = 1, 1, 1
     an, bn = length(ainds), length(binds)
-    while i <= an && j <= bn
+    @inbounds while i <= an && j <= bn
         ai, bj = ainds[i], binds[j]
         if ai == bj
             if avals[i] < bvals[j]
@@ -419,7 +422,11 @@ end
 
 # Checks monomials for elementwise equality
 function monom_is_equal(ea::SparseExponentVector{T}, eb::SparseExponentVector{T}) where {T}
-    ea.inds == eb.inds && ea.vals == eb.vals
+    length(ea.inds) != length(eb.inds) && return false
+    @inbounds for i in 1:length(ea.inds)
+        !(ea.inds[i] == eb.inds[i] && ea.vals[i] == eb.vals[i]) && return false
+    end
+    true
 end
 
 ###
@@ -428,12 +435,12 @@ end
 
 # Constructs and returns the division mask of the given monomial.
 function monom_divmask(
-    e::SparseExponentVector{T, N},
+    e::SparseExponentVector{T, I, N},
     DM::Type{Mask},
     ndivvars,
     divmap,
     ndivbits
-) where {T, N, Mask}
+) where {T, I, N, Mask}
     tmp = Vector{T}(undef, N)
     monom_to_vector!(tmp, e)
     pushfirst!(tmp, monom_totaldeg(e))
