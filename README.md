@@ -16,6 +16,8 @@ Groebner.jl is a Julia package for computing Groebner bases over fields.
 For documentation and more please check out https://sumiya11.github.io/Groebner.jl.
 For a simple example, see below.
 
+**disclaimer: starting from the upcoming version 0.6, Groebner.jl will be distributed under GNU GPL v2.**
+
 ## How to use Groebner.jl?
 
 You can install Groebner.jl using the Julia package manager. From the Julia REPL, type
