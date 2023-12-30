@@ -1,22 +1,23 @@
-# Add all required packages
+# Activate the environment and add all required packages
 import Pkg
-
 include("generate/utils.jl")
 julia_pkg_preamble("$(@__DIR__)")
 
 # Load the packages
+using AbstractAlgebra
 using ArgParse
 using Base.Threads
 using CpuId, Logging, Pkg, Printf
 using Distributed
 using Dates
+using Groebner
 using ProgressMeter, PrettyTables
-using AbstractAlgebra, Groebner
+using NaturalSort
 
-# Set the logger
+# Set up the logger
 global_logger(Logging.ConsoleLogger(stdout, Logging.Info))
 
-# Load benchmark systems
+# Load the definitions of benchmark systems
 include("benchmark_systems.jl")
 
 # Load the code to generate benchmarks for different software
@@ -31,6 +32,8 @@ const _progressbar_value_color = :light_green
 progressbar_enabled() =
     Logging.Info <= Logging.min_enabled_level(current_logger()) < Logging.Warn
 
+const _available_backends = ["groebner", "singular", "maple", "msolve", "openf4"]
+
 # Parses command-line arguments
 #! format: off
 function parse_commandline()
@@ -38,39 +41,55 @@ function parse_commandline()
     @add_arg_table s begin
         "backend"
             help = """
-            The Groebner basis computation backend to benchmark.
+            The backend to benchmark.
             Possible options are:
             - groebner
             - singular
             - maple
             - msolve
-            - openf4"""
+            - openf4
+            - ALL"""
             arg_type = String
             required = true
-        "lopenf4"
+        "--lopenf4"
             help = """
-            Required if openf4 is specified as the backend. 
+            Required if openf4 is the backend. 
             Must point to the location where openf4 library is installed."""
             arg_type = String
             default = ""
             required = false
-        "--benchmark"
+        "--bmaple"
             help = """
-            The index of benchmark dataset.
+            If maple is the backend, specifies the location of the maple binary.
+            """
+            arg_type = String
+            default = "maple"
+            required = false
+        "--bmsolve"
+            help = """
+            If msolve is the backend, specifies the location of the msolve binary.
+            """
+            arg_type = String
+            default = "msolve"
+            required = false
+        "--suite"
+            help = """
+            The index of the benchmark suite.
             Possible options are:
             - 1: for benchmarks over integers modulo a prime
-            - 2: for benchmarks over the rationals"""
+            - 2: for benchmarks over integers modulo a small prime
+            - 3: for benchmarks over the rationals"""
             arg_type = Int
             default = 1
         "--validate"
             help = """
             Validate the output bases against the correct ones.
-            This can result in a slowdown for some of the backends.
+            This will result in a huge slowdown for some of the backends.
                 
             Possible options are:
             - `yes`: validate results
             - `no`: do not validate results
-            - `update`: update validation certificates"""
+            - `update`: update the validation certificates"""
             arg_type = String
             default = "yes"
         "--nruns"
@@ -91,7 +110,16 @@ function parse_commandline()
 end
 #! format: on
 
-function generate_benchmark_file(backend, name, system, dir, validate, nruns, time_filename)
+function generate_benchmark_file(
+    backend,
+    name,
+    system,
+    dir,
+    validate,
+    nruns,
+    time_filename,
+    args
+)
     if backend == "groebner"
         benchmark_source = generate_benchmark_source_for_groebner(
             name,
@@ -160,8 +188,8 @@ function get_command_to_run_benchmark(
     problem_name,
     problem_num_runs,
     problem_set_id,
-    validate;
-    lib=nothing
+    validate,
+    args
 )
     if backend == "groebner"
         return Cmd([
@@ -183,7 +211,7 @@ function get_command_to_run_benchmark(
         ])
     elseif backend == "maple"
         scriptpath = (@__DIR__) * "/" * get_benchmark_dir(backend, problem_set_id)
-        return Cmd(["/usr/local/maple2021/bin/maple", "$scriptpath/$problem_name/$(problem_name).mpl"])
+        return Cmd([args["bmaple"], "$scriptpath/$problem_name/$(problem_name).mpl"])
     elseif backend == "msolve"
         return Cmd([
             "julia",
@@ -191,7 +219,8 @@ function get_command_to_run_benchmark(
             "$problem_name",
             "$problem_num_runs",
             "$problem_set_id",
-            "$validate"
+            "$validate",
+            "$(args["bmsolve"])"
         ])
     elseif backend == "openf4"
         return Cmd([
@@ -200,14 +229,14 @@ function get_command_to_run_benchmark(
             "$problem_name",
             "$problem_num_runs",
             "$problem_set_id",
-            "$lib"
+            "$(args["lopenf4"])"
         ])
     end
 end
 
 function populate_benchmarks(args; regenerate=true)
     backend = args["backend"]
-    benchmark_id = args["benchmark"]
+    benchmark_id = args["suite"]
     nruns = args["nruns"]
     validate = args["validate"] in ["yes", "update"]
     benchmark = get_benchmark(benchmark_id)
@@ -249,7 +278,8 @@ function populate_benchmarks(args; regenerate=true)
             benchmark_system_dir,
             validate,
             nruns,
-            time_filename
+            time_filename,
+            args
         )
     end
     finish!(prog)
@@ -266,7 +296,7 @@ function run_benchmarks(args)
     @assert nworkers > 0
     nruns = args["nruns"]
     @assert nruns > 0
-    benchmark_id = args["benchmark"]
+    benchmark_id = args["suite"]
 
     benchmark = get_benchmark(benchmark_id)
     benchmark_name = benchmark.name
@@ -275,13 +305,15 @@ function run_benchmarks(args)
     systems_to_benchmark = first(walkdir(benchmark_dir))[2]
     indices_to_benchmark = collect(1:length(systems_to_benchmark))
 
+    added_timeout_time = 10
     @info """
     Benchmarking $backend.
     Benchmark suite: $benchmark_name
     Number of benchmark systems: $(length(systems_to_benchmark))
     Validate result: $(validate)
     Workers: $(nworkers)
-    Timeout: $timeout seconds"""
+    Timeout: $timeout + $added_timeout_time seconds
+    Aggregate results over $nruns runs"""
     @info """
     Benchmark systems:
     $systems_to_benchmark"""
@@ -329,7 +361,7 @@ function run_benchmarks(args)
                 nruns,
                 benchmark_id,
                 validate,
-                lib=args["lopenf4"]
+                args
             )
             cmd = Cmd(cmd, ignorestatus=true, detach=false, env=copy(ENV))
             proc = run(pipeline(cmd, stdout=log_file, stderr=log_file), wait=false)
@@ -376,7 +408,7 @@ function run_benchmarks(args)
                 start_time = proc.start_time
                 if seconds_passed(start_time) > timeout
                     push!(to_be_removed, i)
-                    kill(proc.julia_process)
+                    kill(proc.julia_process, Base.SIGINT)
                     close(proc.logfile)
                     # close(proc.errfile)
                     push!(timedout, proc)
@@ -440,7 +472,7 @@ function validate_results(args, problem_names)
 
     update_certificates = args["validate"] == "update"
 
-    benchmark_id = args["benchmark"]
+    benchmark_id = args["suite"]
     benchmark_dir = (@__DIR__) * "/" * get_benchmark_dir(backend, benchmark_id)
     validate_dir = (@__DIR__) * "/" * get_validate_dir(benchmark_id)
 
@@ -488,11 +520,12 @@ function validate_results(args, problem_names)
             true_result_exists = true
         catch e
             @debug "Cannot collect validation data for $name"
-            printstyled("\tMISSING CERTIFICATE.. ", color=:light_yellow)
+            printstyled("\tMISSING CERTIFICATE...", color=:light_yellow)
         end
         # At this point, the recently computed basis is stored in `result`
         @assert result_exists
-        success, result_validation_hash = compute_basis_validation_hash(result)
+        success, result_validation_certificate =
+            compute_basis_validation_certificate(result)
         if !success
             @warn "Bad file encountered at $problem_result_path. Skipping"
             continue
@@ -500,17 +533,17 @@ function validate_results(args, problem_names)
         if update_certificates || !true_result_exists
             mkpath("$validate_dir/$problem_name/")
             true_result_file = open(problem_validate_path, "w")
-            println(true_result_file, result_validation_hash)
+            println(true_result_file, result_validation_certificate)
             printstyled("\tUPDATED\n", color=:light_green)
             continue
         end
         @assert result_exists && true_result_exists
-        @assert is_certificate_standardized(result_validation_hash)
+        @assert is_certificate_standardized(result_validation_certificate)
         @assert is_certificate_standardized(true_result)
-        if result_validation_hash != true_result
-            printstyled("\tWRONG HASH\n", color=:light_red)
+        if result_validation_certificate != true_result
+            printstyled("\tWRONG\n", color=:light_red)
             println("True certificate:\n$true_result")
-            println("Current certificate:\n$result_validation_hash")
+            println("Current certificate:\n$result_validation_certificate")
         else
             printstyled("\tOK\n", color=:light_green)
         end
@@ -521,7 +554,7 @@ end
 
 function collect_timings(args, names)
     backend = args["backend"]
-    benchmark_id = args["benchmark"]
+    benchmark_id = args["suite"]
     benchmark_dir = (@__DIR__) * "/" * get_benchmark_dir(backend, benchmark_id)
     benchmark_name = get_benchmark(benchmark_id).name
 
@@ -529,13 +562,12 @@ function collect_timings(args, names)
     @assert length(targets) > 0
     println()
     @info """
-    Collecting results for $backend.
-    Statistics of interest:
+    Collecting results for $backend. Statistics of interest:
     \t$(join(map(string, targets), "\n\t"))
     """
 
     cannot_collect = []
-    names = sort(names)
+    names = sort(names, lt=NaturalSort.natural)
 
     # Collect timings and data from directory BENCHMARK_RESULTS.
     runtime = Dict()
@@ -628,6 +660,7 @@ function collect_timings(args, names)
     $(now())
 
     Benchmarked backend: $backend
+
     Benchmark suite: $benchmark_name
 
     - Workers: $(args["nworkers"])
@@ -679,15 +712,145 @@ function collect_timings(args, names)
     println()
     printstyled("Table with results", color=:light_green)
     println(" is written to $table_filename")
+
+    return runtime
+end
+
+function collect_all_timings(args, runtimes, systems)
+    benchmark_id = args["suite"]
+    benchmark_name = get_benchmark(benchmark_id).name
+
+    targets = [:total_time]
+    @assert length(targets) > 0
+
+    backends = collect(keys(runtimes))
+    backends = sort(backends, lt=NaturalSort.natural)
+    systems = sort(systems, lt=NaturalSort.natural)
+
+    println()
+    @info """
+    Collecting all results. Statistics of interest:
+    \t$(join(map(string, targets), "\n\t"))
+    Present backends:
+    \t$(join(map(string, backends), "\n\t"))
+    """
+
+    _target = targets[1]
+    formatting_style = CATEGORY_FORMAT[_target]
+    conf = set_pt_conf(tf=tf_markdown, alignment=:c)
+    title = "Benchmark results"
+    header = vcat("System", backends)
+    vec_of_vecs = Vector{Vector{Any}}()
+    for name in systems
+        row = [name]
+        for backend in backends
+            if haskey(runtimes[backend], name) && haskey(runtimes[backend][name], _target)
+                push!(row, formatting_style(runtimes[backend][name][_target]))
+            else
+                push!(row, "-")
+            end
+        end
+        push!(vec_of_vecs, row)
+    end
+    table = Array{Any, 2}(undef, length(vec_of_vecs), length(backends) + 1)
+    for i in 1:length(vec_of_vecs)
+        for j in 1:(length(backends) + 1)
+            table[i, j] = vec_of_vecs[i][j]
+        end
+    end
+    println()
+    h1 = Highlighter(
+        (data, i, j) ->
+            j > 1 &&
+                parse(Float64, data[i, j]) == minimum(
+                    map(
+                        x -> parse(Float64, x),
+                        filter(x -> strip(x) != "-", data[i, 2:end])
+                    )
+                ),
+        bold=true
+    )
+    pretty_table_with_conf(
+        conf,
+        table;
+        header=header,
+        title=title,
+        limit_printing=false,
+        highlighters=(h1,)
+    )
+    println("All results are in seconds.")
+
+    # Print the table to BENCHMARK_TABLE.
+    resulting_md = ""
+    resulting_md *= """
+    ## Benchmark results
+
+    $(now())
+
+    Benchmarked backends: $backends
+
+    Benchmark suite: $benchmark_name
+
+    - Workers: $(args["nworkers"])
+    - Timeout: $(args["timeout"]) s
+    - Aggregated over: $(args["nruns"]) runs
+
+    **All timings in seconds.**
+
+    """
+
+    makecolname(target) = HUMAN_READABLE_CATEGORIES[target]
+    columns = backends
+    resulting_md *= "|Model|" * join(map(string, columns), "|") * "|\n"
+    resulting_md *= "|-----|" * join(["---" for _ in columns], "|") * "|\n"
+    for name in systems
+        resulting_md *= "|$name|"
+        for backend in backends
+            model_data = runtimes[backend][name]
+            for target in targets
+                if !haskey(model_data, target)
+                    resulting_md *= " - " * "|"
+                else
+                    formatting_style = CATEGORY_FORMAT[target]
+                    resulting_md *= formatting_style(model_data[target]) * "|"
+                end
+            end
+        end
+        resulting_md *= "\n"
+    end
+
+    resulting_md *= "\n*Benchmarking environment:*\n\n"
+    resulting_md *= "* Total RAM (GiB): $(div(Sys.total_memory(), 2^30))\n"
+    resulting_md *= "* Processor: $(cpubrand())\n"
+    resulting_md *= "* Julia version: $(VERSION)\n\n"
+    resulting_md *= "Versions of the dependencies:\n\n"
+
+    deps = Pkg.dependencies()
+    stid_info = deps[findfirst(x -> x.name == "Groebner", deps)]
+    for (s, uid) in stid_info.dependencies
+        if deps[uid].version !== nothing
+            resulting_md *= "* $s : $(deps[uid].version)\n"
+        end
+    end
+
+    table_filename =
+        (@__DIR__) * "/$BENCHMARK_RESULTS/$(BENCHMARK_TABLE)_$(benchmark_id).md"
+    open(table_filename, "w") do io
+        write(io, resulting_md)
+    end
+
+    println()
+    printstyled("Table with results", color=:light_green)
+    println(" is written to $table_filename")
 end
 
 function check_args(args)
     backend = args["backend"]
-    @assert backend in ("groebner", "singular", "maple", "openf4", "msolve")
-    if backend == "openf4" && args["benchmark"] in [2, 3]
+    @assert backend in ("groebner", "singular", "maple", "openf4", "msolve", "ALL")
+    if backend == "openf4" && args["suite"] in [3]
         throw("Running benchmarks over the rationals is not possible for openf4")
     end
-    if backend == "msolve" && args["benchmark"] in [2, 3] && args["validate"] != "no"
+    if backend == "msolve" && args["suite"] in [3] && args["validate"] != "no"
         throw(
             "Validating results for msolve over the rationals is not possible. Use command line option --validate=no"
         )
@@ -702,19 +865,34 @@ function main()
         @debug "$arg  =>  $val"
     end
 
-    check_args(args)
-
-    # Create directories with benchmarks
-    populate_benchmarks(args)
-
-    # Run benchmarks and record results
-    computed_problems = run_benchmarks(args)
-
-    # Validate computed Groebner bases
-    validate_results(args, computed_problems)
-
-    # Collect the timings and other info
-    collect_timings(args, computed_problems)
+    # Either benchmark all available backends or a single backend
+    if args["backend"] == "ALL"
+        @info "Benchmarking all available backends"
+        runtimes = Dict()
+        systems = []
+        for backend in _available_backends
+            args_ = copy(args)
+            args_["backend"] = backend
+            try
+                check_args(args_)
+                populate_benchmarks(args_)
+                solved_problems = run_benchmarks(args_)
+                validate_results(args_, solved_problems)
+                runtime = collect_timings(args_, solved_problems)
+                runtimes[backend] = runtime
+                union!(systems, solved_problems)
+            catch e
+                printstyled("(!) ", color=:light_yellow)
+                println("Cannot benchmark $backend")
+            end
+        end
+        collect_all_timings(args, runtimes, systems)
+    else
+        populate_benchmarks(args)
+        solved_problems = run_benchmarks(args)
+        validate_results(args, solved_problems)
+        collect_timings(args, solved_problems)
+    end
 end
 
 main()

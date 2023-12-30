@@ -1,3 +1,6 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
+###
 # Input-output conversions of polynomials.
 
 # Our conventions on some edge cases:

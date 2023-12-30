@@ -1,3 +1,11 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
+# Parts of this file were adapted from msolve
+#   https://github.com/algebraic-solving/msolve
+# msolve is distributed under GNU GPL v2+
+#   https://github.com/algebraic-solving/msolve/blob/master/COPYING
+
+###
 # Pairset and Basis
 
 # Pairset is a list of critical pairs (SPairs).

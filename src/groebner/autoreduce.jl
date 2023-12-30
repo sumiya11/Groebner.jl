@@ -1,4 +1,7 @@
-# Autoreducing a set of polynomials
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
+###
+#  Autoreducing a set of polynomials
 
 function _autoreduce(
     ring::PolyRing,

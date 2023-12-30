@@ -1,3 +1,6 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
+### 
 # Checking correctness in modular computation
 
 @noinline __not_a_basis_error(basis, msg) = throw(DomainError(basis, msg))

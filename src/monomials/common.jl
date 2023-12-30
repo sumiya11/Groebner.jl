@@ -1,3 +1,5 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
 # Some common utilities for monomial implementations.
 #
 # Provides a description of functions that a monomial type must implement to be

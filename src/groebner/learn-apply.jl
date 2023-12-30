@@ -1,3 +1,6 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
+### 
 # Backends for `groebner_learn` & `groebner_apply!`
 
 ###

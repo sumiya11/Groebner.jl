@@ -1,3 +1,6 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
+###
 # Conversion from DynamicPolynomials.jl to internal representation and back.
 
 function peek_at_polynomials(polynomials::Vector{<:AbstractPolynomialLike{T}}) where {T}

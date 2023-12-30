@@ -1,3 +1,6 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
+###
 # Internal monomial orderings
 
 # Internal representations of monomial orderings that are actually used in the

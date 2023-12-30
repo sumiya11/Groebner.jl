@@ -1,22 +1,21 @@
 ## Benchmarks
 
-Benchmarks for `Groebner.jl`, `Singular`, `Maple`, `OpenF4`, and `msolve`. **See
-the instructions below for running benchmarks.**
+Benchmarks for `Groebner.jl`, `Singular`, `Maple`, `OpenF4`, and `msolve`. See
+the instructions below for running benchmarks.
 
 The definitions of benchmark systems can be found in `benchmark_systems.jl`.
 
-Benchmark results will be printed to console and also written to a table in the
+Benchmark results will be printed to console and also written to a file in the
 `results` directory.
 
-Computed Groebner bases will be verified against the correct Groebner bases (or,
-rather, against short certificates that are assumed to be correct).
+Computed Groebner bases will be verified against short certificates that are
+assumed to be correct.
 
 ## Groebner.jl
 
 #### For `Groebner.jl` benchmarks, you will need:
 
 1. A Julia client v1.6+ installed. See the official installation guide at https://julialang.org/downloads/platform/
-
 
 #### To run `Groebner.jl` benchmarks
 
@@ -26,7 +25,11 @@ rather, against short certificates that are assumed to be correct).
 julia one_script_to_run_them_all.jl groebner
 ```
 
-It is possible to specify some command-line options (these are available for all benchmarked software). For example, the following command
+We run Groebner.jl benchmarks using the function `Groebner.groebner` with default options.
+
+It is possible to specify command-line options. 
+These are available for all benchmarked software. 
+For example, the following command
 
 ```
 julia one_script_to_run_them_all.jl groebner --timeout=600 --nworkers=20 --nruns=3 --validate=yes --benchmark=2
@@ -38,7 +41,7 @@ runs Groebner.jl benchmarks under the following conditions:
 - Distribute benchmarks over `20` worker processes
 - Re-run each benchmark `3` times and aggregate timings
 - Validate the correctness of resulting Groebner bases
-- Use `2`-nd benchmark suite (see `generate/benchmark_systems.jl` for details) 
+- Use `2`-nd benchmark suite (see `benchmark_systems.jl` for details) 
 
 ## Singular
 
@@ -70,6 +73,8 @@ julia one_script_to_run_them_all.jl singular
 julia one_script_to_run_them_all.jl maple
 ```
 
+You can use the option `--bmaple` to specify the path to the Maple executable.
+
 Internally, this will generate `system.mpl` and run `maple system.mpl` for each benchmark system.
 
 ## OpenF4
@@ -83,7 +88,7 @@ Internally, this will generate `system.mpl` and run `maple system.mpl` for each 
 1. Execute this command in your favorite terminal from this directory:
 
 ```
-julia one_script_to_run_them_all.jl openf4 /path/to/openf4/lib
+julia one_script_to_run_them_all.jl openf4 --lopenf4=/path/to/openf4/lib
 ```
 
 where `/path/to/openf4/lib` is the path to the directory where openf4 library is installed.
@@ -103,5 +108,7 @@ Internally, this will generate `system.cpp`, compile `system.cpp` (with `g++`), 
 ```
 julia one_script_to_run_them_all.jl msolve
 ```
+
+You can use the option `--bmsolve` to specify the path to the Maple executable.
 
 Internally, this will run `msolve -g 2 -l 44 -c 0 -f system.in -o /dev/null` for each benchmark system.

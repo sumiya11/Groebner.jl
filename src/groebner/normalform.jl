@@ -1,3 +1,6 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
+###
 # Backend for `normalform`
 
 function _normalform(polynomials, to_be_reduced, kws::KeywordsHandler)

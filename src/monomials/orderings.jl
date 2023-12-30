@@ -1,3 +1,5 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
 # All supported monomial orderings.
 #
 # The orderings in this file are exported, and exist mostly for communicating

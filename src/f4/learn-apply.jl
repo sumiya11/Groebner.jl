@@ -1,3 +1,6 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
+###
 # F4 learn & apply with tracing
 #
 # Tracing is implemented as an add-on to the F4 algorithm from f4.jl. Here, we

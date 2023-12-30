@@ -1,3 +1,5 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
 # Adapted from Nemo.jl
 # The license is Simplified "2-clause" BSD License
 # https://github.com/Nemocas/Nemo.jl/blob/master/LICENSE.md

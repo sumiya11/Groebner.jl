@@ -1,3 +1,6 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
+###
 # Homogenization & saturation
 
 function maximum_totaldeg(ring::PolyRing, monoms::Vector{Vector{T}}) where {T}

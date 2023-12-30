@@ -1,41 +1,42 @@
 ## Benchmark results
 
-2023-12-30T02:55:08.019
+2023-12-30T22:35:22.682
 
 Benchmarked backend: maple
+
 Benchmark suite: Integers modulo 2^30 + 3
 
-- Workers: 4
-- Timeout: 3600 s
+- Workers: 8
+- Timeout: 600 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total|
 |-----|---|
-|cyclic 10| - |
 |cyclic 7|0.10|
-|cyclic 8|1.44|
-|cyclic 9|297.84|
-|dummy|0.01|
-|eco 11|0.37|
-|eco 12|2.58|
-|eco 13|21.81|
-|eco 14|203.63|
+|cyclic 8|1.32|
+|cyclic 9|333.67|
+|cyclic 10| - |
+|dummy|0.02|
+|eco 11|0.41|
+|eco 12|2.46|
+|eco 13|21.11|
+|eco 14|228.48|
 |henrion 5|0.02|
-|henrion 6|0.05|
-|henrion 7|5.79|
-|katsura 10|1.37|
-|katsura 11|17.56|
-|katsura 12|135.77|
-|katsura 13|1012.59|
-|noon 10|255.76|
+|henrion 6|0.06|
+|henrion 7|6.39|
+|katsura 10|1.32|
+|katsura 11|16.77|
+|katsura 12|131.91|
+|katsura 13| - |
 |noon 7|0.20|
-|noon 8|1.95|
-|noon 9|20.17|
+|noon 8|1.90|
+|noon 9|21.58|
+|noon 10|268.01|
 |reimer 6|0.06|
-|reimer 7|1.53|
-|reimer 8|57.62|
+|reimer 7|1.56|
+|reimer 8|49.79|
 |reimer 9| - |
 
 *Benchmarking environment:*

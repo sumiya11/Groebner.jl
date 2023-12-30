@@ -1,3 +1,5 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
 # Sparse monomial implementation
 #
 # SparseExponentVector{T, N} is a sparse vector of integers of type T that

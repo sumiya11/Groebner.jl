@@ -1,3 +1,6 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
+###
 # Utilities for packed integers
 
 # Functions here work on integers packed into a single integer of a wider type.

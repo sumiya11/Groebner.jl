@@ -1,3 +1,5 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
 # Arithmetic in the rationals.
 
 # All implementations of arithmetic in the rationals are a subtype of this 

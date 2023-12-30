@@ -1,3 +1,6 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
+### 
 # Select parameters in Groebner basis computation
 
 # It seems there is no Xoshiro rng in Julia v < 1.8.

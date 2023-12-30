@@ -1,3 +1,6 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
+###
 # Conversion from AbstractAlgebra.jl/Nemo.jl to internal representation and back.
 
 # Conversions in this file must be thread-safe, since Groebner.jl can be used in

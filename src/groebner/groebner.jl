@@ -1,3 +1,6 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
+### 
 # Backend for `groebner`
 
 # Proxy function for handling exceptions.

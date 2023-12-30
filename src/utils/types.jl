@@ -1,3 +1,5 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
 # Common types used throughout the project
 
 # MonomialDegreeOverflow is thrown if there is a risk of monomial degree

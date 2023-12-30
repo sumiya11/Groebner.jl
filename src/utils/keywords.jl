@@ -1,3 +1,5 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
 # Handling keyword arguments in the interface
 
 const _default_loglevel = 0

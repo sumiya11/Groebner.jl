@@ -1,3 +1,5 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
 # Measuring performance
 
 # Provides the macro @timeit, which can be used to track the performance of code

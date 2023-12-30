@@ -1,3 +1,5 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
 # Systems used for testing and benchmarking
 
 #! format: off

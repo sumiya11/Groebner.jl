@@ -1,3 +1,5 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
 # Custom assertions for Groebner
 #
 # Provides the @invariant macro

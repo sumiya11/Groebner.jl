@@ -1,3 +1,6 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
+### 
 # Macaulay matrix
 
 # MacaulayMatrix is a sparse matrix with columns labeled by distinct monomials.

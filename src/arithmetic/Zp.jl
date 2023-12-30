@@ -1,3 +1,5 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
 # Arithmetic in Zp.
 
 # All implementations of arithmetic are a subtype of this.

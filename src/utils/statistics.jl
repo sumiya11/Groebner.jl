@@ -1,3 +1,5 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
 # Collecting and displaying statistics about computation.
 # This file is WIP!
 

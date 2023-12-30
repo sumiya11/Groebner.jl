@@ -1,8 +1,18 @@
 module Groebner
 # Groebner is a package for computing Gröbner bases. This is the main file.
+# Groebner.jl is distributed under GNU GPL v2 starting from Groebner.jl v0.6.0.
 
 # Groebner works over integers modulo a prime and over the rationals. At its
 # heart, Groebner implements F4, multi-modular techniques, and tracing.
+
+# Parts of Groebner were adapted from msolve
+#   https://github.com/algebraic-solving/msolve
+# msolve is distributed under GNU GPL v2+
+#   https://github.com/algebraic-solving/msolve/blob/master/COPYING
+#
+# More precisely, the F4 implementation in Groebner adapts monomial hashtable
+# implementation and routines for critical pair handling, symbolic
+# preprocessing, and linear algebra from msolve.
 
 ###
 # Global switches

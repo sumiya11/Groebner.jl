@@ -1,3 +1,5 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
 # Precompile some calls for better ttfx
 
 @assert VERSION >= v"1.6.0-DEV.154"

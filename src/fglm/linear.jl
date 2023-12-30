@@ -1,3 +1,4 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
 
 mutable struct DoubleMacaulayMatrix{C}
     # pivot -> row

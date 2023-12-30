@@ -1,4 +1,7 @@
-# Very lightweight tracing in f4 (for the real stuff, see trace.jl)
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
+###
+#  Very lightweight tracing in f4 (for the real stuff, see trace.jl)
 
 mutable struct TinyTraceF4
     is_iteration_redundant::Vector{Int}

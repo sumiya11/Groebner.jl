@@ -12,11 +12,10 @@
 [![codecov](https://codecov.io/github/sumiya11/Groebner.jl/graph/badge.svg?token=J1SZT8ED9S)](https://codecov.io/github/sumiya11/Groebner.jl)
 
 Groebner.jl is a Julia package for computing Groebner bases over fields.
+Groebner.jl is distributed under GNU GPL v2.
 
 For documentation and more please check out https://sumiya11.github.io/Groebner.jl.
 For a simple example, see below.
-
-**disclaimer: starting from the upcoming version 0.6, Groebner.jl will be distributed under GNU GPL v2.**
 
 ## How to use Groebner.jl?
 
@@ -59,7 +58,6 @@ G = groebner(system)
  x3^3 - 1
 ```
 
-
 ## Contacts
 
 This library is maintained by Alexander Demin (<asdemin_2@edu.hse.ru>).
@@ -74,8 +72,8 @@ Special thanks goes to Vladimir Kuznetsov for providing the sources of his F4 im
 
 Other software for computing Groebner bases in Julia:
 
-- [AlgebraicSolving.jl](https://github.com/algebraic-solving/AlgebraicSolving.jl): fast F4 implementation, elimination, signature Groebner bases.
-- [GroebnerBasis.jl](https://github.com/ederc/GroebnerBasis.jl): deprecated, see [Oscar.jl](https://github.com/oscar-system/Oscar.jl).
+- [AlgebraicSolving.jl](https://github.com/algebraic-solving/AlgebraicSolving.jl)
+- [GroebnerBasis.jl](https://github.com/ederc/GroebnerBasis.jl), deprecated, see [Oscar.jl](https://github.com/oscar-system/Oscar.jl)
 - [Singular.jl](https://github.com/oscar-system/Singular.jl)
 
 If you do not see your package here, we either do not know about it, or forgot to include it, sorry! Feel free to open a PR.

@@ -1,3 +1,6 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
+###
 # ExponentVector{T} 
 
 # ExponentVector{T} is a dense vector of integers of type T that implements the

@@ -1,0 +1,1 @@
+julia one_script_to_run_them_all.jl ALL --timeout=20 --validate=no --suite=1 --lopenf4=/home/demin/src/openf4-install --bmaple=/usr/local/maple2021/bin/maple --bmsolve=/home/demin/src/msolve-install/bin/msolve

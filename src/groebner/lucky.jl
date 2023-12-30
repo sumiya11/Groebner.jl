@@ -1,3 +1,6 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
+### 
 # Lucky primes for modular computation 
 
 # The sequence of lucky primes is increasing and deterministic, and starts with

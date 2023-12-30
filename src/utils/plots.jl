@@ -1,3 +1,5 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
 # Automatic plotting of the sparsity pattern of F4 matrices
 
 # Adapted from and entirely inspired by UnicodePlots.jl.

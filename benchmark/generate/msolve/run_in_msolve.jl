@@ -15,6 +15,10 @@ const PROBLEM_NAME = ARGS[1]
 const NUM_RUNS = parse(Int, ARGS[2])
 const BENCHMARK_SET = parse(Int, ARGS[3])
 const VALIDATE = parse(Bool, ARGS[4])
+const BIN_PATH = ARGS[5]
+index1 = startswith(BIN_PATH, "/") ? 1 : 1
+index2 = endswith(BIN_PATH, "/") ? length(BIN_PATH) - 1 : length(BIN_PATH)
+const BIN_PATH_NORM = BIN_PATH[index1:index2]
 
 const BENCHMARK_DIR = "../../" * get_benchmark_dir("msolve", BENCHMARK_SET)
 
@@ -26,6 +30,17 @@ const BENCHMARK_DIR = "../../" * get_benchmark_dir("msolve", BENCHMARK_SET)
 @info "" "$(@__DIR__)"
 flush(stdout)
 flush(stderr)
+
+const children = []
+
+function kill_children_procs()
+    for child in children
+        kill(child)
+    end
+    nothing
+end
+
+atexit(kill_children_procs)
 
 function process_system()
     @info "Processing $PROBLEM_NAME"
@@ -42,8 +57,16 @@ function process_system()
         outputfile =
             VALIDATE ? (@__DIR__) * "/$BENCHMARK_DIR/$PROBLEM_NAME/$(output_filename())" :
             "/dev/null"
-        cmd = Cmd(`/home/demin/src/msolve-install/bin/msolve -g 2 -l 44 -c 0 -f $problemfile -o $outputfile`, detach=false)
-        timing = @timed proc = run(cmd, wait=true)
+        cmd = Cmd(
+            `$BIN_PATH_NORM -g 2 -l 44 -c 0 -f $problemfile -o $outputfile`,
+            detach=false
+        )
+        timing = time_ns()
+        proc = run(cmd, wait=true)
+        push!(children, proc)
+        # while !process_exited(proc)
+        # end
+        timing = (time_ns() - timing) / 1e9
         @assert process_exited(proc)
         if proc.exitcode != 0
             @warn "Something probably went wrong in msolve"

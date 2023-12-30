@@ -1,3 +1,5 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
 # Logging for Groebner
 
 # Provides the macro @log, which can be used to log a record with the given

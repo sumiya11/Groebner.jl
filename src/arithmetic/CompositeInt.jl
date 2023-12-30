@@ -1,3 +1,5 @@
+# This file is a part of Groebner.jl. License is GNU GPL v2.
+
 # CompositeInt is a tuple of several integers
 
 struct CompositeInt{N, T}
