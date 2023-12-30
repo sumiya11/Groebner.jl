@@ -78,15 +78,15 @@ function generate_benchmark_source_for_maple(
         buf,
         "\tG := Groebner[Basis](J, tdeg($vars_repr), method=fgb, characteristic=$(characteristic(field))):"
     )
-    println(buf, "\tprint(\"$name: \", time[real]() - st);")
-    println(buf, "\truntime := min(runtime, time[real]() - st);")
-    println(buf, "end do;")
+    println(buf, "\tprint(\"$name: \", time[real]() - st):")
+    println(buf, "\truntime := min(runtime, time[real]() - st):")
+    println(buf, "end do:")
     println(buf, "")
     println(buf, "timings_fn := \"$time_filename\":")
     println(buf, "FileTools[Text][WriteLine](timings_fn, \"$name\");")
     println(
         buf,
-        "FileTools[Text][WriteLine](timings_fn, cat(\"total_time, \", String(runtime)));"
+        "FileTools[Text][WriteLine](timings_fn, cat(\"total_time, \", String(runtime))):"
     )
     if validate
         println(buf)
@@ -99,7 +99,7 @@ function generate_benchmark_source_for_maple(
             """
             for poly in G do
                 FileTools[Text][WriteLine](output_fn, cat(String(poly), \",\")):
-            end do;
+            end do:
             """
         )
     end

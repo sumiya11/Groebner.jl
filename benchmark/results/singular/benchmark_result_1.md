@@ -1,12 +1,12 @@
 ## Benchmark results
 
-2023-09-27T00:29:55.206
+2023-12-29T22:02:53.325
 
 Benchmarked backend: singular
 Benchmark suite: Integers modulo 2^30 + 3
 
-- Workers: 16
-- Timeout: 100 s
+- Workers: 4
+- Timeout: 60 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
@@ -14,41 +14,43 @@ Benchmark suite: Integers modulo 2^30 + 3
 |Model|Total|
 |-----|---|
 |cyclic 10| - |
-|cyclic 7|1.47|
-|cyclic 8|40.34|
+|cyclic 7|1.95|
+|cyclic 8| - |
 |cyclic 9| - |
 |dummy|0.00|
-|eco 11|31.73|
+|eco 11| - |
 |eco 12| - |
 |eco 13| - |
-|eco 14| - |
 |henrion 5|0.01|
-|henrion 6|0.31|
+|henrion 6|0.40|
 |henrion 7| - |
 |katsura 10| - |
 |katsura 11| - |
 |katsura 12| - |
 |katsura 13| - |
-|noon 7|0.38|
-|noon 8|3.46|
+|noon 7|0.47|
+|noon 8|4.85|
 |noon 9| - |
-|reimer 6|10.10|
+|reimer 6| - |
 |reimer 7| - |
 |reimer 8| - |
 |reimer 9| - |
 
 *Benchmarking environment:*
 
-* Total RAM (GiB): 2003
-* Processor: AMD EPYC 7702 64-Core Processor                
-* Julia version: 1.9.1
+* Total RAM (GiB): 188
+* Processor: Intel(R) Xeon(R) Gold 6130 CPU @ 2.10GHz
+* Julia version: 1.9.2
 
 Versions of the dependencies:
 
+* Primes : 0.5.5
+* TimerOutputs : 0.5.23
+* PrecompileTools : 1.2.0
+* MultivariatePolynomials : 0.5.3
 * Combinatorics : 1.0.2
-* MultivariatePolynomials : 0.5.2
-* Primes : 0.5.4
+* AbstractAlgebra : 0.34.7
+* Nemo : 0.38.3
+* Atomix : 0.1.0
 * ExprTools : 0.1.10
-* SIMD : 3.4.5
-* AbstractAlgebra : 0.32.3
-* SnoopPrecompile : 1.0.3
+* PrettyTables : 2.3.1

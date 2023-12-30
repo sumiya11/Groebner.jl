@@ -1,42 +1,28 @@
 ## Benchmark results
 
-2023-12-30T12:48:59.245
+2023-12-29T22:11:44.031
 
-Benchmarked backend: msolve
-Benchmark suite: Integers modulo 2^30 + 3
+Benchmarked backend: maple
+Benchmark suite: The rationals
 
 - Workers: 4
-- Timeout: 1200 s
+- Timeout: 600 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total|
 |-----|---|
-|cyclic 10| - |
-|cyclic 7|0.14|
-|cyclic 8|1.49|
-|cyclic 9|268.64|
-|dummy|0.02|
-|eco 11|0.53|
-|eco 12|2.96|
-|eco 13|24.89|
-|eco 14|273.12|
-|henrion 5|0.02|
-|henrion 6|0.08|
-|henrion 7|4.02|
-|katsura 10|1.11|
-|katsura 11|11.05|
-|katsura 12|110.44|
-|katsura 13|823.39|
-|noon 10|318.72|
-|noon 7|0.23|
-|noon 8|2.18|
-|noon 9|24.19|
-|reimer 6|0.08|
-|reimer 7|1.23|
-|reimer 8|48.93|
-|reimer 9| - |
+|cyclic 7|1.74|
+|cyclic 8|30.75|
+|dummy|0.01|
+|eco 10|0.74|
+|eco 11|5.58|
+|henrion 6| - |
+|katsura 10|126.77|
+|katsura 9|9.77|
+|noon 8|9.73|
+|noon 9|122.21|
 
 *Benchmarking environment:*
 

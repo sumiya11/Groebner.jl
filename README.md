@@ -74,8 +74,8 @@ Special thanks goes to Vladimir Kuznetsov for providing the sources of his F4 im
 
 Other software for computing Groebner bases in Julia:
 
-- [AlgebraicSolving.jl](https://github.com/algebraic-solving/AlgebraicSolving.jl): F4 algorithm, elimination, signature Groebner bases.
-- [GroebnerBasis.jl](https://github.com/ederc/GroebnerBasis.jl): deprecated, see [Oscar.jl](https://github.com/oscar-system/Oscar.jl) instead
+- [AlgebraicSolving.jl](https://github.com/algebraic-solving/AlgebraicSolving.jl): fast F4 implementation, elimination, signature Groebner bases.
+- [GroebnerBasis.jl](https://github.com/ederc/GroebnerBasis.jl): deprecated, see [Oscar.jl](https://github.com/oscar-system/Oscar.jl).
 - [Singular.jl](https://github.com/oscar-system/Singular.jl)
 
 If you do not see your package here, we either do not know about it, or forgot to include it, sorry! Feel free to open a PR.

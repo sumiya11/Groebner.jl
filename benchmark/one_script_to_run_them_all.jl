@@ -183,7 +183,7 @@ function get_command_to_run_benchmark(
         ])
     elseif backend == "maple"
         scriptpath = (@__DIR__) * "/" * get_benchmark_dir(backend, problem_set_id)
-        return Cmd(["maple", "$scriptpath/$problem_name/$(problem_name).mpl"])
+        return Cmd(["/usr/local/maple2021/bin/maple", "$scriptpath/$problem_name/$(problem_name).mpl"])
     elseif backend == "msolve"
         return Cmd([
             "julia",
@@ -286,6 +286,7 @@ function run_benchmarks(args)
     Benchmark systems:
     $systems_to_benchmark"""
 
+    timeout = timeout + 10  # add 10 seconds for compilation time :)
     seconds_passed(from_t) = round((time_ns() - from_t) / 1e9, digits=2)
 
     queue = [(problem_id=problem,) for problem in indices_to_benchmark]
