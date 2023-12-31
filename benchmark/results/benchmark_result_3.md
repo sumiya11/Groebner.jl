@@ -1,8 +1,8 @@
 ## Benchmark results
 
-2023-12-31T02:48:35.724
+2023-12-31T02:52:27.789
 
-Benchmarked backend: singular
+Benchmarked backends: Any["groebner", "maple", "msolve", "singular"]
 
 Benchmark suite: The rationals
 
@@ -12,20 +12,20 @@ Benchmark suite: The rationals
 
 **All timings in seconds.**
 
-|Model|Total|
-|-----|---|
-|cyclic 7| - |
-|cyclic 8| - |
-|dummy|0.00|
-|eco 10|30.60|
-|eco 11| - |
-|eco 12| - |
-|henrion 6|5.22|
-|katsura 9| - |
-|katsura 10| - |
-|katsura 11| - |
-|noon 8|13.60|
-|noon 9| - |
+|Model|groebner|maple|msolve|singular|
+|-----|---|---|---|---|
+|cyclic 7|1.23|1.69|2.56| - |
+|cyclic 8|28.93|33.62|67.23| - |
+|dummy|0.00|0.01|0.02|0.00|
+|eco 10|0.67|0.92|0.80|30.60|
+|eco 11|3.55|5.64|6.26| - |
+|eco 12|29.99|52.92|41.68| - |
+|henrion 6|0.72| - |6.34|5.22|
+|katsura 9|4.06|10.30|5.74| - |
+|katsura 10|29.28| - |43.10| - |
+|katsura 11| - | - | - | - |
+|noon 8|5.31|10.19|17.45|13.60|
+|noon 9| - | - | - | - |
 
 *Benchmarking environment:*
 

@@ -1,6 +1,6 @@
 ## Benchmark results
 
-2023-12-30T23:01:44.844
+2023-12-31T02:35:33.899
 
 Benchmarked backend: openf4
 
@@ -14,29 +14,29 @@ Benchmark suite: Integers modulo 2^30 + 3
 
 |Model|Total|
 |-----|---|
-|cyclic 7|0.46|
-|cyclic 8|9.53|
+|cyclic 7|0.50|
+|cyclic 8|11.09|
 |cyclic 9| - |
 |cyclic 10| - |
 |dummy|0.01|
-|eco 11|2.36|
-|eco 12|18.27|
-|eco 13|76.21|
+|eco 11|3.64|
+|eco 12|17.53|
+|eco 13|88.54|
 |eco 14| - |
-|henrion 5|0.04|
-|henrion 6|0.33|
-|henrion 7|28.49|
-|katsura 10|6.40|
-|katsura 11|39.63|
-|katsura 12|308.92|
+|henrion 5|0.03|
+|henrion 6|0.37|
+|henrion 7|33.34|
+|katsura 10|7.16|
+|katsura 11|44.11|
+|katsura 12|351.57|
 |katsura 13| - |
-|noon 7|1.82|
-|noon 8|17.75|
-|noon 9|225.21|
+|noon 7|3.03|
+|noon 8|19.09|
+|noon 9|289.53|
 |noon 10| - |
-|reimer 6|0.28|
-|reimer 7|7.03|
-|reimer 8|272.15|
+|reimer 6|0.32|
+|reimer 7|8.30|
+|reimer 8|318.63|
 |reimer 9| - |
 
 *Benchmarking environment:*

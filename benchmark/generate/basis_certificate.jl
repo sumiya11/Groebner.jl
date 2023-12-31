@@ -65,18 +65,11 @@ function getlines_backend_dependent(result)
     filter(!isempty, split(result, "\n"))
 end
 
-function parse_system_naive(result::String)
-    lines = getlines_backend_dependent(result)
-    @assert length(lines) >= 2
-    base_field, ring_nemo, vars_nemo = extract_ring(lines[1], lines[2])
-    if length(lines) == 2
-        return ring_nemo, []
-    end
-    polys_str = map(s -> string(strip(s, [' ', ',', '\t'])), lines[3:end])
+function parse_polys_with_given_ring(ring, polys_str)
     polys_str = filter(!isempty, polys_str)
-    str_to_var = Dict{String, Nemo.elem_type(ring_nemo)}(string(v) => v for v in vars_nemo)
-    str_to_var_idx = Dict{String, Int}(string(v) => i for (i, v) in enumerate(vars_nemo))
-    polys_nemo = Vector{Nemo.elem_type(ring_nemo)}()
+    base_field, vars = base_ring(ring), gens(ring)
+    str_to_var_idx = Dict{String, Int}(string(v) => i for (i, v) in enumerate(vars))
+    polys = Vector{Nemo.elem_type(ring)}()
     constant_type = base_field == Nemo.QQ ? Rational{BigInt} : Int64
     for poly_str in polys_str
         terms_str_plus = split(poly_str, '+')
@@ -91,14 +84,26 @@ function parse_system_naive(result::String)
         end
         terms_exploded_str = map(t -> map(strip, split(t, "*")), terms_str)
         cfs, exps = parse_polynomial_from_terms(
-            ring_nemo,
+            ring,
             constant_type,
             terms_exploded_str,
             str_to_var_idx
         )
-        poly_nemo = ring_nemo(cfs, exps)
-        push!(polys_nemo, poly_nemo)
+        poly_nemo = ring(cfs, exps)
+        push!(polys, poly_nemo)
     end
+    polys
+end
+
+function parse_system_naive(result::String)
+    lines = getlines_backend_dependent(result)
+    @assert length(lines) >= 2
+    base_field, ring_nemo, vars_nemo = extract_ring(lines[1], lines[2])
+    if length(lines) == 2
+        return ring_nemo, []
+    end
+    polys_str = map(s -> string(strip(s, [' ', ',', '\t'])), lines[3:end])
+    polys_nemo = parse_polys_with_given_ring(ring_nemo, polys_str)
     ring_nemo, polys_nemo
 end
 

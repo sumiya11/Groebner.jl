@@ -31,7 +31,7 @@ end
 
 # The reimer-n system
 function reimern(n; np=AbstractAlgebra, ground=np.QQ, ordering=:lex)
-    _, xs = np.polynomial_ring(ground, ["x$i" for i in 1:n])
+    _, xs = np.polynomial_ring(ground, ["x$i" for i in 1:n], ordering=ordering)
     [sum((-1)^(i + 1) * 2 * xs[i]^j for i in 1:n) - 1 for j in 2:(n + 1)]
 end
 

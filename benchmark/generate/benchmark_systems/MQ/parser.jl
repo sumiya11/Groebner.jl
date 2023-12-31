@@ -4,7 +4,7 @@ import AbstractAlgebra
 function read_MQ_GF(filename)
     @info "Reading MQ $filename"
     polys = []
-    apath = abspath("") * "benchmark\\systems\\MQ\\$filename"
+    apath = (@__DIR__) * "/$filename"
     open(apath, "r") do fio
         line1, line2, line3 = readline(fio), readline(fio), readline(fio)
         ch = parse(Int, line1[(findfirst('(', line1) + 1):(findfirst(')', line1) - 1)])

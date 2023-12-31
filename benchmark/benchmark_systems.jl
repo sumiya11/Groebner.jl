@@ -21,7 +21,10 @@ function benchmark_set_0()
     (
         name="dummy benchmark set",
         field=AbstractAlgebra.QQ,
-        systems=[dummy_system("dummy 1", AbstractAlgebra.QQ), dummy_system("dummy 2", AbstractAlgebra.QQ)]
+        systems=[
+            dummy_system("dummy 1", AbstractAlgebra.QQ),
+            dummy_system("dummy 2", AbstractAlgebra.QQ)
+        ]
     )
 end
 
@@ -105,7 +108,11 @@ function benchmark_set_3()
         ("eco 12", Groebner.eco12(ground=ground_field)),
         ("noon 8", Groebner.noonn(8, ground=ground_field)),
         ("noon 9", Groebner.noonn(9, ground=ground_field)),
-        ("henrion 6", Groebner.henrion6(ground=ground_field))
+        ("henrion 6", Groebner.henrion6(ground=ground_field)),
+        ("henrion 7", Groebner.henrion7(ground=ground_field)),
+        ("reimer 6", Groebner.reimern(6, ground=ground_field)),
+        ("reimer 7", Groebner.reimern(7, ground=ground_field)),
+        ("reimer 8", Groebner.reimern(8, ground=ground_field))
     ]
 
     (name="The rationals", field=ground_field, systems=systems)

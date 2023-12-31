@@ -37,7 +37,7 @@ path = (@__DIR__) * "/$BENCHMARK_DIR/$PROBLEM_NAME/$PROBLEM_NAME.jl"
 include(path)
 
 # Compile
-groebner(system)
+groebner(system, threaded=:no)
 
 function process_system()
     @info "Processing $PROBLEM_NAME"
@@ -50,7 +50,7 @@ function process_system()
     end
     for iter in 1:NUM_RUNS
         @info "Computing GB.." iter
-        timing = @timed result = groebner(system)
+        timing = @timed result = groebner(system, threaded=:no)
         @debug "Result is" result
         if VALIDATE
             output_fn = (@__DIR__) * "/$BENCHMARK_DIR/$PROBLEM_NAME/$(output_filename())"

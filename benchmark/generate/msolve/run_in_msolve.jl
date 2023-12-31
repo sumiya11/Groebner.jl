@@ -31,16 +31,16 @@ const BENCHMARK_DIR = "../../" * get_benchmark_dir("msolve", BENCHMARK_SET)
 flush(stdout)
 flush(stderr)
 
-const children = []
+# const children = []
 
-function kill_children_procs()
-    for child in children
-        kill(child)
-    end
-    nothing
-end
+# function kill_children_procs()
+#     for child in children
+#         kill(child)
+#     end
+#     nothing
+# end
 
-atexit(kill_children_procs)
+# atexit(kill_children_procs)
 
 function process_system()
     @info "Processing $PROBLEM_NAME"
@@ -57,15 +57,10 @@ function process_system()
         outputfile =
             VALIDATE ? (@__DIR__) * "/$BENCHMARK_DIR/$PROBLEM_NAME/$(output_filename())" :
             "/dev/null"
-        cmd = Cmd(
-            `$BIN_PATH_NORM -g 2 -l 44 -c 0 -f $problemfile -o $outputfile`,
-            detach=false
-        )
+        cmd = Cmd(`$BIN_PATH_NORM -g 2 -c 0 -f $problemfile -o $outputfile`, detach=false)
         timing = time_ns()
         proc = run(cmd, wait=true)
-        push!(children, proc)
-        # while !process_exited(proc)
-        # end
+        # push!(children, proc)
         timing = (time_ns() - timing) / 1e9
         @assert process_exited(proc)
         if proc.exitcode != 0
@@ -73,8 +68,7 @@ function process_system()
             exit(1)
         end
         @debug "Result is" result
-        runtime[PROBLEM_NAME][:total_time] =
-            min(runtime[PROBLEM_NAME][:total_time], timing.time)
+        runtime[PROBLEM_NAME][:total_time] = min(runtime[PROBLEM_NAME][:total_time], timing)
     end
 end
 

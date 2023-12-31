@@ -408,7 +408,7 @@ function run_benchmarks(args)
                 start_time = proc.start_time
                 if seconds_passed(start_time) > timeout
                     push!(to_be_removed, i)
-                    kill(proc.julia_process, Base.SIGINT)
+                    kill(proc.julia_process, Base.SIGKILL)
                     close(proc.logfile)
                     # close(proc.errfile)
                     push!(timedout, proc)
@@ -762,6 +762,7 @@ function collect_all_timings(args, runtimes, systems)
     h1 = Highlighter(
         (data, i, j) ->
             j > 1 &&
+                strip(data[i, j]) != "-" &&
                 parse(Float64, data[i, j]) == minimum(
                     map(
                         x -> parse(Float64, x),
@@ -857,6 +858,21 @@ function check_args(args)
     end
 end
 
+function cleanup(names=nothing)
+    # this is quite bad but fine :^)
+    cmd1 = Cmd(`pkill msolve`, ignorestatus=true)
+    cmd2 = Cmd(`pkill mserver`, ignorestatus=true)
+    run(cmd1)
+    run(cmd2)
+    if !(names === nothing)
+        for name in names
+            cmd = Cmd(`pkill -f "$name"`, ignorestatus=true)
+            run(cmd)
+        end
+    end
+    nothing
+end
+
 function main()
     # Parse command line args
     args = parse_commandline()
@@ -870,6 +886,7 @@ function main()
         @info "Benchmarking all available backends"
         runtimes = Dict()
         systems = []
+        solved_problems = []
         for backend in _available_backends
             args_ = copy(args)
             args_["backend"] = backend
@@ -884,14 +901,20 @@ function main()
             catch e
                 printstyled("(!) ", color=:light_yellow)
                 println("Cannot benchmark $backend")
+            finally
+                cleanup(systems)
             end
         end
         collect_all_timings(args, runtimes, systems)
     else
-        populate_benchmarks(args)
-        solved_problems = run_benchmarks(args)
-        validate_results(args, solved_problems)
-        collect_timings(args, solved_problems)
+        try
+            populate_benchmarks(args)
+            solved_problems = run_benchmarks(args)
+            validate_results(args, solved_problems)
+            collect_timings(args, solved_problems)
+        finally
+            cleanup(solved_problems)
+        end
     end
 end
 
