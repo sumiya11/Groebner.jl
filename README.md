@@ -70,7 +70,7 @@ Special thanks goes to Vladimir Kuznetsov for providing the sources of his F4 im
 
 ## See also
 
-Other software for computing Groebner bases in Julia:
+Other software in Julia that can be used for computing Groebner bases:
 
 - [AlgebraicSolving.jl](https://github.com/algebraic-solving/AlgebraicSolving.jl)
 - [GroebnerBasis.jl](https://github.com/ederc/GroebnerBasis.jl), deprecated, see [Oscar.jl](https://github.com/oscar-system/Oscar.jl)
