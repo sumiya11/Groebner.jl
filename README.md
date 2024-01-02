@@ -64,9 +64,11 @@ This library is maintained by Alexander Demin (<asdemin_2@edu.hse.ru>).
 
 ## Acknowledgement
 
-We would like to acknowledge Jérémy Berthomieu, Christian Eder, and Mohab Safey El Din as this library is inspired by their work ["msolve: A Library for Solving Polynomial Systems"](https://arxiv.org/abs/2104.03572). We are also grateful to The Max Planck Institute for Informatics and The MAX team at l'X for providing computational resources.
+We would like to acknowledge the developers of the msolve library ([https://msolve.lip6.fr/](https://msolve.lip6.fr/)), as several components of Groebner.jl were adapted from msolve. In our F4 implementation, we adapt and adjust the code of monomial hashtable, critical pair handling and symbolic preprocessing, and linear algebra from msolve. The source code of msolve is available at [https://github.com/algebraic-solving/msolve](https://github.com/algebraic-solving/msolve).
 
-Special thanks goes to Vladimir Kuznetsov for providing the sources of his F4 implementation.
+We thank Vladimir Kuznetsov for helpful discussions and providing the sources of his F4 implementation.
+
+We are grateful to The Max Planck Institute for Informatics and The MAX team at l'X for providing computational resources.
 
 ## See also
 
