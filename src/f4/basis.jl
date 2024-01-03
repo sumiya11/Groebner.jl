@@ -154,11 +154,11 @@ end
 
 function basis_shallow_copy_with_new_coeffs(
     basis::Basis{C},
-    new_coeffs::Vector{Vector{T}}
+    new_sparse_row_coeffs::Vector{Vector{T}}
 ) where {C <: Coeff, T <: Coeff}
     Basis(
         basis.monoms,
-        new_coeffs,
+        new_sparse_row_coeffs,
         basis.size,
         basis.nprocessed,
         basis.nfilled,
@@ -172,7 +172,7 @@ end
 
 function basis_deep_copy_with_new_coeffs(
     basis::Basis{C},
-    new_coeffs::Vector{Vector{T}}
+    new_sparse_row_coeffs::Vector{Vector{T}}
 ) where {C <: Coeff, T <: Coeff}
     # Assume that MonomId is trivially copiable    
     @invariant isbitstype(MonomId)
@@ -188,7 +188,7 @@ function basis_deep_copy_with_new_coeffs(
 
     Basis(
         monoms,
-        new_coeffs,
+        new_sparse_row_coeffs,
         basis.size,
         basis.nprocessed,
         basis.nfilled,

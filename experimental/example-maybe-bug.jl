@@ -105,7 +105,7 @@ gb1 == gb2 == gb3 == gb4
 
 m = Groebner.DelayedArithmeticZp(UInt64, UInt64, Primes.prevprime(2^31 - 1))
 
-@code_native debuginfo = :none Groebner.dense_row_mod_p!(UInt[1, 2, 3], m)
+@code_native debuginfo = :none Groebner.linalg_dense_row_mod_p!(UInt[1, 2, 3], m)
 
 ########
 
@@ -336,7 +336,7 @@ function widenn(a::Groebner.CompositeInt{N, UInt32}) where {N}
     Groebner.CompositeInt(UInt64.(a.data))
 end
 
-function reduce_dense_row_by_sparse_row_mod_p!(
+function linalg_vector_addmul_sparsedense_mod_p!(
     row::Vector{A},
     indices::Vector{I},
     coeffs::Vector{T},
@@ -357,9 +357,9 @@ x = [ntuple(i -> i, N) for _ in 1:1_000];
 i = Int32.(collect(1:20:1000));
 c = [Int32.(ntuple(i -> i, N)) for _ in 1:50];
 
-@btime reduce_dense_row_by_sparse_row_mod_p!($x, $i, $c, $(ntuple(i -> i, N)))
+@btime linalg_vector_addmul_sparsedense_mod_p!($x, $i, $c, $(ntuple(i -> i, N)))
 
-@code_native debuginfo = :none reduce_dense_row_by_sparse_row_mod_p!(
+@code_native debuginfo = :none linalg_vector_addmul_sparsedense_mod_p!(
     x,
     i,
     c,
@@ -528,7 +528,7 @@ function reduce_dense_row_by_sparse_row_v2!(
     nothing
 end
 
-@code_native debuginfo = :none Groebner.reduce_dense_row_by_sparse_row!(
+@code_native debuginfo = :none Groebner.linalg_vector_addmul_sparsedense!(
     T[1],
     Int32[1],
     Int32[1],
@@ -644,7 +644,7 @@ x = Groebner.CompositeInt((UInt(2^30 + 3)^2 - 1, UInt(2^31 - 1)^2 - 3))
 @code_llvm debuginfo = :none Groebner.mod_p(x, a)
 @code_native debuginfo = :none Groebner.mod_p(x, a)
 
-@code_native debuginfo = :none Groebner.reduce_dense_row_by_sparse_row_mod_p!(
+@code_native debuginfo = :none Groebner.linalg_vector_addmul_sparsedense_mod_p!(
     [x],
     Int32[1],
     [x],
@@ -659,7 +659,7 @@ a1 = Groebner.SpecializedArithmeticZp(x1)
 x4 = Groebner.CompositeInt((Primes.nextprimes(UInt32(2^30), 4)...,))
 a4 = Groebner.CompositeArithmeticZp(x4)
 
-@code_native debuginfo = :none reduce_dense_row_by_sparse_row_mod_p!(
+@code_native debuginfo = :none linalg_vector_addmul_sparsedense_mod_p!(
     [widenn(x4)],
     Int32[1],
     [x4],

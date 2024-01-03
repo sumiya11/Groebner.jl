@@ -154,7 +154,7 @@ function desaturate_generators!(
     @assert nvars > 1
     new_nvars = nvars - 1
     new_monoms = Vector{Vector{Vector{T}}}(undef, length(monoms))
-    new_coeffs = similar(coeffs)
+    new_sparse_row_coeffs = similar(coeffs)
     new_size = 0
     # remove the saturating variable
     @inbounds for i in 1:length(monoms)
@@ -168,7 +168,7 @@ function desaturate_generators!(
         end
         to_skip && break
         new_size += 1
-        new_coeffs[new_size] = coeffs[i]
+        new_sparse_row_coeffs[new_size] = coeffs[i]
         new_monoms[new_size] = Vector{Vector{T}}(undef, length(monoms[i]))
         for j in 1:length(monoms[i])
             new_monoms[i][j] = Vector{T}(undef, new_nvars + 1)
@@ -179,7 +179,7 @@ function desaturate_generators!(
         end
     end
     @assert new_size > 0
-    resize!(new_coeffs, new_size)
+    resize!(new_sparse_row_coeffs, new_size)
     resize!(new_monoms, new_size)
     new_ord = restrict_ordering_in_desaturation(ring.ord)
     new_ring = PolyRing(new_nvars, new_ord, ring.ch)
@@ -194,7 +194,7 @@ function desaturate_generators!(
     De-saturated monomials: 
     $new_monoms
     """
-    new_ring, new_monoms, new_coeffs
+    new_ring, new_monoms, new_sparse_row_coeffs
 end
 
 function saturate_generators_by_variable!(

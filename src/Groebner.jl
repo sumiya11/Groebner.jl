@@ -161,7 +161,7 @@ include("input-output/input-output.jl")
 include("input-output/AbstractAlgebra.jl")
 include("input-output/DynamicPolynomials.jl")
 
-#= generic f4 implementation =#
+#= generic f4 =#
 #= the heart of this library =#
 # `MonomialHashtable` implementation
 include("f4/hashtable.jl")
@@ -171,8 +171,14 @@ include("f4/basis.jl")
 include("f4/trace.jl")
 # `MacaulayMatrix` implementation
 include("f4/matrix.jl")
-# Linear algebra algorithms
-include("f4/linalg.jl")
+# Linear algebra backends
+include("f4/linalg/linalg.jl")
+include("f4/linalg/backend.jl")
+include("f4/linalg/backend_threaded.jl")
+include("f4/linalg/backend_randomized.jl")
+include("f4/linalg/backend_randomized_threaded.jl")
+include("f4/linalg/backend_learn_apply.jl")
+include("f4/linalg/backend_learn_apply_threaded.jl")
 include("f4/sort.jl")
 # Additional tiny tracing
 include("f4/tiny-trace.jl")

@@ -74,11 +74,11 @@ end
     params::AlgorithmParameters
 )
     # Re-enumerate matrix columns
-    column_to_monom_mapping!(matrix, symbol_ht)
+    matrix_fill_column_to_monom_map!(matrix, symbol_ht)
     # Call the linear algebra backend
-    linear_algebra!(matrix, basis, params)
+    linalg_main!(matrix, basis, params)
     # Extract nonzero rows from the matrix into the basis
-    convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
+    matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 end
 
 # F4 update
@@ -179,7 +179,7 @@ function f4_autoreduce!(
     # as matrix upper rows
     @inbounds for i in 1:(basis.nnonredundant) #
         row_idx = matrix.nrows_filled_upper += 1
-        uprows[row_idx] = transform_polynomial_multiple_to_matrix_row!(
+        uprows[row_idx] = matrix_transform_polynomial_multiple_to_matrix_row!(
             matrix,
             symbol_ht,
             ht,
@@ -204,11 +204,11 @@ function f4_autoreduce!(
         symbol_ht.hashdata[i] = Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
     end
 
-    column_to_monom_mapping!(matrix, symbol_ht)
+    matrix_fill_column_to_monom_map!(matrix, symbol_ht)
 
-    linear_algebra_autoreduce_basis!(matrix, basis, params)
+    linalg_autoreduce!(matrix, basis, params)
 
-    convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
+    matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 
     basis.nfilled = matrix.npivots + basis.nprocessed
     basis.nprocessed = matrix.npivots
@@ -259,7 +259,7 @@ function f4_select_tobereduced!(
 
         gen = tobereduced.monoms[i]
         h = MonomHash(0)
-        matrix.lower_rows[row_idx] = transform_polynomial_multiple_to_matrix_row!(
+        matrix.lower_rows[row_idx] = matrix_transform_polynomial_multiple_to_matrix_row!(
             matrix,
             symbol_ht,
             ht,
@@ -355,7 +355,14 @@ function find_multiplied_reducer!(
     @inbounds h = symbol_ht.hashdata[vidx].hash - ht.hashdata[rpoly[1]].hash
 
     matrix.upper_rows[matrix.nrows_filled_upper + 1] =
-        transform_polynomial_multiple_to_matrix_row!(matrix, symbol_ht, ht, h, etmp, rpoly)
+        matrix_transform_polynomial_multiple_to_matrix_row!(
+            matrix,
+            symbol_ht,
+            ht,
+            h,
+            etmp,
+            rpoly
+        )
     @inbounds matrix.upper_to_coeffs[matrix.nrows_filled_upper + 1] = basis.nonredundant[i]
     # TODO: this line is here with one sole purpose -- to support tracing.
     # Probably want to factor it out.
@@ -560,7 +567,7 @@ function add_critical_pairs_to_matrix!(
 
         # add row as a reducer
         row_idx = matrix.nrows_filled_upper += 1
-        uprows[row_idx] = transform_polynomial_multiple_to_matrix_row!(
+        uprows[row_idx] = matrix_transform_polynomial_multiple_to_matrix_row!(
             matrix,
             symbol_ht,
             ht,
@@ -603,7 +610,7 @@ function add_critical_pairs_to_matrix!(
 
             # add row to be reduced
             row_idx = matrix.nrows_filled_lower += 1
-            lowrows[row_idx] = transform_polynomial_multiple_to_matrix_row!(
+            lowrows[row_idx] = matrix_transform_polynomial_multiple_to_matrix_row!(
                 matrix,
                 symbol_ht,
                 ht,
@@ -834,9 +841,9 @@ end
     )
     symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
     # Rename the columns and sort the rows of the matrix
-    column_to_monom_mapping!(matrix, symbol_ht)
+    matrix_fill_column_to_monom_map!(matrix, symbol_ht)
     # Reduce!
-    linear_algebra_isgroebner!(matrix, basis, arithmetic)
+    linalg_isgroebner!(matrix, basis, arithmetic)
 end
 
 # Reduces each polynomial in the `tobereduced` by the polynomials from the `basis`.
@@ -852,10 +859,10 @@ end
     # Fill the matrix
     f4_select_tobereduced!(basis, tobereduced, matrix, symbol_ht, ht)
     symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
-    column_to_monom_mapping!(matrix, symbol_ht)
+    matrix_fill_column_to_monom_map!(matrix, symbol_ht)
     # Reduce the matrix
-    linear_algebra_normalform!(matrix, basis, arithmetic)
+    linalg_normalform!(matrix, basis, arithmetic)
     # Export the rows of the matrix back to the basis elements
-    convert_rows_to_basis_elements_nf!(matrix, tobereduced, ht, symbol_ht)
+    matrix_convert_rows_to_basis_elements_nf!(matrix, tobereduced, ht, symbol_ht)
     tobereduced
 end

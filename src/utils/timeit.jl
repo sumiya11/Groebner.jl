@@ -20,6 +20,7 @@ const _groebner_timer = TimerOutputs.TimerOutput()
     @timeit label expr
     @timeit function foo() ... end"""))
 
+# TODO: @timeit macro is broken in combination with Base.Threads.@threads..
 """
     @timeit label expr
     @timeit function foo() ... end

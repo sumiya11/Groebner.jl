@@ -17,8 +17,11 @@
         isgroebner(arr)
         normalform(arr, arr)
 
-        R, (x, y) =
-            AbstractAlgebra.polynomial_ring(AbstractAlgebra.GF(2^31 - 1), ["x", "y"])
+        R, (x, y) = AbstractAlgebra.polynomial_ring(
+            AbstractAlgebra.GF(2^31 - 1),
+            ["x", "y"],
+            ordering=:degrevlex
+        )
         arr = [x^2 * y + x * y + 1, x * y^5 + y^4 + 1]
         gb = groebner(arr, ordering=DegRevLex())
 

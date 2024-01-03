@@ -1,9 +1,9 @@
 	.text
-	.file	"reduce_dense_row_by_sparse_row!"
-	.globl	"julia_reduce_dense_row_by_sparse_row!_82" # -- Begin function julia_reduce_dense_row_by_sparse_row!_82
+	.file	"linalg_vector_addmul_sparsedense!"
+	.globl	"julia_linalg_vector_addmul_sparsedense!_82" # -- Begin function julia_linalg_vector_addmul_sparsedense!_82
 	.p2align	4, 0x90
-	.type	"julia_reduce_dense_row_by_sparse_row!_82",@function
-"julia_reduce_dense_row_by_sparse_row!_82": # @"julia_reduce_dense_row_by_sparse_row!_82"
+	.type	"julia_linalg_vector_addmul_sparsedense!_82",@function
+"julia_linalg_vector_addmul_sparsedense!_82": # @"julia_linalg_vector_addmul_sparsedense!_82"
 	.cfi_startproc
 # %bb.0:                                # %top
 	pushq	%rbp
@@ -52,7 +52,7 @@
 	vzeroupper
 	retq
 .Lfunc_end0:
-	.size	"julia_reduce_dense_row_by_sparse_row!_82", .Lfunc_end0-"julia_reduce_dense_row_by_sparse_row!_82"
+	.size	"julia_linalg_vector_addmul_sparsedense!_82", .Lfunc_end0-"julia_linalg_vector_addmul_sparsedense!_82"
 	.cfi_endproc
                                         # -- End function
 	.section	".note.GNU-stack","",@progbits

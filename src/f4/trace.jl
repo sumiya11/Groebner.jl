@@ -130,11 +130,11 @@ function trace_copy(
     ::Type{C2};
     deepcopy=false
 ) where {C1 <: Coeff, C3 <: Coeff, M <: Monom, Ord1, Ord2, C2 <: Coeff}
-    new_coeffs = Vector{Vector{C2}}()
+    new_sparse_row_coeffs = Vector{Vector{C2}}()
     new_input_basis = if deepcopy
-        basis_deep_copy_with_new_coeffs(trace.input_basis, new_coeffs)
+        basis_deep_copy_with_new_coeffs(trace.input_basis, new_sparse_row_coeffs)
     else
-        basis_shallow_copy_with_new_coeffs(trace.input_basis, new_coeffs)
+        basis_shallow_copy_with_new_coeffs(trace.input_basis, new_sparse_row_coeffs)
     end
 
     new_buf_basis_coeffs = Vector{Vector{C2}}(undef, length(trace.buf_basis.coeffs))

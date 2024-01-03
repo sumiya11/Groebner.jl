@@ -1,4 +1,4 @@
-define void @"julia_reduce_dense_row_by_sparse_row!_88"({}* noundef nonnull align 16 dereferenceable(40) %0, {}* noundef nonnull align 16 dereferenceable(40) %1, {}* noundef nonnull align 16 dereferenceable(40) %2, { [1 x [4 x i64]], [1 x [4 x i64]], [1 x [4 x i64]], [1 x [4 x i8]], [1 x [4 x i8]] }* nocapture noundef nonnull readonly align 8 dereferenceable(104) %3) #0 {
+define void @"julia_linalg_vector_addmul_sparsedense!_88"({}* noundef nonnull align 16 dereferenceable(40) %0, {}* noundef nonnull align 16 dereferenceable(40) %1, {}* noundef nonnull align 16 dereferenceable(40) %2, { [1 x [4 x i64]], [1 x [4 x i64]], [1 x [4 x i64]], [1 x [4 x i8]], [1 x [4 x i8]] }* nocapture noundef nonnull readonly align 8 dereferenceable(104) %3) #0 {
 top:
   %4 = bitcast {}* %1 to i32**
   %5 = load i32*, i32** %4, align 8

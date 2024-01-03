@@ -1,7 +1,6 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-# Custom assertions for Groebner
-#
+# Custom assertions for Groebner.
 # Provides the @invariant macro
 
 """
@@ -11,7 +10,7 @@ Check that `expr` evaluates to `true` at runtime. If not, throw an
 `AssertionError`.
 
 It should be fine to use the `@invariant` macro in performance-critical code, as
-long as Groebner is compiled with `invariants_enabled() = false`.
+long as the code is compiled with `invariants_enabled() = false`.
 
 ## Examples
 

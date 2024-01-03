@@ -233,13 +233,11 @@ function matrix_string_repr(matrix::MacaulayMatrix{T}) where {T}
     s
 end
 
-# Checks that the matrix is well formed. It may be a good idea to call this on
-# the entry to linear algebra backend.
-function matrix_well_formed(func_id::Symbol, matrix::MacaulayMatrix)
-    # TODO: not much is checked at the moment, but it can be improved.
+# It may be a good idea to call this on the entry to linear algebra
+function matrix_well_formed(matrix::MacaulayMatrix)
+    # TODO: not much is checked at the moment, but it can be improved :^)
     nupper, nlower = matrix_nrows_filled(matrix)
     nleft, nright = matrix_ncols_filled(matrix)
-    # !(nupper == nleft) && return false
     true
 end
 
@@ -306,3 +304,193 @@ end
 
 #     newvec
 # end
+
+###
+
+function matrix_convert_rows_to_basis_elements!(
+    matrix::MacaulayMatrix,
+    basis::Basis,
+    ht::MonomialHashtable,
+    symbol_ht::MonomialHashtable
+)
+    # We mutate the basis directly by adding new elements
+
+    basis_resize_if_needed!(basis, matrix.npivots)
+    rows = matrix.lower_rows
+    crs = basis.nprocessed
+
+    @inbounds for i in 1:(matrix.npivots)
+        colidx = rows[i][1]
+        matrix_insert_in_basis_hashtable_pivots!(
+            rows[i],
+            ht,
+            symbol_ht,
+            matrix.column_to_monom
+        )
+        basis.coeffs[crs + i] = matrix.some_coeffs[matrix.lower_to_coeffs[colidx]]
+        basis.monoms[crs + i] = matrix.lower_rows[i]
+        @invariant length(basis.coeffs[crs + i]) == length(basis.monoms[crs + i])
+    end
+
+    basis.nfilled += matrix.npivots
+end
+
+function matrix_convert_rows_to_basis_elements_nf!(
+    matrix::MacaulayMatrix,
+    basis::Basis,
+    ht::MonomialHashtable,
+    symbol_ht::MonomialHashtable
+)
+    basis_resize_if_needed!(basis, matrix.npivots)
+
+    @inbounds for i in 1:(matrix.npivots)
+        basis.nprocessed += 1
+        basis.nnonredundant += 1
+        basis.nonredundant[basis.nnonredundant] = basis.nprocessed
+        if isassigned(matrix.some_coeffs, i)
+            row = matrix.lower_rows[i]
+            matrix_insert_in_basis_hashtable_pivots!(
+                row,
+                ht,
+                symbol_ht,
+                matrix.column_to_monom
+            )
+            basis.coeffs[basis.nprocessed] = matrix.some_coeffs[i]
+            basis.monoms[basis.nprocessed] = row
+        else
+            empty!(basis.coeffs[basis.nprocessed])
+            empty!(basis.monoms[basis.nprocessed])
+        end
+    end
+
+    nothing
+end
+
+@timeit function matrix_transform_polynomial_multiple_to_matrix_row!(
+    matrix::MacaulayMatrix,
+    symbolic_ht::MonomialHashtable{M},
+    basis_ht::MonomialHashtable{M},
+    htmp::MonomHash,
+    etmp::M,
+    poly::Vector{MonomId}
+) where {M <: Monom}
+    row = similar(poly)
+    resize_hashtable_if_needed!(symbolic_ht, length(poly))
+
+    insert_multiplied_poly_in_hashtable!(row, htmp, etmp, poly, basis_ht, symbolic_ht)
+end
+
+function matrix_fill_column_to_monom_map!(
+    matrix::MacaulayMatrix,
+    symbol_ht::MonomialHashtable
+)
+    @invariant !symbol_ht.frozen
+
+    # monoms from symbolic table represent one column in the matrix
+    hdata = symbol_ht.hashdata
+    load = symbol_ht.load
+
+    column_to_monom = Vector{MonomId}(undef, load - 1)
+    j = 1
+    # number of pivotal cols
+    k = 0
+    @inbounds for i in (symbol_ht.offset):load
+        # column to hash index
+        column_to_monom[j] = i
+        j += 1
+        # meaning the column is pivoted
+        if hdata[i].idx == PIVOT_COLUMN
+            k += 1
+        end
+    end
+
+    sort_columns_by_labels!(column_to_monom, symbol_ht)
+
+    matrix.ncols_left = k  # CHECK!
+    # -1 as long as hashtable load is always 1 more than actual
+    matrix.ncols_right = load - matrix.ncols_left - 1
+
+    # store the other direction of mapping,
+    # hash -> column
+    @inbounds for k in 1:length(column_to_monom)
+        hv = hdata[column_to_monom[k]]
+        hdata[column_to_monom[k]] = Hashvalue(k, hv.hash, hv.divmask, hv.deg)
+    end
+
+    @inbounds for k in 1:(matrix.nrows_filled_upper)
+        row = matrix.upper_rows[k]
+        for j in 1:length(row)
+            row[j] = hdata[row[j]].idx
+        end
+    end
+
+    @inbounds for k in 1:(matrix.nrows_filled_lower)
+        row = matrix.lower_rows[k]
+        for j in 1:length(row)
+            row[j] = hdata[row[j]].idx
+        end
+    end
+
+    matrix.column_to_monom = column_to_monom
+end
+
+# TODO: this does not belong here!
+function matrix_insert_in_basis_hashtable_pivots!(
+    row::Vector{ColumnLabel},
+    ht::MonomialHashtable{M},
+    symbol_ht::MonomialHashtable{M},
+    column_to_monom::Vector{MonomId}
+) where {M <: Monom}
+    resize_hashtable_if_needed!(ht, length(row))
+
+    sdata = symbol_ht.hashdata
+    sexps = symbol_ht.monoms
+
+    mod = MonomHash(ht.size - 1)
+    bdata = ht.hashdata
+    bexps = ht.monoms
+    bhash = ht.hashtable
+
+    l = 1
+    @label Letsgo
+    @inbounds while l <= length(row)
+        hidx = column_to_monom[row[l]]
+
+        # symbolic hash
+        h = sdata[hidx].hash
+
+        lastidx = ht.load + 1
+        bexps[lastidx] = sexps[hidx]
+        e = bexps[lastidx]
+
+        k = h
+        i = MonomHash(1)
+        @inbounds while i <= ht.size
+            k = next_lookup_index(h, i, mod)
+            hm = bhash[k]
+
+            iszero(hm) && break
+
+            if ishashcollision(ht, hm, e, h)
+                i += MonomHash(1)
+                continue
+            end
+
+            row[l] = hm
+            l += 1
+            @goto Letsgo
+        end
+
+        @invariant !ht.frozen
+
+        bhash[k] = pos = lastidx
+        row[l] = pos
+        l += 1
+
+        bdata[pos] = Hashvalue(sdata[hidx].idx, h, sdata[hidx].divmask, sdata[hidx].deg)
+
+        ht.load += 1
+    end
+
+    nothing
+end

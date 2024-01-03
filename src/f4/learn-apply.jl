@@ -68,9 +68,9 @@ function reduction_learn!(
     symbol_ht::MonomialHashtable,
     params::AlgorithmParameters
 )
-    column_to_monom_mapping!(matrix, symbol_ht)
-    linear_algebra!(matrix, basis, params, trace, linalg=LinearAlgebra(:learn, :sparse))
-    convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht)
+    matrix_fill_column_to_monom_map!(matrix, symbol_ht)
+    linalg_main!(matrix, basis, params, trace, linalg=LinearAlgebra(:learn, :sparse))
+    matrix_convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht)
 end
 
 function f4_reducegb_learn!(
@@ -92,7 +92,7 @@ function f4_reducegb_learn!(
     # as matrix upper rows
     @inbounds for i in 1:(basis.nnonredundant) #
         row_idx = matrix.nrows_filled_upper += 1
-        uprows[row_idx] = transform_polynomial_multiple_to_matrix_row!(
+        uprows[row_idx] = matrix_transform_polynomial_multiple_to_matrix_row!(
             matrix,
             symbol_ht,
             ht,
@@ -120,19 +120,13 @@ function f4_reducegb_learn!(
         symbol_ht.hashdata[i] = Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
     end
 
-    column_to_monom_mapping!(matrix, symbol_ht)
+    matrix_fill_column_to_monom_map!(matrix, symbol_ht)
 
     @log level = -6 "In autoreduction learn" basis matrix
 
-    linear_algebra_autoreduce_basis!(
-        matrix,
-        basis,
-        params,
-        trace,
-        linalg=LinearAlgebra(:learn, :sparse)
-    )
+    linalg_autoreduce!(matrix, basis, params, trace, linalg=LinearAlgebra(:learn, :sparse))
 
-    convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
+    matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 
     basis.nfilled = matrix.npivots + basis.nprocessed
     basis.nprocessed = matrix.npivots
@@ -282,7 +276,7 @@ end
 ###
 # F4 apply stage
 
-function column_to_monom_mapping!(
+function matrix_fill_column_to_monom_map!(
     trace::TraceF4,
     matrix::MacaulayMatrix,
     symbol_ht::MonomialHashtable
@@ -339,18 +333,17 @@ function reduction_apply!(
     # We bypass the sorting of the matrix rows when apply is used the second
     # time
     if length(trace.matrix_sorted_columns) < f4_iteration
-        column_to_monom_mapping!(matrix, symbol_ht)
+        matrix_fill_column_to_monom_map!(matrix, symbol_ht)
         push!(trace.matrix_sorted_columns, matrix.column_to_monom)
     else
         matrix.column_to_monom = trace.matrix_sorted_columns[f4_iteration]
-        column_to_monom_mapping!(trace, matrix, symbol_ht)
+        matrix_fill_column_to_monom_map!(trace, matrix, symbol_ht)
     end
 
-    flag =
-        linear_algebra!(matrix, basis, params, trace, linalg=LinearAlgebra(:apply, :sparse))
+    flag = linalg_main!(matrix, basis, params, trace, linalg=LinearAlgebra(:apply, :sparse))
     !flag && return false
 
-    convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
+    matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 
     true
 end
@@ -384,7 +377,7 @@ function symbolic_preprocessing!(
         etmp = hashtable.monoms[mult_idx]
         rpoly = basis.monoms[poly_idx]
 
-        matrix.lower_rows[i] = transform_polynomial_multiple_to_matrix_row!(
+        matrix.lower_rows[i] = matrix_transform_polynomial_multiple_to_matrix_row!(
             matrix,
             symbol_ht,
             hashtable,
@@ -408,7 +401,7 @@ function symbolic_preprocessing!(
         etmp = hashtable.monoms[mult_idx]
         rpoly = basis.monoms[poly_idx]
 
-        matrix.upper_rows[i] = transform_polynomial_multiple_to_matrix_row!(
+        matrix.upper_rows[i] = matrix_transform_polynomial_multiple_to_matrix_row!(
             matrix,
             symbol_ht,
             hashtable,
@@ -485,7 +478,7 @@ function autoreduce_f4_apply!(
         # iszero(h) && continue
 
         # vidx = insert_in_hashtable!(symbol_ht, etmp)
-        matrix.upper_rows[i] = transform_polynomial_multiple_to_matrix_row!(
+        matrix.upper_rows[i] = matrix_transform_polynomial_multiple_to_matrix_row!(
             matrix,
             symbol_ht,
             hashtable,
@@ -507,23 +500,18 @@ function autoreduce_f4_apply!(
     matrix.nrows_filled_upper = nup
 
     if length(trace.matrix_sorted_columns) < f4_iteration
-        column_to_monom_mapping!(matrix, symbol_ht)
+        matrix_fill_column_to_monom_map!(matrix, symbol_ht)
         push!(trace.matrix_sorted_columns, matrix.column_to_monom)
     else
         matrix.column_to_monom = trace.matrix_sorted_columns[f4_iteration]
-        column_to_monom_mapping!(trace, matrix, symbol_ht)
+        matrix_fill_column_to_monom_map!(trace, matrix, symbol_ht)
     end
 
-    flag = linear_algebra_autoreduce_basis!(
-        matrix,
-        basis,
-        params,
-        linalg=LinearAlgebra(:apply, :sparse)
-    )
+    flag = linalg_autoreduce!(matrix, basis, params, linalg=LinearAlgebra(:apply, :sparse))
     if !flag
         return false
     end
-    convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht)
+    matrix_convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht)
 
     basis.nfilled = matrix.npivots + basis.nprocessed
     basis.nprocessed = matrix.npivots

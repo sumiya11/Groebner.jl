@@ -1,8 +1,8 @@
 	.section	__TEXT,__text,regular,pure_instructions
 	.build_version macos, 14, 0
-	.globl	"_julia_reduce_dense_row_by_sparse_row!_5586" ; -- Begin function julia_reduce_dense_row_by_sparse_row!_5586
+	.globl	"_julia_linalg_vector_addmul_sparsedense!_5586" ; -- Begin function julia_linalg_vector_addmul_sparsedense!_5586
 	.p2align	2
-"_julia_reduce_dense_row_by_sparse_row!_5586": ; @"julia_reduce_dense_row_by_sparse_row!_5586"
+"_julia_linalg_vector_addmul_sparsedense!_5586": ; @"julia_linalg_vector_addmul_sparsedense!_5586"
 	.cfi_startproc
 ; %bb.0:                                ; %top
 	ldr	x11, [x1, #8]

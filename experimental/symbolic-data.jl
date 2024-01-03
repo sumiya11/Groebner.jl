@@ -20,5 +20,3 @@ function load_system_symbolic_data(filename)
         end
     end
 end
-
-

@@ -8,7 +8,7 @@ using Groebner, InteractiveUtils
 io = open("llvm_vec4.txt", "w")
 code_llvm(
     io,
-    Groebner.reduce_dense_row_by_sparse_row!,
+    Groebner.linalg_vector_addmul_sparsedense!,
     Tuple{
         Vector{Groebner.CompositeInt{4, Int64}},
         Vector{Int32},
@@ -33,7 +33,7 @@ using Groebner, InteractiveUtils
 io = open("native_vec4.txt", "w")
 code_native(
     io,
-    Groebner.reduce_dense_row_by_sparse_row!,
+    Groebner.linalg_vector_addmul_sparsedense!,
     Tuple{
         Vector{Groebner.CompositeInt{4, Int64}},
         Vector{Int32},
