@@ -1,6 +1,6 @@
 module Groebner
 # Groebner is a package for computing Gröbner bases. This is the main file.
-# Groebner.jl is distributed under GNU GPL v2 starting from Groebner.jl v0.6.0.
+# Groebner is distributed under GNU GPL v2 starting from Groebner v0.6.0.
 
 # Groebner works over integers modulo a prime and over the rationals. At its
 # heart, Groebner implements F4, multi-modular techniques, and tracing.
