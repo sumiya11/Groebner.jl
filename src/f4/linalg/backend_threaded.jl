@@ -284,12 +284,14 @@ function linalg_reduce_matrix_lower_part_threaded_cas_maybe_correct!(
                 # purpose of these atomics is to fence the above assignment
                 #    pivots[new_sparse_row_support[1]] = new_sparse_row_support
                 # 
-                # In a way, it is a lightweight spin-lock.
+                # This way, the next atomic load from the same location in
+                # `sentinels` will also receive all relevant modifications to
+                # `pivots` as a side-effect.
                 #
-                # Roughly speaking, this construction is similar to the
-                # following explicit barrier in C
+                # Roughly speaking, in single-thread, this construction is
+                # similar to an explicit barrier in C
                 #   asm volatile("" ::: "memory");
-                # which is usually used to tell the compiler that the writes and
+                # which can be used to tell the compiler that the writes and
                 # loads cannot be freely moved below or above the barrier.
                 Atomix.set!(
                     Atomix.IndexableRef(sentinels, (Int(new_sparse_row_support[1]),)),
@@ -361,9 +363,9 @@ function linalg_reduce_dense_row_by_pivots_sparse_threadsafe0!(
         #   4. load pivots[i]
         # If 2. happened before 3., then 1. happened before 4.
         #
-        # For this reason, we perform the atomic operation 2. in
-        # `linalg_reduce_matrix_lower_part_threaded_cas_maybe_correct!`, 
-        # and perform the atomic operation 3. here.
+        # For this reason, we perform the atomic write 2. in
+        # `linalg_reduce_matrix_lower_part_threaded_cas_maybe_correct!`, and
+        # perform the atomic load 3. here.
         if iszero(Atomix.get(Atomix.IndexableRef(sentinels, (i,)), Atomix.acquire))
             if new_pivot_column == -1
                 new_pivot_column = i
@@ -372,7 +374,7 @@ function linalg_reduce_dense_row_by_pivots_sparse_threadsafe0!(
             continue
         end
         # At this point, the value of pivots[i] is in sync with any other thread
-        # that modifies, modified, or will modify pivots[i]
+        # that modifies, modified, or will modify it
 
         # if there is no pivot with the leading column equal to i
         if !isassigned(pivots, i) || (tmp_pos != -1 && tmp_pos == i)
