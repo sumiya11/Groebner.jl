@@ -77,9 +77,9 @@ function linalg_reduce_matrix_lower_part_threaded_cas!(
     # Allocate thread-local buffers
     buffers_row = map(_ -> zeros(AccumType, ncols), 1:nthreads())
 
-    # NOTE: the :dynamic execution schedule does not guarantee that threadid()
-    # is constant within one iteration
-    @inbounds Base.Threads.@threads :dynamic for i in 1:nlow
+    # NOTE: by default, @threads uses the :dynamic execution schedule, which
+    # does not guarantee that threadid() is constant within one iteration
+    @inbounds Base.Threads.@threads for i in 1:nlow
         t_id = threadid()
         t_local_row = buffers_row[t_id]
         new_sparse_row_support, new_sparse_row_coeffs =
@@ -204,9 +204,9 @@ function linalg_reduce_matrix_lower_part_threaded_cas_maybe_correct!(
     # Allocate thread-local buffers
     buffers_row = map(_ -> zeros(AccumType, ncols), 1:nthreads())
 
-    # NOTE: the :dynamic execution schedule does not guarantee that threadid()
-    # is constant within one iteration
-    @inbounds Base.Threads.@threads :dynamic for i in 1:nlow
+    # NOTE: by default, @threads uses the :dynamic execution schedule, which
+    # does not guarantee that threadid() is constant within one iteration
+    @inbounds Base.Threads.@threads for i in 1:nlow
         t_id = threadid()
         t_local_row = buffers_row[t_id]
         new_sparse_row_support, new_sparse_row_coeffs =

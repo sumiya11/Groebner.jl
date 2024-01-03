@@ -89,9 +89,9 @@ function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
     buffers_row = map(_ -> zeros(AccumType, ncols), 1:nthreads())
     buffers_rng = map(_ -> copy(rng), 1:nthreads())
 
-    # NOTE: the :dynamic execution schedule does not guarantee that threadid()
-    # is constant within one iteration
-    @inbounds Base.Threads.@threads :dynamic for i in 1:nblocks
+    # NOTE: by default, @threads uses the :dynamic execution schedule, which
+    # does not guarantee that threadid() is constant within one iteration
+    @inbounds Base.Threads.@threads for i in 1:nblocks
         nrowsupper = min(i * rowsperblock, nlow)
         nrowstotal = nrowsupper - (i - 1) * rowsperblock
         nrowstotal == 0 && continue
