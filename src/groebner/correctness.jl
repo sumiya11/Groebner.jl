@@ -46,7 +46,7 @@
             @log level = -2 "Randomized check failed."
 
             # Freeze the hashtable.
-            # TODO: this is a strange place to do it, but OK for no
+            # TODO: this is a strange place to do it, but OK
             # hashtable.frozen = true
 
             return false

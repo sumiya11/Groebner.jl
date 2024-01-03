@@ -102,7 +102,7 @@ function f4_reducegb_learn!(
         )
 
         matrix.upper_to_coeffs[row_idx] = basis.nonredundant[i]
-        matrix.upper_to_mult[row_idx] = insert_in_hashtable!(ht, etmp)
+        matrix.upper_to_mult[row_idx] = hashtable_insert!(ht, etmp)
         # set lead index as 1
         hv = symbol_ht.hashdata[uprows[row_idx][1]]
         symbol_ht.hashdata[uprows[row_idx][1]] =
@@ -113,7 +113,7 @@ function f4_reducegb_learn!(
     # needed for correct column count in symbol hashtable
     matrix.ncols_left = matrix.nrows_filled_upper
 
-    symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
+    f4_symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
     # set all pivots to unknown
     @inbounds for i in (symbol_ht.offset):(symbol_ht.load)
         hv = symbol_ht.hashdata[i]
@@ -140,7 +140,7 @@ function f4_reducegb_learn!(
     @label Letsgo
     @inbounds while i <= basis.nprocessed
         @inbounds for j in 1:k
-            if monom_is_divisible(
+            if hashtable_monom_is_divisible(
                 basis.monoms[basis.nfilled - i + 1][1],
                 basis.monoms[basis.nonredundant[j]][1],
                 ht
@@ -180,8 +180,8 @@ end
     matrix = matrix_initialize(ring, C)
 
     # initialize hash tables for update and symbolic preprocessing steps
-    update_ht = initialize_secondary_hashtable(hashtable)
-    symbol_ht = initialize_secondary_hashtable(hashtable)
+    update_ht = hashtable_initialize_secondary(hashtable)
+    symbol_ht = hashtable_initialize_secondary(hashtable)
 
     # add the first batch of critical pairs to the pairset
     @log level = -3 "Processing initial polynomials, generating first critical pairs"
@@ -209,7 +209,7 @@ end
         )
         push!(trace.critical_pair_sequence, (degree_i, npairs_i))
 
-        symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
+        f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
 
         # reduces polys and obtains new potential basis elements
         reduction_learn!(trace, basis, matrix, hashtable, symbol_ht, params)
@@ -225,12 +225,12 @@ end
         # clear symbolic hashtable
         # clear matrix
         matrix    = matrix_initialize(ring, C)
-        symbol_ht = initialize_secondary_hashtable(hashtable)
+        symbol_ht = hashtable_initialize_secondary(hashtable)
 
         if i > 10_000
             @log level = 1 "Something has gone wrong in the F4 learn stage. Error will follow."
             @log_memory_locals
-            __throw_maximum_iterations_exceeded(i)
+            __throw_maximum_iterations_exceeded_in_f4(i)
         end
     end
 
@@ -348,7 +348,7 @@ function reduction_apply!(
     true
 end
 
-function symbolic_preprocessing!(
+function f4_symbolic_preprocessing!(
     trace::TraceF4,
     f4_iteration::Int,
     basis::Basis,
@@ -368,7 +368,7 @@ function symbolic_preprocessing!(
     matrix.lower_to_coeffs = Vector{Int}(undef, nlow)
     matrix.upper_to_coeffs = Vector{Int}(undef, nup)
 
-    resize_hashtable_if_needed!(symbol_ht, nlow + nup + 2)
+    hashtable_resize_if_needed!(symbol_ht, nlow + nup + 2)
     for i in 1:nlow
         mult_idx = lowmults[i]
         poly_idx = lowrows[i]
@@ -461,7 +461,7 @@ function autoreduce_f4_apply!(
     etmp = monom_construct_const_monom(M, hashtable.nvars)
     # etmp is now set to zero, and has zero hash
 
-    resize_hashtable_if_needed!(symbol_ht, nlow + nup + 2)
+    hashtable_resize_if_needed!(symbol_ht, nlow + nup + 2)
 
     # needed for correct column count in symbol hashtable
     matrix.ncols_left = matrix.nrows_filled_upper
@@ -474,10 +474,7 @@ function autoreduce_f4_apply!(
         etmp = hashtable.monoms[mult_idx]
         rpoly = basis.monoms[poly_idx]
 
-        # TODO: this is not too good
-        # iszero(h) && continue
-
-        # vidx = insert_in_hashtable!(symbol_ht, etmp)
+        # vidx = hashtable_insert!(symbol_ht, etmp)
         matrix.upper_rows[i] = matrix_transform_polynomial_multiple_to_matrix_row!(
             matrix,
             symbol_ht,
@@ -557,7 +554,7 @@ end
     iters = 0
     hashtable = trace.hashtable
 
-    symbol_ht = initialize_secondary_hashtable(hashtable)
+    symbol_ht = hashtable_initialize_secondary(hashtable)
     matrix = matrix_initialize(ring, C)
     @log level = -5 "Applying F4 modulo $(ring.ch)"
     @log level = -5 "Using parameters" params.arithmetic
@@ -571,7 +568,7 @@ end
         iters += 1
         @log level = -5 "F4 Apply iteration $iters"
 
-        symbolic_preprocessing!(trace, iters, basis, matrix, hashtable, symbol_ht)
+        f4_symbolic_preprocessing!(trace, iters, basis, matrix, hashtable, symbol_ht)
 
         flag = reduction_apply!(trace, basis, matrix, hashtable, symbol_ht, iters, params)
         if !flag
@@ -581,7 +578,7 @@ end
 
         basis_update!(basis, hashtable)
 
-        reinitialize_hashtable!(symbol_ht)
+        hashtable_reinitialize!(symbol_ht)
 
         @log_memory_locals
     end
@@ -590,7 +587,7 @@ end
 
     if params.reduced
         @log level = -5 "Autoreducing the final basis.."
-        symbol_ht = initialize_secondary_hashtable(hashtable)
+        symbol_ht = hashtable_initialize_secondary(hashtable)
         flag = autoreduce_f4_apply!(
             trace,
             basis,

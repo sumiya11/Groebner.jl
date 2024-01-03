@@ -145,7 +145,7 @@ function basis_initialize_using_existing_hashtable(
     present_ht::MonomialHashtable;
 ) where {M, C <: Coeff}
     basis = basis_initialize(ring, length(monoms), C)
-    fill_data!(basis, present_ht, monoms, coeffs)
+    basis_fill_data!(basis, present_ht, monoms, coeffs)
     basis
 end
 
@@ -302,7 +302,7 @@ end
         newidx = pl + i
         if !basis.isredundant[i] &&
            !monom_is_gcd_const(ht.monoms[basis.monoms[i][1]], ht.monoms[new_lead])
-            lcms[i] = get_lcm(basis.monoms[i][1], new_lead, ht, update_ht)
+            lcms[i] = hashtable_get_lcm!(basis.monoms[i][1], new_lead, ht, update_ht)
             deg = update_ht.hashdata[lcms[i]].deg
             ps[newidx] = CriticalPair(Int32(i), Int32(idx), lcms[i], pr(deg))
         else
@@ -325,7 +325,7 @@ end
 
         # if an existing pair is divisible by the lead of new poly
         # and has a greater degree than newly generated one then
-        if ps[i].deg > m && monom_is_divisible(ps[i].lcm, new_lead, ht)
+        if ps[i].deg > m && hashtable_monom_is_divisible(ps[i].lcm, new_lead, ht)
             # mark an existing pair redundant
             ps[i] = CriticalPair{pr}(ps[i].poly1, ps[i].poly2, MonomId(0), ps[i].deg)
         end
@@ -353,7 +353,7 @@ end
     @inbounds for j in 1:pc
         # if is not redundant already
         if !iszero(lcms[j])
-            check_monomial_division_in_update(lcms, j + 1, pc, lcms[j], update_ht)
+            hashtable_check_monomial_division_in_update(lcms, j + 1, pc, lcms[j], update_ht)
         end
     end
 
@@ -367,7 +367,7 @@ end
     end
 
     # ensure that basis hashtable can store new lcms
-    resize_hashtable_if_needed!(ht, pc)
+    hashtable_resize_if_needed!(ht, pc)
 
     # add new lcms to the basis hashtable,
     # including index j and not including index pc
@@ -378,7 +378,7 @@ end
     lml = basis.nnonredundant
     @inbounds for i in 1:lml
         if !basis.isredundant[nonred[i]]
-            if monom_is_divisible(basis.monoms[nonred[i]][1], new_lead, ht)
+            if hashtable_monom_is_divisible(basis.monoms[nonred[i]][1], new_lead, ht)
                 basis.isredundant[nonred[i]] = true
             end
         end
@@ -422,7 +422,7 @@ function basis_is_new_polynomial_redundant!(
     idx::Int
 ) where {M}
     pt = monom_entrytype(M)
-    resize_hashtable_if_needed!(update_ht, 0)
+    hashtable_resize_if_needed!(update_ht, 0)
 
     # lead of new polynomial
     lead_new = basis.monoms[idx][1]
@@ -435,9 +435,9 @@ function basis_is_new_polynomial_redundant!(
         # lead of new polynomial at index i > idx
         lead_i = basis.monoms[i][1]
 
-        if monom_is_divisible(lead_new, lead_i, ht)
+        if hashtable_monom_is_divisible(lead_new, lead_i, ht)
             # add new S-pair corresponding to Spoly(i, idx)
-            lcm_new = get_lcm(lead_i, lead_new, ht, ht)
+            lcm_new = hashtable_get_lcm!(lead_i, lead_new, ht, ht)
             psidx = pairset.load + 1
             ps[psidx] = CriticalPair{pt}(
                 Int32(i),
@@ -459,7 +459,7 @@ end
 
 # given input exponent and coefficient vectors hashes exponents into `ht`
 # and then constructs hashed polynomials for `basis`
-function fill_data!(
+function basis_fill_data!(
     basis::Basis,
     ht::MonomialHashtable{M},
     exponents::Vector{Vector{M}},
@@ -467,14 +467,14 @@ function fill_data!(
 ) where {M, T}
     ngens = length(exponents)
     @inbounds for i in 1:ngens
-        resize_hashtable_if_needed!(ht, length(exponents[i]))
+        hashtable_resize_if_needed!(ht, length(exponents[i]))
 
         nterms = length(coeffs[i])
         basis.coeffs[i] = coeffs[i]
         basis.monoms[i] = Vector{MonomId}(undef, nterms)
         poly = basis.monoms[i]
         @inbounds for j in 1:nterms
-            poly[j] = insert_in_hashtable!(ht, exponents[i][j])
+            poly[j] = hashtable_insert!(ht, exponents[i][j])
         end
     end
 
@@ -490,9 +490,9 @@ function basis_sweep_redundant!(basis::Basis, hashtable)
             basis.isredundant[j] && continue
             lead_i = basis.monoms[i][1]
             lead_j = basis.monoms[j][1]
-            if monom_is_divisible(lead_i, lead_j, hashtable)
+            if hashtable_monom_is_divisible(lead_i, lead_j, hashtable)
                 basis.isredundant[i] = true
-            elseif monom_is_divisible(lead_j, lead_i, hashtable)
+            elseif hashtable_monom_is_divisible(lead_j, lead_i, hashtable)
                 basis.isredundant[j] = true
             end
         end
@@ -601,7 +601,7 @@ function insert_lcms_in_basis_hashtable!(
             continue
         end
 
-        if monom_is_gcd_const(
+        if hashtable_monom_is_gcd_const(
             monoms[ps[off + l].poly1][1],
             monoms[ps[off + 1].poly2][1],
             ht
@@ -619,13 +619,13 @@ function insert_lcms_in_basis_hashtable!(
         k = h
         i = MonomHash(1)
         @inbounds while i <= ht.size
-            k = next_lookup_index(h, i, mod)
+            k = hashtable_next_lookup_index(h, i, mod)
             hm = ht.hashtable[k]
 
             # if free
             iszero(hm) && break
 
-            if ishashcollision(ht, hm, n, h)
+            if hashtable_is_hash_collision(ht, hm, n, h)
                 i += MonomHash(1)
                 continue
             end

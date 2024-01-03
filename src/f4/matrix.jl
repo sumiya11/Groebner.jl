@@ -40,7 +40,7 @@
 # Each column in the matrix is associated with a single integer of this type.
 const ColumnLabel = Int32
 
-# Tags for matrix columns from different blocks. TODO: Use enum?
+# Tags for matrix columns from different blocks.
 const NON_PIVOT_COLUMN = 0      # not a pivot, column from the block B
 const UNKNOWN_PIVOT_COLUMN = 1  # maybe a pivot, undecided yet
 const PIVOT_COLUMN = 2          # a pivot, column from the block A
@@ -77,7 +77,7 @@ mutable struct MacaulayMatrix{T <: Coeff}
 
     # The number of columns in the left part of the matrix (in the blocks A, C)
     ncols_left::Int
-    # The number of columns in the right part of the matrix (in the blocks A, C)
+    # The number of columns in the right part of the matrix (in the blocks B, D)
     ncols_right::Int
 
     # The number of rows actually filled in the upper/lower parts of the matrix
@@ -375,9 +375,9 @@ end
     poly::Vector{MonomId}
 ) where {M <: Monom}
     row = similar(poly)
-    resize_hashtable_if_needed!(symbolic_ht, length(poly))
+    hashtable_resize_if_needed!(symbolic_ht, length(poly))
 
-    insert_multiplied_poly_in_hashtable!(row, htmp, etmp, poly, basis_ht, symbolic_ht)
+    hashtable_insert_polynomial_multiple!(row, htmp, etmp, poly, basis_ht, symbolic_ht)
 end
 
 function matrix_fill_column_to_monom_map!(
@@ -441,7 +441,7 @@ function matrix_insert_in_basis_hashtable_pivots!(
     symbol_ht::MonomialHashtable{M},
     column_to_monom::Vector{MonomId}
 ) where {M <: Monom}
-    resize_hashtable_if_needed!(ht, length(row))
+    hashtable_resize_if_needed!(ht, length(row))
 
     sdata = symbol_ht.hashdata
     sexps = symbol_ht.monoms
@@ -466,12 +466,12 @@ function matrix_insert_in_basis_hashtable_pivots!(
         k = h
         i = MonomHash(1)
         @inbounds while i <= ht.size
-            k = next_lookup_index(h, i, mod)
+            k = hashtable_next_lookup_index(h, i, mod)
             hm = bhash[k]
 
             iszero(hm) && break
 
-            if ishashcollision(ht, hm, e, h)
+            if hashtable_is_hash_collision(ht, hm, e, h)
                 i += MonomHash(1)
                 continue
             end

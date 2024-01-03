@@ -14,7 +14,7 @@
 # matrix    - a struct that is used for F4-style reduction,
 # hashtable - a hashtable that stores monomials.
 
-@noinline __throw_maximum_iterations_exceeded(iters) =
+@noinline __throw_maximum_iterations_exceeded_in_f4(iters) =
     throw("""Something probably went wrong in Groebner.jl/F4. 
           The number of F4 iterations exceeded $iters. 
           Please consider submitting a GitHub issue.""")
@@ -34,7 +34,7 @@
 ) where {M <: Monom, C <: Coeff}
     @log level = -5 "Initializing structs.."
 
-    tablesize = select_hashtable_size(ring, monoms)
+    tablesize = hashtable_select_initial_size(ring, monoms)
     @log level = -5 "Initial hashtable size is $tablesize"
 
     # Basis for storing basis elements,
@@ -42,11 +42,11 @@
     # Hashtable for hashing monomials stored in the basis
     basis = basis_initialize(ring, length(monoms), C)
     pairset = pairset_initialize(monom_entrytype(M))
-    hashtable = initialize_hashtable(ring, params.rng, M, tablesize)
+    hashtable = hashtable_initialize(ring, params.rng, M, tablesize)
 
     # Filling the basis and hashtable with the given inputs
-    fill_data!(basis, hashtable, monoms, coeffs)
-    fill_divmask!(hashtable)
+    basis_fill_data!(basis, hashtable, monoms, coeffs)
+    hashtable_fill_divmasks!(hashtable)
 
     if sort_input
         permutation = sort_polys_by_lead_increasing!(basis, hashtable)
@@ -115,7 +115,7 @@ end
 end
 
 # F4 symbolic preprocessing
-@timeit function symbolic_preprocessing!(
+@timeit function f4_symbolic_preprocessing!(
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
@@ -148,7 +148,7 @@ end
         symbol_ht.hashdata[i] =
             Hashvalue(UNKNOWN_PIVOT_COLUMN, hashval.hash, hashval.divmask, hashval.deg)
         matrix.ncols_left += 1
-        find_multiplied_reducer!(basis, matrix, ht, symbol_ht, i)
+        f4_find_multiplied_reducer!(basis, matrix, ht, symbol_ht, i)
         i += MonomId(1)
     end
 
@@ -188,7 +188,7 @@ function f4_autoreduce!(
             basis.monoms[basis.nonredundant[i]]
         )
         matrix.upper_to_coeffs[row_idx] = basis.nonredundant[i]
-        matrix.upper_to_mult[row_idx] = insert_in_hashtable!(ht, etmp)
+        matrix.upper_to_mult[row_idx] = hashtable_insert!(ht, etmp)
         hv = symbol_ht.hashdata[uprows[row_idx][1]]
         symbol_ht.hashdata[uprows[row_idx][1]] =
             Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
@@ -197,7 +197,7 @@ function f4_autoreduce!(
     # needed for correct column count in symbol hashtable
     matrix.ncols_left = matrix.ncols_left
 
-    symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
+    f4_symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
     # set all pivots to unknown
     @inbounds for i in (symbol_ht.offset):(symbol_ht.load)
         hv = symbol_ht.hashdata[i]
@@ -220,7 +220,7 @@ function f4_autoreduce!(
     @label Letsgo
     @inbounds while i <= basis.nprocessed
         @inbounds for j in 1:k
-            if monom_is_divisible(
+            if hashtable_monom_is_divisible(
                 basis.monoms[basis.nfilled - i + 1][1],
                 basis.monoms[basis.nonredundant[j]][1],
                 ht
@@ -269,7 +269,7 @@ function f4_select_tobereduced!(
         )
         matrix.lower_to_coeffs[row_idx] = i
         # TODO: not really needed here
-        matrix.lower_to_mult[row_idx] = insert_in_hashtable!(ht, etmp)
+        matrix.lower_to_mult[row_idx] = hashtable_insert!(ht, etmp)
         matrix.some_coeffs[row_idx] = tobereduced.coeffs[i]
     end
 
@@ -283,11 +283,10 @@ function f4_select_tobereduced!(
     nothing
 end
 
-function find_lead_monom_that_divides_use_divmask(i, divmask, basis)
+function f4_find_divisor_among_lead_monoms_use_divmask(i, divmask, basis)
     lead_divmasks = basis.divmasks
     @inbounds while i <= basis.nnonredundant
-        # TODO: rethink division masks to support more variables
-        if is_divmask_divisible(divmask, lead_divmasks[i])
+        if divmask_is_divisible(divmask, lead_divmasks[i])
             break
         end
         i += 1
@@ -295,7 +294,7 @@ function find_lead_monom_that_divides_use_divmask(i, divmask, basis)
     i
 end
 
-function find_lead_monom_that_divides(i, monom, basis, ht)
+function f4_find_divisor_among_lead_monoms(i, monom, basis, ht)
     @inbounds while i <= basis.nnonredundant
         lead_monom = ht.monoms[basis.monoms[basis.nonredundant[i]][1]]
         if monom_is_divisible(monom, lead_monom)
@@ -309,7 +308,7 @@ end
 # Finds a polynomial from the `basis` with leading term that divides monomial
 # `vidx`. If such a polynomial has been found, writes a multiple of it to the
 # hashtable `symbol_ht` 
-function find_multiplied_reducer!(
+function f4_find_multiplied_reducer!(
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
@@ -327,9 +326,9 @@ function find_multiplied_reducer!(
     @label Letsgo
 
     if ht.use_divmask
-        i = find_lead_monom_that_divides_use_divmask(i, divmask, basis)
+        i = f4_find_divisor_among_lead_monoms_use_divmask(i, divmask, basis)
     else
-        i = find_lead_monom_that_divides(i, e, basis, ht)
+        i = f4_find_divisor_among_lead_monoms(i, e, basis, ht)
     end
 
     # Reducer is not found, yield
@@ -340,7 +339,7 @@ function find_multiplied_reducer!(
 
     # reducers index and exponent in hash table
     @inbounds rpoly = basis.monoms[basis.nonredundant[i]]
-    resize_hashtable_if_needed!(ht, length(rpoly))
+    hashtable_resize_if_needed!(ht, length(rpoly))
 
     @inbounds rexp = ht.monoms[rpoly[1]]
 
@@ -366,7 +365,7 @@ function find_multiplied_reducer!(
     @inbounds matrix.upper_to_coeffs[matrix.nrows_filled_upper + 1] = basis.nonredundant[i]
     # TODO: this line is here with one sole purpose -- to support tracing.
     # Probably want to factor it out.
-    matrix.upper_to_mult[matrix.nrows_filled_upper + 1] = insert_in_hashtable!(ht, etmp)
+    matrix.upper_to_mult[matrix.nrows_filled_upper + 1] = hashtable_insert!(ht, etmp)
     # if sugar
     #     # updates sugar
     #     poly = basis.nonredundant[i]
@@ -385,7 +384,7 @@ end
 
 # Returns N, the number of critical pairs of the smallest degree.
 # Sorts the critical pairs so that the first N pairs are the smallest.
-function lowest_degree_pairs!(pairset::Pairset)
+function pairset_lowest_degree_pairs!(pairset::Pairset)
     sort_pairset_by_degree!(pairset, 1, pairset.load - 1)
     ps = pairset.pairs
     @inbounds min_deg = ps[1].deg
@@ -398,7 +397,7 @@ end
 
 # Returns N, the number of critical pairs of the smallest sugar.
 # Sorts the critical pairs so that the first N pairs are the smallest.
-function lowest_sugar_pairs!(pairset::Pairset, sugar_cubes::Vector{SugarCube})
+function pairset_lowest_sugar_pairs!(pairset::Pairset, sugar_cubes::Vector{SugarCube})
     @log level = -5 "Sugar cubes" sugar_cubes
     sugar = sort_pairset_by_sugar!(pairset, 1, pairset.load - 1, sugar_cubes)
     @inbounds min_sugar = sugar[1]
@@ -412,7 +411,7 @@ end
 
 # Discard all S-pairs of the lowest degree of lcm
 # from the pairset
-function discard_normal!(
+function f4_discard_normal!(
     pairset::Pairset,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -421,12 +420,11 @@ function discard_normal!(
     maxpairs::Int=typemax(Int)
 )
     npairs = pairset.load
-    npairs = lowest_degree_pairs!(pairset)
-    # @debug "Discarded $(npairs) pairs"
+    npairs = pairset_lowest_degree_pairs!(pairset)
 
     ps = pairset.pairs
 
-    # if maxpairs is set
+    # if maxpairs is set or not
     if maxpairs != typemax(Int)
         sort_pairset_by_lcm!(pairset, npairs, ht)
 
@@ -439,8 +437,6 @@ function discard_normal!(
             end
         end
     end
-
-    @debug "Discarded $(npairs) pairs"
 
     @inbounds for i in 1:(pairset.load - npairs)
         ps[i] = ps[i + npairs]
@@ -459,17 +455,16 @@ end
     maxpairs::Int=typemax(Int),
     select_all::Bool=false
 )
-    # Here, the following happens.
     # 1. The pairset is sorted according to the given selection strategy and the
     #    number of selected critical pairs is decided.
 
     npairs = pairset.load
     if !select_all
         if selection_strategy === :normal
-            npairs = lowest_degree_pairs!(pairset)
+            npairs = pairset_lowest_degree_pairs!(pairset)
         else
             @assert selection_strategy === :sugar
-            npairs = lowest_sugar_pairs!(pairset, basis.sugar_cubes)
+            npairs = pairset_lowest_sugar_pairs!(pairset, basis.sugar_cubes)
         end
     end
     npairs = min(npairs, maxpairs)
@@ -494,7 +489,7 @@ end
 
     # 3. At this stage, we know that the first `npairs` pairs in the pairset are 
     #    selected. We add these pairs to the matrix
-    add_critical_pairs_to_matrix!(pairset, npairs, basis, matrix, ht, symbol_ht)
+    f4_add_critical_pairs_to_matrix!(pairset, npairs, basis, matrix, ht, symbol_ht)
 
     # 4. Remove selected parirs from the pairset
     @inbounds for i in 1:(pairset.load - npairs)
@@ -509,7 +504,7 @@ end
 end
 
 # Adds the first `npairs` pairs from the pairset to the matrix
-function add_critical_pairs_to_matrix!(
+function f4_add_critical_pairs_to_matrix!(
     pairset::Pairset,
     npairs::Int,
     basis::Basis,
@@ -577,7 +572,7 @@ function add_critical_pairs_to_matrix!(
         )
         # map upper row to index in basis
         matrix.upper_to_coeffs[row_idx] = prev
-        matrix.upper_to_mult[row_idx] = insert_in_hashtable!(ht, etmp)
+        matrix.upper_to_mult[row_idx] = hashtable_insert!(ht, etmp)
 
         # mark lcm column as reducer in symbolic hashtable
         hv = symbol_ht.hashdata[uprows[row_idx][1]]
@@ -620,7 +615,7 @@ function add_critical_pairs_to_matrix!(
             )
             # map lower row to index in basis
             matrix.lower_to_coeffs[row_idx] = prev
-            matrix.lower_to_mult[row_idx] = insert_in_hashtable!(ht, etmp)
+            matrix.lower_to_mult[row_idx] = hashtable_insert!(ht, etmp)
 
             hv = symbol_ht.hashdata[lowrows[row_idx][1]]
             symbol_ht.hashdata[lowrows[row_idx][1]] =
@@ -712,8 +707,8 @@ end
     matrix = matrix_initialize(ring, C)
 
     # initialize hash tables for update and symbolic preprocessing steps
-    update_ht = initialize_secondary_hashtable(hashtable)
-    symbol_ht = initialize_secondary_hashtable(hashtable)
+    update_ht = hashtable_initialize_secondary(hashtable)
+    symbol_ht = hashtable_initialize_secondary(hashtable)
 
     # add the first batch of critical pairs to the pairset
     @log level = -4 "Processing initial polynomials, generating first critical pairs"
@@ -733,7 +728,7 @@ end
 
         # if the iteration is redundant according to the previous modular run
         if isready(tracer) && is_iteration_redundant(tracer, i)
-            discard_normal!(
+            f4_discard_normal!(
                 pairset,
                 basis,
                 matrix,
@@ -742,9 +737,9 @@ end
                 maxpairs=params.maxpairs
             )
             # matrix    = matrix_initialize(ring, C)
-            # symbol_ht = initialize_secondary_hashtable(hashtable)
+            # symbol_ht = hashtable_initialize_secondary(hashtable)
             matrix_reinitialize!(matrix, 0)
-            reinitialize_hashtable!(symbol_ht)
+            hashtable_reinitialize!(symbol_ht)
             continue
         end
 
@@ -762,7 +757,7 @@ end
         )
         @log level = -3 "After normal selection: available $(pairset.load) pairs"
 
-        symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
+        f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
 
         # reduces polys and obtains new potential basis elements
         f4_reduction!(ring, basis, matrix, hashtable, symbol_ht, params)
@@ -778,14 +773,14 @@ end
         # clear symbolic hashtable
         # clear matrix
         matrix_reinitialize!(matrix, 0)
-        reinitialize_hashtable!(symbol_ht)
+        hashtable_reinitialize!(symbol_ht)
         # matrix    = matrix_initialize(ring, C)
-        # symbol_ht = initialize_secondary_hashtable(hashtable)
+        # symbol_ht = hashtable_initialize_secondary(hashtable)
 
         if i > 10_000
             @log level = 1_000 "Something has gone wrong in F4. Error will follow."
             @log_memory_locals
-            __throw_maximum_iterations_exceeded(i)
+            __throw_maximum_iterations_exceeded_in_f4(i)
         end
     end
 
@@ -824,8 +819,8 @@ end
     arithmetic::A
 ) where {M <: Monom, C <: Coeff, A <: AbstractArithmetic}
     matrix = matrix_initialize(ring, C)
-    symbol_ht = initialize_secondary_hashtable(hashtable)
-    update_ht = initialize_secondary_hashtable(hashtable)
+    symbol_ht = hashtable_initialize_secondary(hashtable)
+    update_ht = hashtable_initialize_secondary(hashtable)
     @log level = -3 "Forming S-polynomials"
     f4_update!(pairset, basis, hashtable, update_ht)
     isempty(pairset) && return true
@@ -839,7 +834,7 @@ end
         :normal,
         select_all=true
     )
-    symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
+    f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
     # Rename the columns and sort the rows of the matrix
     matrix_fill_column_to_monom_map!(matrix, symbol_ht)
     # Reduce!
@@ -855,10 +850,10 @@ end
     arithmetic::A
 ) where {C <: Coeff, A <: AbstractArithmetic}
     matrix = matrix_initialize(ring, C)
-    symbol_ht = initialize_secondary_hashtable(ht)
+    symbol_ht = hashtable_initialize_secondary(ht)
     # Fill the matrix
     f4_select_tobereduced!(basis, tobereduced, matrix, symbol_ht, ht)
-    symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
+    f4_symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
     matrix_fill_column_to_monom_map!(matrix, symbol_ht)
     # Reduce the matrix
     linalg_normalform!(matrix, basis, arithmetic)

@@ -436,7 +436,7 @@ end
 # See f4/hashtable.jl for details.
 
 # Constructs and returns the division mask of the given monomial.
-function monom_divmask(
+function monom_create_divmask(
     e::SparseExponentVector{T, I, N},
     DM::Type{Mask},
     ndivvars,
@@ -446,5 +446,5 @@ function monom_divmask(
     tmp = Vector{T}(undef, N)
     monom_to_vector!(tmp, e)
     pushfirst!(tmp, monom_totaldeg(e))
-    monom_divmask(tmp, DM, ndivvars, divmap, ndivbits)
+    monom_create_divmask(tmp, DM, ndivvars, divmap, ndivbits)
 end

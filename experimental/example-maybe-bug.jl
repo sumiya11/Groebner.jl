@@ -11,7 +11,7 @@ end
 
 @info "" nthreads()
 @show ENV["JULIA_NUM_THREADS"]
-Groebner.logging_enabled() = true
+Groebner.logging_enabled() = false
 Groebner.invariants_enabled() = false
 Groebner.performance_counters_enabled() = false
 
@@ -22,11 +22,12 @@ k = [
     x1 * x2 * x3 + x1 * x2 + x2 * x3 + 11
 ]
 
-k = Groebner.noonn(2, ground=GF(2^31 - 1), ordering=:degrevlex)
+k = Groebner.noonn(7, ground=GF(2^31 - 1), ordering=:degrevlex)
 
-@my_profview Groebner.groebner(k, loglevel=0);
-Groebner.groebner(k, loglevel=-3);
+@my_profview Groebner.groebner(k, loglevel=0, arithmetic=:signed);
+@time Groebner.groebner(k, loglevel=0);
 @btime Groebner.groebner($k, loglevel=0);
+#  134.554 ms (92575 allocations: 51.95 MiB)
 @btime Groebner.groebner($k, loglevel=0, threaded=:yes);
 
 @profile Groebner.groebner(k, use_flint=true);

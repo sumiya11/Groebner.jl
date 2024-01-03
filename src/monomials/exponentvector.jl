@@ -354,7 +354,7 @@ end
 # Monomial division masks.
 
 # Constructs and returns the division mask of type Mask of the given monomial.
-function monom_divmask(
+function monom_create_divmask(
     e::ExponentVector{T},
     DM::Type{Mask},
     ndivvars,

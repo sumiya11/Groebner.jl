@@ -8,6 +8,8 @@
 ### 
 # Monomial hashtable.
 
+# This hashtable implementation assumes that the hash function is linear.
+
 # The hashtable size is always the power of two. The hashtable size is doubled
 # each time the load factor exceeds a threshold, which can be a bit smaller than
 # 0.5, since the number of hits greatly exceeds the number of misses usually.
@@ -19,8 +21,6 @@
 # monom_product! would return a new immutable object that is then assigned to
 # m3. That allows us to write more or less independently of the monomial
 # implementation.
-
-# NOTE: This hashtable implementation assumes that the hash function is linear.
 
 # Hash of a monomial in the hashtable
 const MonomHash = UInt32
@@ -86,13 +86,14 @@ end
 ###
 # Initialization and resizing
 
-# Resize hashtable if load factor exceeds this ht_resize_threshold. Load factor
-# of a hashtable instance must be smaller than ht_resize_threshold at any point
-# in its lifetime
-ht_resize_threshold() = 0.4
-ht_needs_resize(size, load, added) = (load + added) / size > ht_resize_threshold()
+# Resize hashtable if load factor exceeds hashtable_resize_threshold. Load factor of a
+# hashtable must be smaller than hashtable_resize_threshold at any point of its
+# lifetime
+hashtable_resize_threshold() = 0.4
+hashtable_needs_resize(size, load, added) =
+    (load + added) / size > hashtable_resize_threshold()
 
-function initialize_hashtable(
+function hashtable_initialize(
     ring::PolyRing{Ord},
     rng::AbstractRNG,
     MonomT::T,
@@ -152,7 +153,8 @@ function initialize_hashtable(
     )
 end
 
-function copy_hashtable(ht::MonomialHashtable)
+# TODO: this function is incorrect, and is not used at the moment
+function hashtable_deep_copy(ht::MonomialHashtable)
     exps = Vector{M}(undef, ht.size)
     table = Vector{MonomId}(undef, ht.size)
     data = Vector{Hashvalue}(undef, ht.size)
@@ -182,10 +184,7 @@ function copy_hashtable(ht::MonomialHashtable)
     )
 end
 
-# initialize hashtable either for `symbolic_preprocessing` or for `update` functions
-# These are of the same purpose and structure as basis hashtable,
-# but are more local oriented
-@timeit function initialize_secondary_hashtable(ht::MonomialHashtable{M}) where {M <: Monom}
+@timeit function hashtable_initialize_secondary(ht::MonomialHashtable{M}) where {M <: Monom}
     # 2^6 seems to be the best out of 2^5, 2^6, 2^7
     initial_size = 2^6
 
@@ -229,7 +228,7 @@ end
     )
 end
 
-function reinitialize_hashtable!(ht::MonomialHashtable{M}) where {M}
+function hashtable_reinitialize!(ht::MonomialHashtable{M}) where {M}
     @invariant !ht.frozen
 
     initial_size = 2^6
@@ -254,7 +253,7 @@ function reinitialize_hashtable!(ht::MonomialHashtable{M}) where {M}
     nothing
 end
 
-function select_hashtable_size(ring::PolyRing, monoms::AbstractVector)
+function hashtable_select_initial_size(ring::PolyRing, monoms::AbstractVector)
     nvars = ring.nvars
     sz = length(monoms)
 
@@ -276,9 +275,9 @@ function select_hashtable_size(ring::PolyRing, monoms::AbstractVector)
     tablesize
 end
 
-function resize_hashtable_if_needed!(ht::MonomialHashtable, added::Int)
+function hashtable_resize_if_needed!(ht::MonomialHashtable, added::Int)
     newsize = ht.size
-    while ht_needs_resize(newsize, ht.load, added)
+    while hashtable_needs_resize(newsize, ht.load, added)
         newsize *= 2
     end
     if newsize != ht.size
@@ -301,7 +300,7 @@ function resize_hashtable_if_needed!(ht::MonomialHashtable, added::Int)
             he = ht.hashdata[i].hash
             hidx = he
             for j in MonomHash(1):MonomHash(ht.size)
-                hidx = next_lookup_index(he, j, mod)
+                hidx = hashtable_next_lookup_index(he, j, mod)
                 !iszero(ht.hashtable[hidx]) && continue
                 ht.hashtable[hidx] = i
                 break
@@ -315,12 +314,12 @@ end
 # Insertion of monomials
 
 # Returns the next look-up position in the table 
-function next_lookup_index(h::MonomHash, j::MonomHash, mod::MonomHash)
+function hashtable_next_lookup_index(h::MonomHash, j::MonomHash, mod::MonomHash)
     (h + j) & mod + MonomHash(1)
 end
 
 # if hash collision happened
-function ishashcollision(ht::MonomialHashtable, vidx, e, he)
+function hashtable_is_hash_collision(ht::MonomialHashtable, vidx, e, he)
     # if not free and not same hash
     @inbounds if ht.hashdata[vidx].hash != he
         return true
@@ -332,7 +331,7 @@ function ishashcollision(ht::MonomialHashtable, vidx, e, he)
     false
 end
 
-function insert_in_hashtable!(ht::MonomialHashtable{M}, e::M) where {M <: Monom}
+function hashtable_insert!(ht::MonomialHashtable{M}, e::M) where {M <: Monom}
     # generate hash
     he = monom_hash(e, ht.hasher)
 
@@ -345,7 +344,7 @@ function insert_in_hashtable!(ht::MonomialHashtable{M}, e::M) where {M <: Monom}
     hsize = MonomHash(ht.size)
 
     @inbounds while i < hsize
-        hidx = next_lookup_index(he, i, mod)
+        hidx = hashtable_next_lookup_index(he, i, mod)
 
         vidx = ht.hashtable[hidx]
 
@@ -353,7 +352,7 @@ function insert_in_hashtable!(ht::MonomialHashtable{M}, e::M) where {M <: Monom}
         iszero(vidx) && break
 
         # if not free and not same hash
-        if ishashcollision(ht, vidx, e, he)
+        if hashtable_is_hash_collision(ht, vidx, e, he)
             i += MonomHash(1)
             continue
         end
@@ -368,7 +367,7 @@ function insert_in_hashtable!(ht::MonomialHashtable{M}, e::M) where {M <: Monom}
     vidx = MonomId(ht.load + 1)
     @inbounds ht.hashtable[hidx] = vidx
     @inbounds ht.monoms[vidx] = monom_copy(e)
-    divmask = monom_divmask(e, DivisionMask, ht.ndivvars, ht.divmap, ht.ndivbits)
+    divmask = monom_create_divmask(e, DivisionMask, ht.ndivvars, ht.divmap, ht.ndivbits)
     @inbounds ht.hashdata[vidx] = Hashvalue(0, he, divmask, monom_totaldeg(e))
 
     ht.load += 1
@@ -379,13 +378,13 @@ end
 ###
 # Division masks
 
-function is_divmask_divisible(d1::DivisionMask, d2::DivisionMask)
+function divmask_is_divisible(d1::DivisionMask, d2::DivisionMask)
     iszero(~d1 & d2)
 end
 
 # Having `ht` filled with monomials from input polys,
 # computes ht.divmap and divmask for each of already stored monomials
-function fill_divmask!(ht::MonomialHashtable)
+function hashtable_fill_divmasks!(ht::MonomialHashtable)
     @invariant !ht.frozen
 
     ndivvars = ht.ndivvars
@@ -428,7 +427,7 @@ function fill_divmask!(ht::MonomialHashtable)
     @inbounds for vidx in (ht.offset):(ht.load)
         unmasked = ht.hashdata[vidx]
         e = ht.monoms[vidx]
-        divmask = monom_divmask(e, DivisionMask, ht.ndivvars, ht.divmap, ht.ndivbits)
+        divmask = monom_create_divmask(e, DivisionMask, ht.ndivvars, ht.divmap, ht.ndivbits)
         ht.hashdata[vidx] = Hashvalue(0, unmasked.hash, divmask, monom_totaldeg(e))
     end
 
@@ -439,9 +438,9 @@ end
 # Monomial arithmetic
 
 # h1 divisible by h2
-function monom_is_divisible(h1::MonomId, h2::MonomId, ht::MonomialHashtable)
+function hashtable_monom_is_divisible(h1::MonomId, h2::MonomId, ht::MonomialHashtable)
     @inbounds if ht.use_divmask
-        if !is_divmask_divisible(ht.hashdata[h1].divmask, ht.hashdata[h2].divmask)
+        if !divmask_is_divisible(ht.hashdata[h1].divmask, ht.hashdata[h2].divmask)
             return false
         end
     end
@@ -451,15 +450,13 @@ function monom_is_divisible(h1::MonomId, h2::MonomId, ht::MonomialHashtable)
 end
 
 # checks that gcd(g1, h2) is one
-function monom_is_gcd_const(h1::MonomId, h2::MonomId, ht::MonomialHashtable)
+function hashtable_monom_is_gcd_const(h1::MonomId, h2::MonomId, ht::MonomialHashtable)
     @inbounds e1 = ht.monoms[h1]
     @inbounds e2 = ht.monoms[h2]
     monom_is_gcd_const(e1, e2)
 end
 
-# computes lcm of he1 and he2 as exponent vectors from ht1
-# and inserts it in ht2
-function get_lcm(
+function hashtable_get_lcm!(
     he1::MonomId,
     he2::MonomId,
     ht1::MonomialHashtable{M},
@@ -471,14 +468,14 @@ function get_lcm(
 
     etmp = monom_lcm!(etmp, e1, e2)
 
-    insert_in_hashtable!(ht2, etmp)
+    hashtable_insert!(ht2, etmp)
 end
 
 ###
-# 
+# What are those once again?..
 
 # compare pairwise divisibility of lcms from a[first:last] with lcm
-function check_monomial_division_in_update(
+function hashtable_check_monomial_division_in_update(
     a::Vector{MonomId},
     first::Int,
     last::Int,
@@ -499,7 +496,7 @@ function check_monomial_division_in_update(
             continue
         end
         # fast division check
-        if ht.use_divmask && !is_divmask_divisible(ht.hashdata[a[j]].divmask, divmask)
+        if ht.use_divmask && !divmask_is_divisible(ht.hashdata[a[j]].divmask, divmask)
             j += 1
             continue
         end
@@ -515,10 +512,9 @@ function check_monomial_division_in_update(
     nothing
 end
 
-# add monomials from `poly` multiplied by exponent vector `etmp`
-# with hash `htmp` to hashtable `symbol_ht`,
-# and substitute hashes in row
-function insert_multiplied_poly_in_hashtable!(
+# Add monomials from `poly` multiplied by exponent vector `etmp` with hash
+# `htmp` to hashtable `symbol_ht`, inplace
+function hashtable_insert_polynomial_multiple!(
     row::Vector{MonomId},
     htmp::MonomHash,
     etmp::M,
@@ -563,13 +559,13 @@ function insert_multiplied_poly_in_hashtable!(
         i = MonomHash(1)
         ssize = MonomHash(symbol_ht.size)
         @inbounds while i <= ssize
-            k = next_lookup_index(h, i, mod)
+            k = hashtable_next_lookup_index(h, i, mod)
             vidx = symbol_ht.hashtable[k]
 
             # if index is free
             iszero(vidx) && break
 
-            if ishashcollision(symbol_ht, vidx, enew, h)
+            if hashtable_is_hash_collision(symbol_ht, vidx, enew, h)
                 i += MonomHash(1)
                 continue
             end
@@ -588,9 +584,9 @@ function insert_multiplied_poly_in_hashtable!(
         sexps[lastidx] = monom_copy(enew)
         symbol_ht.hashtable[k] = lastidx
 
-        # TODO: do not create divmask here!
-        # defer it to after the matrix if reduced
-        divmask = monom_divmask(
+        # TODO: do not create a divmask here!
+        # Defer its creation to after the matrix is reduced
+        divmask = monom_create_divmask(
             enew,
             DivisionMask,
             symbol_ht.ndivvars,

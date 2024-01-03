@@ -129,6 +129,8 @@ function linalg_apply_reduce_matrix_lower_part!(
         @invariant length(sparse_row_support) == length(sparse_row_coeffs)
 
         # Load coefficients into a dense array
+        # TODO!!!: if `row` was fully reduced to zero on the previous iteration,
+        # then do not set it to zero in here
         linalg_load_sparse_row!(row, sparse_row_support, sparse_row_coeffs)
 
         # Reduce the row with respect to the known `pivots` from the upper part

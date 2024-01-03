@@ -558,7 +558,7 @@ end
 ###
 # Monomial division masks.
 
-function monom_divmask(
+function monom_create_divmask(
     e::PackedTuple1{T, B},
     DM::Type{Mask},
     ndivvars,
@@ -583,7 +583,7 @@ function monom_divmask(
     res
 end
 
-function monom_divmask(
+function monom_create_divmask(
     e::PackedTuple2{T, B},
     DM::Type{Mask},
     ndivvars,
@@ -593,7 +593,13 @@ function monom_divmask(
     epc = div(sizeof(T), sizeof(B))
 
     if ndivvars < epc
-        return monom_divmask(PackedTuple1{T, B}(e.a1), DM, ndivvars, divmap, ndivbits)
+        return monom_create_divmask(
+            PackedTuple1{T, B}(e.a1),
+            DM,
+            ndivvars,
+            divmap,
+            ndivbits
+        )
     end
 
     ctr = one(Mask)
@@ -627,7 +633,7 @@ function monom_divmask(
     res
 end
 
-function monom_divmask(
+function monom_create_divmask(
     e::PackedTuple3{T, B},
     DM::Type{Mask},
     ndivvars,
@@ -637,7 +643,13 @@ function monom_divmask(
     epc = packed_elperchunk(T, B)
 
     if ndivvars < 2 * epc
-        return monom_divmask(PackedTuple2{T, B}(e.a1, e.a2), DM, ndivvars, divmap, ndivbits)
+        return monom_create_divmask(
+            PackedTuple2{T, B}(e.a1, e.a2),
+            DM,
+            ndivvars,
+            divmap,
+            ndivbits
+        )
     end
 
     ctr = one(Mask)

@@ -212,7 +212,7 @@ end
                 end
                 m = monom_construct_from_vector(MonomType, monom)
                 ans = parse(Groebner.DivisionMask, mask, base=2)
-                dm = Groebner.monom_divmask(
+                dm = Groebner.monom_create_divmask(
                     m,
                     Groebner.DivisionMask,
                     nvars,
