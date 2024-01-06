@@ -26,7 +26,7 @@ end
 ⊂(xs, ys) = all(in(ys), xs)
 ≂(xs, ys) = ⊂(xs, ys) && ⊂(ys, xs)
 
-Groebner.versioninfo()
+# Groebner.versioninfo()
 
 @time @testset "All tests" verbose = true begin
     # Different implementations of a monomial 

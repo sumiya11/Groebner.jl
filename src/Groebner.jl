@@ -125,7 +125,7 @@ include("utils/timeit.jl")
 # Provides the macro `@stat` for collecting statistics
 include("utils/statistics.jl")
 
-include("utils/versioninfo.jl")
+# include("utils/versioninfo.jl")
 
 # Minimalistic plotting with Unicode
 include("utils/plots.jl")
