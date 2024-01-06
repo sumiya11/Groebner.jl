@@ -117,7 +117,7 @@ end
 function extract_coeffs_ff(
     representation::PolynomialRepresentation,
     ring::PolyRing,
-    poly::Union{AbstractAlgebra.Generic.Poly, AbstractAlgebra.PolyElem}
+    poly::Union{AbstractAlgebra.Generic.Poly, AbstractAlgebra.PolyRingElem}
 )
     AbstractAlgebra.iszero(poly) && (return zero_coeffs(representation.coefftype, ring))
     reverse(
@@ -133,7 +133,7 @@ end
 function extract_coeffs_qq(
     representation,
     ring::PolyRing,
-    poly::Union{AbstractAlgebra.Generic.Poly, AbstractAlgebra.PolyElem}
+    poly::Union{AbstractAlgebra.Generic.Poly, AbstractAlgebra.PolyRingElem}
 )
     AbstractAlgebra.iszero(poly) && (return zero_coeffs(representation.coefftype, ring))
     reverse(
@@ -455,7 +455,7 @@ function extract_monoms(
     representation::PolynomialRepresentation,
     ring::PolyRing,
     poly::P
-) where {P <: AbstractAlgebra.Generic.PolyElem}
+) where {P <: AbstractAlgebra.Generic.PolyRingElem}
     exps = Vector{representation.monomtype}(undef, 0)
     @inbounds while !AbstractAlgebra.iszero(poly)
         push!(

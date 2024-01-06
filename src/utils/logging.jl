@@ -6,8 +6,6 @@
 # message to console. The macro @log wraps Logging.@logmsg from the standard
 # library.
 
-# Logging is disabled on all threads except the one with threadid() == 1.
-
 """
     @log expr
     @log level=N expr
@@ -26,6 +24,8 @@ macro log end
 
 ###
 # Some aux. definitions
+
+const _groebner_log_lock = Ref{ReentrantLock}(ReentrantLock())
 
 function meta_formatter_groebner end
 
@@ -104,14 +104,24 @@ end
 const _groebner_logger = Ref{GroebnerLogger}(GroebnerLogger())
 
 # Updates the global logging parameters in the Groebner module. 
-function update_logger(; loglevel=nothing)
+function logger_update(; loglevel=nothing)
     # Do nothing if logging is disabled
     !logging_enabled() && return nothing
-    # Do nothing if run from a worker thread
+    # Do nothing if nothing is being updated
+    loglevel === nothing && return nothing
+    # Do nothing if run from a worker thread.
+    # NOTE: this does not always do what is intended. It is still correct, since
+    # we lock the logger anyway.
     threadid() != 1 && return nothing
-    if loglevel !== nothing
-        _groebner_logger[] = Groebner.GroebnerLogger(stderr, Logging.LogLevel(loglevel))
+
+    new_logger = Groebner.GroebnerLogger(stderr, Logging.LogLevel(loglevel))
+    lock(_groebner_log_lock[])
+    try
+        _groebner_logger[] = new_logger
+    finally
+        unlock(_groebner_log_lock[])
     end
+
     nothing
 end
 
@@ -147,10 +157,8 @@ macro log(args...)
     level, msgs = log_macro_pruneargs(file, line, args)
     esc(:(
         if $(@__MODULE__).logging_enabled()
-            if threadid() == 1
-                with_logger($(@__MODULE__)._groebner_logger[]) do
-                    @logmsg LogLevel($level) $(msgs...) _file = $file _line = $line
-                end
+            with_logger($(@__MODULE__)._groebner_logger[]) do
+                @logmsg LogLevel($level) $(msgs...) _file = $file _line = $line
             end
         else
             nothing

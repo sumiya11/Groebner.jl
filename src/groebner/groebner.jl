@@ -63,7 +63,7 @@ function _groebner(polynomials, kws::KeywordsHandler, representation)
     # Convert result back to the representation of input
     basis = convert_to_output(ring, polynomials, gbmonoms, gbcoeffs, params)
 
-    print_performance_counters(params.statistics)
+    performance_counters_print(params.statistics)
     print_statistics(params.statistics)
 
     basis

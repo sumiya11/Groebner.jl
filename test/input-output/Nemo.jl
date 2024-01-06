@@ -16,7 +16,7 @@ import Primes
 end
 
 @testset "Nemo.jl, input-output" begin
-    R, (x, y) = Nemo.GF(Nemo.fmpz(Primes.nextprime(BigInt(2)^100)))["x", "y"]
+    R, (x, y) = Nemo.GF(Nemo.ZZRingElem(Primes.nextprime(BigInt(2)^100)))["x", "y"]
     @test_throws DomainError Groebner.groebner([x, y])
 
     R, (x, y) = Nemo.GF(2, 2)["x", "y"]

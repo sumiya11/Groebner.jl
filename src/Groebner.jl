@@ -101,10 +101,14 @@ import TimerOutputs
 const _threaded = Ref(true)
 
 function __init__()
-    # Setup the global logger
-    update_logger(loglevel=Logging.Info)
-
     _threaded[] = !(get(ENV, "GROEBNER_NO_THREADED", "") == "1")
+
+    # Setup the global logger
+    _groebner_log_lock[] = ReentrantLock()
+    logger_update(loglevel=Logging.Info)
+
+    # Setup performance counters
+    _groebner_timer_lock[] = ReentrantLock()
 
     nothing
 end
@@ -121,7 +125,7 @@ include("utils/timeit.jl")
 # Provides the macro `@stat` for collecting statistics
 include("utils/statistics.jl")
 
-# include("utils/versioninfo.jl")
+include("utils/versioninfo.jl")
 
 # Minimalistic plotting with Unicode
 include("utils/plots.jl")

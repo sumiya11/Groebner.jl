@@ -321,7 +321,6 @@ function monom_isless(
     ord::Ord
 ) where {T, B, Ord <: AbstractInternalOrdering}
     # TODO: Perhaps this should error
-    @unreachable
     s = div(sizeof(T), sizeof(B)) - 1
     tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
     a = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp1, ea))
@@ -333,7 +332,6 @@ function monom_isless(
     eb::PackedTuple2{T, B},
     ord::Ord
 ) where {T, B, Ord <: AbstractInternalOrdering}
-    @unreachable
     s = 2 * div(sizeof(T), sizeof(B)) - 1
     tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
     a = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp1, ea))
@@ -345,7 +343,6 @@ function monom_isless(
     eb::PackedTuple3{T, B},
     ord::Ord
 ) where {T, B, Ord <: AbstractInternalOrdering}
-    @unreachable
     s = 3 * div(sizeof(T), sizeof(B)) - 1
     tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
     a = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp1, ea))

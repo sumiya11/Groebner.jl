@@ -14,12 +14,18 @@ const IGNORE_SMALL_ABSOLUTE_DEVIATION = 1e-3
 # Run benchmarks on the latest stable version of Groebner.jl
 dir_stable = (@__DIR__) * "/run-on-stable"
 @info "Benchmarking Groebner.jl, stable" dir_stable
-@time run(`julia --project=$dir_stable $dir_stable/run_benchmarks.jl`, wait=true)
+@time run(
+    `julia --threads=$(nthreads()) --project=$dir_stable $dir_stable/run_benchmarks.jl`,
+    wait=true
+)
 
 # Run benchmarks on the nightly version of Groebner.jl
 dir_nightly = (@__DIR__) * "/run-on-nightly"
 @info "Benchmarking Groebner.jl, nightly" dir_nightly
-@time run(`julia --project=$dir_nightly $dir_nightly/run_benchmarks.jl`, wait=true)
+@time run(
+    `julia --threads=$(nthreads()) --project=$dir_nightly $dir_nightly/run_benchmarks.jl`,
+    wait=true
+)
 
 # Compare results
 function compare()

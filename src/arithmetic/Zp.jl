@@ -8,7 +8,7 @@
 # the coefficient. Generally, AccumType should be picked so that the result of
 #   a + b*c
 # is representable exactly in AccumType for feasible  a,b,c of type CoeffType. 
-# One common example is AccumType = UInt64 and CoeffType = UInt32
+# One example is AccumType = UInt64 and CoeffType = UInt32 with prime moduli
 abstract type AbstractArithmetic{AccumType, CoeffType} end
 
 # All implementations of arithmetic in Zp are a subtype of this.
@@ -115,7 +115,7 @@ end
 # a modulo p (addition specialization)
 function mod_p(a::T, mod::SpecializedArithmeticZp{T, C, true}) where {T, C}
     x = _mul_high(a, mod.multiplier)
-    x = convert(T, convert(T, (convert(T, a - x) >>> 1)) + x)
+    x = convert(T, convert(T, (convert(T, a - x) >>> UInt8(1))) + x)
     a - (x >>> mod.shift) * mod.divisor
 end
 # a modulo p (no addition specialization)
@@ -176,7 +176,7 @@ end
 # a modulo p (addition specialization)
 function mod_p(a::A, mod::DelayedArithmeticZp{A, T, true}) where {A, T}
     x = _mul_high(a, mod.multiplier)
-    x = convert(A, convert(A, (convert(A, a - x) >>> 1)) + x)
+    x = convert(A, convert(A, (convert(A, a - x) >>> UInt8(1))) + x)
     a - (x >>> mod.shift) * mod.divisor
 end
 # a modulo p (no addition specialization)

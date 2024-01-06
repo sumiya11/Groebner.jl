@@ -385,14 +385,16 @@ end
 # Returns N, the number of critical pairs of the smallest degree.
 # Sorts the critical pairs so that the first N pairs are the smallest.
 function pairset_lowest_degree_pairs!(pairset::Pairset)
-    sort_pairset_by_degree!(pairset, 1, pairset.load - 1)
-    ps = pairset.pairs
-    @inbounds min_deg = ps[1].deg
-    min_idx = 1
-    @inbounds while min_idx < pairset.load && ps[min_idx + 1].deg == min_deg
-        min_idx += 1
+    cnt = if true
+        n_lowest_degree_pairs = pairset_partition_by_degree!(pairset)
+        n_lowest_degree_pairs
+    else
+        sort_pairset_by_degree!(pairset, 1, pairset.load - 1)
+        pair_idx, _ = pairset_find_smallest_degree_pair(pairset)
+        pair_idx
     end
-    min_idx
+    @invariant cnt > 0
+    cnt
 end
 
 # Returns N, the number of critical pairs of the smallest sugar.
@@ -468,7 +470,8 @@ end
         end
     end
     npairs = min(npairs, maxpairs)
-    @assert npairs > 0
+    @invariant npairs > 0
+
     ps = pairset.pairs
     deg = ps[1].deg
 
@@ -512,8 +515,6 @@ function f4_add_critical_pairs_to_matrix!(
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable
 )
-
-    #
     matrix_reinitialize!(matrix, npairs)
     pairs = pairset.pairs
     uprows = matrix.upper_rows

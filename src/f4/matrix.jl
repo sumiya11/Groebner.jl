@@ -253,7 +253,7 @@ function matrix_resize_lower_part!(matrix::MacaulayMatrix, size::Int)
     resize!(matrix.lower_to_mult, size)
 end
 
-# Refresh and partially initialize the matrix
+# statistics_refresh and partially initialize the matrix
 function matrix_reinitialize!(matrix::MacaulayMatrix, size::Int)
     new_size = size * 2
     matrix_resize_upper_part!(matrix, new_size)

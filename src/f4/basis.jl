@@ -8,7 +8,7 @@
 ###
 # Pairset and Basis
 
-# Pairset is a list of critical pairs (SPairs).
+# Pairset is a list of critical pairs (CriticalPair).
 
 # Basis is a structure that stores a list of polynomials. Each polynomial is
 # represented with a sorted vector of monomials and a vector of coefficients.
@@ -19,7 +19,7 @@
 ###
 # Pairset
 
-# S-pair{Degree}, or, a pair of polynomials,
+# CriticalPair, or, a pair of polynomials,
 struct CriticalPair{Degree}
     # First polynomial given by its index in the basis array
     poly1::Int32
@@ -65,6 +65,41 @@ function pairset_resize_lcms_if_needed!(ps::Pairset, nfilled::Int)
         resize!(ps.lcms, floor(Int, nfilled * 1.1) + 1)
     end
     nothing
+end
+
+function pairset_find_smallest_degree_pair(ps::Pairset)
+    @invariant ps.load > 0 && length(ps.pairs) > 0
+    pairs = ps.pairs
+    pair_idx, pair_min_deg = 1, pairs[1].deg
+    @inbounds for i in 1:(ps.load)
+        if pairs[i].deg <= pair_min_deg
+            pair_min_deg = pairs[i].deg
+            pair_idx = i
+        end
+    end
+    pair_idx, pair_min_deg
+end
+
+function pairset_partition_by_degree!(ps::Pairset)
+    @invariant ps.load > 0
+    _, pair_min_deg = pairset_find_smallest_degree_pair(ps)
+
+    pairs = ps.pairs
+    i, j = 0, ps.load + 1
+    @inbounds while true
+        i += 1
+        j -= 1
+        while i <= ps.load && pairs[i].deg == pair_min_deg
+            i += 1
+        end
+        while j > 1 && pairs[j].deg > pair_min_deg
+            j -= 1
+        end
+        i >= j && break
+        pairs[i], pairs[j] = pairs[j], pairs[i]
+    end
+
+    i - 1
 end
 
 ###

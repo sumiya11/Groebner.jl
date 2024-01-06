@@ -64,7 +64,7 @@ function _groebner_learn(polynomials, kws, representation)
     Terms: $(term_sorting_permutations)
     Polynomials: $(trace.input_permutation)"""
 
-    print_performance_counters(params.statistics)
+    performance_counters_print(params.statistics)
     print_statistics(params.statistics)
 
     WrappedTraceF4(trace),
@@ -117,10 +117,10 @@ function _groebner_apply!(
         ring, gb_monoms, gb_coeffs =
             dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
     end
-    # @print_performance_counters
+    # @performance_counters_print
     !flag && return (flag, polynomials)
 
-    print_performance_counters(params.statistics)
+    performance_counters_print(params.statistics)
     print_statistics(params.statistics)
 
     flag, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
@@ -151,12 +151,12 @@ function _groebner_apply!(
         ring, gb_monoms, gb_coeffs =
             dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
     end
-    # @print_performance_counters
+    # @performance_counters_print
     !flag && return flag, batch
 
     gb_coeffs_unpacked = unpack_composite_coefficients(gb_coeffs)
 
-    print_performance_counters(params.statistics)
+    performance_counters_print(params.statistics)
     print_statistics(params.statistics)
 
     flag,

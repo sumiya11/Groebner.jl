@@ -201,7 +201,6 @@ function monom_isless(
     eb::SparseExponentVector{T, I, N},
     ord
 ) where {T, I, N}
-    @unreachable
     tmp1, tmp2 = Vector{T}(undef, N), Vector{T}(undef, N)
     a = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp1, ea))
     b = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp2, eb))

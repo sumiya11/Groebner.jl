@@ -14,13 +14,13 @@
 # code, since they do not affect performance when inactive.
 
 const _groebner_timer = TimerOutputs.TimerOutput()
+const _groebner_timer_lock = Ref{ReentrantLock}(ReentrantLock())
 
 @noinline __throw_timeit_error() = throw(ArgumentError("""
     Invalid usage of macro @timeit in Groebner.jl. Use it as:
     @timeit label expr
     @timeit function foo() ... end"""))
 
-# TODO: @timeit macro is broken in combination with Base.Threads.@threads..
 """
     @timeit label expr
     @timeit function foo() ... end
@@ -53,6 +53,7 @@ end
 ```
 
 NOTE: `@timeit` cannot wrap code blocks that contain `@label` or `@goto`.
+NOTE: `@timeit` is broken in combination with `Base.Threads.@threads`.
 """
 macro timeit(args...)
     if isempty(args) || length(args) > 2
@@ -96,14 +97,25 @@ function _timeit_expr(m, label, expr)
     end
 end
 
-function refresh_performance_counters()
+function performance_counters_refresh()
+    # Do nothing if counters are disabled
     !performance_counters_enabled() && return nothing
+    # Do nothing if run from a worker thread.
+    # NOTE: this does not always do what is intended. It is still correct, since
+    # we lock the timer anyway.
     threadid() != 1 && return nothing
-    TimerOutputs.reset_timer!(_groebner_timer)
+
+    lock(_groebner_timer_lock[])
+    try
+        TimerOutputs.reset_timer!(_groebner_timer)
+    finally
+        unlock(_groebner_timer_lock[])
+    end
+
     nothing
 end
 
-function print_performance_counters(statistics)
+function performance_counters_print(statistics)
     (statistics in (:no, :stats)) && return nothing
     if statistics in (:timings, :all) && !performance_counters_enabled()
         @log level = 1_000 """

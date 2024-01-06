@@ -8,11 +8,11 @@ import Nemo
 
 suite = []
 
-function compute_gb(system, trials=7)
+function compute_gb(system, trials=7; kws...)
     times = []
     for _ in 1:trials
         GC.gc()
-        time = @elapsed groebner(system)
+        time = @elapsed groebner(system; kws...)
         push!(times, time)
     end
     minimum(times)
@@ -88,6 +88,17 @@ push!(
         problem_name="groebner, Nemo, GF(2^31-1), cyclic 8",
         result=compute_gb(
             Groebner.cyclicn(8, ordering=:degrevlex, ground=Nemo.GF(2^31 - 1))
+        )
+    )
+)
+push!(
+    suite,
+    (
+        problem_name="groebner, threaded, AA, GF(2^31-1), cyclic 8",
+        result=compute_gb(
+            Groebner.cyclicn(8, ordering=:degrevlex, ground=GF(2^31 - 1)),
+            5,
+            threaded=:yes
         )
     )
 )

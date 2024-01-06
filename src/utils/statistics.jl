@@ -78,7 +78,7 @@ function update_statistic!(
     nothing
 end
 
-function refresh_statistics!(stat::GroebnerStatistics)
+function statistics_refresh!(stat::GroebnerStatistics)
     stat.stopwatch_start = time_ns()
     empty!(stat.F4_stats)
     nothing
@@ -119,10 +119,10 @@ function update_statistic(file, line, args, key, value)
     update_statistic!(_groebner_statistics, file, line, args, key, value)
 end
 
-function refresh_statistics()
+function statistics_refresh()
     !statistics_enabled() && return nothing
     threadid() != 1 && return nothing
-    refresh_statistics!(_groebner_statistics)
+    statistics_refresh!(_groebner_statistics)
     nothing
 end
 

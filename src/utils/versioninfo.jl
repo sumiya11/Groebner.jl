@@ -2,9 +2,7 @@
 
 # Adapted from Nemo.jl
 # The license is Simplified "2-clause" BSD License
-# https://github.com/Nemocas/Nemo.jl/blob/master/LICENSE.md
-
-# NOTE: Currently not used
+#   https://github.com/Nemocas/Nemo.jl/blob/master/LICENSE.md
 
 import Pkg
 import LibGit2
@@ -14,7 +12,7 @@ const Groebner_uuid = Base.UUID("0b43b601-686d-58a3-8a1c-6623616c7cd4")
 
 deps = Pkg.dependencies()
 if !haskey(deps, Groebner_uuid)
-    version() = "building"
+    version() = "build"
 else
     ver = deps[Groebner_uuid]
     if occursin("/dev/", ver.source)
@@ -42,11 +40,12 @@ function versioninfo()
 
     println()
     println("Switches:")
-    println("  invariants_enabled = $(invariants_enabled())")
-    println("  logging_enabled    = $(logging_enabled())")
+    println("  invariants_enabled           = $(invariants_enabled())")
+    println("  logging_enabled              = $(logging_enabled())")
+    println("  performance_counters_enabled = $(performance_counters_enabled())")
 
     println("Environment:")
     println("  GROEBNER_NO_THREADED = $(get(ENV, "GROEBNER_NO_THREADED", "0"))")
 
-    return nothing
+    nothing
 end

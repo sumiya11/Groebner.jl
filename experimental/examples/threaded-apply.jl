@@ -1,9 +1,12 @@
 using AbstractAlgebra, Primes, Base.Threads
 using BenchmarkTools
-# using Groebner
+using Groebner
+
+@info "Using $(nthreads()) Julia threads"
 
 # Computes the bases of the given system modulo different primes
 function compute_bases(system, batch_size::Int)
+    @assert iszero(batch_size % 4)
     prime = 2^30 + 3
     Zp = GF(prime)
 
@@ -27,11 +30,12 @@ end
 
 # Same as the above, but uses multi-threading
 function compute_bases_threaded(system, batch_size::Int)
+    @assert iszero(batch_size % 4)
     prime = 2^30 + 3
     Zp = GF(prime)
 
     system_zp = map(f -> map_coefficients(c -> Zp(c), f), system)
-    trace, _ = Groebner.groebner_learn(system_zp)
+    trace, _ = Groebner.groebner_learn(system_zp, threaded=:yes)
 
     bases = Vector{typeof(system_zp)}(undef, batch_size)
     buffer_traces = map(_ -> deepcopy(trace), 1:nthreads())
@@ -40,8 +44,7 @@ function compute_bases_threaded(system, batch_size::Int)
     buffer_systems_zp =
         map(zp -> map(f -> map_coefficients(c -> zp(c), f), system), buffer_zp)
 
-    # :static guarantees that threadid() is constant within one iteraton
-    Base.Threads.@threads :static for j in 1:batch_size
+    Base.Threads.@threads for j in 1:batch_size
         t_id = threadid()
 
         system_zp = buffer_systems_zp[j]
@@ -58,11 +61,12 @@ end
 
 # Same as the above, but also uses batch size 4
 function compute_bases_threaded_batched(system, batch_size::Int)
+    @assert iszero(batch_size % 4)
     prime = 2^30 + 3
     Zp = GF(prime)
 
     system_zp = map(f -> map_coefficients(c -> Zp(c), f), system)
-    trace, _ = Groebner.groebner_learn(system_zp)
+    trace, _ = Groebner.groebner_learn(system_zp, threaded=:yes)
 
     bases = Vector{typeof(system_zp)}(undef, batch_size)
     buffer_traces = map(_ -> deepcopy(trace), 1:nthreads())
@@ -71,8 +75,7 @@ function compute_bases_threaded_batched(system, batch_size::Int)
     buffer_systems_zp =
         map(zp -> map(f -> map_coefficients(c -> zp(c), f), system), buffer_zp)
 
-    # :static guarantees that threadid() is constant within one iteraton
-    Base.Threads.@threads :static for j in 1:4:batch_size
+    Base.Threads.@threads for j in 1:4:batch_size
         t_id = threadid()
 
         system_zp = (
@@ -94,19 +97,11 @@ function compute_bases_threaded_batched(system, batch_size::Int)
     return bases
 end
 
-system = Groebner.katsuran(10, ground=ZZ, ordering=:degrevlex)
+system = Groebner.noonn(7, ground=ZZ, ordering=:degrevlex)
 begin
-    GC.gc()
-    @time bases_1 = compute_bases(system, 2^5)
-    GC.gc()
-    @time bases_2 = compute_bases_threaded(system, 2^5)
-    GC.gc()
-    @time bases_3 = compute_bases_threaded_batched(system, 2^5)
+    n = 2^8
+    @time bases_1 = compute_bases(system, n)
+    @time bases_2 = compute_bases_threaded(system, n)
+    @time bases_3 = compute_bases_threaded_batched(system, n)
     @assert all(bases_1 .== bases_2) && all(bases_2 .== bases_3)
 end;
-
-GC.gc()
-@profview compute_bases_threaded_batched(system, 2^8);
-
-# @btime compute_bases($system, 5, 8);
-# @btime compute_bases_threaded($system, 5, 8);

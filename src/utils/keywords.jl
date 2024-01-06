@@ -217,14 +217,14 @@ struct KeywordsHandler{Ord}
 end
 
 function setup_logging(keywords::KeywordsHandler)
-    update_logger(loglevel=keywords.loglevel)
+    logger_update(loglevel=keywords.loglevel)
     nothing
 end
 
 function setup_statistics(keywords::KeywordsHandler)
     if keywords.loglevel <= 0
-        refresh_performance_counters()
-        refresh_statistics()
+        performance_counters_refresh()
+        statistics_refresh()
     end
     nothing
 end

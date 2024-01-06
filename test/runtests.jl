@@ -3,12 +3,12 @@ using TestSetExtensions
 
 using AbstractAlgebra
 using Random
-using Groebner
+# using Groebner
 
 # Check invariants during testing.
 # NOTE: it's good to turn this on!
 Groebner.invariants_enabled() = true
-Groebner.update_logger(loglevel=0)
+Groebner.logger_update(loglevel=0)
 
 # Taken from JuMP/test/solvers.jl
 function try_import(name::Symbol)
@@ -25,6 +25,8 @@ end
 
 ⊂(xs, ys) = all(in(ys), xs)
 ≂(xs, ys) = ⊂(xs, ys) && ⊂(ys, xs)
+
+Groebner.versioninfo()
 
 @time @testset "All tests" verbose = true begin
     # Different implementations of a monomial 

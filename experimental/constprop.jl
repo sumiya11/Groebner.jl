@@ -1,22 +1,15 @@
 module Foo
 
-vanish_enabled() = true
-
-macro vanish(expr)
-    m = __module__
-    quote
-        if !$m.vanish_enabled()
-            $(esc(expr))
-        else
-            nothing
-        end
-    end
+macro unreachable()
+    :(@assert false)
 end
 
-function critical_loop(x)
-    for i in eachindex(x)
-        @vanish println(x[i])
-        x[i] = x[i]^2
+function do_stuff(x)
+    if x > 0
+        x^2
+    else
+        @unreachable
+        x
     end
 end
 

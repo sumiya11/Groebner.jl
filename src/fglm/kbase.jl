@@ -20,7 +20,7 @@ function _kbase(polynomials, kws)
     ring, _ = set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
     m, c = kbase_f4(ring, monoms, coeffs, params)
     res = convert_to_output(ring, polynomials, m, c, params)
-    print_performance_counters(params.statistics)
+    performance_counters_print(params.statistics)
     res
 end
 
