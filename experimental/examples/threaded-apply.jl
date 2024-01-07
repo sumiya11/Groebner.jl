@@ -12,8 +12,8 @@ function compute_bases(system, batch_size::Int)
 
     system_zp = map(f -> map_coefficients(c -> Zp(c), f), system)
     trace, _ = Groebner.groebner_learn(system_zp)
-
     bases = Vector{typeof(system_zp)}()
+
     for j in 1:batch_size
         prime = Primes.nextprime(prime + 1)
         Zp = GF(prime)
@@ -35,6 +35,8 @@ function compute_bases_threaded(system, batch_size::Int)
     Zp = GF(prime)
 
     system_zp = map(f -> map_coefficients(c -> Zp(c), f), system)
+    # Note that Groebner.groebner_learn now supports the option threaded=:yes,
+    # which may marginally improve the timings for the learn stage
     trace, _ = Groebner.groebner_learn(system_zp, threaded=:yes)
 
     bases = Vector{typeof(system_zp)}(undef, batch_size)
@@ -99,9 +101,15 @@ end
 
 system = Groebner.noonn(7, ground=ZZ, ordering=:degrevlex)
 begin
-    n = 2^8
-    @time bases_1 = compute_bases(system, n)
-    @time bases_2 = compute_bases_threaded(system, n)
-    @time bases_3 = compute_bases_threaded_batched(system, n)
+    n = 2^6
+    @btime bases_1 = compute_bases(system, n)
+    @btime bases_2 = compute_bases_threaded(system, n)
+    @btime bases_3 = compute_bases_threaded_batched(system, n)
     @assert all(bases_1 .== bases_2) && all(bases_2 .== bases_3)
 end;
+
+# On my machine, while running `julia --threads=4`, this prints
+#
+# 2.796 s (2187564 allocations: 1.22 GiB)
+# 874.318 ms (2195222 allocations: 1.24 GiB)
+# 552.413 ms (847754 allocations: 760.21 MiB)
