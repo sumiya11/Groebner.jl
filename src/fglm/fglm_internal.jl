@@ -111,9 +111,10 @@ function fglm_main!(
         end
 
         # Compute the normal form of the monomial w.r.t. by constructing and
-        # echelonizing the F4 matrix
+        # echelonizing the F4 matrix.
         to_be_reduced = basis_initialize(ring, [[monom]], [C[1]])
         to_be_reduced.nfilled = 1
+        # ! This call takes most the time
         f4_normalform!(ring, basis, to_be_reduced, ht, params.arithmetic)
 
         # Search for a linear relation between all the computed normal forms
