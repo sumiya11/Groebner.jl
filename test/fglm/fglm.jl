@@ -50,7 +50,8 @@ end
 end
 
 @testset "fglm, non-shape" begin
-    R, (x, y, z, t) = PolynomialRing(AbstractAlgebra.QQ, ["x", "y", "z", "t"])
+    R, (x, y, z, t) =
+        AbstractAlgebra.polynomial_ring(AbstractAlgebra.QQ, ["x", "y", "z", "t"])
     sys = [
         y^2 * z + 2 * x * y * t - 2 * x - z,
         -x^3 * z + 4 * x * y^2 * z + 4 * x^2 * y * t + 2 * y^3 * t + 4 * x^2 - 10 * y^2 + 4 * x * z - 10 * y * t + 2,
