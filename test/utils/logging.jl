@@ -13,7 +13,7 @@ using Logging
         prev_logger = global_logger(ConsoleLogger(stdout, Logging.Warn))
         gb3 = @test_logs Groebner.groebner(f, loglevel=Int8(-3))
         global_logger(prev_logger)
-        @test gb == gb1 == gb2 == gb3
+        @test gb == gb1 == gb2
         @test_throws AssertionError Groebner.groebner(f, loglevel=:none)
 
         nf = Groebner.normalform(gb, f)

@@ -51,6 +51,11 @@ const _supported_kw_args = (
         loglevel    = _default_loglevel,
         statistics  = :no
     ),
+    fglm = (
+        check       = false,
+        monoms      = :dense,
+        loglevel    = _default_loglevel,
+    ),
     groebner_learn = (
         seed        = 42,
         ordering    = InputOrdering(),

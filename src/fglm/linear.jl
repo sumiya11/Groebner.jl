@@ -1,6 +1,6 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-mutable struct DoubleMacaulayMatrix{C}
+mutable struct WideMacaulayMatrix{C}
     # pivot -> row
     leftpivs::Vector{Vector{Int}}
     leftcoeffs::Vector{Vector{C}}
@@ -33,7 +33,7 @@ mutable struct DoubleMacaulayMatrix{C}
     nrcols::Int
 end
 
-function initialize_double_matrix(basis::Basis{C}) where {C <: Coeff}
+function wide_matrix_initialize(basis::Basis{C}) where {C <: Coeff}
     n          = length(basis.monoms)
     leftrows   = Vector{Vector{Int}}(undef, n)
     leftcoeffs = Vector{Vector{C}}(undef, n)
@@ -52,7 +52,7 @@ function initialize_double_matrix(basis::Basis{C}) where {C <: Coeff}
     righthash2col = Dict{Int, Int}()
     rightcolumn_to_monom = Vector{Int}(undef, rsz)
 
-    DoubleMacaulayMatrix(
+    WideMacaulayMatrix(
         leftrows,
         leftcoeffs,
         rightrows,
@@ -70,7 +70,7 @@ function initialize_double_matrix(basis::Basis{C}) where {C <: Coeff}
     )
 end
 
-function convert_to_double_dense_row(matrix, monom, vector::Basis{C}, ht) where {C <: Coeff}
+function convert_to_wide_dense_row(matrix, monom, vector::Basis{C}, ht) where {C <: Coeff}
     if matrix.nrcols >= length(matrix.rightcolumn_to_monom)
         resize!(matrix.rightcolumn_to_monom, 2 * length(matrix.rightcolumn_to_monom))
     end
@@ -133,7 +133,7 @@ end
 
 #
 # Finite field magic specialization
-function normalize_double_row_sparse!(
+function normalize_wide_row_sparse!(
     leftcfs::Vector{T},
     rightcfs,
     arithmetic
@@ -151,7 +151,7 @@ end
 
 #
 # Finite field magic specialization
-function normalize_double_row_sparse!(
+function normalize_wide_row_sparse!(
     leftcfs::Vector{T},
     rightcfs,
     arithmetic
@@ -199,8 +199,8 @@ function reduce_by_pivot_simultaneous!(
     mul
 end
 
-function reduce_double_dense_row_by_known_pivots_sparse!(
-    matrix::DoubleMacaulayMatrix{C},
+function reduce_wide_dense_row_by_known_pivots_sparse!(
+    matrix::WideMacaulayMatrix{C},
     leftrow,
     rightrow,
     arithmetic
@@ -285,15 +285,15 @@ function extract_sparse_row(row::Vector{C}, np, k) where {C}
     newrow, newcfs, j - 1
 end
 
-function linear_relation!(
+function find_linear_relation!(
     ring,
-    matrix::DoubleMacaulayMatrix,
+    matrix::WideMacaulayMatrix,
     monom::MonomId,
     vector::Basis{C},
     ht,
     arithmetic
 ) where {C <: Coeff}
-    leftrow, rightrow = convert_to_double_dense_row(matrix, monom, vector, ht)
+    leftrow, rightrow = convert_to_wide_dense_row(matrix, monom, vector, ht)
 
     # if debug()
     #     # @warn "start"
@@ -304,12 +304,8 @@ function linear_relation!(
     #     println(matrix)
     # end
 
-    reduced, np, k = reduce_double_dense_row_by_known_pivots_sparse!(
-        matrix,
-        leftrow,
-        rightrow,
-        arithmetic
-    )
+    reduced, np, k =
+        reduce_wide_dense_row_by_known_pivots_sparse!(matrix, leftrow, rightrow, arithmetic)
 
     # if debug()
     #     # @warn "reduced"
@@ -324,7 +320,7 @@ function linear_relation!(
         lexps, lcoeffs, _ = extract_sparse_row(leftrow, np, k)
         rexps, rcoeffs, _ = extract_sparse_row(rightrow)
 
-        normalize_double_row_sparse!(lcoeffs, rcoeffs, arithmetic)
+        normalize_wide_row_sparse!(lcoeffs, rcoeffs, arithmetic)
 
         # if debug()
         #     # @warn "extracted"
@@ -354,4 +350,25 @@ function linear_relation!(
     end
 
     return reduced, rightrow
+end
+
+function extract_linear_basis(ring, matrix::WideMacaulayMatrix{C}) where {C}
+    exps = Vector{Vector{MonomId}}(undef, matrix.nrrows)
+    coeffs = Vector{Vector{C}}(undef, matrix.nrrows)
+
+    for i in 1:(matrix.nrrows)
+        exps[i] = matrix.rightrows[i]
+        coeffs[i] = matrix.rightcoeffs[i]
+        for j in 1:length(exps[i])
+            exps[i][j] = matrix.rightcolumn_to_monom[exps[i][j]]
+        end
+    end
+
+    linbasis = basis_initialize(ring, exps, coeffs)
+
+    linbasis.nprocessed = length(exps)
+    linbasis.nnonredundant = length(exps)
+    linbasis.nonredundant = collect(1:(linbasis.nprocessed))
+
+    linbasis
 end

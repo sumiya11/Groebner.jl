@@ -12,7 +12,7 @@
 function _groebner_learn(polynomials, kws::KeywordsHandler)
     # We try to select an efficient internal polynomial representation, i.e., a
     # suitable representation of monomials and coefficients.
-    polynomial_repr = select_polynomial_representation(polynomials, kws)
+    polynomial_repr = io_select_polynomial_representation(polynomials, kws)
     try
         # The backend is wrapped in a try/catch to catch exceptions that one can
         # hope to recover from (and, perhaps, restart the computation with safer
@@ -24,7 +24,7 @@ function _groebner_learn(polynomials, kws::KeywordsHandler)
             Possible overflow of exponent vector detected. 
             Restarting with at least $(32) bits per exponent."""
             polynomial_repr =
-                select_polynomial_representation(polynomials, kws, hint=:large_exponents)
+                io_select_polynomial_representation(polynomials, kws, hint=:large_exponents)
             return _groebner_learn(polynomials, kws, polynomial_repr)
         else
             # Something bad happened.
@@ -35,7 +35,7 @@ end
 
 function _groebner_learn(polynomials, kws, representation)
     ring, var_to_index, monoms, coeffs =
-        convert_to_internal(representation, polynomials, kws)
+        io_convert_to_internal(representation, polynomials, kws)
     if isempty(monoms)
         @log level = -2 "Input consisting of zero polynomials. Error will follow"
         throw(DomainError("Input consisting of zero polynomials."))
@@ -43,7 +43,7 @@ function _groebner_learn(polynomials, kws, representation)
 
     params = AlgorithmParameters(ring, representation, kws)
     ring, term_sorting_permutations =
-        set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
+        io_set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
     term_homogenizing_permutation = Vector{Vector{Int}}()
 
     if params.homogenize
@@ -68,7 +68,7 @@ function _groebner_learn(polynomials, kws, representation)
     print_statistics(params.statistics)
 
     WrappedTraceF4(trace),
-    convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
+    io_convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
 end
 
 function _groebner_learn(
@@ -123,7 +123,7 @@ function _groebner_apply!(
     performance_counters_print(params.statistics)
     print_statistics(params.statistics)
 
-    flag, convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
+    flag, io_convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
 end
 # Specialization for a batch of several inputs
 function _groebner_apply!(
@@ -154,14 +154,14 @@ function _groebner_apply!(
     # @performance_counters_print
     !flag && return flag, batch
 
-    gb_coeffs_unpacked = unpack_composite_coefficients(gb_coeffs)
+    gb_coeffs_unpacked = io_unpack_composite_coefficients(gb_coeffs)
 
     performance_counters_print(params.statistics)
     print_statistics(params.statistics)
 
     flag,
     ntuple(
-        i -> convert_to_output(ring, batch[i], gb_monoms, gb_coeffs_unpacked[i], params),
+        i -> io_convert_to_output(ring, batch[i], gb_monoms, gb_coeffs_unpacked[i], params),
         N
     )
 end

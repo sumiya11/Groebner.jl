@@ -145,7 +145,7 @@ function test_circular_shift(a, b, n, Ord, answers)
     R, x = AbstractAlgebra.QQ[["x$i" for i in 1:n]...]
     vars_to_index = Dict(x .=> 1:n)
     orders = map(
-        i -> Groebner.convert_to_internal_monomial_ordering(
+        i -> Groebner.io_convert_to_internal_monomial_ordering(
             vars_to_index,
             Ord(circshift(x, -i))
         ),
@@ -200,7 +200,7 @@ function test_orderings(n, v1, v2, ords_to_test)
     for wo in ords_to_test
         ord = wo.ord
         ans = wo.ans
-        internal_ord = Groebner.convert_to_internal_monomial_ordering(var_to_index, ord)
+        internal_ord = Groebner.io_convert_to_internal_monomial_ordering(var_to_index, ord)
         @test Groebner.monom_isless(v1, v2, internal_ord) == ans[1]
         @test Groebner.monom_isless(v2, v1, internal_ord) == ans[2]
         @test Groebner.monom_isless(v2, v2, internal_ord) == false

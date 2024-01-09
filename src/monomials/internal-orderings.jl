@@ -146,7 +146,7 @@ end
 # DegRevLex -> _DegRevLex
 for (Ord, InternalOrd) in ((Lex, _Lex), (DegLex, _DegLex), (DegRevLex, _DegRevLex))
     @eval begin
-        function convert_to_internal_monomial_ordering(
+        function io_convert_to_internal_monomial_ordering(
             var_to_index::Dict{V, Int},
             ordering::$Ord{Nothing};
             part_of_a_product=false
@@ -154,7 +154,7 @@ for (Ord, InternalOrd) in ((Lex, _Lex), (DegLex, _DegLex), (DegRevLex, _DegRevLe
             $InternalOrd{true}(1:length(var_to_index))
         end
 
-        function convert_to_internal_monomial_ordering(
+        function io_convert_to_internal_monomial_ordering(
             var_to_index::Dict{V, Int},
             ordering::$Ord{T};
             part_of_a_product=false
@@ -179,7 +179,7 @@ for (Ord, InternalOrd) in ((Lex, _Lex), (DegLex, _DegLex), (DegRevLex, _DegRevLe
 end
 
 # WeightedOrdering -> _WeightedOrdering
-function convert_to_internal_monomial_ordering(
+function io_convert_to_internal_monomial_ordering(
     var_to_index::Dict{V, Int},
     ord::WeightedOrdering{T};
     part_of_a_product=false
@@ -205,17 +205,17 @@ function convert_to_internal_monomial_ordering(
 end
 
 # ProductOrdering -> _ProductOrdering
-function convert_to_internal_monomial_ordering(
+function io_convert_to_internal_monomial_ordering(
     var_to_index::Dict{V, Int},
     ord::ProductOrdering{T};
     part_of_a_product=false
 ) where {V, T}
-    internal_ord1 = convert_to_internal_monomial_ordering(
+    internal_ord1 = io_convert_to_internal_monomial_ordering(
         var_to_index,
         ord.ord1,
         part_of_a_product=true
     )
-    internal_ord2 = convert_to_internal_monomial_ordering(
+    internal_ord2 = io_convert_to_internal_monomial_ordering(
         var_to_index,
         ord.ord2,
         part_of_a_product=true
@@ -230,7 +230,7 @@ function convert_to_internal_monomial_ordering(
 end
 
 # MatrixOrdering -> _MatrixOrdering
-function convert_to_internal_monomial_ordering(
+function io_convert_to_internal_monomial_ordering(
     var_to_index::Dict{V, Int},
     ordering::MatrixOrdering;
     part_of_a_product=false

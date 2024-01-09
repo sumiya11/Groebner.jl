@@ -39,7 +39,7 @@ function peek_at_polynomials(polynomials::Vector{T}) where {T}
     :abstractalgebra, length(polynomials), UInt(char), nvars, ord
 end
 
-function _check_input(polynomials::Vector{T}, kws) where {T}
+function _io_check_input(polynomials::Vector{T}, kws) where {T}
     R = AbstractAlgebra.parent(first(polynomials))
     K = AbstractAlgebra.base_ring(R)
     if !(K isa AbstractAlgebra.Field)
@@ -554,7 +554,7 @@ end
 ###
 # Converting from internal representation to AbstractAlgebra.jl
 
-function _convert_to_output(
+function _io_convert_to_output(
     ring::PolyRing,
     polynomials,
     monoms::Vector{Vector{M}},
@@ -562,11 +562,11 @@ function _convert_to_output(
     params::AlgorithmParameters
 ) where {M <: Monom, C <: Coeff}
     origring = AbstractAlgebra.parent(first(polynomials))
-    _convert_to_output(origring, monoms, coeffs, params)
+    _io_convert_to_output(origring, monoms, coeffs, params)
 end
 
 # Specialization for univariate polynomials
-function _convert_to_output(
+function _io_convert_to_output(
     origring::R,
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{C}},
@@ -594,7 +594,7 @@ end
 
 # The most generic specialization
 # (Nemo.jl opts for this specialization)
-function _convert_to_output(
+function _io_convert_to_output(
     origring::R,
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{C}},
@@ -642,7 +642,7 @@ function create_aa_polynomial(
 end
 
 # Dispatch between monomial orderings
-function _convert_to_output(
+function _io_convert_to_output(
     origring::AbstractAlgebra.Generic.MPolyRing{T},
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{C}},
@@ -657,7 +657,7 @@ function _convert_to_output(
           Basis is computed in $(params.target_ord).
           Terms in the output are in $(ord_aa)"""
     end
-    _convert_to_output(
+    _io_convert_to_output(
         origring,
         gbexps,
         gbcoeffs,
@@ -667,7 +667,7 @@ function _convert_to_output(
 end
 
 # Specialization for degrevlex for matching orderings
-function _convert_to_output(
+function _io_convert_to_output(
     origring::AbstractAlgebra.Generic.MPolyRing{T},
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{C}},
@@ -698,7 +698,7 @@ function _convert_to_output(
 end
 
 # Specialization for lex for matching orderings
-function _convert_to_output(
+function _io_convert_to_output(
     origring::AbstractAlgebra.Generic.MPolyRing{T},
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{C}},
@@ -726,7 +726,7 @@ function _convert_to_output(
 end
 
 # Specialization for deglex for matching orderings
-function _convert_to_output(
+function _io_convert_to_output(
     origring::AbstractAlgebra.Generic.MPolyRing{T},
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{C}},
@@ -755,7 +755,7 @@ function _convert_to_output(
 end
 
 # All other orderings
-function _convert_to_output(
+function _io_convert_to_output(
     origring::AbstractAlgebra.Generic.MPolyRing{T},
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{C}},

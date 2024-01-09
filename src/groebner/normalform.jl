@@ -5,15 +5,15 @@
 
 function _normalform(polynomials, to_be_reduced, kws::KeywordsHandler)
     polynomial_repr =
-        select_polynomial_representation(polynomials, kws, hint=:large_exponents)
+        io_select_polynomial_representation(polynomials, kws, hint=:large_exponents)
     ring, var_to_index1, monoms, coeffs =
-        convert_to_internal(polynomial_repr, polynomials, kws)
+        io_convert_to_internal(polynomial_repr, polynomials, kws)
     if isempty(monoms)
         @log level = -2 "Input basis consisting of zero polynomials only."
         return to_be_reduced
     end
     ring_to_be_reduced, var_to_index2, monoms_to_be_reduced, coeffs_to_be_reduced =
-        convert_to_internal(polynomial_repr, to_be_reduced, kws, dropzeros=false)
+        io_convert_to_internal(polynomial_repr, to_be_reduced, kws, dropzeros=false)
     var_to_index = merge(var_to_index1, var_to_index2)
     nonzero_indices = findall(!iszero_coeffs, coeffs_to_be_reduced)
     if isempty(nonzero_indices)
@@ -23,8 +23,8 @@ function _normalform(polynomials, to_be_reduced, kws::KeywordsHandler)
     monoms_to_be_reduced_nonzero = monoms_to_be_reduced[nonzero_indices]
     coeffs_to_be_reduced_nonzero = coeffs_to_be_reduced[nonzero_indices]
     params = AlgorithmParameters(ring, polynomial_repr, kws)
-    ring, _ = set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
-    ring_, _ = set_monomial_ordering!(
+    ring, _ = io_set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
+    ring_, _ = io_set_monomial_ordering!(
         ring_to_be_reduced,
         var_to_index,
         monoms_to_be_reduced_nonzero,
@@ -62,7 +62,7 @@ function _normalform(polynomials, to_be_reduced, kws::KeywordsHandler)
     monoms_reduced = monoms_to_be_reduced
     coeffs_reduced = coeffs_to_be_reduced
     # TODO: remove `to_be_reduced` from arguments here
-    res = convert_to_output(ring, to_be_reduced, monoms_reduced, coeffs_reduced, params)
+    res = io_convert_to_output(ring, to_be_reduced, monoms_reduced, coeffs_reduced, params)
     performance_counters_print(params.statistics)
     res
 end

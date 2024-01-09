@@ -1,155 +1,51 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-mutable struct NextMonomials{Ord}
-    # monomials to check
-    monoms::Vector{MonomId}
-    load::Int
-    done::Dict{Int, Int}
-    ord::Ord
-end
+function _fglm0(polynomials, ordering_from, ordering_to, kws)
+    ordering_from == ordering_to && return polynomials
 
-Base.isempty(m::NextMonomials) = m.load == 0
-
-function initialize_nextmonomials(ht::MonomialHashtable{M}, ord) where {M}
-    zz = monom_construct_const_monom(M, ht.nvars)
-    vidx = hashtable_insert!(ht, zz)
-    monoms = Vector{MonomId}(undef, 2^3)
-    monoms[1] = vidx
-    load = 1
-    NextMonomials{typeof(ord)}(monoms, load, Dict{MonomId, Int}(vidx => 1), ord)
-end
-
-function insertnexts!(m::NextMonomials, ht::MonomialHashtable{M}, monom::MonomId) where {M}
-    while m.load + ht.nvars >= length(m.monoms)
-        resize!(m.monoms, length(m.monoms) * 2)
+    representation = io_select_polynomial_representation(polynomials, kws)
+    ring, var_to_index, monoms, coeffs =
+        io_convert_to_internal(representation, polynomials, kws)
+    params =
+        AlgorithmParameters(ring, representation, kws, orderings=(ring.ord, ordering_from))
+    if isempty(monoms)
+        @log level = -2 "Input consisting of zero polynomials."
+        throw(DomainError("Input consisting of zero polynomials to Groebner.fglm."))
+        return io_convert_to_output(ring, polynomials, monoms, coeffs, params)
     end
-
-    emonom = ht.monoms[monom]
-    for i in 1:(ht.nvars)
-        eprod = monom_copy(emonom)
-        tmp = Vector{UInt}(undef, ht.nvars)
-        edense = monom_to_vector!(tmp, eprod)
-        edense[i] += 1
-        eprod = monom_construct_from_vector(M, edense)
-        vidx = hashtable_insert!(ht, eprod)
-
-        if !haskey(m.done, vidx)
-            m.load += 1
-            m.monoms[m.load] = vidx
-            m.done[vidx] = 1
+    if kws.check
+        @log level = -2 "Checking if input is a Grobner basis"
+        # TODO this is, perhaps, broken!
+        if !isgroebner(polynomials, ordering=ordering_from, certify=false)
+            throw(DomainError("Input is not a Groebner basis."))
         end
     end
 
-    sort_monom_indices_decreasing!(m.monoms, m.load, ht, m.ord)
+    ring, _ = io_set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
+    params = AlgorithmParameters(
+        ring,
+        representation,
+        kws,
+        orderings=(ordering_from, ordering_to)
+    )
+
+    _ordering_to = io_convert_to_internal_monomial_ordering(var_to_index, ordering_to)
+    new_monoms, new_coeffs = _fglm1(ring, monoms, coeffs, _ordering_to, params)
+
+    res = io_convert_to_output(ring, polynomials, new_monoms, new_coeffs, params)
+
+    performance_counters_print(params.statistics)
+    res
 end
 
-function nextmonomial!(m::NextMonomials)
-    # assuming m.monoms is sorted (reversed)
-    monom = m.monoms[m.load]
-    m.load -= 1
-    monom
-end
-
-function add_generator!(basis::Basis{C}, matrix, relation, ht, ord) where {C <: Coeff}
-    rexps, rcoeffs, _ = extract_sparse_row(relation)
-
-    for i in 1:length(rexps)
-        rexps[i] = matrix.rightcolumn_to_monom[rexps[i]]
-    end
-
-    sort_term_indices_decreasing!(rexps, rcoeffs, ht, ord)
-
-    basis_resize_if_needed!(basis, 1)
-    basis.nprocessed += 1
-    basis.nnonredundant += 1
-    basis.nonredundant[basis.nnonredundant] = basis.nnonredundant
-    basis.monoms[basis.nprocessed] = rexps
-    basis.coeffs[basis.nprocessed] = rcoeffs
-end
-
-function divides_staircase(monom, staircase, ht)
-    for m in staircase
-        if hashtable_monom_is_divisible(monom, m, ht)
-            return true
-        end
-    end
-    false
-end
-
-function fglm_f4!(
+function _fglm1(
     ring::PolyRing,
-    basis::Basis{C},
-    ht::MonomialHashtable,
-    ord::AbstractInternalOrdering,
-    params
-) where {C <: Coeff}
-    newbasis = basis_initialize(ring, basis.nfilled, C)
-    nextmonoms = initialize_nextmonomials(ht, ord)
-    matrix = initialize_double_matrix(basis)
-    staircase = MonomId[]
-
-    while !isempty(nextmonoms)
-        monom = nextmonomial!(nextmonoms)
-
-        if divides_staircase(monom, staircase, ht)
-            continue
-        end
-
-        tobereduced = basis_initialize(ring, [[monom]], [C[1]])
-        tobereduced.nfilled = 1
-
-        # compute normal form
-        f4_normalform!(ring, basis, tobereduced, ht, params.arithmetic)
-
-        # matrix left rows can express tobereduced?
-        # reduces monom and tobereduced
-        exists, relation =
-            linear_relation!(ring, matrix, monom, tobereduced, ht, params.arithmetic)
-
-        # if linear relation between basis elements exists
-        if exists
-            lead = ht.monoms[monom]
-            add_generator!(newbasis, matrix, relation, ht, ord)
-            push!(staircase, monom)
-        else
-            insertnexts!(nextmonoms, ht, monom)
-        end
-    end
-
-    basis_standardize!(ring, newbasis, ht, ord, params.arithmetic)
-
-    linbasis = extract_linear_basis(ring, matrix)
-    newbasis, linbasis, ht
-end
-
-function fglm_f4(
-    ring::PolyRing,
-    basisexps::Vector{Vector{M}},
-    basiscoeffs::Vector{Vector{C}},
-    params
-) where {M, C <: Coeff}
-    basis, pairset, ht = f4_initialize_structs(ring, basisexps, basiscoeffs, params)
-    basis, linbasis, ht = fglm_f4!(ring, basis, ht, ring.ord, params)
-    basis_export_data(basis, ht)
-end
-
-function extract_linear_basis(ring, matrix::DoubleMacaulayMatrix{C}) where {C}
-    exps = Vector{Vector{MonomId}}(undef, matrix.nrrows)
-    coeffs = Vector{Vector{C}}(undef, matrix.nrrows)
-
-    for i in 1:(matrix.nrrows)
-        exps[i] = matrix.rightrows[i]
-        coeffs[i] = matrix.rightcoeffs[i]
-        for j in 1:length(exps[i])
-            exps[i][j] = matrix.rightcolumn_to_monom[exps[i][j]]
-        end
-    end
-
-    linbasis = basis_initialize(ring, exps, coeffs)
-
-    linbasis.nprocessed = length(exps)
-    linbasis.nnonredundant = length(exps)
-    linbasis.nonredundant = collect(1:(linbasis.nprocessed))
-
-    linbasis
+    monoms::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    ordering_to,
+    params::AlgorithmParameters
+) where {M <: Monom, C <: Coeff}
+    basis, _, ht = f4_initialize_structs(ring, monoms, coeffs, params)
+    new_basis, _, new_ht = fglm_main!(ring, basis, ht, ordering_to, params)
+    basis_export_data(new_basis, new_ht)
 end

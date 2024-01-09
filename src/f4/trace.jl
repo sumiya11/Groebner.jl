@@ -273,7 +273,7 @@ function get_trace!(wrapped_trace::WrappedTraceF4, polynomials::AbstractVector, 
     end
 
     # Handle the case when a wider coefficient type is required
-    new_coefftype = get_tight_unsigned_int_type(ring.ch)
+    new_coefftype = io_get_tight_unsigned_int_type(ring.ch)
     @log level = -2 "Creating a new trace with coefficient type $new_coefftype"
     new_trace = trace_copy(trace, new_coefftype, deepcopy=false)
     wrapped_trace.recorded_traces[(new_coefftype, 0)] = new_trace
@@ -298,8 +298,8 @@ function get_trace!(
     On the learn stage, the coefficients were of type $coefftype, 
     and the $(typeof(default_trace.params.arithmetic)) arithmetic was used."""
 
-    tight_signed_type = mapreduce(get_tight_signed_int_type, promote_type, chars)
-    tight_unsigned_type = mapreduce(get_tight_unsigned_int_type, promote_type, chars)
+    tight_signed_type = mapreduce(io_get_tight_signed_int_type, promote_type, chars)
+    tight_unsigned_type = mapreduce(io_get_tight_unsigned_int_type, promote_type, chars)
 
     # The type of coefficients that will be used
     new_coefftype = if tight_signed_type == signed(tight_unsigned_type)

@@ -5,15 +5,15 @@
 
 function _isgroebner(polynomials, kws::KeywordsHandler)
     polynomial_repr =
-        select_polynomial_representation(polynomials, kws, hint=:large_exponents)
+        io_select_polynomial_representation(polynomials, kws, hint=:large_exponents)
     ring, var_to_index, monoms, coeffs =
-        convert_to_internal(polynomial_repr, polynomials, kws)
+        io_convert_to_internal(polynomial_repr, polynomials, kws)
     if isempty(monoms)
         @log level = -2 "Input consisting of zero polynomials, which is a Groebner basis by our convention"
         return true
     end
     params = AlgorithmParameters(ring, polynomial_repr, kws)
-    ring, _ = set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
+    ring, _ = io_set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
     res = _isgroebner(ring, monoms, coeffs, params)
     performance_counters_print(params.statistics)
     res

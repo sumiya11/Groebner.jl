@@ -67,7 +67,7 @@ struct PolynomialRepresentation
 end
 
 """
-    select_polynomial_representation(polynomials, keywords; hint=:none)
+    io_select_polynomial_representation(polynomials, keywords; hint=:none)
 
 Given an array of input polynomials tries to select a suitable representation
 for coefficients and exponent vectors.
@@ -76,7 +76,7 @@ Additionally, `hint` can be specified to one of the following:
 
 - `:large_exponents`: use at least 32 bits per exponent.
 """
-function select_polynomial_representation(
+function io_select_polynomial_representation(
     polynomials::AbstractVector,
     kws::KeywordsHandler;
     hint::Symbol=:none
@@ -85,9 +85,9 @@ function select_polynomial_representation(
         @log level = 1_000 "The given hint=$hint was discarded"
     end
     frontend, npolys, char, nvars, ordering = peek_at_polynomials(polynomials)
-    monomtype = select_monomtype(char, npolys, nvars, ordering, kws, hint)
+    monomtype = io_select_monomtype(char, npolys, nvars, ordering, kws, hint)
     coefftype, using_wide_type_for_coeffs =
-        select_coefftype(char, npolys, nvars, ordering, kws, hint)
+        io_select_coefftype(char, npolys, nvars, ordering, kws, hint)
     basering = iszero(char) ? :qq : :zp
     @log level = -1 "Frontend: $frontend"
     @log level = -1 """
@@ -101,7 +101,7 @@ function select_polynomial_representation(
     PolynomialRepresentation(monomtype, coefftype, using_wide_type_for_coeffs)
 end
 
-function select_monomtype(char, npolys, nvars, ordering, kws, hint)
+function io_select_monomtype(char, npolys, nvars, ordering, kws, hint)
     @log level = -1 """
     Selecting monomial representation.
     Given hint hint=$hint. Keyword argument monoms=$(kws.monoms)"""
@@ -188,7 +188,7 @@ function select_monomtype(char, npolys, nvars, ordering, kws, hint)
     ExponentVector{ExponentSize}
 end
 
-function get_tight_signed_int_type(x::T) where {T <: Integer}
+function io_get_tight_signed_int_type(x::T) where {T <: Integer}
     if x <= typemax(Int8)
         return Int8
     elseif typemax(Int8) < x <= typemax(Int16)
@@ -205,7 +205,7 @@ function get_tight_signed_int_type(x::T) where {T <: Integer}
     end
 end
 
-function get_tight_unsigned_int_type(x::T) where {T <: Integer}
+function io_get_tight_unsigned_int_type(x::T) where {T <: Integer}
     if x <= typemax(UInt8)
         return UInt8
     elseif typemax(UInt8) < x <= typemax(UInt16)
@@ -222,7 +222,7 @@ function get_tight_unsigned_int_type(x::T) where {T <: Integer}
     end
 end
 
-function select_coefftype(char, npolys, nvars, ordering, kws, hint)
+function io_select_coefftype(char, npolys, nvars, ordering, kws, hint)
     @log level = -1 """
     Selecting coefficient representation.
     Given hint hint=$hint. Keyword argument arithmetic=$(kws.arithmetic)"""
@@ -240,7 +240,7 @@ function select_coefftype(char, npolys, nvars, ordering, kws, hint)
     end
 
     using_wide_type_for_coeffs = true
-    tight_signed_type = get_tight_signed_int_type(char)
+    tight_signed_type = io_get_tight_signed_int_type(char)
 
     # If the requested arithmetic requires a signed representation
     if kws.arithmetic === :signed
@@ -255,7 +255,7 @@ function select_coefftype(char, npolys, nvars, ordering, kws, hint)
         end
     end
 
-    tight_unsigned_type = get_tight_unsigned_int_type(char)
+    tight_unsigned_type = io_get_tight_unsigned_int_type(char)
     if !using_wide_type_for_coeffs
         tight_unsigned_type
     else
@@ -267,22 +267,22 @@ end
 # Converting to selected polynomial representation
 
 """
-    convert_to_internal(representation, polynomials, kws)
+    io_convert_to_internal(representation, polynomials, kws)
 
 Converts elements of the given array `polynomials` into an internal polynomial
 representation specified by the given `representation`.
 """
-@timeit function convert_to_internal(
+@timeit function io_convert_to_internal(
     representation::PolynomialRepresentation,
     polynomials,
     kws::KeywordsHandler;
     dropzeros=true
 )
-    check_input(polynomials, kws)
+    io_check_input(polynomials, kws)
     # NOTE: Input polynomials must not be modified.
     @log level = -2 "Converting input polynomials to internal representation.."
     ring = extract_ring(polynomials)
-    var_to_index, monoms, coeffs = extract_polys(representation, ring, polynomials)
+    var_to_index, monoms, coeffs = io_extract_polys(representation, ring, polynomials)
     @log level = -2 "Done converting input polynomials to internal representation."
     @log level = -6 """
     Polynomials in internal representation:
@@ -292,19 +292,19 @@ representation specified by the given `representation`.
     Coefficients: $coeffs"""
     if dropzeros
         @log level = -2 "Removing zero polynomials"
-        remove_zeros_from_input!(ring, monoms, coeffs)
+        io_remove_zeros_from_input!(ring, monoms, coeffs)
     end
     ring, var_to_index, monoms, coeffs
 end
 
-function check_input(polynomials, kws)
+function io_check_input(polynomials, kws)
     if isempty(polynomials)
         __throw_input_not_supported(polynomials, "Empty input array.")
     end
-    _check_input(polynomials, kws)
+    _io_check_input(polynomials, kws)
 end
 
-function extract_polys(
+function io_extract_polys(
     representation::PolynomialRepresentation,
     ring::PolyRing,
     polynomials::Vector{T}
@@ -322,7 +322,7 @@ function extract_polys(
     var_to_index, monoms, coeffs
 end
 
-function remove_zeros_from_input!(
+function io_remove_zeros_from_input!(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{T}}
@@ -342,10 +342,10 @@ end
 # sorts the polynomials terms w.r.t. the target ordering.
 #
 # Also returns the sorting permutations for polynomial terms
-function set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
+function io_set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
     current_ord = ring.ord
     target_ord = params.target_ord
-    internal_ord = convert_to_internal_monomial_ordering(var_to_index, target_ord)
+    internal_ord = io_convert_to_internal_monomial_ordering(var_to_index, target_ord)
     @log level = -2 "Internal ordering:\n$internal_ord"
     ring = PolyRing(ring.nvars, internal_ord, ring.ch)
     if current_ord == target_ord
@@ -369,13 +369,13 @@ zero_coeffs(::Type{T}, ring::PolyRing) where {T} = Vector{T}()
 zero_monoms(::Type{T}, ring::PolyRing) where {T} = Vector{T}()
 
 """
-    convert_to_output(ring, polynomials, monoms, coeffs, params)
+    io_convert_to_output(ring, polynomials, monoms, coeffs, params)
 
 Converts polynomials in internal representation given by arrays `monoms` and
 `coeffs` into polynomials in the output format (using `polynomials` as a
 reference).
 """
-@timeit function convert_to_output(
+@timeit function io_convert_to_output(
     ring::PolyRing,
     polynomials,
     monoms::Vector{Vector{M}},
@@ -390,13 +390,13 @@ reference).
         push!(monoms, zero_monoms(M, ring))
         push!(coeffs, zero_coeffs(C, ring))
     end
-    _convert_to_output(ring, polynomials, monoms, coeffs, params)
+    _io_convert_to_output(ring, polynomials, monoms, coeffs, params)
 end
 
 ###
 # Utilities for composite coefficients
 
-function unpack_composite_coefficients(
+function io_unpack_composite_coefficients(
     composite_coeffs::Vector{Vector{CompositeInt{2, T}}}
 ) where {T <: CoeffZp}
     coeffs_part_1 = Vector{Vector{T}}(undef, length(composite_coeffs))
@@ -414,7 +414,7 @@ function unpack_composite_coefficients(
     coeffs_part_1, coeffs_part_2
 end
 
-function unpack_composite_coefficients(
+function io_unpack_composite_coefficients(
     composite_coeffs::Vector{Vector{CompositeInt{N, T}}}
 ) where {N, T <: CoeffZp}
     coeffs_part_i = ntuple(_ -> Vector{Vector{T}}(undef, length(composite_coeffs)), N)

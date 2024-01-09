@@ -85,9 +85,6 @@ end
     root6 = Groebner.rootn(6)
     gb = Groebner.groebner(root6, ordering=Groebner.DegRevLex())
     @test length(Groebner.kbase(gb)) == 720
-    root6 = Groebner.rootn(6)
-    gb = Groebner.groebner(root6, ordering=Groebner.DegRevLex())
-    @test length(Groebner.kbase(gb)) == 720
 
     noon2 = Groebner.noonn(2, ordering=:degrevlex)
     R = parent(first(noon2))
@@ -95,13 +92,13 @@ end
     gb = Groebner.groebner(noon2, ordering=Groebner.DegRevLex())
     @test Groebner.kbase(gb) == [R(1), x2, x1, x2^2, x1 * x2]
 
-    noon3 = Groebner.noonn(3)
-    R = parent(first(noon3))
-    gb = Groebner.groebner(noon3, ordering=Groebner.DegRevLex())
+    noon = Groebner.noonn(3)
+    R = parent(first(noon))
+    gb = Groebner.groebner(noon, ordering=Groebner.DegRevLex())
     @test length(Groebner.kbase(gb, ordering=Groebner.DegRevLex())) == 21
 
-    noon3 = Groebner.noonn(7)
-    R = parent(first(noon3))
-    gb = Groebner.groebner(noon3, ordering=Groebner.DegRevLex())
+    noon = Groebner.noonn(7, ground=GF(2^31 - 1))
+    R = parent(first(noon))
+    gb = Groebner.groebner(noon, ordering=Groebner.DegRevLex())
     @test length(Groebner.kbase(gb, ordering=Groebner.DegRevLex())) == 2173
 end

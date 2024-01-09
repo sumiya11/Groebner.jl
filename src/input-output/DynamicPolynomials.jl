@@ -15,7 +15,7 @@ function extract_ring(orig_polys::Vector{<:AbstractPolynomialLike{T}}) where {T}
     PolyRing{typeof(ord), UInt}(nv, ord, UInt(0))
 end
 
-function _check_input(polynomials::Vector{<:AbstractPolynomialLike{T}}, kws) where {T}
+function _io_check_input(polynomials::Vector{<:AbstractPolynomialLike{T}}, kws) where {T}
     true
 end
 
@@ -117,7 +117,7 @@ function convert_coeffs_to_output(
     check_and_convert_coeffs(coeffs_zz, T)
 end
 
-function _convert_to_output(
+function _io_convert_to_output(
     ring::PolyRing,
     origpolys::Vector{P},
     gbexps::Vector{Vector{M}},

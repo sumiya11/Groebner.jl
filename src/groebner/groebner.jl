@@ -7,7 +7,7 @@
 function _groebner(polynomials, kws::KeywordsHandler)
     # We try to select an efficient internal polynomial representation, i.e., a
     # suitable representation of monomials and coefficients.
-    polynomial_repr = select_polynomial_representation(polynomials, kws)
+    polynomial_repr = io_select_polynomial_representation(polynomials, kws)
     try
         # The backend is wrapped in a try/catch to catch exceptions that one can
         # hope to recover from (and, perhaps, restart the computation with safer
@@ -19,7 +19,7 @@ function _groebner(polynomials, kws::KeywordsHandler)
             Possible overflow of exponent vector detected. 
             Restarting with at least $(32) bits per exponent."""
             polynomial_repr =
-                select_polynomial_representation(polynomials, kws, hint=:large_exponents)
+                io_select_polynomial_representation(polynomials, kws, hint=:large_exponents)
             return _groebner(polynomials, kws, polynomial_repr)
         else
             # Something bad happened.
@@ -35,16 +35,16 @@ function _groebner(polynomials, kws::KeywordsHandler, representation)
     # modified.
     # NOTE: The body of this function is type-unstable (by design)
     ring, var_to_index, monoms, coeffs =
-        convert_to_internal(representation, polynomials, kws)
+        io_convert_to_internal(representation, polynomials, kws)
 
     # Check and set parameters and monomial ordering
     params = AlgorithmParameters(ring, representation, kws)
-    ring, _ = set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
+    ring, _ = io_set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
 
     # Fast path for the input of zeros
     if isempty(monoms)
         @log level = -2 "Input consisting of zero polynomials. Returning zero."
-        return convert_to_output(ring, polynomials, monoms, coeffs, params)
+        return io_convert_to_output(ring, polynomials, monoms, coeffs, params)
     end
 
     if params.homogenize
@@ -61,7 +61,7 @@ function _groebner(polynomials, kws::KeywordsHandler, representation)
     end
 
     # Convert result back to the representation of input
-    basis = convert_to_output(ring, polynomials, gbmonoms, gbcoeffs, params)
+    basis = io_convert_to_output(ring, polynomials, gbmonoms, gbcoeffs, params)
 
     performance_counters_print(params.statistics)
     print_statistics(params.statistics)
@@ -278,7 +278,7 @@ function _groebner_learn_and_apply(
                 f4_apply!(trace_4x, ring_ff_4x, trace_4x.buf_basis, params_zp_4x)
 
                 gb_coeffs_1, gb_coeffs_2, gb_coeffs_3, gb_coeffs_4 =
-                    unpack_composite_coefficients(trace_4x.gb_basis.coeffs)
+                    io_unpack_composite_coefficients(trace_4x.gb_basis.coeffs)
 
                 push!(state.gb_coeffs_ff_all, gb_coeffs_1)
                 push!(state.gb_coeffs_ff_all, gb_coeffs_2)
@@ -599,7 +599,7 @@ function _groebner_learn_and_apply_threaded(
             )
 
             gb_coeffs_1, gb_coeffs_2, gb_coeffs_3, gb_coeffs_4 =
-                unpack_composite_coefficients(threadlocal_trace_4x.gb_basis.coeffs)
+                io_unpack_composite_coefficients(threadlocal_trace_4x.gb_basis.coeffs)
 
             push!(threadbuf_gb_coeffs[threadid()], (threadlocal_prime_4x[1], gb_coeffs_1))
             push!(threadbuf_gb_coeffs[threadid()], (threadlocal_prime_4x[2], gb_coeffs_2))

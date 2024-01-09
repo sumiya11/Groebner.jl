@@ -219,6 +219,7 @@ include("groebner/homogenization.jl")
 # NOTE: this is currently not exported, and is only for internal use
 include("fglm/linear.jl")
 include("fglm/fglm.jl")
+include("fglm/fglm_internal.jl")
 include("fglm/kbase.jl")
 
 # API

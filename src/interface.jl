@@ -433,5 +433,26 @@ function kbase(basis::AbstractVector; options...)
     setup_logging(keywords)
     setup_statistics(keywords)
 
-    _kbase(basis, keywords)::typeof(basis)
+    _kbase0(basis, keywords)::typeof(basis)
+end
+
+"""
+    fglm(basis, ordering_from, ordering_to; options...)
+
+Converts a Groebner basis from one monomial ordering to another.
+"""
+function fglm(
+    basis::AbstractVector,
+    ordering_from::AbstractMonomialOrdering,
+    ordering_to::AbstractMonomialOrdering;
+    options...
+)
+    Base.require_one_based_indexing(basis)
+
+    keywords = KeywordsHandler(:fglm, options)
+
+    setup_logging(keywords)
+    setup_statistics(keywords)
+
+    _fglm0(basis, ordering_from, ordering_to, keywords)::typeof(basis)
 end
