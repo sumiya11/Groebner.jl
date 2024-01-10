@@ -57,7 +57,10 @@ function process_system()
         outputfile =
             VALIDATE ? (@__DIR__) * "/$BENCHMARK_DIR/$PROBLEM_NAME/$(output_filename())" :
             "/dev/null"
-        cmd = Cmd(`$BIN_PATH_NORM -g 2 -c 0 -f $problemfile -o $outputfile`, detach=false)
+        cmd = Cmd(
+            `$BIN_PATH_NORM -g 2 -l 44 -c 0 -f $problemfile -o $outputfile`,
+            detach=false
+        )
         timing = time_ns()
         proc = run(cmd, wait=true)
         # push!(children, proc)

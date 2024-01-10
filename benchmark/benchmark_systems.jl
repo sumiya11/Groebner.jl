@@ -52,6 +52,7 @@ function benchmark_set_1()
         ("henrion 5", Groebner.henrion5(ground=ground_field)),
         ("henrion 6", Groebner.henrion6(ground=ground_field)),
         ("henrion 7", Groebner.henrion7(ground=ground_field)),
+        ("henrion 8", Groebner.henrion8(ground=ground_field)),
         ("reimer 6", Groebner.reimern(6, ground=ground_field)),
         ("reimer 7", Groebner.reimern(7, ground=ground_field)),
         ("reimer 8", Groebner.reimern(8, ground=ground_field)),

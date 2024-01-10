@@ -167,7 +167,7 @@ version = "6.2.1+2"
 deps = ["AbstractAlgebra", "Atomix", "Combinatorics", "ExprTools", "Logging", "MultivariatePolynomials", "Nemo", "PrecompileTools", "PrettyTables", "Primes", "Printf", "Random", "TimerOutputs"]
 path = "../../.."
 uuid = "0b43b601-686d-58a3-8a1c-6623616c7cd4"
-version = "0.5.1"
+version = "0.6.1"
 
 [[deps.GroupsCore]]
 deps = ["Markdown", "Random"]
