@@ -280,31 +280,30 @@ function hashtable_resize_if_needed!(ht::MonomialHashtable, added::Int)
     while hashtable_needs_resize(newsize, ht.load, added)
         newsize *= 2
     end
-    if newsize != ht.size
-        @invariant !ht.frozen
+    newsize == ht.size && return nothing
 
-        ht.size = newsize
-        @assert ispow2(ht.size)
+    @invariant !ht.frozen
+    ht.size = newsize
+    @invariant ispow2(ht.size)
 
-        resize!(ht.hashdata, ht.size)
-        resize!(ht.monoms, ht.size)
-        resize!(ht.hashtable, ht.size)
-        @inbounds for i in 1:(ht.size)
-            ht.hashtable[i] = zero(MonomId)
-        end
+    resize!(ht.hashdata, ht.size)
+    resize!(ht.monoms, ht.size)
+    resize!(ht.hashtable, ht.size)
+    @inbounds for i in 1:(ht.size)
+        ht.hashtable[i] = zero(MonomId)
+    end
 
-        mod = MonomHash(ht.size - 1)
+    mod = MonomHash(ht.size - 1)
 
-        @inbounds for i in (ht.offset):(ht.load)
-            # hash for this elem is already computed
-            he = ht.hashdata[i].hash
-            hidx = he
-            for j in MonomHash(1):MonomHash(ht.size)
-                hidx = hashtable_next_lookup_index(he, j, mod)
-                !iszero(ht.hashtable[hidx]) && continue
-                ht.hashtable[hidx] = i
-                break
-            end
+    @inbounds for i in (ht.offset):(ht.load)
+        # hash for this elem is already computed
+        he = ht.hashdata[i].hash
+        hidx = he
+        for j in MonomHash(1):MonomHash(ht.size)
+            hidx = hashtable_next_lookup_index(he, j, mod)
+            !iszero(ht.hashtable[hidx]) && continue
+            ht.hashtable[hidx] = i
+            break
         end
     end
     nothing

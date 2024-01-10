@@ -28,6 +28,8 @@ function enumerator_produce_next_monomials!(
     while m.load + ht.nvars >= length(m.monoms)
         resize!(m.monoms, length(m.monoms) * 2)
     end
+    # TODO: maybe an error, uncomment this line later
+    # hashtable_resize_if_needed!(ht, ht.nvars)
 
     emonom = ht.monoms[monom]
     @inbounds for i in 1:(ht.nvars)
@@ -80,6 +82,8 @@ function staircase_divides_monom(monom, staircase, ht)
     false
 end
 
+const _seen = Dict()
+
 function fglm_main!(
     ring::PolyRing,
     basis::Basis{C},
@@ -92,6 +96,7 @@ function fglm_main!(
         from ordering: $(ring.ord)
         to ordering:   $ord"""
 
+    empty!(_seen)
     monom_enumerator = enumerator_initialize(ht, ord)
     new_basis = basis_initialize(ring, basis.nfilled, C)
     matrix = wide_matrix_initialize(basis)
@@ -110,6 +115,10 @@ function fglm_main!(
             continue
         end
 
+        if haskey(_seen, monom)
+            throw("This monomial has been processed before !")
+        end
+        _seen[monom] = 1
         # Compute the normal form of the monomial w.r.t. by constructing and
         # echelonizing the F4 matrix.
         to_be_reduced = basis_initialize(ring, [[monom]], [C[1]])
