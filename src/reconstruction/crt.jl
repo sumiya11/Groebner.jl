@@ -278,7 +278,7 @@ function crt_vec_partial!(
     for i in 1:length(mults)
         mults[i] = BigInt(0)
     end
-    crt_precompute!(modulo, n1, n2, mults, moduli)
+    crt_precompute!(modulo, n1, n2, mults, map(UInt64, moduli))
 
     # Reconstruct an integer for each index (i, j) 
     rems = Vector{UInt64}(undef, n)
@@ -335,4 +335,13 @@ begin
     indices = [(1, 1)]
     Groebner.crt_vec_partial!(table_zz, modulo, tables_ff, moduli, indices)
     @assert table_zz[1][1] == BigInt(2)
+
+    ###
+    table_zz = [[BigInt(0)]]
+    modulo = BigInt(0)
+    tables_ff = [[Int32[2]], [Int32[3]]]
+    moduli = Int32[11, 13]
+    indices = [(1, 1)]
+    Groebner.crt_vec_partial!(table_zz, modulo, tables_ff, moduli, indices)
+    @assert table_zz[1][1] == BigInt(68)
 end
