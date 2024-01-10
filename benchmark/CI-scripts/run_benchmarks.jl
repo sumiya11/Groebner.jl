@@ -6,6 +6,14 @@ using AbstractAlgebra
 import Primes
 import Nemo
 
+function nemo_make_prime_finite_field(p)
+    if p < typemax(UInt)
+        Nemo.fpField(convert(UInt, p), false)
+    else
+        Nemo.FpField(Nemo.ZZRingElem(p), false)
+    end
+end
+
 suite = []
 
 function compute_gb(system, trials=7; kws...)
@@ -87,7 +95,11 @@ push!(
     (
         problem_name="groebner, Nemo, GF(2^31-1), cyclic 8",
         result=compute_gb(
-            Groebner.cyclicn(8, ordering=:degrevlex, ground=Nemo.GF(2^31 - 1))
+            Groebner.cyclicn(
+                8,
+                ordering=:degrevlex,
+                ground=nemo_make_prime_finite_field(2^31 - 1)
+            )
         )
     )
 )
@@ -130,7 +142,11 @@ push!(
     (
         problem_name="groebner_apply!, Nemo, GF(2^31-1), cyclic 7",
         result=learn_and_apply(
-            Groebner.cyclicn(7, ordering=:degrevlex, ground=Nemo.GF(2^31 - 1))
+            Groebner.cyclicn(
+                7,
+                ordering=:degrevlex,
+                ground=nemo_make_prime_finite_field(2^31 - 1)
+            )
         )
     )
 )
@@ -157,7 +173,11 @@ push!(
     (
         problem_name="groebner_apply!, Nemo, GF(2^31-1), katsura 10",
         result=learn_and_apply(
-            Groebner.katsuran(10, ordering=:degrevlex, ground=Nemo.GF(2^31 - 1))
+            Groebner.katsuran(
+                10,
+                ordering=:degrevlex,
+                ground=nemo_make_prime_finite_field(2^31 - 1)
+            )
         )
     )
 )
@@ -290,7 +310,11 @@ push!(
     (
         problem_name="normalform, Nemo, GF(103), cyclic 8",
         result=compute_normalforms(
-            Groebner.cyclicn(8, ordering=:degrevlex, ground=Nemo.GF(103))
+            Groebner.cyclicn(
+                8,
+                ordering=:degrevlex,
+                ground=nemo_make_prime_finite_field(103)
+            )
         )
     )
 )
