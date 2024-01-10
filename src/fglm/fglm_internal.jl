@@ -115,10 +115,10 @@ function fglm_main!(
             continue
         end
 
-        if haskey(_seen, monom)
+        if haskey(_seen, ht.monoms[monom])
             throw("This monomial has been processed before !")
         end
-        _seen[monom] = 1
+        _seen[ht.monoms[monom]] = 1
         # Compute the normal form of the monomial w.r.t. by constructing and
         # echelonizing the F4 matrix.
         to_be_reduced = basis_initialize(ring, [[monom]], [C[1]])
