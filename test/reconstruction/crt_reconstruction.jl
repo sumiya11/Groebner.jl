@@ -22,7 +22,7 @@ using Primes
             m1, m2 = BigInt.((m1, m2))
             minv1, minv2 = BigInt.((minv1, minv2))
             c1, c2 = m2 * minv2, m1 * minv1
-            Groebner.CRT!(M, buf, n1, n2, a1, c1, UInt64(a2), c2)
+            Groebner.crt!(M, buf, n1, n2, a1, c1, UInt64(a2), c2)
             @test buf == a
         end
     end

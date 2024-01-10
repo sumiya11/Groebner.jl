@@ -192,8 +192,8 @@ include("f4/f4.jl")
 include("f4/learn-apply.jl")
 
 #= rational number reconstruction and CRT =#
-include("reconstruction/rational_reconstruction.jl")
-include("reconstruction/crt_reconstruction.jl")
+include("reconstruction/crt.jl")
+include("reconstruction/ratrec.jl")
 
 #= more high level functions =#
 # Lucky prime numbers

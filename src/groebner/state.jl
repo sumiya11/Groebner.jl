@@ -322,7 +322,7 @@ function full_incremental_crt_reconstruct!(state::GroebnerState, lucky::LuckyPri
     end
 
     for idx in 2:length(lucky.primes)
-        CRT_precompute!(M, n1, n2, invm1, lucky.modulo, invm2, lucky.primes[idx])
+        crt_precompute!(M, n1, n2, invm1, lucky.modulo, invm2, lucky.primes[idx])
         gb_coeffs_ff = state.gb_coeffs_ff_all[idx]
 
         @invariant length(gb_coeffs_zz) == length(gb_coeffs_ff)
@@ -341,7 +341,7 @@ function full_incremental_crt_reconstruct!(state::GroebnerState, lucky::LuckyPri
                 c_zz = gb_coeffs_zz[i][j]
                 c_ff = gb_coeffs_ff[i][j]
 
-                CRT!(M, buf, n1, n2, c_zz, invm1, c_ff, invm2)
+                crt!(M, buf, n1, n2, c_zz, invm1, c_ff, invm2)
 
                 Base.GMP.MPZ.set!(gb_coeffs_zz[i][j], buf)
             end
@@ -411,7 +411,7 @@ function full_simultaneous_crt_reconstruct!(state::GroebnerState, lucky::LuckyPr
         mults[i] = BigInt(0)
     end
     moduli = lucky.primes
-    CRT_precompute!(M, n1, n2, mults, moduli)
+    crt_precompute!(M, n1, n2, mults, moduli)
 
     @log level = -6 "Using simultaneous CRT with moduli $moduli"
 
@@ -425,10 +425,10 @@ function full_simultaneous_crt_reconstruct!(state::GroebnerState, lucky::LuckyPr
                 rems[ell] = state.gb_coeffs_ff_all[ell][i][j]
             end
 
-            CRT!(M, buf, n1, n2, rems, mults)
+            crt!(M, buf, n1, n2, rems, mults)
 
             # cf_zz = selected_prev_coeffs_zz[i]
-            # CRT!(MM0, buf, n1, n2, cf_zz, invm1, buf, invm2)
+            # crt!(MM0, buf, n1, n2, cf_zz, invm1, buf, invm2)
 
             # Base.GMP.MPZ.set!(selected_coeffs_zz[i], buf)
 
@@ -484,14 +484,14 @@ end
     M = buffer.reconstructbuf4
     invm1, invm2 = buffer.reconstructbuf6, buffer.reconstructbuf7
 
-    CRT_precompute!(M, n1, n2, invm1, lucky.modulo, invm2, last(lucky.primes))
+    crt_precompute!(M, n1, n2, invm1, lucky.modulo, invm2, last(lucky.primes))
 
     @inbounds for i in 1:length(indices_selection)
         i1, i2 = indices_selection[i]
 
         c_zz = selected_coeffs_zz[i]
         c_ff = gb_coeffs_ff[i1][i2]
-        CRT!(M, buf, n1, n2, c_zz, invm1, c_ff, invm2)
+        crt!(M, buf, n1, n2, c_zz, invm1, c_ff, invm2)
 
         Base.GMP.MPZ.set!(selected_coeffs_zz[i], buf)
 
@@ -554,10 +554,10 @@ end
         mults[i] = BigInt(0)
     end
     moduli = lucky.primes[(prev_index + 1):end]
-    CRT_precompute!(M, n1, n2, mults, moduli)
+    crt_precompute!(M, n1, n2, mults, moduli)
 
     Base.GMP.MPZ.set!(M0, lucky.modulo)
-    CRT_precompute!(MM0, n1, n2, invm1, M0, invm2, M)
+    crt_precompute!(MM0, n1, n2, invm1, M0, invm2, M)
 
     @log level = -6 "Using simultaneous CRT with moduli $moduli" lucky.modulo M0 M MM0
 
@@ -568,10 +568,10 @@ end
             rems[j - prev_index] = state.gb_coeffs_ff_all[j][i1][i2]
         end
 
-        CRT!(M, buf, n1, n2, rems, mults)
+        crt!(M, buf, n1, n2, rems, mults)
 
         cf_zz = selected_prev_coeffs_zz[i]
-        CRT!(MM0, buf, n1, n2, cf_zz, invm1, buf, invm2)
+        crt!(MM0, buf, n1, n2, cf_zz, invm1, buf, invm2)
 
         Base.GMP.MPZ.set!(selected_coeffs_zz[i], buf)
 
@@ -603,7 +603,7 @@ end
     @invariant modulo == prod(BigInt, lucky.primes)
 
     buffer = state.buffer
-    bnd = rational_reconstruction_bound(modulo)
+    bnd = ratrec_reconstruction_bound(modulo)
 
     buf, buf1 = buffer.reconstructbuf1, buffer.reconstructbuf2
     buf2, buf3 = buffer.reconstructbuf3, buffer.reconstructbuf4
@@ -630,7 +630,7 @@ end
 
                 cz = gb_coeffs_zz[i][j]
                 nemo_rem = Nemo.ZZRingElem(cz)
-                success, (num, den) = nemo_rational_reconstruction(nemo_rem, nemo_modulo)
+                success, (num, den) = ratrec_nemo(nemo_rem, nemo_modulo)
                 gb_coeffs_qq[i][j] = Base.unsafe_rational(num, den)
 
                 !success && return false
@@ -651,7 +651,7 @@ end
                 cz = gb_coeffs_zz[i][j]
                 cq = gb_coeffs_qq[i][j]
                 num, den = numerator(cq), denominator(cq)
-                success = rational_reconstruction!(
+                success = ratrec!(
                     num,
                     den,
                     bnd,
@@ -689,7 +689,7 @@ end
     @invariant modulo == prod(BigInt, lucky.primes)
 
     buffer = state.buffer
-    bnd = rational_reconstruction_bound(modulo)
+    bnd = ratrec_reconstruction_bound(modulo)
 
     buf, buf1 = buffer.reconstructbuf1, buffer.reconstructbuf2
     buf2, buf3 = buffer.reconstructbuf3, buffer.reconstructbuf4
@@ -710,7 +710,7 @@ end
             cz = selected_coeffs_zz[i]
             nemo_rem = Nemo.ZZRingElem(cz)
 
-            success, (num, den) = nemo_rational_reconstruction(nemo_rem, nemo_modulo)
+            success, (num, den) = ratrec_nemo(nemo_rem, nemo_modulo)
             selected_coeffs_qq[i] = Base.unsafe_rational(num, den)
 
             !success && return false
@@ -728,7 +728,7 @@ end
             cz = selected_coeffs_zz[i]
             cq = selected_coeffs_qq[i]
             num, den = numerator(cq), denominator(cq)
-            success = rational_reconstruction!(
+            success = ratrec!(
                 num,
                 den,
                 bnd,

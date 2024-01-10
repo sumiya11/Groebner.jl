@@ -8,10 +8,10 @@ using Primes
 
     num, den, buf, buf1, buf2, buf3, u1, u2, u3, v1, v2, v3 = [BigInt(0) for _ in 1:13]
     for m in moduli
-        bnd = Groebner.rational_reconstruction_bound(m)
+        bnd = Groebner.ratrec_reconstruction_bound(m)
         for a in numbers
             ac = numerator(a) * invmod(denominator(a), m)
-            ar1 = Groebner.rational_reconstruction!(
+            ar1 = Groebner.ratrec!(
                 num,
                 den,
                 bnd,
@@ -41,10 +41,10 @@ using Primes
     ]
     samples = 1000
     for m in moduli
-        bnd = Groebner.rational_reconstruction_bound(m)
+        bnd = Groebner.ratrec_reconstruction_bound(m)
         for i in 1:samples
             a = BigInt(rand(0:(m - 1)))
-            success = Groebner.rational_reconstruction!(
+            success = Groebner.ratrec!(
                 num,
                 den,
                 bnd,
