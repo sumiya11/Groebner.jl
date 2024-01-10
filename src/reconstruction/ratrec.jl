@@ -166,7 +166,7 @@ success = Groebner.ratrec_vec_partial!(table_qq, table_zz, modulo, indices)
 
 As a result, we obtain
 
-```
+```julia
 @show table_qq success;
 # table_qq = Vector{Rational{BigInt}}[[1//4], [-2//5, 0]]
 # success = true
