@@ -152,37 +152,25 @@ Elements of `table_zz` must be non-negative.
 Consider the following example
 
 ```julia
-# Buffers
-table_zz = [[BigInt(0)], [BigInt(0), BigInt(0)]]
-modulo = BigInt(0)
+# Buffer
+table_qq = [[BigInt(0) // BigInt(1)], [BigInt(0) // BigInt(1), BigInt(0) // BigInt(1)]]
 
-# Remainders
-tables_ff = [
-    [UInt64[2], UInt64[1, 3]],
-    [UInt64[3], UInt64[4, 7]],
-]
-moduli = UInt64[7, 11]
+# Residuals
+table_zz = [[BigInt(58)], [BigInt(15), BigInt(73)]]
+modulo = BigInt(77)
 
 # Indices in the table to be reconstructed
 indices = [(1, 1), (2, 1)]
-
-Groebner.crt_vec_partial!(table_zz, modulo, tables_ff, moduli, indices)
+success = Groebner.ratrec_vec_partial!(table_qq, table_zz, modulo, indices)
 ```
 
 As a result, we obtain
 
 ```
-@show table_zz modulo;
-# table_zz = Vector{BigInt}[[58], [15, 0]]
-# modulo = 77
+@show table_qq success;
+# table_qq = Vector{Rational{BigInt}}[[1//4], [-2//5, 0]]
+# success = true
 ```
-
-Indeed, `77 = 7 * 11`, and 
-    
-    58 mod 7 == 2,
-    58 mod 11 == 3.
-
-Moreover, the element at index (2, 2) has not been reconstructed.
 """
 function ratrec_vec_partial!(
     table_qq::Vector{Vector{Rational{BigInt}}},
