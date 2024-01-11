@@ -66,24 +66,24 @@ end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
-        ("cyclic 7", Groebner.cyclicn(7, ground=ground)), # 0.06 vs 0.01
-        ("cyclic 8", Groebner.cyclicn(8, ground=ground)), # 0.19 vs 0.03
-        ("cyclic 9", Groebner.cyclicn(9, ground=ground)), # 0.60 vs 0.9
-        ("cyclic 12", Groebner.rootn(12, ground=ground)), # 0.06 vs 0.01
-        ("cyclic 13", Groebner.rootn(13, ground=ground)), # 0.19 vs 0.03
-        ("cyclic 14", Groebner.rootn(14, ground=ground)), # 0.60 vs 0.9
-        ("katsura 11", Groebner.katsura11(ground=ground)), # 1.35 vs 71.121
-        ("katsura 12", Groebner.katsura12(ground=ground)), # 9.68 vs 775
-        ("katsura 13", Groebner.katsura13(ground=ground)), # 65.22 vs 6802
-        ("eco 11", Groebner.eco11(ground=ground)),         # 0.41  vs 31.7
-        ("eco 12", Groebner.eco12(ground=ground)),         # 2.5   vs 341
-        ("eco 13", Groebner.eco13(ground=ground)),         # 17    vs 4102
-        ("noon 7", Groebner.noonn(7, ground=ground)),  # 0.19  vs 0.36
-        ("noon 8", Groebner.noonn(8, ground=ground)),  # 1.8   vs 3.2
-        ("noon 9", Groebner.noonn(9, ground=ground)),   # 18.1  vs 33.3
-        ("henrion 5", Groebner.henrion5(ground=ground)),  # 0.19  vs 0.36
-        ("henrion 6", Groebner.henrion6(ground=ground)),  # 1.8   vs 3.2
-        ("henrion 7", Groebner.henrion7(ground=ground))   # 18.1  vs 33.3
+        ("cyclic 7", Groebner.cyclicn(7, k=ground)), # 0.06 vs 0.01
+        ("cyclic 8", Groebner.cyclicn(8, k=ground)), # 0.19 vs 0.03
+        ("cyclic 9", Groebner.cyclicn(9, k=ground)), # 0.60 vs 0.9
+        ("cyclic 12", Groebner.rootn(12, k=ground)), # 0.06 vs 0.01
+        ("cyclic 13", Groebner.rootn(13, k=ground)), # 0.19 vs 0.03
+        ("cyclic 14", Groebner.rootn(14, k=ground)), # 0.60 vs 0.9
+        ("katsura 11", Groebner.katsura11(k=ground)), # 1.35 vs 71.121
+        ("katsura 12", Groebner.katsura12(k=ground)), # 9.68 vs 775
+        ("katsura 13", Groebner.katsura13(k=ground)), # 65.22 vs 6802
+        ("eco 11", Groebner.eco11(k=ground)),         # 0.41  vs 31.7
+        ("eco 12", Groebner.eco12(k=ground)),         # 2.5   vs 341
+        ("eco 13", Groebner.eco13(k=ground)),         # 17    vs 4102
+        ("noon 7", Groebner.noonn(7, k=ground)),  # 0.19  vs 0.36
+        ("noon 8", Groebner.noonn(8, k=ground)),  # 1.8   vs 3.2
+        ("noon 9", Groebner.noonn(9, k=ground)),   # 18.1  vs 33.3
+        ("henrion 5", Groebner.henrion5(k=ground)),  # 0.19  vs 0.36
+        ("henrion 6", Groebner.henrion6(k=ground)),  # 1.8   vs 3.2
+        ("henrion 7", Groebner.henrion7(k=ground))   # 18.1  vs 33.3
     ]
 
     for (name, system) in systems

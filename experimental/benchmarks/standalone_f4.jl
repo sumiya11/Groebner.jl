@@ -24,16 +24,16 @@ end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
-        ("cyclic 7", reverse(Groebner.cyclicn(7, ground=ground))),
-        ("cyclic 8", reverse(Groebner.cyclicn(8, ground=ground))),
-        ("katsura 9", reverse(Groebner.katsuran(9, ground=ground))),
-        ("katsura 10", reverse(Groebner.katsuran(10, ground=ground))),
-        ("katsura 11", reverse(Groebner.katsuran(11, ground=ground))),
-        ("noon 7", Groebner.noonn(7, ground=ground)),
-        ("noon 8", Groebner.noonn(8, ground=ground)),
-        # ("noon 9", Groebner.noonn(9, ground=ground)),
-        ("eco 10", Groebner.eco10(ground=ground)),
-        ("eco 11", Groebner.eco11(ground=ground))
+        ("cyclic 7", reverse(Groebner.cyclicn(7, k=ground))),
+        ("cyclic 8", reverse(Groebner.cyclicn(8, k=ground))),
+        ("katsura 9", reverse(Groebner.katsuran(9, k=ground))),
+        ("katsura 10", reverse(Groebner.katsuran(10, k=ground))),
+        ("katsura 11", reverse(Groebner.katsuran(11, k=ground))),
+        ("noon 7", Groebner.noonn(7, k=ground)),
+        ("noon 8", Groebner.noonn(8, k=ground)),
+        # ("noon 9", Groebner.noonn(9, k=ground)),
+        ("eco 10", Groebner.eco10(k=ground)),
+        ("eco 11", Groebner.eco11(k=ground))
     ]
 
     for (name, system) in systems
@@ -45,7 +45,7 @@ end
 p1 = 2^31 - 1
 p2 = 2^29 + 11
 p3 = 2^27 + 29
-s = Groebner.katsuran(11, ordering=:degrevlex, ground=AbstractAlgebra.GF(p3))
+s = Groebner.katsuran(11, ordering=:degrevlex, k=AbstractAlgebra.GF(p3))
 
 @profview gb1 = Groebner.groebner(s);
 

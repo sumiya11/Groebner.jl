@@ -103,7 +103,7 @@ graph, gb = Groebner.groebner_learn(f);
     end
 end
 
-c = Groebner.rootn(9, ground=Nemo.GF(2^31 - 1), ordering=:degrevlex)
+c = Groebner.rootn(9, k=Nemo.GF(2^31 - 1), ordering=:degrevlex)
 graph, gb_1 = Groebner.groebner_learn(c);
 flag, gb_2 = Groebner.groebner_apply!(graph, c);
 
@@ -113,4 +113,4 @@ flag, gb_2 = Groebner.groebner_apply!(graph, c);
     end
 end
 
-c = Groebner.rootn(9, ground=Nemo.GF(2^31 - 1), ordering=:degrevlex)
+c = Groebner.rootn(9, k=Nemo.GF(2^31 - 1), ordering=:degrevlex)

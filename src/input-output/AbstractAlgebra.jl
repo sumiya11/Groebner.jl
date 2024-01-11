@@ -256,7 +256,7 @@ function extract_coeffs_raw!(
     ring
 end
 
-function extract_coeffs_in_batch_raw!(
+function io_extract_coeffs_raw_batched!(
     trace,
     representation::PolynomialRepresentation,
     batch::NTuple{N, T},
@@ -280,7 +280,7 @@ function extract_coeffs_in_batch_raw!(
     CoeffType = representation.coefftype
 
     # write new coefficients directly to trace.buf_basis
-    _extract_coeffs_in_batch_raw!(
+    _io_extract_coeffs_raw_batched!(
         basis,
         input_polys_perm,
         term_perms,
@@ -356,7 +356,7 @@ function _extract_coeffs_raw!(
     nothing
 end
 
-function _extract_coeffs_in_batch_raw!(
+function _io_extract_coeffs_raw_batched!(
     basis,
     input_polys_perm::Vector{Int},
     term_perms::Vector{Vector{Int}},
@@ -585,7 +585,7 @@ function _io_convert_to_output(
         end
         cfs = zeros(ground, Int(monom_totaldeg(gbexps[i][1]) + 1))
         for (idx, j) in enumerate(gbexps[i])
-            cfs[monom_totaldeg(j) + 1] = ground(gbcoeffs[i][idx])
+            cfs[monom_totaldeg(j) + 1] = k(gbcoeffs[i][idx])
         end
         exported[i] = origring(cfs)
     end
@@ -690,7 +690,7 @@ function _io_convert_to_output(
             for k in 1:length(tmp)
                 exps[k, jt] = tmp[k]
             end
-            exps[end, jt] = sum(tmp)
+            exps[end, jt] = monom_totaldeg(gbexps[i][jt])
         end
         exported[i] = create_aa_polynomial(origring, cfs, exps)
     end
@@ -747,7 +747,7 @@ function _io_convert_to_output(
             # exps[nv + 1, jt] = gbexps[i][jt][end]
             monom_to_vector!(tmp, gbexps[i][jt])
             exps[(end - 1):-1:1, jt] .= tmp
-            exps[end, jt] = sum(tmp)
+            exps[end, jt] = monom_totaldeg(gbexps[i][jt])
         end
         exported[i] = create_aa_polynomial(origring, cfs, exps)
     end

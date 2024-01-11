@@ -66,15 +66,15 @@ end
             @test !Groebner.isgroebner([x + y, x], certify=certify)
             @test Groebner.isgroebner([z * x, z * x, R(1)], certify=certify)
         end
-        fs = Groebner.rootn(3, ground=GF(2^31 - 1), ordering=:degrevlex)
+        fs = Groebner.rootn(3, k=GF(2^31 - 1), ordering=:degrevlex)
         @test !Groebner.isgroebner(fs, certify=certify)
         @test Groebner.isgroebner(Groebner.groebner(fs), certify=certify)
 
-        fs = Groebner.rootn(3, ground=QQ, ordering=:degrevlex)
+        fs = Groebner.rootn(3, k=QQ, ordering=:degrevlex)
         @test !Groebner.isgroebner(fs, certify=certify)
         @test Groebner.isgroebner(Groebner.groebner(fs), certify=certify)
 
-        fs = Groebner.noonn(2, ground=GF(2^31 - 1), ordering=:degrevlex)
+        fs = Groebner.noonn(2, k=GF(2^31 - 1), ordering=:degrevlex)
         @test !Groebner.isgroebner(fs, certify=certify)
         @test Groebner.isgroebner(Groebner.groebner(fs), certify=certify)
 
@@ -83,7 +83,7 @@ end
         # @test !Groebner.isgroebner(fs, certify=certify)
         # @test Groebner.isgroebner(Groebner.groebner(fs), certify=certify)
 
-        fs = Groebner.noonn(6, ground=GF(2^31 - 1), ordering=:degrevlex)
+        fs = Groebner.noonn(6, k=GF(2^31 - 1), ordering=:degrevlex)
         @test !Groebner.isgroebner(fs, certify=certify)
         @test Groebner.isgroebner(Groebner.groebner(fs), certify=certify)
     end

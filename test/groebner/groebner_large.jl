@@ -121,7 +121,7 @@ using Primes
 end
 
 @testset "groebner, hard-coded answer" begin
-    noon = Groebner.noonn(4, ground=QQ, ordering=:degrevlex)
+    noon = Groebner.noonn(4, k=QQ, ordering=:degrevlex)
     (x1, x2, x3, x4) = gens(parent(first(noon)))
 
     gb = Groebner.groebner(noon)

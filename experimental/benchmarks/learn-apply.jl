@@ -96,7 +96,7 @@ p = prod(Primes.nextprimes(BigInt(2^30), 1000))
 
 1
 
-k = Groebner.katsuran(11, ground=K, ordering=:degrevlex)
+k = Groebner.katsuran(11, k=K, ordering=:degrevlex)
 kat_11_msolve = katsura_11_msolve(K)
 kat_12_msolve = katsura_12_msolve(K)
 kat_13_msolve = katsura_13_msolve(K)

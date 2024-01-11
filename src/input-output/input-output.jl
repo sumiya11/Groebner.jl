@@ -393,6 +393,29 @@ reference).
     _io_convert_to_output(ring, polynomials, monoms, coeffs, params)
 end
 
+@timeit function io_convert_to_output_batched(
+    ring::PolyRing,
+    batch::NTuple{N, V},
+    monoms::Vector{Vector{M}},
+    coeffs_packed::Vector{Vector{C}},
+    params::AlgorithmParameters
+) where {N, V, M <: Monom, C <: Coeff}
+    @assert !any(isempty, batch)
+    @log level = -2 "Converting polynomials from internal representation to output format (batched)"
+
+    coeffs_unpacked = io_unpack_composite_coefficients(coeffs_packed)
+    # NOTE: Internal polynomials must not be modified.
+    if isempty(monoms)
+        @log level = -7 "Output is empty, appending an empty placeholder polynomial"
+        push!(monoms, zero_monoms(M, ring))
+        for coeffs in coeffs_unpacked
+            push!(coeffs, zero_coeffs(C, ring))
+        end
+    end
+
+    ntuple(i -> io_convert_to_output(ring, batch[i], monoms, coeffs_unpacked[i], params), N)
+end
+
 ###
 # Utilities for composite coefficients
 

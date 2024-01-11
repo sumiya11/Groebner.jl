@@ -29,65 +29,56 @@ end
 # Compute Groebner bases over integers modulo a large prime
 problem = (
     problem_name="groebner, AA, GF(2^31-1), katsura 5",
-    result=compute_gb(Groebner.katsuran(5, ordering=:degrevlex, ground=GF(2^31 - 1)))
+    result=compute_gb(Groebner.katsuran(5, ordering=:degrevlex, k=GF(2^31 - 1)))
 )
 push!(suite, problem)
 push!(
     suite,
     (
         problem_name="groebner, AA, GF(2^31-1), katsura 5",
-        result=compute_gb(Groebner.katsuran(5, ordering=:degrevlex, ground=GF(2^31 - 1)))
+        result=compute_gb(Groebner.katsuran(5, ordering=:degrevlex, k=GF(2^31 - 1)))
     )
 )
 push!(
     suite,
     (
         problem_name="groebner, AA, GF(2^31-1), katsura 6",
-        result=compute_gb(Groebner.katsuran(6, ordering=:degrevlex, ground=GF(2^31 - 1)))
+        result=compute_gb(Groebner.katsuran(6, ordering=:degrevlex, k=GF(2^31 - 1)))
     )
 )
 push!(
     suite,
     (
         problem_name="groebner, AA, GF(2^31-1), katsura 8",
-        result=compute_gb(Groebner.katsuran(8, ordering=:degrevlex, ground=GF(2^31 - 1)))
+        result=compute_gb(Groebner.katsuran(8, ordering=:degrevlex, k=GF(2^31 - 1)))
     )
 )
 push!(
     suite,
     (
         problem_name="groebner, AA, GF(2^31-1), katsura 10",
-        result=compute_gb(
-            Groebner.katsuran(10, ordering=:degrevlex, ground=GF(2^31 - 1)),
-            5
-        )
+        result=compute_gb(Groebner.katsuran(10, ordering=:degrevlex, k=GF(2^31 - 1)), 5)
     )
 )
 push!(
     suite,
     (
         problem_name="groebner, AA, GF(2^27+29), katsura 10",
-        result=compute_gb(
-            Groebner.katsuran(10, ordering=:degrevlex, ground=GF(2^27 + 29)),
-            5
-        )
+        result=compute_gb(Groebner.katsuran(10, ordering=:degrevlex, k=GF(2^27 + 29)), 5)
     )
 )
 push!(
     suite,
     (
         problem_name="groebner, AA, GF(2^27+29), cyclic 8",
-        result=compute_gb(
-            Groebner.cyclicn(8, ordering=:degrevlex, ground=GF(2^27 + 29)),
-            5
-        )
+        result=compute_gb(Groebner.cyclicn(8, ordering=:degrevlex, k=GF(2^27 + 29)), 5)
     )
 )
 push!(
     suite,
     (
         problem_name="groebner, AA, GF(2^31-1), cyclic 8",
-        result=compute_gb(Groebner.cyclicn(8, ordering=:degrevlex, ground=GF(2^31 - 1)), 5)
+        result=compute_gb(Groebner.cyclicn(8, ordering=:degrevlex, k=GF(2^31 - 1)), 5)
     )
 )
 push!(
@@ -98,7 +89,7 @@ push!(
             Groebner.cyclicn(
                 8,
                 ordering=:degrevlex,
-                ground=nemo_make_prime_finite_field(2^31 - 1)
+                k=nemo_make_prime_finite_field(2^31 - 1)
             )
         )
     )
@@ -108,7 +99,7 @@ push!(
     (
         problem_name="groebner, threaded, AA, GF(2^31-1), cyclic 8",
         result=compute_gb(
-            Groebner.cyclicn(8, ordering=:degrevlex, ground=GF(2^31 - 1)),
+            Groebner.cyclicn(8, ordering=:degrevlex, k=GF(2^31 - 1)),
             5,
             threaded=:yes
         )
@@ -132,9 +123,7 @@ push!(
     suite,
     (
         problem_name="groebner_apply!, AA, GF(2^31-1), cyclic 7",
-        result=learn_and_apply(
-            Groebner.cyclicn(7, ordering=:degrevlex, ground=GF(2^31 - 1))
-        )
+        result=learn_and_apply(Groebner.cyclicn(7, ordering=:degrevlex, k=GF(2^31 - 1)))
     )
 )
 push!(
@@ -145,7 +134,7 @@ push!(
             Groebner.cyclicn(
                 7,
                 ordering=:degrevlex,
-                ground=nemo_make_prime_finite_field(2^31 - 1)
+                k=nemo_make_prime_finite_field(2^31 - 1)
             )
         )
     )
@@ -154,18 +143,14 @@ push!(
     suite,
     (
         problem_name="groebner_apply!, AA, GF(2^31-1), katsura 10",
-        result=learn_and_apply(
-            Groebner.katsuran(10, ordering=:degrevlex, ground=GF(2^31 - 1))
-        )
+        result=learn_and_apply(Groebner.katsuran(10, ordering=:degrevlex, k=GF(2^31 - 1)))
     )
 )
 push!(
     suite,
     (
         problem_name="groebner_apply!, AA, GF(2^27+29), katsura 10",
-        result=learn_and_apply(
-            Groebner.katsuran(10, ordering=:degrevlex, ground=GF(2^27 + 29))
-        )
+        result=learn_and_apply(Groebner.katsuran(10, ordering=:degrevlex, k=GF(2^27 + 29)))
     )
 )
 push!(
@@ -176,7 +161,7 @@ push!(
             Groebner.katsuran(
                 10,
                 ordering=:degrevlex,
-                ground=nemo_make_prime_finite_field(2^31 - 1)
+                k=nemo_make_prime_finite_field(2^31 - 1)
             )
         )
     )
@@ -187,35 +172,35 @@ push!(
     suite,
     (
         problem_name="groebner, AA, QQ, katsura 8",
-        result=compute_gb(Groebner.katsuran(8, ordering=:degrevlex, ground=QQ))
+        result=compute_gb(Groebner.katsuran(8, ordering=:degrevlex, k=QQ))
     )
 )
 push!(
     suite,
     (
         problem_name="groebner, Nemo, QQ, katsura 8",
-        result=compute_gb(Groebner.katsuran(8, ordering=:degrevlex, ground=Nemo.QQ))
+        result=compute_gb(Groebner.katsuran(8, ordering=:degrevlex, k=Nemo.QQ))
     )
 )
 push!(
     suite,
     (
         problem_name="groebner, AA, QQ, eco 10",
-        result=compute_gb(Groebner.eco10(ordering=:degrevlex, ground=QQ))
+        result=compute_gb(Groebner.eco10(ordering=:degrevlex, k=QQ))
     )
 )
 push!(
     suite,
     (
         problem_name="groebner, AA, QQ, cyclic 7",
-        result=compute_gb(Groebner.cyclicn(7, ordering=:degrevlex, ground=QQ))
+        result=compute_gb(Groebner.cyclicn(7, ordering=:degrevlex, k=QQ))
     )
 )
 push!(
     suite,
     (
         problem_name="groebner, AA, QQ, noon 8",
-        result=compute_gb(Groebner.noonn(8, ordering=:degrevlex, ground=QQ), 3)
+        result=compute_gb(Groebner.noonn(8, ordering=:degrevlex, k=QQ), 3)
     )
 )
 
@@ -292,7 +277,7 @@ push!(
     (
         problem_name="normalform, AA, GF(2^31-1), cyclic 7",
         result=compute_normalforms(
-            Groebner.cyclicn(7, ordering=:degrevlex, ground=GF(2^31 - 1))
+            Groebner.cyclicn(7, ordering=:degrevlex, k=GF(2^31 - 1))
         )
     )
 )
@@ -300,9 +285,7 @@ push!(
     suite,
     (
         problem_name="normalform, AA, GF(103), cyclic 8",
-        result=compute_normalforms(
-            Groebner.cyclicn(8, ordering=:degrevlex, ground=GF(103))
-        )
+        result=compute_normalforms(Groebner.cyclicn(8, ordering=:degrevlex, k=GF(103)))
     )
 )
 push!(
@@ -310,11 +293,7 @@ push!(
     (
         problem_name="normalform, Nemo, GF(103), cyclic 8",
         result=compute_normalforms(
-            Groebner.cyclicn(
-                8,
-                ordering=:degrevlex,
-                ground=nemo_make_prime_finite_field(103)
-            )
+            Groebner.cyclicn(8, ordering=:degrevlex, k=nemo_make_prime_finite_field(103))
         )
     )
 )
@@ -322,7 +301,7 @@ push!(
     suite,
     (
         problem_name="normalform, AA, QQ, katsura 9",
-        result=compute_normalforms(Groebner.katsuran(9, ordering=:degrevlex, ground=QQ))
+        result=compute_normalforms(Groebner.katsuran(9, ordering=:degrevlex, k=QQ))
     )
 )
 

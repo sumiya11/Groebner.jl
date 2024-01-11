@@ -18,11 +18,23 @@ function get_validate_dir(id)
 end
 
 # Statistics of interest
-const TIME_CATEGORIES = [:total_time]
+const TIME_CATEGORIES = [
+    :total_time,
+    :total_time_F4,
+    :total_time_learn,
+    :total_time_apply,
+    :total_time_apply_4x
+]
 const DATA_CATEGORIES = []
 const ALL_CATEGORIES = union(TIME_CATEGORIES, DATA_CATEGORIES)
 
-const HUMAN_READABLE_CATEGORIES = Dict(:total_time => "Total")
+const HUMAN_READABLE_CATEGORIES = Dict(
+    :total_time => "Total, s",
+    :total_time_learn => "Learn, s",
+    :total_time_apply => "Apply, s",
+    :total_time_apply_4x => "Apply 4x, s",
+    :total_time_F4 => "F4, s"
+)
 const CATEGORY_FORMAT = Dict()
 for cat in ALL_CATEGORIES
     CATEGORY_FORMAT[cat] = (val) -> if val isa Real

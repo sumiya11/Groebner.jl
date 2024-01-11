@@ -13,7 +13,17 @@ end
 @show ENV["JULIA_NUM_THREADS"]
 Groebner.logging_enabled() = false
 Groebner.invariants_enabled() = false
-Groebner.performance_counters_enabled() = true
+Groebner.performance_counters_enabled() = false
+
+s = Groebner.katsuran(9, ordering=:degrevlex, k=AbstractAlgebra.GF(2^30 + 3));
+trace, gb = Groebner.groebner_learn(s);
+@btime Groebner.groebner($s);
+@btime Groebner.groebner_apply!($trace, $s);
+@btime Groebner.groebner_apply!($trace, $((s, s)));
+@btime Groebner.groebner_apply!($trace, $((s, s, s, s)));
+@btime Groebner.groebner_apply!($trace, $((s, s, s, s, s, s, s, s)));
+
+@profview Groebner.groebner_apply!(trace, ((s, s, s, s)));
 
 R, (x1, x2, x3) = polynomial_ring(QQ, ["x1", "x2", "x3"], ordering=:degrevlex)
 k = [
@@ -22,7 +32,7 @@ k = [
     x1 * x2 * x3 + x1 * x2 + x2 * x3 + 11
 ]
 
-k = Groebner.noonn(7, ground=GF(2^31 - 1), ordering=:degrevlex)
+k = Groebner.noonn(7, k=GF(2^31 - 1), ordering=:degrevlex)
 
 @my_profview Groebner.groebner(k, loglevel=0, arithmetic=:signed);
 @time Groebner.groebner(k, loglevel=0);
@@ -72,7 +82,7 @@ R, (x1, x2, x3) =
     polynomial_ring(GF(nextprime(2^31 - 1)), ["x1", "x2", "x3"], ordering=:degrevlex)
 
 s = [x1 * x2^10 + 2, x1^11 * x3^3 + 3, x2^6 * x3 + 4 * x1^4 - 5]
-# s = Groebner.katsuran(9, ordering=:degrevlex, ground=AbstractAlgebra.GF(2^31 + 11))
+# s = Groebner.katsuran(9, ordering=:degrevlex, k=AbstractAlgebra.GF(2^31 + 11))
 
 gb2 = Groebner.groebner(s, arithmetic=:signed, loglevel=-3);
 gb3 = Groebner.groebner(s, arithmetic=:delayed, loglevel=-3);
@@ -113,11 +123,11 @@ m = Groebner.DelayedArithmeticZp(UInt64, UInt64, Primes.prevprime(2^31 - 1))
 Groebner.logging_enabled() = false
 
 p1, p2, p3, p4, p5, p6, p7, p8 = Primes.nextprimes(2^30 + 3, 8)
-s1 = Groebner.katsuran(11, ordering=:degrevlex, ground=GF(p1));
-s2 = Groebner.katsuran(11, ordering=:degrevlex, ground=GF(p2));
-s3 = Groebner.katsuran(11, ordering=:degrevlex, ground=GF(p3));
-s4 = Groebner.katsuran(11, ordering=:degrevlex, ground=GF(p4));
-s5 = Groebner.katsuran(11, ordering=:degrevlex, ground=GF(p5));
+s1 = Groebner.katsuran(11, ordering=:degrevlex, k=GF(p1));
+s2 = Groebner.katsuran(11, ordering=:degrevlex, k=GF(p2));
+s3 = Groebner.katsuran(11, ordering=:degrevlex, k=GF(p3));
+s4 = Groebner.katsuran(11, ordering=:degrevlex, k=GF(p4));
+s5 = Groebner.katsuran(11, ordering=:degrevlex, k=GF(p5));
 
 trace, gb = Groebner.groebner_learn(s1);
 
@@ -213,7 +223,7 @@ p5 = 2^27 - 39
 p6 = 2^26 - 5
 p7 = 2^25 - 39
 for p in (p1, p2, p3, p4, p5, p6, p7)
-    s = Groebner.katsuran(8, ordering=:degrevlex, ground=AbstractAlgebra.GF(p))
+    s = Groebner.katsuran(8, ordering=:degrevlex, k=AbstractAlgebra.GF(p))
     @info "p < 2^$(floor(Int, log(2, p)+1))"
     @btime Groebner.groebner($s)
 end
@@ -223,18 +233,18 @@ Groebner.logging_enabled() = false
 
 BenchmarkTools.DEFAULT_PARAMETERS.samples = 3
 systems = [
-    ("kat7", Groebner.katsuran(7, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
-    ("kat8", Groebner.katsuran(8, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
-    ("kat9", Groebner.katsuran(9, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
-    ("kat10", Groebner.katsuran(10, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
-    ("cyc6", Groebner.cyclicn(6, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
-    ("cyc7", Groebner.cyclicn(7, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
-    ("cyc8", Groebner.cyclicn(8, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
-    ("eco10", Groebner.eco10(ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
-    ("eco11", Groebner.eco11(ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
-    ("eco12", Groebner.eco12(ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
-    ("noon6", Groebner.noonn(6, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
-    ("noon7", Groebner.noonn(7, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2)))
+    ("kat7", Groebner.katsuran(7, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("kat8", Groebner.katsuran(8, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("kat9", Groebner.katsuran(9, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("kat10", Groebner.katsuran(10, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("cyc6", Groebner.cyclicn(6, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("cyc7", Groebner.cyclicn(7, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("cyc8", Groebner.cyclicn(8, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("eco10", Groebner.eco10(ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("eco11", Groebner.eco11(ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("eco12", Groebner.eco12(ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("noon6", Groebner.noonn(6, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("noon7", Groebner.noonn(7, ordering=:degrevlex, k=AbstractAlgebra.GF(p2)))
 ]
 for (name, s) in systems
     @info "$name: randomized thr. / randomized / deterministic thr. / deterministic"
@@ -256,18 +266,18 @@ gb1 == gb2
 
 BenchmarkTools.DEFAULT_PARAMETERS.samples = 3
 systems = [
-    ("kat7", Groebner.katsuran(7, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
-    ("kat8", Groebner.katsuran(8, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
-    ("kat9", Groebner.katsuran(9, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
-    ("kat10", Groebner.katsuran(10, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
-    ("cyc6", Groebner.cyclicn(6, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
-    ("cyc7", Groebner.cyclicn(7, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
-    ("cyc8", Groebner.cyclicn(8, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
-    ("eco10", Groebner.eco10(ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
-    ("eco11", Groebner.eco11(ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
-    ("eco12", Groebner.eco12(ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
-    ("noon6", Groebner.noonn(6, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2))),
-    ("noon7", Groebner.noonn(7, ordering=:degrevlex, ground=AbstractAlgebra.GF(p2)))
+    ("kat7", Groebner.katsuran(7, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("kat8", Groebner.katsuran(8, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("kat9", Groebner.katsuran(9, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("kat10", Groebner.katsuran(10, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("cyc6", Groebner.cyclicn(6, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("cyc7", Groebner.cyclicn(7, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("cyc8", Groebner.cyclicn(8, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("eco10", Groebner.eco10(ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("eco11", Groebner.eco11(ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("eco12", Groebner.eco12(ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("noon6", Groebner.noonn(6, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("noon7", Groebner.noonn(7, ordering=:degrevlex, k=AbstractAlgebra.GF(p2)))
 ]
 for (name, s) in systems
     @info "$name: randomized thr. / randomized / deterministic thr. / deterministic"
@@ -304,9 +314,9 @@ Groebner.performance_counters_enabled() = false
     gb = Groebner.groebner(sys2, loglevel=0)
 end
 
-sys1 = Groebner.katsuran(9, ordering=:degrevlex, ground=GF(2^27 + 29))
-sys2 = Groebner.cyclicn(8, ordering=:degrevlex, ground=GF(2^30 + 3))
-sys3 = Groebner.cyclicn(7, ordering=:degrevlex, ground=GF(2^31 - 1))
+sys1 = Groebner.katsuran(9, ordering=:degrevlex, k=GF(2^27 + 29))
+sys2 = Groebner.cyclicn(8, ordering=:degrevlex, k=GF(2^30 + 3))
+sys3 = Groebner.cyclicn(7, ordering=:degrevlex, k=GF(2^31 - 1))
 
 @time gb1 = Groebner.groebner(sys1, arithmetic=:auto, loglevel=-3);
 @time gb2 = Groebner.groebner(sys1, arithmetic=:signed, loglevel=-3);
@@ -746,5 +756,5 @@ using BenchmarkTools
 Groebner.invariants_enabled() = false
 Groebner.logging_enabled() = false
 Groebner.performance_counters_enabled() = false
-k = Groebner.katsuran(10, ground=GF(2^30 + 3), ordering=:degrevlex)
+k = Groebner.katsuran(10, k=GF(2^30 + 3), ordering=:degrevlex)
 @btime Groebner.groebner($k);

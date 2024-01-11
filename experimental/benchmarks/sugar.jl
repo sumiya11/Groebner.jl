@@ -112,7 +112,7 @@ end
 
 R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"], ordering=:lex)
 
-kat = Groebner.katsuran(5, ordering=:lex, ground=GF(2^31 - 1))
+kat = Groebner.katsuran(5, ordering=:lex, k=GF(2^31 - 1))
 
 basis = gb(kat, use_sugar=true)
 

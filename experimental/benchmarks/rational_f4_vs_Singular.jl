@@ -64,21 +64,21 @@ end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
-        ("reimer 6", Groebner.reimern(6, ground=ground)),
-        ("reimer 7", Groebner.reimern(7, ground=ground)),
-        ("reimer 8", Groebner.reimern(8, ground=ground))
+        ("reimer 6", Groebner.reimern(6, k=ground)),
+        ("reimer 7", Groebner.reimern(7, k=ground)),
+        ("reimer 8", Groebner.reimern(8, k=ground))
         # ("siwr", read_SIWR()), # 0.19 vs 0.03
         # ("seaijrc", read_SEAIJRC()), # 0.19 vs 0.03
-        # ("cyclic 7", Groebner.cyclicn(7, ground=ground)), # 0.19 vs 0.03
-        # ("cyclic 8", Groebner.cyclicn(8, ground=ground)), # 0.60 vs 0.9
-        # ("katsura 8",Groebner.katsuran(8, ground=ground)), # 1.35 vs 71.121
-        # ("katsura 9",Groebner.katsuran(9, ground=ground)), # 9.68 vs 775
-        # ("eco 10",Groebner.eco10(ground=ground)),         # 0.41  vs 31.7
-        # ("eco 11",Groebner.eco11(ground=ground)),         # 2.5   vs 341
-        # ("noon 8"    ,Groebner.noonn(8, ground=ground)),  # 0.19  vs 0.36
-        # ("noon 9"    ,Groebner.noonn(9, ground=ground)),  # 1.8   vs 3.2
-        # ("henrion 6"    ,Groebner.henrion6(ground=ground)),  # 0.19  vs 0.36
-        # ("henrion 7"    ,Groebner.henrion7(ground=ground))  # 1.8   vs 3.2
+        # ("cyclic 7", Groebner.cyclicn(7, k=ground)), # 0.19 vs 0.03
+        # ("cyclic 8", Groebner.cyclicn(8, k=ground)), # 0.60 vs 0.9
+        # ("katsura 8",Groebner.katsuran(8, k=ground)), # 1.35 vs 71.121
+        # ("katsura 9",Groebner.katsuran(9, k=ground)), # 9.68 vs 775
+        # ("eco 10",Groebner.eco10(k=ground)),         # 0.41  vs 31.7
+        # ("eco 11",Groebner.eco11(k=ground)),         # 2.5   vs 341
+        # ("noon 8"    ,Groebner.noonn(8, k=ground)),  # 0.19  vs 0.36
+        # ("noon 9"    ,Groebner.noonn(9, k=ground)),  # 1.8   vs 3.2
+        # ("henrion 6"    ,Groebner.henrion6(k=ground)),  # 0.19  vs 0.36
+        # ("henrion 7"    ,Groebner.henrion7(k=ground))  # 1.8   vs 3.2
     ]
 
     for (name, system) in systems

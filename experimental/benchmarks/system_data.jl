@@ -8,26 +8,26 @@ include("../src/Groebner.jl")
 
 function generatesystems(ground)
     [
-        # ("noon 3", Groebner.noon3(ground=ground)),
-        ("cyclic 4", Groebner.cyclicn(4, ground=ground)),
-        ("cyclic 5", Groebner.cyclicn(5, ground=ground)),
-        ("cyclic 6", Groebner.cyclicn(6, ground=ground)),
-        ("cyclic 7", Groebner.cyclicn(7, ground=ground)),
-        ("cyclic 8", Groebner.cyclicn(8, ground=ground)),
-        ("cyclic 9", Groebner.cyclicn(9, ground=ground))
-        # ("eco 11", Groebner.eco11(ground=ground)),
-        # ("eco 12", Groebner.eco12(ground=ground)),
-        # ("eco 13", Groebner.eco13(ground=ground))
-        #("noon 6", Groebner.noonn(6, ground=ground)),
-        #("noon 7", Groebner.noonn(7, ground=ground)),
-        #("noon 8", Groebner.noonn(8, ground=ground)),
-        # ("noon 9", Groebner.noonn(9, ground=ground)),
-        #("cyclic 10", Groebner.rootn(10, ground=ground)),
-        #("cyclic 11", Groebner.rootn(11, ground=ground)),
-        #("cyclic 12", Groebner.rootn(12, ground=ground)),
-        #("henrion 5", Groebner.henrion5(ground=ground)),
-        #("henrion 6", Groebner.henrion6(ground=ground)),
-        # ("henrion 7", Groebner.henrion7(ground=ground))
+        # ("noon 3", Groebner.noon3(k=ground)),
+        ("cyclic 4", Groebner.cyclicn(4, k=ground)),
+        ("cyclic 5", Groebner.cyclicn(5, k=ground)),
+        ("cyclic 6", Groebner.cyclicn(6, k=ground)),
+        ("cyclic 7", Groebner.cyclicn(7, k=ground)),
+        ("cyclic 8", Groebner.cyclicn(8, k=ground)),
+        ("cyclic 9", Groebner.cyclicn(9, k=ground))
+        # ("eco 11", Groebner.eco11(k=ground)),
+        # ("eco 12", Groebner.eco12(k=ground)),
+        # ("eco 13", Groebner.eco13(k=ground))
+        #("noon 6", Groebner.noonn(6, k=ground)),
+        #("noon 7", Groebner.noonn(7, k=ground)),
+        #("noon 8", Groebner.noonn(8, k=ground)),
+        # ("noon 9", Groebner.noonn(9, k=ground)),
+        #("cyclic 10", Groebner.rootn(10, k=ground)),
+        #("cyclic 11", Groebner.rootn(11, k=ground)),
+        #("cyclic 12", Groebner.rootn(12, k=ground)),
+        #("henrion 5", Groebner.henrion5(k=ground)),
+        #("henrion 6", Groebner.henrion6(k=ground)),
+        # ("henrion 7", Groebner.henrion7(k=ground))
     ]
 end
 

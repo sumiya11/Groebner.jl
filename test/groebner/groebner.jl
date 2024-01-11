@@ -87,7 +87,7 @@ end
 
         @test Groebner.groebner([R(3), R(4)]) == [R(1)]
         @test Groebner.groebner([x - 3, y + 3]) == [y + 3, x - 3]
-        noon = Groebner.noonn(5, ground=field, ordering=:degrevlex)
+        noon = Groebner.noonn(5, k=field, ordering=:degrevlex)
         gb = Groebner.groebner(noon)
         @test Groebner.isgroebner(gb) && all(iszero, Groebner.normalform(gb, noon))
 
@@ -108,7 +108,7 @@ end
 
         @test Groebner.groebner([R(3), R(4)]) == [R(1)]
         @test Groebner.groebner([x - 3, y + 3]) == [y + 3, x - 3]
-        noon = Groebner.noonn(5, ground=field, ordering=:degrevlex)
+        noon = Groebner.noonn(5, k=field, ordering=:degrevlex)
         gb = Groebner.groebner(noon)
         @test Groebner.isgroebner(gb) && all(iszero, Groebner.normalform(gb, noon))
 
@@ -124,7 +124,7 @@ end
 
         @test Groebner.groebner([R(3), R(4)]) == [R(1)]
         @test Groebner.groebner([x - 3, y + 3]) == [y + 3, x - 3]
-        noon = Groebner.noonn(5, ground=field, ordering=:degrevlex)
+        noon = Groebner.noonn(5, k=field, ordering=:degrevlex)
         gb = Groebner.groebner(noon)
         @test Groebner.isgroebner(gb) && all(iszero, Groebner.normalform(gb, noon))
 
@@ -140,7 +140,7 @@ end
 
         @test Groebner.groebner([R(3), R(4)]) == [R(1)]
         @test Groebner.groebner([x - 3, y + 3]) == [y + 3, x - 3]
-        noon = Groebner.noonn(5, ground=field, ordering=:degrevlex)
+        noon = Groebner.noonn(5, k=field, ordering=:degrevlex)
         gb = Groebner.groebner(noon)
         @test Groebner.isgroebner(gb) && all(iszero, Groebner.normalform(gb, noon))
 
@@ -196,23 +196,23 @@ end
         @test G ≂
               [y^2 + 7 // 13 * y, x * y + 7 // 13 * x, x^2 - 3 // 22 * x + 39 // 539 * y]
 
-        root = Groebner.rootn(3, ground=QQ, ordering=:degrevlex)
+        root = Groebner.rootn(3, k=QQ, ordering=:degrevlex)
         gb = Groebner.groebner(root, modular=modular)
         @test Groebner.isgroebner(gb)
 
-        root = Groebner.rootn(4, ground=QQ, ordering=:degrevlex)
+        root = Groebner.rootn(4, k=QQ, ordering=:degrevlex)
         gb = Groebner.groebner(root, modular=modular)
         @test Groebner.isgroebner(gb)
 
-        root = Groebner.rootn(8, ground=QQ, ordering=:degrevlex)
+        root = Groebner.rootn(8, k=QQ, ordering=:degrevlex)
         gb = Groebner.groebner(root, modular=modular)
         @test Groebner.isgroebner(gb)
 
-        noon = Groebner.noonn(3, ground=QQ, ordering=:degrevlex)
+        noon = Groebner.noonn(3, k=QQ, ordering=:degrevlex)
         gb = Groebner.groebner(noon, modular=modular)
         @test Groebner.isgroebner(gb)
 
-        noon = Groebner.noonn(4, ground=QQ, ordering=:degrevlex)
+        noon = Groebner.noonn(4, k=QQ, ordering=:degrevlex)
         gb = Groebner.groebner(noon, modular=modular)
         @test Groebner.isgroebner(gb)
 
@@ -313,12 +313,12 @@ end
 end
 
 @testset "groebner autoreduce" begin
-    root = Groebner.rootn(3, ground=GF(2^31 - 1), ordering=:degrevlex)
+    root = Groebner.rootn(3, k=GF(2^31 - 1), ordering=:degrevlex)
     x1, x2, x3 = gens(parent(first(root)))
     gb = Groebner.groebner(root, reduced=true)
     @test gb == [x1 + x2 + x3, x2^2 + x2 * x3 + x3^2, x3^3 + 2147483646]
 
-    root = Groebner.rootn(6, ground=GF(2^31 - 1), ordering=:degrevlex)
+    root = Groebner.rootn(6, k=GF(2^31 - 1), ordering=:degrevlex)
     x1, x2, x3, x4, x5, x6 = gens(parent(first(root)))
     gb = Groebner.groebner(root, reduced=true)
     #! format: off
@@ -332,7 +332,7 @@ end
     ]
     #! format: on
 
-    ku = Groebner.ku10(ground=GF(2^31 - 1), ordering=:degrevlex)
+    ku = Groebner.ku10(k=GF(2^31 - 1), ordering=:degrevlex)
     x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = gens(parent(first(ku)))
     gb = Groebner.groebner(ku, reduced=true)
 
@@ -359,12 +359,12 @@ end
     fs = [x^2 + y, x * y]
     @test Groebner.groebner(fs, certify=true) == [y^2, x * y, x^2 + y]
 
-    root = Groebner.rootn(3, ground=QQ, ordering=:degrevlex)
+    root = Groebner.rootn(3, k=QQ, ordering=:degrevlex)
     x1, x2, x3 = gens(parent(first(root)))
     gb = Groebner.groebner(root, certify=true)
     @test gb == [x1 + x2 + x3, x2^2 + x2 * x3 + x3^2, x3^3 - 1]
 
-    root = Groebner.rootn(6, ground=QQ, ordering=:deglex)
+    root = Groebner.rootn(6, k=QQ, ordering=:deglex)
     x1, x2, x3, x4, x5, x6 = gens(parent(first(root)))
     gb = Groebner.groebner(root, certify=true)
     #! format: off
@@ -378,7 +378,7 @@ end
     ]
     #! format: on
 
-    ku = Groebner.ku10(ground=QQ, ordering=:degrevlex)
+    ku = Groebner.ku10(k=QQ, ordering=:degrevlex)
     x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = gens(parent(first(ku)))
     gb = Groebner.groebner(ku, certify=true)
 
@@ -405,7 +405,7 @@ end
 
 @testset "groebner maxpairs" begin
     # TODO: fix some bugs in maxpairs
-    s = Groebner.noonn(5, ordering=:degrevlex, ground=GF(2^31 - 1))
+    s = Groebner.noonn(5, ordering=:degrevlex, k=GF(2^31 - 1))
     gb = Groebner.groebner(s)
     # @test gb == Groebner.groebner(s, maxpairs=100)
     # @test gb == Groebner.groebner(s, maxpairs=10)
@@ -413,7 +413,7 @@ end
     # @test gb == Groebner.groebner(s, maxpairs=1)
     @test_throws AssertionError Groebner.groebner(s, maxpairs=0)
 
-    s = Groebner.katsuran(5, ordering=:degrevlex, ground=QQ)
+    s = Groebner.katsuran(5, ordering=:degrevlex, k=QQ)
     gb = Groebner.groebner(s)
     # @test gb == Groebner.groebner(s, maxpairs=100)
     # @test gb == Groebner.groebner(s, maxpairs=10)
@@ -625,10 +625,10 @@ end
 @testset "groebner monoms" begin
     for domain in (GF(2^31 - 1), QQ)
         for system in [
-            Groebner.cyclicn(2, ground=domain),
-            Groebner.noonn(4, ground=domain, ordering=:degrevlex),
-            Groebner.katsuran(5, ground=domain, ordering=:degrevlex),
-            Groebner.kinema(ground=domain, ordering=:degrevlex)
+            Groebner.cyclicn(2, k=domain),
+            Groebner.noonn(4, k=domain, ordering=:degrevlex),
+            Groebner.katsuran(5, k=domain, ordering=:degrevlex),
+            Groebner.kinema(k=domain, ordering=:degrevlex)
         ]
             results = []
             for monoms in [:dense, :packed]
@@ -714,19 +714,19 @@ end
               Groebner.groebner(fs) ==
               [y^2, x * y, x^2 + y]
 
-        root = Groebner.rootn(3, ground=GF(2^31 - 1), ordering=:degrevlex)
+        root = Groebner.rootn(3, k=GF(2^31 - 1), ordering=:degrevlex)
         x1, x2, x3 = gens(parent(first(root)))
         gb1 = Groebner.groebner(root, linalg=linalg)
         gb2 = Groebner.groebner(root)
         @test gb1 == gb2 == [x1 + x2 + x3, x2^2 + x2 * x3 + x3^2, x3^3 + 2147483646]
 
-        root = Groebner.rootn(6, ground=GF(2^31 - 1), ordering=:degrevlex)
+        root = Groebner.rootn(6, k=GF(2^31 - 1), ordering=:degrevlex)
         x1, x2, x3, x4, x5, x6 = gens(parent(first(root)))
         gb1 = Groebner.groebner(root, linalg=linalg)
         gb2 = Groebner.groebner(root)
         @test gb1 == gb2
 
-        ku = Groebner.ku10(ground=GF(2^31 - 1), ordering=:degrevlex)
+        ku = Groebner.ku10(k=GF(2^31 - 1), ordering=:degrevlex)
         x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = gens(parent(first(ku)))
         gb1 = Groebner.groebner(ku)
         gb2 = Groebner.groebner(ku, linalg=linalg)

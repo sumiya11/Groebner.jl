@@ -196,7 +196,7 @@ Katsura-9 system:
 using Groebner, AbstractAlgebra, BenchmarkTools
 
 # Create the system
-kat = Groebner.katsuran(9, ground=ZZ, ordering=:degrevlex)
+kat = Groebner.katsuran(9, k=ZZ, ordering=:degrevlex)
 
 # Reduce the coefficients modulo 5 different primes
 kat_0 = map(f -> map_coefficients(c -> GF(2^30 + 3)(c), f), kat)

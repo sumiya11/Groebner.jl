@@ -71,11 +71,11 @@ end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
-    #("cyclic 7", Groebner.cyclicn(7, ground=ground)),
-    #("noon 8"    ,Groebner.noonn(8, ground=ground)),
-    # ("eco 11"    ,Groebner.eco11(ground=ground)),
-        ("katsura 8", Groebner.katsuran(8, ground=ground))
-    #("root 11"    ,Groebner.rootn(11, ground=ground)),
+    #("cyclic 7", Groebner.cyclicn(7, k=ground)),
+    #("noon 8"    ,Groebner.noonn(8, k=ground)),
+    # ("eco 11"    ,Groebner.eco11(k=ground)),
+        ("katsura 8", Groebner.katsuran(8, k=ground))
+    #("root 11"    ,Groebner.rootn(11, k=ground)),
     ]
 
     println()

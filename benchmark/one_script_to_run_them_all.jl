@@ -44,6 +44,7 @@ function parse_commandline()
             The backend to benchmark.
             Possible options are:
             - groebner
+            - learn_apply
             - singular
             - maple
             - msolve
@@ -132,6 +133,18 @@ function generate_benchmark_file(
         fd = open("$dir/$name.jl", "w")
         println(fd, benchmark_source)
         close(fd)
+    elseif backend == "learn_apply"
+        benchmark_source = generate_benchmark_source_for_groebner(
+            name,
+            system,
+            dir,
+            validate,
+            nruns,
+            time_filename
+        )
+        fd = open("$dir/$name.jl", "w")
+        println(fd, benchmark_source)
+        close(fd)
     elseif backend == "singular"
         benchmark_source = generate_benchmark_source_for_singular(
             name,
@@ -200,6 +213,15 @@ function get_command_to_run_benchmark(
             "$problem_set_id",
             "$validate"
         ])
+    elseif backend == "learn_apply"
+        return Cmd([
+            "julia",
+            (@__DIR__) * "/generate/learn_apply/run_in_learn_apply.jl",
+            "$problem_name",
+            "$problem_num_runs",
+            "$problem_set_id",
+            "$validate"
+        ])
     elseif backend == "singular"
         return Cmd([
             "julia",
@@ -239,7 +261,7 @@ function populate_benchmarks(args; regenerate=true)
     benchmark_id = args["suite"]
     nruns = args["nruns"]
     validate = args["validate"] in ["yes", "update"]
-    benchmark = get_benchmark(benchmark_id)
+    benchmark = get_benchmark_suite(benchmark_id)
     benchmark_name, systems = benchmark.name, benchmark.systems
     benchmark_dir = (@__DIR__) * "/" * get_benchmark_dir(backend, benchmark_id)
     dir_present = isdir(benchmark_dir)
@@ -298,7 +320,7 @@ function run_benchmarks(args)
     @assert nruns > 0
     benchmark_id = args["suite"]
 
-    benchmark = get_benchmark(benchmark_id)
+    benchmark = get_benchmark_suite(benchmark_id)
     benchmark_name = benchmark.name
 
     benchmark_dir = (@__DIR__) * "/" * get_benchmark_dir(backend, benchmark_id)
@@ -556,9 +578,13 @@ function collect_timings(args, names)
     backend = args["backend"]
     benchmark_id = args["suite"]
     benchmark_dir = (@__DIR__) * "/" * get_benchmark_dir(backend, benchmark_id)
-    benchmark_name = get_benchmark(benchmark_id).name
+    benchmark_name = get_benchmark_suite(benchmark_id).name
 
-    targets = [:total_time]
+    if backend == "learn_apply"
+        targets = [:total_time_F4, :total_time_learn, :total_time_apply, :total_time_apply_4x]
+    else
+        targets = [:total_time]
+    end
     @assert length(targets) > 0
     println()
     @info """
@@ -605,13 +631,11 @@ function collect_timings(args, names)
             data_file = open("$benchmark_dir/$name/$datafn", "r")
         catch e
             @debug "Cannot collect data for $name"
-            # push!(cannot_collect, (name,))
             continue
         end
         lines = readlines(data_file)
         if isempty(lines)
             @debug "Cannot collect data for $name"
-            # push!(cannot_collect, (name,))
             continue
         end
         @assert lines[1] == name
@@ -630,22 +654,27 @@ function collect_timings(args, names)
         println()
     end
 
-    _target = targets[1]
-    formatting_style = CATEGORY_FORMAT[_target]
-    conf = set_pt_conf(tf=tf_markdown, alignment=:c)
     title = "Benchmark results, $backend"
-    header = ["System", "Time, s"]
+    conf = set_pt_conf(tf=tf_markdown, alignment=:c)
+    makecolname(target) = HUMAN_READABLE_CATEGORIES[target]
+    columns = [makecolname(target) for target in targets]
+    header = vcat("Model", map(string, columns))
     vec_of_vecs = Vector{Vector{Any}}()
     for name in names
-        if haskey(runtime, name) && haskey(runtime[name], _target)
-            push!(vec_of_vecs, [name, formatting_style(runtime[name][_target])])
-        else
-            push!(vec_of_vecs, [name, "-"])
+        push!(vec_of_vecs, [name])
+        for target in targets
+            formatting_style = CATEGORY_FORMAT[target]
+            if haskey(runtime, name) && haskey(runtime[name], target)
+                push!(vec_of_vecs[end], formatting_style(runtime[name][target]))
+            else
+                push!(vec_of_vecs[end], "-")
+            end
         end
     end
-    table = Array{Any, 2}(undef, length(vec_of_vecs), 2)
+
+    table = Array{Any, 2}(undef, length(vec_of_vecs), length(header))
     for i in 1:length(vec_of_vecs)
-        for j in 1:2
+        for j in 1:length(vec_of_vecs[i])
             table[i, j] = vec_of_vecs[i][j]
         end
     end
@@ -671,7 +700,6 @@ function collect_timings(args, names)
 
     """
 
-    makecolname(target) = HUMAN_READABLE_CATEGORIES[target]
     columns = [makecolname(target) for target in targets]
     resulting_md *= "|Model|" * join(map(string, columns), "|") * "|\n"
     resulting_md *= "|-----|" * join(["---" for _ in columns], "|") * "|\n"
@@ -718,7 +746,7 @@ end
 
 function collect_all_timings(args, runtimes, systems)
     benchmark_id = args["suite"]
-    benchmark_name = get_benchmark(benchmark_id).name
+    benchmark_name = get_benchmark_suite(benchmark_id).name
 
     targets = [:total_time]
     @assert length(targets) > 0
@@ -855,6 +883,9 @@ function check_args(args)
         throw(
             "Validating results for msolve over the rationals is not possible. Use command line option --validate=no"
         )
+    end
+    if backend == "learn_apply" && args in [3]
+        throw("Cannot learn & apply over the rationals")
     end
 end
 

@@ -134,7 +134,7 @@ function _groebner_apply!(
     trace = get_trace!(wrapped_trace, batch, kws)
     @log level = -5 "Selected trace" trace.representation.coefftype
 
-    ring = extract_coeffs_in_batch_raw!(trace, trace.representation, batch, kws)
+    ring = io_extract_coeffs_raw_batched!(trace, trace.representation, batch, kws)
 
     # TODO: this is a bit hacky
     params = AlgorithmParameters(
@@ -154,16 +154,10 @@ function _groebner_apply!(
     # @performance_counters_print
     !flag && return flag, batch
 
-    gb_coeffs_unpacked = io_unpack_composite_coefficients(gb_coeffs)
-
     performance_counters_print(params.statistics)
     print_statistics(params.statistics)
 
-    flag,
-    ntuple(
-        i -> io_convert_to_output(ring, batch[i], gb_monoms, gb_coeffs_unpacked[i], params),
-        N
-    )
+    flag, io_convert_to_output_batched(ring, batch, gb_monoms, gb_coeffs, params)
 end
 
 function _groebner_apply!(ring, trace, params)

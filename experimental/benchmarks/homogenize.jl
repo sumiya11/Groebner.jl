@@ -38,7 +38,7 @@ end
 begin
     using AbstractAlgebra
     K = GF(2^31 - 1)
-    kat = Groebner.katsuran(6, ground=K)
+    kat = Groebner.katsuran(6, k=K)
 
     kat_hom = homogenize(kat)
     xs = gens(parent(kat_hom[1]))

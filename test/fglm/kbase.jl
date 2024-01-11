@@ -97,7 +97,7 @@ end
     gb = Groebner.groebner(noon, ordering=Groebner.DegRevLex())
     @test length(Groebner.kbase(gb, ordering=Groebner.DegRevLex())) == 21
 
-    noon = Groebner.noonn(7, ground=GF(2^31 - 1))
+    noon = Groebner.noonn(7, k=GF(2^31 - 1))
     R = parent(first(noon))
     gb = Groebner.groebner(noon, ordering=Groebner.DegRevLex())
     @test length(Groebner.kbase(gb, ordering=Groebner.DegRevLex())) == 2173
