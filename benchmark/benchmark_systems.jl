@@ -1,5 +1,9 @@
 import AbstractAlgebra, Groebner
 
+include((@__DIR__) * "/generate/benchmark_systems/SIAN/Chol.jl")
+include((@__DIR__) * "/generate/benchmark_systems/SIAN/NF-kB.jl")
+include((@__DIR__) * "/generate/benchmark_systems/SIAN/Pharm.jl")
+
 function get_benchmark_suite(id)
     if id == 0
         benchmark_set_0()

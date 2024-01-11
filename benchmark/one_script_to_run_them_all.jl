@@ -581,7 +581,8 @@ function collect_timings(args, names)
     benchmark_name = get_benchmark_suite(benchmark_id).name
 
     if backend == "learn_apply"
-        targets = [:total_time_F4, :total_time_learn, :total_time_apply, :total_time_apply_4x]
+        targets =
+            [:total_time_F4, :total_time_learn, :total_time_apply, :total_time_apply_4x]
     else
         targets = [:total_time]
     end
@@ -911,6 +912,8 @@ function main()
     for (arg, val) in args
         @debug "$arg  =>  $val"
     end
+
+    println("Timestamp: $(now())")
 
     # Either benchmark all available backends or a single backend
     if args["backend"] == "ALL"
