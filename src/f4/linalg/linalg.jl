@@ -27,7 +27,7 @@ In other words, computes the reduced row echelon form of
 
 Returns `true` if successful and `false` otherwise.
 """
-function linalg_main!(
+@timeit function linalg_main!(
     matrix::MacaulayMatrix,
     basis::Basis,
     params::AlgorithmParameters,

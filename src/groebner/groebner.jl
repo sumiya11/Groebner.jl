@@ -4,7 +4,7 @@
 # Backend for `groebner`
 
 # Proxy function for handling exceptions.
-function _groebner(polynomials, kws::KeywordsHandler)
+function _groebner0(polynomials, kws::KeywordsHandler)
     # We try to select an efficient internal polynomial representation, i.e., a
     # suitable representation of monomials and coefficients.
     polynomial_repr = io_select_polynomial_representation(polynomials, kws)
@@ -12,7 +12,7 @@ function _groebner(polynomials, kws::KeywordsHandler)
         # The backend is wrapped in a try/catch to catch exceptions that one can
         # hope to recover from (and, perhaps, restart the computation with safer
         # parameters).
-        return _groebner(polynomials, kws, polynomial_repr)
+        return _groebner1(polynomials, kws, polynomial_repr)
     catch err
         if isa(err, MonomialDegreeOverflow)
             @log level = 1 """
@@ -20,7 +20,7 @@ function _groebner(polynomials, kws::KeywordsHandler)
             Restarting with at least $(32) bits per exponent."""
             polynomial_repr =
                 io_select_polynomial_representation(polynomials, kws, hint=:large_exponents)
-            return _groebner(polynomials, kws, polynomial_repr)
+            return _groebner1(polynomials, kws, polynomial_repr)
         else
             # Something bad happened.
             rethrow(err)
@@ -28,7 +28,7 @@ function _groebner(polynomials, kws::KeywordsHandler)
     end
 end
 
-function _groebner(polynomials, kws::KeywordsHandler, representation)
+function _groebner1(polynomials, kws::KeywordsHandler, representation)
     # Extract ring information, exponents, and coefficients from input
     # polynomials. Convert these to an internal polynomial representation. 
     # NOTE: This must copy the input, so that input `polynomials` is never
@@ -53,7 +53,7 @@ function _groebner(polynomials, kws::KeywordsHandler, representation)
     end
 
     # Compute a groebner basis!
-    gbmonoms, gbcoeffs = _groebner(ring, monoms, coeffs, params)
+    gbmonoms, gbcoeffs = _groebner2(ring, monoms, coeffs, params)
 
     if params.homogenize
         ring, gbmonoms, gbcoeffs =
@@ -63,9 +63,6 @@ function _groebner(polynomials, kws::KeywordsHandler, representation)
     # Convert result back to the representation of input
     basis = io_convert_to_output(ring, polynomials, gbmonoms, gbcoeffs, params)
 
-    performance_counters_print(params.statistics)
-    print_statistics(params.statistics)
-
     basis
 end
 
@@ -73,7 +70,7 @@ end
 # Groebner basis over Z_p.
 # Just calls f4 directly.
 
-@timeit function _groebner(
+@timeit function _groebner2(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -95,7 +92,7 @@ end
 # Groebner basis over Q.
 
 # GB over the rationals uses modular computation.
-@timeit function _groebner(
+@timeit function _groebner2(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -570,12 +567,6 @@ function _groebner_learn_and_apply_threaded(
             threadlocal_prime_4x = ntuple(k -> threadbuf_primes[j + k - 1], 4)
             threadlocal_bigint_buffer = threadbuf_bigint_buffer[threadid()]
             threadlocal_params = threadbuf_params[threadid()]
-
-            # @log level = -3 "The lucky primes are $threadlocal_prime_4x"
-
-            # Perform reduction modulo primes and store result in basis_ff_4x
-            # println(j, " ", "Thread = ", threadid())
-            # println(threadlocal_prime_4x)
 
             ring_ff_4x, basis_ff_4x = reduce_modulo_p_in_batch!(
                 threadlocal_bigint_buffer,  # is modified

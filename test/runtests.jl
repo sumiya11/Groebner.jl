@@ -29,6 +29,9 @@ end
 # Groebner.versioninfo()
 
 @time @testset "All tests" verbose = true begin
+    # Basic tests for addition in Zp
+    @time @includetests ["arithmetic/Zp"]
+
     # Different implementations of a monomial 
     @time @includetests [
         "monoms/exponentvector",
@@ -38,16 +41,10 @@ end
     # High-level monomial arithmetic and term orders
     @time @includetests ["monoms/monom_arithmetic", "monoms/monom_orders"]
 
-    # Basic tests for addition in Zp
-    @time @includetests ["arithmetic/Zp"]
-
     # Consistency of input-output
     @time @includetests ["input-output/AbstractAlgebra"]
     # Crt and rational reconstructions
-    @time @includetests [
-        "reconstruction/crt_reconstruction",
-        "reconstruction/rational_reconstruction"
-    ]
+    @time @includetests ["reconstruction/crt", "reconstruction/ratrec"]
 
     @time @includetests [
         "groebner/groebner",

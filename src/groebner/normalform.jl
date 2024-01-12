@@ -63,7 +63,6 @@ function _normalform(polynomials, to_be_reduced, kws::KeywordsHandler)
     coeffs_reduced = coeffs_to_be_reduced
     # TODO: remove `to_be_reduced` from arguments here
     res = io_convert_to_output(ring, to_be_reduced, monoms_reduced, coeffs_reduced, params)
-    performance_counters_print(params.statistics)
     res
 end
 

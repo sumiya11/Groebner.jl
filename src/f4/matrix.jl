@@ -380,7 +380,7 @@ end
     hashtable_insert_polynomial_multiple!(row, htmp, etmp, poly, basis_ht, symbolic_ht)
 end
 
-function matrix_fill_column_to_monom_map!(
+@timeit function matrix_fill_column_to_monom_map!(
     matrix::MacaulayMatrix,
     symbol_ht::MonomialHashtable
 )

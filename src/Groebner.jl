@@ -93,7 +93,7 @@ import TimerOutputs
 ###
 # Initialization
 
-# Groebner is multi-threaded by default.
+# Groebner may use multi-threaded by default.
 # 1. Set the environment variable GROEBNER_NO_THREADED to 1 to disable all
 #    multi-threading in Groebner
 # 2. If GROEBNER_NO_THREADED=0, the keyword argument `threaded` provided by some
@@ -131,7 +131,7 @@ include("utils/statistics.jl")
 include("utils/plots.jl")
 
 # Test systems, such as katsura, cyclic, etc
-include("utils/test_systems.jl")
+include("utils/examples.jl")
 
 # Monomial orderings.
 # The file orderings.jl is the interface for communicating with the user, and

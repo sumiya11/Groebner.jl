@@ -105,7 +105,7 @@ function print_f4_statistics(io, stat::GroebnerStatistics)
     nothing
 end
 
-function print_statistics(io, stat::GroebnerStatistics)
+function statistics_print(io, stat::GroebnerStatistics)
     println(io, "Groebner statistics")
 
     print_f4_statistics(io, stat)
@@ -165,9 +165,9 @@ macro stat(exprs...)
     end)
 end
 
-function print_statistics(statistics)
-    (statistics in (:no, :timings)) && return nothing
-    if statistics in (:stats, :all) && !statistics_enabled()
+function statistics_print(kws)
+    (kws.statistics in (:no, :timings)) && return nothing
+    if kws.statistics in (:stats, :all) && !statistics_enabled()
         @log level = 1_000 """
         Statistics were not collected since `statistics_enabled()` is `false`.
         Consider setting `Groebner.statistics_enabled()` to `true` and trying again.
@@ -176,5 +176,6 @@ function print_statistics(statistics)
     end
     threadid() != 1 && return nothing
 
-    print_statistics(stdout, _groebner_statistics)
+    statistics_print(stdout, _groebner_statistics)
+    nothing
 end

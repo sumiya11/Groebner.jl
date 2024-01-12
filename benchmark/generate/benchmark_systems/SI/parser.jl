@@ -1,49 +1,58 @@
+include((@__DIR__) * "/../../layman_parser.jl")
 
 import Nemo
 
 function read_SEAIJRC()
     @info "Reading SEAIJRC"
-    polys = []
-    apath = "/home/ademin/gr/gbSEAIJRC"
-    open(apath, "r") do f
-        head = "b, alpha, g2, Ninv, k, g1, q, r, sat_aux1, sat_aux2"
-        body = readline(f)
-        @info "First line" head
-        headv = map(x -> Symbol(x), split(head, ", "))
-        e = Meta.parse(join(headv, ","))
-        R, xs = eval(:((R, $e) = Nemo.polynomial_ring(Nemo.QQ, $headv)))
-        @info "Created ring" R xs
-        rrr = split(body, ",")
-        for (i, s) in enumerate(rrr)
-            @info "Reading poly $i/$(length(rrr))"
-            poly = eval(Meta.parse(s))
-            push!(polys, poly)
-        end
+    apath = (@__DIR__) * "/gbSEAIJRC"
+    sys = open(apath, "r") do f
+        parse_system_naive(read(f, String))
     end
-    @info "Read" length(polys)
-    R.(polys)
+    sys
+    # polys = []
+    # open(apath, "r") do f
+    #     head = "b, alpha, g2, Ninv, k, g1, q, r, sat_aux1, sat_aux2"
+    #     body = readline(f)
+    #     @info "First line" head
+    #     headv = map(x -> Symbol(x), split(head, ", "))
+    #     e = Meta.parse(join(headv, ","))
+    #     R, xs = eval(:((R, $e) = Nemo.polynomial_ring(Nemo.QQ, $headv)))
+    #     @info "Created ring" R xs
+    #     rrr = split(body, ",")
+    #     for (i, s) in enumerate(rrr)
+    #         @info "Reading poly $i/$(length(rrr))"
+    #         poly = eval(Meta.parse(s))
+    #         push!(polys, poly)
+    #     end
+    # end
+    # @debug "Read" length(polys)
+    # map(R, polys)
 end
 
 function read_SIWR()
     @info "Reading SIWR"
-    polys = []
-    apath = "/home/ademin/gr/gbSIWR"
-    open(apath, "r") do f
-        head = readline(f)
-        body = readline(f)
-        headv = map(x -> Symbol(x), split(head, ", "))
-        e = Meta.parse(join(headv, ","))
-        R, xs = eval(:((R, $e) = Nemo.polynomial_ring(Nemo.QQ, $headv)))
-        @info "Created ring" R xs
-        rrr = split(body, ",")
-        for (i, s) in enumerate(rrr)
-            @info "Reading poly $i/$(length(rrr))"
-            poly = eval(Meta.parse(s))
-            push!(polys, poly)
-        end
+    apath = (@__DIR__) * "/gbSIWR"
+    sys = open(apath, "r") do f
+        parse_system_naive(read(f, String))
     end
-    @info "Read" length(polys)
-    R.(polys)
+    sys
+    # polys = []
+    # open(apath, "r") do f
+    #     head = readline(f)
+    #     body = readline(f)
+    #     headv = map(x -> Symbol(x), split(head, ", "))
+    #     e = Meta.parse(join(headv, ","))
+    #     R, xs = eval(:((R, $e) = Nemo.polynomial_ring(Nemo.QQ, $headv)))
+    #     @info "Created ring" R xs
+    #     rrr = split(body, ",")
+    #     for (i, s) in enumerate(rrr)
+    #         @info "Reading poly $i/$(length(rrr))"
+    #         poly = eval(Meta.parse(s))
+    #         push!(polys, poly)
+    #     end
+    # end
+    # @debug "Read" length(polys)
+    # map(R, polys)
 end
 
 function read_MAPK()

@@ -14,9 +14,6 @@ using Groebner
 using ProgressMeter, PrettyTables
 using NaturalSort
 
-# Set up the logger
-global_logger(Logging.ConsoleLogger(stdout, Logging.Info))
-
 # Load the definitions of benchmark systems
 include("benchmark_systems.jl")
 
@@ -25,6 +22,9 @@ include("generate/benchmark_generators.jl")
 
 # Load the code to compute the certificate of a groebner basis
 include("generate/basis_certificate.jl")
+
+# Set up the logger
+global_logger(Logging.ConsoleLogger(stdout, Logging.Info))
 
 # Set the properties of progress bars
 const _progressbar_color = :light_green
@@ -703,7 +703,7 @@ function collect_timings(args, names)
 
     columns = [makecolname(target) for target in targets]
     resulting_md *= "|Model|" * join(map(string, columns), "|") * "|\n"
-    resulting_md *= "|-----|" * join(["---" for _ in columns], "|") * "|\n"
+    resulting_md *= "|:----|" * join(["---" for _ in columns], "|") * "|\n"
     for name in names
         model_data = runtime[name]
         resulting_md *= "|$name|"
@@ -832,7 +832,7 @@ function collect_all_timings(args, runtimes, systems)
     makecolname(target) = HUMAN_READABLE_CATEGORIES[target]
     columns = backends
     resulting_md *= "|Model|" * join(map(string, columns), "|") * "|\n"
-    resulting_md *= "|-----|" * join(["---" for _ in columns], "|") * "|\n"
+    resulting_md *= "|:----|" * join(["---" for _ in columns], "|") * "|\n"
     for name in systems
         resulting_md *= "|$name|"
         for backend in backends
@@ -941,6 +941,7 @@ function main()
         end
         collect_all_timings(args, runtimes, systems)
     else
+        solved_problems = []
         try
             populate_benchmarks(args)
             solved_problems = run_benchmarks(args)

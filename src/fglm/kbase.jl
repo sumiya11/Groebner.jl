@@ -23,7 +23,6 @@ function _kbase0(polynomials, kws)
 
     res = io_convert_to_output(ring, polynomials, m, c, params)
 
-    performance_counters_print(params.statistics)
     res
 end
 

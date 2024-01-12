@@ -34,7 +34,6 @@ function _fglm0(polynomials, ordering_from, ordering_to, kws)
 
     res = io_convert_to_output(ring, polynomials, new_monoms, new_coeffs, params)
 
-    performance_counters_print(params.statistics)
     res
 end
 

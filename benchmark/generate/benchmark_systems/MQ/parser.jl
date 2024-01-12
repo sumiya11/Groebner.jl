@@ -2,7 +2,7 @@
 import AbstractAlgebra
 
 function read_MQ_GF(filename)
-    @info "Reading MQ $filename"
+    @info "Reading MQ problem: $filename"
     polys = []
     apath = (@__DIR__) * "/$filename"
     open(apath, "r") do fio
@@ -13,7 +13,7 @@ function read_MQ_GF(filename)
 
         R, xs =
             AbstractAlgebra.polynomial_ring(AbstractAlgebra.GF(ch), nv, ordering=:degrevlex)
-        @info "Created ring" R xs
+        @debug "Created ring" R xs
 
         labels = sort!(union([x * y for x in xs for y in xs], xs, [R(1)]), rev=true)
 
@@ -21,13 +21,13 @@ function read_MQ_GF(filename)
         rest = rest[5:end]
 
         for (i, s) in enumerate(rest)
-            @info "Reading poly $i/$(length(rest))"
+            @debug "Reading poly $i/$(length(rest))"
             s = replace(s, " ;" => "")
             poly = sum(map(x -> parse(Int, x), split(s, " ")) .* labels)
             push!(polys, poly)
         end
     end
-    @info "Read" length(polys)
+    @debug "Read" length(polys)
     R = parent(first(polys))
     map(R, polys)
 end

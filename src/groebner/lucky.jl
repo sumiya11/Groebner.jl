@@ -4,22 +4,21 @@
 # Lucky primes for modular computation 
 
 # The sequence of lucky primes is increasing and deterministic, and starts with
-# the FIRST_LUCKY_PRIME. Groebner basis is computed modulo a lucky prime, and
-# the correctness of the computed basis is checked modulo some another prime.
+# the FIRST_LUCKY_PRIME_CANDIDATE. Groebner basis is computed modulo a lucky
+# prime, and the correctness of the computed basis is checked modulo some
+# another prime.
 
 # TODO: precompute the first k primes..
-const FIRST_LUCKY_PRIME = 2^30 + 3 # 2^31-1
-const FIRST_CHECK_PRIME = 2^27 - 39 # 2^30 + 3
+const FIRST_LUCKY_PRIME_CANDIDATE = 2^30 + 3 # 2^31-1
+const FIRST_AUX_PRIME_CANDIDATE = 2^27 - 39 # 2^30 + 3
 
-@noinline function __too_large_coefficient_error(modulo)
-    throw(
-        ErrorException(
-            """
-            Too large coefficient encountered in the basis (last used prime was $modulo). 
-            This should not happen normally, please consider sumbitting an issue."""
-        )
+@noinline __too_large_coefficient_error(modulo) = throw(
+    ErrorException(
+        """
+        Too large coefficient encountered in the basis (last used prime was $modulo). 
+        This should not happen normally, please consider sumbitting an issue."""
     )
-end
+)
 
 # Keeps track of used prime numbers and helps selecting new ones
 mutable struct LuckyPrimes
@@ -37,21 +36,37 @@ mutable struct LuckyPrimes
     modulo::BigInt
 
     function LuckyPrimes(coeffs::Vector{Vector{BigInt}})
-        new(coeffs, BigInt(), FIRST_LUCKY_PRIME, FIRST_CHECK_PRIME, UInt64[], BigInt(1))
+        new(
+            coeffs,
+            BigInt(),
+            FIRST_LUCKY_PRIME_CANDIDATE,
+            FIRST_AUX_PRIME_CANDIDATE,
+            UInt64[],
+            BigInt(1)
+        )
     end
 end
 
 # Check if the prime is lucky w.r.t. input basis coefficients -- does not divide
-# any of the leading coefficients
+# any of the leading/trailing coefficients
 function isluckyprime(lucky::LuckyPrimes, prime::UInt64)
     @log level = -3 "Checking if $prime is lucky.."
     buf = lucky.buf
     p   = BigInt(prime)
-    for poly in lucky.coeffs
-        for c in poly
-            if Base.GMP.MPZ.cmp_ui(Base.GMP.MPZ.tdiv_r!(buf, c, p), 0) == 0
-                return false
-            end
+    @inbounds for coeffs in lucky.coeffs
+        # for c in coeffs
+        #     if Base.GMP.MPZ.cmp_ui(Base.GMP.MPZ.tdiv_r!(buf, c, p), 0) == 0
+        #         return false
+        #     end
+        # end
+        @invariant !isempty(coeffs)
+        c = coeffs[1]
+        if Base.GMP.MPZ.cmp_ui(Base.GMP.MPZ.tdiv_r!(buf, c, p), 0) == 0
+            return false
+        end
+        c = coeffs[end]
+        if Base.GMP.MPZ.cmp_ui(Base.GMP.MPZ.tdiv_r!(buf, c, p), 0) == 0
+            return false
         end
     end
     true
@@ -74,7 +89,7 @@ function next_check_prime!(lucky::LuckyPrimes)
     prime = lucky.checkprime
     while !isluckyprime(lucky, prime)
         prime = nextprime(prime + 1)
-        prime >= FIRST_LUCKY_PRIME && __too_large_coefficient_error(prime)
+        prime >= FIRST_LUCKY_PRIME_CANDIDATE && __too_large_coefficient_error(prime)
     end
     lucky.checkprime = nextprime(prime + 1)
     @invariant !(prime in lucky.primes)

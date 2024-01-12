@@ -103,12 +103,17 @@ function groebner(polynomials::AbstractVector; options...)
 
     keywords = KeywordsHandler(:groebner, options)
 
-    setup_logging(keywords)
-    setup_statistics(keywords)
+    logging_setup(keywords)
+    statistics_setup(keywords)
 
     # NOTE: Type assertion is needed for type stability. This limits us to only
     # accept input arrays with concrete `eltype`
-    _groebner(polynomials, keywords)::typeof(polynomials)
+    result = _groebner0(polynomials, keywords)::typeof(polynomials)
+
+    performance_counters_print(keywords)
+    statistics_print(keywords)
+
+    result
 end
 
 """
@@ -226,10 +231,15 @@ function groebner_learn(polynomials::AbstractVector; options...)
 
     keywords = KeywordsHandler(:groebner_learn, options)
 
-    setup_logging(keywords)
-    setup_statistics(keywords)
+    logging_setup(keywords)
+    statistics_setup(keywords)
 
-    _groebner_learn(polynomials, keywords)
+    result = _groebner_learn(polynomials, keywords)
+
+    performance_counters_print(keywords)
+    statistics_print(keywords)
+
+    result
 end
 
 """
@@ -263,10 +273,16 @@ function groebner_apply!(trace, polynomials::AbstractVector; options...)
 
     keywords = KeywordsHandler(:groebner_apply!, options)
 
-    setup_logging(keywords)
-    setup_statistics(keywords)
+    logging_setup(keywords)
+    statistics_setup(keywords)
 
-    _groebner_apply!(trace, polynomials, keywords)::Tuple{Bool, typeof(polynomials)}
+    result =
+        _groebner_apply!(trace, polynomials, keywords)::Tuple{Bool, typeof(polynomials)}
+
+    performance_counters_print(keywords)
+    statistics_print(keywords)
+
+    result
 end
 # Specialization for a batch of inputs
 function groebner_apply!(
@@ -279,10 +295,15 @@ function groebner_apply!(
 
     keywords = KeywordsHandler(:groebner_apply!, options)
 
-    setup_logging(keywords)
-    setup_statistics(keywords)
+    logging_setup(keywords)
+    statistics_setup(keywords)
 
-    _groebner_apply!(trace, batch, keywords)::Tuple{Bool, typeof(batch)}
+    result = _groebner_apply!(trace, batch, keywords)::Tuple{Bool, typeof(batch)}
+
+    performance_counters_print(keywords)
+    statistics_print(keywords)
+
+    result
 end
 
 """
@@ -339,10 +360,15 @@ function isgroebner(polynomials::AbstractVector; options...)
 
     keywords = KeywordsHandler(:isgroebner, options)
 
-    setup_logging(keywords)
-    setup_statistics(keywords)
+    logging_setup(keywords)
+    statistics_setup(keywords)
 
-    _isgroebner(polynomials, keywords)::Bool
+    result = _isgroebner(polynomials, keywords)::Bool
+
+    performance_counters_print(keywords)
+    statistics_print(keywords)
+
+    result
 end
 
 """
@@ -389,10 +415,15 @@ function normalform(basis::AbstractVector, to_be_reduced::AbstractVector; option
 
     keywords = KeywordsHandler(:normalform, options)
 
-    setup_logging(keywords)
-    setup_statistics(keywords)
+    logging_setup(keywords)
+    statistics_setup(keywords)
 
-    _normalform(basis, to_be_reduced, keywords)::typeof(to_be_reduced)
+    result = _normalform(basis, to_be_reduced, keywords)::typeof(to_be_reduced)
+
+    performance_counters_print(keywords)
+    statistics_print(keywords)
+
+    result
 end
 
 normalform(basis::AbstractVector, to_be_reduced; options...) =
@@ -430,10 +461,15 @@ function kbase(basis::AbstractVector; options...)
 
     keywords = KeywordsHandler(:kbase, options)
 
-    setup_logging(keywords)
-    setup_statistics(keywords)
+    logging_setup(keywords)
+    statistics_setup(keywords)
 
-    _kbase0(basis, keywords)::typeof(basis)
+    result = _kbase0(basis, keywords)::typeof(basis)
+
+    performance_counters_print(keywords)
+    statistics_print(keywords)
+
+    result
 end
 
 """
@@ -451,8 +487,13 @@ function fglm(
 
     keywords = KeywordsHandler(:fglm, options)
 
-    setup_logging(keywords)
-    setup_statistics(keywords)
+    logging_setup(keywords)
+    statistics_setup(keywords)
 
-    _fglm0(basis, ordering_from, ordering_to, keywords)::typeof(basis)
+    result = _fglm0(basis, ordering_from, ordering_to, keywords)::typeof(basis)
+
+    performance_counters_print(keywords)
+    statistics_print(keywords)
+
+    result
 end

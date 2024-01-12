@@ -426,7 +426,7 @@ end
 # specialization for multivariate polynomials
 function extract_coeffs_qq(representation, ring::PolyRing, poly)
     iszero(poly) && (return zero_coeffs(representation.coefftype, ring))
-    map(Rational, AbstractAlgebra.coefficients(poly))
+    map(Rational{BigInt}, AbstractAlgebra.coefficients(poly))
 end
 
 function get_var_to_index(
@@ -442,13 +442,16 @@ function extract_monoms(
     poly::T
 ) where {T}
     exps = Vector{representation.monomtype}(undef, length(poly))
-    @inbounds for j in 1:length(poly)
-        exps[j] = monom_construct_from_vector(
-            representation.monomtype,
-            AbstractAlgebra.exponent_vector(poly, j)
-        )
-    end
+    _extract_monoms!(representation.monomtype, exps, poly)
     exps
+end
+
+function _extract_monoms!(::Type{MonomType}, exps, poly) where {MonomType}
+    @inbounds for j in 1:length(exps)
+        exps[j] =
+            monom_construct_from_vector(MonomType, AbstractAlgebra.exponent_vector(poly, j))
+    end
+    nothing
 end
 
 function extract_monoms(
@@ -585,7 +588,7 @@ function _io_convert_to_output(
         end
         cfs = zeros(ground, Int(monom_totaldeg(gbexps[i][1]) + 1))
         for (idx, j) in enumerate(gbexps[i])
-            cfs[monom_totaldeg(j) + 1] = k(gbcoeffs[i][idx])
+            cfs[monom_totaldeg(j) + 1] = ground(gbcoeffs[i][idx])
         end
         exported[i] = origring(cfs)
     end

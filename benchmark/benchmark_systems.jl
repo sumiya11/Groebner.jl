@@ -1,8 +1,10 @@
 import AbstractAlgebra, Groebner
 
-include((@__DIR__) * "/generate/benchmark_systems/SIAN/Chol.jl")
-include((@__DIR__) * "/generate/benchmark_systems/SIAN/NF-kB.jl")
-include((@__DIR__) * "/generate/benchmark_systems/SIAN/Pharm.jl")
+@info "Loading benchmark models.."
+
+include((@__DIR__) * "/generate/benchmark_systems/SIAN/SIAN.jl")
+include((@__DIR__) * "/generate/benchmark_systems/MQ/MQ.jl")
+include((@__DIR__) * "/generate/benchmark_systems/SI/SI.jl")
 
 function get_benchmark_suite(id)
     if id == 0
@@ -15,6 +17,12 @@ function get_benchmark_suite(id)
         benchmark_set_3()
     elseif id == 4
         benchmark_set_4()
+    elseif id == 5
+        benchmark_set_5()
+    elseif id == 6
+        benchmark_set_6()
+    elseif id == 7
+        benchmark_set_7()
     end
 end
 
@@ -55,6 +63,7 @@ function benchmark_set_1()
         ("noon 8", Groebner.noonn(8, k=ground_field)),
         ("noon 9", Groebner.noonn(9, k=ground_field)),
         ("noon 10", Groebner.noonn(10, k=ground_field)),
+        ("noon 11", Groebner.noonn(11, k=ground_field)),
         ("henrion 5", Groebner.henrion5(k=ground_field)),
         ("henrion 6", Groebner.henrion6(k=ground_field)),
         ("henrion 7", Groebner.henrion7(k=ground_field)),
@@ -119,7 +128,13 @@ function benchmark_set_3()
         ("henrion 7", Groebner.henrion7(k=ground_field)),
         ("reimer 6", Groebner.reimern(6, k=ground_field)),
         ("reimer 7", Groebner.reimern(7, k=ground_field)),
-        ("reimer 8", Groebner.reimern(8, k=ground_field))
+        ("reimer 8", Groebner.reimern(8, k=ground_field)),
+        ("chandra 4", Groebner.chandran(4, k=ground_field, ordering=:degrevlex)),
+        ("chandra 5", Groebner.chandran(5, k=ground_field, ordering=:degrevlex)),
+        ("chandra 6", Groebner.chandran(6, k=ground_field, ordering=:degrevlex)),
+        ("reimer 7", Groebner.reimern(7, k=ground_field)),
+        ("reimer 8", Groebner.reimern(8, k=ground_field)),
+        ("ipp", Groebner.ipp(k=ground_field, tol=0.0, ordering=:degrevlex))
     ]
 
     (name="The rationals", field=ground_field, systems=systems)
@@ -127,16 +142,47 @@ end
 
 function benchmark_set_4()
     ground_field = AbstractAlgebra.GF(2^30 + 3)
+    systems = load_SIAN_all(ground=ground_field)
+
+    (name="SIAN modulo 2^30 + 3", field=ground_field, systems=systems)
+end
+
+function benchmark_set_5()
+    # TODO: this is not correct!!
+    ground_field = AbstractAlgebra.GF(2^30 + 3)
+    names = [
+        "mq_n10_m20_p2_s0",
+        "mq_n10_m20_p2_s1",
+        "mq_n10_m7_p2_s0",
+        "mq_n15_m10_p2_s0",
+        "mq_n15_m30_p2_s0",
+        "mq_n24_m16_p31_s0",
+        "mq_n34_m68_p31_s0"
+    ]
+    systems = [(name, load_MQ_problem(name)) for name in names]
+
+    (name="MQ", field=ground_field, systems=systems)
+end
+
+function benchmark_set_6()
+    ground_field = AbstractAlgebra.QQ
+    names = ["SIWR", "SEAIJRC"]
+    systems = [(name, load_SI_problem(name)) for name in names]
+
+    (name="SI", field=ground_field, systems=systems)
+end
+
+function benchmark_set_7()
+    ground_field = AbstractAlgebra.QQ
     systems = [
-        dummy_system("dummy", ground_field),
-        ("NF-kB", NF_kB(k=ground_field)),
-        ("NF-kB, weights", NF_kB_with_weights(k=ground_field)),
-        ("Chol", chol(k=ground_field)),
-        ("Chol, 1 out", chol_1_out(k=ground_field)),
-        ("Chol, weights", chol_with_weights(k=ground_field)),
-        ("Pharm", Pharm(k=ground_field)),
-        ("Pharm_with_weights", Pharm(k=ground_field))
+        ("chandra 11", Groebner.chandran(11, ordering=:degrevlex, k=ground_field)),
+        ("chandra 12", Groebner.chandran(12, ordering=:degrevlex, k=ground_field)),
+        ("chandra 13", Groebner.chandran(13, ordering=:degrevlex, k=ground_field)),
+        ("chandra 14", Groebner.chandran(14, ordering=:degrevlex, k=ground_field)),
+        ("boon", Groebner.boon(ordering=:degrevlex, k=ground_field)),
+        ("rps10", Groebner.rps10(ordering=:degrevlex, k=ground_field)),
+        ("ipp", Groebner.ipp(ordering=:degrevlex, k=ground_field))
     ]
 
-    (name="SIAN", field=ground_field, systems=systems)
+    (name="HC", field=ground_field, systems=systems)
 end
