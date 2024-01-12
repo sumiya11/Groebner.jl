@@ -23,6 +23,8 @@ function get_benchmark_suite(id)
         benchmark_set_6()
     elseif id == 7
         benchmark_set_7()
+    elseif id == 8
+        benchmark_set_8()
     end
 end
 
@@ -71,7 +73,11 @@ function benchmark_set_1()
         ("reimer 6", Groebner.reimern(6, k=ground_field)),
         ("reimer 7", Groebner.reimern(7, k=ground_field)),
         ("reimer 8", Groebner.reimern(8, k=ground_field)),
-        ("reimer 9", Groebner.reimern(9, k=ground_field))
+        ("reimer 9", Groebner.reimern(9, k=ground_field)),
+        ("chandra 11", Groebner.chandran(11, k=ground_field)),
+        ("chandra 12", Groebner.chandran(12, k=ground_field)),
+        ("chandra 13", Groebner.chandran(13, k=ground_field)),
+        ("chandra 14", Groebner.chandran(14, k=ground_field))
     ]
 
     (name="Integers modulo 2^30 + 3", field=ground_field, systems=systems)
@@ -98,13 +104,19 @@ function benchmark_set_2()
         ("noon 8", Groebner.noonn(8, k=ground_field)),
         ("noon 9", Groebner.noonn(9, k=ground_field)),
         ("noon 10", Groebner.noonn(10, k=ground_field)),
+        ("noon 11", Groebner.noonn(11, k=ground_field)),
         ("henrion 5", Groebner.henrion5(k=ground_field)),
         ("henrion 6", Groebner.henrion6(k=ground_field)),
         ("henrion 7", Groebner.henrion7(k=ground_field)),
+        ("henrion 8", Groebner.henrion8(k=ground_field)),
         ("reimer 6", Groebner.reimern(6, k=ground_field)),
         ("reimer 7", Groebner.reimern(7, k=ground_field)),
         ("reimer 8", Groebner.reimern(8, k=ground_field)),
-        ("reimer 9", Groebner.reimern(9, k=ground_field))
+        ("reimer 9", Groebner.reimern(9, k=ground_field)),
+        ("chandra 11", Groebner.chandran(11, k=ground_field)),
+        ("chandra 12", Groebner.chandran(12, k=ground_field)),
+        ("chandra 13", Groebner.chandran(13, k=ground_field)),
+        ("chandra 14", Groebner.chandran(14, k=ground_field))
     ]
 
     (name="Integers modulo 1031", field=ground_field, systems=systems)
@@ -129,9 +141,11 @@ function benchmark_set_3()
         ("reimer 6", Groebner.reimern(6, k=ground_field)),
         ("reimer 7", Groebner.reimern(7, k=ground_field)),
         ("reimer 8", Groebner.reimern(8, k=ground_field)),
-        ("chandra 4", Groebner.chandran(4, k=ground_field, ordering=:degrevlex)),
-        ("chandra 5", Groebner.chandran(5, k=ground_field, ordering=:degrevlex)),
-        ("chandra 6", Groebner.chandran(6, k=ground_field, ordering=:degrevlex)),
+        ("chandra 9", Groebner.chandran(9, k=ground_field, ordering=:degrevlex)),
+        ("chandra 10", Groebner.chandran(10, k=ground_field, ordering=:degrevlex)),
+        ("chandra 11", Groebner.chandran(11, k=ground_field, ordering=:degrevlex)),
+        ("chandra 12", Groebner.chandran(12, k=ground_field, ordering=:degrevlex)),
+        ("chandra 13", Groebner.chandran(13, k=ground_field, ordering=:degrevlex)),
         ("reimer 7", Groebner.reimern(7, k=ground_field)),
         ("reimer 8", Groebner.reimern(8, k=ground_field)),
         ("ipp", Groebner.ipp(k=ground_field, tol=0.0, ordering=:degrevlex))
@@ -175,14 +189,36 @@ end
 function benchmark_set_7()
     ground_field = AbstractAlgebra.QQ
     systems = [
+        ("chandra 5", Groebner.chandran(5, ordering=:degrevlex, k=ground_field)),
+        ("chandra 6", Groebner.chandran(6, ordering=:degrevlex, k=ground_field)),
+        ("chandra 7", Groebner.chandran(7, ordering=:degrevlex, k=ground_field)),
+        ("chandra 8", Groebner.chandran(8, ordering=:degrevlex, k=ground_field)),
+        ("chandra 9", Groebner.chandran(9, ordering=:degrevlex, k=ground_field)),
+        ("chandra 10", Groebner.chandran(10, ordering=:degrevlex, k=ground_field)),
         ("chandra 11", Groebner.chandran(11, ordering=:degrevlex, k=ground_field)),
         ("chandra 12", Groebner.chandran(12, ordering=:degrevlex, k=ground_field)),
-        ("chandra 13", Groebner.chandran(13, ordering=:degrevlex, k=ground_field)),
-        ("chandra 14", Groebner.chandran(14, ordering=:degrevlex, k=ground_field)),
         ("boon", Groebner.boon(ordering=:degrevlex, k=ground_field)),
         ("rps10", Groebner.rps10(ordering=:degrevlex, k=ground_field)),
         ("ipp", Groebner.ipp(ordering=:degrevlex, k=ground_field))
     ]
 
     (name="HC", field=ground_field, systems=systems)
+end
+
+function benchmark_set_8()
+    ground_field = AbstractAlgebra.GF(2^30 + 3)
+    systems = [
+        ("chandra 5", Groebner.chandran(5, ordering=:degrevlex, k=ground_field)),
+        ("chandra 6", Groebner.chandran(6, ordering=:degrevlex, k=ground_field)),
+        ("chandra 7", Groebner.chandran(7, ordering=:degrevlex, k=ground_field)),
+        ("chandra 8", Groebner.chandran(8, ordering=:degrevlex, k=ground_field)),
+        ("chandra 9", Groebner.chandran(9, ordering=:degrevlex, k=ground_field)),
+        ("chandra 10", Groebner.chandran(10, ordering=:degrevlex, k=ground_field)),
+        ("chandra 11", Groebner.chandran(11, ordering=:degrevlex, k=ground_field)),
+        ("chandra 12", Groebner.chandran(12, ordering=:degrevlex, k=ground_field)),
+        ("chandra 13", Groebner.chandran(13, ordering=:degrevlex, k=ground_field)),
+        ("chandra 14", Groebner.chandran(14, ordering=:degrevlex, k=ground_field))
+    ]
+
+    (name="HC modulo 2^30 + 3", field=ground_field, systems=systems)
 end

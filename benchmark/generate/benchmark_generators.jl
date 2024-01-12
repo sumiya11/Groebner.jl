@@ -66,7 +66,7 @@ function generate_benchmark_source_for_maple(
     println(buf, "with(Groebner):")
     println(buf, "with(PolynomialIdeals):")
     println(buf, "kernelopts(numcpus=1);")
-    system_repr = join(map(s -> "\t\t" * s, map(repr, system)), ",\n")
+    system_repr = replace(join(map(s -> "\t\t" * s, map(repr, system)), ",\n"), "//" => "/")
     vars_repr = join(map(string, gens(ring)), ", ")
     println(buf, "")
     println(buf, "runtime := 2^1000:")

@@ -877,15 +877,15 @@ end
 function check_args(args)
     backend = args["backend"]
     @assert backend in ("groebner", "singular", "maple", "openf4", "msolve", "ALL")
-    if backend == "openf4" && args["suite"] in [3]
+    if backend == "openf4" && args["suite"] in [3, 7]
         throw("Running benchmarks over the rationals is not possible for openf4")
     end
-    if backend == "msolve" && args["suite"] in [3] && args["validate"] != "no"
+    if backend == "msolve" && args["suite"] in [3, 7] && args["validate"] != "no"
         throw(
             "Validating results for msolve over the rationals is not possible. Use command line option --validate=no"
         )
     end
-    if backend == "learn_apply" && args in [3]
+    if backend == "learn_apply" && args in [3, 7]
         throw("Cannot learn & apply over the rationals")
     end
 end
