@@ -1,8 +1,8 @@
 ## Benchmark results
 
-2024-01-12T13:17:53.095
+2024-01-12T13:17:57.172
 
-Benchmarked backend: maple
+Benchmarked backends: Any["groebner", "maple"]
 
 Benchmark suite: HC
 
@@ -12,19 +12,19 @@ Benchmark suite: HC
 
 **All timings in seconds.**
 
-|Model|Total, s|
-|:----|---|
-|boon|0.01|
-|chandra 5|0.10|
-|chandra 6|0.15|
-|chandra 7|0.46|
-|chandra 8| - |
-|chandra 9| - |
-|chandra 10| - |
-|chandra 11| - |
-|chandra 12| - |
-|ipp| - |
-|rps10| - |
+|Model|groebner|maple|
+|:----|---|---|
+|boon|0.00|0.01|
+|chandra 5|0.01|0.10|
+|chandra 6|0.02|0.15|
+|chandra 7|0.07|0.46|
+|chandra 8|0.30| - |
+|chandra 9|1.26| - |
+|chandra 10|4.70| - |
+|chandra 11|16.81| - |
+|chandra 12|107.68| - |
+|ipp|195.66| - |
+|rps10| - | - |
 
 *Benchmarking environment:*
 

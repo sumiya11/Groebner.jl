@@ -54,13 +54,17 @@ function process_system()
     for iter in 1:NUM_RUNS
         @info "Computing GB.." iter
         problemfile = (@__DIR__) * "/$BENCHMARK_DIR/$PROBLEM_NAME/$(PROBLEM_NAME).in"
+        __io = open(problemfile, "r")
+        CHAR = parse(Int, readlines(__io)[2])
+        close(__io)
         outputfile =
             VALIDATE ? (@__DIR__) * "/$BENCHMARK_DIR/$PROBLEM_NAME/$(output_filename())" :
             "/dev/null"
-        cmd = Cmd(
-            `$BIN_PATH_NORM -g 2 -l 44 -c 0 -f $problemfile -o $outputfile`,
-            detach=false
-        )
+        cmd = if CHAR > 0
+            Cmd(`$BIN_PATH_NORM -g 2 -l 44 -c 0 -f $problemfile -o $outputfile`, detach=false)
+        else
+            Cmd(`$BIN_PATH_NORM -g 2 -c 0 -f $problemfile -o $outputfile`, detach=false)
+        end
         timing = time_ns()
         proc = run(cmd, wait=true)
         # push!(children, proc)

@@ -1,31 +1,44 @@
 ## Benchmark results
 
-2023-12-31T14:45:53.543
+2024-01-12T13:17:51.416
 
 Benchmarked backend: msolve
 
 Benchmark suite: The rationals
 
 - Workers: 8
-- Timeout: 1200 s
+- Timeout: 2000 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
-|Model|Total|
-|-----|---|
-|cyclic 7|1.20|
-|cyclic 8|25.64|
+|Model|Total, s|
+|:----|---|
+|chandra 9|0.03|
+|chandra 10|0.03|
+|chandra 11|0.02|
+|chandra 12|0.03|
+|chandra 13|0.03|
+|cyclic 7|1.07|
+|cyclic 8|26.84|
+|cyclic 9| - |
 |dummy|0.03|
-|eco 10|0.62|
-|eco 11|3.58|
-|eco 12|27.44|
-|henrion 6|3.95|
-|katsura 9|2.35|
-|katsura 10|17.89|
-|katsura 11|197.02|
-|noon 8|11.92|
-|noon 9|126.53|
+|eco 10|0.57|
+|eco 11|3.67|
+|eco 12|25.40|
+|eco 13|443.58|
+|henrion 6|3.80|
+|henrion 7| - |
+|ipp|0.06|
+|katsura 9|2.77|
+|katsura 10|20.62|
+|katsura 11|244.90|
+|noon 7|1.56|
+|noon 8|12.76|
+|noon 9|102.05|
+|reimer 6|0.28|
+|reimer 7|7.06|
+|reimer 8|364.48|
 
 *Benchmarking environment:*
 

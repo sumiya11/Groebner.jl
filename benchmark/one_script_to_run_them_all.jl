@@ -34,6 +34,8 @@ progressbar_enabled() =
 
 const _available_backends = ["groebner", "singular", "maple", "msolve", "openf4"]
 
+const _skip_singular = true
+
 # Parses command-line arguments
 #! format: off
 function parse_commandline()
@@ -880,11 +882,11 @@ function check_args(args)
     if backend == "openf4" && args["suite"] in [3, 7]
         throw("Running benchmarks over the rationals is not possible for openf4")
     end
-    if backend == "msolve" && args["suite"] in [3, 7] && args["validate"] != "no"
-        throw(
-            "Validating results for msolve over the rationals is not possible. Use command line option --validate=no"
-        )
-    end
+    # if backend == "msolve" && args["suite"] in [3, 7] && args["validate"] != "no"
+    #     throw(
+    #         "Validating results for msolve over the rationals is not possible. Use command line option --validate=no"
+    #     )
+    # end
     if backend == "learn_apply" && args in [3, 7]
         throw("Cannot learn & apply over the rationals")
     end
@@ -922,6 +924,9 @@ function main()
         systems = []
         solved_problems = []
         for backend in _available_backends
+            if _skip_singular && backend == "singular"
+                continue
+            end
             args_ = copy(args)
             args_["backend"] = backend
             try
@@ -943,6 +948,7 @@ function main()
     else
         solved_problems = []
         try
+            check_args(args)
             populate_benchmarks(args)
             solved_problems = run_benchmarks(args)
             validate_results(args, solved_problems)

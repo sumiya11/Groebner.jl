@@ -1,29 +1,29 @@
 ## Benchmark results
 
-2024-01-12T13:17:53.095
+2024-01-12T13:26:27.874
 
-Benchmarked backend: maple
+Benchmarked backend: msolve
 
 Benchmark suite: HC
 
 - Workers: 8
-- Timeout: 1200 s
+- Timeout: 200 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|boon|0.01|
-|chandra 5|0.10|
-|chandra 6|0.15|
-|chandra 7|0.46|
-|chandra 8| - |
-|chandra 9| - |
-|chandra 10| - |
-|chandra 11| - |
-|chandra 12| - |
-|ipp| - |
+|boon|0.04|
+|chandra 5|0.03|
+|chandra 6|0.04|
+|chandra 7|0.04|
+|chandra 8|0.04|
+|chandra 9|0.04|
+|chandra 10|0.04|
+|chandra 11|0.05|
+|chandra 12|0.04|
+|ipp|0.07|
 |rps10| - |
 
 *Benchmarking environment:*

@@ -1,12 +1,12 @@
 ## Benchmark results
 
-2024-01-12T09:04:15.474
+2024-01-12T13:17:47.010
 
 Benchmarked backend: groebner
 
 Benchmark suite: HC
 
-- Workers: 4
+- Workers: 8
 - Timeout: 1200 s
 - Aggregated over: 1 runs
 
@@ -14,16 +14,16 @@ Benchmark suite: HC
 
 |Model|Total, s|
 |:----|---|
-|boon|0.01|
+|boon|0.00|
 |chandra 5|0.01|
-|chandra 6|0.04|
-|chandra 7|0.22|
-|chandra 8|0.44|
-|chandra 9|2.52|
-|chandra 10|5.07|
-|chandra 11|17.69|
-|chandra 12|108.19|
-|ipp|185.73|
+|chandra 6|0.02|
+|chandra 7|0.07|
+|chandra 8|0.30|
+|chandra 9|1.26|
+|chandra 10|4.70|
+|chandra 11|16.81|
+|chandra 12|107.68|
+|ipp|195.66|
 |rps10| - |
 
 *Benchmarking environment:*
