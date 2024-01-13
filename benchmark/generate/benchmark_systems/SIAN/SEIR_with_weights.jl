@@ -40,4 +40,3 @@ function SEIR_with_weights(; np=AbstractAlgebra, ordering=:degrevlex, k=np.QQ)
 		N_0*z_aux - 1
     ]
 end
-

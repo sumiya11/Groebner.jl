@@ -60,4 +60,3 @@ function OralGlucose_with_weights(; np=AbstractAlgebra, ordering=:degrevlex, k=n
 		z_aux - 1
     ]
 end
-

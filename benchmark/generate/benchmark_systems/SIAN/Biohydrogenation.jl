@@ -44,4 +44,3 @@ function Biohydrogenation(; np=AbstractAlgebra, ordering=:degrevlex, k=np.QQ)
 		x₅_0*x₄_0*z_aux*k₁₀_0 + x₆_0*x₄_0*z_aux*k₁₀_0 + x₅_0*z_aux*k₆_0*k₁₀_0 + x₆_0*z_aux*k₆_0*k₁₀_0 + x₄_0*z_aux*k₈_0*k₁₀_0 + z_aux*k₆_0*k₈_0*k₁₀_0 - 1
     ]
 end
-

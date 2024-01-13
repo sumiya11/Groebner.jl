@@ -40,4 +40,3 @@ function DAISY_mamil3(; np=AbstractAlgebra, ordering=:degrevlex, k=np.QQ)
 		z_aux - 1
     ]
 end
-

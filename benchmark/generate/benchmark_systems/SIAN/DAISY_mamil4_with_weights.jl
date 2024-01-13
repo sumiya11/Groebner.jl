@@ -62,4 +62,3 @@ function DAISY_mamil4_with_weights(; np=AbstractAlgebra, ordering=:degrevlex, k=
 		z_aux - 1
     ]
 end
-

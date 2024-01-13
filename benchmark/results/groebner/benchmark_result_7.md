@@ -1,6 +1,6 @@
 ## Benchmark results
 
-2024-01-13T09:36:18.006
+2024-01-13T09:41:18.240
 
 Benchmarked backend: groebner
 

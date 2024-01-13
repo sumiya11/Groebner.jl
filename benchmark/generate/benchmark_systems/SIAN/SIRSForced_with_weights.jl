@@ -52,4 +52,3 @@ function SIRSForced_with_weights(; np=AbstractAlgebra, ordering=:degrevlex, k=np
 		z_aux - 1
     ]
 end
-

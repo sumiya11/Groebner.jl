@@ -50,4 +50,3 @@ function Goodwin(; np=AbstractAlgebra, ordering=:degrevlex, k=np.QQ)
 		x3_0*x4_0*z_aux + x3_0*z_aux*c_0 - 1
     ]
 end
-

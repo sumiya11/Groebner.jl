@@ -67,4 +67,3 @@ function HIV2(; np=AbstractAlgebra, ordering=:degrevlex, k=np.QQ)
 		z_aux - 1
     ]
 end
-

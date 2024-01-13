@@ -55,4 +55,3 @@ function ChemicalReactionNetwork_with_weights(; np=AbstractAlgebra, ordering=:de
 		z_aux - 1
     ]
 end
-

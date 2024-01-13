@@ -50,4 +50,3 @@ function Goodwin_with_weights(; np=AbstractAlgebra, ordering=:degrevlex, k=np.QQ
 		x3_0^3*x4_0^2*z_aux + x3_0^3*z_aux*c_0 - 1
     ]
 end
-

@@ -35,4 +35,3 @@ function Lipolysis_with_weights(; np=AbstractAlgebra, ordering=:degrevlex, k=np.
 		x1_0*z_aux + z_aux*k2_0 - 1
     ]
 end
-

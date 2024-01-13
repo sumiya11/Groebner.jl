@@ -24,4 +24,3 @@ function SIR_R0_with_weights(; np=AbstractAlgebra, ordering=:degrevlex, k=np.QQ)
 		z_aux*g_0 - 1
     ]
 end
-

@@ -35,4 +35,3 @@ function Lipolysis(; np=AbstractAlgebra, ordering=:degrevlex, k=np.QQ)
 		x1_0*z_aux + z_aux*k2_0 - 1
     ]
 end
-

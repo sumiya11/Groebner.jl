@@ -55,4 +55,3 @@ function ChemicalReactionNetwork(; np=AbstractAlgebra, ordering=:degrevlex, k=np
 		z_aux - 1
     ]
 end
-

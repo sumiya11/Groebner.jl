@@ -52,4 +52,3 @@ function COVID_m1_with_weights(; np=AbstractAlgebra, ordering=:degrevlex, k=np.Q
 		z_aux - 1
     ]
 end
-

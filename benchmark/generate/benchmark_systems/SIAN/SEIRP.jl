@@ -41,4 +41,3 @@ function SEIRP(; np=AbstractAlgebra, ordering=:degrevlex, k=np.QQ)
 		z_aux - 1
     ]
 end
-

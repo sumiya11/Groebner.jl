@@ -44,4 +44,3 @@ function Biohydrogenation_with_weights(; np=AbstractAlgebra, ordering=:degrevlex
 		x₆_0^2*x₄_0*z_aux*k₁₀_0^3 + x₆_0^2*z_aux*k₆_0*k₁₀_0^3 + x₅_0*x₄_0*z_aux*k₁₀_0^3 + x₅_0*z_aux*k₆_0*k₁₀_0^3 + x₄_0*z_aux*k₈_0*k₁₀_0^3 + z_aux*k₆_0*k₈_0*k₁₀_0^3 - 1
     ]
 end
-

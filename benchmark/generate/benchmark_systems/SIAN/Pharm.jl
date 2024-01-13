@@ -56,4 +56,3 @@ function Pharm(; np=AbstractAlgebra, ordering=:degrevlex, k=np.QQ)
 		x1_0*z_aux*ka_0 + x3_0*z_aux*kc_0 + z_aux*ka_0*kc_0 - 1
     ]
 end
-
