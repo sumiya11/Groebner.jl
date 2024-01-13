@@ -94,7 +94,7 @@ function parse_commandline()
             - `no`: do not validate results
             - `update`: update the validation certificates"""
             arg_type = String
-            default = "yes"
+            default = "no"
         "--nruns"
             help = "Number of times to run the benchmark."
             arg_type = Int

@@ -165,7 +165,7 @@ version = "6.2.1+2"
 
 [[deps.Groebner]]
 deps = ["AbstractAlgebra", "Atomix", "Combinatorics", "ExprTools", "Logging", "MultivariatePolynomials", "Nemo", "PrecompileTools", "PrettyTables", "Primes", "Printf", "Random", "TimerOutputs"]
-path = "../../.."
+git-tree-sha1 = "04d07847792de9e3858deb62bb688edc1caf4434"
 uuid = "0b43b601-686d-58a3-8a1c-6623616c7cd4"
 version = "0.6.1"
 

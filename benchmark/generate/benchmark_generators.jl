@@ -117,7 +117,7 @@ function generate_benchmark_source_for_msolve(
     ring = parent(system[1])
     field = base_ring(ring)
     vars_repr = join(map(string, gens(ring)), ", ")
-    system_repr = join(map(repr, system), ",\n")
+    system_repr = replace(join(map(repr, system), ",\n"), "//" => "/")
     buf = IOBuffer()
     println(buf, "$vars_repr")
     println(buf, "$(characteristic(field))")

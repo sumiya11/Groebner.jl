@@ -192,6 +192,9 @@ end
 function benchmark_set_7()
     ground_field = AbstractAlgebra.QQ
     systems = [
+        ("chandra 2", Groebner.chandran(2, ordering=:degrevlex, k=ground_field)),
+        ("chandra 3", Groebner.chandran(3, ordering=:degrevlex, k=ground_field)),
+        ("chandra 4", Groebner.chandran(4, ordering=:degrevlex, k=ground_field)),
         ("chandra 5", Groebner.chandran(5, ordering=:degrevlex, k=ground_field)),
         ("chandra 6", Groebner.chandran(6, ordering=:degrevlex, k=ground_field)),
         ("chandra 7", Groebner.chandran(7, ordering=:degrevlex, k=ground_field)),
