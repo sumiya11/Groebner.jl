@@ -1,8 +1,8 @@
-## Groebner v0.6.3 Release notes
+## Groebner v0.6.4 Release notes
 
 Now we handle both `Nemo.GF` and `Nemo.Native.GF` as the coefficient ring.
 
-## Groebner v0.6.1-2 Release notes
+## Groebner v0.6.1-3 Release notes
 
 Bug fixes.
 
