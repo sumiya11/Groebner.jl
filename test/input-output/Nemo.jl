@@ -15,7 +15,7 @@ import Primes
         Nemo.Native.GF(2^31 - 1),
         Nemo.Native.GF(2^62 + 135),
         Nemo.GF(2^62 + 135),
-        Nemo.GF(Nemo.fmpz(2^62 + 135)),
+        Nemo.GF(Nemo.ZZRingElem(2^62 + 135)),
         Nemo.QQ
     ]
         for gb_ord in [Groebner.Lex(), Groebner.DegLex(), Groebner.DegRevLex()]
