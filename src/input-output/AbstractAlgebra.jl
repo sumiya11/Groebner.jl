@@ -133,7 +133,7 @@ function extract_coeffs_ff(
     representation::PolynomialRepresentation,
     ring::PolyRing,
     poly::P
-) where {P <: Nemo.FqPolyRingElem}
+) where {P <: Union{Nemo.FqPolyRingElem, Nemo.FpPolyRingElem}}
     AbstractAlgebra.iszero(poly) && (return zero_coeffs(representation.coefftype, ring))
     reverse(
         map(
