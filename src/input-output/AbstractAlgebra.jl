@@ -129,6 +129,21 @@ function extract_coeffs_ff(
     )
 end
 
+function extract_coeffs_ff(
+    representation::PolynomialRepresentation,
+    ring::PolyRing,
+    poly::P
+) where {P <: Nemo.FqPolyRingElem}
+    AbstractAlgebra.iszero(poly) && (return zero_coeffs(representation.coefftype, ring))
+    reverse(
+        map(
+            # NOTE: type instable!
+            c -> representation.coefftype(UInt64(Nemo.lift(Nemo.ZZ, c))),
+            filter(!AbstractAlgebra.iszero, collect(AbstractAlgebra.coefficients(poly)))
+        )
+    )
+end
+
 # specialization for univariate polynomials
 function extract_coeffs_qq(
     representation,
@@ -154,6 +169,17 @@ function extract_coeffs_ff(
     Ch = representation.coefftype
     # TODO: Get rid of this composed function
     map(Ch ∘ AbstractAlgebra.data, AbstractAlgebra.coefficients(poly))
+end
+
+function extract_coeffs_ff(
+    representation::PolynomialRepresentation,
+    ring::PolyRing{T},
+    poly::P
+) where {T, P <: Nemo.FqMPolyRingElem}
+    AbstractAlgebra.iszero(poly) && (return zero_coeffs(representation.coefftype, ring))
+    Ch = representation.coefftype
+    # TODO: Get rid of this composed function
+    map(c -> Ch(UInt64(Nemo.lift(Nemo.ZZ, c))), AbstractAlgebra.coefficients(poly))
 end
 
 ###

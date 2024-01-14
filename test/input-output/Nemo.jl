@@ -1,38 +1,32 @@
 import Nemo
 import Primes
 
-function nemo_make_prime_finite_field(p)
-    if p < typemax(UInt)
-        Nemo.fpField(convert(UInt, p), false)
-    else
-        Nemo.FpField(Nemo.ZZRingElem(p), false)
-    end
-end
-
 @testset "Nemo.jl, univariate" begin
-    R, x = polynomial_ring(nemo_make_prime_finite_field(2^62 + 135), "x")
-    @test Groebner.groebner([R(2)]) == [R(1)]
-    @test Groebner.groebner([R(0), R(0)]) == [R(0)]
-    @test Groebner.groebner([R(0), R(3), R(0)]) == [R(1)]
+    for ff in [Nemo.Native.GF(2^62 + 135), Nemo.GF(2^62 + 135)]
+        R, x = polynomial_ring(ff, "x")
+        @test Groebner.groebner([R(2)]) == [R(1)]
+        @test Groebner.groebner([R(0), R(0)]) == [R(0)]
+        @test Groebner.groebner([R(0), R(3), R(0)]) == [R(1)]
+        @test Groebner.groebner([R(0), R(3), R(0)]) == [R(1)]
+        @test Groebner.groebner([x + 100]) == [x + 100]
+    end
 
-    for ground in [
-        nemo_make_prime_finite_field(2^31 - 1),
-        nemo_make_prime_finite_field(2^62 + 135),
+    for ff in [
+        Nemo.Native.GF(2^31 - 1),
+        Nemo.Native.GF(2^62 + 135),
+        Nemo.GF(2^62 + 135),
+        Nemo.GF(Nemo.fmpz(2^62 + 135)),
         Nemo.QQ
     ]
         for gb_ord in [Groebner.Lex(), Groebner.DegLex(), Groebner.DegRevLex()]
-            R, x = polynomial_ring(ground, "x")
+            R, x = polynomial_ring(ff, "x")
             @test Groebner.groebner([x^2 - 4, x + 2], ordering=gb_ord) == [x + 2]
         end
     end
 end
 
 @testset "Nemo.jl, input-output" begin
-    R, (x, y) =
-        nemo_make_prime_finite_field(Nemo.ZZRingElem(Primes.nextprime(BigInt(2)^100)))[
-            "x",
-            "y"
-        ]
+    R, (x, y) = Nemo.GF(Nemo.ZZRingElem(Primes.nextprime(BigInt(2)^100)))["x", "y"]
     @test_throws DomainError Groebner.groebner([x, y])
 
     R, (x, y) = Nemo.GF(2, 2)["x", "y"]
@@ -51,9 +45,11 @@ end
 
     nemo_orderings_to_test = [:lex, :deglex, :degrevlex]
     nemo_grounds_to_test = [
-        nemo_make_prime_finite_field(2^62 + 135),
-        nemo_make_prime_finite_field(2^31 - 1),
-        nemo_make_prime_finite_field(17),
+        Nemo.Native.GF(2^62 + 135),
+        Nemo.Native.GF(2^31 - 1),
+        Nemo.Native.GF(17),
+        Nemo.GF(2^62 + 135),
+        Nemo.GF(2^31 - 1),
         Nemo.QQ
     ]
 
