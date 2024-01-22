@@ -234,7 +234,7 @@ function groebner_learn(polynomials::AbstractVector; options...)
     logging_setup(keywords)
     statistics_setup(keywords)
 
-    result = _groebner_learn(polynomials, keywords)
+    result = _groebner_learn0(polynomials, keywords)
 
     performance_counters_print(keywords)
     statistics_print(keywords)
@@ -277,7 +277,7 @@ function groebner_apply!(trace, polynomials::AbstractVector; options...)
     statistics_setup(keywords)
 
     result =
-        _groebner_apply!(trace, polynomials, keywords)::Tuple{Bool, typeof(polynomials)}
+        _groebner_apply0!(trace, polynomials, keywords)::Tuple{Bool, typeof(polynomials)}
 
     performance_counters_print(keywords)
     statistics_print(keywords)
@@ -298,7 +298,7 @@ function groebner_apply!(
     logging_setup(keywords)
     statistics_setup(keywords)
 
-    result = _groebner_apply!(trace, batch, keywords)::Tuple{Bool, typeof(batch)}
+    result = _groebner_apply0!(trace, batch, keywords)::Tuple{Bool, typeof(batch)}
 
     performance_counters_print(keywords)
     statistics_print(keywords)
@@ -363,7 +363,7 @@ function isgroebner(polynomials::AbstractVector; options...)
     logging_setup(keywords)
     statistics_setup(keywords)
 
-    result = _isgroebner(polynomials, keywords)::Bool
+    result = _isgroebner0(polynomials, keywords)::Bool
 
     performance_counters_print(keywords)
     statistics_print(keywords)
@@ -418,7 +418,7 @@ function normalform(basis::AbstractVector, to_be_reduced::AbstractVector; option
     logging_setup(keywords)
     statistics_setup(keywords)
 
-    result = _normalform(basis, to_be_reduced, keywords)::typeof(to_be_reduced)
+    result = _normalform0(basis, to_be_reduced, keywords)::typeof(to_be_reduced)
 
     performance_counters_print(keywords)
     statistics_print(keywords)

@@ -23,6 +23,17 @@ trace, gb = Groebner.groebner_learn(s);
 @btime Groebner.groebner_apply!($trace, $((s, s, s, s)));
 @btime Groebner.groebner_apply!($trace, $((s, s, s, s, s, s, s, s)));
 
+#=
+  113.912 ms (34041 allocations: 43.78 MiB)
+
+  44.803 ms (18887 allocations: 24.46 MiB)
+
+  52.580 ms (20607 allocations: 35.38 MiB)
+
+  64.618 ms (23276 allocations: 59.42 MiB)
+
+  125.247 ms (28610 allocations: 107.47 MiB)
+=#
 @profview Groebner.groebner_apply!(trace, ((s, s, s, s)));
 
 R, (x1, x2, x3) = polynomial_ring(QQ, ["x1", "x2", "x3"], ordering=:degrevlex)

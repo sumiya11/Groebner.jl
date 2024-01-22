@@ -85,6 +85,8 @@ struct SpecializedArithmeticZp{AccumType, CoeffType, Add} <:
         ::Type{CoeffType},
         uinv::UnsignedMultiplicativeInverse{AccumType}
     ) where {AccumType <: CoeffZp, CoeffType <: CoeffZp}
+        # Further in the code we need the guarantee that the shift is < 64
+        @invariant uinv.shift < 64
         new{AccumType, CoeffType, uinv.add}(uinv.multiplier, uinv.shift, uinv.divisor)
     end
 end
@@ -106,21 +108,21 @@ function _mul_high(a::UInt128, b::UInt128)
     a1b1 + (a1b2 >>> shift) + (a2b1 >>> shift) + carry
 end
 
-# NOTE: the compiler usually fails to simd this operation for T = UInt32 and T =
-# UInt64. However, with T = UInt8 and T = UInt16, it uses the simd mulhi
-# instructions such as pmulhuw.
-# Our attempts to emulate pmulhuw for T = UInt32 while preserving the
-# performance and portability were not very promising.
+# NOTE: the compiler sometimes fails to simd this operation for T ≥ UInt32.
 #
 # a modulo p (addition specialization)
 function mod_p(a::T, mod::SpecializedArithmeticZp{T, C, true}) where {T, C}
     x = _mul_high(a, mod.multiplier)
     x = convert(T, convert(T, (convert(T, a - x) >>> UInt8(1))) + x)
+    # Bit shifts Julia check that the shift is less than 64 (due to a contract with LLVM). 
+    # The assumption allows us to bypass this check.
+    unsafe_assume(mod.shift < 64)
     a - (x >>> mod.shift) * mod.divisor
 end
 # a modulo p (no addition specialization)
 function mod_p(a::T, mod::SpecializedArithmeticZp{T, C, false}) where {T, C}
     x = _mul_high(a, mod.multiplier)
+    unsafe_assume(mod.shift < 64)
     a - (x >>> mod.shift) * mod.divisor
 end
 
@@ -157,6 +159,7 @@ struct DelayedArithmeticZp{AccumType, CoeffType, Add} <:
         ::Type{CoeffType},
         uinv::UnsignedMultiplicativeInverse{AccumType}
     ) where {AccumType <: CoeffZp, CoeffType <: CoeffZp}
+        @invariant uinv.shift < 64
         new{AccumType, CoeffType, uinv.add}(uinv.multiplier, uinv.shift, uinv.divisor)
     end
 end
@@ -177,11 +180,13 @@ end
 function mod_p(a::A, mod::DelayedArithmeticZp{A, T, true}) where {A, T}
     x = _mul_high(a, mod.multiplier)
     x = convert(A, convert(A, (convert(A, a - x) >>> UInt8(1))) + x)
+    unsafe_assume(mod.shift < 64)
     a - (x >>> mod.shift) * mod.divisor
 end
 # a modulo p (no addition specialization)
 function mod_p(a::A, mod::DelayedArithmeticZp{A, T, false}) where {A, T}
     x = _mul_high(a, mod.multiplier)
+    unsafe_assume(mod.shift < 64)
     a - (x >>> mod.shift) * mod.divisor
 end
 
@@ -270,6 +275,7 @@ struct SignedArithmeticZp{AccumType, CoeffType} <:
         @invariant Primes.isprime(p)
         pa = convert(AccumType, p)
         magic = Base.MultiplicativeInverses.SignedMultiplicativeInverse(pa)
+        @invariant magic.shift < 64
         new{AccumType, CoeffType}(pa, pa * pa, magic.multiplier, magic.addmul, magic.shift)
     end
 end
@@ -279,6 +285,7 @@ divisor(arithm::SignedArithmeticZp) = arithm.p
 function mod_p(a::T, mod::SignedArithmeticZp{T}) where {T}
     x = _mul_high(a, mod.multiplier)
     x += a * mod.addmul
+    unsafe_assume(mod.shift < 64)
     d = (signbit(x) + (x >> mod.shift)) % T
     res = a - d * mod.p
     ifelse(res >= zero(T), res, res + mod.p)
@@ -310,6 +317,7 @@ struct SignedCompositeArithmeticZp{AccumType, CoeffType, T, N} <:
         multipliers = map(a -> a.multiplier, arithms)
         addmuls = map(a -> a.addmul, arithms)
         shifts = map(a -> a.shift, arithms)
+        @invariant all(x -> x < 64, shifts)
         p2s = CompositeInt{N, AT}(ps) * CompositeInt{N, AT}(ps)
         new{CompositeInt{N, AT}, CompositeInt{N, CT}, AT, N}(
             CompositeInt{N, AT}(ps),
@@ -329,6 +337,7 @@ function mod_p(
 ) where {N, T, U, W}
     x = _mul_high.(a.data, arithm.multipliers.data)
     x = x .+ a.data .* arithm.addmuls.data
+    # unsafe_assume(all(x -> x < 64, arithm.shifts.data))
     d = (signbit.(x) .+ (x .>> arithm.shifts.data)) .% T
     res = a.data .- d .* arithm.ps.data
     res = ifelse.(res .>= T(0), res, res .+ arithm.ps.data)
