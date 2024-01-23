@@ -1,21 +1,21 @@
 ## Benchmark results
 
-2024-01-11T10:11:30.126
+2024-01-22T20:54:25.163
 
 Benchmarked backend: groebner
 
 Benchmark suite: dummy benchmark set
 
-- Workers: 4
-- Timeout: 20 s
+- Workers: 8
+- Timeout: 600 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
-|-----|---|
-|dummy 1| - |
-|dummy 2| - |
+|:----|---|
+|dummy 1|0.00|
+|dummy 2|0.00|
 
 *Benchmarking environment:*
 

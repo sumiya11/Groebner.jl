@@ -1,21 +1,21 @@
 ## Benchmark results
 
-2024-01-11T10:12:02.048
+2024-01-22T20:54:26.062
 
 Benchmarked backend: maple
 
 Benchmark suite: dummy benchmark set
 
-- Workers: 4
-- Timeout: 20 s
+- Workers: 8
+- Timeout: 600 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
-|-----|---|
-|dummy 1|0.01|
-|dummy 2|0.02|
+|:----|---|
+|dummy 1|0.02|
+|dummy 2|0.05|
 
 *Benchmarking environment:*
 

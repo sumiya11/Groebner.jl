@@ -35,6 +35,7 @@ progressbar_enabled() =
 const _available_backends = ["groebner", "singular", "maple", "msolve", "openf4"]
 
 const _skip_singular = true
+const _skip_openf4 = true
 
 # Parses command-line arguments
 #! format: off
@@ -925,6 +926,9 @@ function main()
         solved_problems = []
         for backend in _available_backends
             if _skip_singular && backend == "singular"
+                continue
+            end
+	    if _skip_openf4 && backend == "openf4"
                 continue
             end
             args_ = copy(args)

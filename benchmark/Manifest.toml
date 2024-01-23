@@ -147,11 +147,9 @@ version = "6.2.1+2"
 
 [[deps.Groebner]]
 deps = ["AbstractAlgebra", "Atomix", "Combinatorics", "ExprTools", "Logging", "MultivariatePolynomials", "Nemo", "PrecompileTools", "PrettyTables", "Primes", "Printf", "Random", "TimerOutputs"]
-git-tree-sha1 = "97ea2bd5312f4e6b999dbbb3228cc634e416aabe"
-repo-rev = "master"
-repo-url = "https://github.com/sumiya11/Groebner.jl"
+path = ".."
 uuid = "0b43b601-686d-58a3-8a1c-6623616c7cd4"
-version = "0.6.1"
+version = "0.6.3"
 
 [[deps.GroupsCore]]
 deps = ["Markdown", "Random"]
