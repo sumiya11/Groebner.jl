@@ -1,13 +1,13 @@
 ## Benchmark results
 
-2024-01-11T23:29:16.645
+2024-01-23T15:47:19.959
 
 Benchmarked backend: msolve
 
 Benchmark suite: SIAN modulo 2^30 + 3
 
-- Workers: 8
-- Timeout: 1800 s
+- Workers: 16
+- Timeout: 300 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
@@ -16,25 +16,29 @@ Benchmark suite: SIAN modulo 2^30 + 3
 |:----|---|
 |Biohydrogenation|0.02|
 |Biohydrogenation_with_weights|0.02|
-|ChemicalReactionNetwork|0.61|
+|COVID_m1|1.71|
+|COVID_m1_with_weights|0.31|
+|ChemicalReactionNetwork|0.53|
 |ChemicalReactionNetwork_with_weights| - |
-|Cholera|137.09|
-|Cholera_with_weights|113.41|
+|Cholera|128.92|
+|Cholera_with_weights|120.20|
 |DAISY_ex3|0.02|
-|DAISY_ex3_with_weights|15.56|
+|DAISY_ex3_with_weights|12.52|
 |DAISY_mamil3|0.02|
-|DAISY_mamil3_with_weights|2.10|
-|DAISY_mamil4|0.67|
+|DAISY_mamil3_with_weights|1.81|
+|DAISY_mamil4|0.70|
 |DAISY_mamil4_with_weights| - |
+|Goodwin| - |
+|Goodwin_with_weights| - |
 |HIV|0.03|
-|HIV2|13.10|
-|HIV2_with_weights|3.70|
-|HIV_with_weights|0.02|
-|LV|0.02|
-|LV_with_weights|0.02|
+|HIV2|13.09|
+|HIV2_with_weights|4.16|
+|HIV_with_weights|0.03|
+|LV|0.01|
+|LV_with_weights|0.01|
 |Lipolysis|0.01|
-|Lipolysis_with_weights|0.02|
-|NFkB|1578.72|
+|Lipolysis_with_weights|0.01|
+|NFkB| - |
 |NFkB_with_weights| - |
 |OralGlucose|0.02|
 |OralGlucose_with_weights|0.02|
@@ -43,15 +47,17 @@ Benchmark suite: SIAN modulo 2^30 + 3
 |SEIR|0.02|
 |SEIR2|0.03|
 |SEIR2_with_weights| - |
+|SEIRP|200.05|
+|SEIRP_with_weights|63.88|
 |SEIR_with_weights|0.08|
-|SIRSForced|2.31|
-|SIRSForced_with_weights|0.33|
+|SIRSForced|2.37|
+|SIRSForced_with_weights|0.35|
 |SIR_R0|0.02|
 |SIR_R0_with_weights|0.02|
 |SlowFast|0.02|
 |SlowFast_with_weights|0.02|
 |Treatment|0.03|
-|Treatment_with_weights|0.03|
+|Treatment_with_weights|0.02|
 |Tumor|0.12|
 |Tumor_with_weights|0.07|
 
