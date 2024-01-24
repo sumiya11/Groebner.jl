@@ -3,10 +3,10 @@ using TestSetExtensions
 
 using AbstractAlgebra
 using Random
-# using Groebner
+using Groebner
 
 # Check invariants during testing.
-# NOTE: it's good to turn this on!
+# it's a good idea to turn these on!
 Groebner.invariants_enabled() = true
 Groebner.logging_enabled() = true
 Groebner.logger_update(loglevel=0)
