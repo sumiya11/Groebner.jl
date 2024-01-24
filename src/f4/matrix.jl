@@ -464,7 +464,7 @@ function matrix_insert_in_basis_hashtable_pivots!(
         e = bexps[lastidx]
 
         k = h
-        i = MonomHash(1)
+        i = MonomHash(0)
         @inbounds while i <= ht.size
             k = hashtable_next_lookup_index(h, i, mod)
             hm = bhash[k]

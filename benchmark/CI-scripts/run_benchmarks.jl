@@ -94,6 +94,21 @@ push!(
         )
     )
 )
+
+function n_variable_set(n; ordering=:degrevlex, k=GF(2^31 - 1))
+    R, x = polynomial_ring(k, ["x$i" for i in 1:n], ordering=ordering)
+    f = [sum(prod(x[i:(n - kk)], init=1) for i in 1:(kk + 1)) for kk in 0:(n - 1)]
+    f
+end
+
+push!(
+    suite,
+    (
+        problem_name="groebner, AA, GF(2^31-1), 100 vars",
+        result=compute_gb(n_variable_set(100, ordering=:degrevlex, k=GF(2^31 - 1)))
+    )
+)
+
 push!(
     suite,
     (

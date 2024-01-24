@@ -341,13 +341,7 @@ end
 
 # Checks monomials for element-wise equality
 function monom_is_equal(ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
-    @invariant length(ea) == length(eb)
-    @inbounds for i in 1:length(ea)
-        if ea[i] != eb[i]
-            return false
-        end
-    end
-    return true
+    ea == eb
 end
 
 ###
@@ -356,21 +350,37 @@ end
 # Constructs and returns the division mask of type Mask of the given monomial.
 function monom_create_divmask(
     e::ExponentVector{T},
-    DM::Type{Mask},
+    _::Type{Mask},
     ndivvars,
     divmap,
-    ndivbits
+    ndivbits,
+    compressed
 ) where {T, Mask}
     ctr = one(Mask)
     res = zero(Mask)
     o = one(Mask)
-    @inbounds for i in 1:ndivvars
-        for _ in 1:ndivbits
-            if e[i + 1] >= divmap[ctr]
-                res |= o << (ctr - 1)
+    if !compressed
+        @inbounds for i in 1:ndivvars
+            for _ in 1:ndivbits
+                if e[i + 1] >= divmap[ctr]
+                    res |= o << (ctr - 1)
+                end
+                ctr += o
             end
-            ctr += o
         end
+    else
+        @invariant ndivbits == 1
+        @invariant length(divmap) == 8 * sizeof(Mask)
+        @inbounds for i in 1:length(divmap)
+            nvars_per_bit = divmap[i]
+            bit = Mask(0)
+            for _ in 1:nvars_per_bit
+                bit |= Mask(!iszero(e[ctr + 1]))
+                ctr += o
+            end
+            res |= bit << (i - 1)
+        end
+        res
     end
     res
 end

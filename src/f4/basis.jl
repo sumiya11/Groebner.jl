@@ -38,13 +38,18 @@ mutable struct Pairset{Degree}
     lcms::Vector{MonomId}
     # Number of filled pairs, initially zero
     load::Int
+    # Scratch space to act as a buffer
+    scratch::Vector{CriticalPair{Degree}}
 end
 
 # Initializes and returns a pairset with monom_max_vars for `initial_size` pairs.
 function pairset_initialize(::Type{Degree}; initial_size=2^6) where {Degree}
-    pairs = Vector{CriticalPair{Degree}}(undef, initial_size)
-    lcms = Vector{MonomId}(undef, 0)
-    Pairset(pairs, lcms, 0)
+    Pairset(
+        Vector{CriticalPair{Degree}}(undef, initial_size),
+        Vector{MonomId}(),
+        0,
+        Vector{CriticalPair{Degree}}()
+    )
 end
 
 Base.isempty(ps::Pairset) = ps.load == 0
@@ -652,7 +657,7 @@ function insert_lcms_in_basis_hashtable!(
         n = ht.monoms[ht.load + 1]
 
         k = h
-        i = MonomHash(1)
+        i = MonomHash(0)
         @inbounds while i <= ht.size
             k = hashtable_next_lookup_index(h, i, mod)
             hm = ht.hashtable[k]

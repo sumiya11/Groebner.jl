@@ -207,8 +207,6 @@ end
     resize!(matrix.lower_rows, new_pivots)
     resize!(not_reduced_to_zero, new_pivots)
 
-    @log level = -3 "After interreduction" new_pivots
-
     true, any_zeroed, not_reduced_to_zero
 end
 
@@ -867,7 +865,7 @@ function linalg_vector_addmul_sparsedense_mod_p!(
     @invariant length(indices) == length(coeffs)
     @invariant !isempty(indices)
 
-    unsafe_assume(!isempty(indices))
+    # unsafe_assume(!isempty(indices))
 
     @inbounds mul = divisor(arithmetic) - row[indices[1]]
     @inbounds for j in 1:length(indices)
@@ -892,7 +890,7 @@ function linalg_vector_addmul_sparsedense!(
     @invariant length(indices) == length(coeffs)
     @invariant !isempty(indices)
 
-    unsafe_assume(!isempty(indices))
+    # unsafe_assume(!isempty(indices))
 
     @inbounds mul = divisor(arithmetic) - row[indices[1]]
     @inbounds for j in 1:length(indices)
@@ -917,7 +915,7 @@ function linalg_vector_addmul_sparsedense!(
     @invariant length(indices) == length(coeffs)
     @invariant !isempty(indices)
 
-    unsafe_assume(!isempty(indices))
+    # unsafe_assume(!isempty(indices))
 
     # NOTE: mul is guaranteed to be < typemax(T)
     p2 = arithmetic.p2
@@ -945,7 +943,7 @@ function linalg_vector_addmul_sparsedense!(
     @invariant length(indices) == length(coeffs)
     @invariant !isempty(indices)
 
-    unsafe_assume(!isempty(indices))
+    # unsafe_assume(!isempty(indices))
 
     # NOTE: mul is guaranteed to be < typemax(T)
     p2 = arithmetic.p2s

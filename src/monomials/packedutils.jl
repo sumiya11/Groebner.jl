@@ -17,7 +17,7 @@ end
 packed_degsize(T, B, n) = sizeof(B)
 packed_nchunks(T, B, n) = div((n - 1) * sizeof(B) + packed_degsize(T, B, n), sizeof(T)) + 1
 
-@generated function packed_unpack!(
+@inline @generated function packed_unpack!(
     b::AbstractVector{MH},
     a::T,
     ::Type{B},
@@ -37,7 +37,7 @@ packed_nchunks(T, B, n) = div((n - 1) * sizeof(B) + packed_degsize(T, B, n), siz
     :($ans; return $b)
 end
 
-@generated function packed_dot_product(
+@inline @generated function packed_dot_product(
     a::T,
     b::AbstractVector{MH},
     ::Type{B},
@@ -61,7 +61,7 @@ end
 
 # Keep the number of Val(...) parametric types small, otherwise these functions
 # will be dispatched in runtime
-@generated function packed_is_zero_dot_product(
+@inline @generated function packed_is_zero_dot_product(
     a::T,
     b::T,
     ::Type{B},
@@ -84,7 +84,7 @@ end
 end
 
 # a >= b
-@generated function packed_ge(a::T, b::T, ::Type{B}, ::Val{I}) where {T, B, I}
+@inline @generated function packed_ge(a::T, b::T, ::Type{B}, ::Val{I}) where {T, B, I}
     ts, bs = sizeof(T), sizeof(B)
     @assert bs * div(ts, bs) == ts
     epc = div(ts, bs)
@@ -101,7 +101,7 @@ end
     :($ans; return $x)
 end
 
-@generated function packed_max(a::T, b::T, ::Type{B}, ::Val{I}) where {T, B, I}
+@inline @generated function packed_max(a::T, b::T, ::Type{B}, ::Val{I}) where {T, B, I}
     ts, bs = sizeof(T), sizeof(B)
     @assert bs * div(ts, bs) == ts
     epc = div(ts, bs)

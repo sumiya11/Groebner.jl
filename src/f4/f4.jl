@@ -286,7 +286,7 @@ end
 function f4_find_divisor_among_lead_monoms_use_divmask(i, divmask, basis)
     lead_divmasks = basis.divmasks
     @inbounds while i <= basis.nnonredundant
-        if divmask_is_divisible(divmask, lead_divmasks[i])
+        if divmask_is_probably_divisible(divmask, lead_divmasks[i])
             break
         end
         i += 1
@@ -400,14 +400,12 @@ end
 # Returns N, the number of critical pairs of the smallest sugar.
 # Sorts the critical pairs so that the first N pairs are the smallest.
 function pairset_lowest_sugar_pairs!(pairset::Pairset, sugar_cubes::Vector{SugarCube})
-    @log level = -5 "Sugar cubes" sugar_cubes
     sugar = sort_pairset_by_sugar!(pairset, 1, pairset.load - 1, sugar_cubes)
     @inbounds min_sugar = sugar[1]
     min_idx = 1
     @inbounds while min_idx < pairset.load && sugar[min_idx + 1] == min_sugar
         min_idx += 1
     end
-    @log level = -5 "Selected pairs sugar" sugar min_idx min_sugar
     min_idx
 end
 
@@ -447,39 +445,34 @@ function f4_discard_normal!(
 end
 
 # F4 critical pair selection.
-@timeit function f4_select_critical_pairs!(
-    pairset::Pairset,
+function f4_select_critical_pairs!(
+    pairset::Pairset{Deg},
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
-    symbol_ht::MonomialHashtable,
-    selection_strategy::Symbol;
+    symbol_ht::MonomialHashtable;
     maxpairs::Int=typemax(Int),
     select_all::Bool=false
-)
+) where {Deg}
     # 1. The pairset is sorted according to the given selection strategy and the
     #    number of selected critical pairs is decided.
 
-    npairs = pairset.load
+    # TODO: Why is this code type unstable !???
+    npairs::Int = pairset.load
     if !select_all
-        if selection_strategy === :normal
-            npairs = pairset_lowest_degree_pairs!(pairset)
-        else
-            @assert selection_strategy === :sugar
-            npairs = pairset_lowest_sugar_pairs!(pairset, basis.sugar_cubes)
-        end
+        npairs = pairset_lowest_degree_pairs!(pairset)
     end
     npairs = min(npairs, maxpairs)
     @invariant npairs > 0
 
     ps = pairset.pairs
-    deg = ps[1].deg
+    deg::Deg = ps[1].deg
 
     # 2. Selected pairs in the pairset are sorted once again, now with respect
     #    to a monomial ordering on the LCMs
     sort_pairset_by_lcm!(pairset, npairs, ht)
 
-    # NOTE: when `maxpairs` limits the number of selected pairs, we still add
+    # When `maxpairs` limits the number of selected pairs, we still add
     # some additional pairs which have the same lcm as the selected ones 
     if npairs > maxpairs
         navailable = npairs
@@ -500,8 +493,8 @@ end
     end
     pairset.load -= npairs
 
-    @log level = -5 "Selected $npairs pairs of degree $deg from pairset, $(pairset.load) pairs left"
-    @stat critical_pairs_deg = deg critical_pairs_count = npairs
+    # @log level = -5 "Selected $npairs pairs of degree $deg from pairset, $(pairset.load) pairs left"
+    # @stat critical_pairs_deg = deg critical_pairs_count = npairs
 
     deg, npairs
 end
@@ -753,7 +746,6 @@ end
             matrix,
             hashtable,
             symbol_ht,
-            params.selection_strategy,
             maxpairs=params.maxpairs
         )
         @log level = -3 "After normal selection: available $(pairset.load) pairs"
@@ -826,15 +818,7 @@ end
     f4_update!(pairset, basis, hashtable, update_ht)
     isempty(pairset) && return true
     # Fill the F4 matrix
-    f4_select_critical_pairs!(
-        pairset,
-        basis,
-        matrix,
-        hashtable,
-        symbol_ht,
-        :normal,
-        select_all=true
-    )
+    f4_select_critical_pairs!(pairset, basis, matrix, hashtable, symbol_ht, select_all=true)
     f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
     # Rename the columns and sort the rows of the matrix
     matrix_fill_column_to_monom_map!(matrix, symbol_ht)

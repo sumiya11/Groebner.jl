@@ -8,22 +8,39 @@
 ### 
 # Sorting monomials, polynomials, and other things.
 
-# Unstable algorithm should be a bit faster for large arrays
 _default_sorting_alg() = Base.Sort.DEFAULT_UNSTABLE
 
-# Sorts arr at the range of indices from..to 
-function sort_part!(
-    arr,
-    from::Integer,
-    to::Integer;
-    lt=isless,
-    alg=_default_sorting_alg(),
-    by=identity
-)
-    # NOTE: this is perhaps type unstable
-    ordr = Base.Sort.ord(lt, by, nothing)
-    sort!(arr, from, to, alg, ordr)
-    nothing
+# Use scratch spaces for >1.9.0
+@static if VERSION > v"1.9.0"
+    # Sorts arr at the range of indices from..to. 
+    # NOTE: this function is perhaps type unstable
+    function sort_part!(
+        arr,
+        from::Integer,
+        to::Integer;
+        lt=isless,
+        alg=_default_sorting_alg(),
+        by=identity,
+        scratch=nothing
+    )
+        ordr = Base.Sort.ord(lt, by, nothing)
+        sort!(arr, from, to, alg, ordr, scratch)
+        nothing
+    end
+else
+    function sort_part!(
+        arr,
+        from::Integer,
+        to::Integer;
+        lt=isless,
+        alg=_default_sorting_alg(),
+        by=identity,
+        scratch=nothing
+    )
+        ordr = Base.Sort.ord(lt, by, nothing)
+        sort!(arr, from, to, alg, ordr)
+        nothing
+    end
 end
 
 # Sorts polynomials from the basis by their leading monomial in the
@@ -84,7 +101,7 @@ end
 # Sorts critical pairs from the pairset in the range from..from+sz by the total
 # degree of their lcms in a non-decreasing order
 function sort_pairset_by_degree!(ps::Pairset, from::Int, sz::Int)
-    sort_part!(ps.pairs, from, from + sz, by=pair -> pair.deg)
+    sort_part!(ps.pairs, from, from + sz, by=pair -> pair.deg, scratch=ps.scratch)
 end
 
 # Sorts critical pairs from the pairset in the range from..from+sz by their
@@ -119,7 +136,7 @@ function sort_pairset_by_lcm!(pairset::Pairset, npairs::Int, hashtable::Monomial
             @inbounds(monoms[pair2.lcm]),
             hashtable.ord
         )
-    sort_part!(pairset.pairs, 1, npairs, lt=cmps)
+    sort_part!(pairset.pairs, 1, npairs, lt=cmps, scratch=pairset.scratch)
 end
 
 function sort_generators_by_position!(polys::Vector{Int}, load::Int)

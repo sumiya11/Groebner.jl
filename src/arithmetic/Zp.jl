@@ -114,7 +114,7 @@ end
 function mod_p(a::T, mod::SpecializedArithmeticZp{T, C, true}) where {T, C}
     x = _mul_high(a, mod.multiplier)
     x = convert(T, convert(T, (convert(T, a - x) >>> UInt8(1))) + x)
-    # Bit shifts Julia check that the shift is less than 64 (due to a contract with LLVM). 
+    # Bit shifts in Julia check that the shift is less than 64. 
     # The assumption allows us to bypass this check.
     unsafe_assume(mod.shift < 64)
     a - (x >>> mod.shift) * mod.divisor

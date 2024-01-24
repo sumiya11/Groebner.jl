@@ -37,7 +37,7 @@ disabled, and entails no runtime overhead.
 
 See also `@log` in `src/utils/logging.jl`.
 """
-logging_enabled() = true
+logging_enabled() = false
 
 """
     performance_counters_enabled() -> Bool

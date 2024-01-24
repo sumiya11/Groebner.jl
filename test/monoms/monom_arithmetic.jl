@@ -217,7 +217,8 @@ end
                     Groebner.DivisionMask,
                     nvars,
                     divmap,
-                    ndivbits
+                    ndivbits,
+                    false
                 )
                 @test ans == dm
             end
