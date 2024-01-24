@@ -1,13 +1,13 @@
 ## Benchmark results
 
-2024-01-12T08:15:25.284
+2024-01-23T15:40:45.178
 
 Benchmarked backend: maple
 
 Benchmark suite: SIAN modulo 2^30 + 3
 
 - Workers: 16
-- Timeout: 3600 s
+- Timeout: 300 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
@@ -16,50 +16,50 @@ Benchmark suite: SIAN modulo 2^30 + 3
 |:----|---|
 |Biohydrogenation|0.01|
 |Biohydrogenation_with_weights|0.01|
-|COVID_m1|0.72|
-|COVID_m1_with_weights|0.14|
+|COVID_m1|0.78|
+|COVID_m1_with_weights|0.13|
 |ChemicalReactionNetwork|0.27|
-|ChemicalReactionNetwork_with_weights|0.23|
-|Cholera|42.16|
-|Cholera_with_weights|46.12|
+|ChemicalReactionNetwork_with_weights|0.22|
+|Cholera|57.95|
+|Cholera_with_weights|63.93|
 |DAISY_ex3|0.01|
-|DAISY_ex3_with_weights|0.01|
+|DAISY_ex3_with_weights|0.02|
 |DAISY_mamil3|0.01|
 |DAISY_mamil3_with_weights|0.01|
-|DAISY_mamil4|0.42|
-|DAISY_mamil4_with_weights|0.43|
-|Goodwin|822.12|
-|Goodwin_with_weights|146.60|
+|DAISY_mamil4|0.43|
+|DAISY_mamil4_with_weights|0.45|
+|Goodwin| - |
+|Goodwin_with_weights| - |
 |HIV|0.02|
-|HIV2|3.01|
-|HIV2_with_weights|1.38|
-|HIV_with_weights|0.01|
+|HIV2|3.54|
+|HIV2_with_weights|1.62|
+|HIV_with_weights|0.02|
 |LV|0.01|
 |LV_with_weights|0.01|
 |Lipolysis|0.01|
 |Lipolysis_with_weights|0.01|
-|NFkB|314.56|
-|NFkB_with_weights|163.44|
+|NFkB| - |
+|NFkB_with_weights| - |
 |OralGlucose|0.01|
 |OralGlucose_with_weights|0.01|
 |Pharm| - |
-|Pharm_with_weights|438.33|
+|Pharm_with_weights| - |
 |SEIR|0.01|
-|SEIR2|0.03|
-|SEIR2_with_weights|0.03|
-|SEIRP|85.14|
-|SEIRP_with_weights|19.86|
+|SEIR2|0.06|
+|SEIR2_with_weights|0.07|
+|SEIRP|190.97|
+|SEIRP_with_weights|28.67|
 |SEIR_with_weights|0.01|
-|SIRSForced|0.74|
-|SIRSForced_with_weights|0.13|
+|SIRSForced|0.89|
+|SIRSForced_with_weights|0.12|
 |SIR_R0|0.01|
 |SIR_R0_with_weights|0.01|
 |SlowFast|0.01|
-|SlowFast_with_weights|0.01|
-|Treatment|0.01|
+|SlowFast_with_weights|0.02|
+|Treatment|0.02|
 |Treatment_with_weights|0.02|
-|Tumor|0.05|
-|Tumor_with_weights|0.03|
+|Tumor|0.06|
+|Tumor_with_weights|0.04|
 
 *Benchmarking environment:*
 
