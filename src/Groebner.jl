@@ -47,7 +47,7 @@ If performance-tracking macro `@timeit` should be enabled in Groebner.
 When this is `false`, all performance counters in Groebner are disabled and
 entail **(almost)** no runtime overhead.
 """
-performance_counters_enabled() = true
+performance_counters_enabled() = false
 
 ###
 # Imports
