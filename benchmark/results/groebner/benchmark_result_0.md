@@ -1,13 +1,13 @@
 ## Benchmark results
 
-2024-01-24T03:13:25.755
+2024-01-26T23:39:00.057
 
 Benchmarked backend: groebner
 
 Benchmark suite: dummy benchmark set
 
 - Workers: 16
-- Timeout: 600 s
+- Timeout: 1800 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
@@ -30,6 +30,7 @@ Versions of the dependencies:
 * PrecompileTools : 1.2.0
 * MultivariatePolynomials : 0.5.3
 * Combinatorics : 1.0.2
+* HostCPUFeatures : 0.1.16
 * AbstractAlgebra : 0.34.7
 * Nemo : 0.38.3
 * Atomix : 0.1.0

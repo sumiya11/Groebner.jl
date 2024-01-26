@@ -50,6 +50,12 @@ git-tree-sha1 = "f1f03a9fa24271160ed7e73051fba3c1a759b53f"
 uuid = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 version = "1.4.0"
 
+[[deps.BitTwiddlingConvenienceFunctions]]
+deps = ["Static"]
+git-tree-sha1 = "0c5f81f47bbbcf4aea7b2959135713459170798b"
+uuid = "62783981-4cbd-42fc-bca8-16325de8dc4b"
+version = "0.1.5"
+
 [[deps.Calcium_jll]]
 deps = ["Antic_jll", "Arb_jll", "Artifacts", "FLINT_jll", "GMP_jll", "JLLWrappers", "Libdl", "MPFR_jll", "Pkg"]
 git-tree-sha1 = "37fd335ecca9bd6ab25a2a4d26b7b2f6fe64c246"
@@ -146,7 +152,7 @@ uuid = "781609d7-10c4-51f6-84f2-b8444358ff6d"
 version = "6.2.1+2"
 
 [[deps.Groebner]]
-deps = ["AbstractAlgebra", "Atomix", "Combinatorics", "ExprTools", "Logging", "MultivariatePolynomials", "Nemo", "PrecompileTools", "PrettyTables", "Primes", "Printf", "Random", "TimerOutputs"]
+deps = ["AbstractAlgebra", "Atomix", "Combinatorics", "ExprTools", "HostCPUFeatures", "Logging", "MultivariatePolynomials", "Nemo", "PrecompileTools", "PrettyTables", "Primes", "Printf", "Random", "TimerOutputs"]
 path = "../../.."
 uuid = "0b43b601-686d-58a3-8a1c-6623616c7cd4"
 version = "0.6.3"
@@ -156,6 +162,17 @@ deps = ["Markdown", "Random"]
 git-tree-sha1 = "6df9cd6ee79fc59feab33f63a1b3c9e95e2461d5"
 uuid = "d5909c97-4eac-4ecc-a3dc-fdd0858a4120"
 version = "0.4.2"
+
+[[deps.HostCPUFeatures]]
+deps = ["BitTwiddlingConvenienceFunctions", "IfElse", "Libdl", "Static"]
+git-tree-sha1 = "eb8fed28f4994600e29beef49744639d985a04b2"
+uuid = "3e5b6fbb-0976-4d2c-9146-d79de83f2fb0"
+version = "0.1.16"
+
+[[deps.IfElse]]
+git-tree-sha1 = "debdd00ffef04665ccbb3e150747a77560e8fad1"
+uuid = "615f187c-cbe4-4ef1-ba3b-2fcf58d6d173"
+version = "0.1.1"
 
 [[deps.IntegerMathUtils]]
 git-tree-sha1 = "b8ffb903da9f7b8cf695a8bead8e01814aa24b30"
@@ -363,6 +380,12 @@ uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
 [[deps.SparseArrays]]
 deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
+[[deps.Static]]
+deps = ["IfElse"]
+git-tree-sha1 = "f295e0a1da4ca425659c57441bcb59abb035a4bc"
+uuid = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
+version = "0.8.8"
 
 [[deps.Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]

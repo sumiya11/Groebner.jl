@@ -264,6 +264,12 @@ end
     B = sizeof(T)
     llvm_t = j_to_llvm_t(T)
     mask = typemax_saturated(Int, N)
+    typecast_iN_to_i64(varname) =
+        if N == 64
+            ""
+        else
+            "$(varname)64 = zext i$(N) $(varname)$(N) to i64\n"
+        end
     textir = """
     declare i$N @llvm.cttz.i$N(i$N, i1);
     define i8 @entry(i64 %0, i64 %1, i64 %2) #0 {
@@ -293,7 +299,7 @@ end
 
     L17:
         %tz$N = call i$N @llvm.cttz.i$N(i$N %compressed, i1 true)
-        %tz64 = zext i$N %tz$N to i64
+        $(typecast_iN_to_i64("%tz"))
         %vis = add nuw i64 %i, %tz64
         %sapi2 = getelementptr inbounds $llvm_t, $llvm_t* %a, i64 %vis
         %sbpi2 = getelementptr inbounds $llvm_t, $llvm_t* %b, i64 %vis
@@ -372,6 +378,13 @@ end
     B = sizeof(T)
     llvm_t = j_to_llvm_t(T)
     mask = typemax_saturated(Int, N)
+    typecast_iN_to_i64(varname) =
+        if N == 64
+            ""
+        else
+            "$(varname)64 = zext i$(N) $(varname)$(N) to i64\n"
+        end
+
     textir = """
     declare i$N @llvm.ctlz.i$N(i$N, i1);
     define i8 @entry(i64 %0, i64 %1, i64 %2) #0 {
@@ -402,9 +415,9 @@ end
         br i1 %matchfnotound, label %L30, label %L17
 
     L17:
-        %tz$N = call i$N @llvm.ctlz.i$N(i$N %compressed, i1 true)
-        %tz$N.rev = sub i$N $(N-1), %tz$N
-        %tz64 = zext i$N %tz$N.rev to i64
+        %tz$N.rev = call i$N @llvm.ctlz.i$N(i$N %compressed, i1 true)
+        %tz$N = sub i$N $(N-1), %tz$N.rev
+        $(typecast_iN_to_i64("%tz"))
         %vis = add nsw i64 %i, %tz64
         %sapi2 = getelementptr inbounds $llvm_t, $llvm_t* %a, i64 %vis
         %sbpi2 = getelementptr inbounds $llvm_t, $llvm_t* %b, i64 %vis

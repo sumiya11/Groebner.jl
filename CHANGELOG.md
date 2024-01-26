@@ -1,19 +1,27 @@
+## Groebner v0.6.4 Release notes
+
+Minor performance improvements, especially over finite fields of large characteristic.
+
+Versions of dependencies:
+- Updated dependency on AbstractAlgebra.jl and Nemo.jl.
+- Now Groebmer.jl depends on HostCPUFeatures.jl v0.1+.
+
 ## Groebner v0.6.3 Release notes
 
 Now we handle both `Nemo.GF` and `Nemo.Native.GF` as the coefficient ring.
 
 ## Groebner v0.6.1-2 Release notes
 
-Bug fixes.
+Some bug fixes.
 
 ## Groebner v0.6.0 Release notes
 
 New features:
 - Adds the possibility of parallel computation, can be activated by the `threaded` keyword argument in function `groebner`.
-- Major speed-ups over the rationals thanks to the new learn & apply strategy and rational number reconstruction from Nemo.
+- Major speed-ups over the rationals thanks to the new learn & apply strategy and the use of rational number reconstruction from Nemo.
 - Marginal speed-ups over some finite fields due to the new implementations of arithmetic in Z/pZ.
 
-Other:
+Versions of dependencies:
 - Added a dependency on Nemo.jl.
 
 ## Groebner v0.5.0 Release notes
