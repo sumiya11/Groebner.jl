@@ -1,7 +1,7 @@
-module Groebner
-# Groebner is a package for computing Gröbner bases. This is the main file.
-# Groebner is distributed under GNU GPL v2 starting from Groebner v0.6.0.
+# This file is a part of Groebner.jl. License is GNU GPL v2.
 
+# Groebner.jl is a package for computing Gröbner bases. This is the main file.
+module Groebner
 # Groebner works over integers modulo a prime and over the rationals. At its
 # heart, Groebner implements F4, multi-modular techniques, and tracing.
 
@@ -33,7 +33,7 @@ invariants_enabled() = false
     logging_enabled() -> Bool
 
 Specifies if logging is enabled. If `false`, then all logging in Groebner is
-disabled, and entails no runtime overhead.
+disabled, and entails **(almost)** no runtime overhead.
 
 See also `@log` in `src/utils/logging.jl`.
 """
@@ -45,9 +45,9 @@ logging_enabled() = true
 If performance-tracking macro `@timeit` should be enabled in Groebner. 
 
 When this is `false`, all performance counters in Groebner are disabled and
-entail no runtime overhead.
+entail **(almost)** no runtime overhead.
 """
-performance_counters_enabled() = false
+performance_counters_enabled() = true
 
 ###
 # Imports
@@ -69,6 +69,9 @@ import Base.MultiplicativeInverses: UnsignedMultiplicativeInverse
 import Combinatorics
 
 using ExprTools
+
+import HostCPUFeatures:
+    cpu_name, register_count, register_size, has_feature, pick_vector_width, fma_fast
 
 using Logging
 
@@ -124,7 +127,8 @@ include("utils/invariants.jl")
 include("utils/timeit.jl")
 # Provides the macro `@stat` for collecting statistics
 include("utils/statistics.jl")
-
+# For fast and specific vector arithmetic
+include("utils/simd.jl")
 # include("utils/versioninfo.jl")
 
 # Minimalistic plotting with Unicode

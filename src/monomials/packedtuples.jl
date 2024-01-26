@@ -560,8 +560,10 @@ function monom_create_divmask(
     DM::Type{Mask},
     ndivvars,
     divmap,
-    ndivbits
+    ndivbits,
+    compressed
 ) where {T, B, Mask}
+    @invariant !compressed
     ctr = one(Mask)
     res = zero(Mask)
     o = one(Mask)
@@ -585,8 +587,11 @@ function monom_create_divmask(
     DM::Type{Mask},
     ndivvars,
     divmap,
-    ndivbits
+    ndivbits,
+    compressed
 ) where {T, B, Mask}
+    @invariant !compressed
+
     epc = div(sizeof(T), sizeof(B))
 
     if ndivvars < epc
@@ -595,7 +600,8 @@ function monom_create_divmask(
             DM,
             ndivvars,
             divmap,
-            ndivbits
+            ndivbits,
+            compressed
         )
     end
 
@@ -635,8 +641,11 @@ function monom_create_divmask(
     DM::Type{Mask},
     ndivvars,
     divmap,
-    ndivbits
+    ndivbits,
+    compressed
 ) where {T, B, Mask}
+    @invariant !compressed
+
     epc = packed_elperchunk(T, B)
 
     if ndivvars < 2 * epc
@@ -645,7 +654,8 @@ function monom_create_divmask(
             DM,
             ndivvars,
             divmap,
-            ndivbits
+            ndivbits,
+            compressed
         )
     end
 

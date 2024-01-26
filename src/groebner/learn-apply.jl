@@ -9,7 +9,7 @@
 # Proxy function for handling exceptions.
 # NOTE: probably at some point we'd want to merge this with error handling in
 # _groebner. But for now, we keep it simple.
-function _groebner_learn(polynomials, kws::KeywordsHandler)
+function _groebner_learn0(polynomials, kws::KeywordsHandler)
     # We try to select an efficient internal polynomial representation, i.e., a
     # suitable representation of monomials and coefficients.
     polynomial_repr = io_select_polynomial_representation(polynomials, kws)
@@ -17,7 +17,7 @@ function _groebner_learn(polynomials, kws::KeywordsHandler)
         # The backend is wrapped in a try/catch to catch exceptions that one can
         # hope to recover from (and, perhaps, restart the computation with safer
         # parameters).
-        return _groebner_learn(polynomials, kws, polynomial_repr)
+        return _groebner_learn1(polynomials, kws, polynomial_repr)
     catch err
         if isa(err, MonomialDegreeOverflow)
             @log level = 1 """
@@ -25,7 +25,7 @@ function _groebner_learn(polynomials, kws::KeywordsHandler)
             Restarting with at least $(32) bits per exponent."""
             polynomial_repr =
                 io_select_polynomial_representation(polynomials, kws, hint=:large_exponents)
-            return _groebner_learn(polynomials, kws, polynomial_repr)
+            return _groebner_learn1(polynomials, kws, polynomial_repr)
         else
             # Something bad happened.
             rethrow(err)
@@ -33,7 +33,7 @@ function _groebner_learn(polynomials, kws::KeywordsHandler)
     end
 end
 
-function _groebner_learn(polynomials, kws, representation)
+function _groebner_learn1(polynomials, kws, representation)
     ring, var_to_index, monoms, coeffs =
         io_convert_to_internal(representation, polynomials, kws)
     if isempty(monoms)
@@ -51,7 +51,7 @@ function _groebner_learn(polynomials, kws, representation)
             homogenize_generators!(ring, monoms, coeffs, params)
     end
 
-    trace, gb_monoms, gb_coeffs = _groebner_learn(ring, monoms, coeffs, params)
+    trace, gb_monoms, gb_coeffs = _groebner_learn2(ring, monoms, coeffs, params)
 
     if params.homogenize
         trace.term_homogenizing_permutations = term_homogenizing_permutation
@@ -68,7 +68,7 @@ function _groebner_learn(polynomials, kws, representation)
     io_convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
 end
 
-function _groebner_learn(
+function _groebner_learn2(
     ring,
     monoms,
     coeffs::Vector{Vector{C}},
@@ -89,7 +89,7 @@ end
 # Apply stage
 
 # Specialization for a single input
-function _groebner_apply!(
+function _groebner_apply0!(
     wrapped_trace::WrappedTraceF4,
     polynomials::AbstractVector,
     kws::KeywordsHandler
@@ -108,7 +108,7 @@ function _groebner_apply!(
     )
     ring = PolyRing(trace.ring.nvars, trace.ring.ord, ring.ch)
 
-    flag, gb_monoms, gb_coeffs = _groebner_apply!(ring, trace, params)
+    flag, gb_monoms, gb_coeffs = _groebner_apply1!(ring, trace, params)
 
     if trace.params.homogenize
         ring, gb_monoms, gb_coeffs =
@@ -119,7 +119,7 @@ function _groebner_apply!(
     flag, io_convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
 end
 # Specialization for a batch of several inputs
-function _groebner_apply!(
+function _groebner_apply0!(
     wrapped_trace::WrappedTraceF4,
     batch::NTuple{N, T},
     kws::KeywordsHandler
@@ -138,7 +138,7 @@ function _groebner_apply!(
     )
     ring = PolyRing(trace.ring.nvars, trace.ring.ord, ring.ch)
 
-    flag, gb_monoms, gb_coeffs = _groebner_apply!(ring, trace, params)
+    flag, gb_monoms, gb_coeffs = _groebner_apply1!(ring, trace, params)
 
     if trace.params.homogenize
         ring, gb_monoms, gb_coeffs =
@@ -149,7 +149,7 @@ function _groebner_apply!(
     flag, io_convert_to_output_batched(ring, batch, gb_monoms, gb_coeffs, params)
 end
 
-function _groebner_apply!(ring, trace, params)
+function _groebner_apply1!(ring, trace, params)
     @log level = -1 "Groebner Apply phase"
     @log level = -2 "Applying modulo $(ring.ch)"
 

@@ -204,7 +204,6 @@ end
             matrix,
             hashtable,
             symbol_ht,
-            params.selection_strategy,
             maxpairs=params.maxpairs
         )
         push!(trace.critical_pair_sequence, (degree_i, npairs_i))

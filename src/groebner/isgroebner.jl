@@ -3,7 +3,7 @@
 ### 
 # Backend for `isgroebner`
 
-function _isgroebner(polynomials, kws::KeywordsHandler)
+function _isgroebner0(polynomials, kws::KeywordsHandler)
     polynomial_repr =
         io_select_polynomial_representation(polynomials, kws, hint=:large_exponents)
     ring, var_to_index, monoms, coeffs =
@@ -14,12 +14,12 @@ function _isgroebner(polynomials, kws::KeywordsHandler)
     end
     params = AlgorithmParameters(ring, polynomial_repr, kws)
     ring, _ = io_set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
-    res = _isgroebner(ring, monoms, coeffs, params)
+    res = _isgroebner1(ring, monoms, coeffs, params)
     res
 end
 
 # isgroebner for Finite fields
-@timeit function _isgroebner(
+@timeit function _isgroebner1(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -30,7 +30,7 @@ end
 end
 
 # isgroebner for Rational numbers
-@timeit function _isgroebner(
+@timeit function _isgroebner1(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},

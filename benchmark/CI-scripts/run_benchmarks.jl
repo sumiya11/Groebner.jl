@@ -70,6 +70,13 @@ push!(
 push!(
     suite,
     (
+        problem_name="groebner, AA, GF(2^30+3), katsura 11",
+        result=compute_gb(Groebner.katsuran(11, ordering=:degrevlex, k=GF(2^30 + 3)), 3)
+    )
+)
+push!(
+    suite,
+    (
         problem_name="groebner, AA, GF(2^27+29), cyclic 8",
         result=compute_gb(Groebner.cyclicn(8, ordering=:degrevlex, k=GF(2^27 + 29)), 5)
     )
@@ -94,6 +101,21 @@ push!(
         )
     )
 )
+
+function n_variable_set(n; ordering=:degrevlex, k=GF(2^31 - 1))
+    R, x = polynomial_ring(k, ["x$i" for i in 1:n], ordering=ordering)
+    f = [sum(prod(x[i:(n - kk)], init=1) for i in 1:(kk + 1)) for kk in 0:(n - 1)]
+    f
+end
+
+push!(
+    suite,
+    (
+        problem_name="groebner, AA, GF(2^31-1), 100 vars",
+        result=compute_gb(n_variable_set(100, ordering=:degrevlex, k=GF(2^31 - 1)))
+    )
+)
+
 push!(
     suite,
     (

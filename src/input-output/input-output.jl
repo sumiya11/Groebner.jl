@@ -222,7 +222,15 @@ function io_get_tight_unsigned_int_type(x::T) where {T <: Integer}
     end
 end
 
-function io_select_coefftype(char, npolys, nvars, ordering, kws, hint)
+function io_select_coefftype(
+    char,
+    npolys,
+    nvars,
+    ordering,
+    kws,
+    hint;
+    using_wide_type_for_coeffs=false
+)
     @log level = -1 """
     Selecting coefficient representation.
     Given hint hint=$hint. Keyword argument arithmetic=$(kws.arithmetic)"""
@@ -239,7 +247,6 @@ function io_select_coefftype(char, npolys, nvars, ordering, kws, hint)
         )
     end
 
-    using_wide_type_for_coeffs = true
     tight_signed_type = io_get_tight_signed_int_type(char)
 
     # If the requested arithmetic requires a signed representation
@@ -256,11 +263,13 @@ function io_select_coefftype(char, npolys, nvars, ordering, kws, hint)
     end
 
     tight_unsigned_type = io_get_tight_unsigned_int_type(char)
-    if !using_wide_type_for_coeffs
+    tight_unsigned_type = if !using_wide_type_for_coeffs
         tight_unsigned_type
     else
         widen(tight_unsigned_type)
-    end, using_wide_type_for_coeffs
+    end
+
+    tight_unsigned_type, using_wide_type_for_coeffs
 end
 
 ###

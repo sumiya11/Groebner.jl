@@ -440,10 +440,11 @@ function monom_create_divmask(
     DM::Type{Mask},
     ndivvars,
     divmap,
-    ndivbits
+    ndivbits,
+    compressed
 ) where {T, I, N, Mask}
     tmp = Vector{T}(undef, N)
     monom_to_vector!(tmp, e)
     pushfirst!(tmp, monom_totaldeg(e))
-    monom_create_divmask(tmp, DM, ndivvars, divmap, ndivbits)
+    monom_create_divmask(tmp, DM, ndivvars, divmap, ndivbits, compressed)
 end

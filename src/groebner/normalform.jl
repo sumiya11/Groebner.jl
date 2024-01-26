@@ -3,7 +3,7 @@
 ###
 # Backend for `normalform`
 
-function _normalform(polynomials, to_be_reduced, kws::KeywordsHandler)
+function _normalform0(polynomials, to_be_reduced, kws::KeywordsHandler)
     polynomial_repr =
         io_select_polynomial_representation(polynomials, kws, hint=:large_exponents)
     ring, var_to_index1, monoms, coeffs =
@@ -34,7 +34,7 @@ function _normalform(polynomials, to_be_reduced, kws::KeywordsHandler)
     @assert ring.nvars == ring_to_be_reduced.nvars && ring.ch == ring_to_be_reduced.ch
     if kws.check
         @log level = -2 "As `check=true` was provided, checking that the given input is indeed a Groebner basis"
-        if !_isgroebner(ring, monoms, coeffs, params)
+        if !_isgroebner1(ring, monoms, coeffs, params)
             __not_a_basis_error(
                 polynomials,
                 "Input polynomials do not look like a Groebner basis."
@@ -46,7 +46,7 @@ function _normalform(polynomials, to_be_reduced, kws::KeywordsHandler)
       Basis: $ring
       To be reduced: $ring_"""
     @assert ring.nvars == ring_.nvars && ring.ch == ring_.ch && isequal(ring.ord, ring_.ord)
-    monoms_reduced, coeffs_reduced = _normalform(
+    monoms_reduced, coeffs_reduced = _normalform1(
         ring,
         monoms,
         coeffs,
@@ -66,7 +66,7 @@ function _normalform(polynomials, to_be_reduced, kws::KeywordsHandler)
     res
 end
 
-@timeit function _normalform(
+@timeit function _normalform1(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},

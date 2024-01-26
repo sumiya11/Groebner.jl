@@ -54,6 +54,7 @@ const _supported_kw_args = (
     fglm = (
         check       = false,
         monoms      = :dense,
+        statistics  = :no,
         loglevel    = _default_loglevel,
     ),
     groebner_learn = (
@@ -181,23 +182,6 @@ struct KeywordsHandler{Ord}
         Possible choices for keyword "statistics" are:
         `:no`, `:timings`, `:stats`, `:all`"""
 
-        # @log level = -2 """
-        #   In $function_key, using keywords: 
-        #   reduced    = $reduced, 
-        #   ordering   = $ordering, 
-        #   certify    = $certify, 
-        #   linalg     = $linalg, 
-        #   monoms     = $monoms, 
-        #   seed       = $seed, 
-        #   loglevel   = $loglevel, 
-        #   maxpairs   = $maxpairs,
-        #   selection  = $selection,
-        #   modular    = $modular,
-        #   check      = $check,
-        #   sweep      = $sweep
-        #   homogenize = $homogenize
-        #   statistics = $statistics"""
-
         new{typeof(ordering)}(
             reduced,
             ordering,
@@ -227,6 +211,7 @@ function logging_setup(keywords::KeywordsHandler)
 end
 
 function statistics_setup(keywords::KeywordsHandler)
+    log_simdinfo()
     if keywords.loglevel <= 0
         performance_counters_refresh()
         statistics_refresh()

@@ -7,8 +7,8 @@
 # The arithmetic is parametrized by the type of the accumulator and the type of
 # the coefficient. Generally, AccumType should be picked so that the result of
 #   a + b*c
-# is representable exactly in AccumType for feasible  a,b,c of type CoeffType. 
-# One example is AccumType = UInt64 and CoeffType = UInt32 with prime moduli
+# is representable exactly in AccumType for feasible a,b,c of type CoeffType. 
+# One example is AccumType = UInt64 and CoeffType = UInt32 with prime moduli.
 abstract type AbstractArithmetic{AccumType, CoeffType} end
 
 # All implementations of arithmetic in Zp are a subtype of this.
@@ -48,7 +48,7 @@ end
 
 divisor(arithm::ArithmeticZp) = arithm.magic.divisor
 
-mod_p(a::T, arithm::ArithmeticZp{T}) where {T} = a % arithm.magic
+@inline mod_p(a::T, arithm::ArithmeticZp{T}) where {T} = a % arithm.magic
 
 inv_mod_p(a::T, arithm::ArithmeticZp{T}) where {T} = invmod(a, divisor(arithm))
 
@@ -85,6 +85,8 @@ struct SpecializedArithmeticZp{AccumType, CoeffType, Add} <:
         ::Type{CoeffType},
         uinv::UnsignedMultiplicativeInverse{AccumType}
     ) where {AccumType <: CoeffZp, CoeffType <: CoeffZp}
+        # Further in the code we need the guarantee that the shift is < 64
+        @invariant uinv.shift < 8 * sizeof(AccumType)
         new{AccumType, CoeffType, uinv.add}(uinv.multiplier, uinv.shift, uinv.divisor)
     end
 end
@@ -92,11 +94,11 @@ end
 divisor(arithm::SpecializedArithmeticZp) = arithm.divisor
 
 # Returns the higher half of the product a*b
-function _mul_high(a::T, b::T) where {T <: Union{Signed, Unsigned}}
+@inline function _mul_high(a::T, b::T) where {T <: Union{Signed, Unsigned}}
     ((widen(a) * b) >>> (sizeof(a) * 8)) % T
 end
 
-function _mul_high(a::UInt128, b::UInt128)
+@inline function _mul_high(a::UInt128, b::UInt128)
     shift = sizeof(a) * 4
     mask = typemax(UInt128) >> shift
     a1, a2 = a >>> shift, a & mask
@@ -106,21 +108,22 @@ function _mul_high(a::UInt128, b::UInt128)
     a1b1 + (a1b2 >>> shift) + (a2b1 >>> shift) + carry
 end
 
-# NOTE: the compiler usually fails to simd this operation for T = UInt32 and T =
-# UInt64. However, with T = UInt8 and T = UInt16, it uses the simd mulhi
-# instructions such as pmulhuw.
-# Our attempts to emulate pmulhuw for T = UInt32 while preserving the
-# performance and portability were not very promising.
+# NOTE: the compiler sometimes fails to simd this operation for T ≥ UInt32.
 #
 # a modulo p (addition specialization)
-function mod_p(a::T, mod::SpecializedArithmeticZp{T, C, true}) where {T, C}
+@inline function mod_p(a::T, mod::SpecializedArithmeticZp{T, C, true}) where {T, C}
     x = _mul_high(a, mod.multiplier)
     x = convert(T, convert(T, (convert(T, a - x) >>> UInt8(1))) + x)
+    # Bit shifts in Julia check that the shift value is less than the bitsize of
+    # the argument. 
+    # The assumption here allows us to bypass this check.
+    unsafe_assume(mod.shift < 8 * sizeof(T))
     a - (x >>> mod.shift) * mod.divisor
 end
 # a modulo p (no addition specialization)
-function mod_p(a::T, mod::SpecializedArithmeticZp{T, C, false}) where {T, C}
+@inline function mod_p(a::T, mod::SpecializedArithmeticZp{T, C, false}) where {T, C}
     x = _mul_high(a, mod.multiplier)
+    unsafe_assume(mod.shift < 8 * sizeof(T))
     a - (x >>> mod.shift) * mod.divisor
 end
 
@@ -157,6 +160,7 @@ struct DelayedArithmeticZp{AccumType, CoeffType, Add} <:
         ::Type{CoeffType},
         uinv::UnsignedMultiplicativeInverse{AccumType}
     ) where {AccumType <: CoeffZp, CoeffType <: CoeffZp}
+        @invariant uinv.shift < 8 * sizeof(AccumType)
         new{AccumType, CoeffType, uinv.add}(uinv.multiplier, uinv.shift, uinv.divisor)
     end
 end
@@ -174,14 +178,16 @@ function n_safe_consecutive_additions(arithm::DelayedArithmeticZp{T}) where {T <
 end
 
 # a modulo p (addition specialization)
-function mod_p(a::A, mod::DelayedArithmeticZp{A, T, true}) where {A, T}
+@inline function mod_p(a::A, mod::DelayedArithmeticZp{A, T, true}) where {A, T}
     x = _mul_high(a, mod.multiplier)
     x = convert(A, convert(A, (convert(A, a - x) >>> UInt8(1))) + x)
+    unsafe_assume(mod.shift < 8 * sizeof(T))
     a - (x >>> mod.shift) * mod.divisor
 end
 # a modulo p (no addition specialization)
-function mod_p(a::A, mod::DelayedArithmeticZp{A, T, false}) where {A, T}
+@inline function mod_p(a::A, mod::DelayedArithmeticZp{A, T, false}) where {A, T}
     x = _mul_high(a, mod.multiplier)
+    unsafe_assume(mod.shift < 8 * sizeof(T))
     a - (x >>> mod.shift) * mod.divisor
 end
 
@@ -270,15 +276,17 @@ struct SignedArithmeticZp{AccumType, CoeffType} <:
         @invariant Primes.isprime(p)
         pa = convert(AccumType, p)
         magic = Base.MultiplicativeInverses.SignedMultiplicativeInverse(pa)
+        @invariant magic.shift < 8 * sizeof(AccumType)
         new{AccumType, CoeffType}(pa, pa * pa, magic.multiplier, magic.addmul, magic.shift)
     end
 end
 
 divisor(arithm::SignedArithmeticZp) = arithm.p
 
-function mod_p(a::T, mod::SignedArithmeticZp{T}) where {T}
+@inline function mod_p(a::T, mod::SignedArithmeticZp{T}) where {T}
     x = _mul_high(a, mod.multiplier)
     x += a * mod.addmul
+    unsafe_assume(mod.shift < 8 * sizeof(T))
     d = (signbit(x) + (x >> mod.shift)) % T
     res = a - d * mod.p
     ifelse(res >= zero(T), res, res + mod.p)
@@ -310,6 +318,7 @@ struct SignedCompositeArithmeticZp{AccumType, CoeffType, T, N} <:
         multipliers = map(a -> a.multiplier, arithms)
         addmuls = map(a -> a.addmul, arithms)
         shifts = map(a -> a.shift, arithms)
+        @invariant all(x -> x < 8 * sizeof(AT), shifts)
         p2s = CompositeInt{N, AT}(ps) * CompositeInt{N, AT}(ps)
         new{CompositeInt{N, AT}, CompositeInt{N, CT}, AT, N}(
             CompositeInt{N, AT}(ps),
@@ -323,12 +332,13 @@ end
 
 divisor(arithm::SignedCompositeArithmeticZp) = arithm.ps
 
-function mod_p(
+@inline function mod_p(
     a::CompositeInt{N, T},
     arithm::SignedCompositeArithmeticZp{CompositeInt{N, T}, U, W, N}
 ) where {N, T, U, W}
     x = _mul_high.(a.data, arithm.multipliers.data)
     x = x .+ a.data .* arithm.addmuls.data
+    unsafe_assume(all(arithm.shifts.data .< (8 * sizeof(T))))
     d = (signbit.(x) .+ (x .>> arithm.shifts.data)) .% T
     res = a.data .- d .* arithm.ps.data
     res = ifelse.(res .>= T(0), res, res .+ arithm.ps.data)
