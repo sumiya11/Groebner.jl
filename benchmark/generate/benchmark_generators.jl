@@ -70,7 +70,7 @@ function generate_benchmark_source_for_maple(
     vars_repr = join(map(string, gens(ring)), ", ")
     println(buf, "")
     println(buf, "runtime := 2^1000:")
-    println(buf, "for i from 1 by 1 to $nruns do")
+    println(buf, "for i from 1 by 1 to 1 do")
     println(buf, "\tJ := [\n$system_repr\n\t]:")
     println(buf, "\tprint(\"Running $name\");")
     println(buf, "\tst := time[real]():")

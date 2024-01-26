@@ -1,12 +1,12 @@
 ## Benchmark results
 
-2024-01-22T20:54:25.163
+2024-01-24T03:13:25.755
 
 Benchmarked backend: groebner
 
 Benchmark suite: dummy benchmark set
 
-- Workers: 8
+- Workers: 16
 - Timeout: 600 s
 - Aggregated over: 1 runs
 
