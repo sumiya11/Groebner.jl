@@ -78,11 +78,11 @@ end
         %lenm$(N-1) = add nsw i64 %2, -$(N-1)
         %dosimditer = icmp ugt i64 %2, $(N-1)
         br i1 %dosimditer, label %L9.lr.ph, label %L32
-    
+
     L9.lr.ph:
         %len$N = and i64 %2, $mask  ; divisible by N
         br label %L9
-    
+
     L9:
         %i = phi i64 [ 0, %L9.lr.ph ], [ %vinc, %L30 ]
         %api = getelementptr inbounds $llvm_t, $llvm_t* %a, i64 %i
@@ -95,21 +95,21 @@ end
         %compressed = bitcast <$N x i1> %mask to i$N
         %matchnotfound = icmp eq i$N %compressed, 0
         br i1 %matchnotfound, label %L30, label %common.ret
-    
+
     common.ret:
         %retval = phi i8 [ 0, %L9 ], [ 1, %L32 ], [ 0, %L51 ], [ 1, %L67 ]
         ret i8 %retval
-    
+
     L30:
         %vinc = add nuw nsw i64 %i, $N
         %continue = icmp slt i64 %vinc, %lenm$(N-1)
         br i1 %continue, label %L9, label %L32
-    
+
     L32:
         %cumi = phi i64 [ 0, %top ], [ %len$N, %L30 ]
         %done = icmp eq i64 %cumi, %2
         br i1 %done, label %common.ret, label %L51
-    
+
     L51:
         %si = phi i64 [ %inc, %L67 ], [ %cumi, %L32 ]
         %sapi = getelementptr inbounds $llvm_t, $llvm_t* %a, i64 %si
@@ -118,7 +118,7 @@ end
         %sbvi = load $llvm_t, $llvm_t* %sbpi, align $B
         %match = icmp ult $llvm_t %savi, %sbvi
         br i1 %match, label %common.ret, label %L67
-    
+
     L67:
         %inc = add i64 %si, 1
         %dobreak = icmp eq i64 %inc, %2
@@ -173,11 +173,11 @@ end
         %lenm$(N-1) = add nsw i64 %2, -$(N-1)
         %dosimditer = icmp ugt i64 %2, $(N-1)
         br i1 %dosimditer, label %L9.lr.ph, label %L32
-    
+
     L9.lr.ph:
         %len$N = and i64 %2, $mask  ; divisible by N
         br label %L9
-    
+
     L9:
         %i = phi i64 [ 0, %L9.lr.ph ], [ %vinc, %L30 ]
         %api = getelementptr inbounds $llvm_t, $llvm_t* %a, i64 %i
@@ -192,21 +192,21 @@ end
         %compressed = bitcast <$N x i1> %mask3 to i$N
         %matchnotfound1 = icmp eq i$N %compressed, 0
         br i1 %matchnotfound1, label %L30, label %common.ret
-    
+
     common.ret:
         %retval = phi i8 [ 0, %L9 ], [ 1, %L32 ], [ 0, %L51 ], [ 1, %L67 ]
         ret i8 %retval
-    
+
     L30:
         %vinc = add nuw nsw i64 %i, $N
         %continue = icmp slt i64 %vinc, %lenm$(N-1)
         br i1 %continue, label %L9, label %L32
-    
+
     L32:
         %cumi = phi i64 [ 0, %top ], [ %len$N, %L30 ]
         %done = icmp eq i64 %cumi, %2
         br i1 %done, label %common.ret, label %L51
-    
+
     L51:
         %si = phi i64 [ %inc, %L67 ], [ %cumi, %L32 ]
         %sapi = getelementptr inbounds $llvm_t, $llvm_t* %a, i64 %si
@@ -218,7 +218,7 @@ end
         %mask13 = and i1 %mask11, %mask12
         %matchnotfound2 = icmp eq i1 %mask13, 0
         br i1 %matchnotfound2, label %L67, label %common.ret
-    
+
     L67:
         %inc = add i64 %si, 1
         %dobreak = icmp eq i64 %inc, %2
@@ -277,7 +277,7 @@ end
     L9.lr.ph:
         %len$N = and i64 %2, $mask  ; divisible by N
         br label %L9
-    
+
     L9:
         %i = phi i64 [ 0, %L9.lr.ph ], [ %vinc, %L30 ]
         %api = getelementptr inbounds $llvm_t, $llvm_t* %a, i64 %i
@@ -387,7 +387,7 @@ end
         %len$N = and i64 %2, $mask              ; divisible by N
         %lenmlen$N = sub nsw i64 %lenm1, %len$N
         br label %L9
-    
+
     L9:
         %i = phi i64 [ %lenm$N, %L9.lr.ph ], [ %vdec, %L30 ]
         %api = getelementptr inbounds $llvm_t, $llvm_t* %a, i64 %i

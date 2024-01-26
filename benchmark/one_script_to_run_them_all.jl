@@ -928,7 +928,7 @@ function main()
             if _skip_singular && backend == "singular"
                 continue
             end
-	    if _skip_openf4 && backend == "openf4"
+            if _skip_openf4 && backend == "openf4"
                 continue
             end
             args_ = copy(args)
