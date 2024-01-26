@@ -235,8 +235,15 @@ function get_command_to_run_benchmark(
             "$validate"
         ])
     elseif backend == "maple"
-        scriptpath = (@__DIR__) * "/" * get_benchmark_dir(backend, problem_set_id)
-        return Cmd([args["bmaple"], "$scriptpath/$problem_name/$(problem_name).mpl"])
+        return Cmd([
+            "julia",
+            (@__DIR__) * "/generate/maple/run_in_maple.jl",
+            "$problem_name",
+            "$problem_num_runs",
+            "$problem_set_id",
+            "$validate",
+            "$(args["bmaple"])"
+        ])
     elseif backend == "msolve"
         return Cmd([
             "julia",
@@ -683,7 +690,14 @@ function collect_timings(args, names)
         end
     end
     println()
-    pretty_table_with_conf(conf, table; header=header, title=title, limit_printing=false)
+    pretty_table_with_conf(
+        conf,
+        table;
+        header=header,
+        title=title,
+        limit_printing=false,
+        crop=:none
+    )
 
     # Print the table to BENCHMARK_TABLE.
     resulting_md = ""
@@ -809,7 +823,8 @@ function collect_all_timings(args, runtimes, systems)
         header=header,
         title=title,
         limit_printing=false,
-        highlighters=(h1,)
+        highlighters=(h1,),
+        crop=:none
     )
     println("All results are in seconds.")
 
