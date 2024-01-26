@@ -70,6 +70,13 @@ push!(
 push!(
     suite,
     (
+        problem_name="groebner, AA, GF(2^30+3), katsura 11",
+        result=compute_gb(Groebner.katsuran(11, ordering=:degrevlex, k=GF(2^30 + 3)), 3)
+    )
+)
+push!(
+    suite,
+    (
         problem_name="groebner, AA, GF(2^27+29), cyclic 8",
         result=compute_gb(Groebner.cyclicn(8, ordering=:degrevlex, k=GF(2^27 + 29)), 5)
     )

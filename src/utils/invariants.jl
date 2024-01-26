@@ -35,7 +35,7 @@ macro unreachable()
 end
 
 ###
-# DANGER!!! DANGER!!! DANGER!!!
+# DANGER
 
 """
     unsafe_unreachable() --> Nothing

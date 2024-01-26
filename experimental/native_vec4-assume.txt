@@ -1,0 +1,93 @@
+	.text
+	.file	"mod_p"
+	.section	.rodata.cst8,"aM",@progbits,8
+	.p2align	3                               # -- Begin function julia_mod_p_61774
+.LCPI0_0:
+	.quad	-9223372036854775808            # 0x8000000000000000
+	.text
+	.globl	julia_mod_p_61774
+	.p2align	4, 0x90
+	.type	julia_mod_p_61774,@function
+julia_mod_p_61774:                      # @julia_mod_p_61774
+	.cfi_startproc
+# %bb.0:                                # %top
+	push	rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset rbp, -16
+	mov	rbp, rsp
+	.cfi_def_cfa_register rbp
+	push	rsi
+	push	rdi
+	.cfi_offset rdi, -32
+	.cfi_offset rsi, -24
+	mov	r9, rdx
+	mov	r10, rcx
+	vpmovsxbq	ymm2, dword ptr [r8 + 96]
+	vpmovzxbq	ymm1, dword ptr [r8 + 100] # ymm1 = mem[0],zero,zero,zero,zero,zero,zero,zero,mem[1],zero,zero,zero,zero,zero,zero,zero,mem[2],zero,zero,zero,zero,zero,zero,zero,mem[3],zero,zero,zero,zero,zero,zero,zero
+	mov	r11, qword ptr [r8 + 80]
+	mov	rcx, qword ptr [r8 + 72]
+	mov	rax, qword ptr [r8 + 64]
+	imul	qword ptr [rdx]
+	mov	rdi, rdx
+	mov	rax, rcx
+	imul	qword ptr [r9 + 8]
+	mov	rcx, rdx
+	mov	rax, r11
+	imul	qword ptr [r9 + 16]
+	mov	rsi, rdx
+	vmovdqu	ymm0, ymmword ptr [r9]
+	mov	rax, qword ptr [r8 + 88]
+	imul	qword ptr [r9 + 24]
+	vmovq	xmm3, rdx
+	vmovq	xmm4, rsi
+	vpunpcklqdq	xmm3, xmm4, xmm3        # xmm3 = xmm4[0],xmm3[0]
+	vmovq	xmm4, rcx
+	vmovq	xmm5, rdi
+	vpunpcklqdq	xmm4, xmm5, xmm4        # xmm4 = xmm5[0],xmm4[0]
+	vinserti128	ymm3, ymm4, xmm3, 1
+	vpsrlq	ymm4, ymm0, 32
+	vpmuludq	ymm4, ymm4, ymm2
+	vpsrlq	ymm5, ymm2, 32
+	vpmuludq	ymm5, ymm0, ymm5
+	vpaddq	ymm4, ymm5, ymm4
+	vpsllq	ymm4, ymm4, 32
+	vpmuludq	ymm2, ymm0, ymm2
+	vpaddq	ymm2, ymm2, ymm3
+	vpaddq	ymm2, ymm4, ymm2
+	vpxor	xmm3, xmm3, xmm3
+	vpsrlvq	ymm4, ymm2, ymm1
+	movabs	rax, offset .LCPI0_0
+	vpbroadcastq	ymm5, qword ptr [rax]
+	vpsrlvq	ymm1, ymm5, ymm1
+	vpxor	ymm4, ymm4, ymm1
+	vpsubq	ymm1, ymm4, ymm1
+	vpsrlq	ymm2, ymm2, 63
+	vpaddq	ymm1, ymm1, ymm2
+	vmovdqu	ymm2, ymmword ptr [r8]
+	vpsrlq	ymm4, ymm2, 32
+	vpmuludq	ymm4, ymm1, ymm4
+	vpsrlq	ymm5, ymm1, 32
+	vpmuludq	ymm5, ymm5, ymm2
+	vpaddq	ymm4, ymm4, ymm5
+	vpsllq	ymm4, ymm4, 32
+	vpmuludq	ymm1, ymm1, ymm2
+	vpaddq	ymm1, ymm1, ymm4
+	vpsubq	ymm0, ymm0, ymm1
+	vpcmpgtq	ymm1, ymm3, ymm0
+	vpand	ymm1, ymm1, ymm2
+	vpaddq	ymm0, ymm1, ymm0
+	vpcmpgtq	ymm1, ymm0, ymm2
+	vpand	ymm1, ymm1, ymm2
+	vpsubq	ymm0, ymm0, ymm1
+	vmovdqu	ymmword ptr [r10], ymm0
+	mov	rax, r10
+	pop	rdi
+	pop	rsi
+	pop	rbp
+	vzeroupper
+	ret
+.Lfunc_end0:
+	.size	julia_mod_p_61774, .Lfunc_end0-julia_mod_p_61774
+	.cfi_endproc
+                                        # -- End function
+	.section	".note.GNU-stack","",@progbits

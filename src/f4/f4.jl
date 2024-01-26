@@ -99,6 +99,7 @@ end
     # make sure the pairset has enough space
     pairset_resize_if_needed!(pairset, npairs)
     pairset_size = length(pairset.pairs)
+    
 
     # update pairset:
     # for each new element in basis..

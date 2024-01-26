@@ -13,8 +13,35 @@ implementations_to_test = [
 ]
 
 @testset "monom orders: Lex, DegLex, DegRevLex" begin
-    for T in (UInt64, UInt32, UInt16)
+    x = [1, 1, 1, 1, 1, 0, 1, 1, 0, 1]
+    y = [1, 1, 1, 1, 1, 0, 1, 1, 0, 1]
+    a = monom_construct_from_vector(Groebner.ExponentVector{UInt32}, x)
+    b = monom_construct_from_vector(Groebner.ExponentVector{UInt32}, y)
+    @test !lex(a, b) && !dl(a, b) && !drl(a, b)
+
+    x = [1, 1, 1, 1, 1, 0, 1, 2, 0, 1]
+    y = [1, 1, 1, 1, 1, 0, 2, 1, 0, 1]
+    a = monom_construct_from_vector(Groebner.ExponentVector{UInt32}, x)
+    b = monom_construct_from_vector(Groebner.ExponentVector{UInt32}, y)
+    @test lex(a, b) && dl(a, b) && drl(a, b)
+
+    n = 12
+    for i in 2:n
+        xx = ones(Int32, n)
+        xx[i] = xx[i] + 1
+        yy = ones(Int32, n)
+        yy[i - 1] = yy[i - 1] + 1
+        a = monom_construct_from_vector(Groebner.ExponentVector{UInt32}, xx)
+        b = monom_construct_from_vector(Groebner.ExponentVector{UInt32}, yy)
+        @test lex(a, b) && dl(a, b) && drl(a, b)
+    end
+
+    for T in (UInt64, UInt32, UInt16, UInt8)
         for EV in implementations_to_test
+            if EV{T} <: Groebner.AbstractPackedTuple{T, UInt8} && T == UInt8
+                continue
+            end
+
             a = monom_construct_from_vector(EV{T}, [0])
             b = monom_construct_from_vector(EV{T}, [0])
             @test !lex(a, b)
@@ -74,11 +101,9 @@ implementations_to_test = [
             @test dl(a, b)
             @test drl(a, b)
 
-            5 > Groebner.monom_max_vars(EV{T}) && continue
-            a = monom_construct_from_vector(EV{T}, ones(UInt, 5))
-            b = monom_construct_from_vector(EV{T}, ones(UInt, 5))
-            @test !lex(a, b)
-            @test !dl(a, b)
+            3 > Groebner.monom_max_vars(EV{T}) && continue
+            a = monom_construct_from_vector(EV{T}, [1, 5, 0])
+            b = monom_construct_from_vector(EV{T}, [1, 0, 1])
             @test !drl(a, b)
 
             25 > Groebner.monom_max_vars(EV{T}) && continue
@@ -98,7 +123,7 @@ implementations_to_test = [
 
         # test that different implementations agree
         for n in 1:10
-            k = rand(1:100)
+            k = rand(1:60)
 
             implementations_to_test_local =
                 filter(xxx -> Groebner.monom_max_vars(xxx{T}) >= k, implementations_to_test)
@@ -195,7 +220,7 @@ end
 end
 
 function test_orderings(n, v1, v2, ords_to_test)
-    R, x = QQ[["x$i" for i in 1:n]...]
+    R, x = AbstractAlgebra.QQ[["x$i" for i in 1:n]...]
     var_to_index = Dict(x .=> 1:n)
     for wo in ords_to_test
         ord = wo.ord
@@ -257,7 +282,7 @@ end
 @testset "monom orders: ProductOrdering" begin
     pv = Groebner.ExponentVector{T} where {T}
 
-    R, x = QQ[["x$i" for i in 1:3]...]
+    R, x = AbstractAlgebra.QQ[["x$i" for i in 1:3]...]
     v1 = Groebner.monom_construct_from_vector(pv{UInt64}, [1, 2, 3])
     v2 = Groebner.monom_construct_from_vector(pv{UInt64}, [3, 2, 1])
 
@@ -274,7 +299,7 @@ end
 
     test_orderings(3, v1, v2, ords_to_test)
 
-    R, x = QQ[["x$i" for i in 1:6]...]
+    R, x = AbstractAlgebra.QQ[["x$i" for i in 1:6]...]
     v1 = Groebner.monom_construct_from_vector(pv{UInt64}, [4, 1, 7, 0, 9, 8])
     v2 = Groebner.monom_construct_from_vector(pv{UInt64}, [1, 6, 3, 5, 9, 100])
 

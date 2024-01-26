@@ -497,3 +497,30 @@ function fglm(
 
     result
 end
+
+"""
+    fglm(basis, ordering_from, ordering_to; options...)
+
+Converts a Groebner basis from one monomial ordering to another.
+"""
+function fglm_residuals_in_batch(
+    basis::AbstractVector,
+    ordering_from::AbstractMonomialOrdering,
+    ordering_to::AbstractMonomialOrdering;
+    options...
+)
+    Base.require_one_based_indexing(basis)
+
+    keywords = KeywordsHandler(:fglm, options)
+
+    logging_setup(keywords)
+    statistics_setup(keywords)
+
+    result =
+        _fglm_residuals_in_batch(basis, ordering_from, ordering_to, keywords)::typeof(basis)
+
+    performance_counters_print(keywords)
+    statistics_print(keywords)
+
+    result
+end

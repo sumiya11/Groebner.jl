@@ -1,18 +1,16 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
+# Left part -- linear combinations of residuals (normal forms)
+# Right part -- linear combinations of monomials (preimages)
 mutable struct WideMacaulayMatrix{C}
-    # pivot -> row
     leftpivs::Vector{Vector{Int}}
     leftcoeffs::Vector{Vector{C}}
 
-    # idx -> row
     rightrows::Vector{Vector{Int}}
     rightcoeffs::Vector{Vector{C}}
 
-    # pivot -> idx
     pivot2idx::Vector{Int}
 
-    #
     lefthash2col::Dict{Int, Int}
     leftcolumn_to_monom::Vector{Int}
 
@@ -70,7 +68,7 @@ function wide_matrix_initialize(basis::Basis{C}) where {C <: Coeff}
     )
 end
 
-function convert_to_wide_dense_row(matrix, monom, vector::Basis{C}, ht) where {C <: Coeff}
+function convert_to_wide_dense_row(matrix, monom, vector::Basis{C}) where {C <: Coeff}
     if matrix.nrcols >= length(matrix.rightcolumn_to_monom)
         resize!(matrix.rightcolumn_to_monom, 2 * length(matrix.rightcolumn_to_monom))
     end
@@ -113,9 +111,6 @@ function reduce_by_pivot_simultaneous!(
     rightcfs,
     arithmetic
 ) where {T <: CoeffZp}
-
-    # mul = -densecoeffs[i]
-    # actually.. not bad!
     mul = mod_p(divisor(arithmetic) - leftrow[leftexps[1]], arithmetic)
 
     @inbounds for j in 1:length(leftexps)
@@ -131,8 +126,6 @@ function reduce_by_pivot_simultaneous!(
     mul
 end
 
-#
-# Finite field magic specialization
 function normalize_wide_row_sparse!(
     leftcfs::Vector{T},
     rightcfs,
@@ -149,8 +142,6 @@ function normalize_wide_row_sparse!(
     end
 end
 
-#
-# Finite field magic specialization
 function normalize_wide_row_sparse!(
     leftcfs::Vector{T},
     rightcfs,
@@ -158,7 +149,6 @@ function normalize_wide_row_sparse!(
 ) where {T <: CoeffQQ}
     pinv = inv(leftcfs[1])
     @inbounds for i in 2:length(leftcfs)
-        # row[i] *= pinv
         leftcfs[i] = leftcfs[i] * pinv
     end
     @inbounds leftcfs[1] = one(leftcfs[1])
@@ -180,10 +170,6 @@ function reduce_by_pivot_simultaneous!(
     rightcfs,
     arithmetic
 ) where {T <: CoeffQQ}
-
-    # mul = -densecoeffs[i]
-    # actually.. not bad!
-
     mul = -leftrow[leftexps[1]]
 
     @inbounds for j in 1:length(leftexps)
@@ -217,11 +203,6 @@ function reduce_wide_dense_row_by_known_pivots_sparse!(
     # new pivot index
     np = -1
 
-    # if debug()
-    #     # @warn "in reduce" matrix.nlcols matrix.nrcols matrix.leftpivs
-    #     # @warn "hmm" leftrow
-    # end
-
     for i in 1:(matrix.nlcols)
 
         # if row element zero - no reduction
@@ -246,7 +227,7 @@ function reduce_wide_dense_row_by_known_pivots_sparse!(
         rightexps = rightrows[pivot2idx[i]]
         rightcfs  = matrix.rightcoeffs[pivot2idx[i]]
 
-        mul = reduce_by_pivot_simultaneous!(
+        reduce_by_pivot_simultaneous!(
             leftrow,
             leftexps,
             leftcfs,
@@ -275,7 +256,7 @@ function extract_sparse_row(row::Vector{C}, np, k) where {C}
     # where k - number of structural nonzeros in new reduced row, k > 0
     j = 1
     @inbounds for i in np:length(row) # from new pivot
-        @inbounds if row[i] != 0
+        if row[i] != 0
             newrow[j] = i
             newcfs[j] = row[i]
             j += 1
@@ -285,34 +266,18 @@ function extract_sparse_row(row::Vector{C}, np, k) where {C}
     newrow, newcfs, j - 1
 end
 
-function find_linear_relation!(
-    ring,
+const _sparisty_factors = []
+
+@timeit function find_linear_relation!(
     matrix::WideMacaulayMatrix,
     monom::MonomId,
     vector::Basis{C},
-    ht,
     arithmetic
 ) where {C <: Coeff}
-    leftrow, rightrow = convert_to_wide_dense_row(matrix, monom, vector, ht)
-
-    # if debug()
-    #     # @warn "start"
-    #     println(monom)
-    #     println(vector.monoms, " ", vector.coeffs)
-    #     println(leftrow)
-    #     println(rightrow)
-    #     println(matrix)
-    # end
+    leftrow, rightrow = convert_to_wide_dense_row(matrix, monom, vector)
 
     reduced, np, k =
         reduce_wide_dense_row_by_known_pivots_sparse!(matrix, leftrow, rightrow, arithmetic)
-
-    # if debug()
-    #     # @warn "reduced"
-    #     println(reduced, " ", np, " ", k)
-    #     println(leftrow)
-    #     println(rightrow)
-    # end
 
     if reduced
         # pass
@@ -321,12 +286,6 @@ function find_linear_relation!(
         rexps, rcoeffs, _ = extract_sparse_row(rightrow)
 
         normalize_wide_row_sparse!(lcoeffs, rcoeffs, arithmetic)
-
-        # if debug()
-        #     # @warn "extracted"
-        #     println(lexps, " ", lcoeffs)
-        #     println(rexps, " ", rcoeffs)
-        # end
 
         while np >= matrix.nlsize
             matrix.nlsize *= 2
@@ -348,6 +307,39 @@ function find_linear_relation!(
         matrix.rightrows[matrix.nrrows] = rexps
         matrix.rightcoeffs[matrix.nrrows] = rcoeffs
     end
+
+    nnz_left = 0
+    nnz_left_rows = 0
+    for i in 1:(matrix.nlsize)
+        if isassigned(matrix.leftpivs, i)
+            nnz_left += length(matrix.leftpivs[i])
+            nnz_left_rows += 1
+        end
+    end
+    nnz_right = 0
+    nnz_right_rows = 0
+    for i in 1:(matrix.nrsize)
+        if isassigned(matrix.rightrows, i)
+            nnz_right += length(matrix.rightrows[i])
+            nnz_right_rows += 1
+        end
+    end
+    dimsleft = (nnz_left_rows, matrix.nlcols)
+    dimsright = (nnz_right_rows, matrix.nrcols)
+    spleft = nnz_left / prod(dimsleft)
+    spright = nnz_right / prod(dimsright)
+
+    push!(
+        _sparisty_factors,
+        (
+            nnz_left=nnz_left,
+            dimsleft=dimsleft,
+            spleft=spleft,
+            nnz_right=nnz_right,
+            dimsright=dimsright,
+            spright=spright
+        )
+    )
 
     return reduced, rightrow
 end

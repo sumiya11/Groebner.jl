@@ -11,11 +11,11 @@ end
 
 @info "" nthreads()
 @show ENV["JULIA_NUM_THREADS"]
-Groebner.logging_enabled() = false
+Groebner.logging_enabled() = true
 Groebner.invariants_enabled() = false
 Groebner.performance_counters_enabled() = false
 
-s = Groebner.katsuran(9, ordering=:degrevlex, k=AbstractAlgebra.GF(2^30 + 3));
+s = Groebner.noonn(8, ordering=:degrevlex, k=AbstractAlgebra.GF(2^30 + 3));
 trace, gb = Groebner.groebner_learn(s);
 @btime Groebner.groebner($s);
 @btime Groebner.groebner_apply!($trace, $s);
@@ -24,15 +24,15 @@ trace, gb = Groebner.groebner_learn(s);
 @btime Groebner.groebner_apply!($trace, $((s, s, s, s, s, s, s, s)));
 
 #=
-  113.912 ms (34041 allocations: 43.78 MiB)
+  1.048 s (418167 allocations: 258.02 MiB)
 
-  44.803 ms (18887 allocations: 24.46 MiB)
+  142.140 ms (126985 allocations: 87.63 MiB)
 
-  52.580 ms (20607 allocations: 35.38 MiB)
+  185.635 ms (134610 allocations: 134.37 MiB)
 
-  64.618 ms (23276 allocations: 59.42 MiB)
+  283.075 ms (146988 allocations: 224.29 MiB)
 
-  125.247 ms (28610 allocations: 107.47 MiB)
+  433.356 ms (171889 allocations: 404.00 MiB)
 =#
 @profview Groebner.groebner_apply!(trace, ((s, s, s, s)));
 

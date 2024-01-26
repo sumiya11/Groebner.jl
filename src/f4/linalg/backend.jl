@@ -819,14 +819,14 @@ function linalg_normalize_row!(
     arithmetic::AbstractArithmeticZp{A, T},
     first_nnz_index::Int=1
 ) where {A <: Union{CoeffZp, CompositeCoeffZp}, T <: Union{CoeffZp, CompositeCoeffZp}}
-    @invariant @inbounds !iszero(row[first_nnz_index])
+    @invariant !iszero(row[first_nnz_index])
 
     lead = row[first_nnz_index]
     isone(lead) && return row
 
     @inbounds pinv = inv_mod_p(A(lead), arithmetic) % T
-    @inbounds row[1] = one(T)
-    @inbounds for i in 2:length(row)
+    @inbounds row[first_nnz_index] = one(T)
+    @inbounds for i in (first_nnz_index + 1):length(row)
         row[i] = mod_p(A(row[i]) * A(pinv), arithmetic) % T
     end
 
@@ -839,7 +839,7 @@ function linalg_normalize_row!(
     arithmetic::AbstractArithmeticQQ{T},
     first_nnz_index::Int=1
 ) where {T <: CoeffQQ}
-    @invariant @inbounds !iszero(row[first_nnz_index])
+    @invariant !iszero(row[first_nnz_index])
 
     lead = row[first_nnz_index]
     isone(lead) && return row
@@ -865,8 +865,6 @@ function linalg_vector_addmul_sparsedense_mod_p!(
     @invariant length(indices) == length(coeffs)
     @invariant !isempty(indices)
 
-    # unsafe_assume(!isempty(indices))
-
     @inbounds mul = divisor(arithmetic) - row[indices[1]]
     @inbounds for j in 1:length(indices)
         idx = indices[j]
@@ -890,8 +888,6 @@ function linalg_vector_addmul_sparsedense!(
     @invariant length(indices) == length(coeffs)
     @invariant !isempty(indices)
 
-    # unsafe_assume(!isempty(indices))
-
     @inbounds mul = divisor(arithmetic) - row[indices[1]]
     @inbounds for j in 1:length(indices)
         idx = indices[j]
@@ -914,8 +910,6 @@ function linalg_vector_addmul_sparsedense!(
     @invariant isone(coeffs[1])
     @invariant length(indices) == length(coeffs)
     @invariant !isempty(indices)
-
-    # unsafe_assume(!isempty(indices))
 
     # NOTE: mul is guaranteed to be < typemax(T)
     p2 = arithmetic.p2
@@ -942,8 +936,6 @@ function linalg_vector_addmul_sparsedense!(
     @invariant isone(coeffs[1])
     @invariant length(indices) == length(coeffs)
     @invariant !isempty(indices)
-
-    # unsafe_assume(!isempty(indices))
 
     # NOTE: mul is guaranteed to be < typemax(T)
     p2 = arithmetic.p2s
@@ -1108,21 +1100,3 @@ function linalg_extract_sparse_row!(
 
     j - 1
 end
-
-# TODO: not really important atm
-# function extract_sparse_row_2!(vals::Vector{UInt}, dense::Vector{UInt})
-#     j = 1
-#     z = Vec{4, UInt}((0, 0, 0, 0))
-#     @inbounds for i in 1:8:length(dense)
-#         v1 = SIMD.vload(Vec{4, UInt}, dense, i)
-#         v2 = SIMD.vload(Vec{4, UInt}, dense, i + 4)
-#         mask1 = !iszero(v1)
-#         mask2 = !iszero(v2)
-#         j1 = sum(mask1)
-#         j2 = sum(mask2)
-#         vstorec(v1, vals, j, mask1)
-#         vstorec(v2, vals, j + j1, mask2)
-#         j += j1 + j2
-#     end
-#     nothing
-# end

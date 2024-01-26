@@ -85,35 +85,27 @@ function monom_is_supported_ordering(::Type{ExponentVector{T}}, ::O) where {T, O
     true
 end
 
-# DegRevLex monomial comparison
+# DegRevLex monomial comparison 
 function monom_isless(ea::ExponentVector, eb::ExponentVector, ::_DegRevLex{true})
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
-    if @inbounds monom_totaldeg(ea) < monom_totaldeg(eb)
+    if monom_totaldeg(ea) < monom_totaldeg(eb)
         return true
-    elseif @inbounds monom_totaldeg(ea) != monom_totaldeg(eb)
+    elseif monom_totaldeg(ea) != monom_totaldeg(eb)
         return false
     end
-    i = length(ea)
-    @inbounds while i > 2 && ea[i] == eb[i]
-        i -= 1
-    end
-    @inbounds if ea[i] <= eb[i]
-        return false
-    else
-        return true
-    end
+    _vec_cmp_revlex(ea, eb)
 end
 
-# DegRevLex monomial comparison, but on a range of variables
+# DegRevLex monomial comparison (shuffled variables)
 function monom_isless(
     ea::ExponentVector{T},
     eb::ExponentVector{T},
     ord::_DegRevLex{false}
 ) where {T}
-    indices = variable_indices(ord)
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
+    indices = variable_indices(ord)
     eatotaldeg = zero(T)
     ebtotaldeg = zero(T)
     @inbounds for i in indices
@@ -136,30 +128,27 @@ function monom_isless(
     end
 end
 
-# DegLex exponent vector comparison
+# DegLex monomial comparison
 function monom_isless(ea::ExponentVector, eb::ExponentVector, ::_DegLex{true})
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
-    if @inbounds monom_totaldeg(ea) < monom_totaldeg(eb)
+    if monom_totaldeg(ea) < monom_totaldeg(eb)
         return true
-    elseif @inbounds monom_totaldeg(ea) != monom_totaldeg(eb)
+    elseif monom_totaldeg(ea) != monom_totaldeg(eb)
         return false
     end
-    i = 2
-    @inbounds while i < length(ea) && ea[i] == eb[i]
-        i += 1
-    end
-    @inbounds return ea[i] < eb[i] ? true : false
+    _vec_cmp_lex(ea, eb)
 end
 
+# DegLex monomial comparison (shuffled variables)
 function monom_isless(
     ea::ExponentVector{T},
     eb::ExponentVector{T},
     ord::_DegLex{false}
 ) where {T}
-    indices = variable_indices(ord)
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
+    indices = variable_indices(ord)
     eatotaldeg = zero(T)
     ebtotaldeg = zero(T)
     @inbounds for i in indices
@@ -182,14 +171,10 @@ end
 function monom_isless(ea::ExponentVector, eb::ExponentVector, ::_Lex{true})
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
-    i = 2
-    @inbounds while i < length(ea) && ea[i] == eb[i]
-        i += 1
-    end
-    @inbounds return ea[i] < eb[i] ? true : false
+    _vec_cmp_lex(ea, eb)
 end
 
-# Lex monomial comparison
+# Lex monomial comparison (shuffled variables)
 function monom_isless(ea::ExponentVector, eb::ExponentVector, ord::_Lex{false})
     indices = variable_indices(ord)
     @invariant length(ea) == length(eb)
@@ -264,11 +249,12 @@ function monom_lcm!(
     eb::ExponentVector{T}
 ) where {T}
     @invariant length(ec) == length(ea) == length(eb)
-    @inbounds ec[1] = zero(T)
+    s = zero(T)
     @inbounds for i in 2:length(ec)
         ec[i] = max(ea[i], eb[i])
-        ec[1] += ec[i]
+        s += ec[i]
     end
+    ec[1] = s
     _monom_overflow_check(ec)
     ec
 end
@@ -276,12 +262,7 @@ end
 # Checks if the gcd of monomials is constant.
 function monom_is_gcd_const(ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
     @invariant length(ea) == length(eb)
-    @inbounds for i in 2:length(ea)
-        if !iszero(ea[i]) && !iszero(eb[i])
-            return false
-        end
-    end
-    true
+    _vec_check_orth(ea, eb)
 end
 
 # Returns the product of monomials. Also writes the result to ec.
@@ -315,12 +296,7 @@ end
 # Checks monomial divisibility
 function monom_is_divisible(ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
     @invariant length(ea) == length(eb)
-    @inbounds for j in 1:length(ea)
-        if ea[j] < eb[j]
-            return false
-        end
-    end
-    true
+    _vec_not_any_lt(ea, eb)
 end
 
 # Checks monomial divisibility, AND performs division
@@ -330,12 +306,8 @@ function monom_is_divisible!(
     eb::ExponentVector{T}
 ) where {T}
     @invariant length(ec) == length(ea) == length(eb)
-    @inbounds for j in 1:length(ec)
-        if ea[j] < eb[j]
-            return false, ec
-        end
-        ec[j] = ea[j] - eb[j]
-    end
+    !monom_is_divisible(ea, eb) && return false, ec
+    monom_division!(ec, ea, eb)
     true, ec
 end
 
@@ -360,6 +332,7 @@ function monom_create_divmask(
     res = zero(Mask)
     o = one(Mask)
     if !compressed
+        # if the number of variables is <= 32
         @inbounds for i in 1:ndivvars
             for _ in 1:ndivbits
                 if e[i + 1] >= divmap[ctr]
@@ -369,6 +342,7 @@ function monom_create_divmask(
             end
         end
     else
+        # if the number of variables is > 32
         @invariant ndivbits == 1
         @invariant length(divmap) == 8 * sizeof(Mask)
         @inbounds for i in 1:length(divmap)
