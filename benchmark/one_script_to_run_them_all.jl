@@ -966,7 +966,7 @@ function main()
                 printstyled("(!) ", color=:light_yellow)
                 println("Cannot benchmark $backend")
             finally
-                cleanup(systems)
+                # cleanup(systems)
             end
         end
         collect_all_timings(args, runtimes, systems)
@@ -979,7 +979,7 @@ function main()
             validate_results(args, solved_problems)
             collect_timings(args, solved_problems)
         finally
-            cleanup(solved_problems)
+            # cleanup(solved_problems)
         end
     end
 end

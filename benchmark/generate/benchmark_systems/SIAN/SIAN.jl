@@ -1,8 +1,10 @@
 import AbstractAlgebra
 
+eqpath(path1, path2) = normpath(path1) == normpath(path2)
+
 for (root, dir, files) in walkdir((@__DIR__))
     for file in files
-        if (@__DIR__) * "/$file" == (@__FILE__)
+        if eqpath((@__DIR__) * "/$file", (@__FILE__))
             continue
         end
         include((@__DIR__) * "/$file")
@@ -13,7 +15,7 @@ function load_SIAN_all(; np=AbstractAlgebra, ground=np.QQ, ordering=:degrevlex)
     systems = []
     for (root, dir, files) in walkdir((@__DIR__))
         for file in files
-            if (@__DIR__) * "/$file" == (@__FILE__)
+            if eqpath((@__DIR__) * "/$file", (@__FILE__))
                 continue
             end
             name = Symbol(split(file, "/")[end][1:(end - 3)])
