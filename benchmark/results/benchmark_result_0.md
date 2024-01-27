@@ -1,21 +1,21 @@
 ## Benchmark results
 
-2024-01-26T23:39:30.428
+2024-01-27T00:31:15.423
 
 Benchmarked backends: Any["groebner", "maple", "msolve"]
 
 Benchmark suite: dummy benchmark set
 
 - Workers: 16
-- Timeout: 1800 s
+- Timeout: 60 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|groebner|maple|msolve|
 |:----|---|---|---|
-|dummy 1|0.00|0.24|0.03|
-|dummy 2|0.00|0.23|0.03|
+|dummy 1|0.00|0.23|0.03|
+|dummy 2|0.00|0.21|0.03|
 
 *Benchmarking environment:*
 

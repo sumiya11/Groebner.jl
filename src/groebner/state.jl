@@ -101,11 +101,11 @@ function clear_denominators!(
     @inbounds for i in 1:length(coeffs_qq)
         @invariant length(coeffs_zz[i]) == length(coeffs_qq[i])
         den = common_denominator!(den, coeffs_qq[i])
-        sz  = Base.GMP.MPZ.sizeinbase(den, 2)
+        # sz  = Base.GMP.MPZ.sizeinbase(den, 2)
         for j in 1:length(coeffs_qq[i])
             num = numerator(coeffs_qq[i][j])
             Base.GMP.MPZ.tdiv_q!(buf, den, denominator(coeffs_qq[i][j]))
-            Base.GMP.MPZ.realloc2!(coeffs_zz[i][j], sz)
+            # Base.GMP.MPZ.realloc2!(coeffs_zz[i][j], sz)
             Base.GMP.MPZ.mul!(coeffs_zz[i][j], num, buf)
         end
     end

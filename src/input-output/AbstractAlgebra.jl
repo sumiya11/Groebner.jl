@@ -452,7 +452,12 @@ end
 # specialization for multivariate polynomials
 function extract_coeffs_qq(representation, ring::PolyRing, poly)
     iszero(poly) && (return zero_coeffs(representation.coefftype, ring))
-    map(Rational{BigInt}, AbstractAlgebra.coefficients(poly))
+    n = length(poly)
+    arr = Vector{Rational{BigInt}}(undef, n)
+    @inbounds for i in 1:n
+        arr[i] = Rational{BigInt}(AbstractAlgebra.coeff(poly, i))
+    end
+    arr
 end
 
 function get_var_to_index(
@@ -523,10 +528,10 @@ function extract_monoms(
     npolys = length(orig_polys)
     var_to_index = get_var_to_index(AbstractAlgebra.parent(orig_polys[1]))
     exps = Vector{Vector{representation.monomtype}}(undef, npolys)
-    for i in 1:npolys
+    @inbounds for i in 1:npolys
         poly = orig_polys[i]
         exps[i] = Vector{representation.monomtype}(undef, length(poly))
-        @inbounds for j in 1:length(poly)
+        for j in 1:length(poly)
             exps[i][j] = monom_construct_from_vector(
                 representation.monomtype,
                 poly.exps[(end - 1):-1:1, j]
@@ -545,10 +550,10 @@ function extract_monoms(
     npolys = length(orig_polys)
     var_to_index = get_var_to_index(AbstractAlgebra.parent(orig_polys[1]))
     exps = Vector{Vector{representation.monomtype}}(undef, npolys)
-    for i in 1:npolys
+    @inbounds for i in 1:npolys
         poly = orig_polys[i]
         exps[i] = Vector{representation.monomtype}(undef, length(poly))
-        @inbounds for j in 1:length(poly)
+        for j in 1:length(poly)
             exps[i][j] = monom_construct_from_vector(
                 representation.monomtype,
                 poly.exps[end:-1:1, j]
@@ -567,10 +572,10 @@ function extract_monoms(
     npolys = length(orig_polys)
     var_to_index = get_var_to_index(AbstractAlgebra.parent(orig_polys[1]))
     exps = Vector{Vector{representation.monomtype}}(undef, npolys)
-    for i in 1:npolys
+    @inbounds for i in 1:npolys
         poly = orig_polys[i]
         exps[i] = Vector{representation.monomtype}(undef, length(poly))
-        @inbounds for j in 1:length(poly)
+        for j in 1:length(poly)
             exps[i][j] = monom_construct_from_vector(
                 representation.monomtype,
                 poly.exps[1:(end - 1), j]

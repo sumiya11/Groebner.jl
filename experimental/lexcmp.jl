@@ -41,10 +41,22 @@ end
 
 #########
 
+function scalar_cmp_lex(x, y)
+    i = 2
+    @inbounds while i < length(x) && x[i] == y[i]
+        i += 1
+    end
+    @inbounds x[i] < y[i]
+end
+
 begin
     n, step = 1, 5
     while n < 500
         @info "n = $n"
+        print("scalar_cmp_lex\t\t\t")
+        @btime scalar_cmp_lex(xx, yy) setup = begin
+            cc, xx, yy = _setup3(Int8, max(1, $n))
+        end
         print("Groebner.monom_is_equal\t\t")
         @btime Groebner.monom_is_equal(xx, yy) setup = begin
             cc, xx, yy = _setup3(Int8, max(1, $n))
