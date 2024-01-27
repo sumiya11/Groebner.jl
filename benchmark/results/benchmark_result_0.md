@@ -1,27 +1,27 @@
 ## Benchmark results
 
-2024-01-27T17:25:34.125
+2024-01-27T13:24:45.699
 
 Benchmarked backends: Any["groebner", "maple", "msolve", "openf4", "singular"]
 
 Benchmark suite: dummy benchmark set
 
-- Workers: 4
-- Timeout: 1000 s
-- Aggregated over: 1 runs
+- Workers: 1
+- Timeout: 1800 s
+- Aggregated over: 3 runs
 
 **All timings in seconds.**
 
 |Model|groebner|maple|msolve|openf4|singular|
 |:----|---|---|---|---|---|
-|dummy 1|0.00| - | - | - | - |
-|dummy 2|0.00| - | - | - | - |
+|dummy 1|0.00|0.22|0.01|0.01|0.00|
+|dummy 2|0.00|0.21|0.01|0.01|0.00|
 
 *Benchmarking environment:*
 
-* Total RAM (GiB): 7
-* Processor: Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz
-* Julia version: 1.10.0
+* Total RAM (GiB): 188
+* Processor: Intel(R) Xeon(R) Gold 6130 CPU @ 2.10GHz
+* Julia version: 1.9.2
 
 Versions of the dependencies:
 
