@@ -54,7 +54,7 @@ end
 
 # Returns a vector of variable degrees that correspond to the monomial `pv`.
 function monom_to_vector!(tmp::Vector{M}, pv::ExponentVector{T}) where {M, T}
-    @assert length(tmp) == length(pv) - 1
+    @invariant length(tmp) == length(pv) - 1
     @inbounds tmp[1:end] = pv[2:end]
     tmp
 end
@@ -62,16 +62,16 @@ end
 # Returns a monomial that can be used to compute hashes of monomials of type
 # ExponentVector{T}
 function monom_construct_hash_vector(::Type{ExponentVector{T}}, n::Integer) where {T}
-    rand(MonomHash, n + 1)
+    rand(MonomHash(1):MonomHash(1 << 7), n + 1)
 end
 
 # Computes the hash of `x` with the given hash vector `b`
 function monom_hash(x::ExponentVector{T}, b::Vector{MH}) where {T, MH}
     h = zero(MH)
-    @inbounds for i in eachindex(x, b)
+    @inbounds for i in 2:length(x)
         h += MH(x[i]) * b[i]
     end
-    mod(h, MonomHash)
+    h % MonomHash
 end
 
 ###
