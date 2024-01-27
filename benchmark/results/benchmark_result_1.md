@@ -1,49 +1,46 @@
 ## Benchmark results
 
-2024-01-26T15:22:47.295
+2024-01-27T02:48:25.710
 
 Benchmarked backends: Any["groebner", "maple", "msolve"]
 
 Benchmark suite: Integers modulo 2^30 + 3
 
 - Workers: 16
-- Timeout: 600 s
-- Aggregated over: 3 runs
+- Timeout: 60 s
+- Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|groebner|maple|msolve|
 |:----|---|---|---|
-|chandra 11|0.48|0.76|0.88|
-|chandra 12|2.73|2.89|3.84|
-|chandra 13|14.95|14.09|20.56|
-|chandra 14|98.81|82.15|133.08|
-|cyclic 7|0.09|0.24|0.15|
-|cyclic 8|1.17|1.38|1.36|
-|cyclic 9|120.54|195.46|118.97|
-|cyclic 10| - | - | - |
+|chandra 11|0.76|0.97|0.96|
+|chandra 12|3.69|4.18|4.78|
+|chandra 13| - |25.59|30.71|
+|chandra 14| - | - | - |
+|cyclic 7|0.11|0.30|0.15|
+|cyclic 8|1.62|1.66|1.48|
+|cyclic 9| - | - | - |
 |dummy|0.00|0.18|0.01|
-|eco 11|0.30|0.53|0.52|
-|eco 12|1.98|2.08|2.59|
-|eco 13|9.00|10.52|13.42|
-|eco 14|93.24|86.25|127.94|
-|henrion 5|0.00|0.20|0.02|
-|henrion 6|0.03|0.22|0.06|
-|henrion 7|1.97|5.31|3.26|
+|eco 11|0.33|0.54|0.58|
+|eco 12|2.61|2.35|3.92|
+|eco 13|17.10|20.51|23.67|
+|eco 14| - | - | - |
+|henrion 5|0.00|0.19|0.02|
+|henrion 6|0.03|0.25|0.08|
+|henrion 7|2.70|7.20|3.91|
 |henrion 8| - | - | - |
-|katsura 10|0.75|1.21|1.08|
-|katsura 11|5.14|7.51|6.15|
-|katsura 12|35.77|49.28|43.52|
-|katsura 13| - |634.70| - |
-|noon 7|0.17|0.36|0.22|
-|noon 8|1.37|1.75|1.88|
-|noon 9|13.44|15.72|16.01|
-|noon 10| - |225.13| - |
-|noon 11| - | - | - |
-|reimer 6|0.05|0.23|0.08|
-|reimer 7|0.69|1.41|1.21|
-|reimer 8|18.28|26.74|30.17|
-|reimer 9| - | - | - |
+|katsura 10|0.86|1.73|1.19|
+|katsura 11| - |15.16|10.34|
+|katsura 12| - | - | - |
+|katsura 13| - | - | - |
+|noon 7|0.18| - |0.23|
+|noon 8|1.55|2.09|2.05|
+|noon 9| - |19.33|25.39|
+|noon 10| - | - | - |
+|reimer 6|0.07|0.23| - |
+|reimer 7|0.80|1.75|1.32|
+|reimer 8| - |54.01|47.06|
 
 *Benchmarking environment:*
 
@@ -58,6 +55,7 @@ Versions of the dependencies:
 * PrecompileTools : 1.2.0
 * MultivariatePolynomials : 0.5.3
 * Combinatorics : 1.0.2
+* HostCPUFeatures : 0.1.16
 * AbstractAlgebra : 0.34.7
 * Nemo : 0.38.3
 * Atomix : 0.1.0

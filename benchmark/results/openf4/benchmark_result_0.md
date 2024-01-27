@@ -1,21 +1,21 @@
 ## Benchmark results
 
-2024-01-22T20:54:59.328
+2024-01-27T13:24:44.120
 
 Benchmarked backend: openf4
 
 Benchmark suite: dummy benchmark set
 
-- Workers: 8
-- Timeout: 600 s
-- Aggregated over: 1 runs
+- Workers: 1
+- Timeout: 1800 s
+- Aggregated over: 3 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|dummy 1| - |
-|dummy 2| - |
+|dummy 1|0.01|
+|dummy 2|0.01|
 
 *Benchmarking environment:*
 
@@ -30,6 +30,7 @@ Versions of the dependencies:
 * PrecompileTools : 1.2.0
 * MultivariatePolynomials : 0.5.3
 * Combinatorics : 1.0.2
+* HostCPUFeatures : 0.1.16
 * AbstractAlgebra : 0.34.7
 * Nemo : 0.38.3
 * Atomix : 0.1.0

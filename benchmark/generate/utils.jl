@@ -23,7 +23,8 @@ const TIME_CATEGORIES = [
     :total_time_F4,
     :total_time_learn,
     :total_time_apply,
-    :total_time_apply_4x
+    :total_time_apply_4x,
+    :total_time_apply_8x
 ]
 const DATA_CATEGORIES = []
 const ALL_CATEGORIES = union(TIME_CATEGORIES, DATA_CATEGORIES)
@@ -33,6 +34,7 @@ const HUMAN_READABLE_CATEGORIES = Dict(
     :total_time_learn => "Learn, s",
     :total_time_apply => "Apply, s",
     :total_time_apply_4x => "Apply 4x, s",
+    :total_time_apply_8x => "Apply 8x, s",
     :total_time_F4 => "F4, s"
 )
 const CATEGORY_FORMAT = Dict()

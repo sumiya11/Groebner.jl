@@ -4,10 +4,10 @@ Benchmarks for `Groebner.jl`, `Maple`, `msolve`, `OpenF4`, `Singular`.
 
 The definitions of benchmark systems can be found in `benchmark_systems.jl`.
 
-Computed bases will be verified against short certificates that are assumed to
+Computed bases will be verified against short SHA certificate, which are assumed to
 be correct.
 
-For running the benchmarks, you will need a Julia client v1.6+ installed.
+For running the benchmarks, you will need a Julia client v1.6+ installed (preferably 1.9).
 See the official installation guide at
 https://julialang.org/downloads/platform/.
 

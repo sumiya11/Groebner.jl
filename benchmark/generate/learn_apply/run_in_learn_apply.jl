@@ -60,6 +60,12 @@ function process_system()
         timing3 = @timed flag, _ =
             groebner_apply!(trace, (system, system, system, system), threaded=:no)
         @assert flag
+        timing4 = @timed flag, _ = groebner_apply!(
+            trace,
+            (system, system, system, system, system, system, system, system),
+            threaded=:no
+        )
+        @assert flag
         @debug "Result is" gb
         if VALIDATE
             output_fn = (@__DIR__) * "/$BENCHMARK_DIR/$PROBLEM_NAME/$(output_filename())"
@@ -92,6 +98,8 @@ function process_system()
             min(runtime[PROBLEM_NAME][:total_time_apply], timing2.time)
         runtime[PROBLEM_NAME][:total_time_apply_4x] =
             min(runtime[PROBLEM_NAME][:total_time_apply_4x], timing3.time)
+        runtime[PROBLEM_NAME][:total_time_apply_8x] =
+            min(runtime[PROBLEM_NAME][:total_time_apply_8x], timing4.time)
     end
     # for cat in ID_TIME_CATEGORIES
     #     if haskey(runtime[PROBLEM_NAME], cat)
@@ -104,8 +112,13 @@ function dump_timings()
     timings = ""
     timings *= "$PROBLEM_NAME\n"
     for (key, model_runtime) in runtime
-        for c in
-            [:total_time_F4, :total_time_learn, :total_time_apply, :total_time_apply_4x]
+        for c in [
+            :total_time_F4,
+            :total_time_learn,
+            :total_time_apply,
+            :total_time_apply_4x,
+            :total_time_apply_8x
+        ]
             timings *= "$c, "
             timings *= string(model_runtime[c]) * "\n"
         end

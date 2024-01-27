@@ -1,44 +1,44 @@
 ## Benchmark results
 
-2024-01-26T16:58:11.224
+2024-01-27T08:58:42.262
 
 Benchmarked backend: msolve
 
 Benchmark suite: The rationals
 
-- Workers: 16
-- Timeout: 1800 s
+- Workers: 8
+- Timeout: 3600 s
 - Aggregated over: 3 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|chandra 9|1.25|
-|chandra 10|4.53|
-|chandra 11|19.83|
-|chandra 12|105.81|
-|chandra 13| - |
-|cyclic 7|1.20|
-|cyclic 8|27.28|
+|chandra 9|1.44|
+|chandra 10|5.25|
+|chandra 11|21.87|
+|chandra 12|115.73|
+|chandra 13|709.91|
+|cyclic 7|1.11|
+|cyclic 8|27.03|
 |cyclic 9| - |
-|dummy|0.02|
-|eco 10|0.65|
-|eco 11|4.02|
-|eco 12|28.25|
-|eco 13|314.83|
-|henrion 6|0.65|
-|henrion 7|404.00|
-|ipp|14.18|
-|katsura 9|2.21|
-|katsura 10|17.29|
-|katsura 11|206.39|
-|noon 7|1.53|
-|noon 8|11.80|
-|noon 9|100.94|
-|reimer 6|0.30|
-|reimer 7|6.14|
-|reimer 8|358.83|
+|dummy|0.03|
+|eco 10|0.66|
+|eco 11|4.00|
+|eco 12|29.09|
+|eco 13|344.04|
+|henrion 6|0.63|
+|henrion 7|364.54|
+|ipp|16.44|
+|katsura 9|2.52|
+|katsura 10|19.68|
+|katsura 11|198.94|
+|noon 7|1.75|
+|noon 8|11.94|
+|noon 9|102.60|
+|reimer 6|0.28|
+|reimer 7|6.43|
+|reimer 8|296.64|
 
 *Benchmarking environment:*
 
@@ -53,6 +53,7 @@ Versions of the dependencies:
 * PrecompileTools : 1.2.0
 * MultivariatePolynomials : 0.5.3
 * Combinatorics : 1.0.2
+* HostCPUFeatures : 0.1.16
 * AbstractAlgebra : 0.34.7
 * Nemo : 0.38.3
 * Atomix : 0.1.0

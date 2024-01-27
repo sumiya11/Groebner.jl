@@ -153,9 +153,9 @@ version = "6.2.1+2"
 
 [[deps.Groebner]]
 deps = ["AbstractAlgebra", "Atomix", "Combinatorics", "ExprTools", "HostCPUFeatures", "Logging", "MultivariatePolynomials", "Nemo", "PrecompileTools", "PrettyTables", "Primes", "Printf", "Random", "TimerOutputs"]
-path = ".."
+git-tree-sha1 = "5eb13678ae76a60d70090a4c50d1dc3eab0ce180"
 uuid = "0b43b601-686d-58a3-8a1c-6623616c7cd4"
-version = "0.6.3"
+version = "0.6.4"
 
 [[deps.GroupsCore]]
 deps = ["Markdown", "Random"]

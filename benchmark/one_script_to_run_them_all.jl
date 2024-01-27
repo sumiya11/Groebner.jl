@@ -34,8 +34,8 @@ progressbar_enabled() =
 
 const _available_backends = ["groebner", "singular", "maple", "msolve", "openf4"]
 
-const _skip_singular = true
-const _skip_openf4 = true
+const _skip_singular = false
+const _skip_openf4 = false
 
 # Parses command-line arguments
 #! format: off
@@ -350,7 +350,7 @@ function run_benchmarks(args)
     Benchmark systems:
     $systems_to_benchmark"""
 
-    timeout = timeout + 10  # add 10 seconds for compilation time :)
+    timeout = timeout + added_timeout_time  # add 10 seconds for compilation time :)
     seconds_passed(from_t) = round((time_ns() - from_t) / 1e9, digits=2)
 
     queue = [(problem_id=problem,) for problem in indices_to_benchmark]
@@ -591,8 +591,13 @@ function collect_timings(args, names)
     benchmark_name = get_benchmark_suite(benchmark_id).name
 
     if backend == "learn_apply"
-        targets =
-            [:total_time_F4, :total_time_learn, :total_time_apply, :total_time_apply_4x]
+        targets = [
+            :total_time_F4,
+            :total_time_learn,
+            :total_time_apply,
+            :total_time_apply_4x,
+            :total_time_apply_8x
+        ]
     else
         targets = [:total_time]
     end
@@ -894,7 +899,8 @@ end
 
 function check_args(args)
     backend = args["backend"]
-    @assert backend in ("groebner", "singular", "maple", "openf4", "msolve", "ALL")
+    @assert backend in
+            ("groebner", "singular", "maple", "openf4", "msolve", "learn_apply", "ALL")
     if backend == "openf4" && args["suite"] in [3, 7]
         throw("Running benchmarks over the rationals is not possible for openf4")
     end

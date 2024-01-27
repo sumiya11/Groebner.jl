@@ -1,20 +1,20 @@
 ## Benchmark results
 
-2024-01-11T10:12:01.109
+2024-01-27T13:23:32.554
 
 Benchmarked backend: singular
 
 Benchmark suite: dummy benchmark set
 
-- Workers: 4
-- Timeout: 20 s
-- Aggregated over: 1 runs
+- Workers: 1
+- Timeout: 1800 s
+- Aggregated over: 3 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
-|-----|---|
-|dummy 1| - |
+|:----|---|
+|dummy 1|0.00|
 |dummy 2|0.00|
 
 *Benchmarking environment:*
@@ -30,6 +30,7 @@ Versions of the dependencies:
 * PrecompileTools : 1.2.0
 * MultivariatePolynomials : 0.5.3
 * Combinatorics : 1.0.2
+* HostCPUFeatures : 0.1.16
 * AbstractAlgebra : 0.34.7
 * Nemo : 0.38.3
 * Atomix : 0.1.0

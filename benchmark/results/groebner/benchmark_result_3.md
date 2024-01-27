@@ -1,44 +1,44 @@
 ## Benchmark results
 
-2024-01-26T16:00:02.075
+2024-01-27T04:37:58.855
 
 Benchmarked backend: groebner
 
 Benchmark suite: The rationals
 
-- Workers: 16
-- Timeout: 1800 s
+- Workers: 8
+- Timeout: 3600 s
 - Aggregated over: 3 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|chandra 9|1.18|
-|chandra 10|2.88|
-|chandra 11|10.28|
-|chandra 12|82.21|
-|chandra 13| - |
-|cyclic 7|0.80|
-|cyclic 8|20.81|
+|chandra 9|1.28|
+|chandra 10|4.20|
+|chandra 11|13.27|
+|chandra 12|82.00|
+|chandra 13|415.78|
+|cyclic 7|1.11|
+|cyclic 8|27.19|
 |cyclic 9| - |
 |dummy|0.00|
-|eco 10|0.44|
-|eco 11|3.04|
-|eco 12|20.65|
-|eco 13|320.03|
-|henrion 6|0.53|
-|henrion 7| - |
-|ipp|61.74|
-|katsura 9|2.79|
-|katsura 10|20.30|
-|katsura 11|297.12|
-|noon 7|0.46|
-|noon 8|3.84|
-|noon 9|24.66|
-|reimer 6|0.41|
-|reimer 7|6.79|
-|reimer 8| - |
+|eco 10|0.47|
+|eco 11|3.16|
+|eco 12|26.92|
+|eco 13|281.37|
+|henrion 6|0.63|
+|henrion 7|346.59|
+|ipp|93.93|
+|katsura 9|3.49|
+|katsura 10|24.64|
+|katsura 11|269.47|
+|noon 7|0.66|
+|noon 8|5.37|
+|noon 9|36.32|
+|reimer 6|0.55|
+|reimer 7|10.48|
+|reimer 8|661.18|
 
 *Benchmarking environment:*
 
@@ -53,6 +53,7 @@ Versions of the dependencies:
 * PrecompileTools : 1.2.0
 * MultivariatePolynomials : 0.5.3
 * Combinatorics : 1.0.2
+* HostCPUFeatures : 0.1.16
 * AbstractAlgebra : 0.34.7
 * Nemo : 0.38.3
 * Atomix : 0.1.0
