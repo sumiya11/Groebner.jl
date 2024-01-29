@@ -72,16 +72,18 @@ function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
     resize!(matrix.some_coeffs, nlow)
     resize!(matrix.sentinels, ncols)
 
-    # If there is a pivot with the leading column i, then sentinels[i] = 1.
+    # If there is a pivot with the leading column i, then we set
+    #   sentinels[i] = 1.
+    # If sentinels[i] = 1, and if the pivot is synced, then we set
+    #   sentinels[i] = 2.
     # Otherwise, sentinels[i] = 0.
-    # Once sentinels[i] becomes 1, this equality is unchanged.
-    # NOTE: for all valid indices, isassigned(sentinels, i) must hold. 
+    # Once sentinels[i] becomes 1 or 2, this is unchanged.
     sentinels = matrix.sentinels
     @inbounds for i in 1:ncols
         sentinels[i] = 0
     end
     @inbounds for i in 1:nup
-        sentinels[matrix.upper_rows[i][1]] = 1
+        sentinels[matrix.upper_rows[i][1]] = 2
     end
 
     # Allocate thread-local buffers
@@ -135,7 +137,7 @@ function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
             while !success
                 # Reduce the combination by pivots
                 @invariant 1 <= first_nnz_col <= length(t_local_row)
-                zeroed = linalg_reduce_dense_row_by_pivots_sparse!(
+                zeroed = linalg_reduce_dense_row_by_pivots_sparse_threadsafe0!(
                     new_sparse_row_support,
                     new_sparse_row_coeffs,
                     t_local_row,
@@ -145,6 +147,7 @@ function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
                     first_nnz_col,
                     ncols,
                     arithmetic,
+                    sentinels,
                     tmp_pos=-1
                 )
 
@@ -153,14 +156,6 @@ function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
                     new_pivots_count = nrowstotal
                     break
                 end
-
-                # At this point, we have discovered a row that is not reduced to
-                # zero (yet). Two outcomes are possible: 
-                # - either this row is a new pivot row. In this case,
-                #   sentinels[...] is 0. We set sentinels[...] to 1, update the
-                #   pivots and the matrix, and break out of the loop.
-                # - or, this row can be further reduced. In this case,
-                #   sentinels[...] was already 1.
 
                 # Sync point. Everything before this point becomes visible to
                 # other threads once they reach this point.
@@ -187,6 +182,20 @@ function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
                     matrix.some_coeffs[absolute_row_index] = new_sparse_row_coeffs
                     matrix.lower_to_coeffs[new_sparse_row_support[1]] = absolute_row_index
                     pivots[new_sparse_row_support[1]] = new_sparse_row_support
+
+                    # This atomic write is paired by an atomic load in
+                    # `linalg_reduce_dense_row_by_pivots_sparse_threadsafe0!`. The
+                    # purpose of these atomics is to fence the above assignment
+                    #    pivots[new_sparse_row_support[1]] = new_sparse_row_support
+                    # 
+                    # This way, the next atomic load from the same location in
+                    # `sentinels` will also receive all relevant modifications to
+                    # `pivots` as a side-effect.
+                    Atomix.set!(
+                        Atomix.IndexableRef(sentinels, (Int(new_sparse_row_support[1]),)),
+                        Int8(2),
+                        Atomix.release
+                    )
                 else
                     # go for another iteration
                     first_nnz_col = new_sparse_row_support[1]

@@ -56,16 +56,16 @@ function linalg_reduce_matrix_lower_part_threaded_cas!(
 
     # If there is a pivot with the leading column i, then we set
     #   sentinels[i] = 1.
-    # If sentinels[i] = 1, and the pivot is synced, then we set
+    # If sentinels[i] = 1, and if the pivot is synced, then we set
     #   sentinels[i] = 2.
     # Otherwise, sentinels[i] = 0.
-    # Once sentinels[i] becomes 1 or 2, this equality is unchanged.
+    # Once sentinels[i] becomes 1 or 2, this is unchanged.
     sentinels = matrix.sentinels
     @inbounds for i in 1:ncols
         sentinels[i] = 0
     end
     @inbounds for i in 1:nup
-        sentinels[matrix.upper_rows[i][1]] = 1
+        sentinels[matrix.upper_rows[i][1]] = 2
     end
 
     # Allocate thread-local buffers
@@ -114,15 +114,6 @@ function linalg_reduce_matrix_lower_part_threaded_cas!(
             # If the row is fully reduced
             zeroed && break
 
-            # At this point, we have discovered a row that is not reduced to
-            # zero (yet). Thus, two outcomes are possible: 
-            # 1. sentinels[...] is 0, meaning that this row is potentially a new
-            #   pivot row. We try to set sentinels[...] to 1, update the pivots
-            #   and the matrix, and break out of the loop.
-            #   If assigning sentinels[...] to 1 fails, go to 2.
-            # 2. sentinels[...] is already 1, meaning that this row can be
-            #   further reduced on the following iteration
-
             # Sync point. Everything before this point becomes visible to
             # all other threads once they reach this point.
             # NOTE: Note the absense of a total ordering on atomic operations
@@ -154,15 +145,9 @@ function linalg_reduce_matrix_lower_part_threaded_cas!(
                 # This way, the next atomic load from the same location in
                 # `sentinels` will also receive all relevant modifications to
                 # `pivots` as a side-effect.
-                #
-                # Roughly speaking, in single-thread, this construction is
-                # similar to an explicit barrier in C
-                #   asm volatile("" ::: "memory");
-                # which can be used to tell the compiler that the writes and
-                # loads cannot be freely moved below or above the barrier.
                 Atomix.set!(
                     Atomix.IndexableRef(sentinels, (Int(new_sparse_row_support[1]),)),
-                    Int8(1),
+                    Int8(2),
                     Atomix.release
                 )
             else
@@ -206,34 +191,7 @@ function linalg_reduce_dense_row_by_pivots_sparse_threadsafe0!(
             continue
         end
 
-        # Say, there are two threads, A and B. Thread A non-atomically writes to
-        # pivots[i]. Then loading pivots[i] in thread B may produce a value out
-        # of thin air.
-        #
-        # Modifying pivots[i] atomically is impossible in Julia.
-        # Thus, we may need additional syncronization in this case.
-        # (Note that this is usually not an issue for x86-64, since it performs
-        # well-aligned writes and loads atomically by default, but we should not
-        # rely on that)
-        # 
-        # From https://en.cppreference.com/w/cpp/atomic/memory_order, if thread
-        # B performs (at least) acquire atomic memory load, then "all memory
-        # writes that happened-before the atomic store from the point of view of
-        # thread A, become visible side-effects in thread B".
-        #
-        # In other words, consider the following "sequence" of writes/loads:
-        # thread A:
-        #   1. write pivots[i] = X
-        #   2. write sentinels[i] = 1 (atomic)
-        # thread B:
-        #   3. load sentinels[i] (atomic)
-        #   4. load pivots[i]
-        # If 2. happened before 3., then 1. happened before 4.
-        #
-        # For this reason, we perform the atomic write 2. in
-        # `linalg_reduce_matrix_lower_part_threaded_cas_maybe_correct!`, and
-        # perform the atomic load 3. here.
-        if iszero(Atomix.get(Atomix.IndexableRef(sentinels, (i,)), Atomix.acquire))
+        if 2 != Atomix.get(Atomix.IndexableRef(sentinels, (i,)), Atomix.acquire)
             if new_pivot_column == -1
                 new_pivot_column = i
             end
@@ -298,314 +256,4 @@ function linalg_reduce_dense_row_by_pivots_sparse_threadsafe0!(
     )
 
     false
-end
-
-@timeit function linalg_reduce_matrix_lower_part_threaded_task_cas!(
-    matrix::MacaulayMatrix{CoeffType},
-    basis::Basis{CoeffType},
-    arithmetic::AbstractArithmetic{AccumType, CoeffType}
-) where {CoeffType <: Coeff, AccumType <: Coeff}
-    _, ncols = size(matrix)
-    nup, nlow = matrix_nrows_filled(matrix)
-
-    # Calculate the size of the block
-    nblocks = nthreads()
-    nblocks = min(nblocks, nlow)
-    rem = nlow % nblocks == 0 ? 0 : 1
-    rowsperblock = div(nlow, nblocks) + rem
-
-    @log level = -3 "" nblocks rem rowsperblock nlow
-
-    # Prepare the matrix
-    pivots, row_index_to_coeffs = linalg_prepare_matrix_pivots!(matrix)
-    resize!(matrix.some_coeffs, nlow)
-    resize!(matrix.sentinels, ncols)
-    @inbounds for i in 1:ncols
-        matrix.sentinels[i] = 0
-    end
-    for i in 1:nup
-        matrix.sentinels[matrix.upper_rows[i][1]] = 1
-    end
-
-    tasks = Vector{Task}(undef, nblocks)
-
-    for i in 2:nblocks
-        block_start = 1 + (i - 1) * rowsperblock
-        block_end = min(nlow, i * rowsperblock)
-        block_start > nlow && continue
-        @invariant 1 <= block_start <= block_end <= nlow
-        tasks[i] = Base.Threads.@spawn _reduce_matrix_lower_part_threaded_cas_worker!(
-            matrix,
-            basis,
-            arithmetic,
-            row_index_to_coeffs,
-            block_start,
-            block_end
-        )
-    end
-
-    _reduce_matrix_lower_part_threaded_cas_worker!(
-        matrix,
-        basis,
-        arithmetic,
-        row_index_to_coeffs,
-        1,
-        rowsperblock
-    )
-
-    for i in 1:nblocks
-        if isassigned(tasks, i)
-            fetch(tasks[i])
-        end
-    end
-
-    true
-end
-
-function _reduce_matrix_lower_part_threaded_task_cas_worker!(
-    matrix::MacaulayMatrix{CoeffType},
-    basis::Basis{CoeffType},
-    arithmetic::AbstractArithmetic{AccumType, CoeffType},
-    row_index_to_coeffs,
-    block_start::Int,
-    block_end::Int
-) where {CoeffType <: Coeff, AccumType <: Coeff}
-    _, ncols = size(matrix)
-    pivots = matrix.pivots
-
-    row = zeros(AccumType, ncols)
-    new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
-    sentinels = matrix.sentinels
-
-    @inbounds for i in block_start:block_end
-        # Select the row from the lower part of the matrix to be reduced
-        sparse_row_support = matrix.lower_rows[i]
-        # Locate the array of coefficients of this row.
-        # NOTE: no copy of coefficients is needed
-        sparse_row_coeffs = basis.coeffs[row_index_to_coeffs[i]]
-        @invariant length(sparse_row_support) == length(sparse_row_coeffs)
-
-        # Load the coefficients into a dense array
-        linalg_load_sparse_row!(row, sparse_row_support, sparse_row_coeffs)
-
-        success = false
-        while !success
-
-            # Reduce the row with respect to the known `pivots` from the upper part
-            # of the matrix.
-            # NOTE: this also does partial interreduction of the lower matrix rows.
-            # Upon discovery of a new pivot from the lower part of the matrix, we
-            # add the pivot to the pool of available pivots
-            first_nnz_column = sparse_row_support[1]
-            zeroed = linalg_reduce_dense_row_by_pivots_sparse!(
-                new_sparse_row_support,
-                new_sparse_row_coeffs,
-                row,
-                matrix,
-                basis,
-                pivots,
-                first_nnz_column,
-                ncols,
-                arithmetic,
-                tmp_pos=-1
-            )
-
-            # If the row is fully reduced
-            zeroed && break
-
-            @invariant length(new_sparse_row_coeffs) == length(new_sparse_row_support)
-
-            # Set a reference to the coefficients of this row in the matrix
-            old, success = Atomix.replace!(
-                Atomix.IndexableRef(sentinels, (Int(new_sparse_row_support[1]),)),
-                Int8(0),
-                Int8(1),
-                Atomix.acquire_release,
-                Atomix.acquire
-            )
-
-            if success
-                @invariant iszero(old)
-                linalg_normalize_row!(new_sparse_row_coeffs, arithmetic)
-                matrix.some_coeffs[i] = new_sparse_row_coeffs
-                matrix.lower_to_coeffs[new_sparse_row_support[1]] = i
-                pivots[new_sparse_row_support[1]] = new_sparse_row_support
-            else
-                sparse_row_support = new_sparse_row_support
-                sparse_row_coeffs = new_sparse_row_coeffs
-            end
-        end
-
-        new_sparse_row_support, new_sparse_row_coeffs =
-            linalg_new_empty_sparse_row(CoeffType)
-    end
-end
-
-@timeit function linalg_reduce_matrix_lower_part_threaded_task_lock_free!(
-    matrix::MacaulayMatrix{CoeffType},
-    basis::Basis{CoeffType},
-    arithmetic::AbstractArithmetic{AccumType, CoeffType}
-) where {CoeffType <: Coeff, AccumType <: Coeff}
-    _, ncols = size(matrix)
-    _, nlow = matrix_nrows_filled(matrix)
-
-    # Calculate the size of the block in threading
-    nblocks = nthreads()
-    nblocks = min(nblocks, nlow)
-    rem = nlow % nblocks == 0 ? 0 : 1
-    rowsperblock = div(nlow, nblocks) + rem
-
-    @log level = -3 "" nblocks rem rowsperblock nlow
-
-    # Prepare the matrix
-    pivots, row_index_to_coeffs = linalg_prepare_matrix_pivots!(matrix)
-    resize!(matrix.some_coeffs, nlow)
-    resize!(matrix.sentinels, nlow)
-    @inbounds for i in 1:nlow
-        matrix.sentinels[i] = 0
-    end
-
-    tasks = Vector{Task}(undef, nblocks)
-
-    for i in 2:nblocks
-        block_start = 1 + (i - 1) * rowsperblock
-        block_end = min(nlow, i * rowsperblock)
-        block_start > nlow && continue
-        @invariant 1 <= block_start <= block_end <= nlow
-        tasks[i] = Base.Threads.@spawn _reduce_matrix_lower_part_threaded_lock_free_worker!(
-            matrix,
-            basis,
-            arithmetic,
-            row_index_to_coeffs,
-            block_start,
-            block_end
-        )
-    end
-
-    _reduce_matrix_lower_part_threaded_lock_free_worker!(
-        matrix,
-        basis,
-        arithmetic,
-        row_index_to_coeffs,
-        1,
-        rowsperblock
-    )
-
-    for i in 1:nblocks
-        if isassigned(tasks, i)
-            fetch(tasks[i])
-        end
-    end
-
-    row = zeros(AccumType, ncols)
-    new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
-    @inbounds for i in 1:nlow
-        if iszero(matrix.sentinels[i])
-            continue
-        end
-
-        # Select the row from the lower part of the matrix to be reduced
-        sparse_row_support = matrix.lower_rows[i]
-        sparse_row_coeffs = matrix.some_coeffs[i]
-        @invariant length(sparse_row_support) == length(sparse_row_coeffs)
-
-        # Load the coefficients into a dense array
-        linalg_load_sparse_row!(row, sparse_row_support, sparse_row_coeffs)
-
-        # Reduce the row with respect to the known `pivots` from the upper part
-        # of the matrix.
-        # NOTE: this also does partial interreduction of the lower matrix rows.
-        # Upon discovery of a new pivot from the lower part of the matrix, we
-        # add the pivot to the pool of available pivots
-        first_nnz_column = sparse_row_support[1]
-        zeroed = linalg_reduce_dense_row_by_pivots_sparse!(
-            new_sparse_row_support,
-            new_sparse_row_coeffs,
-            row,
-            matrix,
-            basis,
-            pivots,
-            first_nnz_column,
-            ncols,
-            arithmetic,
-            tmp_pos=-1
-        )
-
-        # If the row is fully reduced
-        zeroed && continue
-
-        @invariant length(new_sparse_row_coeffs) == length(new_sparse_row_support)
-        linalg_normalize_row!(new_sparse_row_coeffs, arithmetic)
-
-        # Store the new row in the matrix, AND add it to the active pivots
-        matrix.some_coeffs[i] = new_sparse_row_coeffs
-        pivots[new_sparse_row_support[1]] = new_sparse_row_support
-        # Set a reference to the coefficients of this row in the matrix
-        matrix.lower_to_coeffs[new_sparse_row_support[1]] = i
-
-        new_sparse_row_support, new_sparse_row_coeffs =
-            linalg_new_empty_sparse_row(CoeffType)
-    end
-
-    true
-end
-
-function _reduce_matrix_lower_part_threaded_task_lock_free_worker!(
-    matrix::MacaulayMatrix{CoeffType},
-    basis::Basis{CoeffType},
-    arithmetic::AbstractArithmetic{CoeffType, AccumType},
-    row_index_to_coeffs,
-    block_start::Int,
-    block_end::Int
-) where {CoeffType <: Coeff, AccumType <: Coeff}
-    _, ncols = size(matrix)
-    pivots = matrix.pivots
-
-    row = zeros(AccumType, ncols)
-    new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
-
-    @inbounds for i in block_start:block_end
-        # Select the row from the lower part of the matrix to be reduced
-        sparse_row_support = matrix.lower_rows[i]
-        # Locate the array of coefficients of this row.
-        # NOTE: no copy of coefficients is needed
-        sparse_row_coeffs = basis.coeffs[row_index_to_coeffs[i]]
-        @invariant length(sparse_row_support) == length(sparse_row_coeffs)
-
-        # Load the coefficients into a dense array
-        linalg_load_sparse_row!(row, sparse_row_support, sparse_row_coeffs)
-
-        # Reduce the row with respect to the known `pivots` from the upper part
-        # of the matrix.
-        # NOTE: this also does partial interreduction of the lower matrix rows.
-        # Upon discovery of a new pivot from the lower part of the matrix, we
-        # add the pivot to the pool of available pivots
-        first_nnz_column = sparse_row_support[1]
-        zeroed = linalg_reduce_dense_row_by_pivots_sparse!(
-            new_sparse_row_support,
-            new_sparse_row_coeffs,
-            row,
-            matrix,
-            basis,
-            pivots,
-            first_nnz_column,
-            ncols,
-            arithmetic,
-            tmp_pos=-1
-        )
-
-        # If the row is fully reduced
-        zeroed && continue
-
-        @invariant length(new_sparse_row_coeffs) == length(new_sparse_row_support)
-        linalg_normalize_row!(new_sparse_row_coeffs, arithmetic)
-
-        # Store the new row in the matrix, AND add it to the active pivots
-        matrix.some_coeffs[i] = new_sparse_row_coeffs
-        matrix.lower_rows[i] = new_sparse_row_support
-        matrix.sentinels[i] = 1
-
-        new_sparse_row_support, new_sparse_row_coeffs =
-            linalg_new_empty_sparse_row(CoeffType)
-    end
 end

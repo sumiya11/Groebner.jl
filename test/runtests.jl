@@ -56,7 +56,8 @@ end
 
     @time @includetests [
         "learn_and_apply/learn_and_apply",
-        "learn_and_apply/apply_in_batches"
+        "learn_and_apply/apply_in_batches",
+        "learn_and_apply/learn_and_apply_tmp"
     ]
 
     @time @includetests ["isgroebner/isgroebner"]

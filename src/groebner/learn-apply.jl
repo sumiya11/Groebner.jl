@@ -170,9 +170,10 @@ end
 
 #=
 Several assumptions are in place:
-- input contains no zero polynomials,
+- input contains no zero polynomials (i.e., no empty vectors or vectors that
+  contain only zeros),
 - input coefficients are non-negative,
-- input coefficients are smaller than modulo
+- input coefficients are smaller than the modulo.
 =#
 function groebner_applyX!(
     wrapped_trace::WrappedTraceF4,
@@ -185,7 +186,7 @@ function groebner_applyX!(
     logging_setup(kws)
     statistics_setup(kws)
 
-    trace = get_default_trace(wrapped_trace)
+    trace = get_trace!(wrapped_trace, modulo, kws)
     @log level = -5 "Selected trace" trace.representation.coefftype
 
     ring = extract_coeffs_raw_X!(trace, trace.representation, coeffs_zp, modulo, kws)
@@ -206,5 +207,5 @@ function groebner_applyX!(
             dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
     end
 
-    flag, gb_coeffs::Vector{Vector{UInt32}}
+    flag, gb_coeffs
 end
