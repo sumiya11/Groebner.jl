@@ -282,6 +282,93 @@ function extract_coeffs_raw!(
     ring
 end
 
+function extract_coeffs_raw_X!(
+    trace,
+    representation::PolynomialRepresentation,
+    coeffs_zp,
+    modulo,
+    kws::KeywordsHandler
+)
+    ring = PolyRing(trace.ring.nvars, trace.ring.ord, UInt64(modulo))
+
+    basis = trace.buf_basis
+    input_polys_perm = trace.input_permutation
+    term_perms = trace.term_sorting_permutations
+    homog_term_perm = trace.term_homogenizing_permutations
+    CoeffType = representation.coefftype
+
+    _extract_coeffs_raw_X!(
+        basis,
+        input_polys_perm,
+        term_perms,
+        homog_term_perm,
+        coeffs_zp,
+        CoeffType
+    )
+
+    # a hack for homogenized inputs
+    if trace.homogenize
+        @assert length(basis.monoms[length(polys) + 1]) ==
+                length(basis.coeffs[length(polys) + 1]) ==
+                2
+        # TODO: !! incorrect if there are zeros in the input
+        @invariant !iszero(ring.ch)
+        C = eltype(basis.coeffs[length(polys) + 1][1])
+        basis.coeffs[length(polys) + 1][1] = one(C)
+        basis.coeffs[length(polys) + 1][2] =
+            iszero(ring.ch) ? -one(C) : (ring.ch - one(ring.ch))
+    end
+
+    @log level = -6 "Extracted coefficients from $(length(polys)) polynomials." basis
+    @log level = -8 "Extracted coefficients" basis.coeffs
+    ring
+end
+
+function _extract_coeffs_raw_X!(
+    basis,
+    input_polys_perm::Vector{Int},
+    term_perms::Vector{Vector{Int}},
+    homog_term_perms::Vector{Vector{Int}},
+    coeffs_zp,
+    ::Type{CoeffsType}
+) where {CoeffsType}
+    # write new coefficients directly to trace.buf_basis
+    permute_input_terms = !isempty(term_perms)
+    permute_homogenizing_terms = !isempty(homog_term_perms)
+
+    @log level = -2 """
+    Permuting input terms: $permute_input_terms
+    Permuting for homogenization: $permute_homogenizing_terms"""
+    @log level = -7 """Permutations:
+      Of polynomials: $input_polys_perm
+      Of terms (change of ordering): $term_perms
+      Of terms (homogenization): $homog_term_perms"""
+    @inbounds for i in 1:length(coeffs_zp)
+        basis_cfs = basis.coeffs[i]
+        poly_index = input_polys_perm[i]
+        poly = coeffs_zp[poly_index]
+        if !(length(poly) == length(basis_cfs))
+            __throw_input_not_supported(
+                "Potential coefficient cancellation in input polynomial at index $i on apply stage.",
+                poly
+            )
+        end
+        for j in 1:length(poly)
+            coeff_index = j
+            if permute_input_terms
+                coeff_index = term_perms[poly_index][coeff_index]
+            end
+            if permute_homogenizing_terms
+                coeff_index = homog_term_perms[poly_index][coeff_index]
+            end
+            coeff = poly[coeff_index]
+            basis_cfs[j] = convert(CoeffsType, coeff)
+        end
+    end
+
+    nothing
+end
+
 function io_extract_coeffs_raw_batched!(
     trace,
     representation::PolynomialRepresentation,

@@ -167,3 +167,44 @@ function _groebner_apply1!(ring, trace, params)
 
     flag, gb_monoms, gb_coeffs
 end
+
+#=
+Several assumptions are in place:
+- input contains no zero polynomials,
+- input coefficients are non-negative,
+- input coefficients are smaller than modulo
+=#
+function groebner_applyX!(
+    wrapped_trace::WrappedTraceF4,
+    coeffs_zp::Vector{Vector{UInt32}},
+    modulo::UInt32;
+    options...
+)
+    kws = KeywordsHandler(:groebner_apply!, options)
+
+    logging_setup(kws)
+    statistics_setup(kws)
+
+    trace = get_default_trace(wrapped_trace)
+    @log level = -5 "Selected trace" trace.representation.coefftype
+
+    ring = extract_coeffs_raw_X!(trace, trace.representation, coeffs_zp, modulo, kws)
+
+    # TODO: this is a bit hacky
+    params = AlgorithmParameters(
+        ring,
+        trace.representation,
+        kws,
+        orderings=(trace.params.original_ord, trace.params.target_ord)
+    )
+    ring = PolyRing(trace.ring.nvars, trace.ring.ord, ring.ch)
+
+    flag, gb_monoms, gb_coeffs = _groebner_apply1!(ring, trace, params)
+
+    if trace.params.homogenize
+        ring, gb_monoms, gb_coeffs =
+            dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
+    end
+    
+    flag, gb_coeffs::Vector{Vector{UInt32}}
+end

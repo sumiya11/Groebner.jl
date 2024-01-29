@@ -35,8 +35,11 @@ typemax_saturated(_::Type{T}, N) where {T <: BitInteger} = typemax(T) ⊻ (N - 1
 # If this is not possible, returns N = 1.
 function cutoff8_pick_vector_width(::Type{T}) where {T}
     N = pick_vector_width(T)
-    if N in (8, 16, 32, 64)
+    if N in (8, 16, 32)
         return Int(N)
+    end
+    if N == 64
+        return 32
     end
     1
 end

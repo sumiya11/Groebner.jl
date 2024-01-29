@@ -28,8 +28,10 @@ less_than_half(p, ::Type{T}) where {T} = p < (typemax(T) >> ((8 >> 1) * sizeof(T
 
 # Modular arithmetic based on builtin classes in `Base.MultiplicativeInverses`. 
 struct ArithmeticZp{AccumType, CoeffType} <: AbstractArithmeticZp{AccumType, CoeffType}
-    # magic contains the precomputed multiplicative inverse of the divisor
-    magic::UnsignedMultiplicativeInverse{AccumType}
+    multiplier::AccumType
+    shift::UInt8
+    divisor::AccumType
+    add::Bool
 
     ArithmeticZp(::Type{A}, ::Type{C}, p) where {A, C} = ArithmeticZp(A, C, C(p))
 
@@ -40,15 +42,21 @@ struct ArithmeticZp{AccumType, CoeffType} <: AbstractArithmeticZp{AccumType, Coe
     ) where {AccumType <: CoeffZp, CoeffType <: CoeffZp}
         @invariant less_than_half(p, AccumType)
         @invariant Primes.isprime(p)
-        new{AccumType, CoeffType}(
-            UnsignedMultiplicativeInverse{AccumType}(convert(AccumType, p))
-        )
+        uinv = UnsignedMultiplicativeInverse{AccumType}(convert(AccumType, p))
+        # Further in the code we need the guarantee that the shift is < 64
+        @invariant uinv.shift < 8 * sizeof(AccumType)
+        new{AccumType, CoeffType}(uinv.multiplier, uinv.shift, uinv.divisor, uinv.add)
     end
 end
 
-divisor(arithm::ArithmeticZp) = arithm.magic.divisor
+divisor(arithm::ArithmeticZp) = arithm.divisor
 
-@inline mod_p(a::T, arithm::ArithmeticZp{T}) where {T} = a % arithm.magic
+@inline function mod_p(a::T, mod::ArithmeticZp{T}) where {T}
+    x = _mul_high(a, mod.multiplier)
+    x = ifelse(mod.add, convert(T, convert(T, (convert(T, a - x) >>> UInt8(1))) + x), x)
+    unsafe_assume(mod.shift < 8 * sizeof(T))
+    a - (x >>> mod.shift) * mod.divisor
+end
 
 inv_mod_p(a::T, arithm::ArithmeticZp{T}) where {T} = invmod(a, divisor(arithm))
 
