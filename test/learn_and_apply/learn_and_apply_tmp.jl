@@ -9,7 +9,7 @@ params = (loglevel=0, sweep=true)
     flag, cfs = Groebner.groebner_applyX!(
         trace,
         [[UInt32(1), UInt32(3)], [UInt32(1), UInt32(2)]],
-        UInt32(2^27 + 39)
+        UInt32(2^27 - 39)
     )
     @assert flag && cfs == [[UInt32(1), UInt32(2)], [UInt32(1), UInt32(3)]]
 
