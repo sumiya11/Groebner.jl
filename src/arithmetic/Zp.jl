@@ -424,19 +424,22 @@ function select_arithmetic(
         # Use delayed modular arithmetic if the prime is one of the following:
         #   2^16 <= prime < 2^28
         #   2^8  <= prime < 2^12
-        #          prime < 2^4
+        #           prime < 2^4
         # The trade-offs are a bit shifted for large moduli that are > 2^32. It
         # looks like it rarely pays off to use delayed modular arithmetic in
         # such cases
-        if !(AccumType === UInt128) &&
-           4 < (leading_zeros(CoeffType(characteristic)) - (8 >> 1) * sizeof(AccumType))
-            return DelayedArithmeticZp(
-                AccumType,
-                CoeffType,
-                convert(AccumType, characteristic)
-            )
-        else
-            return SpecializedArithmeticZp(AccumType, CoeffType, characteristic)
+        if !(AccumType === UInt128)
+            if !using_wide_type_for_coeffs &&
+               leading_zeros(CoeffType(characteristic)) > 4 ||
+               using_wide_type_for_coeffs &&
+               ((8 * sizeof(CoeffType)) >> 1) -
+               (8 * sizeof(CoeffType) - leading_zeros(CoeffType(characteristic))) > 4
+                return DelayedArithmeticZp(
+                    AccumType,
+                    CoeffType,
+                    convert(AccumType, characteristic)
+                )
+            end
         end
     end
 

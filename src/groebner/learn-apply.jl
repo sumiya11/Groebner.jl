@@ -205,6 +205,6 @@ function groebner_applyX!(
         ring, gb_monoms, gb_coeffs =
             dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
     end
-    
+
     flag, gb_coeffs::Vector{Vector{UInt32}}
 end

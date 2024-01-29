@@ -1,6 +1,20 @@
 import Primes
 
 @testset "arithmetic in Zp" begin
+    a = Groebner.select_arithmetic(UInt32, 2^31 - 1, :auto, false)
+    @test a isa Groebner.SpecializedArithmeticZp{UInt64, UInt32}
+    a = Groebner.select_arithmetic(UInt64, 2^31 - 1, :auto, true)
+    @test a isa Groebner.SpecializedArithmeticZp{UInt64, UInt64}
+
+    a = Groebner.select_arithmetic(UInt32, Primes.prevprime(2^27 - 1), :auto, false)
+    @test a isa Groebner.DelayedArithmeticZp{UInt64, UInt32}
+    a = Groebner.select_arithmetic(UInt64, Primes.prevprime(2^27 - 1), :auto, true)
+    @test a isa Groebner.DelayedArithmeticZp{UInt64, UInt64}
+    a = Groebner.select_arithmetic(UInt64, Primes.prevprime(2^28 - 1), :auto, true)
+    @test a isa Groebner.SpecializedArithmeticZp{UInt64, UInt64}
+    a = Groebner.select_arithmetic(UInt32, Primes.prevprime(2^28 - 1), :auto, false)
+    @test a isa Groebner.SpecializedArithmeticZp{UInt64, UInt32}
+
     m = UInt64(2^30 + 3)
     a = Groebner.DelayedArithmeticZp(UInt64, UInt64, m)
     @test Groebner.n_spare_bits(a) == 1
