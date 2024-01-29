@@ -17,6 +17,7 @@ implementations_to_test = [
     Groebner.PackedTuple1{T, UInt8} where {T},
     Groebner.PackedTuple2{T, UInt8} where {T},
     Groebner.PackedTuple3{T, UInt8} where {T},
+    Groebner.PackedTuple4{T, UInt8} where {T},
     Groebner.SparseExponentVector{T} where {T}
 ]
 
@@ -97,6 +98,19 @@ implementations_to_test = [
             @test monom_is_equal(tmp, e)
             @test !monom_is_gcd_const(a, b)
             @test monom_is_equal(tmp, e)
+
+            n = 30
+            if n > Groebner.monom_max_vars(MonomType)
+                continue
+            end
+            a = monom_construct_from_vector(MonomType, 2 .* ones(Int, n))
+            b = monom_construct_from_vector(MonomType, 1 .* ones(Int, n))
+            tmp = monom_copy(a)
+            @test monom_is_divisible(a, b)
+            flag, tmp = monom_is_divisible!(tmp, a, b)
+            @test flag
+            @test monom_is_equal(tmp, b)
+            @test !monom_is_gcd_const(a, b)
         end
 
         # test that different implementations agree

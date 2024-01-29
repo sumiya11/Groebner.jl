@@ -9,6 +9,7 @@ implementations_to_test = [
     Groebner.PackedTuple1{T, UInt8} where {T},
     Groebner.PackedTuple2{T, UInt8} where {T},
     Groebner.PackedTuple3{T, UInt8} where {T},
+    Groebner.PackedTuple4{T, UInt8} where {T},
     Groebner.SparseExponentVector{T} where {T}
 ]
 
@@ -186,7 +187,9 @@ end
 @testset "monoms, variable permutation" begin
     for T in (UInt64, UInt32, UInt16)
         for EV in implementations_to_test
-            if EV{T} <: Groebner.PackedTuple2 || EV{T} <: Groebner.PackedTuple3
+            if EV{T} <: Groebner.PackedTuple2 ||
+               EV{T} <: Groebner.PackedTuple3 ||
+               EV{T} <: Groebner.PackedTuple4
                 continue
             end
 

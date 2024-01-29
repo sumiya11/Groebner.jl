@@ -3,10 +3,8 @@
 ###
 # Utilities for packed integers
 
-# Functions here work on integers packed into a single integer of a wider type.
-
 # How many integers of type B can be stored in an integer of type T
-function packed_elperchunk(T, B)
+function packed_elperchunk(::Type{T}, ::Type{B}) where {T, B}
     epc = div(sizeof(T), sizeof(B))
     @invariant epc * sizeof(B) == sizeof(T)
     epc
@@ -14,8 +12,9 @@ end
 
 # the size of total degree.
 # By default, does not differ from the size of other elements
-packed_degsize(T, B, n) = sizeof(B)
-packed_nchunks(T, B, n) = div((n - 1) * sizeof(B) + packed_degsize(T, B, n), sizeof(T)) + 1
+packed_degsize(::Type{T}, ::Type{B}, n) where {T, B} = sizeof(B)
+packed_nchunks(::Type{T}, ::Type{B}, n) where {T, B} =
+    div((n - 1) * sizeof(B) + packed_degsize(T, B, n), sizeof(T)) + 1
 
 @inline @generated function packed_unpack!(
     b::AbstractVector{MH},
