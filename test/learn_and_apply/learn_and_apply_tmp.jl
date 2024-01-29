@@ -124,7 +124,7 @@ end
         AbstractAlgebra.GF(2^27 - 39),
         AbstractAlgebra.GF(2^20 + 7),
         AbstractAlgebra.GF(2^20 + 13),
-        AbstractAlgebra.GF(2^20 + 25),
+        AbstractAlgebra.GF(2^20 + 25)
     ]
     for case in cases
         # Learn and apply on the same system

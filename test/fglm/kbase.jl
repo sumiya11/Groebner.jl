@@ -97,8 +97,8 @@ end
     gb = Groebner.groebner(noon, ordering=Groebner.DegRevLex())
     @test length(Groebner.kbase(gb, ordering=Groebner.DegRevLex())) == 21
 
-    noon = Groebner.noonn(7, k=GF(2^31 - 1))
-    R = parent(first(noon))
-    gb = Groebner.groebner(noon, ordering=Groebner.DegRevLex())
-    @test length(Groebner.kbase(gb, ordering=Groebner.DegRevLex())) == 2173
+    sys = Groebner.eco10(k=GF(2^31 - 1), ordering=:degrevlex)
+    R = parent(first(sys))
+    gb = Groebner.groebner(sys, ordering=Groebner.DegRevLex())
+    @test length(Groebner.kbase(gb, ordering=Groebner.DegRevLex())) == 256
 end
