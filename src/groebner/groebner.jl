@@ -113,13 +113,17 @@ end
 ###
 # Learn & Apply startegy
 
-function get_next_batchsize(batchsize, batchsize_multiplier)
-    new_batchsize = max(batchsize + 1, round(Int, batchsize * batchsize_multiplier))
+function get_next_batchsize(primes_used, batchsize, batchsize_scaling)
+    new_batchsize = if batchsize == 1
+        2
+    else
+        max(4, round(Int, primes_used * batchsize_scaling))
+    end
     # round to the nearest number divisible by 4
     if new_batchsize > 2
         new_batchsize::Int = (new_batchsize + 3) & (~3)
     end
-    new_batchsize
+    max(new_batchsize, batchsize)
 end
 
 function _groebner_learn_and_apply(
@@ -210,14 +214,13 @@ function _groebner_learn_and_apply(
 
     # At this point, either the reconstruction or the correctness check failed.
     # Continue to compute Groebner bases modulo different primes in batches. 
+    primes_used = 1
     batchsize = 1
-    batchsize_multiplier = 1.4
+    batchsize_scaling = 0.15
     @log level = -2 """
     Preparing to compute bases in batches.. 
     The initial size of the batch is $batchsize. 
-    The size increases in a geometric progression and is aligned by $(4).
-    The batch size multiplier is $batchsize_multiplier.
-    """
+    The batch scale factor is $batchsize_scaling."""
 
     # CRT and rational reconstrction settings
     indices_selection = Vector{Tuple{Int, Int}}(undef, length(state.gb_coeffs_zz))
@@ -238,9 +241,6 @@ function _groebner_learn_and_apply(
     end
     resize!(indices_selection, k - 1)
     unique!(indices_selection)
-    @log level = -2 "" length(indices_selection) length(state.gb_coeffs_zz) sum(
-        map(length, state.gb_coeffs_zz)
-    )
 
     # Initialize partial CRT reconstruction
     if crt_algorithm === :incremental
@@ -290,6 +290,7 @@ function _groebner_learn_and_apply(
                         indices_selection
                     )
                 end
+                primes_used += 4
             end
         else
             for j in 1:batchsize
@@ -320,30 +321,31 @@ function _groebner_learn_and_apply(
                         indices_selection
                     )
                 end
+                primes_used += 1
             end
         end
         if crt_algorithm === :simultaneous
             partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
         end
 
-        @log level = -2 "Reconstructing coefficients to QQ"
-        @log level = -4 "Reconstructing coefficients from Z_$(luckyprimes.modulo * prime) to QQ"
+        @log level = -2 "Partially reconstructing coefficients to QQ"
+        @log level = -4 "Partially reconstructing coefficients from Z_$(luckyprimes.modulo * prime) to QQ"
         success_reconstruct = partial_rational_reconstruct!(
             state,
             luckyprimes,
             indices_selection,
             params.use_flint
         )
-        @log level = -2 "Reconstruction successfull: $success_reconstruct"
+        @log level = -2 "Partial reconstruction successfull: $success_reconstruct"
         @log level = -2 """
-          Used $(length(luckyprimes.primes)) primes in total over $(iters + 1) iterations.
+          Used $(primes_used) primes in total over $(iters + 1) iterations.
           The current batch size is $batchsize.
           """
 
         if !success_reconstruct
             @log level = -2 "Partial rational reconstruction failed"
             iters += 1
-            batchsize = get_next_batchsize(batchsize, batchsize_multiplier)
+            batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
             continue
         end
 
@@ -353,7 +355,7 @@ function _groebner_learn_and_apply(
             if !success_check
                 @log level = -2 "Heuristic check failed for partial reconstruction"
                 iters += 1
-                batchsize = get_next_batchsize(batchsize, batchsize_multiplier)
+                batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
                 continue
             end
         end
@@ -371,7 +373,7 @@ function _groebner_learn_and_apply(
         if !success_reconstruct
             @log level = -2 "Full reconstruction failed"
             iters += 1
-            batchsize = get_next_batchsize(batchsize, batchsize_multiplier)
+            batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
             continue
         end
 
@@ -387,11 +389,11 @@ function _groebner_learn_and_apply(
         )
 
         iters += 1
-        batchsize = get_next_batchsize(batchsize, batchsize_multiplier)
+        batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
     end
 
     @log level = -2 "Correctness check passed!"
-    @log level = -2 "Used $(length(luckyprimes.primes)) primes in total over $(iters) iterations"
+    @log level = -2 "Used $(primes_used) primes in total over $(iters) iterations"
 
     # Construct the output basis.
     # Take monomials from the basis modulo a prime
@@ -496,14 +498,13 @@ function _groebner_learn_and_apply_threaded(
 
     # At this point, either the reconstruction or the correctness check failed.
     # Continue to compute Groebner bases modulo different primes in batches. 
-    batchsize = 4 * nthreads()
-    batchsize_multiplier = 1.4
+    primes_used = 1
+    batchsize = (min(32, max(4, 2 * nthreads())) + 3) & (~3)
+    batchsize_scaling = 0.15
     @log level = -2 """
     Preparing to compute bases in batches.. 
     The initial size of the batch is $batchsize. 
-    The size increases in a geometric progression and is aligned by $(4).
-    The batch size multiplier is $batchsize_multiplier.
-    """
+    The batch scale factor is $batchsize_scaling."""
 
     # CRT and rational reconstrction settings
     indices_selection = Vector{Tuple{Int, Int}}(undef, length(state.gb_coeffs_zz))
@@ -524,9 +525,6 @@ function _groebner_learn_and_apply_threaded(
     end
     resize!(indices_selection, k - 1)
     unique!(indices_selection)
-    @log level = -2 "" length(indices_selection) length(state.gb_coeffs_zz) sum(
-        map(length, state.gb_coeffs_zz)
-    )
 
     # Initialize partial CRT reconstruction
     if crt_algorithm === :incremental
@@ -558,7 +556,6 @@ function _groebner_learn_and_apply_threaded(
         for i in 1:nthreads()
             empty!(threadbuf_gb_coeffs[i])
         end
-        @log level = -1 "primes are" threadbuf_primes
 
         # NOTE: @threads with the option :static guarantees the persistence of
         # threadid() within a single loop iteration
@@ -597,6 +594,7 @@ function _groebner_learn_and_apply_threaded(
             push!(threadbuf_gb_coeffs[threadid()], (threadlocal_prime_4x[3], gb_coeffs_3))
             push!(threadbuf_gb_coeffs[threadid()], (threadlocal_prime_4x[4], gb_coeffs_4))
         end
+        primes_used += batchsize
 
         threadbuf_gb_coeffs_union = reduce(vcat, threadbuf_gb_coeffs)
 
@@ -611,15 +609,15 @@ function _groebner_learn_and_apply_threaded(
             partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
         end
 
-        @log level = -2 "Reconstructing coefficients to QQ"
-        @log level = -4 "Reconstructing coefficients from Z_$(luckyprimes.modulo * prime) to QQ"
+        @log level = -2 "Partially reconstructing coefficients to QQ"
+        @log level = -4 "Partially reconstructing coefficients from Z_$(luckyprimes.modulo * prime) to QQ"
         success_reconstruct = partial_rational_reconstruct!(
             state,
             luckyprimes,
             indices_selection,
             params.use_flint
         )
-        @log level = -2 "Reconstruction successfull: $success_reconstruct"
+        @log level = -2 "Partial reconstruction successfull: $success_reconstruct"
         @log level = -2 """
           Used $(length(luckyprimes.primes)) primes in total over $(iters + 1) iterations.
           The current batch size is $batchsize.
@@ -628,7 +626,7 @@ function _groebner_learn_and_apply_threaded(
         if !success_reconstruct
             @log level = -2 "Partial rational reconstruction failed"
             iters += 1
-            batchsize = get_next_batchsize(batchsize, batchsize_multiplier)
+            batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
             continue
         end
 
@@ -638,7 +636,7 @@ function _groebner_learn_and_apply_threaded(
             if !success_check
                 @log level = -2 "Heuristic check failed for partial reconstruction"
                 iters += 1
-                batchsize = get_next_batchsize(batchsize, batchsize_multiplier)
+                batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
                 continue
             end
         end
@@ -656,7 +654,7 @@ function _groebner_learn_and_apply_threaded(
         if !success_reconstruct
             @log level = -2 "Full reconstruction failed"
             iters += 1
-            batchsize = get_next_batchsize(batchsize, batchsize_multiplier)
+            batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
             continue
         end
 
@@ -672,7 +670,7 @@ function _groebner_learn_and_apply_threaded(
         )
 
         iters += 1
-        batchsize = get_next_batchsize(batchsize, batchsize_multiplier)
+        batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
     end
 
     @log level = -2 "Correctness check passed!"
@@ -771,14 +769,14 @@ function _groebner_classic_modular(
 
     # At this point, either the reconstruction or the correctness check failed.
     # Continue to compute Groebner bases modulo different primes in batches. 
+    primes_used = 1
     batchsize = 1
-    batchsize_multiplier = 1.4
+    batchsize_scaling = 0.1
     @log level = -2 """
-      Preparing to compute bases in batches.. 
-      The initial size of the batch is $batchsize. 
-      The size increases in a geometric progression. 
-      The batch size multiplier is $batchsize_multiplier.
-      """
+    Preparing to compute bases in batches.. 
+    The initial size of the batch is $batchsize. 
+    The batch scale factor is $batchsize_scaling."""
+
     if !tracer.ready_to_use
         @log level = -2 """
           The tracer is disabled until the shape of the basis is not determined via majority vote.
@@ -805,9 +803,6 @@ function _groebner_classic_modular(
     end
     resize!(indices_selection, k - 1)
     unique!(indices_selection)
-    @log level = -2 "" length(indices_selection) length(state.gb_coeffs_zz) sum(
-        map(length, state.gb_coeffs_zz)
-    )
 
     if crt_algorithm === :incremental
         partial_incremental_crt_reconstruct!(state, luckyprimes, indices_selection)
@@ -841,20 +836,21 @@ function _groebner_classic_modular(
             if crt_algorithm === :incremental
                 partial_incremental_crt_reconstruct!(state, luckyprimes, indices_selection)
             end
+            primes_used += 1
         end
         if crt_algorithm === :simultaneous
             partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
         end
 
-        @log level = -2 "Reconstructing coefficients to QQ"
-        @log level = -4 "Reconstructing coefficients from Z_$(luckyprimes.modulo * prime) to QQ"
+        @log level = -2 "Partially reconstructing coefficients to QQ"
+        @log level = -4 "Partially reconstructing coefficients from Z_$(luckyprimes.modulo * prime) to QQ"
         success_reconstruct = partial_rational_reconstruct!(
             state,
             luckyprimes,
             indices_selection,
             params.use_flint
         )
-        @log level = -2 "Reconstruction successfull: $success_reconstruct"
+        @log level = -2 "Partial reconstruction successfull: $success_reconstruct"
         @log level = -2 """
           Used $(length(luckyprimes.primes)) primes in total over $(iters + 1) iterations.
           The current batch size is $batchsize.
@@ -863,7 +859,7 @@ function _groebner_classic_modular(
         if !success_reconstruct
             @log level = -2 "Partial rational reconstruction failed"
             iters += 1
-            batchsize = get_next_batchsize(batchsize, batchsize_multiplier)
+            batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
             continue
         end
 
@@ -873,7 +869,7 @@ function _groebner_classic_modular(
             if !success_check
                 @log level = -2 "Heuristic check failed for partial reconstruction"
                 iters += 1
-                batchsize = get_next_batchsize(batchsize, batchsize_multiplier)
+                batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
                 continue
             end
         end
@@ -891,7 +887,7 @@ function _groebner_classic_modular(
         if !success_reconstruct
             @log level = -2 "Full reconstruction failed"
             iters += 1
-            batchsize = get_next_batchsize(batchsize, batchsize_multiplier)
+            batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
             continue
         end
 
@@ -907,7 +903,7 @@ function _groebner_classic_modular(
         )
 
         iters += 1
-        batchsize = get_next_batchsize(batchsize, batchsize_multiplier)
+        batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
     end
 
     @log level = -2 "Correctness check passed!"

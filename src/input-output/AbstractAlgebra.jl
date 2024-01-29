@@ -308,6 +308,7 @@ function extract_coeffs_raw_X!(
 
     # a hack for homogenized inputs
     if trace.homogenize
+        @assert false
         @assert length(basis.monoms[length(polys) + 1]) ==
                 length(basis.coeffs[length(polys) + 1]) ==
                 2
@@ -347,6 +348,9 @@ function _extract_coeffs_raw_X!(
         basis_cfs = basis.coeffs[i]
         poly_index = input_polys_perm[i]
         poly = coeffs_zp[poly_index]
+        if isempty(poly)
+            __throw_input_not_supported("Zero input polynomial", poly)
+        end
         if !(length(poly) == length(basis_cfs))
             __throw_input_not_supported(
                 "Potential coefficient cancellation in input polynomial at index $i on apply stage.",

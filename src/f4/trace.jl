@@ -254,26 +254,29 @@ function get_default_trace(wrapped_trace::WrappedTraceF4)
 end
 
 function get_trace!(wrapped_trace::WrappedTraceF4, polynomials::AbstractVector, kwargs)
+    ring = extract_ring(polynomials)
+    get_trace!(wrapped_trace, ring.ch, kwargs)
+end
+
+function get_trace!(wrapped_trace::WrappedTraceF4, char, kwargs)
     trace = get_default_trace(wrapped_trace)
 
     # Fast path for the case when there exists a suitable trace
     coefftype = trace.representation.coefftype
-    ring = extract_ring(polynomials)
     if (
-        trace.representation.using_wide_type_for_coeffs &&
-        less_than_half(ring.ch, coefftype)
-    ) || (!trace.representation.using_wide_type_for_coeffs && ring.ch <= typemax(coefftype))
+        trace.representation.using_wide_type_for_coeffs && less_than_half(char, coefftype)
+    ) || (!trace.representation.using_wide_type_for_coeffs && char <= typemax(coefftype))
         return trace
     end
 
     for id in keys(wrapped_trace.recorded_traces)
-        if id[1] <: Integer && ring.ch <= typemax(id[1])
+        if id[1] <: Integer && char <= typemax(id[1])
             return wrapped_trace.recorded_traces[id]
         end
     end
 
     # Handle the case when a wider coefficient type is required
-    new_coefftype = io_get_tight_unsigned_int_type(ring.ch)
+    new_coefftype = io_get_tight_unsigned_int_type(char)
     @log level = -2 "Creating a new trace with coefficient type $new_coefftype"
     new_trace = trace_copy(trace, new_coefftype, deepcopy=false)
     wrapped_trace.recorded_traces[(new_coefftype, 0)] = new_trace
