@@ -308,40 +308,51 @@ function crt_vec_full!(
     tables_ff::Vector{Vector{Vector{T}}},
     moduli::Vector{T}
 ) where {T <: Integer}
-    indices = [(j, i) for j in 1:length(table_zz) for i in 1:length(table_zz[j])]
-    crt_vec_partial!(table_zz, modulo, tables_ff, moduli, indices)
-end
+    # indices = [(j, i) for j in 1:length(table_zz) for i in 1:length(table_zz[j])]
+    # crt_vec_partial!(table_zz, modulo, tables_ff, moduli, indices)
+    @assert isbitstype(T)
+    @assert length(moduli) > 0
 
-###
-# A couple of inline tests
+    n = length(moduli)
+    # Base case
+    if n == 1
+        table_ff = tables_ff[1]
+        Base.GMP.MPZ.set_ui!(modulo, UInt64(moduli[1]))
+        @inbounds for i in 1:length(table_zz)
+            @assert length(table_zz[i]) == length(table_ff[i])
+            for j in 1:length(table_zz[i])
+                rem_ij = UInt64(table_ff[i][j])
+                @assert 0 <= rem_ij < moduli[1]
+                table_zz[i][j] = rem_ij
+            end
+        end
+        return nothing
+    end
 
-begin
-    table_zz = [[BigInt(0)], [BigInt(0), BigInt(0)]]
-    modulo = BigInt(0)
-    tables_ff = [[UInt64[2], UInt64[1, 3]], [UInt64[3], UInt64[4, 7]]]
-    moduli = UInt64[7, 11]
-    indices = [(1, 1), (2, 1)]
-    Groebner.crt_vec_partial!(table_zz, modulo, tables_ff, moduli, indices)
-    @assert table_zz[1][1] == BigInt(58)
-    @assert table_zz[2][1] == BigInt(15)
-    Groebner.crt_vec_full!(table_zz, modulo, tables_ff, moduli)
-    @assert table_zz[2][2] == BigInt(73)
+    # n > 1
+    # Precompute CRT multipliers
+    buf = BigInt()
+    n1, n2 = BigInt(), BigInt()
+    mults = Vector{BigInt}(undef, n)
+    for i in 1:length(mults)
+        mults[i] = BigInt(0)
+    end
+    crt_precompute!(modulo, n1, n2, mults, map(UInt64, moduli))
 
-    ###
-    table_zz = [[BigInt(0)]]
-    modulo = BigInt(0)
-    tables_ff = [[UInt64[2]]]
-    moduli = UInt64[7]
-    indices = [(1, 1)]
-    Groebner.crt_vec_partial!(table_zz, modulo, tables_ff, moduli, indices)
-    @assert table_zz[1][1] == BigInt(2)
+    rems = Vector{UInt64}(undef, n)
+    @inbounds for i in 1:length(table_zz)
+        for j in 1:length(table_zz[i])
+            for t in 1:n
+                @assert length(table_zz[i]) == length(tables_ff[t][i])
+                @assert 0 <= tables_ff[t][i][j] < moduli[t]
+                rems[t] = UInt64(tables_ff[t][i][j])
+            end
 
-    ###
-    table_zz = [[BigInt(0)]]
-    modulo = BigInt(0)
-    tables_ff = [[Int32[2]], [Int32[3]]]
-    moduli = Int32[11, 13]
-    indices = [(1, 1)]
-    Groebner.crt_vec_partial!(table_zz, modulo, tables_ff, moduli, indices)
-    @assert table_zz[1][1] == BigInt(68)
+            crt!(modulo, buf, n1, n2, rems, mults)
+
+            Base.GMP.MPZ.set!(table_zz[i][j], buf)
+        end
+    end
+
+    nothing
 end
