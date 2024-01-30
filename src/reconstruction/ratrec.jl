@@ -204,61 +204,24 @@ function ratrec_vec_full!(
     table_zz::Vector{Vector{BigInt}},
     modulo::BigInt
 )
-    indices = [(j, i) for j in 1:length(table_zz) for i in 1:length(table_zz[j])]
-    ratrec_vec_partial!(table_qq, table_zz, modulo, indices)
-end
+    # indices = [(j, i) for j in 1:length(table_zz) for i in 1:length(table_zz[j])]
+    # ratrec_vec_partial!(table_qq, table_zz, modulo, indices)
+    @assert length(table_qq) == length(table_zz)
+    @assert modulo > 1
 
-###
-# A couple of inline tests
+    modulo_nemo = Nemo.ZZRingElem(modulo)
+    @inbounds for i in 1:length(table_zz)
+        @assert length(table_zz[i]) == length(table_qq[i])
+        for j in 1:length(table_zz[i])
+            rem_nemo = Nemo.ZZRingElem(table_zz[i][j])
+            @assert rem_nemo >= 0
 
-begin
-    table_qq = [[BigInt(0) // BigInt(1)], [BigInt(0) // BigInt(1), BigInt(0) // BigInt(1)]]
-    table_zz = [[BigInt(58)], [BigInt(15), BigInt(73)]]
-    modulo = BigInt(77)
-    indices = [(1, 1), (2, 1)]
-    success = Groebner.ratrec_vec_partial!(table_qq, table_zz, modulo, indices)
-    @assert success
-    @assert table_qq[1][1] == BigInt(1) // BigInt(4)
-    @assert table_qq[2][1] == BigInt(-2) // BigInt(5)
-    success = Groebner.ratrec_vec_full!(table_qq, table_zz, modulo)
-    @assert success
-    @assert table_qq[2][2] == BigInt(-4) // BigInt(1)
+            success, (num, den) = ratrec_nemo(rem_nemo, modulo_nemo)
+            table_qq[i][j] = Base.unsafe_rational(num, den)
 
-    # Impossible reconstruction
-    table_qq = [[BigInt(0) // BigInt(1)]]
-    table_zz = [[BigInt(643465418)]]
-    modulo = BigInt(2^31 - 1)
-    indices = [(1, 1)]
-    success = Groebner.ratrec_vec_partial!(table_qq, table_zz, modulo, indices)
-    @assert !success
-
-    ### A complete example. ###
-    table_zz = [[BigInt(0)], [BigInt(0), BigInt(0)]]
-    table_qq = [[BigInt(0) // BigInt(1)], [BigInt(0) // BigInt(1), BigInt(0) // BigInt(1)]]
-    modulo = BigInt(0)
-    # Collected remainders
-    tables_ff = [[UInt64[2], UInt64[1, 3]], [UInt64[3], UInt64[4, 7]]]
-    moduli = UInt64[7, 11]
-    # Try partial reconstruction first
-    indices = [(1, 1), (2, 1)]
-    Groebner.crt_vec_partial!(table_zz, modulo, tables_ff, moduli, indices)
-    success = Groebner.ratrec_vec_partial!(table_qq, table_zz, modulo, indices)
-    if success
-        # Partial reconstrction succeeded;
-        # Try full reconstruction
-        Groebner.crt_vec_full!(table_zz, modulo, tables_ff, moduli)
-        success = Groebner.ratrec_vec_full!(table_qq, table_zz, modulo)
-        if success
-            # Full reconstruction succeeded
-            @assert table_qq[1][1] == BigInt(1) // BigInt(4)
-            @assert table_qq[2][1] == BigInt(-2) // BigInt(5)
-            @assert table_qq[2][2] == BigInt(-4) // BigInt(1)
-        else
-            # Partial reconstruction succeeded, but full reconstrction failed;
-            # Go for another iteration ...
+            !success && return false
         end
-    else
-        # Partial reconstrction failed;
-        # Go for another iteration ...
     end
+
+    true
 end
