@@ -114,8 +114,14 @@ end
 # Learn & Apply startegy
 
 function get_next_batchsize(primes_used, batchsize, batchsize_scaling)
+    # new_batchsize = max(batchsize + 1, round(Int, batchsize * batchsize_scaling))
+    # # round to the nearest number divisible by 4
+    # if new_batchsize > 2
+    #     new_batchsize::Int = (new_batchsize + 3) & (~3)
+    # end
+    # new_batchsize
     new_batchsize = if batchsize == 1
-        2
+        4
     else
         max(4, round(Int, primes_used * batchsize_scaling))
     end
@@ -216,7 +222,7 @@ function _groebner_learn_and_apply(
     # Continue to compute Groebner bases modulo different primes in batches. 
     primes_used = 1
     batchsize = 1
-    batchsize_scaling = 0.15
+    batchsize_scaling = 0.10
     @log level = -2 """
     Preparing to compute bases in batches.. 
     The initial size of the batch is $batchsize. 
@@ -499,8 +505,8 @@ function _groebner_learn_and_apply_threaded(
     # At this point, either the reconstruction or the correctness check failed.
     # Continue to compute Groebner bases modulo different primes in batches. 
     primes_used = 1
-    batchsize = (min(32, max(4, 2 * nthreads())) + 3) & (~3)
-    batchsize_scaling = 0.15
+    batchsize = (min(32, 4 * nthreads()) + 3) & (~3)
+    batchsize_scaling = 0.10
     @log level = -2 """
     Preparing to compute bases in batches.. 
     The initial size of the batch is $batchsize. 
@@ -771,7 +777,7 @@ function _groebner_classic_modular(
     # Continue to compute Groebner bases modulo different primes in batches. 
     primes_used = 1
     batchsize = 1
-    batchsize_scaling = 0.1
+    batchsize_scaling = 0.10
     @log level = -2 """
     Preparing to compute bases in batches.. 
     The initial size of the batch is $batchsize. 
