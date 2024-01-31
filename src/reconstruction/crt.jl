@@ -310,8 +310,8 @@ function crt_vec_full!(
 ) where {T <: Integer}
     # indices = [(j, i) for j in 1:length(table_zz) for i in 1:length(table_zz[j])]
     # crt_vec_partial!(table_zz, modulo, tables_ff, moduli, indices)
-    @assert isbitstype(T)
-    @assert length(moduli) > 0
+    @invariant isbitstype(T)
+    @invariant length(moduli) > 0
 
     n = length(moduli)
     # Base case
@@ -319,10 +319,10 @@ function crt_vec_full!(
         table_ff = tables_ff[1]
         Base.GMP.MPZ.set_ui!(modulo, UInt64(moduli[1]))
         @inbounds for i in 1:length(table_zz)
-            @assert length(table_zz[i]) == length(table_ff[i])
+            @invariant length(table_zz[i]) == length(table_ff[i])
             for j in 1:length(table_zz[i])
                 rem_ij = UInt64(table_ff[i][j])
-                @assert 0 <= rem_ij < moduli[1]
+                @invariant 0 <= rem_ij < moduli[1]
                 table_zz[i][j] = rem_ij
             end
         end
@@ -343,8 +343,8 @@ function crt_vec_full!(
     @inbounds for i in 1:length(table_zz)
         for j in 1:length(table_zz[i])
             for t in 1:n
-                @assert length(table_zz[i]) == length(tables_ff[t][i])
-                @assert 0 <= tables_ff[t][i][j] < moduli[t]
+                @invariant length(table_zz[i]) == length(tables_ff[t][i])
+                @invariant 0 <= tables_ff[t][i][j] < moduli[t]
                 rems[t] = UInt64(tables_ff[t][i][j])
             end
 
