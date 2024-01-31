@@ -206,15 +206,15 @@ function ratrec_vec_full!(
 )
     # indices = [(j, i) for j in 1:length(table_zz) for i in 1:length(table_zz[j])]
     # ratrec_vec_partial!(table_qq, table_zz, modulo, indices)
-    @assert length(table_qq) == length(table_zz)
-    @assert modulo > 1
+    @invariant length(table_qq) == length(table_zz)
+    @invariant modulo > 1
 
     modulo_nemo = Nemo.ZZRingElem(modulo)
     @inbounds for i in 1:length(table_zz)
-        @assert length(table_zz[i]) == length(table_qq[i])
+        @invariant length(table_zz[i]) == length(table_qq[i])
         for j in 1:length(table_zz[i])
             rem_nemo = Nemo.ZZRingElem(table_zz[i][j])
-            @assert rem_nemo >= 0
+            @invariant 0 <= rem_nemo < modulo
 
             success, (num, den) = ratrec_nemo(rem_nemo, modulo_nemo)
             table_qq[i][j] = Base.unsafe_rational(num, den)
