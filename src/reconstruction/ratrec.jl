@@ -214,7 +214,7 @@ function ratrec_vec_full!(
         @assert length(table_zz[i]) == length(table_qq[i])
         for j in 1:length(table_zz[i])
             rem_nemo = Nemo.ZZRingElem(table_zz[i][j])
-            @assert rem_nemo >= 0
+            @assert 0 <= rem_nemo < modulo
 
             success, (num, den) = ratrec_nemo(rem_nemo, modulo_nemo)
             table_qq[i][j] = Base.unsafe_rational(num, den)
