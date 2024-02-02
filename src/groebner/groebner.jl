@@ -283,6 +283,11 @@ function _groebner_learn_and_apply(
                 gb_coeffs_1, gb_coeffs_2, gb_coeffs_3, gb_coeffs_4 =
                     io_unpack_composite_coefficients(trace_4x.gb_basis.coeffs)
 
+                # TODO: This causes unnecessary conversions of arrays.
+                # Can use
+                #   Base.convert(::Type{Vector{T}}, y::Vector{T}) where {T} = (Vector{T}(y))
+                #   Base.convert(::Type{Vector{T}}, y::Vector{U}) where {T,U} = (display(stacktrace()); Vector{T}(y))
+                # to detect this systematically.
                 push!(state.gb_coeffs_ff_all, gb_coeffs_1)
                 push!(state.gb_coeffs_ff_all, gb_coeffs_2)
                 push!(state.gb_coeffs_ff_all, gb_coeffs_3)
