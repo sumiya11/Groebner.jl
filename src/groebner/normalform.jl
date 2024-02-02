@@ -45,7 +45,9 @@ function _normalform0(polynomials, to_be_reduced, kws::KeywordsHandler)
       Finalized polynomial rings:
       Basis: $ring
       To be reduced: $ring_"""
-    @invariant ring.nvars == ring_.nvars && ring.ch == ring_.ch && isequal(ring.ord, ring_.ord)
+    @invariant ring.nvars == ring_.nvars &&
+               ring.ch == ring_.ch &&
+               isequal(ring.ord, ring_.ord)
     monoms_reduced, coeffs_reduced = _normalform1(
         ring,
         monoms,
