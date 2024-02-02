@@ -335,6 +335,7 @@ function reduction_apply!(
         matrix_fill_column_to_monom_map!(matrix, symbol_ht)
         push!(trace.matrix_sorted_columns, matrix.column_to_monom)
     else
+        # TODO: see "TODO: (I)" in src/groebner/groebner.jl
         matrix.column_to_monom = trace.matrix_sorted_columns[f4_iteration]
         matrix_fill_column_to_monom_map!(trace, matrix, symbol_ht)
     end
@@ -499,6 +500,7 @@ function autoreduce_f4_apply!(
         matrix_fill_column_to_monom_map!(matrix, symbol_ht)
         push!(trace.matrix_sorted_columns, matrix.column_to_monom)
     else
+        # TODO: see "TODO: (I)" in src/groebner/groebner.jl
         matrix.column_to_monom = trace.matrix_sorted_columns[f4_iteration]
         matrix_fill_column_to_monom_map!(trace, matrix, symbol_ht)
     end

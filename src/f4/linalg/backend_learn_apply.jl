@@ -198,6 +198,7 @@ function linalg_learn_interreduce_matrix_pivots!(
         trace.matrix_upper_rows,
         (matrix.upper_to_coeffs[1:nup], matrix.upper_to_mult[1:nup])
     )
+    # TODO: see "TODO: (I)" in src/groebner/groebner.jl
     push!(trace.matrix_lower_rows, (Vector{Int}(), Vector{Int}()))
 
     true
