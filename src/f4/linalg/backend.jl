@@ -389,7 +389,7 @@ function linalg_prepare_matrix_pivots!(matrix::MacaulayMatrix)
         pivots[matrix.upper_rows[i][1]] = matrix.upper_rows[i]
     end
 
-    absolute_lower_to_coeffs = Vector{ColumnLabel}(undef, max(ncols, nlow))
+    absolute_lower_to_coeffs = Vector{Int}(undef, max(ncols, nlow))
     @inbounds for i in 1:nlow
         absolute_lower_to_coeffs[matrix.lower_rows[i][1]] = matrix.lower_to_coeffs[i]
     end

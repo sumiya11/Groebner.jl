@@ -207,5 +207,5 @@ function groebner_applyX!(
             dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
     end
 
-    flag, gb_coeffs
+    (flag, gb_coeffs)::Tuple{Bool, Vector{Vector{UInt32}}}
 end

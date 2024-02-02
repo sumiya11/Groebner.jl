@@ -61,7 +61,7 @@ end
 
 @testset "learn & apply, different field" begin
     # Some small tests and corner cases
-    K, K2, K3 = GF(5), GF(7), GF(11)
+    K, K2, K3 = GF(2^30+3), GF(2^31-1), GF(2^27-39)
     R, (x, y) = polynomial_ring(K, ["x", "y"], ordering=:degrevlex)
     R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], ordering=:degrevlex)
     R3, (x3, y3) = polynomial_ring(K3, ["x", "y"], ordering=:degrevlex)
