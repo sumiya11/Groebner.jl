@@ -54,7 +54,7 @@ end
 
 # Returns a vector of variable degrees that correspond to the monomial `pv`.
 function monom_to_vector!(tmp::Vector{M}, pv::ExponentVector{T}) where {M, T}
-    @assert length(tmp) == length(pv) - 1
+    @invariant length(tmp) == length(pv) - 1
     @inbounds tmp[1:end] = pv[2:end]
     tmp
 end

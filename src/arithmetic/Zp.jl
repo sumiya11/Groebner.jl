@@ -378,7 +378,7 @@ function select_arithmetic(
 }
     # We guarantee that the characteristic is representable by CoeffType. 
     # Maybe change the type of characteristic to CoeffType?
-    @assert characteristic <= typemax(CoeffType)
+    @invariant characteristic <= typemax(CoeffType)
 
     # The type that would act as an accumulator. Usually, this type should be a
     # bit wider than CoeffType

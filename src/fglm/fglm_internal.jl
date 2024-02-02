@@ -51,7 +51,7 @@ function enumerator_produce_next_monomials!(
 end
 
 function enumerator_next_monomial!(m::MonomialEnumerator)
-    @assert m.load > 0
+    @invariant m.load > 0
     monom = m.monoms[m.load]
     m.load -= 1
     monom

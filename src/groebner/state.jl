@@ -524,7 +524,7 @@ end
 
     prev_index = state.prev_index
     n = length(lucky.primes) - prev_index
-    @assert n > 0
+    @invariant n > 0
     if n == 1
         @log level = -2 "Since there is only 1 new modulo, using incremental CRT"
         partial_incremental_crt_reconstruct!(state, lucky, indices_selection)
@@ -533,7 +533,7 @@ end
 
     @log level = -2 "Using partial simultaneous CRT on range $(prev_index + 1)..$(length(lucky.primes))"
 
-    @assert n > 1
+    @invariant n > 1
     @inbounds for i in 1:length(indices_selection)
         Base.GMP.MPZ.set!(selected_prev_coeffs_zz[i], selected_coeffs_zz[i])
     end

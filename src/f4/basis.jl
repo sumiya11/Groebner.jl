@@ -551,7 +551,7 @@ function basis_mark_redundant_elements!(basis::Basis)
         end
     end
     basis.nnonredundant = j - 1
-    @assert basis.nprocessed == basis.nfilled
+    @invariant basis.nprocessed == basis.nfilled
     basis
 end
 
@@ -630,7 +630,7 @@ function insert_lcms_in_basis_hashtable!(
     ps = pairset.pairs
 
     mod = MonomHash(ht.size - 1)
-    @assert ispow2(mod + 1)
+    @invariant ispow2(mod + 1)
 
     m = ifirst
     l = 1

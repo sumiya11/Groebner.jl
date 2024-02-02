@@ -494,7 +494,7 @@ function _io_extract_coeffs_raw_batched!(
     end
 
     batch = map(polys -> filter(!iszero, polys), batch)
-    @assert length(unique(length, batch)) == 1
+    @invariant length(unique(length, batch)) == 1
 
     @log level = -2 """
     Permuting input terms: $permute_input_terms

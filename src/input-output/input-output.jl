@@ -320,10 +320,10 @@ function io_extract_polys(
 ) where {T}
     coeffs = extract_coeffs(representation, ring, polynomials)
     reversed_order, var_to_index, monoms = extract_monoms(representation, ring, polynomials)
-    @assert length(coeffs) == length(monoms)
+    @invariant length(coeffs) == length(monoms)
     if reversed_order
         for i in 1:length(coeffs)
-            @assert length(coeffs[i]) == length(monoms[i])
+            @invariant length(coeffs[i]) == length(monoms[i])
             reverse!(coeffs[i])
             reverse!(monoms[i])
         end
@@ -336,10 +336,10 @@ function io_remove_zeros_from_input!(
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{T}}
 ) where {M, T}
-    @assert length(monoms) == length(coeffs)
+    @invariant length(monoms) == length(coeffs)
     filter!(!iszero_coeffs, coeffs)
     filter!(!iszero_monoms, monoms)
-    @assert length(monoms) == length(coeffs)
+    @invariant length(monoms) == length(coeffs)
     iszerobasis = isempty(monoms)
     @log level = -7 "After removing zero polynomials from input:" monoms coeffs
     iszerobasis

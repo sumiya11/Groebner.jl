@@ -171,8 +171,8 @@ end
     @invariant basis_well_formed(:input_f4_learn!, ring, basis, hashtable)
     # @invariant pairset_well_formed(:input_f4!, pairset, basis, ht)
 
-    @assert basis == trace.gb_basis
-    @assert params.reduced === true
+    @invariant basis == trace.gb_basis
+    @invariant params.reduced
 
     @log level = -3 "Entering F4 Learn phase."
     basis_normalize!(basis, params.arithmetic)
@@ -545,7 +545,7 @@ end
     params::AlgorithmParameters
 ) where {C <: Coeff}
     @invariant basis_well_formed(:input_f4_apply!, ring, basis, trace.hashtable)
-    @assert params.reduced == true
+    @invariant params.reduced
 
     basis_normalize!(basis, params.arithmetic)
 

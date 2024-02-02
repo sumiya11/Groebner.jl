@@ -115,7 +115,7 @@ function hashtable_initialize(
     # exponents[1:load] covers all stored exponents
     # , also exponents[1] is [0, 0, ..., 0] by default
     load = 1
-    @assert initial_size > 1
+    @invariant initial_size > 1
     size = initial_size
 
     # exponents array starts from index offset,
@@ -127,7 +127,6 @@ function hashtable_initialize(
     # use_divmask = true
     dmbits = 8 * sizeof(DivisionMask)
     compress_divmask = nvars > dmbits
-    @assert dmbits == 32
     @log level = -5 "Using division masks: $use_divmask. Using $dmbits bits. Compressed: $compress_divmask"
     ndivbits = div(dmbits, nvars)
     # division mask stores at least 1 bit
@@ -194,7 +193,7 @@ end
 @timeit function hashtable_initialize_secondary(ht::MonomialHashtable{M}) where {M <: Monom}
     # 2^6 seems to be the best out of 2^5, 2^6, 2^7
     initial_size = 2^6
-    @assert initial_size > 1
+    @invariant initial_size > 1
 
     exponents = Vector{M}(undef, initial_size)
     hashdata = Vector{Hashvalue}(undef, initial_size)
@@ -241,7 +240,7 @@ function hashtable_reinitialize!(ht::MonomialHashtable{M}) where {M}
     @invariant !ht.frozen
 
     initial_size = 2^6
-    @assert initial_size > 1
+    @invariant initial_size > 1
 
     # Reinitialize counters
     ht.load = 1
@@ -458,12 +457,12 @@ function hashtable_fill_divmasks!(ht::MonomialHashtable)
         vars_per_bit = div(ht.nvars, 8 * sizeof(DivisionMask))
         vars_covered = vars_per_bit * 8 * sizeof(DivisionMask)
         if vars_covered != ht.nvars
-            @assert vars_covered < ht.nvars
+            @invariant vars_covered < ht.nvars
             vars_per_bit += 1
         end
-        @assert vars_per_bit > 1
-        @assert ht.ndivbits == 1
-        @assert ndivvars == length(ht.divmap)
+        @invariant vars_per_bit > 1
+        @invariant ht.ndivbits == 1
+        @invariant ndivvars == length(ht.divmap)
         ctr = 1
         @inbounds for i in 1:ndivvars
             if ht.nvars - ctr + 1 <= (ndivvars - i + 1) * (vars_per_bit - 1)
@@ -472,7 +471,7 @@ function hashtable_fill_divmasks!(ht::MonomialHashtable)
             ht.divmap[i] = vars_per_bit
             ctr += vars_per_bit
         end
-        @assert sum(ht.divmap) == ht.nvars
+        @invariant sum(ht.divmap) == ht.nvars
     end
 
     @inbounds for vidx in (ht.offset):(ht.load)

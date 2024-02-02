@@ -21,6 +21,6 @@ function select_arithmetic(
     _,
     _
 ) where {CoeffType1 <: CoeffQQ, CoeffType2 <: Coeff}
-    @assert iszero(characteristic)
+    @invariant iszero(characteristic)
     ArithmeticQQ()
 end

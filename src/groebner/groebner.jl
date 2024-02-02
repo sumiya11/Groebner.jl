@@ -556,7 +556,7 @@ function _groebner_learn_and_apply_threaded(
     while !correct_basis
         @log level = -2 "Iteration # $iters of modular Groebner, batchsize: $batchsize"
 
-        @assert iszero(batchsize % 4)
+        @invariant iszero(batchsize % 4)
 
         threadbuf_primes = map(_ -> Int32(next_lucky_prime!(luckyprimes)), 1:batchsize)
         for i in 1:nthreads()

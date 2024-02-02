@@ -158,7 +158,7 @@ end
             # lower part of matrix
             sparse_row_coeffs = matrix.some_coeffs[matrix.lower_to_coeffs[abs_column_idx]]
         end
-        @assert length(sparse_row_support) == length(sparse_row_coeffs)
+        @invariant length(sparse_row_support) == length(sparse_row_coeffs)
 
         # Load the row into a dense array
         linalg_load_sparse_row!(row, sparse_row_support, sparse_row_coeffs)

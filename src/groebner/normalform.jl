@@ -31,7 +31,7 @@ function _normalform0(polynomials, to_be_reduced, kws::KeywordsHandler)
         coeffs_to_be_reduced_nonzero,
         params
     )
-    @assert ring.nvars == ring_to_be_reduced.nvars && ring.ch == ring_to_be_reduced.ch
+    @invariant ring.nvars == ring_to_be_reduced.nvars && ring.ch == ring_to_be_reduced.ch
     if kws.check
         @log level = -2 "As `check=true` was provided, checking that the given input is indeed a Groebner basis"
         if !_isgroebner1(ring, monoms, coeffs, params)
@@ -45,7 +45,7 @@ function _normalform0(polynomials, to_be_reduced, kws::KeywordsHandler)
       Finalized polynomial rings:
       Basis: $ring
       To be reduced: $ring_"""
-    @assert ring.nvars == ring_.nvars && ring.ch == ring_.ch && isequal(ring.ord, ring_.ord)
+    @invariant ring.nvars == ring_.nvars && ring.ch == ring_.ch && isequal(ring.ord, ring_.ord)
     monoms_reduced, coeffs_reduced = _normalform1(
         ring,
         monoms,
