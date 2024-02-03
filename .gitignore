@@ -4,4 +4,5 @@ LocalPreferences.toml
 .vscode
 /.benchmarkci
 /benchmark/*.json
-/benchmark/**/results/**/benchmark_*[0-9]
+/benchmark/**/results/**/benchmark_[0-9]
+/benchmark/**/results/**/benchmark_1[0-9]
