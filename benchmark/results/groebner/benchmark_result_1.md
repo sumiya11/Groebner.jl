@@ -1,46 +1,49 @@
 ## Benchmark results
 
-2024-01-27T02:44:16.764
+2024-02-03T15:01:42.740
 
 Benchmarked backend: groebner
 
 Benchmark suite: Integers modulo 2^30 + 3
 
-- Workers: 16
-- Timeout: 60 s
+- Workers: 8
+- Timeout: 2000 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|chandra 11|0.76|
-|chandra 12|3.69|
-|chandra 13| - |
-|chandra 14| - |
+|chandra 11|0.57|
+|chandra 12|2.98|
+|chandra 13|17.25|
+|chandra 14|144.02|
 |cyclic 7|0.11|
-|cyclic 8|1.62|
-|cyclic 9| - |
+|cyclic 8|1.26|
+|cyclic 9|105.50|
+|cyclic 10| - |
 |dummy|0.00|
-|eco 11|0.33|
-|eco 12|2.61|
-|eco 13|17.10|
-|eco 14| - |
+|eco 11|0.37|
+|eco 12|2.14|
+|eco 13|10.47|
+|eco 14|98.45|
 |henrion 5|0.00|
 |henrion 6|0.03|
-|henrion 7|2.70|
-|henrion 8| - |
-|katsura 10|0.86|
-|katsura 11| - |
-|katsura 12| - |
-|katsura 13| - |
-|noon 7|0.18|
-|noon 8|1.55|
-|noon 9| - |
-|noon 10| - |
-|reimer 6|0.07|
-|reimer 7|0.80|
-|reimer 8| - |
+|henrion 7|2.24|
+|henrion 8|880.36|
+|katsura 10|0.77|
+|katsura 11|6.83|
+|katsura 12|48.55|
+|katsura 13|381.16|
+|noon 7|0.42|
+|noon 8|2.58|
+|noon 9|16.02|
+|noon 10|145.11|
+|noon 11| - |
+|reimer 6|0.10|
+|reimer 7|0.78|
+|reimer 8|23.66|
+|reimer 9| - |
 
 *Benchmarking environment:*
 

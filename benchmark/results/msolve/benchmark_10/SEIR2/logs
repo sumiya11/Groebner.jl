@@ -1,0 +1,26 @@
+┌ Info: 
+│   ARGS =
+│    5-element Vector{String}:
+│     "SEIR2"
+│     "1"
+│     "10"
+│     "false"
+└     "/home/demin/src/msolve-install/bin/msolve"
+┌ Info: 
+└   PROBLEM_NAME = "SEIR2"
+┌ Info: 
+└   NUM_RUNS = 1
+┌ Info: 
+└   BENCHMARK_SET = 10
+┌ Info: 
+└   VALIDATE = false
+┌ Info: 
+└   "$(#= /home/demin/Groebner.jl/benchmark/generate/msolve/run_in_msolve.jl:30 =# @__DIR__())" = "/home/demin/Groebner.jl/benchmark/generate/msolve"
+[ Info: Activating environment at /home/demin/Groebner.jl/benchmark/generate/msolve
+  Activating project at `~/Groebner.jl/benchmark/generate/msolve`
+  No Changes to `~/Groebner.jl/benchmark/generate/msolve/Project.toml`
+  No Changes to `~/Groebner.jl/benchmark/generate/msolve/Manifest.toml`
+[ Info: Processing SEIR2
+[ Info: Averaging over 1 runs.
+┌ Info: Computing GB..
+└   iter = 1

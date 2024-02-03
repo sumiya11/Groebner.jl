@@ -1,0 +1,108 @@
+┌ Info: 
+│   ARGS =
+│    5-element Vector{String}:
+│     "DAISY_ex3_with_weights"
+│     "1"
+│     "10"
+│     "false"
+└     "/usr/local/maple2021/bin/maple"
+┌ Info: 
+└   PROBLEM_NAME = "DAISY_ex3_with_weights"
+┌ Info: 
+└   NUM_RUNS = 1
+┌ Info: 
+└   BENCHMARK_SET = 10
+┌ Info: 
+└   VALIDATE = false
+┌ Info: 
+└   "$(#= /home/demin/Groebner.jl/benchmark/generate/maple/run_in_maple.jl:30 =# @__DIR__())" = "/home/demin/Groebner.jl/benchmark/generate/maple"
+[ Info: Activating environment at /home/demin/Groebner.jl/benchmark/generate/maple
+  Activating project at `~/Groebner.jl/benchmark/generate/maple`
+  No Changes to `~/Groebner.jl/benchmark/generate/maple/Project.toml`
+  No Changes to `~/Groebner.jl/benchmark/generate/maple/Manifest.toml`
+    |\^/|     Maple 2021 (X86 64 LINUX)
+._|\|   |/|_. Copyright (c) Maplesoft, a division of Waterloo Maple Inc. 2021
+ \  MAPLE  /  All rights reserved. Maple is a trademark of
+ <____ ____>  Waterloo Maple Inc.
+      |       Type ? for help.
+# DAISY_ex3_with_weights
+> with(Groebner):
+> with(PolynomialIdeals):
+> kernelopts(numcpus=1);
+                                       32
+
+
+> runtime := 2^1000:
+> for i from 1 by 1 to 1 do
+> 	J := [
+> 		-x₁_0 + 264661164931,
+> 		-x₂_0^2 + x₁_0*p₁_0 + x₁_1 - u₀_0,
+> 		-u₀_0 + 299182358047,
+> 		u₀_1 - 1,
+> 		-x₁_1 - 7577990784818416963533,
+> 		-x₂_1^2 + x₁_1*p₁_0 + x₁_2 - u₀_1,
+> 		-x₃_0^3 + x₂_0^2*p₄_0 + x₂_1^2 - x₁_0*p₃_0,
+> 		-x₁_2 + 216979111263565330902723664029004,
+> 		-x₂_2^2 + x₁_2*p₁_0 + x₁_3 - u₀_2,
+> 		u₀_2,
+> 		-x₃_1^3 + x₂_1^2*p₄_0 + x₂_2^2 - x₁_1*p₃_0,
+> 		x₃_0^3*p₇_0^4 - x₁_0*p₆_0^4 + x₃_1^3,
+> 		-x₁_3 - 6212719991385269866132551843003516907671958,
+> 		-x₂_3^2 + x₁_3*p₁_0 + x₁_4 - u₀_3,
+> 		-x₃_2^3 + x₂_2^2*p₄_0 + x₂_3^2 - x₁_2*p₃_0,
+> 		u₀_3,
+> 		x₃_1^3*p₇_0^4 - x₁_1*p₆_0^4 + x₃_2^3,
+> 		-x₁_4 + 177887587271420859499341543858590391528863901798327515,
+> 		-x₂_4^2 + x₁_4*p₁_0 + x₁_5 - u₀_4,
+> 		-x₃_3^3 + x₂_3^2*p₄_0 + x₂_4^2 - x₁_3*p₃_0,
+> 		u₀_4,
+> 		x₃_2^3*p₇_0^4 - x₁_2*p₆_0^4 + x₃_3^3,
+> 		-x₁_5 - 5093421330784806540548330239096670218621917781304458098087026644,
+> 		-x₂_5^2 + x₁_5*p₁_0 + x₁_6 - u₀_5,
+> 		u₀_5,
+> 		-x₃_4^3 + x₂_4^2*p₄_0 + x₂_5^2 - x₁_4*p₃_0,
+> 		x₃_3^3*p₇_0^4 - x₁_3*p₆_0^4 + x₃_4^3,
+> 		-x₁_6 + 145839251459859407238644900905454943761279409907862709078910928765133902412,
+> 		-x₂_6^2 + x₁_6*p₁_0 + x₁_7 - u₀_6,
+> 		-x₃_5^3 + x₂_5^2*p₄_0 + x₂_6^2 - x₁_5*p₃_0,
+> 		u₀_6,
+> 		x₃_4^3*p₇_0^4 - x₁_4*p₆_0^4 + x₃_5^3,
+> 		-x₁_7 - 4175872763643286633225693860681132168944111399412443194652583553730153809144061921949,
+> 		-x₂_7^2 + x₁_7*p₁_0 + x₁_8 - u₀_7,
+> 		u₀_7,
+> 		-x₃_6^3 + x₂_6^2*p₄_0 + x₂_7^2 - x₁_6*p₃_0,
+> 		x₃_5^3*p₇_0^4 - x₁_5*p₆_0^4 + x₃_6^3,
+> 		-x₁_8 + 119589798160799745445401328236650614501007300106826994123719857013850295505175551543822330122008,
+> 		-u₀_1 + 1,
+> 		-u₀_2,
+> 		-u₀_3,
+> 		-u₀_4,
+> 		-u₀_5,
+> 		-u₀_6,
+> 		-u₀_7,
+> 		z_aux - 1
+> 	]:
+> 	print("Running DAISY_ex3_with_weights");
+> 	st := time[real]():
+> 	G := Groebner[Basis](J, tdeg(x₁_8, x₁_7, x₂_7, u₀_7, x₁_6, x₂_6, x₃_6, u₀_6, x₁_5, x₂_5, x₃_5, u₀_5, x₁_4, x₂_4, x₃_4, u₀_4, x₁_3, x₂_3, x₃_3, u₀_3, x₁_2, x₂_2, x₃_2, u₀_2, x₁_1, x₂_1, x₃_1, u₀_1, x₁_0, x₂_0, x₃_0, u₀_0, z_aux, p₁_0, p₃_0, p₄_0, p₆_0, p₇_0), method=fgb, characteristic=0):
+> 	print("DAISY_ex3_with_weights: ", time[real]() - st):
+> 	runtime := min(runtime, time[real]() - st):
+> end do:
+                        "Running DAISY_ex3_with_weights"
+
+memory used=3.8MB, alloc=40.3MB, time=0.11
+                       "DAISY_ex3_with_weights: ", 0.050
+
+
+> timings_fn := "/home/demin/Groebner.jl/benchmark/results/maple/benchmark_10/DAISY_ex3_with_weights/timings":
+> FileTools[Text][WriteLine](timings_fn, "DAISY_ex3_with_weights");
+                                       23
+
+> FileTools[Text][WriteLine](timings_fn, cat("total_time, ", String(runtime))):
+
+> quit
+memory used=4.0MB, alloc=40.3MB, time=0.11
+[ Info: Processing DAISY_ex3_with_weights
+[ Info: Averaging over 1 runs.
+┌ Info: Computing GB..
+└   iter = 1

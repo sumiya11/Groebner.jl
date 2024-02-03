@@ -1,21 +1,21 @@
 ## Benchmark results
 
-2024-01-11T14:21:00.687
+2024-02-03T00:47:28.718
 
 Benchmarked backend: msolve
 
 Benchmark suite: SI
 
-- Workers: 4
-- Timeout: 500 s
+- Workers: 10
+- Timeout: 1000 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
-|-----|---|
-|SEAIJRC|45.93|
-|SIWR|5.08|
+|:----|---|
+|SEAIJRC|9.50|
+|SIWR|1.67|
 
 *Benchmarking environment:*
 
@@ -30,6 +30,7 @@ Versions of the dependencies:
 * PrecompileTools : 1.2.0
 * MultivariatePolynomials : 0.5.3
 * Combinatorics : 1.0.2
+* HostCPUFeatures : 0.1.16
 * AbstractAlgebra : 0.34.7
 * Nemo : 0.38.3
 * Atomix : 0.1.0

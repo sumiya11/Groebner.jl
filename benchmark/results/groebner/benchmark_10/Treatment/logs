@@ -1,0 +1,25 @@
+┌ Info: 
+│   ARGS =
+│    4-element Vector{String}:
+│     "Treatment"
+│     "1"
+│     "10"
+└     "false"
+┌ Info: 
+└   PROBLEM_NAME = "Treatment"
+┌ Info: 
+└   NUM_RUNS = 1
+┌ Info: 
+└   BENCHMARK_SET = 10
+┌ Info: 
+└   VALIDATE = false
+┌ Info: 
+└   "$(#= /home/demin/Groebner.jl/benchmark/generate/groebner/run_in_groebner.jl:31 =# @__DIR__())" = "/home/demin/Groebner.jl/benchmark/generate/groebner"
+[ Info: Activating environment at /home/demin/Groebner.jl/benchmark/generate/groebner
+  Activating project at `~/Groebner.jl/benchmark/generate/groebner`
+  No Changes to `~/Groebner.jl/benchmark/generate/groebner/Project.toml`
+  No Changes to `~/Groebner.jl/benchmark/generate/groebner/Manifest.toml`
+[ Info: Processing Treatment
+[ Info: Averaging over 1 runs.
+┌ Info: Computing GB..
+└   iter = 1

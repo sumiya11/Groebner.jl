@@ -2,12 +2,13 @@ include((@__DIR__) * "/../../layman_parser.jl")
 
 import Nemo
 
-function read_SEAIJRC()
+function read_SEAIJRC(; k=AbstractAlgebra.QQ)
     @info "Reading SEAIJRC"
     apath = (@__DIR__) * "/gbSEAIJRC"
     sys = open(apath, "r") do f
         parse_system_naive(read(f, String))
     end
+    sys = (sys[1], map(f -> AbstractAlgebra.map_coefficients(c -> k(BigInt(numerator(c))) // k(BigInt(denominator(c))), f), sys[2]))
     sys
     # polys = []
     # open(apath, "r") do f
@@ -29,12 +30,13 @@ function read_SEAIJRC()
     # map(R, polys)
 end
 
-function read_SIWR()
+function read_SIWR(; k=AbstractAlgebra.QQ)
     @info "Reading SIWR"
     apath = (@__DIR__) * "/gbSIWR"
     sys = open(apath, "r") do f
         parse_system_naive(read(f, String))
     end
+    sys = (sys[1], map(f -> AbstractAlgebra.map_coefficients(c -> k(BigInt(numerator(c))) // k(BigInt(denominator(c))), f), sys[2]))
     sys
     # polys = []
     # open(apath, "r") do f

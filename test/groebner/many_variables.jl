@@ -24,9 +24,13 @@ end
 @testset "handling many variables" begin
 
     # up to 63
+    test_n_variables(8)
+    test_n_variables(16)
+    test_n_variables(32)
     for n in 2:5:63
         test_n_variables(n)
     end
+
 
     # up to 127
     for n in [64, 100, 101, 127]

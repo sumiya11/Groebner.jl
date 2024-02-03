@@ -1,46 +1,49 @@
 ## Benchmark results
 
-2024-01-27T02:48:25.710
+2024-02-03T15:43:04.260
 
 Benchmarked backends: Any["groebner", "maple", "msolve"]
 
 Benchmark suite: Integers modulo 2^30 + 3
 
-- Workers: 16
-- Timeout: 60 s
+- Workers: 8
+- Timeout: 2000 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|groebner|maple|msolve|
 |:----|---|---|---|
-|chandra 11|0.76|0.97|0.96|
-|chandra 12|3.69|4.18|4.78|
-|chandra 13| - |25.59|30.71|
-|chandra 14| - | - | - |
-|cyclic 7|0.11|0.30|0.15|
-|cyclic 8|1.62|1.66|1.48|
-|cyclic 9| - | - | - |
-|dummy|0.00|0.18|0.01|
-|eco 11|0.33|0.54|0.58|
-|eco 12|2.61|2.35|3.92|
-|eco 13|17.10|20.51|23.67|
-|eco 14| - | - | - |
-|henrion 5|0.00|0.19|0.02|
-|henrion 6|0.03|0.25|0.08|
-|henrion 7|2.70|7.20|3.91|
-|henrion 8| - | - | - |
-|katsura 10|0.86|1.73|1.19|
-|katsura 11| - |15.16|10.34|
-|katsura 12| - | - | - |
-|katsura 13| - | - | - |
-|noon 7|0.18| - |0.23|
-|noon 8|1.55|2.09|2.05|
-|noon 9| - |19.33|25.39|
-|noon 10| - | - | - |
-|reimer 6|0.07|0.23| - |
-|reimer 7|0.80|1.75|1.32|
-|reimer 8| - |54.01|47.06|
+|chandra 11|0.57|0.76|0.90|
+|chandra 12|2.98|3.31|4.39|
+|chandra 13|17.25|16.10|22.34|
+|chandra 14|144.02|108.67|185.78|
+|cyclic 7|0.11|0.10|0.15|
+|cyclic 8|1.26|1.35|1.38|
+|cyclic 9|105.50|168.47|125.09|
+|cyclic 10| - | - | - |
+|dummy|0.00|0.01|0.01|
+|eco 11|0.37|0.39|0.54|
+|eco 12|2.14|2.66|2.98|
+|eco 13|10.47|15.26|18.39|
+|eco 14|98.45|122.54|147.85|
+|henrion 5|0.00|0.01|0.02|
+|henrion 6|0.03|0.05|0.08|
+|henrion 7|2.24|3.52|3.52|
+|henrion 8|880.36|1298.38|907.76|
+|katsura 10|0.77|0.95|1.18|
+|katsura 11|6.83|10.30|7.47|
+|katsura 12|48.55|79.35|70.53|
+|katsura 13|381.16|691.95|483.17|
+|noon 7|0.42|0.23|0.23|
+|noon 8|2.58|1.85|2.35|
+|noon 9|16.02|20.14|20.09|
+|noon 10|145.11|198.92|226.64|
+|noon 11| - | - | - |
+|reimer 6|0.10|0.06|0.07|
+|reimer 7|0.78|1.42|1.30|
+|reimer 8|23.66|43.09|42.89|
+|reimer 9| - | - | - |
 
 *Benchmarking environment:*
 

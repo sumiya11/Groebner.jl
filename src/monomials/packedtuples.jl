@@ -919,8 +919,8 @@ function monom_create_divmask(
 
     a4 = e.a4
     for i in 1:epc
-        ei = mod(a3, B)
-        a3 = a3 >> (sizeof(B) * 8)
+        ei = mod(a4, B)
+        a4 = a4 >> (sizeof(B) * 8)
         for j in 1:ndivbits
             @inbounds if ei >= divmap[ctr]
                 res |= o << (ctr - 1)
