@@ -1,12 +1,12 @@
 ## Benchmark results
 
-2024-02-03T01:36:18.501
+2024-02-04T07:47:33.883
 
 Benchmarked backend: msolve
 
 Benchmark suite: BIOMD, the rationals
 
-- Workers: 10
+- Workers: 8
 - Timeout: 500 s
 - Aggregated over: 1 runs
 
@@ -14,8 +14,8 @@ Benchmark suite: BIOMD, the rationals
 
 |Model|Total, s|
 |:----|---|
-|BIOMD0000000103|23.52|
-|BIOMD0000000123|302.50|
+|BIOMD0000000103|22.80|
+|BIOMD0000000123|362.60|
 
 *Benchmarking environment:*
 

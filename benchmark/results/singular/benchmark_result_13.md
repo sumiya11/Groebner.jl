@@ -1,21 +1,30 @@
 ## Benchmark results
 
-2024-02-04T07:32:41.251
+2024-02-04T04:00:53.343
 
-Benchmarked backend: groebner
+Benchmarked backend: singular
 
-Benchmark suite: BIOMD, the rationals
+Benchmark suite: Learn-apply, other
 
-- Workers: 8
-- Timeout: 500 s
+- Workers: 4
+- Timeout: 1000 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|BIOMD0000000103|24.97|
-|BIOMD0000000123|140.91|
+|BIOMD0000000103|19.58|
+|BIOMD0000000123|4.12|
+|Cholera| - |
+|HIV2|201.92|
+|NFkB| - |
+|Pharm_with_weights| - |
+|SEAIJRC| - |
+|SEIRP| - |
+|SIWR| - |
+|dummy|0.00|
+|ipp|0.08|
 
 *Benchmarking environment:*
 

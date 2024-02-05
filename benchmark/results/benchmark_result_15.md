@@ -1,21 +1,25 @@
 ## Benchmark results
 
-2024-02-04T07:32:41.251
+2024-02-04T08:22:40.306
 
-Benchmarked backend: groebner
+Benchmarked backends: Any["groebner", "maple", "msolve"]
 
-Benchmark suite: BIOMD, the rationals
+Benchmark suite: SIAN, 2^30+3
 
 - Workers: 8
-- Timeout: 500 s
+- Timeout: 1200 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
-|Model|Total, s|
-|:----|---|
-|BIOMD0000000103|24.97|
-|BIOMD0000000123|140.91|
+|Model|groebner|maple|msolve|
+|:----|---|---|---|
+|Cholera|84.95|99.09|162.29|
+|Goodwin (w.)|401.83|342.48|697.76|
+|HIV2|3.66|4.05|16.48|
+|NFkB (w.)|472.00|484.62| - |
+|SEIRP|217.98|251.86|340.03|
+|dummy|0.00|0.01|0.01|
 
 *Benchmarking environment:*
 

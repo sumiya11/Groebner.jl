@@ -1,6 +1,6 @@
 ## Benchmark results
 
-2024-02-03T15:26:28.713
+2024-02-04T04:25:36.935
 
 Benchmarked backend: maple
 
@@ -14,36 +14,33 @@ Benchmark suite: Integers modulo 2^30 + 3
 
 |Model|Total, s|
 |:----|---|
-|chandra 11|0.76|
-|chandra 12|3.31|
-|chandra 13|16.10|
-|chandra 14|108.67|
-|cyclic 7|0.10|
-|cyclic 8|1.35|
-|cyclic 9|168.47|
-|cyclic 10| - |
+|chandra 11|0.73|
+|chandra 12|3.35|
+|chandra 13|17.89|
+|cyclic 7|0.11|
+|cyclic 8|1.41|
+|cyclic 9|270.81|
 |dummy|0.01|
-|eco 11|0.39|
-|eco 12|2.66|
-|eco 13|15.26|
-|eco 14|122.54|
+|eco 11|0.36|
+|eco 12|2.23|
+|eco 13|14.31|
+|eco 14|140.89|
 |henrion 5|0.01|
 |henrion 6|0.05|
-|henrion 7|3.52|
-|henrion 8|1298.38|
-|katsura 10|0.95|
-|katsura 11|10.30|
-|katsura 12|79.35|
-|katsura 13|691.95|
-|noon 7|0.23|
-|noon 8|1.85|
-|noon 9|20.14|
-|noon 10|198.92|
-|noon 11| - |
+|henrion 7|3.92|
+|henrion 8|1190.94|
+|katsura 10|1.19|
+|katsura 11|10.79|
+|katsura 12|69.45|
+|katsura 13|922.76|
+|katsura 14| - |
+|noon 7|0.19|
+|noon 8|1.97|
+|noon 9|19.40|
+|noon 10|209.29|
 |reimer 6|0.06|
-|reimer 7|1.42|
-|reimer 8|43.09|
-|reimer 9| - |
+|reimer 7|1.47|
+|reimer 8|47.17|
 
 *Benchmarking environment:*
 

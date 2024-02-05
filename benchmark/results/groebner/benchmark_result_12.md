@@ -1,21 +1,22 @@
 ## Benchmark results
 
-2024-02-04T07:32:41.251
+2024-02-04T11:59:06.916
 
 Benchmarked backend: groebner
 
-Benchmark suite: BIOMD, the rationals
+Benchmark suite: 2^30+3, larger
 
-- Workers: 8
-- Timeout: 500 s
+- Workers: 2
+- Timeout: 6000 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|BIOMD0000000103|24.97|
-|BIOMD0000000123|140.91|
+|dummy|0.00|
+|eco 15|2115.58|
+|reimer 9|2050.32|
 
 *Benchmarking environment:*
 

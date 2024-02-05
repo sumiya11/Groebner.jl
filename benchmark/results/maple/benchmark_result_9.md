@@ -1,12 +1,12 @@
 ## Benchmark results
 
-2024-02-03T01:31:08.653
+2024-02-04T07:41:11.571
 
 Benchmarked backend: maple
 
 Benchmark suite: BIOMD, the rationals
 
-- Workers: 10
+- Workers: 8
 - Timeout: 500 s
 - Aggregated over: 1 runs
 
@@ -14,7 +14,7 @@ Benchmark suite: BIOMD, the rationals
 
 |Model|Total, s|
 |:----|---|
-|BIOMD0000000103|98.60|
+|BIOMD0000000103|168.87|
 |BIOMD0000000123| - |
 
 *Benchmarking environment:*

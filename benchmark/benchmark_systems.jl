@@ -41,7 +41,7 @@ function benchmark_set_1()
         ("katsura 11", Groebner.katsuran(11, k=ground_field)),
         ("katsura 12", Groebner.katsuran(12, k=ground_field)),
         ("katsura 13", Groebner.katsuran(13, k=ground_field)),
-        ("katsura 14", Groebner.katsuran(14, k=ground_field)),
+        # ("katsura 14", Groebner.katsuran(14, k=ground_field)),
         ("eco 11", Groebner.eco11(k=ground_field)),
         ("eco 12", Groebner.eco12(k=ground_field)),
         ("eco 13", Groebner.eco13(k=ground_field)),
@@ -49,7 +49,7 @@ function benchmark_set_1()
         ("noon 7", Groebner.noonn(7, k=ground_field)),
         ("noon 8", Groebner.noonn(8, k=ground_field)),
         ("noon 9", Groebner.noonn(9, k=ground_field)),
-        ("noon 10", Groebner.noonn(10, k=ground_field)),
+        # ("noon 10", Groebner.noonn(10, k=ground_field)),
         # ("noon 11", Groebner.noonn(11, k=ground_field)),
         ("henrion 5", Groebner.henrion5(k=ground_field)),
         ("henrion 6", Groebner.henrion6(k=ground_field)),
@@ -59,9 +59,9 @@ function benchmark_set_1()
         ("reimer 7", Groebner.reimern(7, k=ground_field)),
         ("reimer 8", Groebner.reimern(8, k=ground_field)),
         # ("reimer 9", Groebner.reimern(9, k=ground_field)),
-        ("chandra 11", Groebner.chandran(11, k=ground_field)),
-        ("chandra 12", Groebner.chandran(12, k=ground_field)),
-        ("chandra 13", Groebner.chandran(13, k=ground_field)),
+        # ("chandra 11", Groebner.chandran(11, k=ground_field)),
+        # ("chandra 12", Groebner.chandran(12, k=ground_field)),
+        # ("chandra 13", Groebner.chandran(13, k=ground_field)),
         # ("chandra 14", Groebner.chandran(14, k=ground_field))
     ]
 
@@ -239,17 +239,18 @@ function benchmark_set_11()
 end
 
 function benchmark_set_12()
-    ground_field = AbstractAlgebra.QQ
+    ground_field = AbstractAlgebra.GF(2^30+3)
     systems = [
         dummy_system("dummy", ground_field),
-        ("cyclic 9", Groebner.cyclicn(9, k=ground_field)),
-        ("katsura 12", Groebner.katsuran(12, k=ground_field)),
-        ("eco 14", Groebner.eco14(k=ground_field)),
-        ("noon 10", Groebner.noonn(10, k=ground_field)),
+        # ("cyclic 9", Groebner.cyclicn(9, k=ground_field)),
+        # ("katsura 12", Groebner.katsuran(12, k=ground_field)),
+        # ("eco 14", Groebner.eco14(k=ground_field)),
+        # ("noon 10", Groebner.noonn(10, k=ground_field)),
         ("reimer 9", Groebner.reimern(9, k=ground_field)),
+        ("eco 15", Groebner.eco15(k=ground_field)),
     ]
 
-    (name="The rationals, larger", field=ground_field, systems=systems)
+    (name="2^30+3, larger", field=ground_field, systems=systems)
 end
 
 function benchmark_set_13()
@@ -285,4 +286,19 @@ function benchmark_set_14()
     ]
 
     (name="Other, modulo 2^30 + 3", field=ground_field, systems=systems)
+end
+
+function benchmark_set_15()
+    ground_field = GF(2^30+3)
+    systems = [
+        dummy_system("dummy", ground_field),
+        ("Cholera", Cholera(k=ground_field)),
+        ("HIV2", HIV2(k=ground_field)),
+        ("NFkB (w.)", NFkB_with_weights(k=ground_field)),
+        # ("Pharm (w.)", Pharm_with_weights(k=ground_field)),
+        ("Goodwin (w.)", Goodwin_with_weights(k=ground_field)),
+        ("SEIRP", SEIRP(k=ground_field)),
+    ]
+
+    (name="SIAN, 2^30+3", field=ground_field, systems=systems)
 end

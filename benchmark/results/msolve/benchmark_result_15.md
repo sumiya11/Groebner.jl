@@ -1,46 +1,25 @@
 ## Benchmark results
 
-2024-02-04T04:59:12.529
+2024-02-04T08:22:38.800
 
 Benchmarked backend: msolve
 
-Benchmark suite: Integers modulo 2^30 + 3
+Benchmark suite: SIAN, 2^30+3
 
 - Workers: 8
-- Timeout: 2000 s
+- Timeout: 1200 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|chandra 11|0.85|
-|chandra 12|3.91|
-|chandra 13|20.44|
-|cyclic 7|0.14|
-|cyclic 8|1.38|
-|cyclic 9|108.98|
+|Cholera|162.29|
+|Goodwin (w.)|697.76|
+|HIV2|16.48|
+|NFkB (w.)| - |
+|SEIRP|340.03|
 |dummy|0.01|
-|eco 11|0.57|
-|eco 12|2.57|
-|eco 13|12.64|
-|eco 14|129.87|
-|henrion 5|0.02|
-|henrion 6|0.08|
-|henrion 7|3.04|
-|henrion 8|563.32|
-|katsura 10|1.07|
-|katsura 11|6.22|
-|katsura 12|39.49|
-|katsura 13|267.54|
-|katsura 14| - |
-|noon 7|0.25|
-|noon 8|1.73|
-|noon 9|16.28|
-|noon 10|170.61|
-|reimer 6|0.07|
-|reimer 7|1.12|
-|reimer 8|28.36|
 
 *Benchmarking environment:*
 

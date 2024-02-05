@@ -1,12 +1,12 @@
 ## Benchmark results
 
-2024-02-03T01:36:19.445
+2024-02-04T07:47:35.168
 
 Benchmarked backends: Any["groebner", "maple", "msolve"]
 
 Benchmark suite: BIOMD, the rationals
 
-- Workers: 10
+- Workers: 8
 - Timeout: 500 s
 - Aggregated over: 1 runs
 
@@ -14,8 +14,8 @@ Benchmark suite: BIOMD, the rationals
 
 |Model|groebner|maple|msolve|
 |:----|---|---|---|
-|BIOMD0000000103|21.12|98.60|23.52|
-|BIOMD0000000123|105.94| - |302.50|
+|BIOMD0000000103|24.97|168.87|22.80|
+|BIOMD0000000123|140.91| - |362.60|
 
 *Benchmarking environment:*
 
