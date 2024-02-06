@@ -31,7 +31,6 @@ end
         test_n_variables(n)
     end
 
-
     # up to 127
     for n in [64, 100, 101, 127]
         @info "Variables:" n
