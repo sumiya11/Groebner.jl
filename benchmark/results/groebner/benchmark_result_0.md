@@ -1,13 +1,13 @@
 ## Benchmark results
 
-2024-01-27T16:09:40.799
+2024-02-02T15:47:52.819
 
 Benchmarked backend: groebner
 
 Benchmark suite: dummy benchmark set
 
-- Workers: 4
-- Timeout: 1000 s
+- Workers: 10
+- Timeout: 2000 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
@@ -19,9 +19,9 @@ Benchmark suite: dummy benchmark set
 
 *Benchmarking environment:*
 
-* Total RAM (GiB): 15
-* Processor: Intel(R) Core(TM) i5-10400F CPU @ 2.90GHz
-* Julia version: 1.9.3
+* Total RAM (GiB): 188
+* Processor: Intel(R) Xeon(R) Gold 6130 CPU @ 2.10GHz
+* Julia version: 1.9.2
 
 Versions of the dependencies:
 

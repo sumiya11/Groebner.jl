@@ -159,6 +159,8 @@ function io_select_monomtype(char, npolys, nvars, ordering, kws, hint)
                 return PackedTuple2{UInt64, ExponentSize}
             elseif nvars < 3 * variables_per_word
                 return PackedTuple3{UInt64, ExponentSize}
+            elseif nvars < 4 * variables_per_word
+                return PackedTuple4{UInt64, ExponentSize}
             end
             @log level = 1 """
             Unable to use $(kws.monoms) monomial representation, too many
@@ -181,6 +183,8 @@ function io_select_monomtype(char, npolys, nvars, ordering, kws, hint)
                 return PackedTuple2{UInt64, ExponentSize}
             elseif nvars < 3 * variables_per_word
                 return PackedTuple3{UInt64, ExponentSize}
+            elseif nvars < 4 * variables_per_word
+                return PackedTuple4{UInt64, ExponentSize}
             end
         end
     end

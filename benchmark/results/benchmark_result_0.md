@@ -1,21 +1,21 @@
 ## Benchmark results
 
-2024-01-27T13:24:45.699
+2024-02-02T15:48:20.321
 
-Benchmarked backends: Any["groebner", "maple", "msolve", "openf4", "singular"]
+Benchmarked backends: Any["groebner", "maple", "msolve"]
 
 Benchmark suite: dummy benchmark set
 
-- Workers: 1
-- Timeout: 1800 s
-- Aggregated over: 3 runs
+- Workers: 10
+- Timeout: 2000 s
+- Aggregated over: 1 runs
 
 **All timings in seconds.**
 
-|Model|groebner|maple|msolve|openf4|singular|
-|:----|---|---|---|---|---|
-|dummy 1|0.00|0.22|0.01|0.01|0.00|
-|dummy 2|0.00|0.21|0.01|0.01|0.00|
+|Model|groebner|maple|msolve|
+|:----|---|---|---|
+|dummy 1|0.00|0.20|0.02|
+|dummy 2|0.00|0.19|0.01|
 
 *Benchmarking environment:*
 

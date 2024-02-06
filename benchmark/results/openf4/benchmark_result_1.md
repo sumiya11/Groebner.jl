@@ -1,49 +1,46 @@
 ## Benchmark results
 
-2024-01-22T22:02:08.214
+2024-02-04T04:43:53.759
 
 Benchmarked backend: openf4
 
 Benchmark suite: Integers modulo 2^30 + 3
 
-- Workers: 8
-- Timeout: 600 s
+- Workers: 4
+- Timeout: 1000 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|chandra 11|6.97|
-|chandra 12|59.87|
-|chandra 13| - |
-|chandra 14| - |
-|cyclic 7|0.45|
-|cyclic 8|11.57|
+|chandra 11|14.24|
+|chandra 12|53.13|
+|chandra 13|274.22|
+|cyclic 7|0.48|
+|cyclic 8|9.64|
 |cyclic 9| - |
-|cyclic 10| - |
-|dummy|0.02|
-|eco 11|3.38|
-|eco 12|16.38|
-|eco 13|116.34|
-|eco 14| - |
+|dummy|0.01|
+|eco 11|2.26|
+|eco 12|12.48|
+|eco 13|98.25|
+|eco 14|716.15|
 |henrion 5|0.04|
-|henrion 6|0.37|
-|henrion 7|34.52|
+|henrion 6|0.63|
+|henrion 7|41.39|
 |henrion 8| - |
-|katsura 10|6.69|
-|katsura 11|42.68|
-|katsura 12|440.49|
+|katsura 10|8.65|
+|katsura 11|61.22|
+|katsura 12|567.10|
 |katsura 13| - |
-|noon 7|2.26|
-|noon 8|18.99|
-|noon 9|431.45|
+|katsura 14| - |
+|noon 7|1.69|
+|noon 8|20.70|
+|noon 9|302.98|
 |noon 10| - |
-|noon 11| - |
-|reimer 6|0.39|
-|reimer 7|11.35|
-|reimer 8|379.67|
-|reimer 9| - |
+|reimer 6|0.32|
+|reimer 7|9.40|
+|reimer 8|373.76|
 
 *Benchmarking environment:*
 
@@ -58,6 +55,7 @@ Versions of the dependencies:
 * PrecompileTools : 1.2.0
 * MultivariatePolynomials : 0.5.3
 * Combinatorics : 1.0.2
+* HostCPUFeatures : 0.1.16
 * AbstractAlgebra : 0.34.7
 * Nemo : 0.38.3
 * Atomix : 0.1.0

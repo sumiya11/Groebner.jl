@@ -39,7 +39,7 @@ monom_copy(pv::ExponentVector) = Base.copy(pv)
 monom_construct_const_monom(::Type{ExponentVector{T}}, n::Integer) where {T} =
     zeros(T, n + 1)
 
-# Constructs a monomial with the variable degrees taken from the vector `ev`
+# Constructs a monomial from the vector `ev`
 function monom_construct_from_vector(::Type{ExponentVector{T}}, ev::Vector{U}) where {T, U}
     v = Vector{T}(undef, length(ev) + 1)
     s = zero(T)
@@ -52,7 +52,7 @@ function monom_construct_from_vector(::Type{ExponentVector{T}}, ev::Vector{U}) w
     ExponentVector{T}(v)
 end
 
-# Returns a vector of variable degrees that correspond to the monomial `pv`.
+# Writes a monomial to the given vector
 function monom_to_vector!(tmp::Vector{M}, pv::ExponentVector{T}) where {M, T}
     @invariant length(tmp) == length(pv) - 1
     @inbounds tmp[1:end] = pv[2:end]

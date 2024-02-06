@@ -215,7 +215,7 @@ function matrix_string_repr(matrix::MacaulayMatrix{T}) where {T}
         end
     end
     nnz = nnz_A + nnz_B + nnz_C + nnz_D
-    percent(x) = round(100 * x, digits=2)
+    percent(x) = round(100 * x, digits=5)
     s = """
     $(typeof(matrix))
     $m x $n with $nnz nnz ($(percent(nnz / (m * n)))%)

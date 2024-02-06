@@ -71,6 +71,9 @@ function reduction_learn!(
     matrix_fill_column_to_monom_map!(matrix, symbol_ht)
     linalg_main!(matrix, basis, params, trace, linalg=LinearAlgebra(:learn, :sparse))
     matrix_convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht)
+    pivot_indices =
+        map(i -> Int32(basis.monoms[basis.nprocessed + i][1]), 1:(matrix.npivots))
+    push!(trace.pivot_indices, pivot_indices)
 end
 
 function f4_reducegb_learn!(
@@ -343,7 +346,31 @@ function reduction_apply!(
     flag = linalg_main!(matrix, basis, params, trace, linalg=LinearAlgebra(:apply, :sparse))
     !flag && return false
 
+    rows = matrix.lower_rows
+    @inbounds for i in 1:(matrix.npivots)
+        colidx = rows[i][1]
+        # println(length(matrix.some_coeffs[matrix.lower_to_coeffs[colidx]]), " / ")
+        # print(length(matrix.lower_rows[i]), " ; ")
+        !(
+            length(matrix.some_coeffs[matrix.lower_to_coeffs[colidx]]) ==
+            length(matrix.lower_rows[i])
+        ) && return false
+    end
+    # println()
+
     matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
+
+    # Check that the leading terms were not reduced to zero accidentally
+    pivot_indices = trace.pivot_indices[f4_iteration]
+    # println(trace.pivot_indices[1])
+    # println("'''")
+    # println(pivot_indices)
+    # println(map(i -> basis.monoms[basis.nprocessed + i][1], 1:matrix.npivots))
+    @inbounds for i in 1:(matrix.npivots)
+        sgn = basis.monoms[basis.nprocessed + i][1]
+        # sgn = matrix.column_to_monom[matrix.lower_rows[i][1]]
+        sgn != pivot_indices[i] && return false
+    end
 
     true
 end
@@ -393,6 +420,11 @@ function f4_symbolic_preprocessing!(
         matrix.lower_to_coeffs[i] = poly_idx
     end
 
+    # println(map(i -> length(matrix.lower_rows[i]), 1:nlow))
+    # println(map(i -> length(basis.coeffs[matrix.lower_to_coeffs[i]]), 1:nlow))
+    @invariant map(i -> length(matrix.lower_rows[i]), 1:nlow) ==
+               map(i -> length(basis.coeffs[matrix.lower_to_coeffs[i]]), 1:nlow)
+
     for i in 1:nup
         mult_idx = upmults[i]
         poly_idx = uprows[i]
@@ -416,6 +448,11 @@ function f4_symbolic_preprocessing!(
 
         matrix.upper_to_coeffs[i] = poly_idx
     end
+
+    # println(map(i -> length(matrix.upper_rows[i]), 1:nup))
+    # println(map(i -> length(basis.coeffs[matrix.upper_to_coeffs[i]]), 1:nup))
+    @invariant map(i -> length(matrix.upper_rows[i]), 1:nup) ==
+               map(i -> length(basis.coeffs[matrix.upper_to_coeffs[i]]), 1:nup)
 
     i = MonomId(symbol_ht.offset)
     @inbounds while i <= symbol_ht.load

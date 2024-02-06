@@ -1,6 +1,11 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-# Systems used for testing and benchmarking
+# Systems used for testing and benchmarking.
+# Useful references:
+#   - https://github.com/JuliaHomotopyContinuation/PolynomialTestSystems.jl
+#   - https://gitlab.lip6.fr/eder/msolve-examples
+#   - https://web.archive.org/web/20201202185136/http://www.cecm.sfu.ca/%7Erpearcea/mgb.html
+#   - https://github.com/symbolicdata/data
 
 #! format: off
 # Syntax formatting is off in this file.
@@ -8,7 +13,9 @@
 # Göran Björck and Ralf Fröberg: `A faster way to count the solutions of
 # inhomogeneous systems of algebraic equations, with applications to cyclic
 # n-roots', in J. Symbolic Computation (1991) 12, pp 329–336.
-function cyclicn(n; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+#
+# source: https://github.com/JuliaHomotopyContinuation/PolynomialTestSystems.jl/blob/v0.1.6/src/systems.jl
+function cyclicn(n; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, z = np.polynomial_ring(k, ["z$i" for i in 1:n], ordering=ordering)
     [
         (
@@ -19,21 +26,24 @@ function cyclicn(n; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
 end
 
 # Not to be confused with cyclic-n !!
-function rootn(n; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function rootn(n; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, xs = np.polynomial_ring(k, ["x$i" for i in 1:n], ordering=ordering)
     ans = [sum(map(prod, Combinatorics.combinations(xs, i))) for i in 1:n]
     ans[end] -= (-1)^(n - 1)
     ans
 end
 
-function reimern(n; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+# source...?
+function reimern(n; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, xs = np.polynomial_ring(k, ["x$i" for i in 1:n], ordering=ordering)
     [sum((-1)^(i + 1) * 2 * xs[i]^j for i in 1:n) - 1 for j in 2:(n + 1)]
 end
 
 # S. Katsura, W. Fukuda, S. Inawashiro, N.M. Fujiki and R. Gebauer,
 #  Cell Biophysics, Vol 11, pages 309–319, 1987.
-function katsuran(n; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+#
+# source: https://github.com/JuliaHomotopyContinuation/PolynomialTestSystems.jl/blob/v0.1.6/src/systems.jl
+function katsuran(n; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, x = np.polynomial_ring(k, ["x$i" for i in 0:n], ordering=ordering)
     [
         (
@@ -44,7 +54,7 @@ function katsuran(n; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
     ]
 end
 
-function noonn(n; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function noonn(n; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     without(x, k) = x[1:end .!= k]
 
     R, xs = np.polynomial_ring(k, ["x$i" for i in 1:n], ordering=ordering)
@@ -58,7 +68,7 @@ end
 
 ###
 
-function hexapod(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function hexapod(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, (t1,t2,t3,a,b,c) = np.polynomial_ring(k, ["t1","t2","t3","a", "b", "c"], ordering=ordering)
     [1000000*a^2*t1^2+1000000*a^2*t2^2+1000000*a^2*t3^2+1000000*b^2*t1^2+1000000*b^2*t2^2+1000000*b^2*t3^2+1000000*c^2*t1^2+1000000*c^2*t2^2+1000000*c^2*t3^2-1065102000*a^2*t1-1566200000*a^2*t2+359610000*a^2*t3-4000000*a*b*t2-1574352000*a*b*t3+4000000*a*c*t1+273640000*a*c*t3-1065102000*b^2*t1+8152000*b^2*t2+355610000*b^2*t3-1574352000*b*c*t1-273640000*b*c*t2-791462000*c^2*t1-1566200000*c^2*t2+355610000*c^2*t3+740236705137*a^2-279943961360*a*b+47071636200*a*c+1574352000*a*t1-273640000*a*t2+126292488913*b^2+837307375312*b*c+4000000*b*t1-273640000*b*t3+612513941897*c^2+4000000*c*t2-1574352000*c*t3+1000000*t1^2+1000000*t2^2+1000000*t3^2-624135247952*a-50784764200*b-283060057360*c-791462000*t1+8152000*t2+359610000*t3+165673, 1000000*a^2*t1^2+1000000*a^2*t2^2+1000000*a^2*t3^2+1000000*b^2*t1^2+1000000*b^2*t2^2+1000000*b^2*t3^2+1000000*c^2*t1^2+1000000*c^2*t2^2+1000000*c^2*t3^2-1889130000*a^2*t1-139016000*a^2*t2+357608000*a^2*t3+550492000*a*b*t3+1500376000*a*c*t3-1889130000*b^2*t1-689508000*b^2*t2+357608000*b^2*t3+550492000*b*c*t1-1500376000*b*c*t2-388754000*c^2*t1-139016000*c^2*t2+357608000*c^2*t3+740396599024*a^2+98430171568*a*b+268273230304*a*c-550492000*a*t1-1500376000*a*t2+854420557476*b^2-2714848476*b*c-1500376000*b*t3-114024022072*c^2+550492000*c*t3+1000000*t1^2+1000000*t2^2+1000000*t3^2+624263610988*a-268273230304*b+98430171568*c-388754000*t1-689508000*t2+357608000*t3-63620, 4000000*a^2*t1^2+4000000*a^2*t2^2+4000000*a^2*t3^2+4000000*b^2*t1^2+4000000*b^2*t2^2+4000000*b^2*t3^2+4000000*c^2*t1^2+4000000*c^2*t2^2+4000000*c^2*t3^2-3295636000*a^2*t1+6825304000*a^2*t2+1438448000*a^2*t3-16000000*a*b*t2+4096192000*a*b*t3+16000000*a*c*t1+4906624000*a*c*t3-3295636000*b^2*t1+2729112000*b^2*t2+1422448000*b^2*t3+4096192000*b*c*t1-4906624000*b*c*t2+1610988000*c^2*t1+6825304000*c^2*t2+1422448000*c^2*t3+2962666483625*a^2+722869290752*a*b+875649162944*a*c-4096192000*a*t1-4906624000*a*t2+513760438633*b^2-3361285532000*b*c+16000000*b*t1-4906624000*b*t3+2443184693353*c^2+16000000*c*t2+4096192000*c*t3+4000000*t1^2+4000000*t2^2+4000000*t3^2-2498705324448*a-879018458944*b+741978122752*c+1610988000*t1+2729112000*t2+1438448000*t3+440361,4000000*a^2*t1^2+4000000*a^2*t2^2+4000000*a^2*t3^2+4000000*b^2*t1^2+4000000*b^2*t2^2+4000000*b^2*t3^2+4000000*c^2*t1^2+4000000*c^2*t2^2+4000000*c^2*t3^2+3295636000*a^2*t1+6824896000*a^2*t2+1430432000*a^2*t3+4094592000*a*b*t3-4906624000*a*c*t3+3295636000*b^2*t1+2730304000*b^2*t2+1430432000*b^2*t3+4094592000*b*c*t1+4906624000*b*c*t2-1610988000*c^2*t1+6824896000*c^2*t2+1430432000*c^2*t3+2961910911797*a^2+732129427968*a*b-877323997696*a*c-4094592000*a*t1+4906624000*a*t2+516620569397*b^2+3361357491776*b*c+4906624000*b*t3+2445290017525*c^2+4094592000*c*t3+4000000*t1^2+4000000*t2^2+4000000*t3^2+2499114213824*a+877323997696*b+732129427968*c-1610988000*t1+2730304000*t2+1430432000*t3-324875, 1000000*a^2*t1^2+1000000*a^2*t2^2+1000000*a^2*t3^2+1000000*b^2*t1^2+1000000*b^2*t2^2+1000000*b^2*t3^2+1000000*c^2*t1^2+1000000*c^2*t2^2+1000000*c^2*t3^2+1889602000*a^2*t1-138926000*a^2*t2+359604000*a^2*t3-4000000*a*b*t2+550036000*a*b*t3+4000000*a*c*t1-1500228000*a*c*t3+1889602000*b^2*t1-688962000*b^2*t2+355604000*b^2*t3+550036000*b*c*t1+1500228000*b*c*t2+389374000*c^2*t1-138926000*c^2*t2+355604000*c^2*t3+740903906549*a^2+99175424872*a*b-265964790856*a*c-550036000*a*t1+1500228000*a*t2+854030749541*b^2+2874521168*b*c+4000000*b*t1+1500228000*b*t3-114557203083*c^2+4000000*c*t2+550036000*c*t3+1000000*t1^2+1000000*t2^2+1000000*t3^2-623884900400*a+270522742856*b+97519648872*c+389374000*t1-688962000*t2+359604000*t3+55909, 250000*a^2*t1^2+250000*a^2*t2^2+250000*a^2*t3^2+250000*b^2*t1^2+250000*b^2*t2^2+250000*b^2*t3^2+250000*c^2*t1^2+250000*c^2*t2^2+250000*c^2*t3^2+266341000*a^2*t1-391502000*a^2*t2+89402000*a^2*t3-393620000*a*b*t3-68228000*a*c*t3+266341000*b^2*t1+2118000*b^2*t2+89402000*b^2*t3-393620000*b*c*t1+68228000*b*c*t2+198113000*c^2*t1-391502000*c^2*t2+89402000*c^2*t3+184958257568*a^2-70380830480*a*b-12199439312*a*c+393620000*a*t1+68228000*a*t2+31688927488*b^2-209385275032*b*c+68228000*b*t3+153269490056*c^2-393620000*c*t3+250000*t1^2+250000*t2^2+250000*t3^2+156251491928*a+12199439312*b-70380830480*c+198113000*t1+2118000*t2+89402000*t3+159976] 
 end
@@ -68,7 +78,7 @@ end
 
 # Source:
 # https://gitlab.lip6.fr/eder/msolve-examples/-/raw/master/zero-dimensional/henrion5.ms
-function henrion5(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function henrion5(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, (f1, f2, f3, f4, f5, t) =
         np.polynomial_ring(k, ["f1", "f2", "f3", "f4", "f5", "t"], ordering=ordering)
     [
@@ -83,7 +93,7 @@ end
 
 # Source:
 # https://gitlab.lip6.fr/eder/msolve-examples/-/raw/master/zero-dimensional/henrion6.ms
-function henrion6(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function henrion6(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, (f1, f2, f3, f4, f5, f6) =
         np.polynomial_ring(k, ["f1", "f2", "f3", "f4", "f5", "f6"], ordering=ordering)
     [
@@ -98,7 +108,7 @@ end
 
 # Source:
 # https://gitlab.lip6.fr/eder/msolve-examples/-/raw/master/zero-dimensional/henrion7.ms
-function henrion7(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function henrion7(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, (f1, f2, f3, f4, f5, f6, f7) = np.polynomial_ring(
         k,
         ["f1", "f2", "f3", "f4", "f5", "f6", "f7"],
@@ -117,7 +127,7 @@ end
 
 # Source:
 # https://gitlab.lip6.fr/eder/msolve-examples/-/raw/master/zero-dimensional/henrion8.ms
-function henrion8(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function henrion8(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, (f1, f2, f3, f4, f5, f6, f7, f8) = np.polynomial_ring(
         k,
         ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8"],
@@ -136,7 +146,7 @@ end
 
 # Source:
 # https://gitlab.lip6.fr/eder/msolve-examples/-/raw/master/zero-dimensional/henrion9.ms
-function henrion9(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function henrion9(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, (f1, f2, f3, f4, f5, f6, f7, f8, f9) = np.polynomial_ring(
         k,
         ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9"],
@@ -158,7 +168,7 @@ end
 ###
 # Eco
 
-function eco5(; np=AbstractAlgebra, k=np.GF(2^31 - 1), ordering=:lex)
+function eco5(; np=AbstractAlgebra, k=np.GF(2^31 - 1), ordering=:degrevlex)
     _, (x1, x2, x3, x4, x5) =
         np.polynomial_ring(k, ["x$i" for i in 1:5], ordering=ordering)
     [
@@ -170,7 +180,7 @@ function eco5(; np=AbstractAlgebra, k=np.GF(2^31 - 1), ordering=:lex)
     ]
 end
 
-function eco7(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function eco7(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, (x1, x2, x3, x4, x5, x6, x7) =
         np.polynomial_ring(k, ["x$i" for i in 1:7], ordering=ordering)
     [
@@ -184,36 +194,14 @@ function eco7(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
     ]
 end
 
-function eco10(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function eco10(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9) =
-        np.polynomial_ring(k, ["x$i" for i in 1:10], ordering=ordering)
+        np.polynomial_ring(k, ["x$i" for i in 0:9], ordering=ordering)
     [
-        x0 * x1 * x9 +
-        x1 * x2 * x9 +
-        x2 * x3 * x9 +
-        x3 * x4 * x9 +
-        x4 * x5 * x9 +
-        x5 * x6 * x9 +
-        x6 * x7 * x9 +
-        x7 * x8 * x9 +
-        x0 * x9 - 1,
-        x0 * x2 * x9 +
-        x1 * x3 * x9 +
-        x2 * x4 * x9 +
-        x3 * x5 * x9 +
-        x4 * x6 * x9 +
-        x5 * x7 * x9 +
-        x6 * x8 * x9 +
-        x1 * x9 - 2,
-        x0 * x3 * x9 +
-        x1 * x4 * x9 +
-        x2 * x5 * x9 +
-        x3 * x6 * x9 +
-        x4 * x7 * x9 +
-        x5 * x8 * x9 +
-        x2 * x9 - 3,
-        x0 * x4 * x9 + x1 * x5 * x9 + x2 * x6 * x9 + x3 * x7 * x9 + x4 * x8 * x9 + x3 * x9 -
-        4,
+        x0 * x1 * x9 + x1 * x2 * x9 + x2 * x3 * x9 + x3 * x4 * x9 + x4 * x5 * x9 + x5 * x6 * x9 + x6 * x7 * x9 + x7 * x8 * x9 + x0 * x9 - 1, 
+        x0 * x2 * x9 + x1 * x3 * x9 + x2 * x4 * x9 + x3 * x5 * x9 + x4 * x6 * x9 + x5 * x7 * x9 + x6 * x8 * x9 + x1 * x9 - 2, 
+        x0 * x3 * x9 + x1 * x4 * x9 + x2 * x5 * x9 + x3 * x6 * x9 + x4 * x7 * x9 + x5 * x8 * x9 + x2 * x9 - 3,
+        x0 * x4 * x9 + x1 * x5 * x9 + x2 * x6 * x9 + x3 * x7 * x9 + x4 * x8 * x9 + x3 * x9 - 4,
         x0 * x5 * x9 + x1 * x6 * x9 + x2 * x7 * x9 + x3 * x8 * x9 + x4 * x9 - 5,
         x0 * x6 * x9 + x1 * x7 * x9 + x2 * x8 * x9 + x5 * x9 - 6,
         x0 * x7 * x9 + x1 * x8 * x9 + x6 * x9 - 7,
@@ -223,50 +211,15 @@ function eco10(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
     ]
 end
 
-function eco11(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function eco11(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) =
-        np.polynomial_ring(k, ["x$i" for i in 1:11], ordering=ordering)
+        np.polynomial_ring(k, ["x$i" for i in 0:10], ordering=ordering)
     [
-        x0 * x1 * x10 +
-        x1 * x2 * x10 +
-        x2 * x3 * x10 +
-        x3 * x4 * x10 +
-        x4 * x5 * x10 +
-        x5 * x6 * x10 +
-        x6 * x7 * x10 +
-        x7 * x8 * x10 +
-        x8 * x9 * x10 +
-        x0 * x10 - 1,
-        x0 * x2 * x10 +
-        x1 * x3 * x10 +
-        x2 * x4 * x10 +
-        x3 * x5 * x10 +
-        x4 * x6 * x10 +
-        x5 * x7 * x10 +
-        x6 * x8 * x10 +
-        x7 * x9 * x10 +
-        x1 * x10 - 2,
-        x0 * x3 * x10 +
-        x1 * x4 * x10 +
-        x2 * x5 * x10 +
-        x3 * x6 * x10 +
-        x4 * x7 * x10 +
-        x5 * x8 * x10 +
-        x6 * x9 * x10 +
-        x2 * x10 - 3,
-        x0 * x4 * x10 +
-        x1 * x5 * x10 +
-        x2 * x6 * x10 +
-        x3 * x7 * x10 +
-        x4 * x8 * x10 +
-        x5 * x9 * x10 +
-        x3 * x10 - 4,
-        x0 * x5 * x10 +
-        x1 * x6 * x10 +
-        x2 * x7 * x10 +
-        x3 * x8 * x10 +
-        x4 * x9 * x10 +
-        x4 * x10 - 5,
+        x0 * x1 * x10 + x1 * x2 * x10 + x2 * x3 * x10 + x3 * x4 * x10 + x4 * x5 * x10 + x5 * x6 * x10 + x6 * x7 * x10 + x7 * x8 * x10 + x8 * x9 * x10 + x0 * x10 - 1, 
+        x0 * x2 * x10 + x1 * x3 * x10 + x2 * x4 * x10 + x3 * x5 * x10 + x4 * x6 * x10 + x5 * x7 * x10 + x6 * x8 * x10 + x7 * x9 * x10 + x1 * x10 - 2,
+        x0 * x3 * x10 + x1 * x4 * x10 + x2 * x5 * x10 + x3 * x6 * x10 + x4 * x7 * x10 + x5 * x8 * x10 + x6 * x9 * x10 + x2 * x10 - 3,
+        x0 * x4 * x10 + x1 * x5 * x10 + x2 * x6 * x10 + x3 * x7 * x10 + x4 * x8 * x10 + x5 * x9 * x10 + x3 * x10 - 4,
+        x0 * x5 * x10 + x1 * x6 * x10 + x2 * x7 * x10 + x3 * x8 * x10 + x4 * x9 * x10 + x4 * x10 - 5,
         x0 * x6 * x10 + x1 * x7 * x10 + x2 * x8 * x10 + x3 * x9 * x10 + x5 * x10 - 6,
         x0 * x7 * x10 + x1 * x8 * x10 + x2 * x9 * x10 + x6 * x10 - 7,
         x0 * x8 * x10 + x1 * x9 * x10 + x7 * x10 - 8,
@@ -276,61 +229,16 @@ function eco11(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
     ]
 end
 
-function eco12(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function eco12(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11) =
-        np.polynomial_ring(k, ["x$i" for i in 1:12], ordering=ordering)
-    [
-        x0 * x1 * x11 +
-        x1 * x2 * x11 +
-        x2 * x3 * x11 +
-        x3 * x4 * x11 +
-        x4 * x5 * x11 +
-        x5 * x6 * x11 +
-        x6 * x7 * x11 +
-        x7 * x8 * x11 +
-        x8 * x9 * x11 +
-        x9 * x10 * x11 +
-        x0 * x11 - 1,
-        x0 * x2 * x11 +
-        x1 * x3 * x11 +
-        x2 * x4 * x11 +
-        x3 * x5 * x11 +
-        x4 * x6 * x11 +
-        x5 * x7 * x11 +
-        x6 * x8 * x11 +
-        x7 * x9 * x11 +
-        x8 * x10 * x11 +
-        x1 * x11 - 2,
-        x0 * x3 * x11 +
-        x1 * x4 * x11 +
-        x2 * x5 * x11 +
-        x3 * x6 * x11 +
-        x4 * x7 * x11 +
-        x5 * x8 * x11 +
-        x6 * x9 * x11 +
-        x7 * x10 * x11 +
-        x2 * x11 - 3,
-        x0 * x4 * x11 +
-        x1 * x5 * x11 +
-        x2 * x6 * x11 +
-        x3 * x7 * x11 +
-        x4 * x8 * x11 +
-        x5 * x9 * x11 +
-        x6 * x10 * x11 +
-        x3 * x11 - 4,
-        x0 * x5 * x11 +
-        x1 * x6 * x11 +
-        x2 * x7 * x11 +
-        x3 * x8 * x11 +
-        x4 * x9 * x11 +
-        x5 * x10 * x11 +
-        x4 * x11 - 5,
-        x0 * x6 * x11 +
-        x1 * x7 * x11 +
-        x2 * x8 * x11 +
-        x3 * x9 * x11 +
-        x4 * x10 * x11 +
-        x5 * x11 - 6,
+        np.polynomial_ring(k, ["x$i" for i in 0:11], ordering=ordering)
+    [ 
+        x0 * x1 * x11 + x1 * x2 * x11 + x2 * x3 * x11 + x3 * x4 * x11 + x4 * x5 * x11 + x5 * x6 * x11 + x6 * x7 * x11 + x7 * x8 * x11 + x8 * x9 * x11 + x9 * x10 * x11 + x0 * x11 - 1,
+        x0 * x2 * x11 + x1 * x3 * x11 + x2 * x4 * x11 + x3 * x5 * x11 + x4 * x6 * x11 + x5 * x7 * x11 + x6 * x8 * x11 + x7 * x9 * x11 + x8 * x10 * x11 + x1 * x11 - 2,
+        x0 * x3 * x11 + x1 * x4 * x11 + x2 * x5 * x11 + x3 * x6 * x11 + x4 * x7 * x11 + x5 * x8 * x11 + x6 * x9 * x11 + x7 * x10 * x11 + x2 * x11 - 3,
+        x0 * x4 * x11 + x1 * x5 * x11 + x2 * x6 * x11 + x3 * x7 * x11 + x4 * x8 * x11 + x5 * x9 * x11 + x6 * x10 * x11 + x3 * x11 - 4,
+        x0 * x5 * x11 + x1 * x6 * x11 + x2 * x7 * x11 + x3 * x8 * x11 + x4 * x9 * x11 + x5 * x10 * x11 + x4 * x11 - 5, 
+        x0 * x6 * x11 + x1 * x7 * x11 + x2 * x8 * x11 + x3 * x9 * x11 + x4 * x10 * x11 + x5 * x11 - 6,
         x0 * x7 * x11 + x1 * x8 * x11 + x2 * x9 * x11 + x3 * x10 * x11 + x6 * x11 - 7,
         x0 * x8 * x11 + x1 * x9 * x11 + x2 * x10 * x11 + x7 * x11 - 8,
         x0 * x9 * x11 + x1 * x10 * x11 + x8 * x11 - 9,
@@ -340,73 +248,17 @@ function eco12(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
     ]
 end
 
-function eco13(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function eco13(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12) =
-        np.polynomial_ring(k, ["x$i" for i in 1:13], ordering=ordering)
+        np.polynomial_ring(k, ["x$i" for i in 0:12], ordering=ordering)
     [
-        x0 * x1 * x12 +
-        x1 * x2 * x12 +
-        x2 * x3 * x12 +
-        x3 * x4 * x12 +
-        x4 * x5 * x12 +
-        x5 * x6 * x12 +
-        x6 * x7 * x12 +
-        x7 * x8 * x12 +
-        x8 * x9 * x12 +
-        x9 * x10 * x12 +
-        x10 * x11 * x12 +
-        x0 * x12 - 1,
-        x0 * x2 * x12 +
-        x1 * x3 * x12 +
-        x2 * x4 * x12 +
-        x3 * x5 * x12 +
-        x4 * x6 * x12 +
-        x5 * x7 * x12 +
-        x6 * x8 * x12 +
-        x7 * x9 * x12 +
-        x8 * x10 * x12 +
-        x9 * x11 * x12 +
-        x1 * x12 - 2,
-        x0 * x3 * x12 +
-        x1 * x4 * x12 +
-        x2 * x5 * x12 +
-        x3 * x6 * x12 +
-        x4 * x7 * x12 +
-        x5 * x8 * x12 +
-        x6 * x9 * x12 +
-        x7 * x10 * x12 +
-        x8 * x11 * x12 +
-        x2 * x12 - 3,
-        x0 * x4 * x12 +
-        x1 * x5 * x12 +
-        x2 * x6 * x12 +
-        x3 * x7 * x12 +
-        x4 * x8 * x12 +
-        x5 * x9 * x12 +
-        x6 * x10 * x12 +
-        x7 * x11 * x12 +
-        x3 * x12 - 4,
-        x0 * x5 * x12 +
-        x1 * x6 * x12 +
-        x2 * x7 * x12 +
-        x3 * x8 * x12 +
-        x4 * x9 * x12 +
-        x5 * x10 * x12 +
-        x6 * x11 * x12 +
-        x4 * x12 - 5,
-        x0 * x6 * x12 +
-        x1 * x7 * x12 +
-        x2 * x8 * x12 +
-        x3 * x9 * x12 +
-        x4 * x10 * x12 +
-        x5 * x11 * x12 +
-        x5 * x12 - 6,
-        x0 * x7 * x12 +
-        x1 * x8 * x12 +
-        x2 * x9 * x12 +
-        x3 * x10 * x12 +
-        x4 * x11 * x12 +
-        x6 * x12 - 7,
+        x0 * x1 * x12 + x1 * x2 * x12 + x2 * x3 * x12 + x3 * x4 * x12 + x4 * x5 * x12 + x5 * x6 * x12 + x6 * x7 * x12 + x7 * x8 * x12 + x8 * x9 * x12 + x9 * x10 * x12 + x10 * x11 * x12 + x0 * x12 - 1,
+        x0 * x2 * x12 + x1 * x3 * x12 + x2 * x4 * x12 + x3 * x5 * x12 + x4 * x6 * x12 + x5 * x7 * x12 + x6 * x8 * x12 + x7 * x9 * x12 + x8 * x10 * x12 + x9 * x11 * x12 + x1 * x12 - 2,
+        x0 * x3 * x12 + x1 * x4 * x12 + x2 * x5 * x12 + x3 * x6 * x12 + x4 * x7 * x12 + x5 * x8 * x12 + x6 * x9 * x12 + x7 * x10 * x12 + x8 * x11 * x12 + x2 * x12 - 3,
+        x0 * x4 * x12 + x1 * x5 * x12 + x2 * x6 * x12 + x3 * x7 * x12 + x4 * x8 * x12 + x5 * x9 * x12 + x6 * x10 * x12 + x7 * x11 * x12 + x3 * x12 - 4,
+        x0 * x5 * x12 + x1 * x6 * x12 + x2 * x7 * x12 + x3 * x8 * x12 + x4 * x9 * x12 + x5 * x10 * x12 + x6 * x11 * x12 + x4 * x12 - 5,
+        x0 * x6 * x12 + x1 * x7 * x12 + x2 * x8 * x12 + x3 * x9 * x12 + x4 * x10 * x12 + x5 * x11 * x12 + x5 * x12 - 6,
+        x0 * x7 * x12 + x1 * x8 * x12 + x2 * x9 * x12 + x3 * x10 * x12 + x4 * x11 * x12 + x6 * x12 - 7,
         x0 * x8 * x12 + x1 * x9 * x12 + x2 * x10 * x12 + x3 * x11 * x12 + x7 * x12 - 8,
         x0 * x9 * x12 + x1 * x10 * x12 + x2 * x11 * x12 + x8 * x12 - 9,
         x0 * x10 * x12 + x1 * x11 * x12 + x9 * x12 - 10,
@@ -416,8 +268,8 @@ function eco13(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
     ]
 end
 
-function eco14(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
-    _, (x0,x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12, x13) = np.polynomial_ring(k, ["x$i" for i in 1:14], ordering=ordering)
+function eco14(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+    _, (x0,x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12, x13) = np.polynomial_ring(k, ["x$i" for i in 0:13], ordering=ordering)
     [
         x0*x1*x13+x1*x2*x13+x2*x3*x13+x3*x4*x13+x4*x5*x13+x5*x6*x13+x6*x7*x13+x7*x8*x13+x8*x9*x13+x9*x10*x13+x10*x11*x13+x11*x12*x13+x0*x13-1,
         x0*x2*x13+x1*x3*x13+x2*x4*x13+x3*x5*x13+x4*x6*x13+x5*x7*x13+x6*x8*x13+x7*x9*x13+x8*x10*x13+x9*x11*x13+x10*x12*x13+x1*x13-2,
@@ -436,8 +288,8 @@ function eco14(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
     ]
 end
 
-function eco15(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
-    _, (x0,x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13,x14) = np.polynomial_ring(k, ["x$i" for i in 1:15], ordering=ordering)
+function eco15(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+    _, (x0,x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13,x14) = np.polynomial_ring(k, ["x$i" for i in 0:14], ordering=ordering)
     [
         x0*x1*x14+x1*x2*x14+x2*x3*x14+x3*x4*x14+x4*x5*x14+x5*x6*x14+x6*x7*x14+x7*x8*x14+x8*x9*x14+x9*x10*x14+x10*x11*x14+x11*x12*x14+x12*x13*x14+x0*x14-1,
         x0*x2*x14+x1*x3*x14+x2*x4*x14+x3*x5*x14+x4*x6*x14+x5*x7*x14+x6*x8*x14+x7*x9*x14+x8*x10*x14+x9*x11*x14+x10*x12*x14+x11*x13*x14+x1*x14-2,
@@ -459,7 +311,7 @@ end
 
 # Source:
 # https://github.com/JuliaHomotopyContinuation/PolynomialTestSystems.jl/blob/master/src/rps10.jl
-function rps10(; tol=0, np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function rps10(; tol=0, np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, (g1, g2, g3, p1, p2, p3, q0, q1, q2, q3) = np.polynomial_ring(k, ["g1", "g2", "g3", "p1", "p2", "p3", "q0", "q1", "q2", "q3",], ordering=ordering)
     equations = [
     -rationalize(BigInt, 0.1279703687075118, tol=tol)*g1^2 - rationalize(BigInt, 0.48596123125526264, tol=tol)*g1*g2 + rationalize(BigInt, 0.30699556370717496, tol=tol)*g2^2 + rationalize(BigInt, 0.3778977698527674, tol=tol)*g1*g3 - rationalize(BigInt, 0.23404544076569642, tol=tol)*g2*g3 + rationalize(BigInt, 0.01563626178508072, tol=tol)*g3^2 + rationalize(BigInt, 0.327228678790004, tol=tol)*g1^2*p1 + rationalize(BigInt, 0.8426829275672494, tol=tol)*g1*g2*p1 + rationalize(BigInt, 0.6075645757034159, tol=tol)*g2^2*p1 - rationalize(BigInt, 1.1371405598667543, tol=tol)*g1*g3*p1 + rationalize(BigInt, 0.229293271620915, tol=tol)*g2*g3*p1 - rationalize(BigInt, 0.21948911177437957, tol=tol)*g3^2*p1 - rationalize(BigInt, 0.2075154964282774, tol=tol)*g1^2*p1^2 - rationalize(BigInt, 0.37702968479068544, tol=tol)*g1*g2*p1^2 - rationalize(BigInt, 0.16688906819159421, tol=tol)*g2^2*p1^2 + rationalize(BigInt, 0.7986954318323025, tol=tol)*g1*g3*p1^2 + rationalize(BigInt, 0.866826144775651, tol=tol)*g2*g3*p1^2 + rationalize(BigInt, 0.37440456461987165, tol=tol)*g3^2*p1^2 + rationalize(BigInt, 1.5614616440131446, tol=tol)*g1^2*p2 - rationalize(BigInt, 1.7388380675822595, tol=tol)*g1*g2*p2 + rationalize(BigInt, 0.06790915713070725, tol=tol)*g2^2*p2 - rationalize(BigInt, 0.4309121044684771, tol=tol)*g1*g3*p2 + rationalize(BigInt, 0.9086272006283425, tol=tol)*g2*g3*p2 - rationalize(BigInt, 0.2764931751394603, tol=tol)*g3^2*p2 - rationalize(BigInt, 1.8163349832174116, tol=tol)*g1^2*p1*p2 - rationalize(BigInt, 0.9167144057621401, tol=tol)*g1*g2*p1*p2 + rationalize(BigInt, 1.0203368504488892, tol=tol)*g2^2*p1*p2 - rationalize(BigInt, 0.23194646823111892, tol=tol)*g1*g3*p1*p2 + rationalize(BigInt, 0.539670777307627, tol=tol)*g2*g3*p1*p2 + rationalize(BigInt, 0.7959981327685224, tol=tol)*g3^2*p1*p2 + rationalize(BigInt, 0.08717268867521591, tol=tol)*g1^2*p2^2 + rationalize(BigInt, 0.9504154644263471, tol=tol)*g1*g2*p2^2 - rationalize(BigInt, 0.48206756571420756, tol=tol)*g2^2*p2^2 - rationalize(BigInt, 1.065062423127697, tol=tol)*g1*g3*p2^2 + rationalize(BigInt, 0.1209952909274163, tol=tol)*g2*g3*p2^2 + rationalize(BigInt, 0.3948948770389917, tol=tol)*g3^2*p2^2 + rationalize(BigInt, 0.289766299873838, tol=tol)*g1^2*p3 - rationalize(BigInt, 1.2778927965251532, tol=tol)*g1*g2*p3 + rationalize(BigInt, 0.9087896778886251, tol=tol)*g2^2*p3 - rationalize(BigInt, 0.5812612591154215, tol=tol)*g1*g3*p3 - rationalize(BigInt, 0.7595904624983555, tol=tol)*g2*g3*p3 + rationalize(BigInt, 0.5084892760496751, tol=tol)*g3^2*p3 - rationalize(BigInt, 0.3268802641947883, tol=tol)*g1^2*p1*p3 + rationalize(BigInt, 0.657630238424344, tol=tol)*g1*g2*p1*p3 + rationalize(BigInt, 1.1093919363972093, tol=tol)*g2^2*p1*p3 + rationalize(BigInt, 0.4551393419480071, tol=tol)*g1*g3*p1*p3 + rationalize(BigInt, 1.8553852513069364, tol=tol)*g2*g3*p1*p3 - rationalize(BigInt, 0.7825116722024211, tol=tol)*g3^2*p1*p3 + rationalize(BigInt, 0.5810469298461638, tol=tol)*g1^2*p2*p3 - rationalize(BigInt, 1.1557382363783264, tol=tol)*g1*g2*p2*p3 - rationalize(BigInt, 0.11367961187637783, tol=tol)*g2^2*p2*p3 + rationalize(BigInt, 1.7077140933509898, tol=tol)*g1*g3*p2*p3 - rationalize(BigInt, 0.36547942767108677, tol=tol)*g2*g3*p2*p3 - rationalize(BigInt, 0.4673673179697859, tol=tol)*g3^2*p2*p3 + rationalize(BigInt, 0.12034280775306151, tol=tol)*g1^2*p3^2 - rationalize(BigInt, 0.5733857796356615, tol=tol)*g1*g2*p3^2 + rationalize(BigInt, 0.6489566339058018, tol=tol)*g2^2*p3^2 + rationalize(BigInt, 0.2663669912953945, tol=tol)*g1*g3*p3^2 - rationalize(BigInt, 0.9878214357030672, tol=tol)*g2*g3*p3^2 - rationalize(BigInt, 0.7692994416588633, tol=tol)*g3^2*p3^2 - rationalize(BigInt, 0.19466145678474384, tol=tol)*q0 - rationalize(BigInt, 0.7153041427190404, tol=tol)*p1*q0 - rationalize(BigInt, 1.3528776260043915, tol=tol)*p2*q0 - rationalize(BigInt, 1.7070452538121381, tol=tol)*p3*q0 - rationalize(BigInt, 1.0516635822669562, tol=tol)*q1 + rationalize(BigInt, 1.2244185478631853, tol=tol)*p1*q1 - rationalize(BigInt, 0.05844567698552443, tol=tol)*p2*q1 - rationalize(BigInt, 0.37706149953585283, tol=tol)*p3*q1 + rationalize(BigInt, 0.580102254517945, tol=tol)*q2 + rationalize(BigInt, 1.2898860704586343, tol=tol)*p1*q2 - rationalize(BigInt, 0.6655948497180294, tol=tol)*p2*q2 + rationalize(BigInt, 0.697758704890495, tol=tol)*p3*q2 - rationalize(BigInt, 0.042921436747585445, tol=tol)*q3 + rationalize(BigInt, 0.5172073855756967, tol=tol)*p1*q3 + rationalize(BigInt, 0.6917094054122289, tol=tol)*p2*q3 - rationalize(BigInt, 1.4579672250860476, tol=tol)*p3*q3,
@@ -478,7 +330,7 @@ end
 
 # Source:
 # https://github.com/JuliaHomotopyContinuation/PolynomialTestSystems.jl/blob/master/src/systems.jl
-function chandran(n; tol=0, np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function chandran(n; tol=0, np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, H = np.polynomial_ring(k, ["H$i" for i in 1:n], ordering=ordering)
     c = rationalize(BigInt, 0.51234, tol=tol)
     c = k(numerator(c)) // k(denominator(c))
@@ -488,7 +340,7 @@ end
 
 # Source:
 # https://github.com/JuliaHomotopyContinuation/PolynomialTestSystems.jl/blob/master/src/systems.jl
-function boon(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function boon(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, (s1, g1, s2, g2, C1, C2) = np.polynomial_ring(k, ["s1", "g1", "s2", "g2", "C1", "C2"], ordering=ordering)
     eqs = [
         s1^2+g1^2 - 1,
@@ -503,8 +355,8 @@ end
 
 # Source:
 # https://github.com/JuliaHomotopyContinuation/PolynomialTestSystems.jl/blob/e04087ef08cf91ffafd88546c4d4ccb25613a3c7/src/systems.jl#L151
-function ipp(; tol=0, np=AbstractAlgebra, k=np.QQ, ordering=:lex)
-    R, (x1, x2, x3, x4, x5, x6, x7, x8) = np.polynomial_ring(k, ["x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8"], ordering=ordering)
+function ipp(; tol=0, np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+    R, (x1, x2, x3, x4, x5, x6, x7, x8) = np.polynomial_ring(np.QQ, ["x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8"], ordering=ordering)
     sys = [
         x1^2+x2^2-1,
         x3^2+x4^2-1,
@@ -515,12 +367,126 @@ function ipp(; tol=0, np=AbstractAlgebra, k=np.QQ, ordering=:lex)
         (-rationalize(BigInt, 6.3555007E-01, tol=tol)*x1*x3-rationalize(BigInt, 1.1571992E-01, tol=tol)*x1*x4-rationalize(BigInt, 6.6640448E-01, tol=tol) *x2*x3) + (rationalize(BigInt, 1.1036211E-01, tol=tol)*x2*x4+ rationalize(BigInt, 2.9070203E-01, tol=tol)*x5*x7+ rationalize(BigInt, 1.2587767E+00, tol=tol)*x5*x8)- (rationalize(BigInt, 6.2938836E-01, tol=tol)*x6*x7+ rationalize(BigInt, 5.8140406E-01, tol=tol)*x6*x8+ rationalize(BigInt, 1.9594662E-01, tol=tol)*x1)- (rationalize(BigInt, 1.2280342E+00, tol=tol)*x2-rationalize(BigInt, 7.9034221E-02, tol=tol)*x4+ rationalize(BigInt, 2.6387877E-02, tol=tol)*x5)- rationalize(BigInt, 5.713143E-02, tol=tol)*x6-rationalize(BigInt, 1.1628081E+00, tol=tol)*x7+rationalize(BigInt, 1.2587767E+00, tol=tol)*x8+ rationalize(BigInt, 2.162575E+00, tol=tol),
         (rationalize(BigInt, 1.4894773E+00, tol=tol)*x1*x3+ rationalize(BigInt, 2.3062341E-01, tol=tol)*x1*x4+ rationalize(BigInt, 1.3281073E+00, tol=tol)*x2*x3)-(rationalize(BigInt, 2.5864503E-01, tol=tol)*x2*x4+ rationalize(BigInt, 1.165172E+00, tol=tol)*x5*x7-rationalize(BigInt, 2.6908494E-01, tol=tol)*x5*x8)+ (rationalize(BigInt, 5.3816987E-01, tol=tol)*x6*x7+ rationalize(BigInt, 5.8258598E-01, tol=tol)*x6*x8-rationalize(BigInt, 2.0816985E-01, tol=tol)*x1)+(rationalize(BigInt, 2.686832E+00, tol=tol)*x2-rationalize(BigInt, 6.9910317E-01, tol=tol)*x3+ rationalize(BigInt, 3.5744413E-01, tol=tol)*x4)+ rationalize(BigInt, 1.2499117E+00, tol=tol)*x5+ rationalize(BigInt, 1.467736E+00, tol=tol)*x6+ rationalize(BigInt, 1.165172E+00, tol=tol)*x7+ rationalize(BigInt, 1.10763397E+00, tol=tol)*x8-rationalize(BigInt, 6.9686809E-01, tol=tol)
     ]
+    sys = map(f -> AbstractAlgebra.map_coefficients(c -> k(BigInt(numerator(c))) // k(BigInt(denominator(c))), f), sys)
+    sys
+end
+
+###
+
+# Source: https://web.archive.org/web/20201202185136/http://www.cecm.sfu.ca/%7Erpearcea/mgb.html
+function yang1(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+    R, (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48) = np.polynomial_ring(
+        k, [:x1, :x2, :x3, :x4, :x5, :x6, :x7, :x8, :x9, :x10, :x11, :x12, :x13, :x14, :x15, :x16, :x17, :x18, :x19, :x20, :x21, :x22, :x23, :x24, :x25, :x26, :x27, :x28, :x29, :x30, :x31, :x32, :x33, :x34, :x35, :x36, :x37, :x38, :x39, :x40, :x41, :x42, :x43, :x44, :x45, :x46, :x47, :x48], ordering=ordering)
+    sys = [
+        x21*x45+x22*x46+x23*x47+x24*x48, x17*x45+x18*x46+x19*x47+x20*x48, x13*x45+x14*x46+x15*x47+x16*x48, x10*x46+x11*x47+x12*x48+x45*x9, x45*x5+x46*x6+x47*x7+x48*x8, x1*x45+x2*x46+x3*x47+x4*x48, x21*x41+x22*x42+x23*x43+x24*x44,
+        x17*x41+x18*x42+x19*x43+x20*x44, x13*x41+x14*x42+x15*x43+x16*x44, x10*x42+x11*x43+x12*x44+x41*x9, x41*x5+x42*x6+x43*x7+x44*x8, x1*x41+x2*x42+x3*x43+x4*x44, x21*x37+x22*x38+x23*x39+x24*x40, x17*x37+x18*x38+x19*x39+x20*x40,
+        x13*x37+x14*x38+x15*x39+x16*x40, x10*x38+x11*x39+x12*x40+x37*x9, x37*x5+x38*x6+x39*x7+x40*x8, x1*x37+x2*x38+x3*x39+x4*x40, x21*x33+x22*x34+x23*x35+x24*x36, x17*x33+x18*x34+x19*x35+x20*x36, x13*x33+x14*x34+x15*x35+x16*x36,
+        x10*x34+x11*x35+x12*x36+x33*x9, x33*x5+x34*x6+x35*x7+x36*x8, x1*x33+x2*x34+x3*x35+x36*x4, x21*x29+x22*x30+x23*x31+x24*x32, x17*x29+x18*x30+x19*x31+x20*x32, x13*x29+x14*x30+x15*x31+x16*x32, x10*x30+x11*x31+x12*x32+x29*x9,
+        x29*x5+x30*x6+x31*x7+x32*x8, x1*x29+x2*x30+x3*x31+x32*x4, x21*x25+x22*x26+x23*x27+x24*x28, x17*x25+x18*x26+x19*x27+x20*x28, x13*x25+x14*x26+x15*x27+x16*x28, x10*x26+x11*x27+x12*x28+x25*x9, x25*x5+x26*x6+x27*x7+x28*x8, x1*x25+x2*x26+x27*x3+x28*x4,
+        x33*x38*x43*x48-x33*x38*x44*x47-x33*x39*x42*x48+x33*x39*x44*x46+x33*x40*x42*x47-x33*x40*x43*x46-x34*x37*x43*x48+x34*x37*x44*x47+x34*x39*x41*x48-x34*x39*x44*x45-x34*x40*x41*x47+x34*x40*x43*x45+x35*x37*x42*x48-x35*x37*x44*x46-x35*x38*x41*x48+x35*x38*x44*x45+x35*x40*x41*x46-x35*x40*x42*x45-x36*x37*x42*x47+x36*x37*x43*x46+x36*x38*x41*x47-x36*x38*x43*x45-x36*x39*x41*x46+x36*x39*x42*x45,
+        x29*x38*x43*x48-x29*x38*x44*x47-x29*x39*x42*x48+x29*x39*x44*x46+x29*x40*x42*x47-x29*x40*x43*x46-x30*x37*x43*x48+x30*x37*x44*x47+x30*x39*x41*x48-x30*x39*x44*x45-x30*x40*x41*x47+x30*x40*x43*x45+x31*x37*x42*x48-x31*x37*x44*x46-x31*x38*x41*x48+x31*x38*x44*x45+x31*x40*x41*x46-x31*x40*x42*x45-x32*x37*x42*x47+x32*x37*x43*x46+x32*x38*x41*x47-x32*x38*x43*x45-x32*x39*x41*x46+x32*x39*x42*x45,
+        x25*x38*x43*x48-x25*x38*x44*x47-x25*x39*x42*x48+x25*x39*x44*x46+x25*x40*x42*x47-x25*x40*x43*x46-x26*x37*x43*x48+x26*x37*x44*x47+x26*x39*x41*x48-x26*x39*x44*x45-x26*x40*x41*x47+x26*x40*x43*x45+x27*x37*x42*x48-x27*x37*x44*x46-x27*x38*x41*x48+x27*x38*x44*x45+x27*x40*x41*x46-x27*x40*x42*x45-x28*x37*x42*x47+x28*x37*x43*x46+x28*x38*x41*x47-x28*x38*x43*x45-x28*x39*x41*x46+x28*x39*x42*x45,
+        x29*x34*x43*x48-x29*x34*x44*x47-x29*x35*x42*x48+x29*x35*x44*x46+x29*x36*x42*x47-x29*x36*x43*x46-x30*x33*x43*x48+x30*x33*x44*x47+x30*x35*x41*x48-x30*x35*x44*x45-x30*x36*x41*x47+x30*x36*x43*x45+x31*x33*x42*x48-x31*x33*x44*x46-x31*x34*x41*x48+x31*x34*x44*x45+x31*x36*x41*x46-x31*x36*x42*x45-x32*x33*x42*x47+x32*x33*x43*x46+x32*x34*x41*x47-x32*x34*x43*x45-x32*x35*x41*x46+x32*x35*x42*x45,
+        x25*x34*x43*x48-x25*x34*x44*x47-x25*x35*x42*x48+x25*x35*x44*x46+x25*x36*x42*x47-x25*x36*x43*x46-x26*x33*x43*x48+x26*x33*x44*x47+x26*x35*x41*x48-x26*x35*x44*x45-x26*x36*x41*x47+x26*x36*x43*x45+x27*x33*x42*x48-x27*x33*x44*x46-x27*x34*x41*x48+x27*x34*x44*x45+x27*x36*x41*x46-x27*x36*x42*x45-x28*x33*x42*x47+x28*x33*x43*x46+x28*x34*x41*x47-x28*x34*x43*x45-x28*x35*x41*x46+x28*x35*x42*x45,
+        x25*x30*x43*x48-x25*x30*x44*x47-x25*x31*x42*x48+x25*x31*x44*x46+x25*x32*x42*x47-x25*x32*x43*x46-x26*x29*x43*x48+x26*x29*x44*x47+x26*x31*x41*x48-x26*x31*x44*x45-x26*x32*x41*x47+x26*x32*x43*x45+x27*x29*x42*x48-x27*x29*x44*x46-x27*x30*x41*x48+x27*x30*x44*x45+x27*x32*x41*x46-x27*x32*x42*x45-x28*x29*x42*x47+x28*x29*x43*x46+x28*x30*x41*x47-x28*x30*x43*x45-x28*x31*x41*x46+x28*x31*x42*x45,
+        x29*x34*x39*x48-x29*x34*x40*x47-x29*x35*x38*x48+x29*x35*x40*x46+x29*x36*x38*x47-x29*x36*x39*x46-x30*x33*x39*x48+x30*x33*x40*x47+x30*x35*x37*x48-x30*x35*x40*x45-x30*x36*x37*x47+x30*x36*x39*x45+x31*x33*x38*x48-x31*x33*x40*x46-x31*x34*x37*x48+x31*x34*x40*x45+x31*x36*x37*x46-x31*x36*x38*x45-x32*x33*x38*x47+x32*x33*x39*x46+x32*x34*x37*x47-x32*x34*x39*x45-x32*x35*x37*x46+x32*x35*x38*x45,
+        x25*x34*x39*x48-x25*x34*x40*x47-x25*x35*x38*x48+x25*x35*x40*x46+x25*x36*x38*x47-x25*x36*x39*x46-x26*x33*x39*x48+x26*x33*x40*x47+x26*x35*x37*x48-x26*x35*x40*x45-x26*x36*x37*x47+x26*x36*x39*x45+x27*x33*x38*x48-x27*x33*x40*x46-x27*x34*x37*x48+x27*x34*x40*x45+x27*x36*x37*x46-x27*x36*x38*x45-x28*x33*x38*x47+x28*x33*x39*x46+x28*x34*x37*x47-x28*x34*x39*x45-x28*x35*x37*x46+x28*x35*x38*x45,
+        x25*x30*x39*x48-x25*x30*x40*x47-x25*x31*x38*x48+x25*x31*x40*x46+x25*x32*x38*x47-x25*x32*x39*x46-x26*x29*x39*x48+x26*x29*x40*x47+x26*x31*x37*x48-x26*x31*x40*x45-x26*x32*x37*x47+x26*x32*x39*x45+x27*x29*x38*x48-x27*x29*x40*x46-x27*x30*x37*x48+x27*x30*x40*x45+x27*x32*x37*x46-x27*x32*x38*x45-x28*x29*x38*x47+x28*x29*x39*x46+x28*x30*x37*x47-x28*x30*x39*x45-x28*x31*x37*x46+x28*x31*x38*x45,
+        x25*x30*x35*x48-x25*x30*x36*x47-x25*x31*x34*x48+x25*x31*x36*x46+x25*x32*x34*x47-x25*x32*x35*x46-x26*x29*x35*x48+x26*x29*x36*x47+x26*x31*x33*x48-x26*x31*x36*x45-x26*x32*x33*x47+x26*x32*x35*x45+x27*x29*x34*x48-x27*x29*x36*x46-x27*x30*x33*x48+x27*x30*x36*x45+x27*x32*x33*x46-x27*x32*x34*x45-x28*x29*x34*x47+x28*x29*x35*x46+x28*x30*x33*x47-x28*x30*x35*x45-x28*x31*x33*x46+x28*x31*x34*x45,
+        x29*x34*x39*x44-x29*x34*x40*x43-x29*x35*x38*x44+x29*x35*x40*x42+x29*x36*x38*x43-x29*x36*x39*x42-x30*x33*x39*x44+x30*x33*x40*x43+x30*x35*x37*x44-x30*x35*x40*x41-x30*x36*x37*x43+x30*x36*x39*x41+x31*x33*x38*x44-x31*x33*x40*x42-x31*x34*x37*x44+x31*x34*x40*x41+x31*x36*x37*x42-x31*x36*x38*x41-x32*x33*x38*x43+x32*x33*x39*x42+x32*x34*x37*x43-x32*x34*x39*x41-x32*x35*x37*x42+x32*x35*x38*x41,
+        x25*x34*x39*x44-x25*x34*x40*x43-x25*x35*x38*x44+x25*x35*x40*x42+x25*x36*x38*x43-x25*x36*x39*x42-x26*x33*x39*x44+x26*x33*x40*x43+x26*x35*x37*x44-x26*x35*x40*x41-x26*x36*x37*x43+x26*x36*x39*x41+x27*x33*x38*x44-x27*x33*x40*x42-x27*x34*x37*x44+x27*x34*x40*x41+x27*x36*x37*x42-x27*x36*x38*x41-x28*x33*x38*x43+x28*x33*x39*x42+x28*x34*x37*x43-x28*x34*x39*x41-x28*x35*x37*x42+x28*x35*x38*x41,
+        x25*x30*x39*x44-x25*x30*x40*x43-x25*x31*x38*x44+x25*x31*x40*x42+x25*x32*x38*x43-x25*x32*x39*x42-x26*x29*x39*x44+x26*x29*x40*x43+x26*x31*x37*x44-x26*x31*x40*x41-x26*x32*x37*x43+x26*x32*x39*x41+x27*x29*x38*x44-x27*x29*x40*x42-x27*x30*x37*x44+x27*x30*x40*x41+x27*x32*x37*x42-x27*x32*x38*x41-x28*x29*x38*x43+x28*x29*x39*x42+x28*x30*x37*x43-x28*x30*x39*x41-x28*x31*x37*x42+x28*x31*x38*x41,
+        x25*x30*x35*x44-x25*x30*x36*x43-x25*x31*x34*x44+x25*x31*x36*x42+x25*x32*x34*x43-x25*x32*x35*x42-x26*x29*x35*x44+x26*x29*x36*x43+x26*x31*x33*x44-x26*x31*x36*x41-x26*x32*x33*x43+x26*x32*x35*x41+x27*x29*x34*x44-x27*x29*x36*x42-x27*x30*x33*x44+x27*x30*x36*x41+x27*x32*x33*x42-x27*x32*x34*x41-x28*x29*x34*x43+x28*x29*x35*x42+x28*x30*x33*x43-x28*x30*x35*x41-x28*x31*x33*x42+x28*x31*x34*x41,
+        x25*x30*x35*x40-x25*x30*x36*x39-x25*x31*x34*x40+x25*x31*x36*x38+x25*x32*x34*x39-x25*x32*x35*x38-x26*x29*x35*x40+x26*x29*x36*x39+x26*x31*x33*x40-x26*x31*x36*x37-x26*x32*x33*x39+x26*x32*x35*x37+x27*x29*x34*x40-x27*x29*x36*x38-x27*x30*x33*x40+x27*x30*x36*x37+x27*x32*x33*x38-x27*x32*x34*x37-x28*x29*x34*x39+x28*x29*x35*x38+x28*x30*x33*x39-x28*x30*x35*x37-x28*x31*x33*x38+x28*x31*x34*x37,
+        -x10*x13*x19*x24+x10*x13*x20*x23+x10*x15*x17*x24-x10*x15*x20*x21-x10*x16*x17*x23+x10*x16*x19*x21+x11*x13*x18*x24-x11*x13*x20*x22-x11*x14*x17*x24+x11*x14*x20*x21+x11*x16*x17*x22-x11*x16*x18*x21-x12*x13*x18*x23+x12*x13*x19*x22+x12*x14*x17*x23-x12*x14*x19*x21-x12*x15*x17*x22+x12*x15*x18*x21+x14*x19*x24*x9-x14*x20*x23*x9-x15*x18*x24*x9+x15*x20*x22*x9+x16*x18*x23*x9-x16*x19*x22*x9,
+        -x13*x18*x23*x8+x13*x18*x24*x7+x13*x19*x22*x8-x13*x19*x24*x6-x13*x20*x22*x7+x13*x20*x23*x6+x14*x17*x23*x8-x14*x17*x24*x7-x14*x19*x21*x8+x14*x19*x24*x5+x14*x20*x21*x7-x14*x20*x23*x5-x15*x17*x22*x8+x15*x17*x24*x6+x15*x18*x21*x8-x15*x18*x24*x5-x15*x20*x21*x6+x15*x20*x22*x5+x16*x17*x22*x7-x16*x17*x23*x6-x16*x18*x21*x7+x16*x18*x23*x5+x16*x19*x21*x6-x16*x19*x22*x5,
+        x1*x14*x19*x24-x1*x14*x20*x23-x1*x15*x18*x24+x1*x15*x20*x22+x1*x16*x18*x23-x1*x16*x19*x22-x13*x18*x23*x4+x13*x18*x24*x3-x13*x19*x2*x24+x13*x19*x22*x4+x13*x2*x20*x23-x13*x20*x22*x3+x14*x17*x23*x4-x14*x17*x24*x3-x14*x19*x21*x4+x14*x20*x21*x3+x15*x17*x2*x24-x15*x17*x22*x4+x15*x18*x21*x4-x15*x2*x20*x21-x16*x17*x2*x23+x16*x17*x22*x3-x16*x18*x21*x3+x16*x19*x2*x21,
+        x10*x17*x23*x8-x10*x17*x24*x7-x10*x19*x21*x8+x10*x19*x24*x5+x10*x20*x21*x7-x10*x20*x23*x5-x11*x17*x22*x8+x11*x17*x24*x6+x11*x18*x21*x8-x11*x18*x24*x5-x11*x20*x21*x6+x11*x20*x22*x5+x12*x17*x22*x7-x12*x17*x23*x6-x12*x18*x21*x7+x12*x18*x23*x5+x12*x19*x21*x6-x12*x19*x22*x5-x18*x23*x8*x9+x18*x24*x7*x9+x19*x22*x8*x9-x19*x24*x6*x9-x20*x22*x7*x9+x20*x23*x6*x9,
+        x1*x10*x19*x24-x1*x10*x20*x23-x1*x11*x18*x24+x1*x11*x20*x22+x1*x12*x18*x23-x1*x12*x19*x22+x10*x17*x23*x4-x10*x17*x24*x3-x10*x19*x21*x4+x10*x20*x21*x3+x11*x17*x2*x24-x11*x17*x22*x4+x11*x18*x21*x4-x11*x2*x20*x21-x12*x17*x2*x23+x12*x17*x22*x3-x12*x18*x21*x3+x12*x19*x2*x21-x18*x23*x4*x9+x18*x24*x3*x9-x19*x2*x24*x9+x19*x22*x4*x9+x2*x20*x23*x9-x20*x22*x3*x9,
+        x1*x18*x23*x8-x1*x18*x24*x7-x1*x19*x22*x8+x1*x19*x24*x6+x1*x20*x22*x7-x1*x20*x23*x6-x17*x2*x23*x8+x17*x2*x24*x7+x17*x22*x3*x8-x17*x22*x4*x7+x17*x23*x4*x6-x17*x24*x3*x6-x18*x21*x3*x8+x18*x21*x4*x7-x18*x23*x4*x5+x18*x24*x3*x5+x19*x2*x21*x8-x19*x2*x24*x5-x19*x21*x4*x6+x19*x22*x4*x5-x2*x20*x21*x7+x2*x20*x23*x5+x20*x21*x3*x6-x20*x22*x3*x5,
+        x10*x13*x23*x8-x10*x13*x24*x7-x10*x15*x21*x8+x10*x15*x24*x5+x10*x16*x21*x7-x10*x16*x23*x5-x11*x13*x22*x8+x11*x13*x24*x6+x11*x14*x21*x8-x11*x14*x24*x5-x11*x16*x21*x6+x11*x16*x22*x5+x12*x13*x22*x7-x12*x13*x23*x6-x12*x14*x21*x7+x12*x14*x23*x5+x12*x15*x21*x6-x12*x15*x22*x5-x14*x23*x8*x9+x14*x24*x7*x9+x15*x22*x8*x9-x15*x24*x6*x9-x16*x22*x7*x9+x16*x23*x6*x9,
+        x1*x10*x15*x24-x1*x10*x16*x23-x1*x11*x14*x24+x1*x11*x16*x22+x1*x12*x14*x23-x1*x12*x15*x22+x10*x13*x23*x4-x10*x13*x24*x3-x10*x15*x21*x4+x10*x16*x21*x3+x11*x13*x2*x24-x11*x13*x22*x4+x11*x14*x21*x4-x11*x16*x2*x21-x12*x13*x2*x23+x12*x13*x22*x3-x12*x14*x21*x3+x12*x15*x2*x21-x14*x23*x4*x9+x14*x24*x3*x9-x15*x2*x24*x9+x15*x22*x4*x9+x16*x2*x23*x9-x16*x22*x3*x9,
+        x1*x14*x23*x8-x1*x14*x24*x7-x1*x15*x22*x8+x1*x15*x24*x6+x1*x16*x22*x7-x1*x16*x23*x6-x13*x2*x23*x8+x13*x2*x24*x7+x13*x22*x3*x8-x13*x22*x4*x7+x13*x23*x4*x6-x13*x24*x3*x6-x14*x21*x3*x8+x14*x21*x4*x7-x14*x23*x4*x5+x14*x24*x3*x5+x15*x2*x21*x8-x15*x2*x24*x5-x15*x21*x4*x6+x15*x22*x4*x5-x16*x2*x21*x7+x16*x2*x23*x5+x16*x21*x3*x6-x16*x22*x3*x5,
+        x1*x10*x23*x8-x1*x10*x24*x7-x1*x11*x22*x8+x1*x11*x24*x6+x1*x12*x22*x7-x1*x12*x23*x6-x10*x21*x3*x8+x10*x21*x4*x7-x10*x23*x4*x5+x10*x24*x3*x5+x11*x2*x21*x8-x11*x2*x24*x5-x11*x21*x4*x6+x11*x22*x4*x5-x12*x2*x21*x7+x12*x2*x23*x5+x12*x21*x3*x6-x12*x22*x3*x5-x2*x23*x8*x9+x2*x24*x7*x9+x22*x3*x8*x9-x22*x4*x7*x9+x23*x4*x6*x9-x24*x3*x6*x9,
+        x10*x13*x19*x8-x10*x13*x20*x7-x10*x15*x17*x8+x10*x15*x20*x5+x10*x16*x17*x7-x10*x16*x19*x5-x11*x13*x18*x8+x11*x13*x20*x6+x11*x14*x17*x8-x11*x14*x20*x5-x11*x16*x17*x6+x11*x16*x18*x5+x12*x13*x18*x7-x12*x13*x19*x6-x12*x14*x17*x7+x12*x14*x19*x5+x12*x15*x17*x6-x12*x15*x18*x5-x14*x19*x8*x9+x14*x20*x7*x9+x15*x18*x8*x9-x15*x20*x6*x9-x16*x18*x7*x9+x16*x19*x6*x9,
+        x1*x10*x15*x20-x1*x10*x16*x19-x1*x11*x14*x20+x1*x11*x16*x18+x1*x12*x14*x19-x1*x12*x15*x18+x10*x13*x19*x4-x10*x13*x20*x3-x10*x15*x17*x4+x10*x16*x17*x3-x11*x13*x18*x4+x11*x13*x2*x20+x11*x14*x17*x4-x11*x16*x17*x2+x12*x13*x18*x3-x12*x13*x19*x2-x12*x14*x17*x3+x12*x15*x17*x2-x14*x19*x4*x9+x14*x20*x3*x9+x15*x18*x4*x9-x15*x2*x20*x9-x16*x18*x3*x9+x16*x19*x2*x9,
+        x1*x14*x19*x8-x1*x14*x20*x7-x1*x15*x18*x8+x1*x15*x20*x6+x1*x16*x18*x7-x1*x16*x19*x6+x13*x18*x3*x8-x13*x18*x4*x7-x13*x19*x2*x8+x13*x19*x4*x6+x13*x2*x20*x7-x13*x20*x3*x6-x14*x17*x3*x8+x14*x17*x4*x7-x14*x19*x4*x5+x14*x20*x3*x5+x15*x17*x2*x8-x15*x17*x4*x6+x15*x18*x4*x5-x15*x2*x20*x5-x16*x17*x2*x7+x16*x17*x3*x6-x16*x18*x3*x5+x16*x19*x2*x5,
+        x1*x10*x19*x8-x1*x10*x20*x7-x1*x11*x18*x8+x1*x11*x20*x6+x1*x12*x18*x7-x1*x12*x19*x6-x10*x17*x3*x8+x10*x17*x4*x7-x10*x19*x4*x5+x10*x20*x3*x5+x11*x17*x2*x8-x11*x17*x4*x6+x11*x18*x4*x5-x11*x2*x20*x5-x12*x17*x2*x7+x12*x17*x3*x6-x12*x18*x3*x5+x12*x19*x2*x5+x18*x3*x8*x9-x18*x4*x7*x9-x19*x2*x8*x9+x19*x4*x6*x9+x2*x20*x7*x9-x20*x3*x6*x9,
+        x1*x10*x15*x8-x1*x10*x16*x7-x1*x11*x14*x8+x1*x11*x16*x6+x1*x12*x14*x7-x1*x12*x15*x6-x10*x13*x3*x8+x10*x13*x4*x7-x10*x15*x4*x5+x10*x16*x3*x5+x11*x13*x2*x8-x11*x13*x4*x6+x11*x14*x4*x5-x11*x16*x2*x5-x12*x13*x2*x7+x12*x13*x3*x6-x12*x14*x3*x5+x12*x15*x2*x5+x14*x3*x8*x9-x14*x4*x7*x9-x15*x2*x8*x9+x15*x4*x6*x9+x16*x2*x7*x9-x16*x3*x6*x9
+    ]
+end
+
+# Source: https://web.archive.org/web/20201202185136/http://www.cecm.sfu.ca/%7Erpearcea/mgb.html
+function bayes148(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+    R, (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32) = np.polynomial_ring(
+        k, [:x1, :x2, :x3, :x4, :x5, :x6, :x7, :x8, :x9, :x10, :x11, :x12, :x13, :x14, :x15, :x16, :x17, :x18, :x19, :x20, :x21, :x22, :x23, :x24, :x25, :x26, :x27, :x28, :x29, :x30, :x31, :x32], ordering=ordering)
+    sys = [
+        -x23*x32+x24*x31, -x22*x32+x24*x30, -x22*x31+x23*x30, -x21*x32+x24*x29, -x21*x31+x23*x29, -x21*x30+x22*x29, -x12*x32+x16*x28,  -x19*x28+x20*x27,
+        -x11*x31+x15*x27, -x18*x28+x20*x26, -x18*x27+x19*x26, -x10*x30+x14*x26, -x17*x28+x20*x25, -x17*x27+x19*x25, -x17*x26+x18*x25, -x9*x29+x13*x25, x20*x8-x24*x4,
+        -x17*x20-x17*x24-2*x17*x28-x17*x32+x18*x19+x18*x23+2*x18*x27+x18*x31+x19*x22+x19*x30-x20*x21-x20*x29-x21*x24-x21*x28-2*x21*x32+x22*x23+x22*x27+2*x22*x31+x23*x26-x24*x25-x25*x28-x25*x32+x26*x27+x26*x31+x27*x30-x28*x29-x29*x32+x30*x31,
+        x19*x7-x23*x3, x18*x6-x2*x22, -x1*x21+x17*x5
+    ]
+end
+
+# Source: https://web.archive.org/web/20201202185136/http://www.cecm.sfu.ca/%7Erpearcea/mgb.html
+function gametwo2(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+    R, (p1,p2,p3,p4,p5,p6,p7) = np.polynomial_ring(k, [:p1,:p2,:p3,:p4,:p5,:p6,:p7], ordering=ordering)
+    sys = [
+        3821*p2*p3*p4*p5*p6*p7-7730*p2*p3*p4*p5*p6-164*p2*p3*p4*p5*p7-2536*p2*p3*p4*p6*p7-4321*p2*p3*p5*p6*p7-2161*p2*p4*p5*p6*p7-2188*p3*p4*p5*p6*p7-486*p2*p3*p4*p5+3491*p2*p3*p4*p6+4247*p2*p3*p5*p6+3528*p2*p4*p5*p6+2616*p3*p4*p5*p6-101*p2*p3*p4*p7+1765*p2*p3*p5*p7+258*p2*p4*p5*p7-378*p3*p4*p5*p7+1246*p2*p3*p6*p7+2320*p2*p4*p6*p7+1776*p3*p4*p6*p7+1715*p2*p5*p6*p7+728*p3*p5*p6*p7+842*p4*p5*p6*p7+69*p2*p3*p4-1660*p2*p3*p5+1863*p2*p4*p5+1520*p3*p4*p5-245*p2*p3*p6-804*p2*p4*p6-2552*p3*p4*p6-3152*p2*p5*p6+40*p3*p5*p6-1213*p4*p5*p6+270*p2*p3*p7-851*p2*p4*p7+327*p3*p4*p7-1151*p2*p5*p7+1035*p3*p5*p7-161*p4*p5*p7-230*p2*p6*p7-294*p3*p6*p7-973*p4*p6*p7-264*p5*p6*p7+874*p2*p3-2212*p2*p4+168*p3*p4+511*p2*p5-918*p3*p5-2017*p4*p5-76*p2*p6+465*p3*p6+1629*p4*p6+856*p5*p6-54*p2*p7-1355*p3*p7+227*p4*p7+77*p5*p7-220*p6*p7-696*p2+458*p3+486*p4+661*p5-650*p6+671*p7-439,
+        -6157*p1*p3*p4*p5*p6*p7+13318*p1*p3*p4*p5*p6+5928*p1*p3*p4*p5*p7+1904*p1*p3*p4*p6*p7+2109*p1*p3*p5*p6*p7+8475*p1*p4*p5*p6*p7+2878*p3*p4*p5*p6*p7-8339*p1*p3*p4*p5-2800*p1*p3*p4*p6-9649*p1*p3*p5*p6-10964*p1*p4*p5*p6-4481*p3*p4*p5*p6+251*p1*p3*p4*p7-4245*p1*p3*p5*p7-7707*p1*p4*p5*p7-2448*p3*p4*p5*p7+1057*p1*p3*p6*p7-3605*p1*p4*p6*p7+546*p3*p4*p6*p7-3633*p1*p5*p6*p7-699*p3*p5*p6*p7-4126*p4*p5*p6*p7-730*p1*p3*p4+5519*p1*p3*p5+8168*p1*p4*p5+4366*p3*p4*p5+2847*p1*p3*p6+2058*p1*p4*p6-1416*p3*p4*p6+8004*p1*p5*p6+4740*p3*p5*p6+5361*p4*p5*p6-677*p1*p3*p7+1755*p1*p4*p7-760*p3*p4*p7+3384*p1*p5*p7+2038*p3*p5*p7+4119*p4*p5*p7+812*p1*p6*p7+11*p3*p6*p7+2022*p4*p6*p7+2642*p5*p6*p7+1276*p1*p3-1723*p1*p4+121*p3*p4-6456*p1*p5-3710*p3*p5-4525*p4*p5-2187*p1*p6-1559*p3*p6-848*p4*p6-4041*p5*p6-83*p1*p7-12*p3*p7-1180*p4*p7-2747*p5*p7-1970*p6*p7+2575*p1-161*p3+2149*p4+4294*p5+1687*p6+958*p7-1950,
+        182*p1*p2*p4*p5*p6*p7-2824*p1*p2*p4*p5*p6-3513*p1*p2*p4*p5*p7-3386*p1*p2*p4*p6*p7-2330*p1*p2*p5*p6*p7-2838*p1*p4*p5*p6*p7+1294*p2*p4*p5*p6*p7+4764*p1*p2*p4*p5+1647*p1*p2*p4*p6+4221*p1*p2*p5*p6+814*p1*p4*p5*p6+2738*p2*p4*p5*p6+4057*p1*p2*p4*p7+2403*p1*p2*p5*p7+2552*p1*p4*p5*p7+471*p2*p4*p5*p7+448*p1*p2*p6*p7+2336*p1*p4*p6*p7+1617*p2*p4*p6*p7+2220*p1*p5*p6*p7-1543*p2*p5*p6*p7+402*p4*p5*p6*p7-5184*p1*p2*p4-3983*p1*p2*p5+44*p1*p4*p5-1327*p2*p4*p5-581*p1*p2*p6-389*p1*p4*p6-2722*p2*p4*p6+443*p1*p5*p6-2893*p2*p5*p6-154*p4*p5*p6-1277*p1*p2*p7-2018*p1*p4*p7-509*p2*p4*p7-1254*p1*p5*p7+602*p2*p5*p7-464*p4*p5*p7-647*p1*p6*p7+922*p2*p6*p7-1463*p4*p6*p7+729*p5*p6*p7+2665*p1*p2+591*p1*p4+981*p2*p4-444*p1*p5+1818*p2*p5-1985*p4*p5-1818*p1*p6+197*p2*p6+1038*p4*p6+340*p5*p6+399*p1*p7-835*p2*p7+787*p4*p7-753*p5*p7-221*p6*p7+481*p1+260*p2+1713*p4+1219*p5+794*p6+762*p7-1231,
+        2923*p1*p2*p3*p5*p6*p7-4328*p1*p2*p3*p5*p6-3674*p1*p2*p3*p5*p7-3291*p1*p2*p3*p6*p7-4955*p1*p2*p5*p6*p7-8*p1*p3*p5*p6*p7-135*p2*p3*p5*p6*p7+7784*p1*p2*p3*p5+3471*p1*p2*p3*p6+1544*p1*p2*p5*p6+1607*p1*p3*p5*p6+1710*p2*p3*p5*p6+2434*p1*p2*p3*p7+1408*p1*p2*p5*p7-215*p1*p3*p5*p7+507*p2*p3*p5*p7+2208*p1*p2*p6*p7+1920*p1*p3*p6*p7-389*p2*p3*p6*p7+1304*p1*p5*p6*p7+2480*p2*p5*p6*p7+102*p3*p5*p6*p7-2683*p1*p2*p3-3508*p1*p2*p5-3505*p1*p3*p5-2400*p2*p3*p5-2236*p1*p2*p6-1727*p1*p3*p6-1354*p2*p3*p6-1022*p1*p5*p6-2099*p2*p5*p6-918*p3*p5*p6-495*p1*p2*p7-109*p1*p3*p7+474*p2*p3*p7+268*p1*p5*p7+1084*p2*p5*p7-190*p3*p5*p7-666*p1*p6*p7-497*p2*p6*p7+615*p3*p6*p7-912*p5*p6*p7+473*p1*p2+742*p1*p3+186*p2*p3+1021*p1*p5+2556*p2*p5+2312*p3*p5+1075*p1*p6+920*p2*p6+164*p3*p6+80*p5*p6-199*p1*p7-1270*p2*p7-1050*p3*p7-724*p5*p7+136*p6*p7+740*p1-474*p2+37*p3-1056*p5+303*p6+833*p7+736,
+        4990*p1*p2*p3*p4*p6*p7-3067*p1*p2*p3*p4*p6-1661*p1*p2*p3*p4*p7-4064*p1*p2*p3*p6*p7-223*p1*p2*p4*p6*p7-5229*p1*p3*p4*p6*p7-4636*p2*p3*p4*p6*p7+5720*p1*p2*p3*p4+4872*p1*p2*p3*p6+1643*p1*p2*p4*p6+4536*p1*p3*p4*p6+2451*p2*p3*p4*p6+1264*p1*p2*p3*p7+70*p1*p2*p4*p7+2213*p1*p3*p4*p7+1734*p2*p3*p4*p7+1698*p1*p2*p6*p7+3799*p1*p3*p6*p7+1622*p2*p3*p6*p7+901*p1*p4*p6*p7-496*p2*p4*p6*p7+3782*p3*p4*p6*p7-5591*p1*p2*p3-1303*p1*p2*p4-6383*p1*p3*p4-2332*p2*p3*p4-3179*p1*p2*p6-6257*p1*p3*p6-3654*p2*p3*p6-1830*p1*p4*p6-1473*p2*p4*p6-3278*p3*p4*p6-1462*p1*p2*p7-1495*p1*p3*p7-468*p2*p3*p7-400*p1*p4*p7+431*p2*p4*p7-1907*p3*p4*p7-1547*p1*p6*p7-214*p2*p6*p7-1423*p3*p6*p7-1625*p4*p6*p7+5708*p1*p2+3809*p1*p3+2053*p2*p3+2824*p1*p4+1122*p2*p4+3653*p3*p4+3658*p1*p6+3001*p2*p6+3890*p3*p6+2371*p4*p6+602*p1*p7+185*p2*p7+899*p3*p7+963*p4*p7+560*p6*p7-4557*p1-3536*p2-1635*p3-2552*p4-2595*p6-207*p7+2740,
+        -1407*p1*p2*p3*p4*p5*p7+4444*p1*p2*p3*p4*p5+2350*p1*p2*p3*p4*p7+5424*p1*p2*p3*p5*p7-2524*p1*p2*p4*p5*p7-985*p1*p3*p4*p5*p7-431*p2*p3*p4*p5*p7-2662*p1*p2*p3*p4-5342*p1*p2*p3*p5-39*p1*p2*p4*p5-2525*p1*p3*p4*p5-2650*p2*p3*p4*p5-3553*p1*p2*p3*p7-71*p1*p2*p4*p7-3268*p1*p3*p4*p7-1140*p2*p3*p4*p7-702*p1*p2*p5*p7-924*p1*p3*p5*p7-2198*p2*p3*p5*p7+4087*p1*p4*p5*p7+2709*p2*p4*p5*p7+587*p3*p4*p5*p7+968*p1*p2*p3-150*p1*p2*p4+909*p1*p3*p4+4587*p2*p3*p4+929*p1*p2*p5+1804*p1*p3*p5+2226*p2*p3*p5-916*p1*p4*p5+906*p2*p4*p5+2735*p3*p4*p5+1894*p1*p2*p7+2998*p1*p3*p7+1611*p2*p3*p7+304*p1*p4*p7-1601*p2*p4*p7+2066*p3*p4*p7-1971*p1*p5*p7-480*p2*p5*p7-500*p3*p5*p7-2617*p4*p5*p7-532*p1*p2+2016*p1*p3-2574*p2*p3+529*p1*p4-1251*p2*p4-2082*p3*p4+280*p1*p5-852*p2*p5-476*p3*p5-340*p4*p5-924*p1*p7+253*p2*p7-1090*p3*p7+170*p4*p7+1204*p5*p7-869*p1+1394*p2-264*p3+719*p4+219*p5-128*p7+506,
+        -901*p1*p2*p3*p4*p5*p6+1805*p1*p2*p3*p4*p5-1103*p1*p2*p3*p4*p6-1746*p1*p2*p3*p5*p6-1968*p1*p2*p4*p5*p6+3957*p1*p3*p4*p5*p6+1293*p2*p3*p4*p5*p6-523*p1*p2*p3*p4-2498*p1*p2*p3*p5+693*p1*p2*p4*p5-2805*p1*p3*p4*p5-722*p2*p3*p4*p5-770*p1*p2*p3*p6+1088*p1*p2*p4*p6-232*p1*p3*p4*p6+2657*p2*p3*p4*p6+3281*p1*p2*p5*p6-1066*p1*p3*p5*p6+240*p2*p3*p5*p6-1174*p1*p4*p5*p6+1304*p2*p4*p5*p6-2070*p3*p4*p5*p6+2571*p1*p2*p3+115*p1*p2*p4+3899*p1*p3*p4-4641*p2*p3*p4-752*p1*p2*p5+1531*p1*p3*p5+1178*p2*p3*p5+11*p1*p4*p5-1144*p2*p4*p5-1701*p3*p4*p5+592*p1*p2*p6+1140*p1*p3*p6+130*p2*p3*p6+304*p1*p4*p6-2273*p2*p4*p6-1224*p3*p4*p6-2*p1*p5*p6-1090*p2*p5*p6+585*p3*p5*p6+670*p4*p5*p6-1867*p1*p2-4780*p1*p3+1079*p2*p3-2435*p1*p4+2901*p2*p4+2073*p3*p4+499*p1*p5+908*p2*p5+323*p3*p5+1631*p4*p5-966*p1*p6-315*p2*p6-481*p3*p6+759*p4*p6-595*p5*p6+3233*p1-1978*p2+729*p3-1184*p4-40*p5+446*p6+282
+    ]
+end
+
+# Source: https://web.archive.org/web/20201202185136/http://www.cecm.sfu.ca/%7Erpearcea/mgb.html
+function jason210(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+    R, (x1, x2, x3, x4, x5, x6, x7, x8) = np.polynomial_ring(k, [:x1, :x2, :x3, :x4, :x5, :x6, :x7, :x8], ordering=ordering)
+    sys = [
+        x1^2*x3^4+x1*x2*x3^2*x5^2+x1*x2*x3*x4*x5*x7+x1*x2*x3*x4*x6*x8+x1*x2*x4^2*x6^2+x2^2*x4^4, x2^6, x1^6
+    ]
+end
+
+# Source: https://web.archive.org/web/20201202185136/http://www.cecm.sfu.ca/%7Erpearcea/mgb.html
+function alea6(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+    R, (x0, x1, x2, x3, x4, x5) = np.polynomial_ring(k, [:x0, :x1, :x2, :x3, :x4, :x5], ordering=ordering)
+    sys = [
+        5*x0^2*x3+37*x1*x3*x4+32*x1*x3*x5+21*x3*x5+55*x4*x5,
+        39*x0*x1*x5+23*x1^2*x4+57*x1*x2*x4+56*x1*x4^2+10*x2^2+52*x3*x4*x5,
+        33*x0^2*x3+51*x0^2+42*x0*x3*x5+51*x1^2*x4+32*x1*x3^2+x5^3,
+        44*x0*x3^2+42*x1*x3+47*x1*x4^2+12*x2*x3+2*x2*x4*x5+43*x3*x4^2,
+        49*x0^2*x2+11*x0*x1*x2+39*x0*x3*x4+44*x0*x3*x4+54*x0*x3+45*x1^2*x4,
+        48*x0*x2*x3+2*x2^2*x3+59*x2^2*x5+17*x2+36*x3^3+45*x4
+    ]
+end
+
+# Source: https://web.archive.org/web/20201202185136/http://www.cecm.sfu.ca/%7Erpearcea/mgb.html
+function mayr42(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+    R, (x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13,x14,x15,x16,x17,x18,x19,x20,x21,x22,x23,x24,x25,x26,x27,x28,x29,x30,x31,x32,x33,x34,x35,x36,x37,x38,x39,x40,x41,x42,x43,x44,x45,x46,x47,x48,x49,x50,x51) = np.polynomial_ring(
+        k, [:x1,:x2,:x3,:x4,:x5,:x6,:x7,:x8,:x9,:x10,:x11,:x12,:x13,:x14,:x15,:x16,:x17,:x18,:x19,:x20,:x21,:x22,:x23,:x24,:x25,:x26,:x27,:x28,:x29,:x30,:x31,:x32,:x33,:x34,:x35,:x36,:x37,:x38,:x39,:x40,:x41,:x42,:x43,:x44,:x45,:x46,:x47,:x48,:x49,:x50,:x51], ordering=ordering)
+    sys = [
+        -x10*x51+x4*x49, x3*x48-x51*x9, x2*x47-x51*x8, x1*x46-x51*x7,
+        x4*x44-x49*x9, x3*x43-x48*x8, x2*x42-x47*x7, x1*x41-x46*x6,
+        x39*x4-x49*x9, x3*x38-x48*x8, x2*x37-x47*x7, x1*x36-x46*x6, x34*x9-x49*x9, x34*x4-x5*x51,
+        x33*x8-x48*x8, x3*x33-x4*x51, x32*x7-x47*x7, x2*x32-x3*x51, x31*x6-x46*x6, x1*x31-x2*x51, 
+        x14*x39*x9-x29*x44*x9, x13*x38*x8-x28*x43*x8, x12*x37*x7-x27*x42*x7, x11*x36*x6-x26*x41*x6,
+        x26^2*x46*x6-x51^3*x7, x11^2*x46*x6-x2*x51^3, x21^2*x41*x6-x46*x51^2*x6, x16^2*x36*x6-x46*x51^2*x6,
+        x24*x30*x39*x50*x9-x29*x44*x50*x51*x9, x23*x29*x38*x49*x8-x28*x43*x49*x51*x8, x22*x28*x37*x48*x7-x27*x42*x48*x51*x7,
+        x21*x27*x36*x47*x6-x26*x41*x47*x51*x6, x24*x25*x39*x45*x9-x29*x44*x45*x51*x9, x23*x24*x38*x44*x8-x28*x43*x44*x51*x8,
+        x22*x23*x37*x43*x7-x27*x42*x43*x51*x7, x21*x22*x36*x42*x6-x26*x41*x42*x51*x6, x20*x24*x39*x40*x9-x29*x40*x44*x51*x9,
+        x19*x23*x38*x39*x8-x28*x39*x43*x51*x8, x15*x24*x35*x39*x9-x29*x35*x44*x51*x9, x18*x22*x37*x38*x7-x27*x38*x42*x51*x7, 
+        x14*x23*x34*x38*x8-x28*x34*x43*x51*x8, x17*x21*x36*x37*x6-x26*x37*x41*x51*x6, x13*x22*x33*x37*x7-x27*x33*x42*x51*x7,
+        x12*x21*x32*x36*x6-x26*x32*x41*x51*x6
+    ]
 end
 
 ###
 # Some other examples
 
-function ku10(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function ku10(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) =
         np.polynomial_ring(k, ["x$i" for i in 1:10], ordering=ordering)
     [
@@ -537,7 +503,7 @@ function ku10(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
     ]
 end
 
-function kinema(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function kinema(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, (z1, z2, z3, z4, z5, z6, z7, z8, z9) =
         np.polynomial_ring(k, ["z$i" for i in 1:9], ordering=ordering)
     [
@@ -553,7 +519,7 @@ function kinema(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
     ]
 end
 
-function sparse5(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function sparse5(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, (x1, x2, x3, x4, x5) =
         np.polynomial_ring(k, ["x$i" for i in 1:5], ordering=ordering)
     [
@@ -600,7 +566,7 @@ function sparse5(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
     ]
 end
 
-function s9_1(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function s9_1(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, (a, b, c, d, e, f, g, h) =
         np.polynomial_ring(k, ["x$i" for i in 1:8], ordering=ordering)
     [
@@ -615,7 +581,7 @@ function s9_1(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
     ]
 end
 
-function ojika4(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function ojika4(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, (x1, x2, x3) = np.polynomial_ring(k, ["x$i" for i in 1:3], ordering=ordering)
     [
         x1 + x3 * x1^3 + x1 * x3 * x2^2 - x1 * x3,
@@ -628,7 +594,7 @@ function ojika4(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
     ]
 end
 
-function ojika3_d1R2(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function ojika3_d1R2(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, (x1, x2, x3) = np.polynomial_ring(k, ["x$i" for i in 1:3], ordering=ordering)
     [
         x1^3 * x3 + x1 * x3 * x2^2 - x1 * x3 + x1,
@@ -641,7 +607,7 @@ function ojika3_d1R2(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
     ]
 end
 
-function ojika4_d1R2_d2R5(; np=AbstractAlgebra, k=np.QQ, ordering=:lex)
+function ojika4_d1R2_d2R5(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     _, (x1, x2, x3) = np.polynomial_ring(k, ["x$i" for i in 1:3], ordering=ordering)
     [
         x1^3 * x3 + x1 * x3 * x2^2 - x1 * x3 + x1,

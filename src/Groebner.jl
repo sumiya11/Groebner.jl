@@ -1,7 +1,6 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
-
-# Groebner.jl is a package for computing Gröbner bases. This is the main file.
 module Groebner
+# Groebner is a package for computing Gröbner bases. This is the main file.
 # Groebner works over integers modulo a prime and over the rationals. At its
 # heart, Groebner implements F4, multi-modular techniques, and tracing.
 
@@ -55,7 +54,7 @@ performance_counters_enabled() = false
 # Groebner does not provide a polynomial implementation of its own but relies on
 # existing symbolic computation packages in Julia for communicating with the
 # user. Groebner accepts as its input polynomials from the Julia packages
-# AbstractAlgebra.jl, Nemo.jl (Oscar.jl) and MultivariatePolynomials.jl.
+# AbstractAlgebra.jl, Nemo.jl (Oscar.jl), and MultivariatePolynomials.jl.
 import AbstractAlgebra
 import AbstractAlgebra: base_ring, elem_type
 
@@ -96,7 +95,7 @@ import TimerOutputs
 ###
 # Initialization
 
-# Groebner may use multi-threaded by default.
+# Groebner may use multi-threading by default.
 # 1. Set the environment variable GROEBNER_NO_THREADED to 1 to disable all
 #    multi-threading in Groebner
 # 2. If GROEBNER_NO_THREADED=0, the keyword argument `threaded` provided by some
@@ -127,7 +126,7 @@ include("utils/invariants.jl")
 include("utils/timeit.jl")
 # Provides the macro `@stat` for collecting statistics
 include("utils/statistics.jl")
-# For fast and specific vector arithmetic
+# For fast and very specific dense vector arithmetic
 include("utils/simd.jl")
 # include("utils/versioninfo.jl")
 
@@ -187,6 +186,8 @@ include("f4/linalg/backend_randomized.jl")
 include("f4/linalg/backend_randomized_threaded.jl")
 include("f4/linalg/backend_learn_apply.jl")
 include("f4/linalg/backend_learn_apply_threaded.jl")
+include("f4/linalg/backend_experimental.jl")
+
 include("f4/sort.jl")
 # Additional tiny tracing
 include("f4/tiny-trace.jl")

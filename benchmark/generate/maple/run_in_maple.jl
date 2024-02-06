@@ -74,4 +74,4 @@ function dump_timings()
 end
 
 process_system()
-dump_timings()
+# dump_timings()

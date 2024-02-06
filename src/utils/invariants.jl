@@ -34,6 +34,13 @@ macro unreachable()
     :(@invariant false)
 end
 
+@noinline function __this_is_bad()
+    @log level = 2_000 """
+      Invariant violation. Recovering the state...
+      Please consider submitting a Github issue with Groebner.jl."""
+    return true
+end
+
 ###
 # DANGER
 

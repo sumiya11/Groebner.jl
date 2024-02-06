@@ -212,6 +212,7 @@ function sort_matrix_upper_rows!(matrix::MacaulayMatrix)
     #= smaller means pivot being more left  =#
     #= and density being smaller            =#
     permutation = collect(1:(matrix.nrows_filled_upper))
+    # TODO: use "let" here!
     cmp =
         (x, y) -> matrix_row_decreasing_cmp(
             @inbounds(matrix.upper_rows[x]),
@@ -262,23 +263,20 @@ function sort_columns_by_labels!(
     column_to_monom::Vector{T},
     symbol_ht::MonomialHashtable
 ) where {T}
-    hd = symbol_ht.hashdata
-    es = symbol_ht.monoms
-
-    function cmp(a, b, ord)
-        @inbounds ha = hd[a]
-        @inbounds hb = hd[b]
-        if ha.idx != hb.idx
-            return ha.idx > hb.idx
+    cmp = let hd = symbol_ht.hashdata, es = symbol_ht.monoms, htord = symbol_ht.ord
+        function _cmp(a, b, ord)
+            @inbounds ha = hd[a]
+            @inbounds hb = hd[b]
+            if ha.idx != hb.idx
+                return ha.idx > hb.idx
+            end
+            @inbounds ea = es[a]
+            @inbounds eb = es[b]
+            monom_isless(eb, ea, ord)
         end
-        @inbounds ea = es[a]
-        @inbounds eb = es[b]
-        monom_isless(eb, ea, ord)
+        (x, y) -> _cmp(x, y, htord)
     end
-
-    ordcmp = (x, y) -> cmp(x, y, symbol_ht.ord)
-
-    sort!(column_to_monom, lt=ordcmp, alg=_default_sorting_alg())
+    sort!(column_to_monom, lt=cmp, alg=_default_sorting_alg())
 end
 
 # Given a vector of vectors of exponent vectors and coefficients, sort each
