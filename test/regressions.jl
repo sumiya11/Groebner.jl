@@ -72,7 +72,7 @@ end
     pr = 2^28
     bad = 268419493
     sys_zp0 = map(f -> AbstractAlgebra.change_base_ring(AbstractAlgebra.GF(Primes.prevprime(pr-1)), f), sys_z_t)
-    sys_zp2 = map(f -> AbstractAlgebra.change_base_ring(AbstractAlgebraGF(bad), f), sys_z_t)
+    sys_zp2 = map(f -> AbstractAlgebra.change_base_ring(AbstractAlgebra.GF(bad), f), sys_z_t)
     trace, _ = Groebner.groebner_learn(sys_zp0, ordering=Groebner.DegRevLex());
     flag,gb = Groebner.groebner_apply!(trace, sys_zp2);
     @test true
