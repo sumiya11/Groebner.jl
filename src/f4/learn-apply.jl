@@ -71,7 +71,8 @@ function reduction_learn!(
     matrix_fill_column_to_monom_map!(matrix, symbol_ht)
     linalg_main!(matrix, basis, params, trace, linalg=LinearAlgebra(:learn, :sparse))
     matrix_convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht)
-    pivot_indices = map(i -> Int32(basis.monoms[basis.nprocessed + i][1]), 1:matrix.npivots)
+    pivot_indices =
+        map(i -> Int32(basis.monoms[basis.nprocessed + i][1]), 1:(matrix.npivots))
     push!(trace.pivot_indices, pivot_indices)
 end
 
@@ -350,7 +351,10 @@ function reduction_apply!(
         colidx = rows[i][1]
         # println(length(matrix.some_coeffs[matrix.lower_to_coeffs[colidx]]), " / ")
         # print(length(matrix.lower_rows[i]), " ; ")
-        !(length(matrix.some_coeffs[matrix.lower_to_coeffs[colidx]]) == length(matrix.lower_rows[i])) && return false
+        !(
+            length(matrix.some_coeffs[matrix.lower_to_coeffs[colidx]]) ==
+            length(matrix.lower_rows[i])
+        ) && return false
     end
     # println()
 
@@ -418,7 +422,8 @@ function f4_symbolic_preprocessing!(
 
     # println(map(i -> length(matrix.lower_rows[i]), 1:nlow))
     # println(map(i -> length(basis.coeffs[matrix.lower_to_coeffs[i]]), 1:nlow))
-    @invariant map(i -> length(matrix.lower_rows[i]), 1:nlow) == map(i -> length(basis.coeffs[matrix.lower_to_coeffs[i]]), 1:nlow)
+    @invariant map(i -> length(matrix.lower_rows[i]), 1:nlow) ==
+               map(i -> length(basis.coeffs[matrix.lower_to_coeffs[i]]), 1:nlow)
 
     for i in 1:nup
         mult_idx = upmults[i]
@@ -446,7 +451,8 @@ function f4_symbolic_preprocessing!(
 
     # println(map(i -> length(matrix.upper_rows[i]), 1:nup))
     # println(map(i -> length(basis.coeffs[matrix.upper_to_coeffs[i]]), 1:nup))
-    @invariant map(i -> length(matrix.upper_rows[i]), 1:nup) == map(i -> length(basis.coeffs[matrix.upper_to_coeffs[i]]), 1:nup)
+    @invariant map(i -> length(matrix.upper_rows[i]), 1:nup) ==
+               map(i -> length(basis.coeffs[matrix.upper_to_coeffs[i]]), 1:nup)
 
     i = MonomId(symbol_ht.offset)
     @inbounds while i <= symbol_ht.load

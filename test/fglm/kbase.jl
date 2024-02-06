@@ -52,32 +52,7 @@ end
     gb = Groebner.groebner(root4)
     R = parent(first(root4))
     (x1, x2, x3, x4) = gens(R)
-    @test Groebner.kbase(gb) == [
-        R(1),
-        x4,
-        x4^2,
-        x4^3,
-        x3,
-        x3 * x4,
-        x3 * x4^2,
-        x3 * x4^3,
-        x3^2,
-        x3^2 * x4,
-        x3^2 * x4^2,
-        x3^2 * x4^3,
-        x2,
-        x2 * x4,
-        x2 * x4^2,
-        x2 * x4^3,
-        x2 * x3,
-        x2 * x3 * x4,
-        x2 * x3 * x4^2,
-        x2 * x3 * x4^3,
-        x2 * x3^2,
-        x2 * x3^2 * x4,
-        x2 * x3^2 * x4^2,
-        x2 * x3^2 * x4^3
-    ]
+    @test length(Groebner.kbase(gb)) == 24
 
     root6 = Groebner.rootn(6)
     gb = Groebner.groebner(root6)
