@@ -127,6 +127,10 @@ function linalg_apply_reduce_matrix_lower_part!(
         sparse_row_coeffs = basis.coeffs[row_index_to_coeffs[i]]
 
         @invariant length(sparse_row_support) == length(sparse_row_coeffs)
+        if !(length(sparse_row_support) == length(sparse_row_coeffs))
+            __this_is_bad()
+            return false
+        end
 
         # Load coefficients into a dense array
         # TODO!!!: if `row` was fully reduced to zero on the previous iteration,
@@ -155,6 +159,10 @@ function linalg_apply_reduce_matrix_lower_part!(
         end
 
         @invariant length(new_sparse_row_coeffs) == length(new_sparse_row_support)
+        if !(length(new_sparse_row_coeffs) == length(new_sparse_row_support))
+            __this_is_bad()
+            return false
+        end
         linalg_normalize_row!(new_sparse_row_coeffs, arithmetic)
 
         # Store the new row in the matrix, AND add it to the active pivots
@@ -236,6 +244,7 @@ function linalg_learn_reduce_matrix_lower_part!(
     # Allocate the buffers
     row = zeros(AccumType, ncols)
     not_reduced_to_zero = Vector{Int}()
+    pivot_indices = Vector{Int}()
     useful_reducers = Set{Tuple{Int, Int, MonomId}}()
     new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
     reducer_rows = Tuple{Int, Int, MonomId}[]
@@ -269,6 +278,7 @@ function linalg_learn_reduce_matrix_lower_part!(
 
         # NOTE: we are not recording reducers from the lower part of the matrix
         push!(not_reduced_to_zero, i)
+        push!(pivot_indices, new_sparse_row_support[1])
         for reducer_row in reducer_rows
             push!(useful_reducers, reducer_row)
         end
@@ -301,6 +311,7 @@ function linalg_learn_reduce_matrix_lower_part!(
         trace.matrix_lower_rows,
         (row_idx_to_coeffs[not_reduced_to_zero], matrix.lower_to_mult[not_reduced_to_zero])
     )
+    # push!(trace.pivot_indices, map(sgn -> matrix.column_to_monom[sgn], pivot_indices))
 
     true
 end

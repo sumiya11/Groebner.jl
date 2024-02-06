@@ -51,7 +51,7 @@ end
 
 begin
     n, step = 1, 5
-    while n < 500
+    while n < 40
         @info "n = $n"
         print("scalar_cmp_lex\t\t\t")
         @btime scalar_cmp_lex(xx, yy) setup = begin
@@ -101,45 +101,55 @@ end
 
 _setup4(n) = begin
     s = rand(UInt8.([0, 0, 0, 1, 2, 3]), 2)
-    a, b = vcat(zeros(UInt8, n), s), vcat(zeros(UInt8, n), reverse(s))
+    a, b = vcat(zeros(UInt8, n-3), s), vcat(zeros(UInt8, n-3), reverse(s))
     a, b = reverse(a), reverse(b)
     x = Groebner.monom_construct_from_vector(Groebner.ExponentVector{UInt8}, a)
     y = Groebner.monom_construct_from_vector(Groebner.ExponentVector{UInt8}, b)
     vT(n) =
-        if n + 2 < 8
+        if n < 8
             Groebner.PackedTuple1
-        elseif n + 2 < 16
+        elseif n < 16
             Groebner.PackedTuple2
-        elseif n + 2 < 24
+        elseif n < 24
             Groebner.PackedTuple3
+        elseif n < 32
+            Groebner.PackedTuple4
+        else
+            Groebner.PackedTuple4
         end
     xpacked = Groebner.monom_construct_from_vector(vT(n){UInt64, UInt8}, a)
     ypacked = Groebner.monom_construct_from_vector(vT(n){UInt64, UInt8}, b)
-    x, y, xpacked, ypacked
+    xsparse = Groebner.monom_construct_from_vector(Groebner.SparseExponentVector{UInt8}, a)
+    ysparse = Groebner.monom_construct_from_vector(Groebner.SparseExponentVector{UInt8}, b)
+    x, y, xpacked, ypacked, xsparse, ysparse
 end
 begin
-    n, step = 1, 3
-    while n < 22
+    for n in [15, 31, 63, 127, 255]
         @info "n = $n"
-        print("Groebner.monom_isless:drl:packed\t")
-        @btime Groebner.monom_isless(xpacked, ypacked, _ord) setup = begin
-            x, y, xpacked, ypacked = _setup4($n)
-            _ord = Groebner._DegRevLex{true}(ones(Int, length(x)))
-            @assert Groebner.monom_totaldeg(xpacked) == Groebner.monom_totaldeg(ypacked)
-            tmp1, tmp2 =
-                Vector{Int8}(undef, length(x) - 1), Vector{Int8}(undef, length(x) - 1)
-            @assert Groebner.monom_to_vector!(tmp1, x) ==
-                    Groebner.monom_to_vector!(tmp2, xpacked)
-            @assert Groebner.monom_to_vector!(tmp1, y) ==
-                    Groebner.monom_to_vector!(tmp2, ypacked)
+        print("Groebner.monom_lcm!:packed\t")
+        if n <= 31
+            x, y, xpacked, ypacked, xsparse, ysparse = _setup4(n)
+            z = Groebner.monom_copy(xpacked)
+            @btime Groebner.monom_lcm!($z, $xpacked, $ypacked)
+            # setup = begin
+            #     x, y, xpacked, ypacked, xsparse, ysparse = _setup4($n)
+            #     z = Groebner.monom_copy(xpacked)
+            # end
+        else
+            println("-")
         end
-        print("Groebner.monom_isless:drl:expvect\t")
-        @btime Groebner.monom_isless(x, y, _ord) setup = begin
-            x, y, xpacked, ypacked = _setup4($n)
-            _ord = Groebner._DegRevLex{true}(ones(Int, length(x)))
-            @assert Groebner.monom_totaldeg(x) == Groebner.monom_totaldeg(y)
+        print("Groebner.monom_lcm!:expvect\t")
+        @btime Groebner.monom_lcm!(z, x, y) setup = begin
+            x, y, xpacked, ypacked, xsparse, ysparse = _setup4($n)
+            @assert length(x) == length(y) == $n
+            z = Groebner.monom_copy(x)
         end
-        n += step
+        print("Groebner.monom_lcm!:sparsevect\t")
+        @btime Groebner.monom_lcm!(z, xsparse, ysparse) setup = begin
+            x, y, xpacked, ypacked, xsparse, ysparse = _setup4($n)
+            z = Groebner.monom_copy(xsparse)
+            Groebner.monom_resize_if_needed!(z, $(2n))
+        end
     end
 end
 

@@ -30,6 +30,7 @@ mutable struct TraceF4{C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
     matrix_upper_rows::Vector{Tuple{Vector{Int}, Vector{MonomId}}}
     matrix_lower_rows::Vector{Tuple{Vector{Int}, Vector{MonomId}}}
     matrix_sorted_columns::Vector{Vector{Int}}
+    pivot_indices::Vector{Vector{Int}}
 
     critical_pair_sequence::Vector{Tuple{Int, Int}}
 
@@ -75,6 +76,7 @@ function trace_initialize(
         Vector{Tuple{Vector{Int}, Vector{MonomId}}}(),
         Vector{Tuple{Vector{Int}, Vector{MonomId}}}(),
         Vector{Vector{Int}}(),
+        Vector{Vector{Int}}(),
         Vector{Tuple{Int, Int}}(),
         Vector{Int}(),
         Vector{Int}(),
@@ -110,6 +112,7 @@ function trace_deepcopy(
         trace.matrix_upper_rows,
         trace.matrix_lower_rows,
         map(copy, trace.matrix_sorted_columns),
+        map(copy, trace.pivot_indices),
         copy(trace.critical_pair_sequence),
         copy(trace.output_nonredundant_indices),
         copy(trace.nonredundant_indices_before_reduce),
@@ -179,6 +182,7 @@ function trace_copy(
         trace.matrix_upper_rows,
         trace.matrix_lower_rows,
         copy(trace.matrix_sorted_columns),
+        trace.pivot_indices,
         trace.critical_pair_sequence,
         trace.output_nonredundant_indices,
         trace.nonredundant_indices_before_reduce,

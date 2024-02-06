@@ -497,6 +497,10 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
         else
             pivot_coeffs = matrix.some_coeffs[matrix.lower_to_coeffs[i]]
         end
+        if !(length(pivot_support) == length(pivot_coeffs))
+            __this_is_bad()
+            return true
+        end
         @invariant length(pivot_support) == length(pivot_coeffs)
 
         linalg_vector_addmul_sparsedense_mod_p!(
@@ -587,6 +591,10 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
         else
             # if reducer is from the lower part of the matrix
             coeffs = matrix.some_coeffs[matrix.lower_to_coeffs[i]]
+        end
+        if !(length(indices) == length(coeffs))
+            __this_is_bad()
+            return true
         end
         @invariant length(indices) == length(coeffs)
 
@@ -680,6 +688,10 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
             # if reducer is from the lower part of the matrix
             coeffs = matrix.some_coeffs[matrix.lower_to_coeffs[i]]
         end
+        if !(length(indices) == length(coeffs))
+            __this_is_bad()
+            return true
+        end
         @invariant length(indices) == length(coeffs)
 
         linalg_vector_addmul_sparsedense!(row, indices, coeffs, arithmetic)
@@ -765,6 +777,10 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
         else
             # if reducer is from the lower part of the matrix
             coeffs = matrix.some_coeffs[matrix.lower_to_coeffs[i]]
+        end
+        if !(length(indices) == length(coeffs))
+            __this_is_bad()
+            return true
         end
         @invariant length(indices) == length(coeffs)
 

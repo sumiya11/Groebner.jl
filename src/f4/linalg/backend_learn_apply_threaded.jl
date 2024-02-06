@@ -40,6 +40,7 @@ function linalg_learn_reduce_matrix_lower_part_threaded!(
         Using multi-threaded linear algebra with nthreads() == 1. 
         Something probably went wrong."""
     end
+    @assert false # this may be broken
 
     _, ncols = size(matrix)
     nup, nlow = matrix_nrows_filled(matrix)
