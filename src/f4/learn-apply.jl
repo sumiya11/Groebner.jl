@@ -60,6 +60,20 @@ function standardize_basis_in_learn!(
     basis_normalize!(basis, arithmetic)
 end
 
+function matrix_compute_pivot_signature(pivots::Vector{Vector{MonomId}}, from::Int, sz::Int)
+    sgn = UInt64(0x7e2d6fb6448beb77)
+    sgn = sgn - UInt64(89 * sz)
+    @inbounds for i in from:(from + sz - 1)
+        p = pivots[i]
+        sgni = zero(UInt64)
+        for j in 1:length(p)
+            sgni = p[j] - UInt64(13) * sgni
+        end
+        sgn = sgn - UInt(13) * sgni
+    end
+    sgn
+end
+
 function reduction_learn!(
     trace::TraceF4,
     basis::Basis,
@@ -73,7 +87,10 @@ function reduction_learn!(
     matrix_convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht)
     pivot_indices =
         map(i -> Int32(basis.monoms[basis.nprocessed + i][1]), 1:(matrix.npivots))
-    push!(trace.pivot_indices, pivot_indices)
+    push!(trace.matrix_pivot_indices, pivot_indices)
+    matrix_pivot_signature =
+        matrix_compute_pivot_signature(basis.monoms, basis.nprocessed + 1, matrix.npivots)
+    push!(trace.matrix_pivot_signatures, matrix_pivot_signature)
 end
 
 function f4_reducegb_learn!(
@@ -330,54 +347,81 @@ function reduction_apply!(
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable,
     f4_iteration::Int,
+    cache_column_order::Bool,
     params::AlgorithmParameters
 )
     # if length(trace.matrix_sorted_columns) >= f4_iteration &&
     #    length(trace.matrix_sorted_columns[f4_iteration]) != (symbol_ht.load - 1)
     #     # Some monomial vanished!!!
-    #     return false
+    #     # return false
+    #     @assert false
     # end
 
     # We bypass the sorting of the matrix columns when apply is used the second
     # time
-    if false && length(trace.matrix_sorted_columns) >= f4_iteration # && length(trace.matrix_sorted_columns[f4_iteration]) == (symbol_ht.load - 1)
-        # TODO: see "TODO: (I)" in src/groebner/groebner.jl
-        matrix.column_to_monom = trace.matrix_sorted_columns[f4_iteration]
-        matrix_fill_column_to_monom_map!(trace, matrix, symbol_ht)
+    if cache_column_order
+        if length(trace.matrix_sorted_columns) >= f4_iteration
+            # TODO: see "TODO: (I)" in src/groebner/groebner.jl
+            matrix.column_to_monom = trace.matrix_sorted_columns[f4_iteration]
+            matrix_fill_column_to_monom_map!(trace, matrix, symbol_ht)
+        else
+            matrix_fill_column_to_monom_map!(matrix, symbol_ht)
+            push!(trace.matrix_sorted_columns, matrix.column_to_monom)
+        end
     else
         matrix_fill_column_to_monom_map!(matrix, symbol_ht)
-        push!(trace.matrix_sorted_columns, matrix.column_to_monom)
     end
 
     flag = linalg_main!(matrix, basis, params, trace, linalg=LinearAlgebra(:apply, :sparse))
-    !flag && return false
-
-    rows = matrix.lower_rows
-    @inbounds for i in 1:(matrix.npivots)
-        colidx = rows[i][1]
-        # println(length(matrix.some_coeffs[matrix.lower_to_coeffs[colidx]]), " / ")
-        # print(length(matrix.lower_rows[i]), " ; ")
-        !(
-            length(matrix.some_coeffs[matrix.lower_to_coeffs[colidx]]) ==
-            length(matrix.lower_rows[i])
-        ) && return false
+    if !flag
+        @log level = 1000 "In apply, in linear algebra, some of the matrix rows reduced to zero."
+        return (false, false)
     end
+
+    # println(matrix)
+
+    # rows = matrix.lower_rows
+    # @inbounds for i in 1:(matrix.npivots)
+    #     colidx = rows[i][1]
+    #     !(
+    #         length(matrix.some_coeffs[matrix.lower_to_coeffs[colidx]]) ==
+    #         length(matrix.lower_rows[i])
+    #     ) && return false
+    # end
 
     matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 
     # Check that the leading terms were not reduced to zero accidentally
-    pivot_indices = trace.pivot_indices[f4_iteration]
-    # println(trace.pivot_indices[1])
+    pivot_indices = trace.matrix_pivot_indices[f4_iteration]
+    # println(trace.matrix_pivot_indices[1])
     # println("'''")
     # println(pivot_indices)
     # println(map(i -> basis.monoms[basis.nprocessed + i][1], 1:matrix.npivots))
     @inbounds for i in 1:(matrix.npivots)
         sgn = basis.monoms[basis.nprocessed + i][1]
         # sgn = matrix.column_to_monom[matrix.lower_rows[i][1]]
-        sgn != pivot_indices[i] && return false
+        if sgn != pivot_indices[i]
+            @log level = -2 "In apply, some leading terms cancelled out!"
+            return (false, false)
+        end
     end
 
-    true
+    if cache_column_order
+        matrix_pivot_signature = matrix_compute_pivot_signature(
+            basis.monoms,
+            basis.nprocessed + 1,
+            matrix.npivots
+        )
+        if matrix_pivot_signature != trace.matrix_pivot_signatures[f4_iteration]
+            @log level = 0 """
+            In apply, on iteration $(f4_iteration) of F4, some trailing terms cancelled out.
+            hash (expected):    $(trace.matrix_pivot_signatures[f4_iteration])
+            hash (got):         $(matrix_pivot_signature)"""
+            return true, false
+        end
+    end
+
+    true, cache_column_order
 end
 
 function f4_symbolic_preprocessing!(
@@ -481,6 +525,7 @@ function autoreduce_f4_apply!(
     hashtable::MonomialHashtable{M},
     symbol_ht::MonomialHashtable{M},
     f4_iteration::Int,
+    cache_column_order::Bool,
     params::AlgorithmParameters
 ) where {M}
     @log level = -5 "Entering apply autoreduction" basis
@@ -538,17 +583,22 @@ function autoreduce_f4_apply!(
     matrix.nrows_filled_lower = nlow
     matrix.nrows_filled_upper = nup
 
-    if true || length(trace.matrix_sorted_columns) < f4_iteration
-        matrix_fill_column_to_monom_map!(matrix, symbol_ht)
-        # push!(trace.matrix_sorted_columns, matrix.column_to_monom)
+    if cache_column_order
+        if length(trace.matrix_sorted_columns) >= f4_iteration
+            # TODO: see "TODO: (I)" in src/groebner/groebner.jl
+            matrix.column_to_monom = trace.matrix_sorted_columns[f4_iteration]
+            matrix_fill_column_to_monom_map!(trace, matrix, symbol_ht)
+        else
+            matrix_fill_column_to_monom_map!(matrix, symbol_ht)
+            push!(trace.matrix_sorted_columns, matrix.column_to_monom)
+        end
     else
-        # TODO: see "TODO: (I)" in src/groebner/groebner.jl
-        matrix.column_to_monom = trace.matrix_sorted_columns[f4_iteration]
-        matrix_fill_column_to_monom_map!(trace, matrix, symbol_ht)
+        matrix_fill_column_to_monom_map!(matrix, symbol_ht)
     end
 
     flag = linalg_autoreduce!(matrix, basis, params, linalg=LinearAlgebra(:apply, :sparse))
     if !flag
+        @log level = 1000 "In apply, the final autoreduction of the basis failed"
         return false
     end
     matrix_convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht)
@@ -607,17 +657,35 @@ end
 
     basis_update!(basis, hashtable)
 
+    cache_column_order = true
+
     while iters < iters_total
         iters += 1
         @log level = -5 "F4 Apply iteration $iters"
 
+        # println(basis)
+
         f4_symbolic_preprocessing!(trace, iters, basis, matrix, hashtable, symbol_ht)
 
-        flag = reduction_apply!(trace, basis, matrix, hashtable, symbol_ht, iters, params)
+        # println(matrix)
+
+        flag, new_cache_column_order = reduction_apply!(
+            trace,
+            basis,
+            matrix,
+            hashtable,
+            symbol_ht,
+            iters,
+            cache_column_order,
+            params
+        )
         if !flag
             # Unlucky cancellation of basis coefficients may have happened
             return false
         end
+        cache_column_order = new_cache_column_order && cache_column_order
+
+        # println(basis)
 
         basis_update!(basis, hashtable)
 
@@ -638,6 +706,7 @@ end
             hashtable,
             symbol_ht,
             iters_total + 1,
+            cache_column_order,
             params
         )
         if !flag

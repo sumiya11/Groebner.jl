@@ -1,13 +1,14 @@
 using AbstractAlgebra
 using Primes
 using Random
+include("../src/Groebner.jl")
 
 function fooo()
     R, (x, y) = polynomial_ring(QQ, ["x", "y"], ordering=:degrevlex)
 
-    sys = [x * y + y, x * y + x + y]
-    sys = [x * y^3 + y, x * y + x + y]
-    sys = Groebner.cyclicn(7)
+    # sys = [x * y + y, x * y + x + y]
+    # sys = [x * y^3 + y, x * y + x + y]
+    sys = Groebner.katsuran(9)
     R = parent(sys[1])
     println(sys)
     Groebner.groebner(sys)
@@ -16,9 +17,12 @@ function fooo()
     A, B = 0, 0
 
     boot = 100
-    for p in Primes.nextprimes(2^27 + 3, 100)
+    for p in Primes.nextprimes(2^25, 100)
         @info "" p boot
         for i in 1:boot
+            if (i % 10) == 0
+                @info "$i / $boot"
+            end
             #
             # sys_x = map(f -> evaluate(f, xy .* gens(R)), sys)
             sys_x = empty(sys)
@@ -39,7 +43,8 @@ function fooo()
                 continue
             end
             trace, gb = Groebner.groebner_learn(sys_x_mod_p)
-            for p2 in Primes.nextprimes(2^27 + 3, 100)
+            backup = deepcopy(trace)
+            for p2 in Primes.nextprimes(2^25, 10)
                 if p == p2
                     continue
                 end
@@ -57,7 +62,8 @@ function fooo()
                     println(A / B)
                     A += 1
                     # @info "$success $p $p2"
-                    # trace, gb = Groebner.groebner_learn(sys_x_mod_p)
+                    trace = backup
+                    backup = deepcopy(trace)
                 end
                 B += 1
             end
@@ -95,8 +101,31 @@ Groebner.groebner(sys_mod_p, loglevel=-100)
 Groebner.groebner(sys_mod_p2, loglevel=-100)
 
 trace, gb = Groebner.groebner_learn(sys_mod_p)
-flag, gb = Groebner.groebner_apply!(trace, sys_mod_p)
+flag, gb = Groebner.groebner_apply!(trace, sys_mod_p, loglevel=-5)
+flag, gb = Groebner.groebner_apply!(trace, sys_mod_p2, loglevel=-5)
+
+trace, gb = Groebner.groebner_learn(sys_mod_p2)
 flag, gb = Groebner.groebner_apply!(trace, sys_mod_p2)
+flag, gb = Groebner.groebner_apply!(trace, sys_mod_p)
+
+###############
+
+p, p2 = nextprime(2^27), nextprime(2^27)
+
+sys = Groebner.cyclicn(8)
+
+sys_mod_p = map(f -> map_coefficients(c -> GF(p)(numerator(c)), f), sys)
+sys_mod_p2 = map(f -> map_coefficients(c -> GF(p2)(numerator(c)), f), sys)
+
+a = length.(Groebner.groebner(sys_mod_p))
+b = length.(Groebner.groebner(sys_mod_p2))
+a == b
+
+trace, gb = Groebner.groebner_learn(sys_mod_p);
+flag, gb = Groebner.groebner_apply!(trace, sys_mod_p);
+flag, gb = Groebner.groebner_apply!(trace, sys_mod_p2);
+
+@profview Groebner.groebner_apply!(trace, sys_mod_p)
 
 trace, gb = Groebner.groebner_learn(sys_mod_p2)
 flag, gb = Groebner.groebner_apply!(trace, sys_mod_p2)

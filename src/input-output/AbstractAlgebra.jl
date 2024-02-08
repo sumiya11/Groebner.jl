@@ -266,9 +266,11 @@ function extract_coeffs_raw!(
 
     # a hack for homogenized inputs
     if trace.homogenize
-        if !(length(basis.monoms[length(polys) + 1]) ==
-                length(basis.coeffs[length(polys) + 1]) ==
-                2)
+        if !(
+            length(basis.monoms[length(polys) + 1]) ==
+            length(basis.coeffs[length(polys) + 1]) ==
+            2
+        )
             return false, ring
         end
         @invariant !iszero(ring.ch)
@@ -413,9 +415,11 @@ function io_extract_coeffs_raw_batched!(
 
     # a hack for homogenized inputs
     if trace.homogenize
-        if !(length(basis.monoms[length(batch[1]) + 1]) ==
-                length(basis.coeffs[length(batch[1]) + 1]) ==
-                2)
+        if !(
+            length(basis.monoms[length(batch[1]) + 1]) ==
+            length(basis.coeffs[length(batch[1]) + 1]) ==
+            2
+        )
             return false
         end
         basis.coeffs[length(batch[1]) + 1][1] = one(CoeffType)
@@ -439,7 +443,7 @@ function _extract_coeffs_raw!(
     permute_input_terms = !isempty(term_perms)
     permute_homogenizing_terms = !isempty(homog_term_perms)
     if !(basis.nfilled == count(!iszero, polys) + permute_homogenizing_terms)
-        @log level = 1000 "In apply, input contains too many zero polynomials."
+        @log level = 1000 "In apply, the number of polynomials in input is different from the learn stage."
         return false
     end
     polys = filter(!iszero, polys)
@@ -485,7 +489,7 @@ function _io_extract_coeffs_raw_batched!(
     permute_homogenizing_terms = !isempty(homog_term_perms)
     for polys in batch
         if !(basis.nfilled == count(!iszero, polys) + permute_homogenizing_terms)
-            @log level = 1000 "In apply, input contains too many zero polynomials."
+            @log level = 1000 "In apply, the number of polynomials in input is different from the learn stage."
             return false
         end
     end

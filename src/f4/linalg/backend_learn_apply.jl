@@ -303,7 +303,7 @@ function linalg_learn_reduce_matrix_lower_part!(
         trace.matrix_lower_rows,
         (row_idx_to_coeffs[not_reduced_to_zero], matrix.lower_to_mult[not_reduced_to_zero])
     )
-    # push!(trace.pivot_indices, map(sgn -> matrix.column_to_monom[sgn], pivot_indices))
+    # push!(trace.matrix_pivot_indices, map(sgn -> matrix.column_to_monom[sgn], pivot_indices))
 
     true
 end

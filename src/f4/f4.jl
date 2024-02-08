@@ -741,7 +741,7 @@ end
         # selects pairs for reduction from pairset following normal strategy
         # (minimal lcm degrees are selected),
         # and puts these into the matrix rows
-        @timeit "pair selection" f4_select_critical_pairs!(
+        f4_select_critical_pairs!(
             pairset,
             basis,
             matrix,

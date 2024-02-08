@@ -497,7 +497,6 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
         else
             pivot_coeffs = matrix.some_coeffs[matrix.lower_to_coeffs[i]]
         end
-        # TODO!!!
         @invariant length(pivot_support) == length(pivot_coeffs)
 
         linalg_vector_addmul_sparsedense_mod_p!(
