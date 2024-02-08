@@ -1,25 +1,24 @@
 ## Benchmark results
 
-2024-02-04T08:22:40.306
+2024-02-07T01:15:46.704
 
 Benchmarked backends: Any["groebner", "maple", "msolve"]
 
 Benchmark suite: SIAN, 2^30+3
 
 - Workers: 8
-- Timeout: 1200 s
+- Timeout: 2000 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|groebner|maple|msolve|
 |:----|---|---|---|
-|Cholera|84.95|99.09|162.29|
-|Goodwin (w.)|401.83|342.48|697.76|
-|HIV2|3.66|4.05|16.48|
-|NFkB (w.)|472.00|484.62| - |
-|SEIRP|217.98|251.86|340.03|
-|dummy|0.00|0.01|0.01|
+|Cholera|70.65|98.30|176.09|
+|Goodwin (w.)|298.46|368.19|522.61|
+|HIV2|3.72|3.89|15.92|
+|NFkB (w.)|325.64|515.50| - |
+|dummy|0.00|0.04|0.04|
 
 *Benchmarking environment:*
 

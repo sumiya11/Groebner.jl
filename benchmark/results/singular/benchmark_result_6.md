@@ -1,10 +1,10 @@
 ## Benchmark results
 
-2024-02-07T02:28:54.478
+2024-02-07T02:50:12.062
 
-Benchmarked backend: groebner
+Benchmarked backend: singular
 
-Benchmark suite: ipp, the rationals
+Benchmark suite: SI
 
 - Workers: 8
 - Timeout: 1000 s
@@ -14,7 +14,8 @@ Benchmark suite: ipp, the rationals
 
 |Model|Total, s|
 |:----|---|
-|ipp|47.85|
+|SEAIJRC| - |
+|SIWR| - |
 
 *Benchmarking environment:*
 

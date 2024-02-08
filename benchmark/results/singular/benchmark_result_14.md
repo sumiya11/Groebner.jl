@@ -1,26 +1,26 @@
 ## Benchmark results
 
-2024-02-03T14:08:15.578
+2024-02-07T00:39:26.777
 
 Benchmarked backend: singular
 
 Benchmark suite: Other, modulo 2^30 + 3
 
 - Workers: 8
-- Timeout: 1200 s
+- Timeout: 1000 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|alea6|4.69|
-|bayes148|7.48|
+|alea6|4.38|
+|bayes148|6.50|
 |dummy|0.00|
 |gametwo2| - |
-|jason210|2.39|
-|mayr42|178.37|
-|yang1|78.44|
+|jason210|2.40|
+|mayr42|314.92|
+|yang1|101.44|
 
 *Benchmarking environment:*
 

@@ -1,20 +1,24 @@
 ## Benchmark results
 
-2024-02-07T02:28:54.478
+2024-02-07T00:55:49.612
 
-Benchmarked backend: groebner
+Benchmarked backend: openf4
 
-Benchmark suite: ipp, the rationals
+Benchmark suite: SIAN, 2^30+3
 
 - Workers: 8
-- Timeout: 1000 s
+- Timeout: 600 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|ipp|47.85|
+|Cholera| - |
+|Goodwin (w.)| - |
+|HIV2|202.62|
+|NFkB (w.)| - |
+|dummy|0.01|
 
 *Benchmarking environment:*
 

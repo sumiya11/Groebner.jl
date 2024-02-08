@@ -1,21 +1,20 @@
 ## Benchmark results
 
-2024-02-03T13:42:18.869
+2024-02-07T02:34:17.890
 
 Benchmarked backend: msolve
 
-Benchmark suite: hexapod, the rationals
+Benchmark suite: ipp, the rationals
 
-- Workers: 4
-- Timeout: 600 s
+- Workers: 8
+- Timeout: 1000 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|alea6|24.14|
-|hexapod|3.65|
+|ipp|13.22|
 
 *Benchmarking environment:*
 

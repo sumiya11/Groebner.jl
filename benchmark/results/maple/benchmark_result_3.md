@@ -1,43 +1,43 @@
 ## Benchmark results
 
-2024-02-03T01:01:10.467
+2024-02-06T12:16:34.827
 
 Benchmarked backend: maple
 
 Benchmark suite: The rationals
 
-- Workers: 10
-- Timeout: 6500 s
+- Workers: 8
+- Timeout: 1800 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|chandra 9|5.60|
-|chandra 10|22.04|
-|chandra 11|108.12|
-|chandra 12|872.18|
-|chandra 13|4408.74|
-|cyclic 7|1.73|
-|cyclic 8|21.95|
-|dummy|0.14|
-|eco 10|0.78|
+|chandra 9|5.37|
+|chandra 10|25.70|
+|chandra 11|129.58|
+|chandra 12|1052.14|
+|chandra 13| - |
+|cyclic 7|1.41|
+|cyclic 8|23.82|
+|dummy|0.01|
+|eco 10|0.71|
 |eco 11|4.87|
-|eco 12|34.40|
-|eco 13|314.34|
-|henrion 6|1.67|
-|henrion 7|2533.45|
-|ipp|139.11|
-|katsura 9|8.59|
-|katsura 10|78.59|
-|katsura 11|1063.73|
-|noon 7|1.19|
-|noon 8|9.65|
-|noon 9|71.94|
-|reimer 6|0.70|
-|reimer 7|26.74|
-|reimer 8|2729.68|
+|eco 12|35.06|
+|eco 13|496.48|
+|henrion 6|1.74|
+|henrion 7| - |
+|ipp|173.43|
+|katsura 9|9.00|
+|katsura 10|84.81|
+|katsura 11|1318.31|
+|noon 7|1.03|
+|noon 8|9.23|
+|noon 9|98.78|
+|reimer 6|0.57|
+|reimer 7|32.33|
+|reimer 8| - |
 
 *Benchmarking environment:*
 

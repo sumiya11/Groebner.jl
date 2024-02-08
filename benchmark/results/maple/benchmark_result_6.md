@@ -1,21 +1,21 @@
 ## Benchmark results
 
-2024-02-03T00:58:41.761
+2024-02-07T02:42:41.216
 
 Benchmarked backend: maple
 
 Benchmark suite: SI
 
-- Workers: 10
-- Timeout: 1000 s
+- Workers: 8
+- Timeout: 3600 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|SEAIJRC|74.00|
-|SIWR|5.62|
+|SEAIJRC|85.26|
+|SIWR|6.18|
 
 *Benchmarking environment:*
 

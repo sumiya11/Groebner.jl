@@ -1,25 +1,24 @@
 ## Benchmark results
 
-2024-02-04T08:22:38.800
+2024-02-07T01:15:45.192
 
 Benchmarked backend: msolve
 
 Benchmark suite: SIAN, 2^30+3
 
 - Workers: 8
-- Timeout: 1200 s
+- Timeout: 2000 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|Cholera|162.29|
-|Goodwin (w.)|697.76|
-|HIV2|16.48|
+|Cholera|176.09|
+|Goodwin (w.)|522.61|
+|HIV2|15.92|
 |NFkB (w.)| - |
-|SEIRP|340.03|
-|dummy|0.01|
+|dummy|0.04|
 
 *Benchmarking environment:*
 

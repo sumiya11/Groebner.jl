@@ -1,20 +1,21 @@
 ## Benchmark results
 
-2024-02-07T02:28:54.478
+2024-02-07T02:52:21.882
 
-Benchmarked backend: groebner
+Benchmarked backend: msolve
 
-Benchmark suite: ipp, the rationals
+Benchmark suite: 2^30+3, larger x2
 
-- Workers: 8
-- Timeout: 1000 s
+- Workers: 4
+- Timeout: 7200 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|ipp|47.85|
+|dummy|0.01|
+|noon 10|178.75|
 
 *Benchmarking environment:*
 

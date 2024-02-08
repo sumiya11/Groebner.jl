@@ -1,21 +1,20 @@
 ## Benchmark results
 
-2024-02-03T13:42:20.204
+2024-02-07T02:34:19.180
 
 Benchmarked backends: Any["groebner", "maple", "msolve"]
 
-Benchmark suite: hexapod, the rationals
+Benchmark suite: ipp, the rationals
 
-- Workers: 4
-- Timeout: 600 s
+- Workers: 8
+- Timeout: 1000 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|groebner|maple|msolve|
 |:----|---|---|---|
-|alea6|41.05|238.65|24.14|
-|hexapod|4.78|72.17|3.65|
+|ipp|47.85|290.35|13.22|
 
 *Benchmarking environment:*
 

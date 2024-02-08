@@ -1,21 +1,21 @@
 ## Benchmark results
 
-2024-02-03T00:47:28.718
+2024-02-07T02:32:13.282
 
 Benchmarked backend: msolve
 
 Benchmark suite: SI
 
-- Workers: 10
-- Timeout: 1000 s
+- Workers: 8
+- Timeout: 3600 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|SEAIJRC|9.50|
-|SIWR|1.67|
+|SEAIJRC|13.55|
+|SIWR|2.08|
 
 *Benchmarking environment:*
 

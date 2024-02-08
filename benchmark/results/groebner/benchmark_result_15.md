@@ -1,24 +1,23 @@
 ## Benchmark results
 
-2024-02-04T07:55:02.177
+2024-02-07T00:52:31.875
 
 Benchmarked backend: groebner
 
 Benchmark suite: SIAN, 2^30+3
 
 - Workers: 8
-- Timeout: 1200 s
+- Timeout: 2000 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|Cholera|84.95|
-|Goodwin (w.)|401.83|
-|HIV2|3.66|
-|NFkB (w.)|472.00|
-|SEIRP|217.98|
+|Cholera|70.65|
+|Goodwin (w.)|298.46|
+|HIV2|3.72|
+|NFkB (w.)|325.64|
 |dummy|0.00|
 
 *Benchmarking environment:*

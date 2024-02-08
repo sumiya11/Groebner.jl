@@ -231,11 +231,12 @@ end
 function benchmark_set_11()
     ground_field = AbstractAlgebra.QQ
     systems = [
-        ("hexapod", Groebner.hexapod(k=ground_field)), 
-        ("alea6", Groebner.alea6(k=ground_field))
+        # ("hexapod", Groebner.hexapod(k=ground_field)), 
+        ("ipp", Groebner.ipp(k=ground_field)), 
+        # ("alea6", Groebner.alea6(k=ground_field))
     ]
 
-    (name="hexapod, the rationals", field=ground_field, systems=systems)
+    (name="ipp, the rationals", field=ground_field, systems=systems)
 end
 
 function benchmark_set_12()
@@ -297,8 +298,38 @@ function benchmark_set_15()
         ("NFkB (w.)", NFkB_with_weights(k=ground_field)),
         # ("Pharm (w.)", Pharm_with_weights(k=ground_field)),
         ("Goodwin (w.)", Goodwin_with_weights(k=ground_field)),
-        ("SEIRP", SEIRP(k=ground_field)),
+        # ("SEIRP", SEIRP(k=ground_field)),
     ]
 
     (name="SIAN, 2^30+3", field=ground_field, systems=systems)
+end
+
+function benchmark_set_16()
+    ground_field = AbstractAlgebra.GF(2^30+3)
+    systems = [
+        dummy_system("dummy", ground_field),
+        # ("cyclic 9", Groebner.cyclicn(9, k=ground_field)),
+        # ("katsura 12", Groebner.katsuran(12, k=ground_field)),
+        # ("eco 14", Groebner.eco14(k=ground_field)),
+        ("noon 10", Groebner.noonn(10, k=ground_field)),
+        # ("reimer 9", Groebner.reimern(9, k=ground_field)),
+        # ("eco 15", Groebner.eco15(k=ground_field)),
+    ]
+
+    (name="2^30+3, larger x2", field=ground_field, systems=systems)
+end
+
+function benchmark_set_17()
+    ground_field = QQ
+    systems = [
+        dummy_system("dummy", ground_field),
+        ("Cholera", Cholera(k=ground_field)),
+        ("HIV2", HIV2(k=ground_field)),
+        ("NFkB (w.)", NFkB_with_weights(k=ground_field)),
+        ("Pharm (w.)", Pharm_with_weights(k=ground_field)),
+        ("Goodwin (w.)", Goodwin_with_weights(k=ground_field)),
+        ("SEIRP", SEIRP(k=ground_field)),
+    ]
+
+    (name="SIAN, QQ", field=ground_field, systems=systems)
 end

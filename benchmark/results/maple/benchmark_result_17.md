@@ -1,20 +1,26 @@
 ## Benchmark results
 
-2024-02-07T02:28:54.478
+2024-02-07T06:42:34.534
 
-Benchmarked backend: groebner
+Benchmarked backend: maple
 
-Benchmark suite: ipp, the rationals
+Benchmark suite: SIAN, QQ
 
 - Workers: 8
-- Timeout: 1000 s
+- Timeout: 7200 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|ipp|47.85|
+|Cholera|527.64|
+|Goodwin (w.)|2120.47|
+|HIV2|23.85|
+|NFkB (w.)|3411.72|
+|Pharm (w.)| - |
+|SEIRP|1235.47|
+|dummy|0.01|
 
 *Benchmarking environment:*
 

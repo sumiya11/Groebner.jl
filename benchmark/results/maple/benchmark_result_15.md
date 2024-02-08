@@ -1,25 +1,24 @@
 ## Benchmark results
 
-2024-02-04T08:03:27.610
+2024-02-07T01:01:20.996
 
 Benchmarked backend: maple
 
 Benchmark suite: SIAN, 2^30+3
 
 - Workers: 8
-- Timeout: 1200 s
+- Timeout: 2000 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|Cholera|99.09|
-|Goodwin (w.)|342.48|
-|HIV2|4.05|
-|NFkB (w.)|484.62|
-|SEIRP|251.86|
-|dummy|0.01|
+|Cholera|98.30|
+|Goodwin (w.)|368.19|
+|HIV2|3.89|
+|NFkB (w.)|515.50|
+|dummy|0.04|
 
 *Benchmarking environment:*
 

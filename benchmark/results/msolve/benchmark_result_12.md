@@ -1,22 +1,22 @@
 ## Benchmark results
 
-2024-02-04T14:07:21.480
+2024-02-06T21:50:38.112
 
 Benchmarked backend: msolve
 
 Benchmark suite: 2^30+3, larger
 
-- Workers: 2
-- Timeout: 6000 s
+- Workers: 8
+- Timeout: 7200 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|dummy|0.02|
-|eco 15|2465.36|
-|reimer 9|3354.00|
+|dummy|0.03|
+|eco 15|2407.44|
+|reimer 9|4022.78|
 
 *Benchmarking environment:*
 

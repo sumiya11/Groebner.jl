@@ -1,43 +1,41 @@
 ## Benchmark results
 
-2024-01-10T04:27:42.467
+2024-02-06T20:39:54.517
 
 Benchmarked backend: singular
 
 Benchmark suite: Integers modulo 2^30 + 3
 
-- Workers: 4
-- Timeout: 600 s
+- Workers: 8
+- Timeout: 7200 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
-|Model|Total|
-|-----|---|
-|cyclic 7|1.84|
-|cyclic 8|68.34|
+|Model|Total, s|
+|:----|---|
+|cyclic 7|1.95|
+|cyclic 8|88.30|
 |cyclic 9| - |
-|cyclic 10| - |
 |dummy|0.00|
-|eco 11|37.99|
-|eco 12| - |
+|eco 11|57.00|
+|eco 12|628.17|
 |eco 13| - |
 |eco 14| - |
 |henrion 5|0.01|
-|henrion 6|0.39|
-|henrion 7|126.98|
-|katsura 10|120.02|
-|katsura 11| - |
+|henrion 6|0.41|
+|henrion 7|94.75|
+|henrion 8| - |
+|katsura 10|107.25|
+|katsura 11|1387.56|
 |katsura 12| - |
 |katsura 13| - |
-|noon 7|0.45|
-|noon 8|4.65|
-|noon 9|57.79|
-|noon 10| - |
-|reimer 6|17.06|
-|reimer 7| - |
+|noon 7|0.49|
+|noon 8|4.93|
+|noon 9|47.89|
+|reimer 6|19.51|
+|reimer 7|3106.54|
 |reimer 8| - |
-|reimer 9| - |
 
 *Benchmarking environment:*
 
@@ -52,6 +50,7 @@ Versions of the dependencies:
 * PrecompileTools : 1.2.0
 * MultivariatePolynomials : 0.5.3
 * Combinatorics : 1.0.2
+* HostCPUFeatures : 0.1.16
 * AbstractAlgebra : 0.34.7
 * Nemo : 0.38.3
 * Atomix : 0.1.0

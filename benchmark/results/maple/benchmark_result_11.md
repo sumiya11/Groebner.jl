@@ -1,21 +1,20 @@
 ## Benchmark results
 
-2024-02-03T13:41:39.761
+2024-02-07T02:33:54.607
 
 Benchmarked backend: maple
 
-Benchmark suite: hexapod, the rationals
+Benchmark suite: ipp, the rationals
 
-- Workers: 4
-- Timeout: 600 s
+- Workers: 8
+- Timeout: 1000 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|alea6|238.65|
-|hexapod|72.17|
+|ipp|290.35|
 
 *Benchmarking environment:*
 

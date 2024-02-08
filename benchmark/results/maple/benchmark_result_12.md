@@ -1,22 +1,22 @@
 ## Benchmark results
 
-2024-02-04T13:11:16.224
+2024-02-06T21:52:56.772
 
 Benchmarked backend: maple
 
 Benchmark suite: 2^30+3, larger
 
-- Workers: 2
-- Timeout: 6000 s
+- Workers: 8
+- Timeout: 7200 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|dummy|0.01|
-|eco 15|1985.55|
-|reimer 9|4317.16|
+|dummy|0.02|
+|eco 15|1851.99|
+|reimer 9|4198.73|
 
 *Benchmarking environment:*
 

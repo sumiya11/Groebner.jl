@@ -1,12 +1,12 @@
 ## Benchmark results
 
-2024-02-07T02:28:54.478
+2024-02-06T14:06:55.553
 
-Benchmarked backend: groebner
+Benchmarked backend: singular
 
-Benchmark suite: ipp, the rationals
+Benchmark suite: hexapod, the rationals
 
-- Workers: 8
+- Workers: 9
 - Timeout: 1000 s
 - Aggregated over: 1 runs
 
@@ -14,7 +14,8 @@ Benchmark suite: ipp, the rationals
 
 |Model|Total, s|
 |:----|---|
-|ipp|47.85|
+|alea6| - |
+|hexapod|308.40|
 
 *Benchmarking environment:*
 

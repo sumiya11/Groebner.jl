@@ -1,40 +1,40 @@
 ## Benchmark results
 
-2024-02-03T10:29:37.149
+2024-02-07T04:07:14.794
 
 Benchmarked backend: singular
 
 Benchmark suite: The rationals
 
-- Workers: 10
-- Timeout: 60 s
+- Workers: 4
+- Timeout: 1800 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|chandra 9| - |
-|chandra 10| - |
-|chandra 11| - |
+|chandra 9|2.99|
+|chandra 10|44.93|
+|chandra 11|341.61|
 |chandra 12| - |
 |chandra 13| - |
 |cyclic 7| - |
 |cyclic 8| - |
-|dummy| - |
-|eco 10| - |
+|dummy|0.00|
+|eco 10|38.52|
 |eco 11| - |
 |eco 12| - |
 |eco 13| - |
-|henrion 6| - |
+|henrion 6|6.22|
 |henrion 7| - |
-|ipp| - |
-|katsura 9| - |
+|ipp|858.20|
+|katsura 9|275.01|
 |katsura 10| - |
 |katsura 11| - |
-|noon 7| - |
-|noon 8| - |
-|noon 9| - |
+|noon 7|1.11|
+|noon 8|12.26|
+|noon 9|184.11|
 |reimer 6| - |
 |reimer 7| - |
 |reimer 8| - |
