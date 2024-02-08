@@ -223,15 +223,14 @@ function is_input_compatible_in_apply(trace, ring, polynomials, kws)
         # @log level = 1_000 "In apply, the given option ordering=$(kws.ordering) has no effect and was discarded"
     end
     if !is_ring_compatible_in_apply(trace, ring, kws)
-        @log level = 1_000 "The ring of input does not seem to be compatible with the learned trace."
+        @log level = 1_000 "In apply, the ring of input does not seem to be compatible with the learned trace."
         return false
     end
     if !(
         length(trace_signature) + count(iszero, polynomials) ==
         length(polynomials) + homogenized
     )
-        @log level = 1_000 "The number of input polynomials in apply ($(length(polynomials))) is different from the number seen in learn ($(length(trace_signature) + count(iszero, polynomials) - homogenized))."
-        return false
+        @log level = 1_000 "In apply, the number of input polynomials ($(length(polynomials))) is different from the number seen in learn ($(length(trace_signature) + count(iszero, polynomials) - homogenized))."
     end
     true
 end
@@ -255,7 +254,7 @@ function extract_coeffs_raw!(
     CoeffType = representation.coefftype
 
     # write new coefficients directly to trace.buf_basis
-    _extract_coeffs_raw!(
+    flag = _extract_coeffs_raw!(
         basis,
         input_polys_perm,
         term_perms,
@@ -263,13 +262,15 @@ function extract_coeffs_raw!(
         polys,
         CoeffType
     )
+    !flag && return (flag, ring)
 
     # a hack for homogenized inputs
     if trace.homogenize
-        @assert length(basis.monoms[length(polys) + 1]) ==
+        if !(length(basis.monoms[length(polys) + 1]) ==
                 length(basis.coeffs[length(polys) + 1]) ==
-                2
-        # TODO: !! incorrect if there are zeros in the input
+                2)
+            return false, ring
+        end
         @invariant !iszero(ring.ch)
         C = eltype(basis.coeffs[length(polys) + 1][1])
         basis.coeffs[length(polys) + 1][1] = one(C)
@@ -279,7 +280,7 @@ function extract_coeffs_raw!(
 
     @log level = -6 "Extracted coefficients from $(length(polys)) polynomials." basis
     @log level = -8 "Extracted coefficients" basis.coeffs
-    ring
+    flag, ring
 end
 
 function extract_coeffs_raw_X!(
@@ -297,7 +298,7 @@ function extract_coeffs_raw_X!(
     homog_term_perm = trace.term_homogenizing_permutations
     CoeffType = representation.coefftype
 
-    _extract_coeffs_raw_X!(
+    flag = _extract_coeffs_raw_X!(
         basis,
         input_polys_perm,
         term_perms,
@@ -305,6 +306,7 @@ function extract_coeffs_raw_X!(
         coeffs_zp,
         CoeffType
     )
+    !flag && return flag, ring
 
     # a hack for homogenized inputs
     if trace.homogenize
@@ -322,7 +324,7 @@ function extract_coeffs_raw_X!(
 
     @log level = -6 "Extracted coefficients from $(length(polys)) polynomials." basis
     @log level = -8 "Extracted coefficients" basis.coeffs
-    ring
+    flag, ring
 end
 
 function _extract_coeffs_raw_X!(
@@ -349,13 +351,12 @@ function _extract_coeffs_raw_X!(
         poly_index = input_polys_perm[i]
         poly = coeffs_zp[poly_index]
         if isempty(poly)
-            __throw_input_not_supported("Zero input polynomial", poly)
+            @log level = 1000 "In apply, input contains too many zero polynomials."
+            return false
         end
         if !(length(poly) == length(basis_cfs))
-            __throw_input_not_supported(
-                "Potential coefficient cancellation in input polynomial at index $i on apply stage.",
-                poly
-            )
+            @log level = 1000 "In apply, some coefficients in the input cancelled out."
+            return false
         end
         for j in 1:length(poly)
             coeff_index = j
@@ -370,7 +371,7 @@ function _extract_coeffs_raw_X!(
         end
     end
 
-    nothing
+    true
 end
 
 function io_extract_coeffs_raw_batched!(
@@ -396,8 +397,11 @@ function io_extract_coeffs_raw_batched!(
     homog_term_perm = trace.term_homogenizing_permutations
     CoeffType = representation.coefftype
 
+    ring = PolyRing(rings[1].nvars, trace.ring.ord, chars)
+    trace.ring = ring
+
     # write new coefficients directly to trace.buf_basis
-    _io_extract_coeffs_raw_batched!(
+    flag = _io_extract_coeffs_raw_batched!(
         basis,
         input_polys_perm,
         term_perms,
@@ -405,12 +409,15 @@ function io_extract_coeffs_raw_batched!(
         batch,
         CoeffType
     )
+    !flag && return (flag, ring)
 
     # a hack for homogenized inputs
     if trace.homogenize
-        @assert length(basis.monoms[length(batch[1]) + 1]) ==
+        if !(length(basis.monoms[length(batch[1]) + 1]) ==
                 length(basis.coeffs[length(batch[1]) + 1]) ==
-                2
+                2)
+            return false
+        end
         basis.coeffs[length(batch[1]) + 1][1] = one(CoeffType)
         basis.coeffs[length(batch[1]) + 1][2] = chars - one(CoeffType)
     end
@@ -418,9 +425,7 @@ function io_extract_coeffs_raw_batched!(
     @log level = -6 "Extracted coefficients from $(map(length, batch)) polynomials." basis
     @log level = -8 "Extracted coefficients" basis.coeffs
 
-    ring = PolyRing(rings[1].nvars, trace.ring.ord, chars)
-    trace.ring = ring
-    ring
+    flag, ring
 end
 
 function _extract_coeffs_raw!(
@@ -434,11 +439,8 @@ function _extract_coeffs_raw!(
     permute_input_terms = !isempty(term_perms)
     permute_homogenizing_terms = !isempty(homog_term_perms)
     if !(basis.nfilled == count(!iszero, polys) + permute_homogenizing_terms)
-        @log level = 1000 "Input on apply stage contains too many zeroes polynomials. Error will follow."
-        __throw_input_not_supported(
-            "Potential coefficient cancellation in input on apply stage.",
-            false
-        )
+        @log level = 1000 "In apply, input contains too many zero polynomials."
+        return false
     end
     polys = filter(!iszero, polys)
     @log level = -2 """
@@ -453,10 +455,8 @@ function _extract_coeffs_raw!(
         poly_index = input_polys_perm[i]
         poly = polys[poly_index]
         if !(length(poly) == length(basis_cfs))
-            __throw_input_not_supported(
-                "Potential coefficient cancellation in input polynomial at index $i on apply stage.",
-                poly
-            )
+            @log level = 1000 "In apply, some coefficients in the input cancelled out."
+            return false
         end
         for j in 1:length(poly)
             coeff_index = j
@@ -470,7 +470,7 @@ function _extract_coeffs_raw!(
             basis_cfs[j] = convert(CoeffsType, coeff)
         end
     end
-    nothing
+    true
 end
 
 function _io_extract_coeffs_raw_batched!(
@@ -485,11 +485,8 @@ function _io_extract_coeffs_raw_batched!(
     permute_homogenizing_terms = !isempty(homog_term_perms)
     for polys in batch
         if !(basis.nfilled == count(!iszero, polys) + permute_homogenizing_terms)
-            @log level = 1000 "Input on apply stage contains too many zeroes polynomials. Error will follow."
-            __throw_input_not_supported(
-                "Potential coefficient cancellation in input on apply stage.",
-                false
-            )
+            @log level = 1000 "In apply, input contains too many zero polynomials."
+            return false
         end
     end
 
@@ -510,10 +507,8 @@ function _io_extract_coeffs_raw_batched!(
 
         for batch_idx in 1:length(batch)
             if !(length(batch[batch_idx][poly_index]) == length(basis_cfs))
-                __throw_input_not_supported(
-                    "Potential coefficient cancellation in input polynomial at index $i on apply stage.",
-                    poly
-                )
+                @log level = 1000 "In apply, some coefficients in the input cancelled out."
+                return false
             end
         end
 
@@ -535,7 +530,7 @@ function _io_extract_coeffs_raw_batched!(
             )
         end
     end
-    nothing
+    true
 end
 
 ###

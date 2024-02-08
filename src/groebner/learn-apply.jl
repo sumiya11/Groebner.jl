@@ -38,7 +38,7 @@ function _groebner_learn1(polynomials, kws, representation)
         io_convert_to_internal(representation, polynomials, kws)
     if isempty(monoms)
         @log level = -2 "Input consisting of zero polynomials. Error will follow"
-        throw(DomainError("Input consisting of zero polynomials."))
+        throw(DomainError("In learn, input consisting of zero polynomials."))
     end
 
     params = AlgorithmParameters(ring, representation, kws)
@@ -97,7 +97,8 @@ function _groebner_apply0!(
     trace = get_trace!(wrapped_trace, polynomials, kws)
     @log level = -5 "Selected trace" trace.representation.coefftype
 
-    ring = extract_coeffs_raw!(trace, trace.representation, polynomials, kws)
+    flag, ring = extract_coeffs_raw!(trace, trace.representation, polynomials, kws)
+    !flag && return (flag, polynomials)
 
     # TODO: this is a bit hacky
     params = AlgorithmParameters(
@@ -110,11 +111,12 @@ function _groebner_apply0!(
 
     flag, gb_monoms, gb_coeffs = _groebner_apply1!(ring, trace, params)
 
+    !flag && return (flag, polynomials)
+    
     if trace.params.homogenize
         ring, gb_monoms, gb_coeffs =
             dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
     end
-    !flag && return (flag, polynomials)
 
     flag, io_convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
 end
@@ -127,7 +129,8 @@ function _groebner_apply0!(
     trace = get_trace!(wrapped_trace, batch, kws)
     @log level = -5 "Selected trace" trace.representation.coefftype
 
-    ring = io_extract_coeffs_raw_batched!(trace, trace.representation, batch, kws)
+    flag, ring = io_extract_coeffs_raw_batched!(trace, trace.representation, batch, kws)
+    !flag && return flag, batch
 
     # TODO: this is a bit hacky
     params = AlgorithmParameters(
@@ -140,11 +143,12 @@ function _groebner_apply0!(
 
     flag, gb_monoms, gb_coeffs = _groebner_apply1!(ring, trace, params)
 
+    !flag && return flag, batch
+
     if trace.params.homogenize
         ring, gb_monoms, gb_coeffs =
             dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
     end
-    !flag && return flag, batch
 
     flag, io_convert_to_output_batched(ring, batch, gb_monoms, gb_coeffs, params)
 end
@@ -189,7 +193,8 @@ function groebner_applyX!(
     trace = get_trace!(wrapped_trace, modulo, kws)
     @log level = -5 "Selected trace" trace.representation.coefftype
 
-    ring = extract_coeffs_raw_X!(trace, trace.representation, coeffs_zp, modulo, kws)
+    flag, ring = extract_coeffs_raw_X!(trace, trace.representation, coeffs_zp, modulo, kws)
+    !flag && return (flag, coeffs_zp)
 
     # TODO: this is a bit hacky
     params = AlgorithmParameters(

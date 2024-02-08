@@ -127,10 +127,6 @@ function linalg_apply_reduce_matrix_lower_part!(
         sparse_row_coeffs = basis.coeffs[row_index_to_coeffs[i]]
 
         @invariant length(sparse_row_support) == length(sparse_row_coeffs)
-        if !(length(sparse_row_support) == length(sparse_row_coeffs))
-            __this_is_bad()
-            return false
-        end
 
         # Load coefficients into a dense array
         # TODO!!!: if `row` was fully reduced to zero on the previous iteration,
@@ -159,10 +155,6 @@ function linalg_apply_reduce_matrix_lower_part!(
         end
 
         @invariant length(new_sparse_row_coeffs) == length(new_sparse_row_support)
-        if !(length(new_sparse_row_coeffs) == length(new_sparse_row_support))
-            __this_is_bad()
-            return false
-        end
         linalg_normalize_row!(new_sparse_row_coeffs, arithmetic)
 
         # Store the new row in the matrix, AND add it to the active pivots

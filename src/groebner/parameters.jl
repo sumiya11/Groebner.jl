@@ -156,15 +156,17 @@ function AlgorithmParameters(
     end
 
     linalg = kwargs.linalg
-    if !iszero(ring.ch) && linalg === :randomized
+    if !iszero(ring.ch) && (linalg === :randomized || linalg === :auto)
         # Do not use randomized linear algebra if the field characteristic is
         # too small. 
         # TODO: In the future, it would be good to adapt randomized linear
         # algebra to this case by taking more random samples
-        if ring.ch < 500
-            @log level = 1_000 """
+        if linalg === :randomized
+            @log level = -2 """
             The field characteristic is too small ($(ring.ch)).
             Switching from randomized linear algebra to a deterministic one."""
+        end
+        if ring.ch < 500
             linalg = :deterministic
         end
     end
