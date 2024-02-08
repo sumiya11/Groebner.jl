@@ -290,7 +290,7 @@ function matrix_fill_column_to_monom_map!(
     # number of pivotal cols
     k = 0
     @inbounds for i in (symbol_ht.offset):load
-        if hdata[i].idx == 2
+        if hdata[i].idx == PIVOT_COLUMN
             k += 1
         end
     end
@@ -332,15 +332,21 @@ function reduction_apply!(
     f4_iteration::Int,
     params::AlgorithmParameters
 )
-    # We bypass the sorting of the matrix rows when apply is used the second
+    # if length(trace.matrix_sorted_columns) >= f4_iteration &&
+    #    length(trace.matrix_sorted_columns[f4_iteration]) != (symbol_ht.load - 1)
+    #     # Some monomial vanished!!!
+    #     return false
+    # end
+
+    # We bypass the sorting of the matrix columns when apply is used the second
     # time
-    if length(trace.matrix_sorted_columns) < f4_iteration
-        matrix_fill_column_to_monom_map!(matrix, symbol_ht)
-        push!(trace.matrix_sorted_columns, matrix.column_to_monom)
-    else
+    if false && length(trace.matrix_sorted_columns) >= f4_iteration # && length(trace.matrix_sorted_columns[f4_iteration]) == (symbol_ht.load - 1)
         # TODO: see "TODO: (I)" in src/groebner/groebner.jl
         matrix.column_to_monom = trace.matrix_sorted_columns[f4_iteration]
         matrix_fill_column_to_monom_map!(trace, matrix, symbol_ht)
+    else
+        matrix_fill_column_to_monom_map!(matrix, symbol_ht)
+        push!(trace.matrix_sorted_columns, matrix.column_to_monom)
     end
 
     flag = linalg_main!(matrix, basis, params, trace, linalg=LinearAlgebra(:apply, :sparse))
@@ -356,7 +362,6 @@ function reduction_apply!(
             length(matrix.lower_rows[i])
         ) && return false
     end
-    # println()
 
     matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
 
@@ -533,9 +538,9 @@ function autoreduce_f4_apply!(
     matrix.nrows_filled_lower = nlow
     matrix.nrows_filled_upper = nup
 
-    if length(trace.matrix_sorted_columns) < f4_iteration
+    if true || length(trace.matrix_sorted_columns) < f4_iteration
         matrix_fill_column_to_monom_map!(matrix, symbol_ht)
-        push!(trace.matrix_sorted_columns, matrix.column_to_monom)
+        # push!(trace.matrix_sorted_columns, matrix.column_to_monom)
     else
         # TODO: see "TODO: (I)" in src/groebner/groebner.jl
         matrix.column_to_monom = trace.matrix_sorted_columns[f4_iteration]

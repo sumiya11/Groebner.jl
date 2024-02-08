@@ -112,7 +112,7 @@ function _groebner_apply0!(
     flag, gb_monoms, gb_coeffs = _groebner_apply1!(ring, trace, params)
 
     !flag && return (flag, polynomials)
-    
+
     if trace.params.homogenize
         ring, gb_monoms, gb_coeffs =
             dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)

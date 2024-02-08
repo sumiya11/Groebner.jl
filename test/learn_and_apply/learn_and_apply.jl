@@ -96,11 +96,13 @@ end
     system = [5x2 + 5, 5y2 + 1]
     system2 = map(f -> map_coefficients(c -> K(data(c)), f), system)
     trace, gb_1 = Groebner.groebner_learn(system; params...)
-    @test_throws DomainError Groebner.groebner_apply!(trace, system2; params...)
+    flag, _ = Groebner.groebner_apply!(trace, system2; params...)
+    @test !flag
     system = [x2 + 5, y2 + 1]
     system2 = map(f -> map_coefficients(c -> K(data(c)), f), system)
     trace, gb_1 = Groebner.groebner_learn(system; params...)
-    @test_throws DomainError Groebner.groebner_apply!(trace, system2; params...)
+    flag, _ = Groebner.groebner_apply!(trace, system2; params...)
+    @test !flag
 
     # Going from small characteristic to large is not allowed
     # NOTE: it should be allowed
@@ -316,7 +318,8 @@ end
     flag, gb_2 = Groebner.groebner_apply!(trace, system_1; params...)
     @test flag && gb_2 == gb_1
 
-    @test_throws DomainError Groebner.groebner_apply!(trace, [x, y]; params...)
+    flag, _ = Groebner.groebner_apply!(trace, [x, y]; params...)
+    @test !flag
 
     # Cancellation of a leading term:
     # s-poly of x + 1 and x*y + y is 0 = y - y.

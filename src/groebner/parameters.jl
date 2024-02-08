@@ -161,12 +161,12 @@ function AlgorithmParameters(
         # too small. 
         # TODO: In the future, it would be good to adapt randomized linear
         # algebra to this case by taking more random samples
-        if linalg === :randomized
-            @log level = -2 """
-            The field characteristic is too small ($(ring.ch)).
-            Switching from randomized linear algebra to a deterministic one."""
-        end
         if ring.ch < 500
+            if linalg === :randomized
+                @log level = -2 """
+                The field characteristic is too small ($(ring.ch)).
+                Switching from randomized linear algebra to a deterministic one."""
+            end
             linalg = :deterministic
         end
     end
