@@ -1,5 +1,6 @@
 [deps]
 AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 Nemo = "2edaba10-b0f1-5616-af89-8c11ac63239a"
 Primes = "27ebfcd6-29c5-5fa9-bf4b-fb8fc14df3ae"
