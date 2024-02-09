@@ -417,8 +417,8 @@ function reduction_apply!(
             In apply, on iteration $(f4_iteration) of F4, some trailing terms cancelled out.
             hash (expected):    $(trace.matrix_pivot_signatures[f4_iteration])
             hash (got):         $(matrix_pivot_signature)"""
-            return true, false
             # return false, false
+            return false, false
         end
     end
 
