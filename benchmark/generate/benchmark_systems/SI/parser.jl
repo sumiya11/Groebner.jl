@@ -8,7 +8,16 @@ function read_SEAIJRC(; k=AbstractAlgebra.QQ)
     sys = open(apath, "r") do f
         parse_system_naive(read(f, String))
     end
-    sys = (sys[1], map(f -> AbstractAlgebra.map_coefficients(c -> k(BigInt(numerator(c))) // k(BigInt(denominator(c))), f), sys[2]))
+    sys = (
+        sys[1],
+        map(
+            f -> AbstractAlgebra.map_coefficients(
+                c -> k(BigInt(numerator(c))) // k(BigInt(denominator(c))),
+                f
+            ),
+            sys[2]
+        )
+    )
     sys
     # polys = []
     # open(apath, "r") do f
@@ -36,7 +45,16 @@ function read_SIWR(; k=AbstractAlgebra.QQ)
     sys = open(apath, "r") do f
         parse_system_naive(read(f, String))
     end
-    sys = (sys[1], map(f -> AbstractAlgebra.map_coefficients(c -> k(BigInt(numerator(c))) // k(BigInt(denominator(c))), f), sys[2]))
+    sys = (
+        sys[1],
+        map(
+            f -> AbstractAlgebra.map_coefficients(
+                c -> k(BigInt(numerator(c))) // k(BigInt(denominator(c))),
+                f
+            ),
+            sys[2]
+        )
+    )
     sys
     # polys = []
     # open(apath, "r") do f

@@ -101,7 +101,7 @@ end
 
 _setup4(n) = begin
     s = rand(UInt8.([0, 0, 0, 1, 2, 3]), 2)
-    a, b = vcat(zeros(UInt8, n-3), s), vcat(zeros(UInt8, n-3), reverse(s))
+    a, b = vcat(zeros(UInt8, n - 3), s), vcat(zeros(UInt8, n - 3), reverse(s))
     a, b = reverse(a), reverse(b)
     x = Groebner.monom_construct_from_vector(Groebner.ExponentVector{UInt8}, a)
     y = Groebner.monom_construct_from_vector(Groebner.ExponentVector{UInt8}, b)
@@ -119,8 +119,10 @@ _setup4(n) = begin
         end
     xpacked = Groebner.monom_construct_from_vector(vT(n){UInt64, UInt8}, a)
     ypacked = Groebner.monom_construct_from_vector(vT(n){UInt64, UInt8}, b)
-    xsparse = Groebner.monom_construct_from_vector(Groebner.SparseExponentVector{UInt8}, a)
-    ysparse = Groebner.monom_construct_from_vector(Groebner.SparseExponentVector{UInt8}, b)
+    xsparse =
+        Groebner.monom_construct_from_vector(Groebner.SparseExponentVector{UInt8}, a)
+    ysparse =
+        Groebner.monom_construct_from_vector(Groebner.SparseExponentVector{UInt8}, b)
     x, y, xpacked, ypacked, xsparse, ysparse
 end
 begin

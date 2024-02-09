@@ -57,7 +57,7 @@ function benchmark_set_1()
         ("henrion 8", Groebner.henrion8(k=ground_field)),
         ("reimer 6", Groebner.reimern(6, k=ground_field)),
         ("reimer 7", Groebner.reimern(7, k=ground_field)),
-        ("reimer 8", Groebner.reimern(8, k=ground_field)),
+        ("reimer 8", Groebner.reimern(8, k=ground_field))
         # ("reimer 9", Groebner.reimern(9, k=ground_field)),
         # ("chandra 11", Groebner.chandran(11, k=ground_field)),
         # ("chandra 12", Groebner.chandran(12, k=ground_field)),
@@ -214,10 +214,8 @@ end
 
 function benchmark_set_9()
     ground_field = AbstractAlgebra.QQ
-    systems = [
-        ("BIOMD0000000103", BIOMD0000000103()),
-        ("BIOMD0000000123", BIOMD0000000123()),
-    ]
+    systems =
+        [("BIOMD0000000103", BIOMD0000000103()), ("BIOMD0000000123", BIOMD0000000123())]
     (name="BIOMD, the rationals", field=ground_field, systems=systems)
 end
 
@@ -231,16 +229,16 @@ end
 function benchmark_set_11()
     ground_field = AbstractAlgebra.QQ
     systems = [
-        # ("hexapod", Groebner.hexapod(k=ground_field)), 
-        ("ipp", Groebner.ipp(k=ground_field)), 
-        # ("alea6", Groebner.alea6(k=ground_field))
+    # ("hexapod", Groebner.hexapod(k=ground_field)), 
+        ("ipp", Groebner.ipp(k=ground_field))
+    # ("alea6", Groebner.alea6(k=ground_field))
     ]
 
     (name="ipp, the rationals", field=ground_field, systems=systems)
 end
 
 function benchmark_set_12()
-    ground_field = AbstractAlgebra.GF(2^30+3)
+    ground_field = AbstractAlgebra.GF(2^30 + 3)
     systems = [
         dummy_system("dummy", ground_field),
         # ("cyclic 9", Groebner.cyclicn(9, k=ground_field)),
@@ -248,34 +246,34 @@ function benchmark_set_12()
         # ("eco 14", Groebner.eco14(k=ground_field)),
         # ("noon 10", Groebner.noonn(10, k=ground_field)),
         ("reimer 9", Groebner.reimern(9, k=ground_field)),
-        ("eco 15", Groebner.eco15(k=ground_field)),
+        ("eco 15", Groebner.eco15(k=ground_field))
     ]
 
     (name="2^30+3, larger", field=ground_field, systems=systems)
 end
 
 function benchmark_set_13()
-    ground_field = GF(2^30+3)
+    ground_field = GF(2^30 + 3)
     systems = [
         dummy_system("dummy", ground_field),
         ("ipp", Groebner.hexapod(ordering=:degrevlex, k=ground_field)),
         ("ipp", Groebner.ipp(ordering=:degrevlex, k=ground_field)),
-        ("SIWR", load_SI_problem("SIWR",k=ground_field)),
-        ("SEAIJRC", load_SI_problem("SEAIJRC",k=ground_field)),
+        ("SIWR", load_SI_problem("SIWR", k=ground_field)),
+        ("SEAIJRC", load_SI_problem("SEAIJRC", k=ground_field)),
         ("BIOMD0000000103", BIOMD0000000103(k=ground_field)),
         ("BIOMD0000000123", BIOMD0000000123(k=ground_field)),
         ("Cholera", Cholera(k=ground_field)),
         ("HIV2", HIV2(k=ground_field)),
         ("NFkB", NFkB(k=ground_field)),
         ("Pharm_with_weights", Pharm_with_weights(k=ground_field)),
-        ("SEIRP", SEIRP(k=ground_field)),
+        ("SEIRP", SEIRP(k=ground_field))
     ]
 
     (name="Learn-apply, other", field=ground_field, systems=systems)
 end
 
 function benchmark_set_14()
-    ground_field = GF(2^30+3)
+    ground_field = GF(2^30 + 3)
     systems = [
         dummy_system("dummy", ground_field),
         ("yang1", Groebner.yang1(ordering=:degrevlex, k=ground_field)),
@@ -283,21 +281,21 @@ function benchmark_set_14()
         ("gametwo2", Groebner.gametwo2(ordering=:degrevlex, k=ground_field)),
         ("jason210", Groebner.jason210(ordering=:degrevlex, k=ground_field)),
         ("alea6", Groebner.alea6(ordering=:degrevlex, k=ground_field)),
-        ("mayr42", Groebner.mayr42(ordering=:degrevlex, k=ground_field)),
+        ("mayr42", Groebner.mayr42(ordering=:degrevlex, k=ground_field))
     ]
 
     (name="Other, modulo 2^30 + 3", field=ground_field, systems=systems)
 end
 
 function benchmark_set_15()
-    ground_field = GF(2^30+3)
+    ground_field = GF(2^30 + 3)
     systems = [
         dummy_system("dummy", ground_field),
         ("Cholera", Cholera(k=ground_field)),
         ("HIV2", HIV2(k=ground_field)),
         ("NFkB (w.)", NFkB_with_weights(k=ground_field)),
         # ("Pharm (w.)", Pharm_with_weights(k=ground_field)),
-        ("Goodwin (w.)", Goodwin_with_weights(k=ground_field)),
+        ("Goodwin (w.)", Goodwin_with_weights(k=ground_field))
         # ("SEIRP", SEIRP(k=ground_field)),
     ]
 
@@ -305,13 +303,13 @@ function benchmark_set_15()
 end
 
 function benchmark_set_16()
-    ground_field = AbstractAlgebra.GF(2^30+3)
+    ground_field = AbstractAlgebra.GF(2^30 + 3)
     systems = [
         dummy_system("dummy", ground_field),
         # ("cyclic 9", Groebner.cyclicn(9, k=ground_field)),
         # ("katsura 12", Groebner.katsuran(12, k=ground_field)),
         # ("eco 14", Groebner.eco14(k=ground_field)),
-        ("noon 10", Groebner.noonn(10, k=ground_field)),
+        ("noon 10", Groebner.noonn(10, k=ground_field))
         # ("reimer 9", Groebner.reimern(9, k=ground_field)),
         # ("eco 15", Groebner.eco15(k=ground_field)),
     ]
@@ -328,7 +326,7 @@ function benchmark_set_17()
         ("NFkB (w.)", NFkB_with_weights(k=ground_field)),
         ("Pharm (w.)", Pharm_with_weights(k=ground_field)),
         ("Goodwin (w.)", Goodwin_with_weights(k=ground_field)),
-        ("SEIRP", SEIRP(k=ground_field)),
+        ("SEIRP", SEIRP(k=ground_field))
     ]
 
     (name="SIAN, QQ", field=ground_field, systems=systems)

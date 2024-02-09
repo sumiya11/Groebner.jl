@@ -355,7 +355,7 @@ end
         end
     end
 
-    # Leading term: in the matrix cancel out
+    # Leading term in the matrix cancel out
     R, (x, y) = polynomial_ring(QQ, ["x", "y"], ordering=:degrevlex)
     p, p2 = 3, 19
     sys = [-11 * x * y + 53 * y, 83 * x * y + x - 70 * y]
@@ -387,51 +387,48 @@ end
     # stress test for small primes for errors
     Random.seed!(42)
     R, (x, y) = polynomial_ring(QQ, ["x", "y"], ordering=:degrevlex)
-    sys = [x * y + y, x * y + x + y]
+    for sys in [[x * y + y, x * y + x + y], Groebner.cyclicn(5)]
+        A, B = 0, 0
+        boot = 10
+        primes1 = vcat(Primes.nextprimes(2, 10), 1031, 2^20 + 7, 2^27 - 39, 2^27 + 29)
+        primes2 = primes1
+        @info """
+        Stress testing groebner_apply! on:
+        primes =    $primes1
+        boot =      $boot
+        system =
+        $sys"""
 
-    A, B = 0, 0
-    boot = 1
-    primes1 = Primes.nextprimes(2, 7)
-    primes2 = primes1
-    @info """
-    Stress testing groebner_apply! on:
-    primes =    $primes1
-    boot =      $boot
-    system =
-    $sys"""
-
-    for p in primes1
-        for i in 1:boot
-            sys_x = empty(sys)
-            for f in sys
-                _f = zero(f)
-                for t in monomials(f)
-                    __c = rand(-100:100)
-                    _f += t * __c
+        for p in primes1
+            for i in 1:boot
+                sys_x = empty(sys)
+                for f in sys
+                    _f = zero(f)
+                    for t in monomials(f)
+                        __c = rand(-100:100)
+                        _f += t * __c
+                    end
+                    push!(sys_x, _f)
                 end
-                push!(sys_x, _f)
-            end
-            sys_x_mod_p = map(f -> map_coefficients(c -> GF(p)(numerator(c)), f), sys_x)
-            if all(iszero, sys_x_mod_p)
-                continue
-            end
-            trace, gb = Groebner.groebner_learn(sys_x_mod_p)
-            backup = deepcopy(trace)
-            for p2 in primes2
-                if p == p2
-                    continue
+                sys_x_mod_p = map(f -> map_coefficients(c -> GF(p)(numerator(c)), f), sys_x)
+                all(iszero, sys_x_mod_p) && continue
+                trace, gb = Groebner.groebner_learn(sys_x_mod_p)
+                backup = deepcopy(trace)
+                for p2 in primes2
+                    p == p2 && continue
+                    sys_x_mod_p2 =
+                        map(f -> map_coefficients(c -> GF(p2)(numerator(c)), f), sys_x)
+                    success, gb2 =
+                        Groebner.groebner_apply!(trace, sys_x_mod_p2, loglevel=10_000)
+                    if !success
+                        A += 1
+                        trace = backup
+                        backup = deepcopy(trace)
+                    end
+                    B += 1
                 end
-                sys_x_mod_p2 =
-                    map(f -> map_coefficients(c -> GF(p2)(numerator(c)), f), sys_x)
-                success, gb2 = Groebner.groebner_apply!(trace, sys_x_mod_p2)
-                if !success
-                    A += 1
-                    trace = backup
-                    backup = deepcopy(trace)
-                end
-                B += 1
             end
         end
+        @info "Apply failed in $A / $B cases."
     end
-    @info "Apply failed in $A / $B cases."
 end
