@@ -1,6 +1,6 @@
 # Test for performance regressions.
 using Pkg
-Pkg.activate(".")
+# Pkg.activate(".")
 
 using Test
 using TestSetExtensions
