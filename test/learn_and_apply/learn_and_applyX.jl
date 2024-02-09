@@ -152,4 +152,33 @@ end
                   cfs_2
         end
     end
+
+    # Leading term in the matrix cancel out
+    R, (x, y) = polynomial_ring(QQ, ["x", "y"], ordering=:degrevlex)
+    p, p2 = 3, 19
+    sys = [-11 * x * y + 53 * y, 83 * x * y + x - 70 * y]
+    sys_mod_p = map(
+        f -> map_coefficients(c -> GF(p)(numerator(c)), f),
+        [x * y + 2 * y, 2 * x * y + x + 2 * y]
+    )
+    sys_mod_p2 = map(
+        f -> map_coefficients(c -> GF(p2)(numerator(c)), f),
+        [8 * x * y + 15 * y, 7 * x * y + x + 6 * y]
+    )
+    Groebner.groebner(sys_mod_p)
+    Groebner.groebner(sys_mod_p2)
+
+    _cfs(s) = map(f -> map(UInt32 ∘ data, collect(AbstractAlgebra.coefficients(f))), s)
+
+    trace, gb1 = Groebner.groebner_learn(sys_mod_p)
+    flag2, gb2 = Groebner.groebner_applyX!(trace, _cfs(sys_mod_p), UInt32(3))
+    @test flag
+    flag3, gb3 = Groebner.groebner_applyX!(trace, _cfs(sys_mod_p2), UInt32(19))
+    flag4, gb4 = Groebner.groebner_applyX!(trace, _cfs(sys_mod_p2), UInt32(19))
+    flag5, gb5 = Groebner.groebner_applyX!(trace, _cfs(sys_mod_p2), UInt32(19))
+
+    trace, gb = Groebner.groebner_learn(sys_mod_p2)
+    flag, gb = Groebner.groebner_applyX!(trace, _cfs(sys_mod_p2), UInt32(19))
+    @test flag
+    flag, gb = Groebner.groebner_applyX!(trace, _cfs(sys_mod_p), UInt32(3))
 end
