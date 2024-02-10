@@ -1,40 +1,40 @@
 ## Benchmark results
 
-2024-02-06T20:39:54.517
+2024-02-09T14:05:30.569
 
 Benchmarked backend: singular
 
 Benchmark suite: Integers modulo 2^30 + 3
 
 - Workers: 8
-- Timeout: 7200 s
+- Timeout: 12000 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|cyclic 7|1.95|
-|cyclic 8|88.30|
+|cyclic 7|1.98|
+|cyclic 8|94.22|
 |cyclic 9| - |
 |dummy|0.00|
-|eco 11|57.00|
-|eco 12|628.17|
+|eco 11|58.62|
+|eco 12|580.91|
 |eco 13| - |
 |eco 14| - |
 |henrion 5|0.01|
-|henrion 6|0.41|
-|henrion 7|94.75|
+|henrion 6|0.40|
+|henrion 7|149.01|
 |henrion 8| - |
-|katsura 10|107.25|
-|katsura 11|1387.56|
+|katsura 10|176.48|
+|katsura 11|1170.55|
 |katsura 12| - |
 |katsura 13| - |
-|noon 7|0.49|
-|noon 8|4.93|
-|noon 9|47.89|
-|reimer 6|19.51|
-|reimer 7|3106.54|
+|noon 7|0.47|
+|noon 8|4.79|
+|noon 9|58.67|
+|reimer 6|19.47|
+|reimer 7|2633.02|
 |reimer 8| - |
 
 *Benchmarking environment:*

@@ -1,20 +1,20 @@
 ## Benchmark results
 
-2024-02-02T14:32:38.239
+2024-02-09T10:29:22.741
 
 Benchmarked backend: openf4
 
 Benchmark suite: dummy benchmark set
 
-- Workers: 10
-- Timeout: 1800 s
+- Workers: 8
+- Timeout: 10000 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|Total, s|
 |:----|---|
-|dummy 1|0.01|
+|dummy 1|0.02|
 |dummy 2|0.02|
 
 *Benchmarking environment:*

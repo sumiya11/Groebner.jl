@@ -258,8 +258,8 @@ function benchmark_set_13()
         dummy_system("dummy", ground_field),
         ("ipp", Groebner.hexapod(ordering=:degrevlex, k=ground_field)),
         ("ipp", Groebner.ipp(ordering=:degrevlex, k=ground_field)),
-        ("SIWR", load_SI_problem("SIWR", k=ground_field)),
-        ("SEAIJRC", load_SI_problem("SEAIJRC", k=ground_field)),
+        # ("SIWR", load_SI_problem("SIWR", k=ground_field)),
+        # ("SEAIJRC", load_SI_problem("SEAIJRC", k=ground_field)),
         ("BIOMD0000000103", BIOMD0000000103(k=ground_field)),
         ("BIOMD0000000123", BIOMD0000000123(k=ground_field)),
         ("Cholera", Cholera(k=ground_field)),
@@ -330,4 +330,44 @@ function benchmark_set_17()
     ]
 
     (name="SIAN, QQ", field=ground_field, systems=systems)
+end
+
+function benchmark_set_18()
+    ground_field = AbstractAlgebra.GF(2^30 + 3)
+
+    systems = [
+        dummy_system("dummy", ground_field),
+        ("cyclic 7", Groebner.cyclicn(7, k=ground_field)),
+        ("cyclic 8", Groebner.cyclicn(8, k=ground_field)),
+        ("cyclic 9", Groebner.cyclicn(9, k=ground_field)),
+        # ("cyclic 10", Groebner.cyclicn(10, k=ground_field)),
+        ("katsura 10", Groebner.katsuran(10, k=ground_field)),
+        ("katsura 11", Groebner.katsuran(11, k=ground_field)),
+        ("katsura 12", Groebner.katsuran(12, k=ground_field)),
+        ("katsura 13", Groebner.katsuran(13, k=ground_field)),
+        # ("katsura 14", Groebner.katsuran(14, k=ground_field)),
+        ("eco 11", Groebner.eco11(k=ground_field)),
+        ("eco 12", Groebner.eco12(k=ground_field)),
+        ("eco 13", Groebner.eco13(k=ground_field)),
+        ("eco 14", Groebner.eco14(k=ground_field)),
+        ("noon 7", Groebner.noonn(7, k=ground_field)),
+        ("noon 8", Groebner.noonn(8, k=ground_field)),
+        ("noon 9", Groebner.noonn(9, k=ground_field)),
+        # ("noon 10", Groebner.noonn(10, k=ground_field)),
+        # ("noon 11", Groebner.noonn(11, k=ground_field)),
+        ("henrion 5", Groebner.henrion5(k=ground_field)),
+        ("henrion 6", Groebner.henrion6(k=ground_field)),
+        ("henrion 7", Groebner.henrion7(k=ground_field)),
+        ("henrion 8", Groebner.henrion8(k=ground_field)),
+        ("reimer 6", Groebner.reimern(6, k=ground_field)),
+        ("reimer 7", Groebner.reimern(7, k=ground_field)),
+        ("reimer 8", Groebner.reimern(8, k=ground_field))
+        # ("reimer 9", Groebner.reimern(9, k=ground_field)),
+        # ("chandra 11", Groebner.chandran(11, k=ground_field)),
+        # ("chandra 12", Groebner.chandran(12, k=ground_field)),
+        # ("chandra 13", Groebner.chandran(13, k=ground_field)),
+        # ("chandra 14", Groebner.chandran(14, k=ground_field))
+    ]
+
+    (name="Integers modulo 2^30 + 3", field=ground_field, systems=systems)
 end

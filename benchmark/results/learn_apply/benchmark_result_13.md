@@ -1,30 +1,28 @@
 ## Benchmark results
 
-2024-02-03T06:11:23.163
+2024-02-09T15:31:14.835
 
 Benchmarked backend: learn_apply
 
 Benchmark suite: Learn-apply, other
 
 - Workers: 8
-- Timeout: 3600 s
+- Timeout: 10000 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
 
 |Model|F4, s|Learn, s|Apply, s|Apply 4x, s|Apply 8x, s|
 |:----|---|---|---|---|---|
-|BIOMD0000000103|0.24|0.67|0.08|0.13|3.39|
-|BIOMD0000000123|0.85|1.03|0.18|0.19|3.48|
-|Cholera|46.50|148.29|20.60|37.53|73.88|
-|HIV2|2.26|2.64|0.24|0.34|3.70|
+|BIOMD0000000103|0.24|0.58|0.11|0.12|4.39|
+|BIOMD0000000123|1.17|1.25|0.16|0.19|4.11|
+|Cholera|107.16|376.82|51.06|117.03|224.11|
+|HIV2|2.84|2.89|0.29|0.31|4.18|
 |NFkB| - | - | - | - | - |
 |Pharm_with_weights| - | - | - | - | - |
-|SEAIJRC| - | - | - | - | - |
-|SEIRP|76.31|409.59|41.65|80.22|146.57|
-|SIWR| - | - | - | - | - |
-|dummy|0.00|0.00|0.00|0.00|3.21|
-|ipp|0.01|0.01|0.00|0.00|3.21|
+|SEIRP|237.51|1307.65|125.60|308.66|597.90|
+|dummy|0.00|0.00|0.00|0.00|3.28|
+|ipp|0.01|0.01|0.00|0.00|3.40|
 
 *Benchmarking environment:*
 

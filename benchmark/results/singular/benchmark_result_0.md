@@ -1,13 +1,13 @@
 ## Benchmark results
 
-2024-02-02T14:31:54.226
+2024-02-09T10:28:40.238
 
 Benchmarked backend: singular
 
 Benchmark suite: dummy benchmark set
 
-- Workers: 10
-- Timeout: 1800 s
+- Workers: 8
+- Timeout: 10000 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**

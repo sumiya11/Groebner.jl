@@ -1,13 +1,13 @@
 ## Benchmark results
 
-2024-02-02T15:48:19.087
+2024-02-09T10:29:08.009
 
 Benchmarked backend: msolve
 
 Benchmark suite: dummy benchmark set
 
-- Workers: 10
-- Timeout: 2000 s
+- Workers: 8
+- Timeout: 10000 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
@@ -15,7 +15,7 @@ Benchmark suite: dummy benchmark set
 |Model|Total, s|
 |:----|---|
 |dummy 1|0.02|
-|dummy 2|0.01|
+|dummy 2|0.03|
 
 *Benchmarking environment:*
 

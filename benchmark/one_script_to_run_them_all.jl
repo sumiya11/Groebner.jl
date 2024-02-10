@@ -34,8 +34,8 @@ progressbar_enabled() =
 
 const _available_backends = ["groebner", "singular", "maple", "msolve", "openf4"]
 
-const _skip_singular = true
-const _skip_openf4 = true
+const _skip_singular = false
+const _skip_openf4 = false
 
 # Parses command-line arguments
 #! format: off

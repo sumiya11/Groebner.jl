@@ -1,10 +1,10 @@
 ## Benchmark results
 
-2024-02-09T10:28:54.038
+2024-02-09T16:39:01.413
 
-Benchmarked backend: maple
+Benchmarked backend: openf4
 
-Benchmark suite: dummy benchmark set
+Benchmark suite: 2^30+3, larger x2
 
 - Workers: 8
 - Timeout: 10000 s
@@ -14,8 +14,8 @@ Benchmark suite: dummy benchmark set
 
 |Model|Total, s|
 |:----|---|
-|dummy 1|0.01|
-|dummy 2|0.04|
+|dummy|0.01|
+|noon 10| - |
 
 *Benchmarking environment:*
 
