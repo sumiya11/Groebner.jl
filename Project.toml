@@ -20,7 +20,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
 [compat]
-AbstractAlgebra = "0.34, 0.35, 0.36, 0.37"
+AbstractAlgebra = "0.34, 0.35, 0.36, 0.37, 0.39"
 Atomix = "0.1"
 BenchmarkTools = "1"
 Combinatorics = "1"
