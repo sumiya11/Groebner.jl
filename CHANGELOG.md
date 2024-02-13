@@ -1,3 +1,12 @@
+## Groebner v0.7.0 Release notes
+
+Exciting changes: 
+- `groebner_apply!` is now much better at detecting bad primes;
+- the number of primes in the multi-modular computation is now a bit sharper;
+- performance of monomial arithmetic for dense exponent vectors is improved.
+
+Also, some dependencies' versions were updated.
+
 ## Groebner v0.6.4 Release notes
 
 Minor performance improvements, especially over finite fields of large characteristic.
