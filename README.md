@@ -14,16 +14,24 @@
 Groebner.jl is a Julia package for computing Groebner bases over fields.
 Groebner.jl is distributed under GNU GPL v2.
 
-For documentation and more please check out https://sumiya11.github.io/Groebner.jl.
+For documentation please check out https://sumiya11.github.io/Groebner.jl.
 For a simple example, see below.
 
-## How to use Groebner.jl?
+## Installation
 
 You can install Groebner.jl using the Julia package manager. From the Julia REPL, type
 
 ```julia
 import Pkg; Pkg.add("Groebner")
 ```
+
+After the installation, you can run package tests with
+
+```julia
+import Pkg; Pkg.test("Groebner")
+```
+
+## How to use Groebner.jl?
 
 Groebner.jl works with polynomials from AbstractAlgebra.jl, DynamicPolynomials.jl, and Nemo.jl. For example, let's create a ring of polynomials in 3 variables
 
