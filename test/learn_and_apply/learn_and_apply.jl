@@ -429,6 +429,6 @@ end
                 end
             end
         end
-        @info "Apply failed in $A / $B cases."
+        @info "Apply (expectedly) failed in $A / $B cases."
     end
 end
