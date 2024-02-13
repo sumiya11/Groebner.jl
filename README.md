@@ -82,14 +82,15 @@ If you do not see your package here, we either do not know about it, or forgot t
 
 ## Citing Groebner.jl
 
-If you find Groebner.jl useful in your work, you can cite [this paper](https://arxiv.org/abs/2304.06935)
+If you find Groebner.jl useful in your work, you can star this repository and cite [this paper](https://arxiv.org/abs/2304.06935)
 
 ```
-@misc{groebnerjl2023,
-  title = {Groebner.jl: A package for Gr\"obner bases computations in Julia}, 
-  author = {Alexander Demin and Shashi Gowda},
-  year = {2023},
-  eprint = {2304.06935},
-  url = {https://arxiv.org/abs/2304.06935}
+@misc{demin2024groebnerjl,
+      title={Groebner.jl: A package for Gr\"obner bases computations in Julia}, 
+      author={Alexander Demin and Shashi Gowda},
+      year={2024},
+      eprint={2304.06935},
+      archivePrefix={arXiv},
+      primaryClass={cs.MS}
 }
 ```
