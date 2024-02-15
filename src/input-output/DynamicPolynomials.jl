@@ -3,16 +3,52 @@
 ###
 # Conversion from DynamicPolynomials.jl to internal representation and back.
 
+const _DP_supported_orderings_symbols = (:lex, :deglex, :degrevlex)
+
+function dp_ordering_sym2typed(ord::Symbol)
+    if !(ord in _DP_supported_orderings_symbols)
+        __throw_input_not_supported(ord, "Not a supported ordering.")
+    end
+    if ord === :lex
+        Lex()
+    elseif ord === :deglex
+        DegLex()
+    elseif ord === :degrevlex
+        DegRevLex()
+    end
+end
+
+function dp_ord_to_symbol(ord)
+    if ord === MultivariatePolynomials.LexOrder
+        :lex
+    elseif ord === MultivariatePolynomials.Graded{MultivariatePolynomials.LexOrder}
+        :deglex
+    elseif ord === MultivariatePolynomials.Graded{
+        MultivariatePolynomials.Reverse{MultivariatePolynomials.InverseLexOrder}
+    }
+        :degrevlex
+    else
+        __throw_input_not_supported(
+            """This ordering from DynamicPolynomials.jl is not supported by Groebner.jl. 
+            Consider opening a Github issue if you need it.""",
+            ord
+        )
+    end
+end
+
 function peek_at_polynomials(polynomials::Vector{<:AbstractPolynomialLike{T}}) where {T}
     @assert !isempty(polynomials) "Input must not be empty"
-    nv = Groebner.MultivariatePolynomials.nvariables(polynomials)
-    :dynamicpolynomials, length(polynomials), UInt(0), nv, :deglex
+    nv = MultivariatePolynomials.nvariables(polynomials)
+    ord = dp_ord_to_symbol(MultivariatePolynomials.ordering(polynomials[1]))
+    @assert length(unique(MultivariatePolynomials.ordering, polynomials)) == 1
+    :dynamicpolynomials, length(polynomials), UInt(0), nv, ord
 end
 
 function extract_ring(orig_polys::Vector{<:AbstractPolynomialLike{T}}) where {T}
-    nv = Groebner.MultivariatePolynomials.nvariables(orig_polys)
-    ord = DegLex()
-    PolyRing{typeof(ord), UInt}(nv, ord, UInt(0))
+    nv = MultivariatePolynomials.nvariables(orig_polys)
+    ord = dp_ord_to_symbol(MultivariatePolynomials.ordering(orig_polys[1]))
+    ord_typed = dp_ordering_sym2typed(ord)
+    PolyRing{typeof(ord_typed), UInt}(nv, ord_typed, UInt(0))
 end
 
 function _io_check_input(polynomials::Vector{<:AbstractPolynomialLike{T}}, kws) where {T}
@@ -47,7 +83,7 @@ end
 
 function exponents_wrt_vars(t, var2idx)
     exp = zeros(Int, length(var2idx))
-    @inbounds for (v, p) in Groebner.MultivariatePolynomials.powers(t)
+    @inbounds for (v, p) in MultivariatePolynomials.powers(t)
         exp[var2idx[v]] = p
     end
     exp
@@ -124,10 +160,12 @@ function _io_convert_to_output(
     gbcoeffs::Vector{Vector{I}},
     params::AlgorithmParameters
 ) where {M <: Monom, P <: AbstractPolynomialLike{J}, I <: Coeff} where {J}
-    if params.target_ord != DegLex()
+    ord_dp = MultivariatePolynomials.ordering(origpolys[1])
+    _ord_dp = dp_ordering_sym2typed(dp_ord_to_symbol(ord_dp))
+    if params.target_ord != _ord_dp
         @log level = -1 """
           Basis is computed in $(params.target_ord).
-          Terms in the output are in $(DegLex())"""
+          Terms in the output are in $(_ord_dp)"""
     end
 
     origvars = MultivariatePolynomials.variables(origpolys)

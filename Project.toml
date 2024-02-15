@@ -1,7 +1,7 @@
 name = "Groebner"
 uuid = "0b43b601-686d-58a3-8a1c-6623616c7cd4"
 authors = ["sumiya11"]
-version = "0.7.0"
+version = "0.7.1"
 
 [deps]
 AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
@@ -26,7 +26,7 @@ BenchmarkTools = "1"
 Combinatorics = "1"
 ExprTools = "0.1"
 HostCPUFeatures = "0.1"
-MultivariatePolynomials = "0.4, 0.5"
+MultivariatePolynomials = "0.5"
 Nemo = "0.38.3, 0.39, 0.40, 0.41, 0.42"
 PrecompileTools = "1"
 PrettyTables = "2"

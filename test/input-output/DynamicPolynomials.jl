@@ -100,4 +100,44 @@ using DynamicPolynomials
         gb = Groebner.groebner(fs, ordering=gb_ord)
         @test gb == result
     end
+
+    # Test for different DynamicPolynomials.jl orderings
+    @polyvar x y monomial_order = LexOrder
+    F = [2x^2 * y + 3x, 4x * y^2 + 5y^3]
+    gb = Groebner.groebner(F, ordering=Groebner.DegLex())
+    @test gb == [5 * x * y + 4 * x^2, 25 * y^3 + 24 * x, -6 * x + 5 * x * y^2]
+    gb = Groebner.groebner(F, ordering=Groebner.DegRevLex())
+    @test gb == [5 * x * y + 4 * x^2, 25 * y^3 + 24 * x, -6 * x + 5 * x * y^2]
+    gb = Groebner.groebner(F, ordering=Groebner.Lex())
+    @test gb == [-6 * y^3 + 5 * y^5, 25 * y^3 + 24 * x]
+    gb = Groebner.groebner(F, ordering=Groebner.Lex())
+    @test gb == [-6 * y^3 + 5 * y^5, 25 * y^3 + 24 * x]
+    gb = Groebner.groebner(F, ordering=Groebner.Lex(y, x))
+    @test gb == [-15 * x + 8 * x^3, 5 * x * y + 4 * x^2, 24 * x + 25 * y^3]
+
+    @polyvar x y monomial_order = Graded{Reverse{InverseLexOrder}}
+    F = [2x^2 * y + 3x, 4x * y^2 + 5y^3]
+    gb = Groebner.groebner(F)
+    @test gb == [5 * x * y + 4 * x^2, 25 * y^3 + 24 * x, -6 * x + 5 * x * y^2]
+    gb = Groebner.groebner(F, ordering=Groebner.Lex())
+    @test gb == [-6 * y^3 + 5 * y^5, 25 * y^3 + 24 * x]
+
+    for dp_ord in [LexOrder, Graded{LexOrder}, Graded{Reverse{InverseLexOrder}}]
+        @polyvar x y monomial_order = dp_ord
+        F = [2x^2 * y + 3x, 4x * y^2 + 5y^3]
+        for gb_ord in [
+            Groebner.Lex(),
+            Groebner.DegLex(),
+            Groebner.DegRevLex(),
+            Groebner.Lex(x, y),
+            Groebner.Lex(y, x)
+        ]
+            gb = Groebner.groebner(F, ordering=gb_ord)
+            @test Groebner.isgroebner(gb, ordering=gb_ord)
+        end
+    end
+
+    @polyvar x y monomial_order = InverseLexOrder
+    F = [2x^2 * y + 3x, 4x * y^2 + 5y^3]
+    @test_throws DomainError Groebner.groebner(F)
 end
