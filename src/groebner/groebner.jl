@@ -568,19 +568,18 @@ function _groebner_learn_and_apply_threaded(
             empty!(threadbuf_gb_coeffs[i])
         end
 
-        # NOTE: @threads with the option :static guarantees the persistence of
-        # threadid() within a single loop iteration
-        Base.Threads.@threads :static for j in 1:4:batchsize
-            threadlocal_trace_4x = threadbuf_trace_4x[threadid()]
+        Base.Threads.@threads for j in 1:4:batchsize
+            t_id = threadid()
+            threadlocal_trace_4x = threadbuf_trace_4x[t_id]
             threadlocal_prime_4x = ntuple(k -> threadbuf_primes[j + k - 1], 4)
-            threadlocal_bigint_buffer = threadbuf_bigint_buffer[threadid()]
-            threadlocal_params = threadbuf_params[threadid()]
+            threadlocal_bigint_buffer = threadbuf_bigint_buffer[t_id]
+            threadlocal_params = threadbuf_params[t_id]
 
             ring_ff_4x, basis_ff_4x = reduce_modulo_p_in_batch!(
                 threadlocal_bigint_buffer,  # is modified
                 ring,                       # is not modified
                 basis_zz,                   # is not modified
-                threadlocal_prime_4x       # is not modified
+                threadlocal_prime_4x        # is not modified
             )
             threadlocal_params_zp_4x = params_mod_p(
                 threadlocal_params,               # can be modified later
@@ -600,10 +599,10 @@ function _groebner_learn_and_apply_threaded(
             gb_coeffs_1, gb_coeffs_2, gb_coeffs_3, gb_coeffs_4 =
                 io_unpack_composite_coefficients(threadlocal_trace_4x.gb_basis.coeffs)
 
-            push!(threadbuf_gb_coeffs[threadid()], (threadlocal_prime_4x[1], gb_coeffs_1))
-            push!(threadbuf_gb_coeffs[threadid()], (threadlocal_prime_4x[2], gb_coeffs_2))
-            push!(threadbuf_gb_coeffs[threadid()], (threadlocal_prime_4x[3], gb_coeffs_3))
-            push!(threadbuf_gb_coeffs[threadid()], (threadlocal_prime_4x[4], gb_coeffs_4))
+            push!(threadbuf_gb_coeffs[t_id], (threadlocal_prime_4x[1], gb_coeffs_1))
+            push!(threadbuf_gb_coeffs[t_id], (threadlocal_prime_4x[2], gb_coeffs_2))
+            push!(threadbuf_gb_coeffs[t_id], (threadlocal_prime_4x[3], gb_coeffs_3))
+            push!(threadbuf_gb_coeffs[t_id], (threadlocal_prime_4x[4], gb_coeffs_4))
         end
         primes_used += batchsize
 
