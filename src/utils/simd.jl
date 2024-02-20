@@ -135,8 +135,8 @@ end
                 ($textir, "entry"),
                 Bool,
                 Tuple{Ptr{T}, Ptr{T}, Int64},
-                Base.unsafe_convert(Ptr{T}, a) + sizeof(T) * offset,
-                Base.unsafe_convert(Ptr{T}, b) + sizeof(T) * offset,
+                pointer(a) + sizeof(T) * offset,
+                pointer(b) + sizeof(T) * offset,
                 length(a) - offset
             )
         end
@@ -235,8 +235,8 @@ end
                 ($textir, "entry"),
                 Bool,
                 Tuple{Ptr{T}, Ptr{T}, Int64},
-                Base.unsafe_convert(Ptr{T}, a) + sizeof(T) * offset,
-                Base.unsafe_convert(Ptr{T}, b) + sizeof(T) * offset,
+                pointer(a) + sizeof(T) * offset,
+                pointer(b) + sizeof(T) * offset,
                 length(a) - offset
             )
         end
@@ -349,8 +349,8 @@ end
                 ($textir, "entry"),
                 Bool,
                 Tuple{Ptr{T}, Ptr{T}, Int64},
-                Base.unsafe_convert(Ptr{T}, a) + sizeof(T) * offset,
-                Base.unsafe_convert(Ptr{T}, b) + sizeof(T) * offset,
+                pointer(a) + sizeof(T) * offset,
+                pointer(b) + sizeof(T) * offset,
                 length(a) - offset
             )
         end
@@ -467,8 +467,8 @@ end
                 ($textir, "entry"),
                 Bool,
                 Tuple{Ptr{T}, Ptr{T}, Int64},
-                Base.unsafe_convert(Ptr{T}, a) + sizeof(T) * offset,
-                Base.unsafe_convert(Ptr{T}, b) + sizeof(T) * offset,
+                pointer(a) + sizeof(T) * offset,
+                pointer(b) + sizeof(T) * offset,
                 length(a) - offset
             )
         end
