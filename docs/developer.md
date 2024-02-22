@@ -27,7 +27,7 @@ The up-to-date branch in the repository is "master".
 
 ### Development directions
 
-WIP!
+TBD!
 
 ### Utilities in Groebner.jl
 
@@ -37,7 +37,7 @@ Each utility can be globally enabled/disabled by setting the appropriate switch 
 
 | Macro        | Switch                         | Default value |
 |--------------|--------------------------------|---------------|
-| `@invariant` | `invariants_enabled`           | `true`        |
+| `@invariant` | `invariants_enabled`           | `false`        |
 | `@log`       | `logging_enabled`              | `true`        |
 | `@timeit`    | `performance_counters_enabled` | `false`       |
 
@@ -47,7 +47,6 @@ Therefore, for example, if you would like to get the best performance out of Gro
 
 ```julia
 using Groebner
-Groebner.invariants_enabled() = false
 Groebner.logging_enabled() = false
 ```
 

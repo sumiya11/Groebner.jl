@@ -5,6 +5,9 @@ using AbstractAlgebra
 using Random
 using Groebner
 
+# TODO: test examples in README.md automatcically (https://github.com/thchr/TestReadme.jl)
+# TODO: test examples in the documentation automatcically
+
 # Check invariants during testing.
 # it's a good idea to turn these on!
 Groebner.invariants_enabled() = true

@@ -25,7 +25,7 @@ You can install Groebner.jl using the Julia package manager. From the Julia REPL
 import Pkg; Pkg.add("Groebner")
 ```
 
-After the installation, you can run package tests with
+After the installation, you can run the package tests with
 
 ```julia
 import Pkg; Pkg.test("Groebner")
@@ -33,7 +33,12 @@ import Pkg; Pkg.test("Groebner")
 
 ## How to use Groebner.jl?
 
-Groebner.jl works with polynomials from AbstractAlgebra.jl, DynamicPolynomials.jl, and Nemo.jl. For example, let's create a ring of polynomials in 3 variables
+The main function provided by Groebner.jl is `groebner`.
+It works with polynomials from AbstractAlgebra.jl, DynamicPolynomials.jl, and Nemo.jl. 
+
+### with AbstractAlgebra.jl
+
+We create a ring of polynomials in 3 variables
 
 ```julia
 using AbstractAlgebra
@@ -66,9 +71,34 @@ G = groebner(system)
  x3^3 - 1
 ```
 
+### with DynamicPolynomials.jl
+
+Similarly to AbstractAlgebra.jl, we create a system of polynomials and pass it to `groebner`
+
+```julia
+using DynamicPolynomials, Groebner
+
+@polyvar x1 x2
+system = [10*x1*x2^2 - 11*x1 + 10,
+        10*x1^2*x2 - 11*x2 + 10]
+
+G = groebner(system)
+```
+```julia
+# result
+3-element Vector{Polynomial{DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}, Graded{LexOrder}, Int64}}:
+ 10x2 - 10x1 - 11x2² + 11x1²
+ 110 - 121x2 - 100x2² + 100x1x2 + 110x2³
+ 10 - 11x1 + 10x1x2²
+```
+
 ## Contacts
 
 This library is maintained by Alexander Demin (<asdemin_2@edu.hse.ru>).
+
+## Contributing
+
+Contributions are very welcome, as are feature requests and suggestions. In particular additional examples and documentation improvements are encouraged. If you encounter any problems, please open an issue or contact a maintainer.
 
 ## Acknowledgement
 
