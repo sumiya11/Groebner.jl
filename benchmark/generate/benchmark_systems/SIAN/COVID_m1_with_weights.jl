@@ -3,7 +3,7 @@
 
 import AbstractAlgebra
 
-function COVID_m1_with_weights(; np=AbstractAlgebra, ordering=:degrevlex, k=np.QQ)
+function COVID_m1_with_weights(; np=AbstractAlgebra, internal_ordering=:degrevlex, k=np.QQ)
     R, (I_7,I_6,x1_6,S_6,I_5,x2_5,R_5,x1_5,S_5,I_4,x2_4,R_4,x1_4,S_4,I_3,x2_3,R_3,x1_3,S_3,I_2,x2_2,R_2,x1_2,S_2,I_1,x2_1,R_1,x1_1,S_1,I_0,x2_0,R_0,x1_0,S_0,z_aux,mu_0,b_0_0,b_1_0,g_0,v_0,M_0) = np.PolynomialRing(k, [:I_7,:I_6,:x1_6,:S_6,:I_5,:x2_5,:R_5,:x1_5,:S_5,:I_4,:x2_4,:R_4,:x1_4,:S_4,:I_3,:x2_3,:R_3,:x1_3,:S_3,:I_2,:x2_2,:R_2,:x1_2,:S_2,:I_1,:x2_1,:R_1,:x1_1,:S_1,:I_0,:x2_0,:R_0,:x1_0,:S_0,:z_aux,:mu_0,:b_0_0,:b_1_0,:g_0,:v_0,:M_0], ordering=ordering)
     sys = [
     		-R_0 + 85799292012153741090,

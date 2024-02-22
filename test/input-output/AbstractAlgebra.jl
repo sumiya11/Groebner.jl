@@ -42,7 +42,7 @@ end
         R, (x, y) = AbstractAlgebra.polynomial_ring(
             AbstractAlgebra.GF(5),
             ["x", "y"],
-            ordering=aaord
+            internal_ordering=aaord
         )
         fs = [x + 3y, R(0)]
         for gbord in [
@@ -59,10 +59,10 @@ end
 
     for ord in aa_orderings_to_test
         for ground in aa_grounds_to_test
-            R, (x,) = polynomial_ring(ground, ["x"], ordering=ord)
+            R, (x,) = polynomial_ring(ground, ["x"], internal_ordering=ord)
             @test parent(first(Groebner.groebner([x]))) == R
 
-            R, (x, y) = polynomial_ring(ground, ["x", "y"], ordering=ord)
+            R, (x, y) = polynomial_ring(ground, ["x", "y"], internal_ordering=ord)
             fs = [x^2 * y + 3, (2^31 - 5) * x - (2^31 - 4) * y]
             gb = Groebner.groebner(fs)
             @test parent(gb[1]) == R
@@ -82,7 +82,7 @@ end
     # Test for different Groebner.jl orderings
     aa_ord = :lex
     for ground in aa_grounds_to_test
-        R, (x,) = polynomial_ring(ground, ["x"], ordering=aa_ord)
+        R, (x,) = polynomial_ring(ground, ["x"], internal_ordering=aa_ord)
         for case in [
             Groebner.Lex(),
             Groebner.DegLex(),
@@ -95,7 +95,7 @@ end
             @test gb == [x^2]
         end
 
-        R, (x, y) = polynomial_ring(ground, ["x", "y"], ordering=aa_ord)
+        R, (x, y) = polynomial_ring(ground, ["x", "y"], internal_ordering=aa_ord)
         fs = [x^2 + 3, y - 1]
         for case in [
             Groebner.Lex(),

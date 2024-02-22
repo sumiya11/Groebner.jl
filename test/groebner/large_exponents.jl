@@ -2,12 +2,10 @@
 # degrees of 2^31
 
 @testset "handling large exponents" begin
-    R, (x, y) = polynomial_ring(QQ, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(QQ, ["x", "y"], internal_ordering=:degrevlex)
 
     # up to 2^8-1
     for (i, d) in enumerate(4:2:255)
-        # i = [...] are not in the sequence
-        d in [124, 30] && continue
         f = [x^d - 1, x * y + 2]
         m, n, k = div(d, 2), div(d, 2) + 1, div(d, 2) - 1
         gb = Groebner.groebner(f)

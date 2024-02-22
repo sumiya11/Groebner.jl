@@ -199,7 +199,7 @@ function trace_copy(
 end
 
 function trace_finalize!(trace::TraceF4)
-    # TODO: trim array sizes
+    # TODO: trim array sizes (Alex: well, this is whatever, memory usage won't be lowered)
     trace.buf_basis = basis_deepcopy(trace.gb_basis)
     trace.buf_basis.nnonredundant = trace.input_basis.nnonredundant
     trace.buf_basis.nprocessed = trace.input_basis.nprocessed

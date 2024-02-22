@@ -1,7 +1,7 @@
 using AbstractAlgebra
 include("../src/Groebner.jl")
 
-R, (x, y) = polynomial_ring(QQ, ["x", "y"], ordering=:degrevlex)
+R, (x, y) = polynomial_ring(QQ, ["x", "y"], internal_ordering=:degrevlex)
 p, p2 = 3, 19
 
 sys = [-11 * x * y + 53 * y, 83 * x * y + x - 70 * y]

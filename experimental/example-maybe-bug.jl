@@ -9,19 +9,176 @@ macro my_profview(ex)
     VSCodeServer.view_profile(;))
 end
 
+####################
+
+m = 2^30 + 3
+arithmetic = Groebner.SignedArithmeticZp(Int64, Int32, m)
+i32_4x = Groebner.CompositeInt{4, Int32}
+i64_4x = Groebner.CompositeInt{4, Int64}
+i32_2x = Groebner.CompositeInt{2, Int32}
+i64_2x = Groebner.CompositeInt{2, Int64}
+m_4x = i32_4x((m, m, m, m))
+arithmetic_4x = Groebner.SignedCompositeArithmeticZp(i64_4x, i32_4x, m_4x)
+
+@code_native debuginfo = :none Groebner.mod_p(Int64(4), arithmetic)
+@code_native debuginfo = :none Groebner.mod_p(i64_4x((4, 4, 4, 4)), arithmetic_4x)
+
+# @edit Groebner.mod_p(i64_4x((4, 4, 4, 4)), arithmetic_4x)
+
+row_4x = [i64_4x((1, 2, 3, 4))]
+indices = [Int32(1)]
+coeffs_4x = [i32_4x((1, 1, 1, 1))]
+
+@code_native debuginfo = :none Groebner.linalg_vector_addmul_sparsedense!(
+    row_4x,
+    indices,
+    coeffs_4x,
+    arithmetic_4x
+)
+
+function fun(m, n)
+    row = [rand(Int64) for _ in 1:m]
+    indices = unique(sort([Int32(rand(1:(m))) for _ in 1:(n)]))
+    coeffs = [rand(Int32) for _ in 1:length(indices)]
+    m = 2^30 + 3
+    arithmetic = Groebner.SignedArithmeticZp(Int64, Int32, m)
+    row, indices, coeffs, arithmetic
+end
+
+function fun_2x(m, n)
+    row_2x = [i64_2x((rand(Int64), rand(Int64))) for _ in 1:m]
+    indices = unique(sort([Int32(rand(1:(m))) for _ in 1:(n)]))
+    coeffs_2x = [i32_2x((rand(Int32), rand(Int32))) for _ in 1:length(indices)]
+    m = 2^30 + 3
+    m_2x = i32_2x((m, m))
+    arithmetic_2x = Groebner.SignedCompositeArithmeticZp(i64_2x, i32_2x, m_2x)
+    row_2x, indices, coeffs_2x, arithmetic_2x
+end
+
+function fun_4x(m, n)
+    row_4x = [i64_4x((rand(Int64), rand(Int64), rand(Int64), rand(Int64))) for _ in 1:m]
+    indices = unique(sort([Int32(rand(1:(m))) for _ in 1:(n)]))
+    coeffs_4x = [
+        i32_4x((rand(Int32), rand(Int32), rand(Int32), rand(Int32))) for
+        _ in 1:length(indices)
+    ]
+    m = 2^30 + 3
+    m_4x = i32_4x((m, m, m, m))
+    arithmetic_4x = Groebner.SignedCompositeArithmeticZp(i64_4x, i32_4x, m_4x)
+    row_4x, indices, coeffs_4x, arithmetic_4x
+end
+
+function my_bench(m, n, x)
+    boot = 1_000
+    t = Inf
+    if x == 1
+        row, indices, coeffs, arithmetic = fun(m, n)
+        for _ in 1:boot
+            _, indices, coeffs, arithmetic = fun(m, n)
+            td = @timed Groebner.linalg_vector_addmul_sparsedense!(
+                row,
+                indices,
+                coeffs,
+                arithmetic
+            )
+            t = min(td.time, t)
+        end
+        println("\t", BenchmarkTools.prettytime(1e9 * t))
+    elseif x == 2
+        row_2x, indices, coeffs_2x, arithmetic_2x = fun_2x(m, n)
+        for _ in 1:boot
+            _, indices, coeffs_2x, arithmetic_2x = fun_2x(m, n)
+            td = @timed Groebner.linalg_vector_addmul_sparsedense!(
+                row_2x,
+                indices,
+                coeffs_2x,
+                arithmetic_2x
+            )
+            t = min(td.time, t)
+        end
+        println("\t", BenchmarkTools.prettytime(1e9 * t))
+    elseif x == 4
+        row_4x, indices, coeffs_4x, arithmetic_4x = fun_4x(m, n)
+        for _ in 1:boot
+            _, indices, coeffs_4x, arithmetic_4x = fun_4x(m, n)
+            td = @timed Groebner.linalg_vector_addmul_sparsedense!(
+                row_4x,
+                indices,
+                coeffs_4x,
+                arithmetic_4x
+            )
+            t = min(td.time, t)
+        end
+        println("\t", BenchmarkTools.prettytime(1e9 * t))
+    end
+end
+
+m = 100_000
+
+for i in 1:16
+    n = 1 << i
+    println("n = 2^$i")
+
+    print("4x:")
+    my_bench(m, n, 4)
+
+    print("2x:")
+    my_bench(m, n, 2)
+
+    print("1x:")
+    my_bench(m, n, 1)
+end
+
+for i in 1:16
+    n = 1 << i
+    println("n = 2^$i")
+
+    print("4x:")
+    @btime Groebner.linalg_vector_addmul_sparsedense!(
+        row_4x,
+        indices,
+        coeffs_4x,
+        arithmetic_4x
+    ) setup = begin
+        row_4x, indices, coeffs_4x, arithmetic_4x = fun_4x($m, $n)
+    end
+
+    print("2x:")
+    @btime Groebner.linalg_vector_addmul_sparsedense!(
+        row_2x,
+        indices,
+        coeffs_2x,
+        arithmetic_2x
+    ) setup = begin
+        row_2x, indices, coeffs_2x, arithmetic_2x = fun_2x($m, $n)
+    end
+
+    print("1x:")
+    @btime Groebner.linalg_vector_addmul_sparsedense!(row, indices, coeffs, arithmetic) setup =
+        begin
+            row, indices, coeffs, arithmetic = fun($m, $n)
+        end
+end
+
+####################
+
 @info "" nthreads()
 @show ENV["JULIA_NUM_THREADS"]
 Groebner.logging_enabled() = true
 Groebner.invariants_enabled() = false
 Groebner.performance_counters_enabled() = false
 
-s = Groebner.noonn(8, ordering=:degrevlex, k=AbstractAlgebra.GF(2^30 + 3));
-trace, gb = Groebner.groebner_learn(s);
+s = Groebner.cyclicn(9, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(2^30 + 3));
+@time trace, gb = Groebner.groebner_learn(s);
+@time Groebner.groebner(s);
+@profview Groebner.groebner_apply!(trace, s);
+
 @btime Groebner.groebner($s);
 @btime Groebner.groebner_apply!($trace, $s);
-@btime Groebner.groebner_apply!($trace, $((s, s)));
+# @btime Groebner.groebner_apply!($trace, $((s, s)));
+Groebner.groebner_apply!(trace, ((s, s, s, s)), loglevel=-3);
 @btime Groebner.groebner_apply!($trace, $((s, s, s, s)));
-@btime Groebner.groebner_apply!($trace, $((s, s, s, s, s, s, s, s)));
+# @btime Groebner.groebner_apply!($trace, $((s, s, s, s, s, s, s, s)));
 
 #=
   1.048 s (418167 allocations: 258.02 MiB)
@@ -36,14 +193,14 @@ trace, gb = Groebner.groebner_learn(s);
 =#
 @profview Groebner.groebner_apply!(trace, ((s, s, s, s)));
 
-R, (x1, x2, x3) = polynomial_ring(QQ, ["x1", "x2", "x3"], ordering=:degrevlex)
+R, (x1, x2, x3) = polynomial_ring(QQ, ["x1", "x2", "x3"], internal_ordering=:degrevlex)
 k = [
     x1^2 * x2^2 + BigInt(2)^1000 * x3^2,
     x1^3 * x2 * x3^3 - BigInt(2)^1000 - 1 * x3,
     x1 * x2 * x3 + x1 * x2 + x2 * x3 + 11
 ]
 
-k = Groebner.noonn(7, k=GF(2^31 - 1), ordering=:degrevlex)
+k = Groebner.noonn(7, k=GF(2^31 - 1), internal_ordering=:degrevlex)
 
 @my_profview Groebner.groebner(k, loglevel=0, arithmetic=:signed);
 @time Groebner.groebner(k, loglevel=0);
@@ -54,7 +211,7 @@ k = Groebner.noonn(7, k=GF(2^31 - 1), ordering=:degrevlex)
 @profile Groebner.groebner(k, use_flint=true);
 
 #! format: off
-R,(t1,t2,t3,a,b,c) = polynomial_ring(QQ, ["t1","t2","t3","a", "b", "c"], ordering=:degrevlex)
+R,(t1,t2,t3,a,b,c) = polynomial_ring(QQ, ["t1","t2","t3","a", "b", "c"], internal_ordering=:degrevlex)
 hexapod = [1000000*a^2*t1^2+1000000*a^2*t2^2+1000000*a^2*t3^2+1000000*b^2*t1^2+1000000*b^2*t2^2+1000000*b^2*t3^2+1000000*c^2*t1^2+1000000*c^2*t2^2+1000000*c^2*t3^2-1065102000*a^2*t1-1566200000*a^2*t2+359610000*a^2*t3-4000000*a*b*t2-1574352000*a*b*t3+4000000*a*c*t1+273640000*a*c*t3-1065102000*b^2*t1+8152000*b^2*t2+355610000*b^2*t3-1574352000*b*c*t1-273640000*b*c*t2-791462000*c^2*t1-1566200000*c^2*t2+355610000*c^2*t3+740236705137*a^2-279943961360*a*b+47071636200*a*c+1574352000*a*t1-273640000*a*t2+126292488913*b^2+837307375312*b*c+4000000*b*t1-273640000*b*t3+612513941897*c^2+4000000*c*t2-1574352000*c*t3+1000000*t1^2+1000000*t2^2+1000000*t3^2-624135247952*a-50784764200*b-283060057360*c-791462000*t1+8152000*t2+359610000*t3+165673, 1000000*a^2*t1^2+1000000*a^2*t2^2+1000000*a^2*t3^2+1000000*b^2*t1^2+1000000*b^2*t2^2+1000000*b^2*t3^2+1000000*c^2*t1^2+1000000*c^2*t2^2+1000000*c^2*t3^2-1889130000*a^2*t1-139016000*a^2*t2+357608000*a^2*t3+550492000*a*b*t3+1500376000*a*c*t3-1889130000*b^2*t1-689508000*b^2*t2+357608000*b^2*t3+550492000*b*c*t1-1500376000*b*c*t2-388754000*c^2*t1-139016000*c^2*t2+357608000*c^2*t3+740396599024*a^2+98430171568*a*b+268273230304*a*c-550492000*a*t1-1500376000*a*t2+854420557476*b^2-2714848476*b*c-1500376000*b*t3-114024022072*c^2+550492000*c*t3+1000000*t1^2+1000000*t2^2+1000000*t3^2+624263610988*a-268273230304*b+98430171568*c-388754000*t1-689508000*t2+357608000*t3-63620, 4000000*a^2*t1^2+4000000*a^2*t2^2+4000000*a^2*t3^2+4000000*b^2*t1^2+4000000*b^2*t2^2+4000000*b^2*t3^2+4000000*c^2*t1^2+4000000*c^2*t2^2+4000000*c^2*t3^2-3295636000*a^2*t1+6825304000*a^2*t2+1438448000*a^2*t3-16000000*a*b*t2+4096192000*a*b*t3+16000000*a*c*t1+4906624000*a*c*t3-3295636000*b^2*t1+2729112000*b^2*t2+1422448000*b^2*t3+4096192000*b*c*t1-4906624000*b*c*t2+1610988000*c^2*t1+6825304000*c^2*t2+1422448000*c^2*t3+2962666483625*a^2+722869290752*a*b+875649162944*a*c-4096192000*a*t1-4906624000*a*t2+513760438633*b^2-3361285532000*b*c+16000000*b*t1-4906624000*b*t3+2443184693353*c^2+16000000*c*t2+4096192000*c*t3+4000000*t1^2+4000000*t2^2+4000000*t3^2-2498705324448*a-879018458944*b+741978122752*c+1610988000*t1+2729112000*t2+1438448000*t3+440361,4000000*a^2*t1^2+4000000*a^2*t2^2+4000000*a^2*t3^2+4000000*b^2*t1^2+4000000*b^2*t2^2+4000000*b^2*t3^2+4000000*c^2*t1^2+4000000*c^2*t2^2+4000000*c^2*t3^2+3295636000*a^2*t1+6824896000*a^2*t2+1430432000*a^2*t3+4094592000*a*b*t3-4906624000*a*c*t3+3295636000*b^2*t1+2730304000*b^2*t2+1430432000*b^2*t3+4094592000*b*c*t1+4906624000*b*c*t2-1610988000*c^2*t1+6824896000*c^2*t2+1430432000*c^2*t3+2961910911797*a^2+732129427968*a*b-877323997696*a*c-4094592000*a*t1+4906624000*a*t2+516620569397*b^2+3361357491776*b*c+4906624000*b*t3+2445290017525*c^2+4094592000*c*t3+4000000*t1^2+4000000*t2^2+4000000*t3^2+2499114213824*a+877323997696*b+732129427968*c-1610988000*t1+2730304000*t2+1430432000*t3-324875, 1000000*a^2*t1^2+1000000*a^2*t2^2+1000000*a^2*t3^2+1000000*b^2*t1^2+1000000*b^2*t2^2+1000000*b^2*t3^2+1000000*c^2*t1^2+1000000*c^2*t2^2+1000000*c^2*t3^2+1889602000*a^2*t1-138926000*a^2*t2+359604000*a^2*t3-4000000*a*b*t2+550036000*a*b*t3+4000000*a*c*t1-1500228000*a*c*t3+1889602000*b^2*t1-688962000*b^2*t2+355604000*b^2*t3+550036000*b*c*t1+1500228000*b*c*t2+389374000*c^2*t1-138926000*c^2*t2+355604000*c^2*t3+740903906549*a^2+99175424872*a*b-265964790856*a*c-550036000*a*t1+1500228000*a*t2+854030749541*b^2+2874521168*b*c+4000000*b*t1+1500228000*b*t3-114557203083*c^2+4000000*c*t2+550036000*c*t3+1000000*t1^2+1000000*t2^2+1000000*t3^2-623884900400*a+270522742856*b+97519648872*c+389374000*t1-688962000*t2+359604000*t3+55909, 250000*a^2*t1^2+250000*a^2*t2^2+250000*a^2*t3^2+250000*b^2*t1^2+250000*b^2*t2^2+250000*b^2*t3^2+250000*c^2*t1^2+250000*c^2*t2^2+250000*c^2*t3^2+266341000*a^2*t1-391502000*a^2*t2+89402000*a^2*t3-393620000*a*b*t3-68228000*a*c*t3+266341000*b^2*t1+2118000*b^2*t2+89402000*b^2*t3-393620000*b*c*t1+68228000*b*c*t2+198113000*c^2*t1-391502000*c^2*t2+89402000*c^2*t3+184958257568*a^2-70380830480*a*b-12199439312*a*c+393620000*a*t1+68228000*a*t2+31688927488*b^2-209385275032*b*c+68228000*b*t3+153269490056*c^2-393620000*c*t3+250000*t1^2+250000*t2^2+250000*t3^2+156251491928*a+12199439312*b-70380830480*c+198113000*t1+2118000*t2+89402000*t3+159976]
 #! format: on
 
@@ -88,12 +245,16 @@ gb2 = Groebner.groebner([x1 + BigInt(2)^70 * x2], loglevel=-6);
 
 ###
 
-R, (x1, x2, x3) = polynomial_ring(GF(2^27 + 29), ["x1", "x2", "x3"], ordering=:degrevlex)
 R, (x1, x2, x3) =
-    polynomial_ring(GF(nextprime(2^31 - 1)), ["x1", "x2", "x3"], ordering=:degrevlex)
+    polynomial_ring(GF(2^27 + 29), ["x1", "x2", "x3"], internal_ordering=:degrevlex)
+R, (x1, x2, x3) = polynomial_ring(
+    GF(nextprime(2^31 - 1)),
+    ["x1", "x2", "x3"],
+    internal_ordering=:degrevlex
+)
 
 s = [x1 * x2^10 + 2, x1^11 * x3^3 + 3, x2^6 * x3 + 4 * x1^4 - 5]
-# s = Groebner.katsuran(9, ordering=:degrevlex, k=AbstractAlgebra.GF(2^31 + 11))
+# s = Groebner.katsuran(9, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(2^31 + 11))
 
 gb2 = Groebner.groebner(s, arithmetic=:signed, loglevel=-3);
 gb3 = Groebner.groebner(s, arithmetic=:delayed, loglevel=-3);
@@ -134,11 +295,11 @@ m = Groebner.DelayedArithmeticZp(UInt64, UInt64, Primes.prevprime(2^31 - 1))
 Groebner.logging_enabled() = false
 
 p1, p2, p3, p4, p5, p6, p7, p8 = Primes.nextprimes(2^30 + 3, 8)
-s1 = Groebner.katsuran(11, ordering=:degrevlex, k=GF(p1));
-s2 = Groebner.katsuran(11, ordering=:degrevlex, k=GF(p2));
-s3 = Groebner.katsuran(11, ordering=:degrevlex, k=GF(p3));
-s4 = Groebner.katsuran(11, ordering=:degrevlex, k=GF(p4));
-s5 = Groebner.katsuran(11, ordering=:degrevlex, k=GF(p5));
+s1 = Groebner.katsuran(11, internal_ordering=:degrevlex, k=GF(p1));
+s2 = Groebner.katsuran(11, internal_ordering=:degrevlex, k=GF(p2));
+s3 = Groebner.katsuran(11, internal_ordering=:degrevlex, k=GF(p3));
+s4 = Groebner.katsuran(11, internal_ordering=:degrevlex, k=GF(p4));
+s5 = Groebner.katsuran(11, internal_ordering=:degrevlex, k=GF(p5));
 
 trace, gb = Groebner.groebner_learn(s1);
 
@@ -234,7 +395,7 @@ p5 = 2^27 - 39
 p6 = 2^26 - 5
 p7 = 2^25 - 39
 for p in (p1, p2, p3, p4, p5, p6, p7)
-    s = Groebner.katsuran(8, ordering=:degrevlex, k=AbstractAlgebra.GF(p))
+    s = Groebner.katsuran(8, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
     @info "p < 2^$(floor(Int, log(2, p)+1))"
     @btime Groebner.groebner($s)
 end
@@ -244,18 +405,21 @@ Groebner.logging_enabled() = false
 
 BenchmarkTools.DEFAULT_PARAMETERS.samples = 3
 systems = [
-    ("kat7", Groebner.katsuran(7, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
-    ("kat8", Groebner.katsuran(8, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
-    ("kat9", Groebner.katsuran(9, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
-    ("kat10", Groebner.katsuran(10, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
-    ("cyc6", Groebner.cyclicn(6, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
-    ("cyc7", Groebner.cyclicn(7, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
-    ("cyc8", Groebner.cyclicn(8, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
-    ("eco10", Groebner.eco10(ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
-    ("eco11", Groebner.eco11(ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
-    ("eco12", Groebner.eco12(ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
-    ("noon6", Groebner.noonn(6, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
-    ("noon7", Groebner.noonn(7, ordering=:degrevlex, k=AbstractAlgebra.GF(p2)))
+    ("kat7", Groebner.katsuran(7, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("kat8", Groebner.katsuran(8, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("kat9", Groebner.katsuran(9, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    (
+        "kat10",
+        Groebner.katsuran(10, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2))
+    ),
+    ("cyc6", Groebner.cyclicn(6, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("cyc7", Groebner.cyclicn(7, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("cyc8", Groebner.cyclicn(8, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("eco10", Groebner.eco10(internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("eco11", Groebner.eco11(internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("eco12", Groebner.eco12(internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("noon6", Groebner.noonn(6, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("noon7", Groebner.noonn(7, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2)))
 ]
 for (name, s) in systems
     @info "$name: randomized thr. / randomized / deterministic thr. / deterministic"
@@ -277,18 +441,21 @@ gb1 == gb2
 
 BenchmarkTools.DEFAULT_PARAMETERS.samples = 3
 systems = [
-    ("kat7", Groebner.katsuran(7, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
-    ("kat8", Groebner.katsuran(8, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
-    ("kat9", Groebner.katsuran(9, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
-    ("kat10", Groebner.katsuran(10, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
-    ("cyc6", Groebner.cyclicn(6, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
-    ("cyc7", Groebner.cyclicn(7, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
-    ("cyc8", Groebner.cyclicn(8, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
-    ("eco10", Groebner.eco10(ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
-    ("eco11", Groebner.eco11(ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
-    ("eco12", Groebner.eco12(ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
-    ("noon6", Groebner.noonn(6, ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
-    ("noon7", Groebner.noonn(7, ordering=:degrevlex, k=AbstractAlgebra.GF(p2)))
+    ("kat7", Groebner.katsuran(7, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("kat8", Groebner.katsuran(8, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("kat9", Groebner.katsuran(9, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    (
+        "kat10",
+        Groebner.katsuran(10, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2))
+    ),
+    ("cyc6", Groebner.cyclicn(6, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("cyc7", Groebner.cyclicn(7, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("cyc8", Groebner.cyclicn(8, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("eco10", Groebner.eco10(internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("eco11", Groebner.eco11(internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("eco12", Groebner.eco12(internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("noon6", Groebner.noonn(6, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2))),
+    ("noon7", Groebner.noonn(7, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p2)))
 ]
 for (name, s) in systems
     @info "$name: randomized thr. / randomized / deterministic thr. / deterministic"
@@ -310,10 +477,10 @@ run_f4_ff_degrevlex_benchmarks(ground)
 # 188.876 ms (213205 allocations: 42.44 MiB)
 
 #! format: off
-R,(t1,t2,t3,a,b,c) = polynomial_ring(QQ, ["t1","t2","t3","a", "b", "c"], ordering=:degrevlex)
+R,(t1,t2,t3,a,b,c) = polynomial_ring(QQ, ["t1","t2","t3","a", "b", "c"], internal_ordering=:degrevlex)
 sys1 = [1000000*a^2*t1^2+1000000*a^2*t2^2+1000000*a^2*t3^2+1000000*b^2*t1^2+1000000*b^2*t2^2+1000000*b^2*t3^2+1000000*c^2*t1^2+1000000*c^2*t2^2+1000000*c^2*t3^2-1065102000*a^2*t1-1566200000*a^2*t2+359610000*a^2*t3-4000000*a*b*t2-1574352000*a*b*t3+4000000*a*c*t1+273640000*a*c*t3-1065102000*b^2*t1+8152000*b^2*t2+355610000*b^2*t3-1574352000*b*c*t1-273640000*b*c*t2-791462000*c^2*t1-1566200000*c^2*t2+355610000*c^2*t3+740236705137*a^2-279943961360*a*b+47071636200*a*c+1574352000*a*t1-273640000*a*t2+126292488913*b^2+837307375312*b*c+4000000*b*t1-273640000*b*t3+612513941897*c^2+4000000*c*t2-1574352000*c*t3+1000000*t1^2+1000000*t2^2+1000000*t3^2-624135247952*a-50784764200*b-283060057360*c-791462000*t1+8152000*t2+359610000*t3+165673, 1000000*a^2*t1^2+1000000*a^2*t2^2+1000000*a^2*t3^2+1000000*b^2*t1^2+1000000*b^2*t2^2+1000000*b^2*t3^2+1000000*c^2*t1^2+1000000*c^2*t2^2+1000000*c^2*t3^2-1889130000*a^2*t1-139016000*a^2*t2+357608000*a^2*t3+550492000*a*b*t3+1500376000*a*c*t3-1889130000*b^2*t1-689508000*b^2*t2+357608000*b^2*t3+550492000*b*c*t1-1500376000*b*c*t2-388754000*c^2*t1-139016000*c^2*t2+357608000*c^2*t3+740396599024*a^2+98430171568*a*b+268273230304*a*c-550492000*a*t1-1500376000*a*t2+854420557476*b^2-2714848476*b*c-1500376000*b*t3-114024022072*c^2+550492000*c*t3+1000000*t1^2+1000000*t2^2+1000000*t3^2+624263610988*a-268273230304*b+98430171568*c-388754000*t1-689508000*t2+357608000*t3-63620, 4000000*a^2*t1^2+4000000*a^2*t2^2+4000000*a^2*t3^2+4000000*b^2*t1^2+4000000*b^2*t2^2+4000000*b^2*t3^2+4000000*c^2*t1^2+4000000*c^2*t2^2+4000000*c^2*t3^2-3295636000*a^2*t1+6825304000*a^2*t2+1438448000*a^2*t3-16000000*a*b*t2+4096192000*a*b*t3+16000000*a*c*t1+4906624000*a*c*t3-3295636000*b^2*t1+2729112000*b^2*t2+1422448000*b^2*t3+4096192000*b*c*t1-4906624000*b*c*t2+1610988000*c^2*t1+6825304000*c^2*t2+1422448000*c^2*t3+2962666483625*a^2+722869290752*a*b+875649162944*a*c-4096192000*a*t1-4906624000*a*t2+513760438633*b^2-3361285532000*b*c+16000000*b*t1-4906624000*b*t3+2443184693353*c^2+16000000*c*t2+4096192000*c*t3+4000000*t1^2+4000000*t2^2+4000000*t3^2-2498705324448*a-879018458944*b+741978122752*c+1610988000*t1+2729112000*t2+1438448000*t3+440361,4000000*a^2*t1^2+4000000*a^2*t2^2+4000000*a^2*t3^2+4000000*b^2*t1^2+4000000*b^2*t2^2+4000000*b^2*t3^2+4000000*c^2*t1^2+4000000*c^2*t2^2+4000000*c^2*t3^2+3295636000*a^2*t1+6824896000*a^2*t2+1430432000*a^2*t3+4094592000*a*b*t3-4906624000*a*c*t3+3295636000*b^2*t1+2730304000*b^2*t2+1430432000*b^2*t3+4094592000*b*c*t1+4906624000*b*c*t2-1610988000*c^2*t1+6824896000*c^2*t2+1430432000*c^2*t3+2961910911797*a^2+732129427968*a*b-877323997696*a*c-4094592000*a*t1+4906624000*a*t2+516620569397*b^2+3361357491776*b*c+4906624000*b*t3+2445290017525*c^2+4094592000*c*t3+4000000*t1^2+4000000*t2^2+4000000*t3^2+2499114213824*a+877323997696*b+732129427968*c-1610988000*t1+2730304000*t2+1430432000*t3-324875, 1000000*a^2*t1^2+1000000*a^2*t2^2+1000000*a^2*t3^2+1000000*b^2*t1^2+1000000*b^2*t2^2+1000000*b^2*t3^2+1000000*c^2*t1^2+1000000*c^2*t2^2+1000000*c^2*t3^2+1889602000*a^2*t1-138926000*a^2*t2+359604000*a^2*t3-4000000*a*b*t2+550036000*a*b*t3+4000000*a*c*t1-1500228000*a*c*t3+1889602000*b^2*t1-688962000*b^2*t2+355604000*b^2*t3+550036000*b*c*t1+1500228000*b*c*t2+389374000*c^2*t1-138926000*c^2*t2+355604000*c^2*t3+740903906549*a^2+99175424872*a*b-265964790856*a*c-550036000*a*t1+1500228000*a*t2+854030749541*b^2+2874521168*b*c+4000000*b*t1+1500228000*b*t3-114557203083*c^2+4000000*c*t2+550036000*c*t3+1000000*t1^2+1000000*t2^2+1000000*t3^2-623884900400*a+270522742856*b+97519648872*c+389374000*t1-688962000*t2+359604000*t3+55909, 250000*a^2*t1^2+250000*a^2*t2^2+250000*a^2*t3^2+250000*b^2*t1^2+250000*b^2*t2^2+250000*b^2*t3^2+250000*c^2*t1^2+250000*c^2*t2^2+250000*c^2*t3^2+266341000*a^2*t1-391502000*a^2*t2+89402000*a^2*t3-393620000*a*b*t3-68228000*a*c*t3+266341000*b^2*t1+2118000*b^2*t2+89402000*b^2*t3-393620000*b*c*t1+68228000*b*c*t2+198113000*c^2*t1-391502000*c^2*t2+89402000*c^2*t3+184958257568*a^2-70380830480*a*b-12199439312*a*c+393620000*a*t1+68228000*a*t2+31688927488*b^2-209385275032*b*c+68228000*b*t3+153269490056*c^2-393620000*c*t3+250000*t1^2+250000*t2^2+250000*t3^2+156251491928*a+12199439312*b-70380830480*c+198113000*t1+2118000*t2+89402000*t3+159976]
 
-R,(t1,t2,t3,a,b,c) = polynomial_ring(GF(2^30+3), ["t1","t2","t3","a", "b", "c"], ordering=:degrevlex)
+R,(t1,t2,t3,a,b,c) = polynomial_ring(GF(2^30+3), ["t1","t2","t3","a", "b", "c"], internal_ordering=:degrevlex)
 sys2 = [1000000*a^2*t1^2+1000000*a^2*t2^2+1000000*a^2*t3^2+1000000*b^2*t1^2+1000000*b^2*t2^2+1000000*b^2*t3^2+1000000*c^2*t1^2+1000000*c^2*t2^2+1000000*c^2*t3^2-1065102000*a^2*t1-1566200000*a^2*t2+359610000*a^2*t3-4000000*a*b*t2-1574352000*a*b*t3+4000000*a*c*t1+273640000*a*c*t3-1065102000*b^2*t1+8152000*b^2*t2+355610000*b^2*t3-1574352000*b*c*t1-273640000*b*c*t2-791462000*c^2*t1-1566200000*c^2*t2+355610000*c^2*t3+740236705137*a^2-279943961360*a*b+47071636200*a*c+1574352000*a*t1-273640000*a*t2+126292488913*b^2+837307375312*b*c+4000000*b*t1-273640000*b*t3+612513941897*c^2+4000000*c*t2-1574352000*c*t3+1000000*t1^2+1000000*t2^2+1000000*t3^2-624135247952*a-50784764200*b-283060057360*c-791462000*t1+8152000*t2+359610000*t3+165673, 1000000*a^2*t1^2+1000000*a^2*t2^2+1000000*a^2*t3^2+1000000*b^2*t1^2+1000000*b^2*t2^2+1000000*b^2*t3^2+1000000*c^2*t1^2+1000000*c^2*t2^2+1000000*c^2*t3^2-1889130000*a^2*t1-139016000*a^2*t2+357608000*a^2*t3+550492000*a*b*t3+1500376000*a*c*t3-1889130000*b^2*t1-689508000*b^2*t2+357608000*b^2*t3+550492000*b*c*t1-1500376000*b*c*t2-388754000*c^2*t1-139016000*c^2*t2+357608000*c^2*t3+740396599024*a^2+98430171568*a*b+268273230304*a*c-550492000*a*t1-1500376000*a*t2+854420557476*b^2-2714848476*b*c-1500376000*b*t3-114024022072*c^2+550492000*c*t3+1000000*t1^2+1000000*t2^2+1000000*t3^2+624263610988*a-268273230304*b+98430171568*c-388754000*t1-689508000*t2+357608000*t3-63620, 4000000*a^2*t1^2+4000000*a^2*t2^2+4000000*a^2*t3^2+4000000*b^2*t1^2+4000000*b^2*t2^2+4000000*b^2*t3^2+4000000*c^2*t1^2+4000000*c^2*t2^2+4000000*c^2*t3^2-3295636000*a^2*t1+6825304000*a^2*t2+1438448000*a^2*t3-16000000*a*b*t2+4096192000*a*b*t3+16000000*a*c*t1+4906624000*a*c*t3-3295636000*b^2*t1+2729112000*b^2*t2+1422448000*b^2*t3+4096192000*b*c*t1-4906624000*b*c*t2+1610988000*c^2*t1+6825304000*c^2*t2+1422448000*c^2*t3+2962666483625*a^2+722869290752*a*b+875649162944*a*c-4096192000*a*t1-4906624000*a*t2+513760438633*b^2-3361285532000*b*c+16000000*b*t1-4906624000*b*t3+2443184693353*c^2+16000000*c*t2+4096192000*c*t3+4000000*t1^2+4000000*t2^2+4000000*t3^2-2498705324448*a-879018458944*b+741978122752*c+1610988000*t1+2729112000*t2+1438448000*t3+440361,4000000*a^2*t1^2+4000000*a^2*t2^2+4000000*a^2*t3^2+4000000*b^2*t1^2+4000000*b^2*t2^2+4000000*b^2*t3^2+4000000*c^2*t1^2+4000000*c^2*t2^2+4000000*c^2*t3^2+3295636000*a^2*t1+6824896000*a^2*t2+1430432000*a^2*t3+4094592000*a*b*t3-4906624000*a*c*t3+3295636000*b^2*t1+2730304000*b^2*t2+1430432000*b^2*t3+4094592000*b*c*t1+4906624000*b*c*t2-1610988000*c^2*t1+6824896000*c^2*t2+1430432000*c^2*t3+2961910911797*a^2+732129427968*a*b-877323997696*a*c-4094592000*a*t1+4906624000*a*t2+516620569397*b^2+3361357491776*b*c+4906624000*b*t3+2445290017525*c^2+4094592000*c*t3+4000000*t1^2+4000000*t2^2+4000000*t3^2+2499114213824*a+877323997696*b+732129427968*c-1610988000*t1+2730304000*t2+1430432000*t3-324875, 1000000*a^2*t1^2+1000000*a^2*t2^2+1000000*a^2*t3^2+1000000*b^2*t1^2+1000000*b^2*t2^2+1000000*b^2*t3^2+1000000*c^2*t1^2+1000000*c^2*t2^2+1000000*c^2*t3^2+1889602000*a^2*t1-138926000*a^2*t2+359604000*a^2*t3-4000000*a*b*t2+550036000*a*b*t3+4000000*a*c*t1-1500228000*a*c*t3+1889602000*b^2*t1-688962000*b^2*t2+355604000*b^2*t3+550036000*b*c*t1+1500228000*b*c*t2+389374000*c^2*t1-138926000*c^2*t2+355604000*c^2*t3+740903906549*a^2+99175424872*a*b-265964790856*a*c-550036000*a*t1+1500228000*a*t2+854030749541*b^2+2874521168*b*c+4000000*b*t1+1500228000*b*t3-114557203083*c^2+4000000*c*t2+550036000*c*t3+1000000*t1^2+1000000*t2^2+1000000*t3^2-623884900400*a+270522742856*b+97519648872*c+389374000*t1-688962000*t2+359604000*t3+55909, 250000*a^2*t1^2+250000*a^2*t2^2+250000*a^2*t3^2+250000*b^2*t1^2+250000*b^2*t2^2+250000*b^2*t3^2+250000*c^2*t1^2+250000*c^2*t2^2+250000*c^2*t3^2+266341000*a^2*t1-391502000*a^2*t2+89402000*a^2*t3-393620000*a*b*t3-68228000*a*c*t3+266341000*b^2*t1+2118000*b^2*t2+89402000*b^2*t3-393620000*b*c*t1+68228000*b*c*t2+198113000*c^2*t1-391502000*c^2*t2+89402000*c^2*t3+184958257568*a^2-70380830480*a*b-12199439312*a*c+393620000*a*t1+68228000*a*t2+31688927488*b^2-209385275032*b*c+68228000*b*t3+153269490056*c^2-393620000*c*t3+250000*t1^2+250000*t2^2+250000*t3^2+156251491928*a+12199439312*b-70380830480*c+198113000*t1+2118000*t2+89402000*t3+159976]
 #! format: on
 
@@ -325,9 +492,9 @@ Groebner.performance_counters_enabled() = false
     gb = Groebner.groebner(sys2, loglevel=0)
 end
 
-sys1 = Groebner.katsuran(9, ordering=:degrevlex, k=GF(2^27 + 29))
-sys2 = Groebner.cyclicn(8, ordering=:degrevlex, k=GF(2^30 + 3))
-sys3 = Groebner.cyclicn(7, ordering=:degrevlex, k=GF(2^31 - 1))
+sys1 = Groebner.katsuran(9, internal_ordering=:degrevlex, k=GF(2^27 + 29))
+sys2 = Groebner.cyclicn(8, internal_ordering=:degrevlex, k=GF(2^30 + 3))
+sys3 = Groebner.cyclicn(7, internal_ordering=:degrevlex, k=GF(2^31 - 1))
 
 @time gb1 = Groebner.groebner(sys1, arithmetic=:auto, loglevel=-3);
 @time gb2 = Groebner.groebner(sys1, arithmetic=:signed, loglevel=-3);
@@ -767,5 +934,5 @@ using BenchmarkTools
 Groebner.invariants_enabled() = false
 Groebner.logging_enabled() = false
 Groebner.performance_counters_enabled() = false
-k = Groebner.katsuran(10, k=GF(2^30 + 3), ordering=:degrevlex)
+k = Groebner.katsuran(10, k=GF(2^30 + 3), internal_ordering=:degrevlex)
 @btime Groebner.groebner($k);

@@ -3,7 +3,7 @@
 
 import AbstractAlgebra
 
-function DAISY_ex3_with_weights(; np=AbstractAlgebra, ordering=:degrevlex, k=np.QQ)
+function DAISY_ex3_with_weights(; np=AbstractAlgebra, internal_ordering=:degrevlex, k=np.QQ)
     R, (x₁_8,x₁_7,x₂_7,u₀_7,x₁_6,x₂_6,x₃_6,u₀_6,x₁_5,x₂_5,x₃_5,u₀_5,x₁_4,x₂_4,x₃_4,u₀_4,x₁_3,x₂_3,x₃_3,u₀_3,x₁_2,x₂_2,x₃_2,u₀_2,x₁_1,x₂_1,x₃_1,u₀_1,x₁_0,x₂_0,x₃_0,u₀_0,z_aux,p₁_0,p₃_0,p₄_0,p₆_0,p₇_0) = np.PolynomialRing(k, [:x₁_8,:x₁_7,:x₂_7,:u₀_7,:x₁_6,:x₂_6,:x₃_6,:u₀_6,:x₁_5,:x₂_5,:x₃_5,:u₀_5,:x₁_4,:x₂_4,:x₃_4,:u₀_4,:x₁_3,:x₂_3,:x₃_3,:u₀_3,:x₁_2,:x₂_2,:x₃_2,:u₀_2,:x₁_1,:x₂_1,:x₃_1,:u₀_1,:x₁_0,:x₂_0,:x₃_0,:u₀_0,:z_aux,:p₁_0,:p₃_0,:p₄_0,:p₆_0,:p₇_0], ordering=ordering)
     sys = [
     		-x₁_0 + 264661164931,

@@ -31,7 +31,7 @@ using AbstractAlgebra
 end
 
 @testset "fglm, the rationals" begin
-    R, (x, y, z) = polynomial_ring(QQ, ["x", "y", "z"], ordering=:degrevlex)
+    R, (x, y, z) = polynomial_ring(QQ, ["x", "y", "z"], internal_ordering=:degrevlex)
 
     gb = [
         z^2 - (9 // 490) * y - 201 // 980 * z + 13 // 980,

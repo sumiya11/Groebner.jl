@@ -3,7 +3,7 @@
 
 import AbstractAlgebra
 
-function DAISY_mamil3(; np=AbstractAlgebra, ordering=:degrevlex, k=np.QQ)
+function DAISY_mamil3(; np=AbstractAlgebra, internal_ordering=:degrevlex, k=np.QQ)
     R, (x1_8,x1_7,x3_7,x2_7,x1_6,x3_6,x2_6,x1_5,x3_5,x2_5,x1_4,x3_4,x2_4,x1_3,x3_3,x2_3,x1_2,x3_2,x2_2,x1_1,x3_1,x2_1,x1_0,x3_0,x2_0,z_aux,a21_0,a31_0,a01_0,a12_0,a13_0) = np.PolynomialRing(k, [:x1_8,:x1_7,:x3_7,:x2_7,:x1_6,:x3_6,:x2_6,:x1_5,:x3_5,:x2_5,:x1_4,:x3_4,:x2_4,:x1_3,:x3_3,:x2_3,:x1_2,:x3_2,:x2_2,:x1_1,:x3_1,:x2_1,:x1_0,:x3_0,:x2_0,:z_aux,:a21_0,:a31_0,:a01_0,:a12_0,:a13_0], ordering=ordering)
     sys = [
     		-x1_0 + 535512116913,

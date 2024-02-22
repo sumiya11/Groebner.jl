@@ -5,7 +5,8 @@ function extract_ring(line1, line2)
     char = parse(BigInt, strip(line2))
     @assert char < typemax(UInt)
     base_field = iszero(char) ? Nemo.QQ : Nemo.GF(UInt(char))
-    ring_nemo, vars_nemo = Nemo.polynomial_ring(base_field, vars_str, ordering=:degrevlex)
+    ring_nemo, vars_nemo =
+        Nemo.polynomial_ring(base_field, vars_str, internal_ordering=:degrevlex)
     base_field, ring_nemo, vars_nemo
 end
 

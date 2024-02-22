@@ -24,7 +24,7 @@ function peek_at_polynomials(polynomials::Vector{T}) where {T}
     nvars = AbstractAlgebra.nvars(R)
     ord = if AA_is_multivariate_ring(R)
         # if multivariate
-        AbstractAlgebra.ordering(R)
+        AbstractAlgebra.internal_ordering(R)
     else
         # if univariate, defaults to lex
         :lex
@@ -81,7 +81,7 @@ function extract_ring(polynomials)
     nv = AbstractAlgebra.nvars(R)
     # lex is the default ordering on univariate polynomials
     ord = if AA_is_multivariate_ring(R)
-        AbstractAlgebra.ordering(R)
+        AbstractAlgebra.internal_ordering(R)
     else
         :lex
     end
@@ -772,7 +772,7 @@ function _io_convert_to_output(
     gbcoeffs::Vector{Vector{C}},
     params::AlgorithmParameters
 ) where {T, M <: Monom, C <: Coeff}
-    ord_aa = AbstractAlgebra.ordering(origring)
+    ord_aa = AbstractAlgebra.internal_ordering(origring)
     _ord_aa = ordering_sym2typed(ord_aa)
     input_ordering_matches_output = true
     if params.target_ord != _ord_aa

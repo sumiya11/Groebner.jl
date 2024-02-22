@@ -4,7 +4,7 @@ params = (loglevel=0, sweep=true)
 
 @testset "learn & apply, same field" begin
     K = AbstractAlgebra.GF(2^31 - 1)
-    R, (x, y) = polynomial_ring(K, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:degrevlex)
     trace, gb1 = Groebner.groebner_learn([x + 2, y + 3])
     flag, cfs = Groebner.groebner_applyX!(
         trace,
@@ -22,22 +22,22 @@ params = (loglevel=0, sweep=true)
         (system=[x + 1, y + 2, x * y + 3],),
         (system=[x^20 * y + x + 1, x * y^20 + y + 1],),
         (system=[x^20 * y + x + 1, x * y^20 + y + 1],),
-        (system=Groebner.noonn(3, ordering=:degrevlex, k=K),),
-        (system=Groebner.noonn(4, ordering=:degrevlex, k=K),),
-        (system=Groebner.noonn(5, ordering=:degrevlex, k=K),),
-        (system=Groebner.katsuran(3, ordering=:degrevlex, k=K),),
-        (system=Groebner.katsuran(4, ordering=:degrevlex, k=K),),
-        (system=Groebner.katsuran(5, ordering=:degrevlex, k=K),),
-        (system=Groebner.cyclicn(5, ordering=:degrevlex, k=K),),
-        (system=Groebner.rootn(5, ordering=:degrevlex, k=K),),
-        (system=Groebner.rootn(5, ordering=:degrevlex, k=K),),
-        (system=Groebner.rootn(6, ordering=:degrevlex, k=K),),
-        (system=Groebner.eco5(ordering=:degrevlex, k=K),),
-        (system=Groebner.eco10(ordering=:degrevlex, k=K),),
-        (system=Groebner.ku10(ordering=:degrevlex, k=K),),
-        (system=Groebner.kinema(ordering=:degrevlex, k=K),),
-        (system=Groebner.sparse5(ordering=:degrevlex, k=K),),
-        (system=Groebner.s9_1(ordering=:degrevlex, k=K),)
+        (system=Groebner.noonn(3, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.noonn(4, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.noonn(5, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.katsuran(3, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.katsuran(4, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.katsuran(5, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.cyclicn(5, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.rootn(5, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.rootn(5, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.rootn(6, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.eco5(internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.eco10(internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.ku10(internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.kinema(internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.sparse5(internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.s9_1(internal_ordering=:degrevlex, k=K),)
     ]
 
     for case in cases
@@ -62,9 +62,9 @@ end
 @testset "learn & apply, different field" begin
     # Some small tests and corner cases
     K, K2, K3 = GF(2^30 + 3), GF(2^31 - 1), GF(2^27 - 39)
-    R, (x, y) = polynomial_ring(K, ["x", "y"], ordering=:degrevlex)
-    R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], ordering=:degrevlex)
-    R3, (x3, y3) = polynomial_ring(K3, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:degrevlex)
+    R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], internal_ordering=:degrevlex)
+    R3, (x3, y3) = polynomial_ring(K3, ["x", "y"], internal_ordering=:degrevlex)
     system = [x^4 + 2y^3 + 3x^2 + 4y, 4y^4 + 3x^3 + 2y^2 + 1x]
     system2 = map(f -> map_coefficients(c -> K2(data(c)), f), system)
 
@@ -83,7 +83,7 @@ end
 
     # NOTE: these systems are only relatively very large.
     # We should also test for larger systems and larger primes!!
-    R, (x, y) = polynomial_ring(ZZ, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(ZZ, ["x", "y"], internal_ordering=:degrevlex)
     cases = [
         (system=[x],),
         (system=[R(1)],),
@@ -93,26 +93,26 @@ end
         (system=[x + 1, y + 2, x * y + 3],),
         (system=[x^20 * y + x + 1, x * y^20 + y + 1],),
         (system=[x^20 * y + x + 1, x * y^20 + y + 1],),
-        (system=Groebner.noonn(3, ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.noonn(4, ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.noonn(5, ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.katsuran(3, ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.katsuran(4, ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.katsuran(5, ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.katsuran(6, ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.katsuran(7, ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.cyclicn(5, ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.cyclicn(6, ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.rootn(5, ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.rootn(5, ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.rootn(6, ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.eco5(ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.eco10(ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.eco11(ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.ku10(ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.kinema(ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.sparse5(ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.s9_1(ordering=:degrevlex, k=ZZ),)
+        (system=Groebner.noonn(3, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.noonn(4, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.noonn(5, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.katsuran(3, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.katsuran(4, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.katsuran(5, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.katsuran(6, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.katsuran(7, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.cyclicn(5, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.cyclicn(6, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.rootn(5, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.rootn(5, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.rootn(6, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.eco5(internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.eco10(internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.eco11(internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.ku10(internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.kinema(internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.sparse5(internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.s9_1(internal_ordering=:degrevlex, k=ZZ),)
     ]
 
     # Some bigger tests
@@ -154,7 +154,7 @@ end
     end
 
     # Leading term in the matrix cancel out
-    R, (x, y) = polynomial_ring(QQ, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(QQ, ["x", "y"], internal_ordering=:degrevlex)
     p, p2 = 3, 19
     sys = [-11 * x * y + 53 * y, 83 * x * y + x - 70 * y]
     sys_mod_p = map(

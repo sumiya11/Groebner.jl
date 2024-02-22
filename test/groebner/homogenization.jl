@@ -11,7 +11,7 @@ import Random
         @test Groebner.groebner([x^2 - 1, (x + 1) * x^2], homogenize=:auto) == [x + 1]
 
         for ordering in [:lex, :deglex, :degrevlex]
-            R, (x, y) = polynomial_ring(field, ["x", "y"], ordering=ordering)
+            R, (x, y) = polynomial_ring(field, ["x", "y"], internal_ordering=ordering)
 
             @test Groebner.groebner([R(3)], homogenize=:yes) == [R(1)]
             @test Groebner.groebner([R(0)], homogenize=:yes) == [R(0)]
@@ -26,11 +26,11 @@ import Random
             end
 
             for case in [
-                Groebner.katsuran(2, k=field, ordering=ordering),
-                Groebner.katsuran(3, k=field, ordering=ordering),
-                Groebner.katsuran(4, k=field, ordering=ordering),
-                Groebner.noonn(2, k=field, ordering=ordering),
-                Groebner.noonn(3, k=field, ordering=ordering)
+                Groebner.katsuran(2, k=field, internal_ordering=ordering),
+                Groebner.katsuran(3, k=field, internal_ordering=ordering),
+                Groebner.katsuran(4, k=field, internal_ordering=ordering),
+                Groebner.noonn(2, k=field, internal_ordering=ordering),
+                Groebner.noonn(3, k=field, internal_ordering=ordering)
             ]
                 gb = Groebner.groebner(case, homogenize=:yes)
                 @test Groebner.isgroebner(gb)

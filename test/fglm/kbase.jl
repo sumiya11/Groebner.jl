@@ -1,6 +1,6 @@
 
 @testset "kbase simple" begin
-    R, (x, y) = polynomial_ring(QQ, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(QQ, ["x", "y"], internal_ordering=:degrevlex)
 
     @test Groebner.kbase([x, y]) == [R(1)]
     @test Groebner.kbase([x + y, y]) == [R(1)]
@@ -12,7 +12,7 @@
     @test Groebner.kbase([x^3, y^3, x * y]) == [R(1), y, x, y^2, x^2]
     @test length(Groebner.kbase([8x^77 + 1, y^34 - 1])) == 77 * 34
 
-    R, (x, y) = polynomial_ring(QQ, ["x", "y"], ordering=:lex)
+    R, (x, y) = polynomial_ring(QQ, ["x", "y"], internal_ordering=:lex)
     @test Groebner.kbase([x, y]) == [R(1)]
     @test Groebner.kbase([x + y, y]) == [R(1)]
     @test Groebner.kbase([-2x + 8, 10y + 1]) == [R(1)]
@@ -23,7 +23,7 @@
     @test Groebner.kbase([x^3, y^3, x * y]) == [R(1), y, y^2, x, x^2]
     @test length(Groebner.kbase([8x^77 + 1, y^34 - 1])) == 77 * 34
 
-    R, (x, y) = polynomial_ring(QQ, ["x", "y"], ordering=:deglex)
+    R, (x, y) = polynomial_ring(QQ, ["x", "y"], internal_ordering=:deglex)
 
     @test Groebner.kbase([x, y]) == [R(1)]
     @test Groebner.kbase([x + y, y]) == [R(1)]
@@ -38,7 +38,7 @@ end
 
 @testset "kbase zeros" begin
     for field in [GF(2), GF(2^31 - 1), QQ]
-        R, (x, y, z) = polynomial_ring(field, ["x", "y", "z"], ordering=:lex)
+        R, (x, y, z) = polynomial_ring(field, ["x", "y", "z"], internal_ordering=:lex)
 
         @test_throws DomainError Groebner.kbase([R(0)])
         @test_throws DomainError Groebner.kbase([R(0), R(0), R(0)])
@@ -61,7 +61,7 @@ end
     gb = Groebner.groebner(root6, ordering=Groebner.DegRevLex())
     @test length(Groebner.kbase(gb)) == 720
 
-    noon2 = Groebner.noonn(2, ordering=:degrevlex)
+    noon2 = Groebner.noonn(2, internal_ordering=:degrevlex)
     R = parent(first(noon2))
     (x1, x2) = gens(R)
     gb = Groebner.groebner(noon2, ordering=Groebner.DegRevLex())
@@ -72,7 +72,7 @@ end
     gb = Groebner.groebner(noon, ordering=Groebner.DegRevLex())
     @test length(Groebner.kbase(gb, ordering=Groebner.DegRevLex())) == 21
 
-    sys = Groebner.eco10(k=GF(2^31 - 1), ordering=:degrevlex)
+    sys = Groebner.eco10(k=GF(2^31 - 1), internal_ordering=:degrevlex)
     R = parent(first(sys))
     gb = Groebner.groebner(sys, ordering=Groebner.DegRevLex())
     @test length(Groebner.kbase(gb, ordering=Groebner.DegRevLex())) == 256

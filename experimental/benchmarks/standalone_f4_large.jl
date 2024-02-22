@@ -24,19 +24,19 @@ end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
-        ("cyclic 7", Groebner.cyclicn(7, k=ground, ordering=:degrevlex)),
-        ("cyclic 8", Groebner.cyclicn(8, k=ground, ordering=:degrevlex)),
-        # ("cyclic 9", Groebner.cyclicn(9, k=ground, ordering=:degrevlex)),
-        ("katsura 9", Groebner.katsuran(9, k=ground, ordering=:degrevlex)),
-        ("katsura 10", Groebner.katsuran(10, k=ground, ordering=:degrevlex)),
-        ("katsura 11", Groebner.katsuran(11, k=ground, ordering=:degrevlex)),
-        # ("katsura 12", Groebner.katsuran(12, k=ground, ordering=:degrevlex)),
-        ("noon 7", Groebner.noonn(7, k=ground, ordering=:degrevlex)),
-        ("noon 8", Groebner.noonn(8, k=ground, ordering=:degrevlex)),
-        ("noon 9", Groebner.noonn(9, k=ground, ordering=:degrevlex)),
-        ("eco 11", Groebner.eco11(k=ground, ordering=:degrevlex)),
-        ("eco 12", Groebner.eco12(k=ground, ordering=:degrevlex)),
-        ("eco 13", Groebner.eco13(k=ground, ordering=:degrevlex))
+        ("cyclic 7", Groebner.cyclicn(7, k=ground, internal_ordering=:degrevlex)),
+        ("cyclic 8", Groebner.cyclicn(8, k=ground, internal_ordering=:degrevlex)),
+        # ("cyclic 9", Groebner.cyclicn(9, k=ground, internal_ordering=:degrevlex)),
+        ("katsura 9", Groebner.katsuran(9, k=ground, internal_ordering=:degrevlex)),
+        ("katsura 10", Groebner.katsuran(10, k=ground, internal_ordering=:degrevlex)),
+        ("katsura 11", Groebner.katsuran(11, k=ground, internal_ordering=:degrevlex)),
+        # ("katsura 12", Groebner.katsuran(12, k=ground, internal_ordering=:degrevlex)),
+        ("noon 7", Groebner.noonn(7, k=ground, internal_ordering=:degrevlex)),
+        ("noon 8", Groebner.noonn(8, k=ground, internal_ordering=:degrevlex)),
+        ("noon 9", Groebner.noonn(9, k=ground, internal_ordering=:degrevlex)),
+        ("eco 11", Groebner.eco11(k=ground, internal_ordering=:degrevlex)),
+        ("eco 12", Groebner.eco12(k=ground, internal_ordering=:degrevlex)),
+        ("eco 13", Groebner.eco13(k=ground, internal_ordering=:degrevlex))
     ]
 
     for (name, system) in systems

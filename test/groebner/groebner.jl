@@ -4,7 +4,7 @@ import Random
 import Primes
 
 @testset "groebner simple" begin
-    R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], internal_ordering=:degrevlex)
 
     @test_throws DomainError Groebner.groebner([])
     @test_throws DomainError Groebner.groebner(Vector{elem_type(R)}())
@@ -24,7 +24,7 @@ import Primes
     fs = [2x, 3y, 4x + 5y]
     @test Groebner.groebner(fs) ≂ [x, y]
 
-    R, (x1, x2) = polynomial_ring(GF(2^31 - 1), ["x1", "x2"], ordering=:degrevlex)
+    R, (x1, x2) = polynomial_ring(GF(2^31 - 1), ["x1", "x2"], internal_ordering=:degrevlex)
 
     fs = [
         1 * x1^2 * x2^2 + 2 * x1^2 * x2,
@@ -40,7 +40,7 @@ import Primes
 end
 
 @testset "groebner no autoreduce" begin
-    R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], ordering=:lex)
+    R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], internal_ordering=:lex)
 
     fs = [x + y^2, x * y - y^2]
     gb = Groebner.groebner(fs, reduced=false)
@@ -87,7 +87,7 @@ end
 
         @test Groebner.groebner([R(3), R(4)]) == [R(1)]
         @test Groebner.groebner([x - 3, y + 3]) == [y + 3, x - 3]
-        noon = Groebner.noonn(5, k=field, ordering=:degrevlex)
+        noon = Groebner.noonn(5, k=field, internal_ordering=:degrevlex)
         gb = Groebner.groebner(noon)
         @test Groebner.isgroebner(gb) && all(iszero, Groebner.normalform(gb, noon))
 
@@ -108,7 +108,7 @@ end
 
         @test Groebner.groebner([R(3), R(4)]) == [R(1)]
         @test Groebner.groebner([x - 3, y + 3]) == [y + 3, x - 3]
-        noon = Groebner.noonn(5, k=field, ordering=:degrevlex)
+        noon = Groebner.noonn(5, k=field, internal_ordering=:degrevlex)
         gb = Groebner.groebner(noon)
         @test Groebner.isgroebner(gb) && all(iszero, Groebner.normalform(gb, noon))
 
@@ -124,7 +124,7 @@ end
 
         @test Groebner.groebner([R(3), R(4)]) == [R(1)]
         @test Groebner.groebner([x - 3, y + 3]) == [y + 3, x - 3]
-        noon = Groebner.noonn(5, k=field, ordering=:degrevlex)
+        noon = Groebner.noonn(5, k=field, internal_ordering=:degrevlex)
         gb = Groebner.groebner(noon)
         @test Groebner.isgroebner(gb) && all(iszero, Groebner.normalform(gb, noon))
 
@@ -140,7 +140,7 @@ end
 
         @test Groebner.groebner([R(3), R(4)]) == [R(1)]
         @test Groebner.groebner([x - 3, y + 3]) == [y + 3, x - 3]
-        noon = Groebner.noonn(5, k=field, ordering=:degrevlex)
+        noon = Groebner.noonn(5, k=field, internal_ordering=:degrevlex)
         gb = Groebner.groebner(noon)
         @test Groebner.isgroebner(gb) && all(iszero, Groebner.normalform(gb, noon))
 
@@ -152,7 +152,7 @@ end
 
 @testset "groebner modular" begin
     for modular in [:classic_modular, :learn_and_apply]
-        R, (x,) = polynomial_ring(QQ, ["x"], ordering=:degrevlex)
+        R, (x,) = polynomial_ring(QQ, ["x"], internal_ordering=:degrevlex)
         @test Groebner.groebner([x], modular=modular) == [x]
         @test Groebner.groebner([4x], modular=modular) == [x]
         @test Groebner.groebner([x + 1], modular=modular) == [x + 1]
@@ -174,7 +174,7 @@ end
             modular=modular
         ) == [x^2 + 1152921511049297929x + (2^30 + 3) // 1073741831]
 
-        R, (x, y) = polynomial_ring(QQ, ["x", "y"], ordering=:degrevlex)
+        R, (x, y) = polynomial_ring(QQ, ["x", "y"], internal_ordering=:degrevlex)
 
         fs = [x, y]
         G = Groebner.groebner(fs, modular=modular)
@@ -196,23 +196,23 @@ end
         @test G ≂
               [y^2 + 7 // 13 * y, x * y + 7 // 13 * x, x^2 - 3 // 22 * x + 39 // 539 * y]
 
-        root = Groebner.rootn(3, k=QQ, ordering=:degrevlex)
+        root = Groebner.rootn(3, k=QQ, internal_ordering=:degrevlex)
         gb = Groebner.groebner(root, modular=modular)
         @test Groebner.isgroebner(gb)
 
-        root = Groebner.rootn(4, k=QQ, ordering=:degrevlex)
+        root = Groebner.rootn(4, k=QQ, internal_ordering=:degrevlex)
         gb = Groebner.groebner(root, modular=modular)
         @test Groebner.isgroebner(gb)
 
-        root = Groebner.rootn(8, k=QQ, ordering=:degrevlex)
+        root = Groebner.rootn(8, k=QQ, internal_ordering=:degrevlex)
         gb = Groebner.groebner(root, modular=modular)
         @test Groebner.isgroebner(gb)
 
-        noon = Groebner.noonn(3, k=QQ, ordering=:degrevlex)
+        noon = Groebner.noonn(3, k=QQ, internal_ordering=:degrevlex)
         gb = Groebner.groebner(noon, modular=modular)
         @test Groebner.isgroebner(gb)
 
-        noon = Groebner.noonn(4, k=QQ, ordering=:degrevlex)
+        noon = Groebner.noonn(4, k=QQ, internal_ordering=:degrevlex)
         gb = Groebner.groebner(noon, modular=modular)
         @test Groebner.isgroebner(gb)
 
@@ -232,7 +232,8 @@ end
 end
 
 @testset "groebner corner cases" begin
-    R, (x, y, z, w) = polynomial_ring(QQ, ["x", "y", "z", "w"], ordering=:degrevlex)
+    R, (x, y, z, w) =
+        polynomial_ring(QQ, ["x", "y", "z", "w"], internal_ordering=:degrevlex)
 
     fs = [(12345678 // 12347)x, (222222221111123 // 2131232232097)y + z]
     G = Groebner.groebner(fs)
@@ -265,7 +266,7 @@ end
     G = Groebner.groebner(G)
     @test G == [y + 2147483647, x - 1]
 
-    R, (x, y, z, w) = polynomial_ring(QQ, ["x", "y", "z", "w"], ordering=:lex)
+    R, (x, y, z, w) = polynomial_ring(QQ, ["x", "y", "z", "w"], internal_ordering=:lex)
     fs = [(12345678 // 12347)x, (222222221111123 // 2131232232097)y + z]
     G = Groebner.groebner(fs)
     @test G == [y + 2131232232097 // 222222221111123 * z, x]
@@ -273,7 +274,7 @@ end
 
 @testset "groebner output sorted" begin
     for K in [GF(11), GF(307), GF(12007), GF(2^31 - 1), QQ]
-        R, (x, y, z) = polynomial_ring(K, ["x", "y", "z"], ordering=:lex)
+        R, (x, y, z) = polynomial_ring(K, ["x", "y", "z"], internal_ordering=:lex)
 
         @test Groebner.groebner([x, y]) == Groebner.groebner([y, x]) == [y, x]
 
@@ -287,7 +288,8 @@ end
 end
 
 @testset "monomial overflow" begin
-    R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"], ordering=:degrevlex)
+    R, (x, y, z) =
+        polynomial_ring(GF(2^31 - 1), ["x", "y", "z"], internal_ordering=:degrevlex)
     for monoms in [:auto, :dense, :packed, :sparse]
         gb_1 = [x * y^100 + y, x^100 * y + y^100, y^199 + 2147483646 * x^99 * y]
         gb_2 = [x * y^200 + y, x^200 * y + y^200, y^399 + 2147483646 * x^199 * y]
@@ -313,12 +315,12 @@ end
 end
 
 @testset "groebner autoreduce" begin
-    root = Groebner.rootn(3, k=GF(2^31 - 1), ordering=:degrevlex)
+    root = Groebner.rootn(3, k=GF(2^31 - 1), internal_ordering=:degrevlex)
     x1, x2, x3 = gens(parent(first(root)))
     gb = Groebner.groebner(root, reduced=true)
     @test gb == [x1 + x2 + x3, x2^2 + x2 * x3 + x3^2, x3^3 + 2147483646]
 
-    root = Groebner.rootn(6, k=GF(2^31 - 1), ordering=:degrevlex)
+    root = Groebner.rootn(6, k=GF(2^31 - 1), internal_ordering=:degrevlex)
     x1, x2, x3, x4, x5, x6 = gens(parent(first(root)))
     gb = Groebner.groebner(root, reduced=true)
     #! format: off
@@ -332,7 +334,7 @@ end
     ]
     #! format: on
 
-    ku = Groebner.ku10(k=GF(2^31 - 1), ordering=:degrevlex)
+    ku = Groebner.ku10(k=GF(2^31 - 1), internal_ordering=:degrevlex)
     x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = gens(parent(first(ku)))
     gb = Groebner.groebner(ku, reduced=true)
 
@@ -351,7 +353,7 @@ end
 end
 
 @testset "groebner certify" begin
-    R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"], ordering=:lex)
+    R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"], internal_ordering=:lex)
 
     @test Groebner.groebner([x, y], certify=true) == [y, x]
     @test Groebner.groebner([y, x], certify=true) == [y, x]
@@ -359,12 +361,12 @@ end
     fs = [x^2 + y, x * y]
     @test Groebner.groebner(fs, certify=true) == [y^2, x * y, x^2 + y]
 
-    root = Groebner.rootn(3, k=QQ, ordering=:degrevlex)
+    root = Groebner.rootn(3, k=QQ, internal_ordering=:degrevlex)
     x1, x2, x3 = gens(parent(first(root)))
     gb = Groebner.groebner(root, certify=true)
     @test gb == [x1 + x2 + x3, x2^2 + x2 * x3 + x3^2, x3^3 - 1]
 
-    root = Groebner.rootn(6, k=QQ, ordering=:deglex)
+    root = Groebner.rootn(6, k=QQ, internal_ordering=:deglex)
     x1, x2, x3, x4, x5, x6 = gens(parent(first(root)))
     gb = Groebner.groebner(root, certify=true)
     #! format: off
@@ -378,7 +380,7 @@ end
     ]
     #! format: on
 
-    ku = Groebner.ku10(k=QQ, ordering=:degrevlex)
+    ku = Groebner.ku10(k=QQ, internal_ordering=:degrevlex)
     x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = gens(parent(first(ku)))
     gb = Groebner.groebner(ku, certify=true)
 
@@ -405,7 +407,7 @@ end
 
 @testset "groebner maxpairs" begin
     # TODO: fix some bugs in maxpairs
-    s = Groebner.noonn(5, ordering=:degrevlex, k=GF(2^31 - 1))
+    s = Groebner.noonn(5, internal_ordering=:degrevlex, k=GF(2^31 - 1))
     gb = Groebner.groebner(s)
     # @test gb == Groebner.groebner(s, maxpairs=100)
     # @test gb == Groebner.groebner(s, maxpairs=10)
@@ -413,7 +415,7 @@ end
     # @test gb == Groebner.groebner(s, maxpairs=1)
     @test_throws AssertionError Groebner.groebner(s, maxpairs=0)
 
-    s = Groebner.katsuran(5, ordering=:degrevlex, k=QQ)
+    s = Groebner.katsuran(5, internal_ordering=:degrevlex, k=QQ)
     gb = Groebner.groebner(s)
     # @test gb == Groebner.groebner(s, maxpairs=100)
     # @test gb == Groebner.groebner(s, maxpairs=10)
@@ -423,14 +425,15 @@ end
 end
 
 @testset "groebner orderings" begin
-    R, (x, y, z, w) = polynomial_ring(QQ, ["x", "y", "z", "w"], ordering=:deglex)
+    R, (x, y, z, w) = polynomial_ring(QQ, ["x", "y", "z", "w"], internal_ordering=:deglex)
 
     gb = Groebner.groebner([x, y, z, w], ordering=Groebner.Lex(y, x, w, z))
     @test gb == [z, w, x, y]
 
     # Parent ring persists
     for aa_ord in [:lex, :deglex, :degrevlex]
-        R, (x, y, z, w) = polynomial_ring(QQ, ["x", "y", "z", "w"], ordering=aa_ord)
+        R, (x, y, z, w) =
+            polynomial_ring(QQ, ["x", "y", "z", "w"], internal_ordering=aa_ord)
 
         @test_throws DomainError Groebner.groebner([x, y, z, w], ordering=Groebner.Lex(x))
         @test_throws DomainError Groebner.groebner([x, y], ordering=Groebner.DegLex(x, y))
@@ -475,7 +478,7 @@ end
           [(7 // 5) * x + (3 // 5) * y + z + 11 // 5]
 
     # The order of output polynomials is correct
-    R, (x, y, z, w) = polynomial_ring(QQ, ["x", "y", "z", "w"], ordering=:deglex)
+    R, (x, y, z, w) = polynomial_ring(QQ, ["x", "y", "z", "w"], internal_ordering=:deglex)
     for i in 1:10
         xs = Random.shuffle([x, y, z, w])
         polys = [x + 1, y + 2, z + 3, w - 4]
@@ -492,7 +495,8 @@ end
 
     # Correctness of Lex, DegLex, DegRevLex comparing with AbstractAlgebra
     for aa_ord in [:lex, :deglex, :degrevlex]
-        R, (x1, x2, x3, x4) = polynomial_ring(QQ, ["x1", "x2", "x3", "x4"], ordering=aa_ord)
+        R, (x1, x2, x3, x4) =
+            polynomial_ring(QQ, ["x1", "x2", "x3", "x4"], internal_ordering=aa_ord)
         cases = [
             [x1, x2, x3, x4],
             [x2 * x3 + 2x4, x1 * x2 + 3x3],
@@ -515,7 +519,7 @@ end
                             (__R, _) = polynomial_ring(
                                 QQ,
                                 map(repr, $(vars)),
-                                ordering=$_quot_aa_ord
+                                internal_ordering=$_quot_aa_ord
                             )
                         )
                     )
@@ -582,7 +586,7 @@ end
     @test R == parent(first(Groebner.groebner([x], ordering=Groebner.DegLex())))
     @test R == parent(first(Groebner.groebner([x], ordering=Groebner.DegRevLex())))
 
-    R, (x, y, z) = polynomial_ring(QQ, ["x", "y", "z"], ordering=:deglex)
+    R, (x, y, z) = polynomial_ring(QQ, ["x", "y", "z"], internal_ordering=:deglex)
 
     fs = [y^2, x]
     gb = Groebner.groebner(fs, ordering=Groebner.Lex())
@@ -597,7 +601,7 @@ end
     @test parent(gb[1]) == R
     @test gb == [x, y^2]
 
-    noon = Groebner.noonn(2, ordering=:lex)
+    noon = Groebner.noonn(2, internal_ordering=:lex)
     gb = Groebner.groebner(noon, ordering=Groebner.Lex())
     x1, x2 = gens(parent(first(noon)))
     @test gb == [
@@ -626,9 +630,9 @@ end
     for domain in (GF(2^31 - 1), QQ)
         for system in [
             Groebner.cyclicn(2, k=domain),
-            Groebner.noonn(4, k=domain, ordering=:degrevlex),
-            Groebner.katsuran(5, k=domain, ordering=:degrevlex),
-            Groebner.kinema(k=domain, ordering=:degrevlex)
+            Groebner.noonn(4, k=domain, internal_ordering=:degrevlex),
+            Groebner.katsuran(5, k=domain, internal_ordering=:degrevlex),
+            Groebner.kinema(k=domain, internal_ordering=:degrevlex)
         ]
             results = []
             for monoms in [:dense, :packed]
@@ -643,7 +647,7 @@ end
 
 @testset "groebner zeros" begin
     for field in [GF(2), GF(2^31 - 1), QQ]
-        R, (x, y, z) = polynomial_ring(field, ["x", "y", "z"], ordering=:lex)
+        R, (x, y, z) = polynomial_ring(field, ["x", "y", "z"], internal_ordering=:lex)
 
         @test Groebner.groebner([x - x]) == [R(0)]
         @test Groebner.groebner([R(0), R(0), R(0)]) == Groebner.groebner([R(0)]) == [R(0)]
@@ -655,7 +659,7 @@ end
 
 @testset "isgroebner zeros" begin
     for field in [GF(2), GF(2^31 - 1), QQ]
-        R, (x, y, z) = polynomial_ring(field, ["x", "y", "z"], ordering=:lex)
+        R, (x, y, z) = polynomial_ring(field, ["x", "y", "z"], internal_ordering=:lex)
 
         @test Groebner.isgroebner([x - x])
         @test Groebner.isgroebner([R(0), R(0), R(0)])
@@ -668,7 +672,7 @@ end
 
 @testset "normalform zeros" begin
     for field in [GF(2), GF(2^31 - 1), QQ]
-        R, (x, y, z) = polynomial_ring(field, ["x", "y", "z"], ordering=:lex)
+        R, (x, y, z) = polynomial_ring(field, ["x", "y", "z"], internal_ordering=:lex)
 
         @test Groebner.normalform([R(0)], [R(0)]) == [R(0)]
         @test Groebner.normalform([R(0), R(0), R(0)], [x + 2, x, x + 1]) ==
@@ -681,7 +685,7 @@ end
 end
 
 @testset "normalform checks" begin
-    R, (x, y, z) = polynomial_ring(QQ, ["x", "y", "z"], ordering=:lex)
+    R, (x, y, z) = polynomial_ring(QQ, ["x", "y", "z"], internal_ordering=:lex)
 
     for check in [false, true]
         @test Groebner.normalform([x, y], y, check=check) == R(0)
@@ -691,7 +695,7 @@ end
 end
 
 @testset "kbase checks" begin
-    R, (x, y, z) = polynomial_ring(QQ, ["x", "y", "z"], ordering=:lex)
+    R, (x, y, z) = polynomial_ring(QQ, ["x", "y", "z"], internal_ordering=:lex)
 
     for check in [false, true]
         b = Groebner.kbase([x, y, z], check=check)
@@ -702,7 +706,7 @@ end
 end
 
 @testset "groebner linear algebra" begin
-    R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"], ordering=:lex)
+    R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"], internal_ordering=:lex)
 
     for linalg in [:deterministic, :randomized]
         @test Groebner.groebner([x, y], linalg=linalg) ==
@@ -714,19 +718,19 @@ end
               Groebner.groebner(fs) ==
               [y^2, x * y, x^2 + y]
 
-        root = Groebner.rootn(3, k=GF(2^31 - 1), ordering=:degrevlex)
+        root = Groebner.rootn(3, k=GF(2^31 - 1), internal_ordering=:degrevlex)
         x1, x2, x3 = gens(parent(first(root)))
         gb1 = Groebner.groebner(root, linalg=linalg)
         gb2 = Groebner.groebner(root)
         @test gb1 == gb2 == [x1 + x2 + x3, x2^2 + x2 * x3 + x3^2, x3^3 + 2147483646]
 
-        root = Groebner.rootn(6, k=GF(2^31 - 1), ordering=:degrevlex)
+        root = Groebner.rootn(6, k=GF(2^31 - 1), internal_ordering=:degrevlex)
         x1, x2, x3, x4, x5, x6 = gens(parent(first(root)))
         gb1 = Groebner.groebner(root, linalg=linalg)
         gb2 = Groebner.groebner(root)
         @test gb1 == gb2
 
-        ku = Groebner.ku10(k=GF(2^31 - 1), ordering=:degrevlex)
+        ku = Groebner.ku10(k=GF(2^31 - 1), internal_ordering=:degrevlex)
         x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = gens(parent(first(ku)))
         gb1 = Groebner.groebner(ku)
         gb2 = Groebner.groebner(ku, linalg=linalg)

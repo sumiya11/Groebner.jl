@@ -19,7 +19,7 @@ function generate_benchmark_source_for_groebner(
     ring_repr = """ring, ($vars_repr) = polynomial_ring(
         $field_repr, 
         $vars_repr_quoted, 
-        ordering=:degrevlex
+        internal_ordering=:degrevlex
     )"""
     system_repr = join(map(s -> "\t" * s, map(repr, system)), ",\n")
     system_repr = "system = [\n$system_repr\n]"

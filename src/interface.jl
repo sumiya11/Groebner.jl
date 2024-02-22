@@ -175,14 +175,14 @@ Using `groebner_apply!` in batches (works only in `:degrevlex` at the moment):
 
 ```jldoctest
 using Groebner, AbstractAlgebra
-R, (x, y) = polynomial_ring(GF(2^31-1), ["x", "y"], ordering=:degrevlex)
+R, (x, y) = polynomial_ring(GF(2^31-1), ["x", "y"], internal_ordering=:degrevlex)
 
 # Learn
 trace, gb_1 = groebner_learn([x*y^2 + x, y*x^2 + y])
 
 # Create rings with some other moduli
-R2, (x2, y2) = polynomial_ring(GF(2^30+3), ["x", "y"], ordering=:degrevlex)
-R3, (x3, y3) = polynomial_ring(GF(2^27+29), ["x", "y"], ordering=:degrevlex)
+R2, (x2, y2) = polynomial_ring(GF(2^30+3), ["x", "y"], internal_ordering=:degrevlex)
+R3, (x3, y3) = polynomial_ring(GF(2^27+29), ["x", "y"], internal_ordering=:degrevlex)
 
 # Two specializations of the same ideal
 batch = ([2x2*y2^2 + 3x2, 4y2*x2^2 + 5y2], [4x3*y3^2 + 4x3, 5y3*x3^2 + 7y3])
@@ -201,7 +201,7 @@ Katsura-9 system:
 using Groebner, AbstractAlgebra, BenchmarkTools
 
 # Create the system
-kat = Groebner.katsuran(9, k=ZZ, ordering=:degrevlex)
+kat = Groebner.katsuran(9, k=ZZ, internal_ordering=:degrevlex)
 
 # Reduce the coefficients modulo 5 different primes
 kat_0 = map(f -> map_coefficients(c -> GF(2^30 + 3)(c), f), kat)

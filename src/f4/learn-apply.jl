@@ -350,13 +350,6 @@ function reduction_apply!(
     cache_column_order::Bool,
     params::AlgorithmParameters
 )
-    # if length(trace.matrix_sorted_columns) >= f4_iteration &&
-    #    length(trace.matrix_sorted_columns[f4_iteration]) != (symbol_ht.load - 1)
-    #     # Some monomial vanished!!!
-    #     # return false
-    #     @assert false
-    # end
-
     # We bypass the sorting of the matrix columns when apply is used the second
     # time
     if cache_column_order

@@ -3,7 +3,7 @@
 
 import AbstractAlgebra
 
-function Lipolysis(; np=AbstractAlgebra, ordering=:degrevlex, k=np.QQ)
+function Lipolysis(; np=AbstractAlgebra, internal_ordering=:degrevlex, k=np.QQ)
     R, (x2_4,x3_4,x1_3,x2_3,x3_3,x5_3,x1_2,x2_2,x3_2,x5_2,x1_1,x2_1,x3_1,x4_1,x5_1,x1_0,x2_0,x3_0,x4_0,x5_0,z_aux,k2_0,k4_0,k3_0) = np.PolynomialRing(k, [:x2_4,:x3_4,:x1_3,:x2_3,:x3_3,:x5_3,:x1_2,:x2_2,:x3_2,:x5_2,:x1_1,:x2_1,:x3_1,:x4_1,:x5_1,:x1_0,:x2_0,:x3_0,:x4_0,:x5_0,:z_aux,:k2_0,:k4_0,:k3_0], ordering=ordering)
     sys = [
     		-x2_0 - x3_0 + 23625618972,

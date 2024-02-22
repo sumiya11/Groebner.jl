@@ -4,12 +4,16 @@ import Primes
     # Simple sanity checks
     ks = map(GF, Primes.nextprimes(2^30, 40))
 
-    @test_broken false # broken for ordering=:lex
+    @test_broken false # broken for internal_ordering=:lex
 
-    R, (x, y) = polynomial_ring(AbstractAlgebra.ZZ, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) =
+        polynomial_ring(AbstractAlgebra.ZZ, ["x", "y"], internal_ordering=:degrevlex)
     sys_qq = [44x^2 + x + 2^50, y^10 - 10 * y^5 - 99]
     sys_gf = map(
-        j -> map(poly -> map_coefficients(c -> (k = ks[j]; k(c)), poly), sys_qq),
+        j -> map(
+            poly -> AbstractAlgebra.map_coefficients(c -> (k = ks[j]; k(c)), poly),
+            sys_qq
+        ),
         1:length(ks)
     )
 
@@ -46,7 +50,10 @@ import Primes
 
     function test_learn_apply(system, primes)
         @assert length(primes) > 4
-        systems_zp = map(p -> map(f -> map_coefficients(c -> GF(p)(c), f), system), primes)
+        systems_zp = map(
+            p -> map(f -> AbstractAlgebra.map_coefficients(c -> GF(p)(c), f), system),
+            primes
+        )
 
         trace, gb_0 = Groebner.groebner_learn(systems_zp[1])
 
@@ -60,8 +67,8 @@ import Primes
         @test collect(gbs) == map(Groebner.groebner, systems_zp[2:5])
     end
 
-    kat = Groebner.katsuran(8, k=ZZ, ordering=:degrevlex)
-    cyc = Groebner.cyclicn(6, k=ZZ, ordering=:degrevlex)
+    kat = Groebner.katsuran(8, k=ZZ, internal_ordering=:degrevlex)
+    cyc = Groebner.cyclicn(6, k=ZZ, internal_ordering=:degrevlex)
 
     ps1 = Primes.nextprimes(2^30, 5)
     ps2 = [2^31 - 1, 2^30 + 3, 2^32 + 15, 2^40 + 15, 2^30 + 3]

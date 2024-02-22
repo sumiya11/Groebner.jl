@@ -2,7 +2,7 @@ using AbstractAlgebra
 
 #! format: off
 function katsura_10_msolve(K)
-    R, (x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) = polynomial_ring(K, ["x$i" for i in 1:10], ordering=:degrevlex)
+    R, (x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) = polynomial_ring(K, ["x$i" for i in 1:10], internal_ordering=:degrevlex)
     system = [
 x1+2*x2+2*x3+2*x4+2*x5+2*x6+2*x7+2*x8+2*x9+2*x10-1,
 x1^2+2*x2^2+2*x3^2+2*x4^2+2*x5^2+2*x6^2+2*x7^2+2*x8^2+2*x9^2+2*x10^2-x1,
@@ -18,7 +18,7 @@ x5^2+2*x4*x6+2*x3*x7+2*x2*x8+2*x1*x9+2*x2*x10-x9
 end
 
 function katsura_11_msolve(K)
-    R, (x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11) = polynomial_ring(K, ["x$i" for i in 1:11], ordering=:degrevlex)
+    R, (x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11) = polynomial_ring(K, ["x$i" for i in 1:11], internal_ordering=:degrevlex)
     system = [
         x1+2*x2+2*x3+2*x4+2*x5+2*x6+2*x7+2*x8+2*x9+2*x10+2*x11-1,
 x1^2+2*x2^2+2*x3^2+2*x4^2+2*x5^2+2*x6^2+2*x7^2+2*x8^2+2*x9^2+2*x10^2+2*x11^2-x1,
@@ -35,7 +35,7 @@ x5^2+2*x4*x6+2*x3*x7+2*x2*x8+2*x1*x9+2*x2*x10+2*x3*x11-x9,
 end
 
 function katsura_12_msolve(K)
-    R, (x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12) = polynomial_ring(K, ["x$i" for i in 1:12], ordering=:degrevlex)
+    R, (x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12) = polynomial_ring(K, ["x$i" for i in 1:12], internal_ordering=:degrevlex)
     system = [
         x1+2*x2+2*x3+2*x4+2*x5+2*x6+2*x7+2*x8+2*x9+2*x10+2*x11+2*x12-1,
         x1^2+2*x2^2+2*x3^2+2*x4^2+2*x5^2+2*x6^2+2*x7^2+2*x8^2+2*x9^2+2*x10^2+2*x11^2+2*x12^2-x1,
@@ -53,7 +53,7 @@ function katsura_12_msolve(K)
 end
 
 function katsura_13_msolve(K)
-    R, (x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13) = polynomial_ring(K, ["x$i" for i in 1:13], ordering=:degrevlex)
+    R, (x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13) = polynomial_ring(K, ["x$i" for i in 1:13], internal_ordering=:degrevlex)
     system = [
         x1+2*x2+2*x3+2*x4+2*x5+2*x6+2*x7+2*x8+2*x9+2*x10+2*x11+2*x12+2*x13-1,
 x1^2+2*x2^2+2*x3^2+2*x4^2+2*x5^2+2*x6^2+2*x7^2+2*x8^2+2*x9^2+2*x10^2+2*x11^2+2*x12^2+2*x13^2-x1,
@@ -74,8 +74,11 @@ end
 
 using Nemo, AbstractAlgebra, Primes
 using BenchmarkTools
-R, (x, y) =
-    AbstractAlgebra.polynomial_ring(AbstractAlgebra.QQ, ["x", "y"], ordering=:degrevlex)
+R, (x, y) = AbstractAlgebra.polynomial_ring(
+    AbstractAlgebra.QQ,
+    ["x", "y"],
+    internal_ordering=:degrevlex
+)
 
 Groebner.logging_enabled() = true
 Groebner.invariants_enabled() = false
@@ -96,7 +99,7 @@ p = prod(Primes.nextprimes(BigInt(2^30), 1000))
 
 1
 
-k = Groebner.katsuran(11, k=K, ordering=:degrevlex)
+k = Groebner.katsuran(11, k=K, internal_ordering=:degrevlex)
 kat_11_msolve = katsura_11_msolve(K)
 kat_12_msolve = katsura_12_msolve(K)
 kat_13_msolve = katsura_13_msolve(K)

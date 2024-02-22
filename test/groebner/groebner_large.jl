@@ -2,7 +2,8 @@ using AbstractAlgebra
 using Primes
 
 @testset "groebner modular-hard problems" begin
-    R, (x1, x2, x3, x4) = polynomial_ring(QQ, ["x1", "x2", "x3", "x4"], ordering=:degrevlex)
+    R, (x1, x2, x3, x4) =
+        polynomial_ring(QQ, ["x1", "x2", "x3", "x4"], internal_ordering=:degrevlex)
 
     ###########################################################################
 
@@ -121,7 +122,7 @@ using Primes
 end
 
 @testset "groebner, hard-coded answer" begin
-    noon = Groebner.noonn(4, k=QQ, ordering=:degrevlex)
+    noon = Groebner.noonn(4, k=QQ, internal_ordering=:degrevlex)
     (x1, x2, x3, x4) = gens(parent(first(noon)))
 
     gb = Groebner.groebner(noon)
@@ -319,7 +320,7 @@ end
 
     @test gb == map(f -> divexact(f, leading_coefficient(f)), sing_ans)
 
-    noon = Groebner.noonn(5, ordering=:degrevlex)
+    noon = Groebner.noonn(5, internal_ordering=:degrevlex)
     (x1, x2, x3, x4, x5) = gens(parent(first(noon)))
 
     gb = Groebner.groebner(noon)
@@ -1513,7 +1514,7 @@ end
 
     @test gb == map(f -> divexact(f, leading_coefficient(f)), sing_ans)
 
-    kat = Groebner.katsuran(6, ordering=:degrevlex)
+    kat = Groebner.katsuran(6, internal_ordering=:degrevlex)
     (x1, x2, x3, x4, x5, x6, x7) = gens(parent(first(kat)))
 
     gb = Groebner.groebner(kat)

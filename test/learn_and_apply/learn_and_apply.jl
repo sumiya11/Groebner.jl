@@ -10,8 +10,8 @@ params = (loglevel=0, sweep=true)
     @assert gb1 == gb2 && flag
 
     K = AbstractAlgebra.GF(2^31 - 1)
-    R, (x, y) = polynomial_ring(K, ["x", "y"], ordering=:degrevlex)
-    R2, xs = polynomial_ring(K, ["x$i" for i in 1:30], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:degrevlex)
+    R2, xs = polynomial_ring(K, ["x$i" for i in 1:30], internal_ordering=:degrevlex)
 
     @test_throws DomainError Groebner.groebner_learn([R(0), R(0)]; params...)
 
@@ -24,21 +24,21 @@ params = (loglevel=0, sweep=true)
         (system=[x + 1, y + 2, x * y + 3],),
         (system=[x^20 * y + x + 1, x * y^20 + y + 1],),
         (system=[x^20 * y + x + 1, x * y^20 + y + 1],),
-        (system=Groebner.noonn(3, ordering=:degrevlex, k=K),),
-        (system=Groebner.noonn(4, ordering=:degrevlex, k=K),),
-        (system=Groebner.noonn(5, ordering=:degrevlex, k=K),),
-        (system=Groebner.katsuran(3, ordering=:degrevlex, k=K),),
-        (system=Groebner.katsuran(4, ordering=:degrevlex, k=K),),
-        (system=Groebner.katsuran(5, ordering=:degrevlex, k=K),),
-        (system=Groebner.cyclicn(5, ordering=:degrevlex, k=K),),
-        (system=Groebner.rootn(5, ordering=:lex, k=K),),
-        (system=Groebner.rootn(5, ordering=:deglex, k=K),),
-        (system=Groebner.rootn(6, ordering=:degrevlex, k=K),),
-        (system=Groebner.eco5(ordering=:degrevlex, k=K),),
-        (system=Groebner.ku10(ordering=:degrevlex, k=K),),
-        (system=Groebner.kinema(ordering=:degrevlex, k=K),),
-        (system=Groebner.sparse5(ordering=:degrevlex, k=K),),
-        (system=Groebner.s9_1(ordering=:degrevlex, k=K),),
+        (system=Groebner.noonn(3, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.noonn(4, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.noonn(5, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.katsuran(3, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.katsuran(4, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.katsuran(5, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.cyclicn(5, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.rootn(5, internal_ordering=:lex, k=K),),
+        (system=Groebner.rootn(5, internal_ordering=:deglex, k=K),),
+        (system=Groebner.rootn(6, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.eco5(internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.ku10(internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.kinema(internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.sparse5(internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.s9_1(internal_ordering=:degrevlex, k=K),),
         (system=[sum(xs) + prod(xs), sum(xs)^2, prod(xs) - 1],)
     ]
 
@@ -66,11 +66,11 @@ end
 @testset "learn & apply, different field" begin
     # Some small tests and corner cases
     K, K2, K3 = GF(5), GF(7), GF(11)
-    R, (x, y) = polynomial_ring(K, ["x", "y"], ordering=:degrevlex)
-    R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], ordering=:degrevlex)
-    R3, (x3, y3) = polynomial_ring(K3, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:degrevlex)
+    R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], internal_ordering=:degrevlex)
+    R3, (x3, y3) = polynomial_ring(K3, ["x", "y"], internal_ordering=:degrevlex)
     system = [x^4 + 2y^3 + 3x^2 + 4y, 4y^4 + 3x^3 + 2y^2 + 1x]
-    system2 = map(f -> map_coefficients(c -> K2(data(c)), f), system)
+    system2 = map(f -> AbstractAlgebra.map_coefficients(c -> K2(data(c)), f), system)
 
     trace, gb_1 = Groebner.groebner_learn(system; params...)
     flag, gb_2 = Groebner.groebner_apply!(trace, system2; params...)
@@ -85,8 +85,8 @@ end
     @test flag && gb_2 == Groebner.groebner(system)
 
     system = [6x2^4 + 6y2 + 1, y2 + 3]
-    system2 = map(f -> map_coefficients(c -> K(data(c)), f), system)
-    system3 = map(f -> map_coefficients(c -> K3(data(c)), f), system)
+    system2 = map(f -> AbstractAlgebra.map_coefficients(c -> K(data(c)), f), system)
+    system3 = map(f -> AbstractAlgebra.map_coefficients(c -> K3(data(c)), f), system)
     trace, gb_1 = Groebner.groebner_learn(system; params...)
     flag, gb_2 = Groebner.groebner_apply!(trace, system2; params...)
     @test flag && gb_2 == Groebner.groebner(system2)
@@ -94,12 +94,12 @@ end
     @test flag && gb_3 == Groebner.groebner(system3)
 
     system = [5x2 + 5, 5y2 + 1]
-    system2 = map(f -> map_coefficients(c -> K(data(c)), f), system)
+    system2 = map(f -> AbstractAlgebra.map_coefficients(c -> K(data(c)), f), system)
     trace, gb_1 = Groebner.groebner_learn(system; params...)
     flag, _ = Groebner.groebner_apply!(trace, system2; params...)
     @test !flag
     system = [x2 + 5, y2 + 1]
-    system2 = map(f -> map_coefficients(c -> K(data(c)), f), system)
+    system2 = map(f -> AbstractAlgebra.map_coefficients(c -> K(data(c)), f), system)
     trace, gb_1 = Groebner.groebner_learn(system; params...)
     flag, _ = Groebner.groebner_apply!(trace, system2; params...)
     @test !flag
@@ -107,10 +107,10 @@ end
     # Going from small characteristic to large is not allowed
     # NOTE: it should be allowed
     K1, K2 = GF(2^31 - 1), GF(2^60 + 33)
-    R, (x, y) = polynomial_ring(K1, ["x", "y"], ordering=:degrevlex)
-    R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(K1, ["x", "y"], internal_ordering=:degrevlex)
+    R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], internal_ordering=:degrevlex)
     system2 = [(2^49 + 1) * x2 - 1, (2^50) * y2 + (2^56 + 99)]
-    system = map(f -> map_coefficients(c -> K1(data(c)), f), system2)
+    system = map(f -> AbstractAlgebra.map_coefficients(c -> K1(data(c)), f), system2)
     trace, gb_1 = Groebner.groebner_learn(system; params...)
     # TODO
     # flag, gb_2 = Groebner.groebner_apply!(trace, system2; params...)
@@ -118,16 +118,16 @@ end
 
     # Going from one monomial ordering to another is not allowed
     K1, K2 = GF(2^31 - 1), GF(2^60 + 33)
-    R, (x, y) = polynomial_ring(K1, ["x", "y"], ordering=:lex)
-    R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(K1, ["x", "y"], internal_ordering=:lex)
+    R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], internal_ordering=:degrevlex)
     system = [x + 1, y - 1]
     system2 = [x2 + 1, y2 - 1]
     trace, gb_1 = Groebner.groebner_learn(system; params...)
     @test_throws DomainError Groebner.groebner_apply!(trace, system2; params...)
 
     K1, K2 = GF(2^31 - 1), GF(2^60 + 33)
-    R, (x, y) = polynomial_ring(K1, ["x", "y"], ordering=:lex)
-    R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(K1, ["x", "y"], internal_ordering=:lex)
+    R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], internal_ordering=:degrevlex)
     system = [x + 1, y - 1]
     system2 = [x2 + 1, y2 - 1]
     trace, gb_1 = Groebner.groebner_learn(system; params...)
@@ -140,7 +140,7 @@ end
 
     # NOTE: these systems are only relatively very large.
     # We should also test for larger systems and larger primes!!
-    R, (x, y) = polynomial_ring(ZZ, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(ZZ, ["x", "y"], internal_ordering=:degrevlex)
     cases = [
         (system=[x, R(0)],),
         (system=[R(1)],),
@@ -150,24 +150,24 @@ end
         (system=[x + 1, y + 2, x * y + 3],),
         (system=[x^20 * y + x + 1, x * y^20 + y + 1],),
         (system=[x^20 * y + x + 1, x * y^20 + y + 1],),
-        (system=Groebner.noonn(3, ordering=:lex, k=ZZ),),
-        (system=Groebner.noonn(4, ordering=:deglex, k=ZZ),),
-        (system=Groebner.noonn(5, ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.katsuran(3, ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.katsuran(4, ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.katsuran(5, ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.katsuran(6, ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.katsuran(7, ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.cyclicn(5, ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.cyclicn(6, ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.rootn(5, ordering=:lex, k=ZZ),),
-        (system=Groebner.rootn(5, ordering=:deglex, k=ZZ),),
-        (system=Groebner.rootn(6, ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.eco5(ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.ku10(ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.kinema(ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.sparse5(ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.s9_1(ordering=:degrevlex, k=ZZ),)
+        (system=Groebner.noonn(3, internal_ordering=:lex, k=ZZ),),
+        (system=Groebner.noonn(4, internal_ordering=:deglex, k=ZZ),),
+        (system=Groebner.noonn(5, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.katsuran(3, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.katsuran(4, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.katsuran(5, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.katsuran(6, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.katsuran(7, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.cyclicn(5, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.cyclicn(6, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.rootn(5, internal_ordering=:lex, k=ZZ),),
+        (system=Groebner.rootn(5, internal_ordering=:deglex, k=ZZ),),
+        (system=Groebner.rootn(6, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.eco5(internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.ku10(internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.kinema(internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.sparse5(internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.s9_1(internal_ordering=:degrevlex, k=ZZ),)
     ]
 
     # Some bigger tests
@@ -190,7 +190,7 @@ end
     for case in cases
         # Learn and apply on the same system
         system = case.system
-        system_zp = map(f -> map_coefficients(c -> K(BigInt(c)), f), system)
+        system_zp = map(f -> AbstractAlgebra.map_coefficients(c -> K(BigInt(c)), f), system)
         true_gb = Groebner.groebner(system_zp; params...)
         trace, gb_1 = Groebner.groebner_learn(system_zp; params...)
         flag, gb_2 = Groebner.groebner_apply!(trace, system_zp; params...)
@@ -198,20 +198,22 @@ end
 
         # Apply on the same system but modulo a different prime 
         for K_ in Ks
-            system_zp_2 = map(f -> map_coefficients(c -> K_(BigInt(c)), f), system)
+            system_zp_2 =
+                map(f -> AbstractAlgebra.map_coefficients(c -> K_(BigInt(c)), f), system)
             flag, gb_2 = Groebner.groebner_apply!(trace, system_zp_2; params...)
             @test flag && gb_2 == Groebner.groebner(system_zp_2)
         end
     end
 
     K1 = GF(2^31 - 1)
-    R, (x, y) = polynomial_ring(ZZ, ["x", "y"], ordering=:lex)
+    R, (x, y) = polynomial_ring(ZZ, ["x", "y"], internal_ordering=:lex)
     system = [BigInt(2)^1000 * x + (BigInt(2)^1001 + 1) * y + 1]
-    system_zp = map(f -> map_coefficients(c -> K1(BigInt(c)), f), system)
+    system_zp = map(f -> AbstractAlgebra.map_coefficients(c -> K1(BigInt(c)), f), system)
     trace, gb_1 =
         Groebner.groebner_learn(system_zp; ordering=Groebner.DegRevLex(y, x), params...)
     for K in Primes.nextprimes(2^31, 200)
-        system_zp = map(f -> map_coefficients(c -> GF(K)(BigInt(c)), f), system)
+        system_zp =
+            map(f -> AbstractAlgebra.map_coefficients(c -> GF(K)(BigInt(c)), f), system)
         true_gb = Groebner.groebner(system_zp; ordering=Groebner.DegRevLex(y, x), params...)
         flag, gb_2 = Groebner.groebner_apply!(trace, system_zp; params...)
         @test flag && gb_2 == true_gb
@@ -220,7 +222,7 @@ end
 
 @testset "learn & apply, orderings" begin
     K = GF(2^31 - 1)
-    R, (x, y) = polynomial_ring(K, ["x", "y"], ordering=:lex)
+    R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:lex)
 
     ord_1 = Groebner.Lex()
     trace_1, gb_1 = Groebner.groebner_learn([x + 2y + 3, y], ordering=ord_1)
@@ -238,7 +240,7 @@ end
 
     K = GF(2^31 - 1)
     n = 10
-    R, x = polynomial_ring(K, [["x$i" for i in 1:n]...], ordering=:degrevlex)
+    R, x = polynomial_ring(K, [["x$i" for i in 1:n]...], internal_ordering=:degrevlex)
     F = (x .+ (1:n) .* circshift(x, 1)) .^ 2
     # F = [(x1 + xn)^2, (x2 + 2 x1)^2, ..., (xn + n x_{n-1})^2]
     for i in 0:(2n)
@@ -287,7 +289,7 @@ end
 
 @testset "learn & apply, tricky" begin
     for K in [GF(2^31 - 1), GF(2^62 + 135)]
-        R, (x, y) = polynomial_ring(K, ["x", "y"], ordering=:degrevlex)
+        R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:degrevlex)
 
         s = [x^100 * y + y^100, x * y^100 + y]
         trace, gb_1 = Groebner.groebner_learn(s; params...)
@@ -310,7 +312,7 @@ end
     end
 
     K = AbstractAlgebra.GF(2^31 - 1)
-    R, (x, y) = polynomial_ring(K, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:degrevlex)
 
     # s-poly of x + 1 and x*y + 7y is y - 7y.
     system_1 = [x + 1, x * y + 7y]
@@ -343,8 +345,8 @@ end
     # Input is a Groebner basis already:
     N = 3
     for system in [
-        Groebner.noonn(4, ordering=:degrevlex, k=K),
-        Groebner.katsuran(5, ordering=:degrevlex, k=K),
+        Groebner.noonn(4, internal_ordering=:degrevlex, k=K),
+        Groebner.katsuran(5, internal_ordering=:degrevlex, k=K),
         [x, x^2, y^2, x * y, x^3, y^4, x^10, y^10, x * y^10]
     ]
         gb = Groebner.groebner(system; params...)
@@ -356,15 +358,15 @@ end
     end
 
     # Leading term in the matrix cancel out
-    R, (x, y) = polynomial_ring(QQ, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(QQ, ["x", "y"], internal_ordering=:degrevlex)
     p, p2 = 3, 19
     sys = [-11 * x * y + 53 * y, 83 * x * y + x - 70 * y]
     sys_mod_p = map(
-        f -> map_coefficients(c -> GF(p)(numerator(c)), f),
+        f -> AbstractAlgebra.map_coefficients(c -> GF(p)(numerator(c)), f),
         [x * y + 2 * y, 2 * x * y + x + 2 * y]
     )
     sys_mod_p2 = map(
-        f -> map_coefficients(c -> GF(p2)(numerator(c)), f),
+        f -> AbstractAlgebra.map_coefficients(c -> GF(p2)(numerator(c)), f),
         [8 * x * y + 15 * y, 7 * x * y + x + 6 * y]
     )
     Groebner.groebner(sys_mod_p)
@@ -386,7 +388,7 @@ end
 @testset "learn & apply, stress" begin
     # stress test for small primes for errors
     Random.seed!(42)
-    R, (x, y) = polynomial_ring(QQ, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(QQ, ["x", "y"], internal_ordering=:degrevlex)
     for sys in [[x * y + y, x * y + x + y], Groebner.cyclicn(5)]
         A, B = 0, 0
         boot = 10
@@ -404,20 +406,25 @@ end
                 sys_x = empty(sys)
                 for f in sys
                     _f = zero(f)
-                    for t in monomials(f)
+                    for t in AbstractAlgebra.monomials(f)
                         __c = rand(-100:100)
                         _f += t * __c
                     end
                     push!(sys_x, _f)
                 end
-                sys_x_mod_p = map(f -> map_coefficients(c -> GF(p)(numerator(c)), f), sys_x)
+                sys_x_mod_p = map(
+                    f -> AbstractAlgebra.map_coefficients(c -> GF(p)(numerator(c)), f),
+                    sys_x
+                )
                 all(iszero, sys_x_mod_p) && continue
                 trace, gb = Groebner.groebner_learn(sys_x_mod_p)
                 backup = deepcopy(trace)
                 for p2 in primes2
                     p == p2 && continue
-                    sys_x_mod_p2 =
-                        map(f -> map_coefficients(c -> GF(p2)(numerator(c)), f), sys_x)
+                    sys_x_mod_p2 = map(
+                        f -> AbstractAlgebra.map_coefficients(c -> GF(p2)(numerator(c)), f),
+                        sys_x
+                    )
                     success, gb2 =
                         Groebner.groebner_apply!(trace, sys_x_mod_p2, loglevel=10_000)
                     if !success

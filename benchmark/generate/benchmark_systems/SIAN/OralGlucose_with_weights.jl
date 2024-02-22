@@ -3,7 +3,7 @@
 
 import AbstractAlgebra
 
-function OralGlucose_with_weights(; np=AbstractAlgebra, ordering=:degrevlex, k=np.QQ)
+function OralGlucose_with_weights(; np=AbstractAlgebra, internal_ordering=:degrevlex, k=np.QQ)
     R, (G_7,X_6,Gb_6,G_6,R_6,Ib_5,X_5,Gb_5,G_5,R_5,Ib_4,X_4,Gb_4,G_4,R_4,Ib_3,X_3,Gb_3,G_3,R_3,Ib_2,X_2,Gb_2,G_2,R_2,Ib_1,X_1,Gb_1,G_1,R_1,Ib_0,X_0,Gb_0,G_0,R_0,z_aux,p1_0,v_0,p2_0,p3_0,k_0) = np.PolynomialRing(k, [:G_7,:X_6,:Gb_6,:G_6,:R_6,:Ib_5,:X_5,:Gb_5,:G_5,:R_5,:Ib_4,:X_4,:Gb_4,:G_4,:R_4,:Ib_3,:X_3,:Gb_3,:G_3,:R_3,:Ib_2,:X_2,:Gb_2,:G_2,:R_2,:Ib_1,:X_1,:Gb_1,:G_1,:R_1,:Ib_0,:X_0,:Gb_0,:G_0,:R_0,:z_aux,:p1_0,:v_0,:p2_0,:p3_0,:k_0], ordering=ordering)
     sys = [
     		-Gb_0 + 118376518,

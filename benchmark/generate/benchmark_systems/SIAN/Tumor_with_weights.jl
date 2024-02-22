@@ -3,7 +3,7 @@
 
 import AbstractAlgebra
 
-function Tumor_with_weights(; np=AbstractAlgebra, ordering=:degrevlex, k=np.QQ)
+function Tumor_with_weights(; np=AbstractAlgebra, internal_ordering=:degrevlex, k=np.QQ)
     R, (x5_9,x5_8,x1_8,x2_7,x5_7,x1_7,d_6,x4_6,x2_6,x5_6,b_6,x1_6,a_6,x3_6,d_5,x4_5,x2_5,x5_5,b_5,x1_5,a_5,x3_5,d_4,x4_4,x2_4,x5_4,b_4,x1_4,a_4,x3_4,d_3,x4_3,x2_3,x5_3,b_3,x1_3,a_3,x3_3,d_2,x4_2,x2_2,x5_2,b_2,x1_2,a_2,x3_2,d_1,x4_1,x2_1,x5_1,b_1,x1_1,a_1,x3_1,d_0,x4_0,x2_0,x5_0,b_0,x1_0,a_0,x3_0,z_aux,k3_0,k7_0,k4_0,k5_0,k6_0) = np.PolynomialRing(k, [:x5_9,:x5_8,:x1_8,:x2_7,:x5_7,:x1_7,:d_6,:x4_6,:x2_6,:x5_6,:b_6,:x1_6,:a_6,:x3_6,:d_5,:x4_5,:x2_5,:x5_5,:b_5,:x1_5,:a_5,:x3_5,:d_4,:x4_4,:x2_4,:x5_4,:b_4,:x1_4,:a_4,:x3_4,:d_3,:x4_3,:x2_3,:x5_3,:b_3,:x1_3,:a_3,:x3_3,:d_2,:x4_2,:x2_2,:x5_2,:b_2,:x1_2,:a_2,:x3_2,:d_1,:x4_1,:x2_1,:x5_1,:b_1,:x1_1,:a_1,:x3_1,:d_0,:x4_0,:x2_0,:x5_0,:b_0,:x1_0,:a_0,:x3_0,:z_aux,:k3_0,:k7_0,:k4_0,:k5_0,:k6_0], ordering=ordering)
     sys = [
     		-d_0 + 1966535748744876353393,

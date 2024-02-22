@@ -3,7 +3,7 @@
 
 import AbstractAlgebra
 
-function Biohydrogenation(; np=AbstractAlgebra, ordering=:degrevlex, k=np.QQ)
+function Biohydrogenation(; np=AbstractAlgebra, internal_ordering=:degrevlex, k=np.QQ)
     R, (x₅_12,x₅_11,x₅_10,x₅_9,x₅_8,x₅_7,x₅_6,x₅_5,x₆_5,x₄_5,x₅_4,x₆_4,x₄_4,x₅_3,x₆_3,x₄_3,x₅_2,x₆_2,x₄_2,x₅_1,x₆_1,x₄_1,x₅_0,x₆_0,x₄_0,z_aux,x₇_0,k₅_0,k₆_0,k₇_0,k₈_0,k₉_0,k₁₀_0) = np.PolynomialRing(k, [:x₅_12,:x₅_11,:x₅_10,:x₅_9,:x₅_8,:x₅_7,:x₅_6,:x₅_5,:x₆_5,:x₄_5,:x₅_4,:x₆_4,:x₄_4,:x₅_3,:x₆_3,:x₄_3,:x₅_2,:x₆_2,:x₄_2,:x₅_1,:x₆_1,:x₄_1,:x₅_0,:x₆_0,:x₄_0,:z_aux,:x₇_0,:k₅_0,:k₆_0,:k₇_0,:k₈_0,:k₉_0,:k₁₀_0], ordering=ordering)
     sys = [
     		-x₅_0 + 67015448674721,

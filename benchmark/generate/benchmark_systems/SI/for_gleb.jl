@@ -10,7 +10,7 @@ global_logger(ConsoleLogger(stderr, Logging.Error))
 BenchmarkTools.DEFAULT_PARAMETERS.samples = 2
 
 function benchmark_system(system)
-    @btime Groebner.groebner($s, ordering=:degrevlex)
+    @btime Groebner.groebner($s, internal_ordering=:degrevlex)
 end
 
 function run_for_gleb()

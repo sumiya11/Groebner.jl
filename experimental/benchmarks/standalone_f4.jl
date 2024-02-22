@@ -23,16 +23,25 @@ end
 
 function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
-        ("cyclic 7", reverse(Groebner.cyclicn(7, k=ground, ordering=:degrevlex))),
-        ("cyclic 8", reverse(Groebner.cyclicn(8, k=ground, ordering=:degrevlex))),
-        ("katsura 9", reverse(Groebner.katsuran(9, k=ground, ordering=:degrevlex))),
-        ("katsura 10", reverse(Groebner.katsuran(10, k=ground, ordering=:degrevlex))),
-        ("katsura 11", reverse(Groebner.katsuran(11, k=ground, ordering=:degrevlex))),
-        ("noon 7", Groebner.noonn(7, k=ground, ordering=:degrevlex)),
-        ("noon 8", Groebner.noonn(8, k=ground, ordering=:degrevlex)),
-        # ("noon 9", Groebner.noonn(9, k=ground, ordering=:degrevlex)),
-        ("eco 10", Groebner.eco10(k=ground, ordering=:degrevlex)),
-        ("eco 11", Groebner.eco11(k=ground, ordering=:degrevlex))
+        ("cyclic 7", reverse(Groebner.cyclicn(7, k=ground, internal_ordering=:degrevlex))),
+        ("cyclic 8", reverse(Groebner.cyclicn(8, k=ground, internal_ordering=:degrevlex))),
+        (
+            "katsura 9",
+            reverse(Groebner.katsuran(9, k=ground, internal_ordering=:degrevlex))
+        ),
+        (
+            "katsura 10",
+            reverse(Groebner.katsuran(10, k=ground, internal_ordering=:degrevlex))
+        ),
+        (
+            "katsura 11",
+            reverse(Groebner.katsuran(11, k=ground, internal_ordering=:degrevlex))
+        ),
+        ("noon 7", Groebner.noonn(7, k=ground, internal_ordering=:degrevlex)),
+        ("noon 8", Groebner.noonn(8, k=ground, internal_ordering=:degrevlex)),
+        # ("noon 9", Groebner.noonn(9, k=ground, internal_ordering=:degrevlex)),
+        ("eco 10", Groebner.eco10(k=ground, internal_ordering=:degrevlex)),
+        ("eco 11", Groebner.eco11(k=ground, internal_ordering=:degrevlex))
     ]
 
     for (name, system) in systems
@@ -42,7 +51,7 @@ function run_f4_ff_degrevlex_benchmarks(ground)
 end
 
 p1 = 2^30 + 3
-s = Groebner.katsuran(11, ordering=:degrevlex, k=AbstractAlgebra.GF(p1))
+s = Groebner.katsuran(11, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p1))
 
 # @profview gb1 = Groebner.groebner(s);
 

@@ -22,18 +22,18 @@ using Base.Threads
         threaded = [:yes, :no, :auto]
         grid = [(linalg=l, threaded=t) for l in linalg for t in threaded]
         for system in [
-            Groebner.katsuran(3, ordering=:lex, k=GF(2^31 - 1)),
-            Groebner.katsuran(4, ordering=:lex, k=GF(2^20 + 7)),
-            Groebner.katsuran(7, ordering=:degrevlex, k=GF(2^31 - 1)),
-            Groebner.eco5(ordering=:deglex, k=GF(2^20 + 7)),
-            Groebner.eco5(ordering=:degrevlex, k=GF(2^20 + 7)),
-            Groebner.cyclicn(5, ordering=:degrevlex, k=GF(2^20 + 7)),
-            Groebner.cyclicn(6, ordering=:degrevlex, k=GF(2^20 + 7)),
-            Groebner.ojika4(ordering=:lex, k=GF(2^20 + 7)),
-            Groebner.henrion5(ordering=:degrevlex, k=GF(2^20 + 7)),
-            Groebner.noonn(6, ordering=:degrevlex, k=GF(2^10 + 7)),
-            Groebner.ku10(ordering=:degrevlex, k=GF(2^10 + 7)),
-            Groebner.sparse5(ordering=:degrevlex, k=GF(2^10 + 7))
+            Groebner.katsuran(3, internal_ordering=:lex, k=GF(2^31 - 1)),
+            Groebner.katsuran(4, internal_ordering=:lex, k=GF(2^20 + 7)),
+            Groebner.katsuran(7, internal_ordering=:degrevlex, k=GF(2^31 - 1)),
+            Groebner.eco5(internal_ordering=:deglex, k=GF(2^20 + 7)),
+            Groebner.eco5(internal_ordering=:degrevlex, k=GF(2^20 + 7)),
+            Groebner.cyclicn(5, internal_ordering=:degrevlex, k=GF(2^20 + 7)),
+            Groebner.cyclicn(6, internal_ordering=:degrevlex, k=GF(2^20 + 7)),
+            Groebner.ojika4(internal_ordering=:lex, k=GF(2^20 + 7)),
+            Groebner.henrion5(internal_ordering=:degrevlex, k=GF(2^20 + 7)),
+            Groebner.noonn(6, internal_ordering=:degrevlex, k=GF(2^10 + 7)),
+            Groebner.ku10(internal_ordering=:degrevlex, k=GF(2^10 + 7)),
+            Groebner.sparse5(internal_ordering=:degrevlex, k=GF(2^10 + 7))
         ]
             results = Array{Any}(undef, size(grid))
             for (i, kw) in enumerate(grid)
@@ -62,14 +62,14 @@ end
         for system in [
             [x - 1, y - 2],
             [x + (BigInt(2)^1000 + 1) // 2^61, x * y + BigInt(2)^(2^10)],
-            Groebner.katsuran(3, ordering=:lex, k=QQ),
-            Groebner.katsuran(4, ordering=:lex, k=QQ),
-            Groebner.eco5(ordering=:degrevlex, k=QQ),
-            Groebner.cyclicn(5, ordering=:degrevlex, k=QQ),
-            Groebner.ojika4(ordering=:lex, k=QQ),
-            Groebner.noonn(6, ordering=:degrevlex, k=QQ),
-            Groebner.ku10(ordering=:degrevlex, k=QQ),
-            Groebner.sparse5(ordering=:degrevlex, k=QQ),
+            Groebner.katsuran(3, internal_ordering=:lex, k=QQ),
+            Groebner.katsuran(4, internal_ordering=:lex, k=QQ),
+            Groebner.eco5(internal_ordering=:degrevlex, k=QQ),
+            Groebner.cyclicn(5, internal_ordering=:degrevlex, k=QQ),
+            Groebner.ojika4(internal_ordering=:lex, k=QQ),
+            Groebner.noonn(6, internal_ordering=:degrevlex, k=QQ),
+            Groebner.ku10(internal_ordering=:degrevlex, k=QQ),
+            Groebner.sparse5(internal_ordering=:degrevlex, k=QQ),
             [x + BigInt(2)^1_000 // (BigInt(2)^1_000 - 1), y - BigInt(2)^1_000],
             [x + BigInt(2)^10_000 // (BigInt(2)^10_000 - 1), y^2 - BigInt(2)^10_000 * y]
         ]

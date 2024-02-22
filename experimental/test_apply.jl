@@ -4,7 +4,7 @@ using Random
 include("../src/Groebner.jl")
 
 function fooo()
-    R, (x, y) = polynomial_ring(QQ, ["x", "y"], ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(QQ, ["x", "y"], internal_ordering=:degrevlex)
 
     # sys = [x * y + y, x * y + x + y]
     # sys = [x * y^3 + y, x * y + x + y]
@@ -84,7 +84,7 @@ gb_mod_p =      [x + y, y^2 + y]
 gb_mod_p2 =     [y, x]
 =#
 
-R, (x, y) = polynomial_ring(QQ, ["x", "y"], ordering=:degrevlex)
+R, (x, y) = polynomial_ring(QQ, ["x", "y"], internal_ordering=:degrevlex)
 p, p2 = 3, 19
 
 sys = [-11 * x * y + 53 * y, 83 * x * y + x - 70 * y]
@@ -141,7 +141,7 @@ gb_mod_p =      [x*y + x + 2*y]
 gb_mod_p2 =     [x*y + x + 4*y, y^3 + 10*y^2 + 3*x + 3*y]
 =#
 
-R, (x, y) = polynomial_ring(QQ, ["x", "y"], ordering=:degrevlex)
+R, (x, y) = polynomial_ring(QQ, ["x", "y"], internal_ordering=:degrevlex)
 p, p2 = 3, 13
 
 sys = [-x * y^3 + 19 * y, 67 * x * y + 100 * x - 73 * y]
@@ -172,7 +172,7 @@ gb_mod_p =      [x*y + 2*x + y]
 gb_mod_p2 =     [x*y + 5*x + 18*y, x^2 + 8*y^2 + 15*x + 13*y, y^3 + 26*y^2 + 19*x + 11*y]
 =#
 
-R, (x, y) = polynomial_ring(QQ, ["x", "y"], ordering=:degrevlex)
+R, (x, y) = polynomial_ring(QQ, ["x", "y"], internal_ordering=:degrevlex)
 p, p2 = 3, 31
 
 sys = [4 * x * y^3 - 77 * y, 98 * x * y + 25 * x - 34 * y]

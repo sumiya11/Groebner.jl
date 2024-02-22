@@ -99,7 +99,7 @@ function compute_bases_threaded_batched(system, batch_size::Int)
     return bases
 end
 
-system = Groebner.noonn(7, k=ZZ, ordering=:degrevlex)
+system = Groebner.noonn(7, k=ZZ, internal_ordering=:degrevlex)
 begin
     n = 2^6
     @btime bases_1 = compute_bases(system, n)

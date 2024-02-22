@@ -25,7 +25,11 @@ function benchmark_system_singular(system)
     R = AbstractAlgebra.parent(system[1])
     n = AbstractAlgebra.nvars(R)
     ground_s = Singular.QQ
-    R_s, _ = Singular.polynomial_ring(ground_s, ["x$i" for i in 1:n], ordering=:degrevlex)
+    R_s, _ = Singular.polynomial_ring(
+        ground_s,
+        ["x$i" for i in 1:n],
+        internal_ordering=:degrevlex
+    )
 
     system_s = map(
         f -> AbstractAlgebra.change_base_ring(

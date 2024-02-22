@@ -6,7 +6,8 @@ using AbstractAlgebra
     @test Groebner.isgroebner([x, x, x, x])
     @test !Groebner.isgroebner([x^2, x^2 + 1])
 
-    R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"], ordering=:degrevlex)
+    R, (x, y, z) =
+        polynomial_ring(GF(2^31 - 1), ["x", "y", "z"], internal_ordering=:degrevlex)
 
     @test Groebner.isgroebner([R(1)])
     @test Groebner.isgroebner([x])
@@ -17,25 +18,25 @@ using AbstractAlgebra
     @test !Groebner.isgroebner([x + y, x])
     @test Groebner.isgroebner([z * x, z * x, R(1)])
 
-    fs = Groebner.rootn(3, ordering=:degrevlex)
+    fs = Groebner.rootn(3, internal_ordering=:degrevlex)
     @test !Groebner.isgroebner(fs)
     @test Groebner.isgroebner(Groebner.groebner(fs))
 
-    fs = Groebner.rootn(5, ordering=:degrevlex)
-    @test !Groebner.isgroebner(fs)
-    @test Groebner.isgroebner(Groebner.groebner(fs))
-    @test Groebner.isgroebner(Groebner.groebner(fs, reduced=false))
-
-    fs = Groebner.noonn(2, ordering=:degrevlex)
-    @test !Groebner.isgroebner(fs)
-    @test Groebner.isgroebner(Groebner.groebner(fs))
-
-    fs = Groebner.noonn(3, ordering=:degrevlex)
+    fs = Groebner.rootn(5, internal_ordering=:degrevlex)
     @test !Groebner.isgroebner(fs)
     @test Groebner.isgroebner(Groebner.groebner(fs))
     @test Groebner.isgroebner(Groebner.groebner(fs, reduced=false))
 
-    fs = Groebner.noonn(6, ordering=:degrevlex)
+    fs = Groebner.noonn(2, internal_ordering=:degrevlex)
+    @test !Groebner.isgroebner(fs)
+    @test Groebner.isgroebner(Groebner.groebner(fs))
+
+    fs = Groebner.noonn(3, internal_ordering=:degrevlex)
+    @test !Groebner.isgroebner(fs)
+    @test Groebner.isgroebner(Groebner.groebner(fs))
+    @test Groebner.isgroebner(Groebner.groebner(fs, reduced=false))
+
+    fs = Groebner.noonn(6, internal_ordering=:degrevlex)
     @test !Groebner.isgroebner(fs)
     @test Groebner.isgroebner(Groebner.groebner(fs))
 end
@@ -54,7 +55,8 @@ end
 @testset "isgroebner certify" begin
     for certify in [false, true]
         for field in [GF(17), GF(2^31 - 1), QQ]
-            R, (x, y, z) = polynomial_ring(field, ["x", "y", "z"], ordering=:degrevlex)
+            R, (x, y, z) =
+                polynomial_ring(field, ["x", "y", "z"], internal_ordering=:degrevlex)
 
             @test Groebner.isgroebner([R(0)], certify=certify)
             @test Groebner.isgroebner([R(1)], certify=certify)
@@ -66,24 +68,24 @@ end
             @test !Groebner.isgroebner([x + y, x], certify=certify)
             @test Groebner.isgroebner([z * x, z * x, R(1)], certify=certify)
         end
-        fs = Groebner.rootn(3, k=GF(2^31 - 1), ordering=:degrevlex)
+        fs = Groebner.rootn(3, k=GF(2^31 - 1), internal_ordering=:degrevlex)
         @test !Groebner.isgroebner(fs, certify=certify)
         @test Groebner.isgroebner(Groebner.groebner(fs), certify=certify)
 
-        fs = Groebner.rootn(3, k=QQ, ordering=:degrevlex)
+        fs = Groebner.rootn(3, k=QQ, internal_ordering=:degrevlex)
         @test !Groebner.isgroebner(fs, certify=certify)
         @test Groebner.isgroebner(Groebner.groebner(fs), certify=certify)
 
-        fs = Groebner.noonn(2, k=GF(2^31 - 1), ordering=:degrevlex)
+        fs = Groebner.noonn(2, k=GF(2^31 - 1), internal_ordering=:degrevlex)
         @test !Groebner.isgroebner(fs, certify=certify)
         @test Groebner.isgroebner(Groebner.groebner(fs), certify=certify)
 
         # TODO: figure out why this is broken!
-        # fs = Groebner.noonn(2, ordering=:degrevlex)
+        # fs = Groebner.noonn(2, internal_ordering=:degrevlex)
         # @test !Groebner.isgroebner(fs, certify=certify)
         # @test Groebner.isgroebner(Groebner.groebner(fs), certify=certify)
 
-        fs = Groebner.noonn(6, k=GF(2^31 - 1), ordering=:degrevlex)
+        fs = Groebner.noonn(6, k=GF(2^31 - 1), internal_ordering=:degrevlex)
         @test !Groebner.isgroebner(fs, certify=certify)
         @test Groebner.isgroebner(Groebner.groebner(fs), certify=certify)
     end

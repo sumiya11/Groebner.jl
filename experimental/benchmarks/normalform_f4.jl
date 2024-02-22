@@ -13,7 +13,7 @@ global_logger(ConsoleLogger(stderr, Logging.Error))
 
 BenchmarkTools.DEFAULT_PARAMETERS.samples = 4
 
-system = Groebner.cyclicn(7, k=Nemo.QQ, ordering=:degrevlex)
+system = Groebner.cyclicn(7, k=Nemo.QQ, internal_ordering=:degrevlex)
 gb = Groebner.groebner(system);
 xs = gens(parent(system[1]))
 

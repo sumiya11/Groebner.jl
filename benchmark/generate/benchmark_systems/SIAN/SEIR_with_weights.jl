@@ -3,7 +3,7 @@
 
 import AbstractAlgebra
 
-function SEIR_with_weights(; np=AbstractAlgebra, ordering=:degrevlex, k=np.QQ)
+function SEIR_with_weights(; np=AbstractAlgebra, internal_ordering=:degrevlex, k=np.QQ)
     R, (In_6,In_5,E_5,S_4,N_4,In_4,E_4,S_3,N_3,In_3,E_3,S_2,N_2,In_2,E_2,S_1,N_1,In_1,E_1,S_0,N_0,In_0,E_0,z_aux,b_0,nu_0,a_0) = np.PolynomialRing(k, [:In_6,:In_5,:E_5,:S_4,:N_4,:In_4,:E_4,:S_3,:N_3,:In_3,:E_3,:S_2,:N_2,:In_2,:E_2,:S_1,:N_1,:In_1,:E_1,:S_0,:N_0,:In_0,:E_0,:z_aux,:b_0,:nu_0,:a_0], ordering=ordering)
     sys = [
     		-In_0 + 50233694983,

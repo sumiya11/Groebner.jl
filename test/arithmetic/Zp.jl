@@ -51,3 +51,20 @@ import Primes
         end
     end
 end
+
+@testset "arithmetic in Zp x 4" begin
+    m = (Primes.nextprimes(2^30 + 3, 4)...,)
+    i32_4x = Groebner.CompositeInt{4, Int32}
+    i64_4x = Groebner.CompositeInt{4, Int64}
+    m_4x = i32_4x(m)
+    arithmetic = Groebner.SignedCompositeArithmeticZp(i64_4x, i32_4x, m_4x)
+
+    for _ in 1:1000
+        T = Int64
+        x = ntuple(_ -> rand(T), 4)
+        @test Groebner.mod_p(i64_4x(x), arithmetic).data == Base.mod.(x, m)
+        if all(==(1), gcd.(m, x))
+            @test Groebner.inv_mod_p(i64_4x(x), arithmetic).data == Base.invmod.(x, m)
+        end
+    end
+end

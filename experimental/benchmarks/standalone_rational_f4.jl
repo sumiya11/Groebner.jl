@@ -36,10 +36,10 @@ function run_f4_ff_degrevlex_benchmarks(ground)
     systems = [
         # ("siwr", read_SIWR()),
         # ("sear", read_SEAIJRC()),
-        ("root 11", Groebner.rootn(11, k=ground, ordering=:degrevlex)),
-        ("noon 7", Groebner.noonn(7, k=ground, ordering=:degrevlex)),
-        ("eco 10", Groebner.eco10(k=ground, ordering=:degrevlex)),
-        ("katsura 8", Groebner.katsuran(8, k=ground, ordering=:degrevlex))
+        ("root 11", Groebner.rootn(11, k=ground, internal_ordering=:degrevlex)),
+        ("noon 7", Groebner.noonn(7, k=ground, internal_ordering=:degrevlex)),
+        ("eco 10", Groebner.eco10(k=ground, internal_ordering=:degrevlex)),
+        ("katsura 8", Groebner.katsuran(8, k=ground, internal_ordering=:degrevlex))
     ]
 
     println()

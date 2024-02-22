@@ -350,7 +350,7 @@ divisor(arithm::SignedCompositeArithmeticZp) = arithm.ps
     d = (signbit.(x) .+ (x .>> arithm.shifts.data)) .% T
     res = a.data .- d .* arithm.ps.data
     res = ifelse.(res .>= T(0), res, res .+ arithm.ps.data)
-    CompositeInt(ifelse.(res .> arithm.ps.data, res .- arithm.ps.data, res))
+    CompositeInt(res)
 end
 
 function inv_mod_p(a::T, arithm::SignedCompositeArithmeticZp{T}) where {T}

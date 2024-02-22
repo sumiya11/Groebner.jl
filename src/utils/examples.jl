@@ -15,8 +15,8 @@
 # n-roots', in J. Symbolic Computation (1991) 12, pp 329–336.
 #
 # source: https://github.com/JuliaHomotopyContinuation/PolynomialTestSystems.jl/blob/v0.1.6/src/systems.jl
-function cyclicn(n; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
-    _, z = np.polynomial_ring(k, ["z$i" for i in 1:n], ordering=ordering)
+function cyclicn(n; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
+    _, z = np.polynomial_ring(k, ["z$i" for i in 1:n], internal_ordering=internal_ordering)
     [
         (
             sum(prod(z[(k - 1) % n + 1] for k in j:(j + m)) for j in 1:n) for m in 0:(n - 2)
@@ -26,16 +26,16 @@ function cyclicn(n; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
 end
 
 # Not to be confused with cyclic-n !!
-function rootn(n; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
-    _, xs = np.polynomial_ring(k, ["x$i" for i in 1:n], ordering=ordering)
+function rootn(n; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
+    _, xs = np.polynomial_ring(k, ["x$i" for i in 1:n], internal_ordering=internal_ordering)
     ans = [sum(map(prod, Combinatorics.combinations(xs, i))) for i in 1:n]
     ans[end] -= (-1)^(n - 1)
     ans
 end
 
 # source...?
-function reimern(n; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
-    _, xs = np.polynomial_ring(k, ["x$i" for i in 1:n], ordering=ordering)
+function reimern(n; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
+    _, xs = np.polynomial_ring(k, ["x$i" for i in 1:n], internal_ordering=internal_ordering)
     [sum((-1)^(i + 1) * 2 * xs[i]^j for i in 1:n) - 1 for j in 2:(n + 1)]
 end
 
@@ -43,8 +43,8 @@ end
 #  Cell Biophysics, Vol 11, pages 309–319, 1987.
 #
 # source: https://github.com/JuliaHomotopyContinuation/PolynomialTestSystems.jl/blob/v0.1.6/src/systems.jl
-function katsuran(n; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
-    _, x = np.polynomial_ring(k, ["x$i" for i in 0:n], ordering=ordering)
+function katsuran(n; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
+    _, x = np.polynomial_ring(k, ["x$i" for i in 0:n], internal_ordering=internal_ordering)
     [
         (
             sum(x[abs(l) + 1] * x[abs(m - l) + 1] for l = (-n):n if abs(m - l) <= n) -
@@ -54,10 +54,10 @@ function katsuran(n; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     ]
 end
 
-function noonn(n; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+function noonn(n; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     without(x, k) = x[1:end .!= k]
 
-    R, xs = np.polynomial_ring(k, ["x$i" for i in 1:n], ordering=ordering)
+    R, xs = np.polynomial_ring(k, ["x$i" for i in 1:n], internal_ordering=internal_ordering)
     fs = zeros(R, n)
     for i in 1:n
         other = without(xs, i)
@@ -68,8 +68,8 @@ end
 
 ###
 
-function hexapod(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
-    _, (t1,t2,t3,a,b,c) = np.polynomial_ring(k, ["t1","t2","t3","a", "b", "c"], ordering=ordering)
+function hexapod(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
+    _, (t1,t2,t3,a,b,c) = np.polynomial_ring(k, ["t1","t2","t3","a", "b", "c"], internal_ordering=internal_ordering)
     [1000000*a^2*t1^2+1000000*a^2*t2^2+1000000*a^2*t3^2+1000000*b^2*t1^2+1000000*b^2*t2^2+1000000*b^2*t3^2+1000000*c^2*t1^2+1000000*c^2*t2^2+1000000*c^2*t3^2-1065102000*a^2*t1-1566200000*a^2*t2+359610000*a^2*t3-4000000*a*b*t2-1574352000*a*b*t3+4000000*a*c*t1+273640000*a*c*t3-1065102000*b^2*t1+8152000*b^2*t2+355610000*b^2*t3-1574352000*b*c*t1-273640000*b*c*t2-791462000*c^2*t1-1566200000*c^2*t2+355610000*c^2*t3+740236705137*a^2-279943961360*a*b+47071636200*a*c+1574352000*a*t1-273640000*a*t2+126292488913*b^2+837307375312*b*c+4000000*b*t1-273640000*b*t3+612513941897*c^2+4000000*c*t2-1574352000*c*t3+1000000*t1^2+1000000*t2^2+1000000*t3^2-624135247952*a-50784764200*b-283060057360*c-791462000*t1+8152000*t2+359610000*t3+165673, 1000000*a^2*t1^2+1000000*a^2*t2^2+1000000*a^2*t3^2+1000000*b^2*t1^2+1000000*b^2*t2^2+1000000*b^2*t3^2+1000000*c^2*t1^2+1000000*c^2*t2^2+1000000*c^2*t3^2-1889130000*a^2*t1-139016000*a^2*t2+357608000*a^2*t3+550492000*a*b*t3+1500376000*a*c*t3-1889130000*b^2*t1-689508000*b^2*t2+357608000*b^2*t3+550492000*b*c*t1-1500376000*b*c*t2-388754000*c^2*t1-139016000*c^2*t2+357608000*c^2*t3+740396599024*a^2+98430171568*a*b+268273230304*a*c-550492000*a*t1-1500376000*a*t2+854420557476*b^2-2714848476*b*c-1500376000*b*t3-114024022072*c^2+550492000*c*t3+1000000*t1^2+1000000*t2^2+1000000*t3^2+624263610988*a-268273230304*b+98430171568*c-388754000*t1-689508000*t2+357608000*t3-63620, 4000000*a^2*t1^2+4000000*a^2*t2^2+4000000*a^2*t3^2+4000000*b^2*t1^2+4000000*b^2*t2^2+4000000*b^2*t3^2+4000000*c^2*t1^2+4000000*c^2*t2^2+4000000*c^2*t3^2-3295636000*a^2*t1+6825304000*a^2*t2+1438448000*a^2*t3-16000000*a*b*t2+4096192000*a*b*t3+16000000*a*c*t1+4906624000*a*c*t3-3295636000*b^2*t1+2729112000*b^2*t2+1422448000*b^2*t3+4096192000*b*c*t1-4906624000*b*c*t2+1610988000*c^2*t1+6825304000*c^2*t2+1422448000*c^2*t3+2962666483625*a^2+722869290752*a*b+875649162944*a*c-4096192000*a*t1-4906624000*a*t2+513760438633*b^2-3361285532000*b*c+16000000*b*t1-4906624000*b*t3+2443184693353*c^2+16000000*c*t2+4096192000*c*t3+4000000*t1^2+4000000*t2^2+4000000*t3^2-2498705324448*a-879018458944*b+741978122752*c+1610988000*t1+2729112000*t2+1438448000*t3+440361,4000000*a^2*t1^2+4000000*a^2*t2^2+4000000*a^2*t3^2+4000000*b^2*t1^2+4000000*b^2*t2^2+4000000*b^2*t3^2+4000000*c^2*t1^2+4000000*c^2*t2^2+4000000*c^2*t3^2+3295636000*a^2*t1+6824896000*a^2*t2+1430432000*a^2*t3+4094592000*a*b*t3-4906624000*a*c*t3+3295636000*b^2*t1+2730304000*b^2*t2+1430432000*b^2*t3+4094592000*b*c*t1+4906624000*b*c*t2-1610988000*c^2*t1+6824896000*c^2*t2+1430432000*c^2*t3+2961910911797*a^2+732129427968*a*b-877323997696*a*c-4094592000*a*t1+4906624000*a*t2+516620569397*b^2+3361357491776*b*c+4906624000*b*t3+2445290017525*c^2+4094592000*c*t3+4000000*t1^2+4000000*t2^2+4000000*t3^2+2499114213824*a+877323997696*b+732129427968*c-1610988000*t1+2730304000*t2+1430432000*t3-324875, 1000000*a^2*t1^2+1000000*a^2*t2^2+1000000*a^2*t3^2+1000000*b^2*t1^2+1000000*b^2*t2^2+1000000*b^2*t3^2+1000000*c^2*t1^2+1000000*c^2*t2^2+1000000*c^2*t3^2+1889602000*a^2*t1-138926000*a^2*t2+359604000*a^2*t3-4000000*a*b*t2+550036000*a*b*t3+4000000*a*c*t1-1500228000*a*c*t3+1889602000*b^2*t1-688962000*b^2*t2+355604000*b^2*t3+550036000*b*c*t1+1500228000*b*c*t2+389374000*c^2*t1-138926000*c^2*t2+355604000*c^2*t3+740903906549*a^2+99175424872*a*b-265964790856*a*c-550036000*a*t1+1500228000*a*t2+854030749541*b^2+2874521168*b*c+4000000*b*t1+1500228000*b*t3-114557203083*c^2+4000000*c*t2+550036000*c*t3+1000000*t1^2+1000000*t2^2+1000000*t3^2-623884900400*a+270522742856*b+97519648872*c+389374000*t1-688962000*t2+359604000*t3+55909, 250000*a^2*t1^2+250000*a^2*t2^2+250000*a^2*t3^2+250000*b^2*t1^2+250000*b^2*t2^2+250000*b^2*t3^2+250000*c^2*t1^2+250000*c^2*t2^2+250000*c^2*t3^2+266341000*a^2*t1-391502000*a^2*t2+89402000*a^2*t3-393620000*a*b*t3-68228000*a*c*t3+266341000*b^2*t1+2118000*b^2*t2+89402000*b^2*t3-393620000*b*c*t1+68228000*b*c*t2+198113000*c^2*t1-391502000*c^2*t2+89402000*c^2*t3+184958257568*a^2-70380830480*a*b-12199439312*a*c+393620000*a*t1+68228000*a*t2+31688927488*b^2-209385275032*b*c+68228000*b*t3+153269490056*c^2-393620000*c*t3+250000*t1^2+250000*t2^2+250000*t3^2+156251491928*a+12199439312*b-70380830480*c+198113000*t1+2118000*t2+89402000*t3+159976] 
 end
 
@@ -78,9 +78,9 @@ end
 
 # Source:
 # https://gitlab.lip6.fr/eder/msolve-examples/-/raw/master/zero-dimensional/henrion5.ms
-function henrion5(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+function henrion5(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     _, (f1, f2, f3, f4, f5, t) =
-        np.polynomial_ring(k, ["f1", "f2", "f3", "f4", "f5", "t"], ordering=ordering)
+        np.polynomial_ring(k, ["f1", "f2", "f3", "f4", "f5", "t"], internal_ordering=internal_ordering)
     [
         2*f1*f2*f3*f4*f5-9823275,
         k(21) // k(5)*f1*f2*f4*f5+k(16) // k(5)*f1*f3*f4*f5+k(9) // k(5)*f2*f3*f4*f5+k(24) // k(5)*f1*f2*f3*f5+5*f4*f3*f1*f2-4465125,
@@ -93,9 +93,9 @@ end
 
 # Source:
 # https://gitlab.lip6.fr/eder/msolve-examples/-/raw/master/zero-dimensional/henrion6.ms
-function henrion6(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+function henrion6(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     _, (f1, f2, f3, f4, f5, f6) =
-        np.polynomial_ring(k, ["f1", "f2", "f3", "f4", "f5", "f6"], ordering=ordering)
+        np.polynomial_ring(k, ["f1", "f2", "f3", "f4", "f5", "f6"], internal_ordering=internal_ordering)
     [
         2*f1*f2*f3*f4*f5*f6-1404728325,
         6*f5*f4*f3*f1*f2+k(11) // k(6)*f2*f3*f4*f5*f6+k(16) // k(3)*f1*f2*f3*f5*f6+k(9) // k(2)*f1*f2*f4*f5*f6+k(10) // k(3)*f1*f3*f4*f5*f6+k(35) // k(6)*f1*f2*f3*f4*f6-648336150,
@@ -108,7 +108,7 @@ end
 
 # Source:
 # https://gitlab.lip6.fr/eder/msolve-examples/-/raw/master/zero-dimensional/henrion7.ms
-function henrion7(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+function henrion7(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     _, (f1, f2, f3, f4, f5, f6, f7) = np.polynomial_ring(
         k,
         ["f1", "f2", "f3", "f4", "f5", "f6", "f7"],
@@ -127,7 +127,7 @@ end
 
 # Source:
 # https://gitlab.lip6.fr/eder/msolve-examples/-/raw/master/zero-dimensional/henrion8.ms
-function henrion8(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+function henrion8(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     _, (f1, f2, f3, f4, f5, f6, f7, f8) = np.polynomial_ring(
         k,
         ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8"],
@@ -146,7 +146,7 @@ end
 
 # Source:
 # https://gitlab.lip6.fr/eder/msolve-examples/-/raw/master/zero-dimensional/henrion9.ms
-function henrion9(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+function henrion9(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     _, (f1, f2, f3, f4, f5, f6, f7, f8, f9) = np.polynomial_ring(
         k,
         ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9"],
@@ -168,9 +168,9 @@ end
 ###
 # Eco
 
-function eco5(; np=AbstractAlgebra, k=np.GF(2^31 - 1), ordering=:degrevlex)
+function eco5(; np=AbstractAlgebra, k=np.GF(2^31 - 1), internal_ordering=:degrevlex)
     _, (x1, x2, x3, x4, x5) =
-        np.polynomial_ring(k, ["x$i" for i in 1:5], ordering=ordering)
+        np.polynomial_ring(k, ["x$i" for i in 1:5], internal_ordering=internal_ordering)
     [
         (x1 + x1 * x2 + x2 * x3 + x3 * x4) * x5 - 1,
         (x2 + x1 * x3 + x2 * x4) * x5 - 2,
@@ -180,9 +180,9 @@ function eco5(; np=AbstractAlgebra, k=np.GF(2^31 - 1), ordering=:degrevlex)
     ]
 end
 
-function eco7(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+function eco7(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     _, (x1, x2, x3, x4, x5, x6, x7) =
-        np.polynomial_ring(k, ["x$i" for i in 1:7], ordering=ordering)
+        np.polynomial_ring(k, ["x$i" for i in 1:7], internal_ordering=internal_ordering)
     [
         (x1 + x1 * x2 + x2 * x3 + x3 * x4 + x4 * x5 + x5 * x6) * x7 - 1,
         (x2 + x1 * x3 + x2 * x4 + x3 * x5 + x4 * x6) * x7 - 2,
@@ -194,9 +194,9 @@ function eco7(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     ]
 end
 
-function eco10(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+function eco10(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     _, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9) =
-        np.polynomial_ring(k, ["x$i" for i in 0:9], ordering=ordering)
+        np.polynomial_ring(k, ["x$i" for i in 0:9], internal_ordering=internal_ordering)
     [
         x0 * x1 * x9 + x1 * x2 * x9 + x2 * x3 * x9 + x3 * x4 * x9 + x4 * x5 * x9 + x5 * x6 * x9 + x6 * x7 * x9 + x7 * x8 * x9 + x0 * x9 - 1, 
         x0 * x2 * x9 + x1 * x3 * x9 + x2 * x4 * x9 + x3 * x5 * x9 + x4 * x6 * x9 + x5 * x7 * x9 + x6 * x8 * x9 + x1 * x9 - 2, 
@@ -211,9 +211,9 @@ function eco10(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     ]
 end
 
-function eco11(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+function eco11(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     _, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) =
-        np.polynomial_ring(k, ["x$i" for i in 0:10], ordering=ordering)
+        np.polynomial_ring(k, ["x$i" for i in 0:10], internal_ordering=internal_ordering)
     [
         x0 * x1 * x10 + x1 * x2 * x10 + x2 * x3 * x10 + x3 * x4 * x10 + x4 * x5 * x10 + x5 * x6 * x10 + x6 * x7 * x10 + x7 * x8 * x10 + x8 * x9 * x10 + x0 * x10 - 1, 
         x0 * x2 * x10 + x1 * x3 * x10 + x2 * x4 * x10 + x3 * x5 * x10 + x4 * x6 * x10 + x5 * x7 * x10 + x6 * x8 * x10 + x7 * x9 * x10 + x1 * x10 - 2,
@@ -229,9 +229,9 @@ function eco11(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     ]
 end
 
-function eco12(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+function eco12(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     _, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11) =
-        np.polynomial_ring(k, ["x$i" for i in 0:11], ordering=ordering)
+        np.polynomial_ring(k, ["x$i" for i in 0:11], internal_ordering=internal_ordering)
     [ 
         x0 * x1 * x11 + x1 * x2 * x11 + x2 * x3 * x11 + x3 * x4 * x11 + x4 * x5 * x11 + x5 * x6 * x11 + x6 * x7 * x11 + x7 * x8 * x11 + x8 * x9 * x11 + x9 * x10 * x11 + x0 * x11 - 1,
         x0 * x2 * x11 + x1 * x3 * x11 + x2 * x4 * x11 + x3 * x5 * x11 + x4 * x6 * x11 + x5 * x7 * x11 + x6 * x8 * x11 + x7 * x9 * x11 + x8 * x10 * x11 + x1 * x11 - 2,
@@ -248,9 +248,9 @@ function eco12(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     ]
 end
 
-function eco13(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+function eco13(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     _, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12) =
-        np.polynomial_ring(k, ["x$i" for i in 0:12], ordering=ordering)
+        np.polynomial_ring(k, ["x$i" for i in 0:12], internal_ordering=internal_ordering)
     [
         x0 * x1 * x12 + x1 * x2 * x12 + x2 * x3 * x12 + x3 * x4 * x12 + x4 * x5 * x12 + x5 * x6 * x12 + x6 * x7 * x12 + x7 * x8 * x12 + x8 * x9 * x12 + x9 * x10 * x12 + x10 * x11 * x12 + x0 * x12 - 1,
         x0 * x2 * x12 + x1 * x3 * x12 + x2 * x4 * x12 + x3 * x5 * x12 + x4 * x6 * x12 + x5 * x7 * x12 + x6 * x8 * x12 + x7 * x9 * x12 + x8 * x10 * x12 + x9 * x11 * x12 + x1 * x12 - 2,
@@ -268,8 +268,8 @@ function eco13(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     ]
 end
 
-function eco14(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
-    _, (x0,x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12, x13) = np.polynomial_ring(k, ["x$i" for i in 0:13], ordering=ordering)
+function eco14(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
+    _, (x0,x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12, x13) = np.polynomial_ring(k, ["x$i" for i in 0:13], internal_ordering=internal_ordering)
     [
         x0*x1*x13+x1*x2*x13+x2*x3*x13+x3*x4*x13+x4*x5*x13+x5*x6*x13+x6*x7*x13+x7*x8*x13+x8*x9*x13+x9*x10*x13+x10*x11*x13+x11*x12*x13+x0*x13-1,
         x0*x2*x13+x1*x3*x13+x2*x4*x13+x3*x5*x13+x4*x6*x13+x5*x7*x13+x6*x8*x13+x7*x9*x13+x8*x10*x13+x9*x11*x13+x10*x12*x13+x1*x13-2,
@@ -288,8 +288,8 @@ function eco14(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     ]
 end
 
-function eco15(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
-    _, (x0,x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13,x14) = np.polynomial_ring(k, ["x$i" for i in 0:14], ordering=ordering)
+function eco15(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
+    _, (x0,x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13,x14) = np.polynomial_ring(k, ["x$i" for i in 0:14], internal_ordering=internal_ordering)
     [
         x0*x1*x14+x1*x2*x14+x2*x3*x14+x3*x4*x14+x4*x5*x14+x5*x6*x14+x6*x7*x14+x7*x8*x14+x8*x9*x14+x9*x10*x14+x10*x11*x14+x11*x12*x14+x12*x13*x14+x0*x14-1,
         x0*x2*x14+x1*x3*x14+x2*x4*x14+x3*x5*x14+x4*x6*x14+x5*x7*x14+x6*x8*x14+x7*x9*x14+x8*x10*x14+x9*x11*x14+x10*x12*x14+x11*x13*x14+x1*x14-2,
@@ -311,8 +311,8 @@ end
 
 # Source:
 # https://github.com/JuliaHomotopyContinuation/PolynomialTestSystems.jl/blob/master/src/rps10.jl
-function rps10(; tol=0, np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
-    _, (g1, g2, g3, p1, p2, p3, q0, q1, q2, q3) = np.polynomial_ring(k, ["g1", "g2", "g3", "p1", "p2", "p3", "q0", "q1", "q2", "q3",], ordering=ordering)
+function rps10(; tol=0, np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
+    _, (g1, g2, g3, p1, p2, p3, q0, q1, q2, q3) = np.polynomial_ring(k, ["g1", "g2", "g3", "p1", "p2", "p3", "q0", "q1", "q2", "q3",], internal_ordering=internal_ordering)
     equations = [
     -rationalize(BigInt, 0.1279703687075118, tol=tol)*g1^2 - rationalize(BigInt, 0.48596123125526264, tol=tol)*g1*g2 + rationalize(BigInt, 0.30699556370717496, tol=tol)*g2^2 + rationalize(BigInt, 0.3778977698527674, tol=tol)*g1*g3 - rationalize(BigInt, 0.23404544076569642, tol=tol)*g2*g3 + rationalize(BigInt, 0.01563626178508072, tol=tol)*g3^2 + rationalize(BigInt, 0.327228678790004, tol=tol)*g1^2*p1 + rationalize(BigInt, 0.8426829275672494, tol=tol)*g1*g2*p1 + rationalize(BigInt, 0.6075645757034159, tol=tol)*g2^2*p1 - rationalize(BigInt, 1.1371405598667543, tol=tol)*g1*g3*p1 + rationalize(BigInt, 0.229293271620915, tol=tol)*g2*g3*p1 - rationalize(BigInt, 0.21948911177437957, tol=tol)*g3^2*p1 - rationalize(BigInt, 0.2075154964282774, tol=tol)*g1^2*p1^2 - rationalize(BigInt, 0.37702968479068544, tol=tol)*g1*g2*p1^2 - rationalize(BigInt, 0.16688906819159421, tol=tol)*g2^2*p1^2 + rationalize(BigInt, 0.7986954318323025, tol=tol)*g1*g3*p1^2 + rationalize(BigInt, 0.866826144775651, tol=tol)*g2*g3*p1^2 + rationalize(BigInt, 0.37440456461987165, tol=tol)*g3^2*p1^2 + rationalize(BigInt, 1.5614616440131446, tol=tol)*g1^2*p2 - rationalize(BigInt, 1.7388380675822595, tol=tol)*g1*g2*p2 + rationalize(BigInt, 0.06790915713070725, tol=tol)*g2^2*p2 - rationalize(BigInt, 0.4309121044684771, tol=tol)*g1*g3*p2 + rationalize(BigInt, 0.9086272006283425, tol=tol)*g2*g3*p2 - rationalize(BigInt, 0.2764931751394603, tol=tol)*g3^2*p2 - rationalize(BigInt, 1.8163349832174116, tol=tol)*g1^2*p1*p2 - rationalize(BigInt, 0.9167144057621401, tol=tol)*g1*g2*p1*p2 + rationalize(BigInt, 1.0203368504488892, tol=tol)*g2^2*p1*p2 - rationalize(BigInt, 0.23194646823111892, tol=tol)*g1*g3*p1*p2 + rationalize(BigInt, 0.539670777307627, tol=tol)*g2*g3*p1*p2 + rationalize(BigInt, 0.7959981327685224, tol=tol)*g3^2*p1*p2 + rationalize(BigInt, 0.08717268867521591, tol=tol)*g1^2*p2^2 + rationalize(BigInt, 0.9504154644263471, tol=tol)*g1*g2*p2^2 - rationalize(BigInt, 0.48206756571420756, tol=tol)*g2^2*p2^2 - rationalize(BigInt, 1.065062423127697, tol=tol)*g1*g3*p2^2 + rationalize(BigInt, 0.1209952909274163, tol=tol)*g2*g3*p2^2 + rationalize(BigInt, 0.3948948770389917, tol=tol)*g3^2*p2^2 + rationalize(BigInt, 0.289766299873838, tol=tol)*g1^2*p3 - rationalize(BigInt, 1.2778927965251532, tol=tol)*g1*g2*p3 + rationalize(BigInt, 0.9087896778886251, tol=tol)*g2^2*p3 - rationalize(BigInt, 0.5812612591154215, tol=tol)*g1*g3*p3 - rationalize(BigInt, 0.7595904624983555, tol=tol)*g2*g3*p3 + rationalize(BigInt, 0.5084892760496751, tol=tol)*g3^2*p3 - rationalize(BigInt, 0.3268802641947883, tol=tol)*g1^2*p1*p3 + rationalize(BigInt, 0.657630238424344, tol=tol)*g1*g2*p1*p3 + rationalize(BigInt, 1.1093919363972093, tol=tol)*g2^2*p1*p3 + rationalize(BigInt, 0.4551393419480071, tol=tol)*g1*g3*p1*p3 + rationalize(BigInt, 1.8553852513069364, tol=tol)*g2*g3*p1*p3 - rationalize(BigInt, 0.7825116722024211, tol=tol)*g3^2*p1*p3 + rationalize(BigInt, 0.5810469298461638, tol=tol)*g1^2*p2*p3 - rationalize(BigInt, 1.1557382363783264, tol=tol)*g1*g2*p2*p3 - rationalize(BigInt, 0.11367961187637783, tol=tol)*g2^2*p2*p3 + rationalize(BigInt, 1.7077140933509898, tol=tol)*g1*g3*p2*p3 - rationalize(BigInt, 0.36547942767108677, tol=tol)*g2*g3*p2*p3 - rationalize(BigInt, 0.4673673179697859, tol=tol)*g3^2*p2*p3 + rationalize(BigInt, 0.12034280775306151, tol=tol)*g1^2*p3^2 - rationalize(BigInt, 0.5733857796356615, tol=tol)*g1*g2*p3^2 + rationalize(BigInt, 0.6489566339058018, tol=tol)*g2^2*p3^2 + rationalize(BigInt, 0.2663669912953945, tol=tol)*g1*g3*p3^2 - rationalize(BigInt, 0.9878214357030672, tol=tol)*g2*g3*p3^2 - rationalize(BigInt, 0.7692994416588633, tol=tol)*g3^2*p3^2 - rationalize(BigInt, 0.19466145678474384, tol=tol)*q0 - rationalize(BigInt, 0.7153041427190404, tol=tol)*p1*q0 - rationalize(BigInt, 1.3528776260043915, tol=tol)*p2*q0 - rationalize(BigInt, 1.7070452538121381, tol=tol)*p3*q0 - rationalize(BigInt, 1.0516635822669562, tol=tol)*q1 + rationalize(BigInt, 1.2244185478631853, tol=tol)*p1*q1 - rationalize(BigInt, 0.05844567698552443, tol=tol)*p2*q1 - rationalize(BigInt, 0.37706149953585283, tol=tol)*p3*q1 + rationalize(BigInt, 0.580102254517945, tol=tol)*q2 + rationalize(BigInt, 1.2898860704586343, tol=tol)*p1*q2 - rationalize(BigInt, 0.6655948497180294, tol=tol)*p2*q2 + rationalize(BigInt, 0.697758704890495, tol=tol)*p3*q2 - rationalize(BigInt, 0.042921436747585445, tol=tol)*q3 + rationalize(BigInt, 0.5172073855756967, tol=tol)*p1*q3 + rationalize(BigInt, 0.6917094054122289, tol=tol)*p2*q3 - rationalize(BigInt, 1.4579672250860476, tol=tol)*p3*q3,
     rationalize(BigInt, 0.16011034303688113, tol=tol)*g1^2 - rationalize(BigInt, 0.9005468824403076, tol=tol)*g1*g2 - rationalize(BigInt, 0.3519015838689263, tol=tol)*g2^2 + rationalize(BigInt, 0.5202586158306898, tol=tol)*g1*g3 + rationalize(BigInt, 0.908682123022068, tol=tol)*g2*g3 - rationalize(BigInt, 0.4464562170645777, tol=tol)*g3^2 - rationalize(BigInt, 0.13844524415679324, tol=tol)*g1^2*p1 + rationalize(BigInt, 1.5568085644333742, tol=tol)*g1*g2*p1 + rationalize(BigInt, 1.6863862382239232, tol=tol)*g2^2*p1 - rationalize(BigInt, 1.7409458121154344, tol=tol)*g1*g3*p1 - rationalize(BigInt, 0.13872356093602894, tol=tol)*g2*g3*p1 - rationalize(BigInt, 0.5159047084859331, tol=tol)*g3^2*p1 - rationalize(BigInt, 0.2741643484200128, tol=tol)*g1^2*p1^2 - rationalize(BigInt, 0.34212012775550327, tol=tol)*g1*g2*p1^2 - rationalize(BigInt, 0.07542436599114127, tol=tol)*g2^2*p1^2 + rationalize(BigInt, 0.37458987278720324, tol=tol)*g1*g3*p1^2 + rationalize(BigInt, 0.4782561996467687, tol=tol)*g2*g3*p1^2 + rationalize(BigInt, 0.3495887144111541, tol=tol)*g3^2*p1^2 + rationalize(BigInt, 0.41377445473869573, tol=tol)*g1^2*p2 - rationalize(BigInt, 1.5789383736211624, tol=tol)*g1*g2*p2 + rationalize(BigInt, 1.268319517294935, tol=tol)*g2^2*p2 + rationalize(BigInt, 0.6163793667190677, tol=tol)*g1*g3*p2 - rationalize(BigInt, 0.43374574206406646, tol=tol)*g2*g3*p2 - rationalize(BigInt, 0.2061458017243186, tol=tol)*g3^2*p2 + rationalize(BigInt, 0.14555549639831628, tol=tol)*g1^2*p1*p2 - rationalize(BigInt, 1.1674745895517964, tol=tol)*g1*g2*p1*p2 - rationalize(BigInt, 0.9428064489876502, tol=tol)*g2^2*p1*p2 + rationalize(BigInt, 0.0024916775818734295, tol=tol)*g1*g3*p1*p2 + rationalize(BigInt, 0.5291621555283466, tol=tol)*g2*g3*p1*p2 + rationalize(BigInt, 0.7972509525893339, tol=tol)*g3^2*p1*p2 + rationalize(BigInt, 0.1807885464109201, tol=tol)*g1^2*p2^2 + rationalize(BigInt, 0.9404541869824675, tol=tol)*g1*g2*p2^2 - rationalize(BigInt, 0.5780030515551372, tol=tol)*g2^2*p2^2 - rationalize(BigInt, 1.0257418447585547, tol=tol)*g1*g3*p2^2 + rationalize(BigInt, 0.09251778173989315, tol=tol)*g2*g3*p2^2 + rationalize(BigInt, 0.39721450514421713, tol=tol)*g3^2*p2^2 + rationalize(BigInt, 0.40272988912109214, tol=tol)*g1^2*p3 - rationalize(BigInt, 0.8272484673958682, tol=tol)*g1*g2*p3 + rationalize(BigInt, 1.057139636924469, tol=tol)*g2^2*p3 - rationalize(BigInt, 0.12353226665002319, tol=tol)*g1*g3*p3 - rationalize(BigInt, 2.5741855761862396, tol=tol)*g2*g3*p3 + rationalize(BigInt, 1.560474007685759, tol=tol)*g3^2*p3 - rationalize(BigInt, 0.6150996832616941, tol=tol)*g1^2*p1*p3 + rationalize(BigInt, 0.09937192239106099, tol=tol)*g1*g2*p1*p3 + rationalize(BigInt, 0.8226042775491553, tol=tol)*g2^2*p1*p3 + rationalize(BigInt, 0.4732438203631739, tol=tol)*g1*g3*p1*p3 + rationalize(BigInt, 1.6946050580334677, tol=tol)*g2*g3*p1*p3 - rationalize(BigInt, 0.20750459428746135, tol=tol)*g3^2*p1*p3 + rationalize(BigInt, 0.7556396990592089, tol=tol)*g1^2*p2*p3 - rationalize(BigInt, 1.412614951501404, tol=tol)*g1*g2*p2*p3 - rationalize(BigInt, 0.09676545515565128, tol=tol)*g2^2*p2*p3 - rationalize(BigInt, 0.9781576342585658, tol=tol)*g1*g3*p2*p3 + rationalize(BigInt, 2.5006617995144724, tol=tol)*g2*g3*p2*p3 - rationalize(BigInt, 0.6588742439035575, tol=tol)*g3^2*p2*p3 + rationalize(BigInt, 0.09337580200909272, tol=tol)*g1^2*p3^2 - rationalize(BigInt, 0.5983340592269643, tol=tol)*g1*g2*p3^2 + rationalize(BigInt, 0.6534274175462785, tol=tol)*g2^2*p3^2 + rationalize(BigInt, 0.6511519719713513, tol=tol)*g1*g3*p3^2 - rationalize(BigInt, 0.5707739813866619, tol=tol)*g2*g3*p3^2 - rationalize(BigInt, 0.7468032195553712, tol=tol)*g3^2*p3^2 + rationalize(BigInt, 0.6382474578966228, tol=tol)*q0 - rationalize(BigInt, 1.032036285581197, tol=tol)*p1*q0 - rationalize(BigInt, 1.4759481703093122, tol=tol)*p2*q0 - rationalize(BigInt, 3.0203435337313205, tol=tol)*p3*q0 - rationalize(BigInt, 0.22812438675350769, tol=tol)*q1 - rationalize(BigInt, 0.2157590670168509, tol=tol)*p1*q1 - rationalize(BigInt, 0.1270558344695696, tol=tol)*p2*q1 - rationalize(BigInt, 0.5148593639524484, tol=tol)*p3*q1 + rationalize(BigInt, 1.3667793800860086, tol=tol)*q2 - rationalize(BigInt, 0.06171123442924746, tol=tol)*p1*q2 - rationalize(BigInt, 0.7314954155886625, tol=tol)*p2*q2 + rationalize(BigInt, 0.7189348075213543, tol=tol)*p3*q2 - rationalize(BigInt, 0.902118536026858, tol=tol)*q3 + rationalize(BigInt, 0.43214823742186254, tol=tol)*p1*q3 + rationalize(BigInt, 0.6677624868260497, tol=tol)*p2*q3 + rationalize(BigInt, 0.5162571144422815, tol=tol)*p3*q3,
@@ -330,8 +330,8 @@ end
 
 # Source:
 # https://github.com/JuliaHomotopyContinuation/PolynomialTestSystems.jl/blob/master/src/systems.jl
-function chandran(n; tol=0, np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
-    _, H = np.polynomial_ring(k, ["H$i" for i in 1:n], ordering=ordering)
+function chandran(n; tol=0, np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
+    _, H = np.polynomial_ring(k, ["H$i" for i in 1:n], internal_ordering=internal_ordering)
     c = rationalize(BigInt, 0.51234, tol=tol)
     c = k(numerator(c)) // k(denominator(c))
     eqs = [(2n*H[i] - c*H[i]*(1 + sum(k(i) // (j+i) * H[j] for j=1:(n-1))) - 2n) for i=1:n]
@@ -340,8 +340,8 @@ end
 
 # Source:
 # https://github.com/JuliaHomotopyContinuation/PolynomialTestSystems.jl/blob/master/src/systems.jl
-function boon(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
-    _, (s1, g1, s2, g2, C1, C2) = np.polynomial_ring(k, ["s1", "g1", "s2", "g2", "C1", "C2"], ordering=ordering)
+function boon(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
+    _, (s1, g1, s2, g2, C1, C2) = np.polynomial_ring(k, ["s1", "g1", "s2", "g2", "C1", "C2"], internal_ordering=internal_ordering)
     eqs = [
         s1^2+g1^2 - 1,
         s2^2+g2^2 - 1,
@@ -355,8 +355,8 @@ end
 
 # Source:
 # https://github.com/JuliaHomotopyContinuation/PolynomialTestSystems.jl/blob/e04087ef08cf91ffafd88546c4d4ccb25613a3c7/src/systems.jl#L151
-function ipp(; tol=0, np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
-    R, (x1, x2, x3, x4, x5, x6, x7, x8) = np.polynomial_ring(np.QQ, ["x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8"], ordering=ordering)
+function ipp(; tol=0, np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
+    R, (x1, x2, x3, x4, x5, x6, x7, x8) = np.polynomial_ring(np.QQ, ["x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8"], internal_ordering=internal_ordering)
     sys = [
         x1^2+x2^2-1,
         x3^2+x4^2-1,
@@ -374,9 +374,9 @@ end
 ###
 
 # Source: https://web.archive.org/web/20201202185136/http://www.cecm.sfu.ca/%7Erpearcea/mgb.html
-function yang1(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+function yang1(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     R, (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48) = np.polynomial_ring(
-        k, [:x1, :x2, :x3, :x4, :x5, :x6, :x7, :x8, :x9, :x10, :x11, :x12, :x13, :x14, :x15, :x16, :x17, :x18, :x19, :x20, :x21, :x22, :x23, :x24, :x25, :x26, :x27, :x28, :x29, :x30, :x31, :x32, :x33, :x34, :x35, :x36, :x37, :x38, :x39, :x40, :x41, :x42, :x43, :x44, :x45, :x46, :x47, :x48], ordering=ordering)
+        k, [:x1, :x2, :x3, :x4, :x5, :x6, :x7, :x8, :x9, :x10, :x11, :x12, :x13, :x14, :x15, :x16, :x17, :x18, :x19, :x20, :x21, :x22, :x23, :x24, :x25, :x26, :x27, :x28, :x29, :x30, :x31, :x32, :x33, :x34, :x35, :x36, :x37, :x38, :x39, :x40, :x41, :x42, :x43, :x44, :x45, :x46, :x47, :x48], internal_ordering=internal_ordering)
     sys = [
         x21*x45+x22*x46+x23*x47+x24*x48, x17*x45+x18*x46+x19*x47+x20*x48, x13*x45+x14*x46+x15*x47+x16*x48, x10*x46+x11*x47+x12*x48+x45*x9, x45*x5+x46*x6+x47*x7+x48*x8, x1*x45+x2*x46+x3*x47+x4*x48, x21*x41+x22*x42+x23*x43+x24*x44,
         x17*x41+x18*x42+x19*x43+x20*x44, x13*x41+x14*x42+x15*x43+x16*x44, x10*x42+x11*x43+x12*x44+x41*x9, x41*x5+x42*x6+x43*x7+x44*x8, x1*x41+x2*x42+x3*x43+x4*x44, x21*x37+x22*x38+x23*x39+x24*x40, x17*x37+x18*x38+x19*x39+x20*x40,
@@ -417,9 +417,9 @@ function yang1(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
 end
 
 # Source: https://web.archive.org/web/20201202185136/http://www.cecm.sfu.ca/%7Erpearcea/mgb.html
-function bayes148(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+function bayes148(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     R, (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32) = np.polynomial_ring(
-        k, [:x1, :x2, :x3, :x4, :x5, :x6, :x7, :x8, :x9, :x10, :x11, :x12, :x13, :x14, :x15, :x16, :x17, :x18, :x19, :x20, :x21, :x22, :x23, :x24, :x25, :x26, :x27, :x28, :x29, :x30, :x31, :x32], ordering=ordering)
+        k, [:x1, :x2, :x3, :x4, :x5, :x6, :x7, :x8, :x9, :x10, :x11, :x12, :x13, :x14, :x15, :x16, :x17, :x18, :x19, :x20, :x21, :x22, :x23, :x24, :x25, :x26, :x27, :x28, :x29, :x30, :x31, :x32], internal_ordering=internal_ordering)
     sys = [
         -x23*x32+x24*x31, -x22*x32+x24*x30, -x22*x31+x23*x30, -x21*x32+x24*x29, -x21*x31+x23*x29, -x21*x30+x22*x29, -x12*x32+x16*x28,  -x19*x28+x20*x27,
         -x11*x31+x15*x27, -x18*x28+x20*x26, -x18*x27+x19*x26, -x10*x30+x14*x26, -x17*x28+x20*x25, -x17*x27+x19*x25, -x17*x26+x18*x25, -x9*x29+x13*x25, x20*x8-x24*x4,
@@ -429,8 +429,8 @@ function bayes148(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
 end
 
 # Source: https://web.archive.org/web/20201202185136/http://www.cecm.sfu.ca/%7Erpearcea/mgb.html
-function gametwo2(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
-    R, (p1,p2,p3,p4,p5,p6,p7) = np.polynomial_ring(k, [:p1,:p2,:p3,:p4,:p5,:p6,:p7], ordering=ordering)
+function gametwo2(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
+    R, (p1,p2,p3,p4,p5,p6,p7) = np.polynomial_ring(k, [:p1,:p2,:p3,:p4,:p5,:p6,:p7], internal_ordering=internal_ordering)
     sys = [
         3821*p2*p3*p4*p5*p6*p7-7730*p2*p3*p4*p5*p6-164*p2*p3*p4*p5*p7-2536*p2*p3*p4*p6*p7-4321*p2*p3*p5*p6*p7-2161*p2*p4*p5*p6*p7-2188*p3*p4*p5*p6*p7-486*p2*p3*p4*p5+3491*p2*p3*p4*p6+4247*p2*p3*p5*p6+3528*p2*p4*p5*p6+2616*p3*p4*p5*p6-101*p2*p3*p4*p7+1765*p2*p3*p5*p7+258*p2*p4*p5*p7-378*p3*p4*p5*p7+1246*p2*p3*p6*p7+2320*p2*p4*p6*p7+1776*p3*p4*p6*p7+1715*p2*p5*p6*p7+728*p3*p5*p6*p7+842*p4*p5*p6*p7+69*p2*p3*p4-1660*p2*p3*p5+1863*p2*p4*p5+1520*p3*p4*p5-245*p2*p3*p6-804*p2*p4*p6-2552*p3*p4*p6-3152*p2*p5*p6+40*p3*p5*p6-1213*p4*p5*p6+270*p2*p3*p7-851*p2*p4*p7+327*p3*p4*p7-1151*p2*p5*p7+1035*p3*p5*p7-161*p4*p5*p7-230*p2*p6*p7-294*p3*p6*p7-973*p4*p6*p7-264*p5*p6*p7+874*p2*p3-2212*p2*p4+168*p3*p4+511*p2*p5-918*p3*p5-2017*p4*p5-76*p2*p6+465*p3*p6+1629*p4*p6+856*p5*p6-54*p2*p7-1355*p3*p7+227*p4*p7+77*p5*p7-220*p6*p7-696*p2+458*p3+486*p4+661*p5-650*p6+671*p7-439,
         -6157*p1*p3*p4*p5*p6*p7+13318*p1*p3*p4*p5*p6+5928*p1*p3*p4*p5*p7+1904*p1*p3*p4*p6*p7+2109*p1*p3*p5*p6*p7+8475*p1*p4*p5*p6*p7+2878*p3*p4*p5*p6*p7-8339*p1*p3*p4*p5-2800*p1*p3*p4*p6-9649*p1*p3*p5*p6-10964*p1*p4*p5*p6-4481*p3*p4*p5*p6+251*p1*p3*p4*p7-4245*p1*p3*p5*p7-7707*p1*p4*p5*p7-2448*p3*p4*p5*p7+1057*p1*p3*p6*p7-3605*p1*p4*p6*p7+546*p3*p4*p6*p7-3633*p1*p5*p6*p7-699*p3*p5*p6*p7-4126*p4*p5*p6*p7-730*p1*p3*p4+5519*p1*p3*p5+8168*p1*p4*p5+4366*p3*p4*p5+2847*p1*p3*p6+2058*p1*p4*p6-1416*p3*p4*p6+8004*p1*p5*p6+4740*p3*p5*p6+5361*p4*p5*p6-677*p1*p3*p7+1755*p1*p4*p7-760*p3*p4*p7+3384*p1*p5*p7+2038*p3*p5*p7+4119*p4*p5*p7+812*p1*p6*p7+11*p3*p6*p7+2022*p4*p6*p7+2642*p5*p6*p7+1276*p1*p3-1723*p1*p4+121*p3*p4-6456*p1*p5-3710*p3*p5-4525*p4*p5-2187*p1*p6-1559*p3*p6-848*p4*p6-4041*p5*p6-83*p1*p7-12*p3*p7-1180*p4*p7-2747*p5*p7-1970*p6*p7+2575*p1-161*p3+2149*p4+4294*p5+1687*p6+958*p7-1950,
@@ -443,16 +443,16 @@ function gametwo2(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
 end
 
 # Source: https://web.archive.org/web/20201202185136/http://www.cecm.sfu.ca/%7Erpearcea/mgb.html
-function jason210(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
-    R, (x1, x2, x3, x4, x5, x6, x7, x8) = np.polynomial_ring(k, [:x1, :x2, :x3, :x4, :x5, :x6, :x7, :x8], ordering=ordering)
+function jason210(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
+    R, (x1, x2, x3, x4, x5, x6, x7, x8) = np.polynomial_ring(k, [:x1, :x2, :x3, :x4, :x5, :x6, :x7, :x8], internal_ordering=internal_ordering)
     sys = [
         x1^2*x3^4+x1*x2*x3^2*x5^2+x1*x2*x3*x4*x5*x7+x1*x2*x3*x4*x6*x8+x1*x2*x4^2*x6^2+x2^2*x4^4, x2^6, x1^6
     ]
 end
 
 # Source: https://web.archive.org/web/20201202185136/http://www.cecm.sfu.ca/%7Erpearcea/mgb.html
-function alea6(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
-    R, (x0, x1, x2, x3, x4, x5) = np.polynomial_ring(k, [:x0, :x1, :x2, :x3, :x4, :x5], ordering=ordering)
+function alea6(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
+    R, (x0, x1, x2, x3, x4, x5) = np.polynomial_ring(k, [:x0, :x1, :x2, :x3, :x4, :x5], internal_ordering=internal_ordering)
     sys = [
         5*x0^2*x3+37*x1*x3*x4+32*x1*x3*x5+21*x3*x5+55*x4*x5,
         39*x0*x1*x5+23*x1^2*x4+57*x1*x2*x4+56*x1*x4^2+10*x2^2+52*x3*x4*x5,
@@ -464,9 +464,9 @@ function alea6(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
 end
 
 # Source: https://web.archive.org/web/20201202185136/http://www.cecm.sfu.ca/%7Erpearcea/mgb.html
-function mayr42(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+function mayr42(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     R, (x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13,x14,x15,x16,x17,x18,x19,x20,x21,x22,x23,x24,x25,x26,x27,x28,x29,x30,x31,x32,x33,x34,x35,x36,x37,x38,x39,x40,x41,x42,x43,x44,x45,x46,x47,x48,x49,x50,x51) = np.polynomial_ring(
-        k, [:x1,:x2,:x3,:x4,:x5,:x6,:x7,:x8,:x9,:x10,:x11,:x12,:x13,:x14,:x15,:x16,:x17,:x18,:x19,:x20,:x21,:x22,:x23,:x24,:x25,:x26,:x27,:x28,:x29,:x30,:x31,:x32,:x33,:x34,:x35,:x36,:x37,:x38,:x39,:x40,:x41,:x42,:x43,:x44,:x45,:x46,:x47,:x48,:x49,:x50,:x51], ordering=ordering)
+        k, [:x1,:x2,:x3,:x4,:x5,:x6,:x7,:x8,:x9,:x10,:x11,:x12,:x13,:x14,:x15,:x16,:x17,:x18,:x19,:x20,:x21,:x22,:x23,:x24,:x25,:x26,:x27,:x28,:x29,:x30,:x31,:x32,:x33,:x34,:x35,:x36,:x37,:x38,:x39,:x40,:x41,:x42,:x43,:x44,:x45,:x46,:x47,:x48,:x49,:x50,:x51], internal_ordering=internal_ordering)
     sys = [
         -x10*x51+x4*x49, x3*x48-x51*x9, x2*x47-x51*x8, x1*x46-x51*x7,
         x4*x44-x49*x9, x3*x43-x48*x8, x2*x42-x47*x7, x1*x41-x46*x6,
@@ -486,9 +486,9 @@ end
 ###
 # Some other examples
 
-function ku10(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+function ku10(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     _, (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) =
-        np.polynomial_ring(k, ["x$i" for i in 1:10], ordering=ordering)
+        np.polynomial_ring(k, ["x$i" for i in 1:10], internal_ordering=internal_ordering)
     [
         5 * x1 * x2 + 5 * x1 + 3 * x2 + 55,
         7 * x2 * x3 + 9 * x2 + 9 * x3 + 19,
@@ -503,9 +503,9 @@ function ku10(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     ]
 end
 
-function kinema(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+function kinema(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     _, (z1, z2, z3, z4, z5, z6, z7, z8, z9) =
-        np.polynomial_ring(k, ["z$i" for i in 1:9], ordering=ordering)
+        np.polynomial_ring(k, ["z$i" for i in 1:9], internal_ordering=internal_ordering)
     [
         z1^2 + z2^2 + z3^2 - 12 * z1 - 68
         z4^2 + z5^2 + z6^2 - 12 * z5 - 68
@@ -519,9 +519,9 @@ function kinema(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     ]
 end
 
-function sparse5(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+function sparse5(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     _, (x1, x2, x3, x4, x5) =
-        np.polynomial_ring(k, ["x$i" for i in 1:5], ordering=ordering)
+        np.polynomial_ring(k, ["x$i" for i in 1:5], internal_ordering=internal_ordering)
     [
         x1^2 * x2^2 * x3^2 * x4^2 * x5^2 +
         3 * x1^2 +
@@ -566,9 +566,9 @@ function sparse5(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     ]
 end
 
-function s9_1(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
+function s9_1(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     _, (a, b, c, d, e, f, g, h) =
-        np.polynomial_ring(k, ["x$i" for i in 1:8], ordering=ordering)
+        np.polynomial_ring(k, ["x$i" for i in 1:8], internal_ordering=internal_ordering)
     [
         -e * g - 2 * d * h,
         9 * e + 4 * b,
@@ -581,8 +581,8 @@ function s9_1(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     ]
 end
 
-function ojika4(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
-    _, (x1, x2, x3) = np.polynomial_ring(k, ["x$i" for i in 1:3], ordering=ordering)
+function ojika4(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
+    _, (x1, x2, x3) = np.polynomial_ring(k, ["x$i" for i in 1:3], internal_ordering=internal_ordering)
     [
         x1 + x3 * x1^3 + x1 * x3 * x2^2 - x1 * x3,
         10 * x2 - 2 * x2 * x3 * x1^2 - x3 * x2^3 - x2 * x3,
@@ -594,8 +594,8 @@ function ojika4(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     ]
 end
 
-function ojika3_d1R2(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
-    _, (x1, x2, x3) = np.polynomial_ring(k, ["x$i" for i in 1:3], ordering=ordering)
+function ojika3_d1R2(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
+    _, (x1, x2, x3) = np.polynomial_ring(k, ["x$i" for i in 1:3], internal_ordering=internal_ordering)
     [
         x1^3 * x3 + x1 * x3 * x2^2 - x1 * x3 + x1,
         -2 * x1^2 * x3 * x2 - x3 * x2^3 - x3 * x2 + 10 * x2,
@@ -607,8 +607,8 @@ function ojika3_d1R2(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
     ]
 end
 
-function ojika4_d1R2_d2R5(; np=AbstractAlgebra, k=np.QQ, ordering=:degrevlex)
-    _, (x1, x2, x3) = np.polynomial_ring(k, ["x$i" for i in 1:3], ordering=ordering)
+function ojika4_d1R2_d2R5(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
+    _, (x1, x2, x3) = np.polynomial_ring(k, ["x$i" for i in 1:3], internal_ordering=internal_ordering)
     [
         x1^3 * x3 + x1 * x3 * x2^2 - x1 * x3 + x1,
         -2 * x1^2 * x3 * x2 - x3 * x2^3 - x3 * x2 + 10 * x2,
@@ -640,10 +640,10 @@ function generate_set(
     csz,
     rng,
     k,
-    ordering;
+    internal_ordering;
     np=AbstractAlgebra
 )
-    R, _ = np.polynomial_ring(k, ["x$i" for i in 1:nvariables], ordering=ordering)
+    R, _ = np.polynomial_ring(k, ["x$i" for i in 1:nvariables], internal_ordering=internal_ordering)
 
     filter!(
         !iszero,
@@ -666,11 +666,11 @@ function generate_set(
     csz,
     rng,
     k::T,
-    ordering;
+    internal_ordering;
     np=AbstractAlgebra
 ) where {T <: AbstractAlgebra.Rationals}
     semik = np.GF(2^31 - 1)
-    R, _ = np.polynomial_ring(semik, ["x$i" for i in 1:nvariables], ordering=ordering)
+    R, _ = np.polynomial_ring(semik, ["x$i" for i in 1:nvariables], internal_ordering=internal_ordering)
 
     csz = BigInt(csz)
     zzbase = BigInt(9223372036854775837)
@@ -697,10 +697,10 @@ function generate_set(
     csz,
     rng,
     k::T,
-    ordering;
+    internal_ordering;
     np=AbstractAlgebra
 ) where {T <: AbstractAlgebra.Integers}
-    s = generate_set(nvariables, exps, nterms, npolys, csz, rng, QQ, ordering)
+    s = generate_set(nvariables, exps, nterms, npolys, csz, rng, QQ, internal_ordering)
     s = map(f -> np.map_coefficients(c -> numerator(c), f), s)
     s = map(f -> np.change_coefficient_ring(np.ZZ, f), s)
     s

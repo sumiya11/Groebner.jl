@@ -13,7 +13,7 @@ function aa_to_singular(poly)
     Rqq = AbstractAlgebra.base_ring(Rxx)
     xstrings = map(string, AbstractAlgebra.gens(Rxx))
     base = Singular.QQ
-    new_ring, _ = Singular.polynomial_ring(base, xstrings, ordering=:degrevlex)
+    new_ring, _ = Singular.polynomial_ring(base, xstrings, internal_ordering=:degrevlex)
     AbstractAlgebra.change_base_ring(
         AbstractAlgebra.base_ring(new_ring),
         poly,

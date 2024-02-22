@@ -60,7 +60,7 @@ function load_system_symbolic_data(filename)
     @assert !isempty(vars_str)
     @assert !isempty(polys_str)
 
-    ring, xs = polynomial_ring(QQ, vars_str, ordering=:degrevlex)
+    ring, xs = polynomial_ring(QQ, vars_str, internal_ordering=:degrevlex)
     polys = parse_polys_with_given_ring(ring, polys_str)
 
     return ring, polys

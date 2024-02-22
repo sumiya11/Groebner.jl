@@ -59,7 +59,7 @@ end
             gb = Groebner.groebner([(x - 1) * (x + 8), (x + 8) * (x + 10)])
             @test gb == [(x + 8)]
 
-            R, (x, y) = polynomial_ring(ground, ["x", "y"], ordering=ord)
+            R, (x, y) = polynomial_ring(ground, ["x", "y"], internal_ordering=ord)
             fs = [x^2 * y + 3, (2^31 - 5) * x - (2^31 - 4) * y]
             gb = Groebner.groebner(fs)
             @test parent(gb[1]) == R
@@ -70,7 +70,7 @@ end
     # Test for different Groebner.jl orderings
     for nemo_ord in [:lex, :deglex, :degrevlex]
         for ground in nemo_grounds_to_test
-            R, (x,) = polynomial_ring(ground, ["x"], ordering=nemo_ord)
+            R, (x,) = polynomial_ring(ground, ["x"], internal_ordering=nemo_ord)
             for gb_ord in [
                 Groebner.Lex(),
                 Groebner.DegLex(),
@@ -83,7 +83,7 @@ end
                 @test gb == [x^2]
             end
 
-            R, (x, y) = polynomial_ring(ground, ["x", "y"], ordering=nemo_ord)
+            R, (x, y) = polynomial_ring(ground, ["x", "y"], internal_ordering=nemo_ord)
             fs = [x^2 + 3, y - 1]
             for gb_ord in [
                 Groebner.Lex(),

@@ -11,7 +11,7 @@ for (root, dir, files) in walkdir((@__DIR__))
     end
 end
 
-function load_SIAN_all(; np=AbstractAlgebra, ground=np.QQ, ordering=:degrevlex)
+function load_SIAN_all(; np=AbstractAlgebra, ground=np.QQ, internal_ordering=:degrevlex)
     systems = []
     for (root, dir, files) in walkdir((@__DIR__))
         for file in files

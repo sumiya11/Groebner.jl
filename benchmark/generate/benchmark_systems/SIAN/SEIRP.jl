@@ -3,7 +3,7 @@
 
 import AbstractAlgebra
 
-function SEIRP(; np=AbstractAlgebra, ordering=:degrevlex, k=np.QQ)
+function SEIRP(; np=AbstractAlgebra, internal_ordering=:degrevlex, k=np.QQ)
     R, (S_8,I_8,E_7,S_7,I_7,E_6,S_6,I_6,E_5,S_5,I_5,E_4,S_4,I_4,E_3,S_3,I_3,E_2,S_2,I_2,E_1,S_1,I_1,E_0,S_0,I_0,z_aux,R_0,P_0,alpha_e_0,alpha_i_0,kappa_0,rho_0,beta_0,mu_0) = np.PolynomialRing(k, [:S_8,:I_8,:E_7,:S_7,:I_7,:E_6,:S_6,:I_6,:E_5,:S_5,:I_5,:E_4,:S_4,:I_4,:E_3,:S_3,:I_3,:E_2,:S_2,:I_2,:E_1,:S_1,:I_1,:E_0,:S_0,:I_0,:z_aux,:R_0,:P_0,:alpha_e_0,:alpha_i_0,:kappa_0,:rho_0,:beta_0,:mu_0], ordering=ordering)
     sys = [
     		-S_0 - I_0 + 6444397146265595,

@@ -11,7 +11,7 @@ import Primes
 end
 
 @testset "regression, ordering of empty" begin
-    R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], ordering=:lex)
+    R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], internal_ordering=:lex)
 
     ord = Groebner.DegRevLex()
     gb1 = Groebner.groebner([x, y], ordering=ord)
@@ -125,8 +125,11 @@ end
 end
 
 @testset "regression, tracing invariants" begin
-    R, (x1, x2, x3, x4, x5, x6, x7, _Z) =
-        polynomial_ring(ZZ, [:x1, :x2, :x3, :x4, :x5, :x6, :x7, :_Z], ordering=:degrevlex)
+    R, (x1, x2, x3, x4, x5, x6, x7, _Z) = polynomial_ring(
+        ZZ,
+        [:x1, :x2, :x3, :x4, :x5, :x6, :x7, :_Z],
+        internal_ordering=:degrevlex
+    )
     sys_z_t = [
         2 * x1^2 - 2 * x2^2 + 2 * x3^2 - 2 * x4^2 + 2 * x5^2 - 2 * x6^2 + 2 * x7^2 - 1
         2 * x1^3 - 2 * x2^3 + 2 * x3^3 - 2 * x4^3 + 2 * x5^3 - 2 * x6^3 + 2 * x7^3 - 1
