@@ -112,7 +112,7 @@ function henrion7(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     _, (f1, f2, f3, f4, f5, f6, f7) = np.polynomial_ring(
         k,
         ["f1", "f2", "f3", "f4", "f5", "f6", "f7"],
-        ordering=ordering
+        internal_ordering=internal_ordering
     )
     [
         2*f1*f2*f3*f4*f5*f6*f7-273922023375,
@@ -131,7 +131,7 @@ function henrion8(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     _, (f1, f2, f3, f4, f5, f6, f7, f8) = np.polynomial_ring(
         k,
         ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8"],
-        ordering=ordering
+        internal_ordering=internal_ordering
     )
     [
         k(2)*f1*f2*f3*f4*f5*f6*f7*f8-k(69850115960625),
@@ -150,7 +150,7 @@ function henrion9(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     _, (f1, f2, f3, f4, f5, f6, f7, f8, f9) = np.polynomial_ring(
         k,
         ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9"],
-        ordering=ordering
+        internal_ordering=internal_ordering
     )
     [
         2*f1*f2*f3*f4*f5*f6*f7*f8*f9-22561587455281875,
