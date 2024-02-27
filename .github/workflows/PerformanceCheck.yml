@@ -1,5 +1,10 @@
 name: Performance Check
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - 'master'
+    tags: '*'
+  pull_request:
 jobs:
   build-and-benchmark:
     runs-on: ${{ matrix.os }}
