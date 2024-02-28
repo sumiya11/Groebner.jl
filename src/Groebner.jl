@@ -60,10 +60,14 @@ import AbstractAlgebra: base_ring, elem_type
 
 import Atomix
 
-import Base: *
 import Base.Threads
 import Base.Threads: nthreads, threadid
 import Base.MultiplicativeInverses: UnsignedMultiplicativeInverse
+
+import Base: *
+
+# Custom allocators
+import Bumper
 
 import Combinatorics
 
