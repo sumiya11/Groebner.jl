@@ -1,8 +1,8 @@
 Manifest.toml
-!benchmark/**/Manifest.toml
+!perf/**/Manifest.toml
 LocalPreferences.toml
 .vscode
 /.benchmarkci
-/benchmark/*.json
-/benchmark/**/results/**/benchmark_[0-9]
-/benchmark/**/results/**/benchmark_1[0-9]
+/perf/*.json
+/perf/**/results/**/benchmark_[0-9]
+/perf/**/results/**/benchmark_1[0-9]
