@@ -1,8 +1,0 @@
-x1 = C_free
-x2 = R_A
-x3 = R_B
-x4 = RC_A
-x5 = RC_B
-x6 = RC_AB
-x7 = AP
-x8 = AD

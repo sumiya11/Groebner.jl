@@ -1,0 +1,10 @@
+x1 = srci
+x2 = srco
+x3 = srca
+x4 = srcc
+x5 = Cbp_P_CSK
+x6 = CSK_cytoplasm
+x7 = PTP
+x8 = PTP_pY789
+x9 = Cbp
+x10 = Cbp_P

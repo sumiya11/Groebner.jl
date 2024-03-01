@@ -1,0 +1,4 @@
+x1 = Susceptible
+x2 = Infected
+x3 = Recovered
+x4 = Confirmed

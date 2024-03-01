@@ -1,6 +1,0 @@
-x1 = BoNT
-x2 = bulk
-x3 = free
-x4 = bound
-x5 = translocate
-x6 = lytic

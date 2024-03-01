@@ -1,0 +1,8 @@
+x1 = Pi
+x2 = RasGTP
+x3 = RasGTP_minus_NF1
+x4 = RasGTP_minus_NF1_star_
+x5 = RasGDP_minus_NF1_Pi
+x6 = RasGDP_NF1
+x7 = RasGDP
+x8 = NF1

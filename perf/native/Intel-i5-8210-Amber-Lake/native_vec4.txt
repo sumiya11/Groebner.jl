@@ -1,0 +1,48 @@
+	.section	__TEXT,__text,regular,pure_instructions
+	.build_version macos, 12, 0
+	.globl	"_julia_linalg_vector_addmul_sparsedense!_237" ## -- Begin function julia_linalg_vector_addmul_sparsedense!_237
+	.p2align	4, 0x90
+"_julia_linalg_vector_addmul_sparsedense!_237": ## @"julia_linalg_vector_addmul_sparsedense!_237"
+	.cfi_startproc
+## %bb.0:                               ## %top
+	movq	8(%rsi), %r8
+	testq	%r8, %r8
+	je	LBB0_4
+## %bb.1:                               ## %L33.preheader
+	movq	(%rsi), %rsi
+	movl	(%rsi), %eax
+	movslq	%eax, %r9
+	movq	(%rdi), %rdi
+	shlq	$5, %r9
+	vmovdqu	-32(%r9,%rdi), %ymm0
+	movq	(%rdx), %rdx
+	vmovdqu	32(%rcx), %ymm1
+	movl	$1, %ecx
+	vpxor	%xmm2, %xmm2, %xmm2
+	.p2align	4, 0x90
+LBB0_2:                                 ## %L33
+                                        ## =>This Inner Loop Header: Depth=1
+	cltq
+	shlq	$5, %rax
+	vmovdqu	-32(%rax,%rdi), %ymm3
+	vpmovzxdq	(%rdx), %ymm4           ## ymm4 = mem[0],zero,mem[1],zero,mem[2],zero,mem[3],zero
+	vpmuldq	%ymm4, %ymm0, %ymm4
+	vpsubq	%ymm4, %ymm3, %ymm3
+	vpcmpgtq	%ymm3, %ymm2, %ymm4
+	vpand	%ymm1, %ymm4, %ymm4
+	vpaddq	%ymm3, %ymm4, %ymm3
+	vmovdqu	%ymm3, -32(%rax,%rdi)
+	cmpq	%rcx, %r8
+	je	LBB0_4
+## %bb.3:                               ## %L33.L33_crit_edge
+                                        ##   in Loop: Header=BB0_2 Depth=1
+	movl	(%rsi,%rcx,4), %eax
+	incq	%rcx
+	addq	$16, %rdx
+	jmp	LBB0_2
+LBB0_4:                                 ## %L105
+	vzeroupper
+	retq
+	.cfi_endproc
+                                        ## -- End function
+.subsections_via_symbols

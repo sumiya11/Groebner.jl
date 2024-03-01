@@ -1,0 +1,11 @@
+Julia Version 1.9.4
+Commit 8e5136fa297 (2023-11-14 08:46 UTC)
+Build Info:
+  Official https://julialang.org/ release
+Platform Info:
+  OS: Linux (x86_64-linux-gnu)
+  CPU: 4 × Intel Core Processor (Broadwell)
+  WORD_SIZE: 64
+  LIBM: libopenlibm
+  LLVM: libLLVM-14.0.6 (ORCJIT, broadwell)
+  Threads: 1 on 4 virtual cores

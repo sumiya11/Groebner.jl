@@ -1,4 +1,0 @@
-x1 = EmptySet
-x2 = u
-x3 = z
-x4 = v

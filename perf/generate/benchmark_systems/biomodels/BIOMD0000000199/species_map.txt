@@ -1,0 +1,15 @@
+x1 = FeIII
+x2 = FeII
+x3 = FeII_O2
+x4 = FeIII_star
+x5 = FeII_star
+x6 = FeII_star_O2
+x7 = FeIII_NO
+x8 = FeII_NO
+x9 = NADPH
+x10 = O2
+x11 = citrulline
+x12 = NO3
+x13 = NO
+x14 = NADPplus
+x15 = FeIII_t

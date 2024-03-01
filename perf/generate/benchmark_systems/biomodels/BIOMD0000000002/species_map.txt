@@ -1,0 +1,13 @@
+x1 = BLL
+x2 = IL
+x3 = AL
+x4 = A
+x5 = BL
+x6 = B
+x7 = DLL
+x8 = D
+x9 = ILL
+x10 = DL
+x11 = I
+x12 = ALL
+x13 = L

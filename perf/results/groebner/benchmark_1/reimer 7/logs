@@ -1,0 +1,26 @@
+┌ Info: 
+│   ARGS =
+│    4-element Vector{String}:
+│     "reimer 7"
+│     "1"
+│     "1"
+└     "true"
+┌ Info: 
+└   PROBLEM_NAME = "reimer 7"
+┌ Info: 
+└   NUM_RUNS = 1
+┌ Info: 
+└   BENCHMARK_SET = 1
+┌ Info: 
+└   VALIDATE = true
+┌ Info: 
+└   "$(#= C:\data\projects\gbgb\Groebner.jl\benchmark\generate\groebner\run_in_groebner.jl:31 =# @__DIR__())" = "C:\\data\\projects\\gbgb\\Groebner.jl\\benchmark\\generate\\groebner"
+[ Info: Activating environment at C:\data\projects\gbgb\Groebner.jl\benchmark\generate\groebner
+  Activating project at `C:\data\projects\gbgb\Groebner.jl\benchmark\generate\groebner`
+  No Changes to `C:\data\projects\gbgb\Groebner.jl\benchmark\generate\groebner\Project.toml`
+  No Changes to `C:\data\projects\gbgb\Groebner.jl\benchmark\generate\groebner\Manifest.toml`
+[ Info: Processing reimer 7
+[ Info: Averaging over 1 runs.
+┌ Info: Computing GB..
+└   iter = 1
+[ Info: Printing the basis to C:\data\projects\gbgb\Groebner.jl\benchmark\generate\groebner/../../results/groebner/benchmark_1/reimer 7/output

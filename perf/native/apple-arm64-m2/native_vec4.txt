@@ -1,0 +1,71 @@
+	.section	__TEXT,__text,regular,pure_instructions
+	.build_version macos, 14, 0
+	.globl	"_julia_linalg_vector_addmul_sparsedense!_5586" ; -- Begin function julia_linalg_vector_addmul_sparsedense!_5586
+	.p2align	2
+"_julia_linalg_vector_addmul_sparsedense!_5586": ; @"julia_linalg_vector_addmul_sparsedense!_5586"
+	.cfi_startproc
+; %bb.0:                                ; %top
+	ldr	x11, [x1, #8]
+	cbz	x11, LBB0_4
+; %bb.1:                                ; %L33.preheader
+	ldr	x9, [x1]
+	ldrsw	x14, [x9]
+	sub	x10, x14, #1
+	ldr	x8, [x0]
+	add	x10, x8, x10, lsl #5
+	ldp	q0, q1, [x10]
+	ldr	x10, [x2]
+	shl	v0.2d, v0.2d, #32
+	sshr	v0.2d, v0.2d, #32
+	shl	v1.2d, v1.2d, #32
+	sshr	v1.2d, v1.2d, #32
+	ldp	q2, q3, [x3, #32]
+	add	x9, x9, #4
+	add	x10, x10, #8
+	sub	x11, x11, #1
+	mov	x12, v0.d[1]
+	mov	x13, v1.d[1]
+                                        ; kill: def $w14 killed $w14 killed $x14 def $x14
+LBB0_2:                                 ; %L33
+                                        ; =>This Inner Loop Header: Depth=1
+	sxtw	x14, w14
+	add	x14, x8, x14, lsl #5
+	ldp	q4, q5, [x14, #-32]
+	ldp	d6, d7, [x10, #-8]
+	sshll	v6.2d, v6.2s, #0
+	mov	x15, v6.d[1]
+	mul	x15, x12, x15
+	fmov	x16, d0
+	fmov	x17, d6
+	mul	x16, x16, x17
+	fmov	d6, x16
+	mov	v6.d[1], x15
+	sub	v4.2d, v4.2d, v6.2d
+	sshll	v6.2d, v7.2s, #0
+	mov	x15, v6.d[1]
+	mul	x15, x13, x15
+	fmov	x16, d1
+	fmov	x17, d6
+	mul	x16, x16, x17
+	fmov	d6, x16
+	mov	v6.d[1], x15
+	sub	v5.2d, v5.2d, v6.2d
+	cmlt	v6.2d, v4.2d, #0
+	and	v6.16b, v6.16b, v2.16b
+	add	v4.2d, v6.2d, v4.2d
+	cmlt	v6.2d, v5.2d, #0
+	and	v6.16b, v6.16b, v3.16b
+	add	v5.2d, v6.2d, v5.2d
+	stp	q4, q5, [x14, #-32]
+	cbz	x11, LBB0_4
+; %bb.3:                                ; %L33.L33_crit_edge
+                                        ;   in Loop: Header=BB0_2 Depth=1
+	ldr	w14, [x9], #4
+	add	x10, x10, #16
+	sub	x11, x11, #1
+	b	LBB0_2
+LBB0_4:                                 ; %L105
+	ret
+	.cfi_endproc
+                                        ; -- End function
+.subsections_via_symbols

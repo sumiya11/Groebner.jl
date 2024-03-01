@@ -1,0 +1,11 @@
+x1 = M
+x2 = Mp
+x3 = Mpp
+x4 = MAPKK
+x5 = MKP3
+x6 = M_MAPKK
+x7 = Mp_MAPKK
+x8 = Mpp_MKP3
+x9 = Mp_MKP3_dep
+x10 = Mp_MKP3
+x11 = M_MKP3

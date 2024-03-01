@@ -1,0 +1,45 @@
+┌ Info: 
+│   ARGS =
+│    5-element Vector{String}:
+│     "dummy 1"
+│     "1"
+│     "0"
+│     "false"
+└     "maple"
+┌ Info: 
+└   PROBLEM_NAME = "dummy 1"
+┌ Info: 
+└   NUM_RUNS = 1
+┌ Info: 
+└   BENCHMARK_SET = 0
+┌ Info: 
+└   VALIDATE = false
+┌ Info: 
+└   "$(#= C:\data\projects\gbgb\Groebner.jl\benchmark\generate\maple\run_in_maple.jl:30 =# @__DIR__())" = "C:\\data\\projects\\gbgb\\Groebner.jl\\benchmark\\generate\\maple"
+[ Info: Activating environment at C:\data\projects\gbgb\Groebner.jl\benchmark\generate\maple
+  Activating project at `C:\data\projects\gbgb\Groebner.jl\benchmark\generate\maple`
+  No Changes to `C:\data\projects\gbgb\Groebner.jl\benchmark\generate\maple\Project.toml`
+  No Changes to `C:\data\projects\gbgb\Groebner.jl\benchmark\generate\maple\Manifest.toml`
+ERROR: LoadError: IOError: could not spawn `maple 'C:\data\projects\gbgb\Groebner.jl\benchmark\generate\maple/../../results/maple/benchmark_0/dummy 1/dummy 1.mpl'`: no such file or directory (ENOENT)
+Stacktrace:
+ [1] _spawn_primitive(file::String, cmd::Cmd, stdio::Vector{Union{RawFD, Base.Libc.WindowsRawSocket, IO}})
+   @ Base .\process.jl:128
+ [2] #784
+   @ Base .\process.jl:139 [inlined]
+ [3] setup_stdios(f::Base.var"#784#785"{Cmd}, stdios::Vector{Union{RawFD, Base.Libc.WindowsRawSocket, IO}})
+   @ Base .\process.jl:223
+ [4] _spawn
+   @ Base .\process.jl:138 [inlined]
+ [5] run(::Cmd; wait::Bool)
+   @ Base .\process.jl:479
+ [6] run
+   @ .\process.jl:477 [inlined]
+ [7] process_system()
+   @ Main C:\data\projects\gbgb\Groebner.jl\benchmark\generate\maple\run_in_maple.jl:49
+ [8] top-level scope
+   @ C:\data\projects\gbgb\Groebner.jl\benchmark\generate\maple\run_in_maple.jl:76
+in expression starting at C:\data\projects\gbgb\Groebner.jl\benchmark\generate\maple\run_in_maple.jl:76
+[ Info: Processing dummy 1
+[ Info: Averaging over 1 runs.
+┌ Info: Computing GB..
+└   iter = 1

@@ -1,0 +1,59 @@
+define void @"julia_linalg_vector_addmul_sparsedense!_212"({}* noundef nonnull align 16 dereferenceable(40) %0, {}* noundef nonnull align 16 dereferenceable(40) %1, {}* noundef nonnull align 16 dereferenceable(40) %2, { [1 x [4 x i64]], [1 x [4 x i64]], [1 x [4 x i64]], [1 x [4 x i8]], [1 x [4 x i8]] }* nocapture noundef nonnull readonly align 8 dereferenceable(104) %3) #0 {
+top:
+  %4 = bitcast {}* %1 to i32**
+  %5 = load i32*, i32** %4, align 8
+  %6 = load i32, i32* %5, align 4
+  %7 = bitcast {}* %0 to [1 x [4 x i64]]**
+  %8 = load [1 x [4 x i64]]*, [1 x [4 x i64]]** %7, align 8
+  %9 = bitcast {}* %1 to { i8*, i64, i16, i16, i32 }*
+  %10 = getelementptr inbounds { i8*, i64, i16, i16, i32 }, { i8*, i64, i16, i16, i32 }* %9, i64 0, i32 1
+  %11 = load i64, i64* %10, align 8
+  %.not.not = icmp eq i64 %11, 0
+  br i1 %.not.not, label %L105, label %L33.preheader
+
+L33.preheader:                                    ; preds = %top
+  %12 = sext i32 %6 to i64
+  %13 = add nsw i64 %12, -1
+  %.sroa.026.0..sroa_idx = getelementptr inbounds [1 x [4 x i64]], [1 x [4 x i64]]* %8, i64 %13, i64 0, i64 0
+  %14 = bitcast i64* %.sroa.026.0..sroa_idx to <4 x i64>*
+  %15 = load <4 x i64>, <4 x i64>* %14, align 1
+  %16 = bitcast {}* %2 to [1 x [4 x i32]]**
+  %17 = load [1 x [4 x i32]]*, [1 x [4 x i32]]** %16, align 8
+  %18 = shl <4 x i64> %15, <i64 32, i64 32, i64 32, i64 32>
+  %19 = ashr exact <4 x i64> %18, <i64 32, i64 32, i64 32, i64 32>
+  %20 = getelementptr inbounds { [1 x [4 x i64]], [1 x [4 x i64]], [1 x [4 x i64]], [1 x [4 x i8]], [1 x [4 x i8]] }, { [1 x [4 x i64]], [1 x [4 x i64]], [1 x [4 x i64]], [1 x [4 x i8]], [1 x [4 x i8]] }* %3, i64 0, i32 1, i64 0, i64 0
+  %21 = bitcast i64* %20 to <4 x i64>*
+  %22 = load <4 x i64>, <4 x i64>* %21, align 8
+  br label %L33
+
+L33:                                              ; preds = %L33.L33_crit_edge, %L33.preheader
+  %23 = phi i32 [ %.pre, %L33.L33_crit_edge ], [ %6, %L33.preheader ]
+  %value_phi4 = phi i64 [ %37, %L33.L33_crit_edge ], [ 1, %L33.preheader ]
+  %24 = add nsw i64 %value_phi4, -1
+  %25 = sext i32 %23 to i64
+  %26 = add nsw i64 %25, -1
+  %.sroa.019.0..sroa_idx = getelementptr inbounds [1 x [4 x i64]], [1 x [4 x i64]]* %8, i64 %26, i64 0, i64 0
+  %27 = bitcast i64* %.sroa.019.0..sroa_idx to <4 x i64>*
+  %28 = load <4 x i64>, <4 x i64>* %27, align 1
+  %.sroa.012.0..sroa_idx = getelementptr inbounds [1 x [4 x i32]], [1 x [4 x i32]]* %17, i64 %24, i64 0, i64 0
+  %29 = bitcast i32* %.sroa.012.0..sroa_idx to <4 x i32>*
+  %30 = load <4 x i32>, <4 x i32>* %29, align 1
+  %31 = sext <4 x i32> %30 to <4 x i64>
+  %32 = mul nsw <4 x i64> %19, %31
+  %33 = sub <4 x i64> %28, %32
+  %34 = icmp slt <4 x i64> %33, zeroinitializer
+  %35 = select <4 x i1> %34, <4 x i64> %22, <4 x i64> zeroinitializer
+  %36 = add <4 x i64> %35, %33
+  store <4 x i64> %36, <4 x i64>* %27, align 8
+  %.not.not43 = icmp eq i64 %value_phi4, %11
+  br i1 %.not.not43, label %L105, label %L33.L33_crit_edge
+
+L33.L33_crit_edge:                                ; preds = %L33
+  %37 = add nuw nsw i64 %value_phi4, 1
+  %.phi.trans.insert = getelementptr inbounds i32, i32* %5, i64 %value_phi4
+  %.pre = load i32, i32* %.phi.trans.insert, align 4
+  br label %L33
+
+L105:                                             ; preds = %L33, %top
+  ret void
+}

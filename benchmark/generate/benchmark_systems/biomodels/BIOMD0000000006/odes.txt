@@ -1,3 +1,0 @@
-{ diff(x1, t) = 0,
-  diff(x2, t) = k3*(x4 - x2)*(k4/k3 + x2^2) - k2*x2,
-  diff(x4, t) = k1 - k2*x2 }

@@ -1,7 +1,0 @@
-{ diff(x1, t) = (-(k17 + k1))*x1 + k18*x2 + k2*k13*x3,
-  diff(x2, t) = k17*x1 - (k18 + k1)*x2 + k2*k13*x4,
-  diff(x3, t) = k1/k13*x1 - (k2 + k17 + k3)*x3 + k18*x4 + k4/(k19*k13/(1 + k13))*x5,
-  diff(x4, t) = k1/k13*x2 + k17*x3 - (k18 + k2)*x4,
-  diff(x5, t) = k3*k19*k13/(1 + k13)*x3 - (k4 + k20)*x5 + k21*x6 + k6*k12/k9*x7 - k5*(k8 - x7)*x5,
-  diff(x6, t) = k20*x5 - k21*x6 + k7*k12/k9*x7,
-  diff(x7, t) = k5/(k12/k9)*(k8 - x7)*x5 - (k6 + k7)*x7 }

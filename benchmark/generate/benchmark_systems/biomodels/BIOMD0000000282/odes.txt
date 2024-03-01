@@ -1,6 +1,0 @@
-{ diff(x1, t) = ((-1)*k5*(k1*x1*x2 - k2*x3) + 1*k5*k3*x3*x2 + 1*k5*k4*x3*k6)/k5,
-  diff(x2, t) = ((-1)*k5*(k1*x1*x2 - k2*x3) + (-1)*k5*k3*x3*x2)/k5,
-  diff(x3, t) = (1*k5*(k1*x1*x2 - k2*x3) + (-1)*k5*k3*x3*x2 + (-1)*k5*k4*x3*k6)/k5,
-  diff(x4, t) = 1*k5*k3*x3*x2/k5,
-  diff(x5, t) = 0,
-  diff(x6, t) = 1*k5*k4*x3*k6/k5 }

@@ -1,0 +1,25 @@
+┌ Info: 
+│   ARGS =
+│    4-element Vector{String}:
+│     "cyclic 7"
+│     "1"
+│     "1"
+└     "true"
+┌ Info: 
+└   PROBLEM_NAME = "cyclic 7"
+┌ Info: 
+└   NUM_RUNS = 1
+┌ Info: 
+└   BENCHMARK_SET = 1
+┌ Info: 
+└   VALIDATE = true
+┌ Info: 
+└   "$(#= C:\data\projects\gbgb\Groebner.jl\benchmark\generate\groebner\run_in_groebner.jl:31 =# @__DIR__())" = "C:\\data\\projects\\gbgb\\Groebner.jl\\benchmark\\generate\\groebner"
+[ Info: Activating environment at C:\data\projects\gbgb\Groebner.jl\benchmark\generate\groebner
+┌ Warning: failed to remove pidfile on close
+│   path = "C:\\Users\\User\\.julia\\registries\\.pid"
+│   removed = false
+└ @ FileWatching.Pidfile C:\Users\User\AppData\Local\Programs\Julia-1.9.1\share\julia\stdlib\v1.9\FileWatching\src\pidfile.jl:313
+  Activating project at `C:\data\projects\gbgb\Groebner.jl\benchmark\generate\groebner`
+  No Changes to `C:\data\projects\gbgb\Groebner.jl\benchmark\generate\groebner\Project.toml`
+  No Changes to `C:\data\projects\gbgb\Groebner.jl\benchmark\generate\groebner\Manifest.toml`

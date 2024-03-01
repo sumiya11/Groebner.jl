@@ -1,0 +1,11 @@
+Julia Version 1.9.3
+Commit bed2cd540a (2023-08-24 14:43 UTC)
+Build Info:
+  Official https://julialang.org/ release
+Platform Info:
+  OS: Windows (x86_64-w64-mingw32)
+  CPU: 12 × Intel(R) Core(TM) i5-10400F CPU @ 2.90GHz
+  WORD_SIZE: 64
+  LIBM: libopenlibm
+  LLVM: libLLVM-14.0.6 (ORCJIT, skylake)
+  Threads: 1 on 12 virtual cores

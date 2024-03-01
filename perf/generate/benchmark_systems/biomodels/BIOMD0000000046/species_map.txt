@@ -1,0 +1,16 @@
+x1 = NADH
+x2 = O2
+x3 = H2O2
+x4 = per3
+x5 = coI
+x6 = ArH
+x7 = coII
+x8 = Ar
+x9 = NADrad
+x10 = super
+x11 = coIII
+x12 = per2
+x13 = NAD2
+x14 = NAD
+x15 = O2g
+x16 = NADHres

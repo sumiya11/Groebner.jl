@@ -1,7 +1,0 @@
-x1 = L
-x2 = R
-x3 = G
-x4 = Gbg
-x5 = Gd
-x6 = Ga
-x7 = RL

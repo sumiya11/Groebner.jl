@@ -1,0 +1,7 @@
+x1 = T
+x2 = LT
+x3 = RT
+x4 = m
+x5 = Lm
+x6 = Rm
+x7 = SL

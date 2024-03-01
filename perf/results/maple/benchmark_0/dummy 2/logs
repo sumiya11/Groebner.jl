@@ -1,0 +1,68 @@
+┌ Info: 
+│   ARGS =
+│    5-element Vector{String}:
+│     "dummy 2"
+│     "1"
+│     "0"
+│     "false"
+└     "maple"
+┌ Info: 
+└   PROBLEM_NAME = "dummy 2"
+┌ Info: 
+└   NUM_RUNS = 1
+┌ Info: 
+└   BENCHMARK_SET = 0
+┌ Info: 
+└   VALIDATE = false
+┌ Info: 
+└   "$(#= C:\data\projects\gbgb\Groebner.jl\benchmark\generate\maple\run_in_maple.jl:30 =# @__DIR__())" = "C:\\data\\projects\\gbgb\\Groebner.jl\\benchmark\\generate\\maple"
+[ Info: Activating environment at C:\data\projects\gbgb\Groebner.jl\benchmark\generate\maple
+  Activating project at `C:\data\projects\gbgb\Groebner.jl\benchmark\generate\maple`
+    Updating `C:\data\projects\gbgb\Groebner.jl\benchmark\generate\maple\Project.toml`
+  [10745b16] ↑ Statistics v1.9.0 ⇒ v1.10.0
+    Updating `C:\data\projects\gbgb\Groebner.jl\benchmark\generate\maple\Manifest.toml`
+  [0dad84c5] - ArgTools v1.1.1
+  [f43a241f] - Downloads v1.6.0
+  [7b1f6079] - FileWatching
+  [b27032c2] - LibCURL v0.6.3
+  [76f85450] - LibGit2
+  [ca575930] - NetworkOptions v1.2.0
+  [44cfe95a] - Pkg v1.9.2
+  [3fa0cd96] - REPL
+  [2f01184e] ~ SparseArrays ⇒ v1.10.0
+  [10745b16] ↑ Statistics v1.9.0 ⇒ v1.10.0
+  [a4e569a6] - Tar v1.10.0
+  [e66e0078] ↑ CompilerSupportLibraries_jll v1.0.5+0 ⇒ v1.0.5+1
+  [deac9b47] - LibCURL_jll v7.84.0+0
+  [29816b5a] - LibSSH2_jll v1.10.2+0
+  [c8ffd9c3] - MbedTLS_jll v2.28.2+0
+  [14a3606d] - MozillaCACerts_jll v2022.10.11
+  [4536629a] ↑ OpenBLAS_jll v0.3.21+4 ⇒ v0.3.23+2
+  [bea87d4a] ↑ SuiteSparse_jll v5.10.1+6 ⇒ v7.2.1+1
+  [83775a58] - Zlib_jll v1.2.13+0
+  [8e850b90] ↑ libblastrampoline_jll v5.8.0+0 ⇒ v5.8.0+1
+  [8e850ede] - nghttp2_jll v1.48.0+0
+  [3f19e933] - p7zip_jll v17.4.0+0
+ERROR: LoadError: IOError: could not spawn `maple 'C:\data\projects\gbgb\Groebner.jl\benchmark\generate\maple/../../results/maple/benchmark_0/dummy 2/dummy 2.mpl'`: no such file or directory (ENOENT)
+Stacktrace:
+ [1] _spawn_primitive(file::String, cmd::Cmd, stdio::Vector{Union{RawFD, Base.Libc.WindowsRawSocket, IO}})
+   @ Base .\process.jl:128
+ [2] #784
+   @ Base .\process.jl:139 [inlined]
+ [3] setup_stdios(f::Base.var"#784#785"{Cmd}, stdios::Vector{Union{RawFD, Base.Libc.WindowsRawSocket, IO}})
+   @ Base .\process.jl:223
+ [4] _spawn
+   @ Base .\process.jl:138 [inlined]
+ [5] run(::Cmd; wait::Bool)
+   @ Base .\process.jl:479
+ [6] run
+   @ .\process.jl:477 [inlined]
+ [7] process_system()
+   @ Main C:\data\projects\gbgb\Groebner.jl\benchmark\generate\maple\run_in_maple.jl:49
+ [8] top-level scope
+   @ C:\data\projects\gbgb\Groebner.jl\benchmark\generate\maple\run_in_maple.jl:76
+in expression starting at C:\data\projects\gbgb\Groebner.jl\benchmark\generate\maple\run_in_maple.jl:76
+[ Info: Processing dummy 2
+[ Info: Averaging over 1 runs.
+┌ Info: Computing GB..
+└   iter = 1

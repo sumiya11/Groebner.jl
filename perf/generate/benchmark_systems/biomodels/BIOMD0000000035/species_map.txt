@@ -1,0 +1,10 @@
+x1 = EmptySet
+x2 = A
+x3 = C
+x4 = DA
+x5 = DAp
+x6 = DR
+x7 = DRp
+x8 = MA
+x9 = MR
+x10 = R

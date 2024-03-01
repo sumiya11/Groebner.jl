@@ -1,5 +1,0 @@
-x1 = Susceptible
-x2 = Unquarantined_Infected
-x3 = Quarantined_Infected
-x4 = Confirmed_Infected
-x5 = Cumulative_Infected

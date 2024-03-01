@@ -1,6 +1,0 @@
-x1 = Tn
-x2 = Ts
-x3 = M1
-x4 = M2
-x5 = Th1
-x6 = Th2

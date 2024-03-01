@@ -1,0 +1,11 @@
+Julia Version 1.9.2
+Commit e4ee485e909 (2023-07-05 09:39 UTC)
+Platform Info:
+  OS: Linux (x86_64-linux-gnu)
+  CPU: 64 × Intel(R) Xeon(R) Gold 6130 CPU @ 2.10GHz
+  WORD_SIZE: 64
+  LIBM: libopenlibm
+  LLVM: libLLVM-14.0.6 (ORCJIT, skylake-avx512)
+  Threads: 1 on 64 virtual cores
+Environment:
+  LD_LIBRARY_PATH = :/home/demin/libs2/usr/local/lib/

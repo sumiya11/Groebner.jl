@@ -1,7 +1,0 @@
-x1 = p100t
-x2 = p100
-x3 = p52
-x4 = NIK
-x5 = IkBd
-x6 = IkBd_NIK
-x7 = p100_NIK
