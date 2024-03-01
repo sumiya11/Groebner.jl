@@ -17,8 +17,8 @@
 const BitInteger = Union{Int16, Int32, Int64, Int8, UInt16, UInt32, UInt64, UInt8}
 
 function log_simdinfo()
-    @log level = -1 """
-      CPU: $(Symbol(cpu_name()))
+    @log :misc """
+      CPU (host): $(Symbol(cpu_name()))
       ------------------------
       fma_fast: \t$(Bool(fma_fast()))
       registers:\t$(Int(register_count()))
@@ -28,12 +28,9 @@ function log_simdinfo()
 end
 
 j_to_llvm_t(_::Type{T}) where {T <: BitInteger} = "i$(8*sizeof(T))"
-typemax_saturated(_::Type{T}, N) where {T <: BitInteger} = typemax(T) ⊻ (N - 1)
+align_to(x::Integer, N::Integer) = x ⊻ (N - 1)
 
-# Same as `HostCPUFeatures.pick_vector_width`, 
-# but also makes sure that N \in {8, 16, 32, 64}. 
-# If this is not possible, returns N = 1.
-function cutoff8_pick_vector_width(::Type{T}) where {T}
+function pick_compatible_vector_width(::Type{T}) where {T}
     N = pick_vector_width(T)
     if N in (8, 16, 32)
         return Int(N)
@@ -54,12 +51,12 @@ end
     b::Vector{T},
     offset::Int=1
 ) where {T <: BitInteger}
-    N = cutoff8_pick_vector_width(T)
+    N = pick_compatible_vector_width(T)
 
     # Unfortunate case. Default to scalar code.
     if N == 1
         return quote
-            @inbounds for j in 1:length(a)
+            @inbounds for j in (1 + offset):length(a)
                 if a[j] < b[j]
                     return false
                 end
@@ -72,7 +69,7 @@ end
     @assert N in (8, 16, 32, 64)
     B = sizeof(T)
     llvm_t = j_to_llvm_t(T)
-    mask = typemax_saturated(Int, N)
+    mask = align_to(typemax(Int), N)
     textir = """
     define i8 @entry(i64 %0, i64 %1, i64 %2) #0 {
     top:
@@ -149,12 +146,12 @@ end
     b::Vector{T},
     offset::Int=1
 ) where {T <: BitInteger}
-    N = cutoff8_pick_vector_width(T)
+    N = pick_compatible_vector_width(T)
 
     # Unfortunate case. Default to scalar code.
     if N == 1
         return quote
-            @inbounds for j in 1:length(a)
+            @inbounds for j in (1 + offset):length(a)
                 if !iszero(a[j]) && !iszero(b[j])
                     return false
                 end
@@ -167,7 +164,7 @@ end
     @assert N in (8, 16, 32, 64)
     B = sizeof(T)
     llvm_t = j_to_llvm_t(T)
-    mask = typemax_saturated(Int, N)
+    mask = align_to(typemax(Int), N)
     textir = """
     define i8 @entry(i64 %0, i64 %1, i64 %2) #0 {
     top:
@@ -249,7 +246,7 @@ end
     b::Vector{T},
     offset::Int=1
 ) where {T <: BitInteger}
-    N = cutoff8_pick_vector_width(T)
+    N = pick_compatible_vector_width(T)
 
     # Unfortunate case. Default to scalar code.
     if N == 1
@@ -266,7 +263,7 @@ end
     @assert N in (8, 16, 32, 64)
     B = sizeof(T)
     llvm_t = j_to_llvm_t(T)
-    mask = typemax_saturated(Int, N)
+    mask = align_to(typemax(Int), N)
     typecast_iN_to_i64(varname) =
         if N == 64
             ""
@@ -363,7 +360,7 @@ end
     b::Vector{T},
     offset::Int=1
 ) where {T <: BitInteger}
-    N = cutoff8_pick_vector_width(T)
+    N = pick_compatible_vector_width(T)
 
     # Unfortunate case. Default to scalar code.
     if N == 1
@@ -380,7 +377,7 @@ end
     @assert N in (8, 16, 32, 64)
     B = sizeof(T)
     llvm_t = j_to_llvm_t(T)
-    mask = typemax_saturated(Int, N)
+    mask = align_to(typemax(Int), N)
     typecast_iN_to_i64(varname) =
         if N == 64
             ""

@@ -186,29 +186,29 @@ end
 # Process input polynomials on the apply stage
 
 function is_ring_compatible_in_apply(trace, ring, kws)
-    @log level = -7 "" trace.original_ord ring.ord
+    @log :debug "" trace.original_ord ring.ord
     if trace.original_ord != ring.ord
-        @log level = 1_000 """
+        @log :warn """
         In apply, the monomial ordering is different from the one used in learn.
         Apply ordering: $(ring.ord)
         Learn ordering: $(trace.original_ord)"""
         return false
     end
     if trace.ring.nvars != ring.nvars + 2 * trace.homogenize
-        @log level = 1_000 """
+        @log :warn """
         In apply, the polynomial ring has $(ring.nvars) variables, but in learn there were $(trace.ring.nvars) variables 
         (used homogenization in learn: $(trace.homogenize)."""
         return false
     end
     if trace.sweep_output != kws.sweep
-        @log level = 1_000 "Input sweep option ($(kws.sweep)) is different from the one used in learn ($(trace.sweep_output))."
+        @log :warn "Input sweep option ($(kws.sweep)) is different from the one used in learn ($(trace.sweep_output))."
         return false
     end
     if !(kws.monoms === :auto)
-        @log level = 1 "In apply, the argument monoms=$(kws.monoms) was ignored"
+        @log :info 1 "In apply, the argument monoms=$(kws.monoms) was ignored"
     end
     if trace.ring.ch != ring.ch
-        @log level = -1 """
+        @log :misc """
         In apply, the ground field characteristic is $(ring.ch), 
         the learn used a different characteristic: $(trace.ring.ch)"""
         # not an error!
@@ -220,17 +220,17 @@ function is_input_compatible_in_apply(trace, ring, polynomials, kws)
     trace_signature = trace.input_signature
     homogenized = trace.homogenize
     if kws.ordering != InputOrdering()
-        # @log level = 1_000 "In apply, the given option ordering=$(kws.ordering) has no effect and was discarded"
+        # @log :warn "In apply, the given option ordering=$(kws.ordering) has no effect and was discarded"
     end
     if !is_ring_compatible_in_apply(trace, ring, kws)
-        @log level = 1_000 "In apply, the ring of input does not seem to be compatible with the learned trace."
+        @log :warn "In apply, the ring of input does not seem to be compatible with the learned trace."
         return false
     end
     if !(
         length(trace_signature) + count(iszero, polynomials) ==
         length(polynomials) + homogenized
     )
-        @log level = 1_000 "In apply, the number of input polynomials ($(length(polynomials))) is different from the number seen in learn ($(length(trace_signature) + count(iszero, polynomials) - homogenized))."
+        @log :warn "In apply, the number of input polynomials ($(length(polynomials))) is different from the number seen in learn ($(length(trace_signature) + count(iszero, polynomials) - homogenized))."
     end
     true
 end
@@ -280,8 +280,8 @@ function extract_coeffs_raw!(
             iszero(ring.ch) ? -one(C) : (ring.ch - one(ring.ch))
     end
 
-    @log level = -6 "Extracted coefficients from $(length(polys)) polynomials." basis
-    @log level = -8 "Extracted coefficients" basis.coeffs
+    @log :debug "Extracted coefficients from $(length(polys)) polynomials." basis
+    @log :debug "Extracted coefficients" basis.coeffs
     flag, ring
 end
 
@@ -324,8 +324,8 @@ function extract_coeffs_raw_X!(
             iszero(ring.ch) ? -one(C) : (ring.ch - one(ring.ch))
     end
 
-    @log level = -6 "Extracted coefficients from $(length(polys)) polynomials." basis
-    @log level = -8 "Extracted coefficients" basis.coeffs
+    @log :debug "Extracted coefficients from $(length(polys)) polynomials." basis
+    @log :debug "Extracted coefficients" basis.coeffs
     flag, ring
 end
 
@@ -341,10 +341,10 @@ function _extract_coeffs_raw_X!(
     permute_input_terms = !isempty(term_perms)
     permute_homogenizing_terms = !isempty(homog_term_perms)
 
-    @log level = -2 """
+    @log :misc """
     Permuting input terms: $permute_input_terms
     Permuting for homogenization: $permute_homogenizing_terms"""
-    @log level = -7 """Permutations:
+    @log :debug """Permutations:
       Of polynomials: $input_polys_perm
       Of terms (change of ordering): $term_perms
       Of terms (homogenization): $homog_term_perms"""
@@ -353,11 +353,11 @@ function _extract_coeffs_raw_X!(
         poly_index = input_polys_perm[i]
         poly = coeffs_zp[poly_index]
         if isempty(poly)
-            @log level = 1000 "In apply, input contains too many zero polynomials."
+            @log :warn "In apply, input contains too many zero polynomials."
             return false
         end
         if !(length(poly) == length(basis_cfs))
-            @log level = 1000 "In apply, some coefficients in the input cancelled out."
+            @log :warn "In apply, some coefficients in the input cancelled out."
             return false
         end
         for j in 1:length(poly)
@@ -426,8 +426,8 @@ function io_extract_coeffs_raw_batched!(
         basis.coeffs[length(batch[1]) + 1][2] = chars - one(CoeffType)
     end
 
-    @log level = -6 "Extracted coefficients from $(map(length, batch)) polynomials." basis
-    @log level = -8 "Extracted coefficients" basis.coeffs
+    @log :debug "Extracted coefficients from $(map(length, batch)) polynomials." basis
+    @log :debug "Extracted coefficients" basis.coeffs
 
     flag, ring
 end
@@ -443,14 +443,14 @@ function _extract_coeffs_raw!(
     permute_input_terms = !isempty(term_perms)
     permute_homogenizing_terms = !isempty(homog_term_perms)
     if !(basis.nfilled == count(!iszero, polys) + permute_homogenizing_terms)
-        @log level = 1000 "In apply, the number of polynomials in input is different from the learn stage."
+        @log :warn "In apply, the number of polynomials in input is different from the learn stage."
         return false
     end
     polys = filter(!iszero, polys)
-    @log level = -2 """
+    @log :misc """
     Permuting input terms: $permute_input_terms
     Permuting for homogenization: $permute_homogenizing_terms"""
-    @log level = -7 """Permutations:
+    @log :debug """Permutations:
       Of polynomials: $input_polys_perm
       Of terms (change of ordering): $term_perms
       Of terms (homogenization): $homog_term_perms"""
@@ -459,7 +459,7 @@ function _extract_coeffs_raw!(
         poly_index = input_polys_perm[i]
         poly = polys[poly_index]
         if !(length(poly) == length(basis_cfs))
-            @log level = 1000 "In apply, some coefficients in the input cancelled out."
+            @log :warn "In apply, some coefficients in the input cancelled out."
             return false
         end
         for j in 1:length(poly)
@@ -489,7 +489,7 @@ function _io_extract_coeffs_raw_batched!(
     permute_homogenizing_terms = !isempty(homog_term_perms)
     for polys in batch
         if !(basis.nfilled == count(!iszero, polys) + permute_homogenizing_terms)
-            @log level = 1000 "In apply, the number of polynomials in input is different from the learn stage."
+            @log :warn "In apply, the number of polynomials in input is different from the learn stage."
             return false
         end
     end
@@ -497,10 +497,10 @@ function _io_extract_coeffs_raw_batched!(
     batch = map(polys -> filter(!iszero, polys), batch)
     @invariant length(unique(length, batch)) == 1
 
-    @log level = -2 """
+    @log :misc """
     Permuting input terms: $permute_input_terms
     Permuting for homogenization: $permute_homogenizing_terms"""
-    @log level = -7 """Permutations:
+    @log :debug """Permutations:
       Of polynomials: $input_polys_perm
       Of terms (change of ordering): $term_perms
       Of terms (homogenization): $homog_term_perms"""
@@ -511,7 +511,7 @@ function _io_extract_coeffs_raw_batched!(
 
         for batch_idx in 1:length(batch)
             if !(length(batch[batch_idx][poly_index]) == length(basis_cfs))
-                @log level = 1000 "In apply, some coefficients in the input cancelled out."
+                @log :warn "In apply, some coefficients in the input cancelled out."
                 return false
             end
         end
@@ -777,7 +777,7 @@ function _io_convert_to_output(
     input_ordering_matches_output = true
     if params.target_ord != _ord_aa
         input_ordering_matches_output = false
-        @log level = -1 """
+        @log :misc """
           Basis is computed in $(params.target_ord).
           Terms in the output are in $(ord_aa)"""
     end

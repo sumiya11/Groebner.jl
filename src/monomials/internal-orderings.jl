@@ -221,7 +221,7 @@ function io_convert_to_internal_monomial_ordering(
         part_of_a_product=true
     )
     if !isempty(intersect(variable_indices(internal_ord1), variable_indices(internal_ord2)))
-        @log level = -0 """
+        @log :info """
         Two blocks of the product ordering intersect by their variables.
         Block 1: $(ord.ord1)
         Block 2: $(ord.ord2)"""

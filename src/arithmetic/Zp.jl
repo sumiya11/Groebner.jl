@@ -408,7 +408,7 @@ function select_arithmetic(
 
     if hint === :delayed
         if iszero(leading_zeros(characteristic) - (8 >> 1) * sizeof(AccumType))
-            @log level = 1_000 "Cannot use $hint arithmetic with characteristic $characteristic"
+            @log :warn "Cannot use $hint arithmetic with characteristic $characteristic"
             @assert false
         end
         return DelayedArithmeticZp(AccumType, CoeffType, characteristic)

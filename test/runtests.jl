@@ -5,14 +5,12 @@ using AbstractAlgebra
 using Random
 using Groebner
 
-# TODO: test examples in README.md automatcically (https://github.com/thchr/TestReadme.jl)
-# TODO: test examples in the documentation automatcically
+# TODO: test examples in README.md (https://github.com/thchr/TestReadme.jl)
+# TODO: test examples in the documentation
 
 # Check invariants during testing.
-# it's a good idea to turn these on!
 Groebner.invariants_enabled() = true
 Groebner.logging_enabled() = true
-Groebner.logger_update(loglevel=0)
 
 # Taken from JuMP/test/solvers.jl
 function try_import(name::Symbol)

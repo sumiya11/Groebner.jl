@@ -90,7 +90,7 @@ end
     ord::AbstractInternalOrdering,
     params::AlgorithmParameters
 ) where {M <: Monom, C <: Coeff}
-    @log level = -2 """
+    @log :debug """
         Applying FGLM to convert a basis
         from ordering: $(ring.ord)
         to ordering:   $ord"""
@@ -104,12 +104,12 @@ end
     while !isempty(monom_enumerator)
         # Get the next monomial
         monom = enumerator_next_monomial!(monom_enumerator)
-        @log level = -4 "Processing monomial, id = $monom"
+        @log :debug "Processing monomial, id = $monom"
 
         # If the monomial is divisible by any of the elements of the existing
         # staircase, then throw the monomial away
         if staircase_divides_monom(monom, monom_staircase, ht)
-            @log level = -4 "Monomial discarded, id = $monom"
+            @log :debug "Monomial discarded, id = $monom"
             continue
         end
 
@@ -149,7 +149,7 @@ function _fglm_residuals_in_batch!(
     ord::AbstractInternalOrdering,
     params::AlgorithmParameters
 ) where {M <: Monom, C <: Coeff}
-    @log level = -2 """
+    @log :debug """
         Applying FGLM to convert a basis
         from ordering: $(ring.ord)
         to ordering:   $ord"""
@@ -178,7 +178,7 @@ function _fglm_residuals_in_batch!(
             # If the monomial is divisible by any of the elements of the existing
             # staircase, then throw the monomial away
             if staircase_divides_monom(monom, monom_staircase, ht)
-                @log level = -4 "Monomial discarded, id = $monom"
+                @log :debug "Monomial discarded, id = $monom"
                 continue
             end
 

@@ -50,15 +50,10 @@ end
 # Check if the prime is lucky w.r.t. input basis coefficients -- does not divide
 # any of the leading/trailing coefficients
 function isluckyprime(lucky::LuckyPrimes, prime::UInt64)
-    @log level = -3 "Checking if $prime is lucky.."
+    @log :debug "Checking if $prime is lucky.."
     buf = lucky.buf
     p   = BigInt(prime)
     @inbounds for coeffs in lucky.coeffs
-        # for c in coeffs
-        #     if Base.GMP.MPZ.cmp_ui(Base.GMP.MPZ.tdiv_r!(buf, c, p), 0) == 0
-        #         return false
-        #     end
-        # end
         @invariant !isempty(coeffs)
         c = coeffs[1]
         if Base.GMP.MPZ.cmp_ui(Base.GMP.MPZ.tdiv_r!(buf, c, p), 0) == 0

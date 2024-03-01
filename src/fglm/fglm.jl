@@ -9,12 +9,12 @@ function _fglm0(polynomials, ordering_from, ordering_to, kws)
     params =
         AlgorithmParameters(ring, representation, kws, orderings=(ring.ord, ordering_from))
     if isempty(monoms)
-        @log level = -2 "Input consisting of zero polynomials."
+        @log :misc "Input consisting of zero polynomials."
         throw(DomainError("Input consisting of zero polynomials to Groebner.fglm."))
         return io_convert_to_output(ring, polynomials, monoms, coeffs, params)
     end
     if kws.check
-        @log level = -2 "Checking if input is a Grobner basis"
+        @log :misc "Checking if input is a Grobner basis"
         # TODO this is, perhaps, broken!
         if !isgroebner(polynomials, ordering=ordering_from, certify=false)
             throw(DomainError("Input is not a Groebner basis."))
@@ -62,12 +62,12 @@ function _fglm_residuals_in_batch(polynomials, ordering_from, ordering_to, kws)
     params =
         AlgorithmParameters(ring, representation, kws, orderings=(ring.ord, ordering_from))
     if isempty(monoms)
-        @log level = -2 "Input consisting of zero polynomials."
+        @log :misc "Input consisting of zero polynomials."
         throw(DomainError("Input consisting of zero polynomials to Groebner.fglm."))
         return io_convert_to_output(ring, polynomials, monoms, coeffs, params)
     end
     if kws.check
-        @log level = -2 "Checking if input is a Grobner basis"
+        @log :misc "Checking if input is a Grobner basis"
         # TODO this is, perhaps, broken!
         if !isgroebner(polynomials, ordering=ordering_from, certify=false)
             throw(DomainError("Input is not a Groebner basis."))

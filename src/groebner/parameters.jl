@@ -163,7 +163,7 @@ function AlgorithmParameters(
         # algebra to this case by taking more random samples
         if ring.ch < 500
             if linalg === :randomized
-                @log level = -2 """
+                @log :misc """
                 The field characteristic is too small ($(ring.ch)).
                 Switching from randomized linear algebra to a deterministic one."""
             end
@@ -205,10 +205,10 @@ function AlgorithmParameters(
     threaded = kwargs.threaded
     if !(_threaded[])
         if threaded === :yes
-            @log level = 1_000 """
-            You have explicitly provided the keyword argument `threaded = :yes`,
+            @log :warn """
+            You have explicitly provided keyword argument `threaded = :yes`,
             however, multi-threading is disabled globally in Groebner.jl due to
-            the environment variable GROEBNER_NO_THREADED=0
+            the environment variable GROEBNER_NO_THREADED=0.
 
             Consider enabling threading by setting GROEBNER_NO_THREADED to 1"""
         end
@@ -230,7 +230,7 @@ function AlgorithmParameters(
         modular_strategy = :learn_and_apply
     end
     if !reduced
-        @log level = -1 """
+        @log :misc """
         The option reduced=$reduced was passed in the input, 
         falling back to classic multi-modular algorithm."""
         modular_strategy = :classic_modular
@@ -250,7 +250,7 @@ function AlgorithmParameters(
 
     use_flint = kwargs.use_flint
 
-    @log level = -1 """
+    @log :misc """
     Selected parameters:
     target_ord = $target_ord
     computation_ord = $computation_ord

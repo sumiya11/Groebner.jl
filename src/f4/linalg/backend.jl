@@ -16,8 +16,10 @@ function linalg_deterministic_sparse!(
 )
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
-    @log level = -3 "linalg_deterministic_sparse!"
-    @log level = -3 matrix_string_repr(matrix)
+
+    @log :matrix "linalg_deterministic_sparse!"
+    @log :matrix matrix_string_repr(matrix)
+
     # Reduce CD with AB
     linalg_reduce_matrix_lower_part!(matrix, basis, arithmetic)
     # Interreduce CD
@@ -30,8 +32,9 @@ function linalg_deterministic_sparse_interreduction!(
     basis::Basis,
     arithmetic::AbstractArithmetic
 )
-    @log level = -3 "linalg_deterministic_sparse_interreduction!"
-    @log level = -3 matrix_string_repr(matrix)
+    @log :matrix "linalg_deterministic_sparse_interreduction!"
+    @log :matrix matrix_string_repr(matrix)
+
     # Prepare the matrix
     linalg_prepare_matrix_pivots_in_interreduction!(matrix, basis)
     # Interreduce AB

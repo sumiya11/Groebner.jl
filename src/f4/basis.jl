@@ -285,7 +285,7 @@ end
     basis::Basis{C},
     arithmetic::AbstractArithmeticZp{A, C}
 ) where {A <: Union{CoeffZp, CompositeCoeffZp}, C <: Union{CoeffZp, CompositeCoeffZp}}
-    @log level = -5 "Normalizing polynomials in the basis"
+    @log :debug "Normalizing polynomials in the basis"
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.nfilled)
         !isassigned(cfs, i) && continue   # TODO: this is kind of bad
@@ -304,7 +304,7 @@ function basis_normalize!(
     basis::Basis{C},
     arithmetic::AbstractArithmeticQQ
 ) where {C <: CoeffQQ}
-    @log level = -5 "Normalizing polynomials in the basis"
+    @log :debug "Normalizing polynomials in the basis"
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.nfilled)
         !isassigned(cfs, i) && continue

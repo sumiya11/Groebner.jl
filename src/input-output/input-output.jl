@@ -82,18 +82,18 @@ function io_select_polynomial_representation(
     hint::Symbol=:none
 )
     if !(hint in (:none, :large_exponents))
-        @log level = 1_000 "The given hint=$hint was discarded"
+        @log :warn "The given hint=$hint was discarded"
     end
     frontend, npolys, char, nvars, ordering = peek_at_polynomials(polynomials)
     monomtype = io_select_monomtype(char, npolys, nvars, ordering, kws, hint)
     coefftype, using_wide_type_for_coeffs =
         io_select_coefftype(char, npolys, nvars, ordering, kws, hint)
     basering = iszero(char) ? :qq : :zp
-    @log level = -1 "Frontend: $frontend"
-    @log level = -1 """
+    @log :misc "Frontend: $frontend"
+    @log :misc """
     Input: $npolys polynomials over $basering in $nvars variables
     Ordering: $ordering"""
-    @log level = -1 """
+    @log :misc """
     Internal representation: 
     monomials are $monomtype
     coefficients are $coefftype
@@ -102,11 +102,11 @@ function io_select_polynomial_representation(
 end
 
 function io_select_monomtype(char, npolys, nvars, ordering, kws, hint)
-    @log level = -1 """
+    @log :misc """
     Selecting monomial representation.
     Given hint hint=$hint. Keyword argument monoms=$(kws.monoms)"""
     if hint === :large_exponents
-        @log level = -1 "As hint=$hint was provided, using 64 bits per single exponent"
+        @log :misc "As hint=$hint was provided, using 64 bits per single exponent"
         # use 64 bits if large exponents detected
         desired_monom_type = ExponentVector{UInt64}
         @assert monom_is_supported_ordering(desired_monom_type, kws.ordering)
@@ -122,7 +122,7 @@ function io_select_monomtype(char, npolys, nvars, ordering, kws, hint)
             (ordering == :lex && kws.ordering isa InputOrdering)
         )
     )
-        @log level = -1 """
+        @log :misc """
         As homogenize=:yes/:auto was provided, 
         representing monomials as dense exponent vectors"""
         desired_monom_type = ExponentVector{UInt32}
@@ -145,7 +145,7 @@ function io_select_monomtype(char, npolys, nvars, ordering, kws, hint)
         )
             return SparseExponentVector{ExponentSize, Int32, nvars}
         end
-        @log level = 1 """
+        @log :info """
         The given monomial ordering $(kws.ordering) is not implemented for
         $(kws.monoms) monomial representation. Falling back to other monomial
         representations."""
@@ -162,12 +162,12 @@ function io_select_monomtype(char, npolys, nvars, ordering, kws, hint)
             elseif nvars < 4 * variables_per_word
                 return PackedTuple4{UInt64, ExponentSize}
             end
-            @log level = 1 """
+            @log :info """
             Unable to use $(kws.monoms) monomial representation, too many
             variables ($nvars). Falling back to dense monomial
             representation."""
         else
-            @log level = 1 """
+            @log :info """
             The given monomial ordering $(kws.ordering) is not implemented for
             $(kws.monoms) monomial representation. Falling back to dense
             representation."""
@@ -235,7 +235,7 @@ function io_select_coefftype(
     hint;
     using_wide_type_for_coeffs=false
 )
-    @log level = -1 """
+    @log :misc """
     Selecting coefficient representation.
     Given hint hint=$hint. Keyword argument arithmetic=$(kws.arithmetic)"""
 
@@ -257,7 +257,7 @@ function io_select_coefftype(
     if kws.arithmetic === :signed
         if typemax(Int32) < char < typemax(UInt32) ||
            typemax(Int64) < char < typemax(UInt64)
-            @log level = 1_000 "Cannot use $(kws.arithmetic) arithmetic with characteristic $char"
+            @log :warn "Cannot use $(kws.arithmetic) arithmetic with characteristic $char"
             @assert false
         elseif !using_wide_type_for_coeffs
             return tight_signed_type, using_wide_type_for_coeffs
@@ -293,18 +293,18 @@ representation specified by the given `representation`.
 )
     io_check_input(polynomials, kws)
     # NOTE: Input polynomials must not be modified.
-    @log level = -2 "Converting input polynomials to internal representation.."
+    @log :misc "Converting input polynomials to internal representation.."
     ring = extract_ring(polynomials)
     var_to_index, monoms, coeffs = io_extract_polys(representation, ring, polynomials)
-    @log level = -2 "Done converting input polynomials to internal representation."
-    @log level = -6 """
+    @log :misc "Done converting input polynomials to internal representation."
+    @log :debug """
     Polynomials in internal representation:
     Ring: $ring
     Variable to index map: $var_to_index
     Monomials: $monoms
     Coefficients: $coeffs"""
     if dropzeros
-        @log level = -2 "Removing zero polynomials"
+        @log :misc "Removing zero polynomials"
         io_remove_zeros_from_input!(ring, monoms, coeffs)
     end
     ring, var_to_index, monoms, coeffs
@@ -345,7 +345,7 @@ function io_remove_zeros_from_input!(
     filter!(!iszero_monoms, monoms)
     @invariant length(monoms) == length(coeffs)
     iszerobasis = isempty(monoms)
-    @log level = -7 "After removing zero polynomials from input:" monoms coeffs
+    @log :debug "After removing zero polynomials from input:" monoms coeffs
     iszerobasis
 end
 
@@ -359,16 +359,16 @@ function io_set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
     current_ord = ring.ord
     target_ord = params.target_ord
     internal_ord = io_convert_to_internal_monomial_ordering(var_to_index, target_ord)
-    @log level = -2 "Internal ordering:\n$internal_ord"
+    @log :misc "Internal ordering:\n$internal_ord"
     ring = PolyRing(ring.nvars, internal_ord, ring.ch)
     if current_ord == target_ord
         # No reordering of terms needed, the terms are already ordered according
         # to the requested monomial ordering
         return ring, Vector{Vector{Int}}()
     end
-    @log level = -2 "Reordering input polynomial terms from $(current_ord) to $(target_ord)"
+    @log :misc "Reordering input polynomial terms from $(current_ord) to $(target_ord)"
     permutations = sort_input_terms_to_change_ordering!(monoms, coeffs, internal_ord)
-    @log level = -7 "Reordered terms:" monoms coeffs
+    @log :debug "Reordered terms:" monoms coeffs
     ring, permutations
 end
 
@@ -396,10 +396,10 @@ reference).
     params::AlgorithmParameters
 ) where {M <: Monom, C <: Coeff}
     @assert !isempty(polynomials)
-    @log level = -2 "Converting polynomials from internal representation to output format"
+    @log :misc "Converting polynomials from internal representation to output format"
     # NOTE: Internal polynomials must not be modified.
     if isempty(monoms)
-        @log level = -7 "Output is empty, appending an empty placeholder polynomial"
+        @log :debug "Output is empty, appending an empty placeholder polynomial"
         push!(monoms, zero_monoms(M, ring))
         push!(coeffs, zero_coeffs(C, ring))
     end
@@ -414,12 +414,12 @@ end
     params::AlgorithmParameters
 ) where {N, V, M <: Monom, C <: Coeff}
     @assert !any(isempty, batch)
-    @log level = -2 "Converting polynomials from internal representation to output format (batched)"
+    @log :misc "Converting polynomials from internal representation to output format (batched)"
 
     coeffs_unpacked = io_unpack_composite_coefficients(coeffs_packed)
     # NOTE: Internal polynomials must not be modified.
     if isempty(monoms)
-        @log level = -7 "Output is empty, appending an empty placeholder polynomial"
+        @log :debug "Output is empty, appending an empty placeholder polynomial"
         push!(monoms, zero_monoms(M, ring))
         for coeffs in coeffs_unpacked
             push!(coeffs, zero_coeffs(C, ring))
