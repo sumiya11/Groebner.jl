@@ -30,7 +30,7 @@ end
 j_to_llvm_t(_::Type{T}) where {T <: BitInteger} = "i$(8*sizeof(T))"
 align_to(x::Integer, N::Integer) = x ⊻ (N - 1)
 
-function pick_compatible_vector_width(::Type{T}) where {T}
+function pick_vector_width_clamp_8(::Type{T}) where {T}
     N = pick_vector_width(T)
     if N in (8, 16, 32)
         return Int(N)
@@ -51,7 +51,7 @@ end
     b::Vector{T},
     offset::Int=1
 ) where {T <: BitInteger}
-    N = pick_compatible_vector_width(T)
+    N = pick_vector_width_clamp_8(T)
 
     # Unfortunate case. Default to scalar code.
     if N == 1
@@ -146,7 +146,7 @@ end
     b::Vector{T},
     offset::Int=1
 ) where {T <: BitInteger}
-    N = pick_compatible_vector_width(T)
+    N = pick_vector_width_clamp_8(T)
 
     # Unfortunate case. Default to scalar code.
     if N == 1
@@ -246,7 +246,7 @@ end
     b::Vector{T},
     offset::Int=1
 ) where {T <: BitInteger}
-    N = pick_compatible_vector_width(T)
+    N = pick_vector_width_clamp_8(T)
 
     # Unfortunate case. Default to scalar code.
     if N == 1
@@ -360,7 +360,7 @@ end
     b::Vector{T},
     offset::Int=1
 ) where {T <: BitInteger}
-    N = pick_compatible_vector_width(T)
+    N = pick_vector_width_clamp_8(T)
 
     # Unfortunate case. Default to scalar code.
     if N == 1
