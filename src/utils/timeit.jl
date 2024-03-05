@@ -118,7 +118,7 @@ end
 function performance_counters_print(kws)
     (kws.statistics in (:no, :stats)) && return nothing
     if kws.statistics in (:timings, :all) && !performance_counters_enabled()
-        @log level = 1_000 """
+        @log :warn """
         Timings were not collected since `performance_counters_enabled()` is `false`.
         Consider setting `Groebner.performance_counters_enabled()` to `true` and trying again.
         """

@@ -48,7 +48,7 @@ function homogenize_generators!(
     coeffs::Vector{Vector{C}},
     params
 ) where {Ord, T, C <: Coeff}
-    @log level = -1 "Homogenizing generators"
+    @log :misc "Homogenizing generators"
     @assert length(monoms) == length(coeffs)
     nvars = ring.nvars
     new_nvars = nvars + 1
@@ -72,12 +72,12 @@ function homogenize_generators!(
     new_ord = extend_ordering_in_homogenization(ring.ord)
     new_ring = PolyRing(new_nvars, new_ord, ring.ch)
     term_permutation = sort_input_terms_to_change_ordering!(new_monoms, coeffs, new_ord)
-    @log level = -2 """
+    @log :misc """
     Original polynomial ring: 
     $ring
     Homogenized polynomial ring: 
     $new_ring"""
-    @log level = -7 """
+    @log :debug """
     Original monomials: 
     $monoms
     Homogenized monomials: 
@@ -102,8 +102,8 @@ function dehomogenize_generators!(
 ) where {T, C <: Coeff}
     ring_desat, monoms, coeffs = desaturate_generators!(ring, monoms, coeffs, params)
     @assert length(monoms) == length(coeffs)
-    @log level = -1 "De-homogenizing generators.."
-    @log level = -2 "Polynomial ring:\n$ring_desat"
+    @log :misc "De-homogenizing generators.."
+    @log :misc "Polynomial ring:\n$ring_desat"
     nvars = ring_desat.nvars
     @assert nvars > 1
     new_nvars = nvars - 1
@@ -127,12 +127,12 @@ function dehomogenize_generators!(
     new_ord = restrict_ordering_in_dehomogenization(ring_desat.ord)
     new_ring = PolyRing(new_nvars, new_ord, ring_desat.ch)
     sort_input_terms_to_change_ordering!(new_monoms, coeffs, new_ord)
-    @log level = -2 """
+    @log :misc """
     Original polynomial ring: 
     $ring_desat
     De-homogenized polynomial ring: 
     $new_ring"""
-    @log level = -7 """
+    @log :debug """
     Original monomials: 
     $monoms
     De-homogenized monomials: 
@@ -149,7 +149,7 @@ function desaturate_generators!(
     params
 ) where {T, C <: Coeff}
     @assert length(monoms) == length(coeffs)
-    @log level = -1 "De-saturating generators.."
+    @log :misc "De-saturating generators.."
     nvars = ring.nvars
     @assert nvars > 1
     new_nvars = nvars - 1
@@ -183,12 +183,12 @@ function desaturate_generators!(
     resize!(new_monoms, new_size)
     new_ord = restrict_ordering_in_desaturation(ring.ord)
     new_ring = PolyRing(new_nvars, new_ord, ring.ch)
-    @log level = -2 """
+    @log :misc """
     Original polynomial ring: 
     $ring
     De-saturated polynomial ring: 
     $new_ring"""
-    @log level = -7 """
+    @log :debug """
     Original monomials: 
     $monoms
     De-saturated monomials: 
@@ -205,7 +205,7 @@ function saturate_generators_by_variable!(
     sat_var_index
 ) where {T, C <: Coeff}
     @assert length(monoms) == length(coeffs)
-    @log level = -1 "Saturating by variable at index $sat_var_index.."
+    @log :misc "Saturating by variable at index $sat_var_index.."
     nvars = ring.nvars
     new_nvars = nvars + 1
     new_monoms = Vector{Vector{Vector{T}}}(undef, length(monoms))
@@ -237,12 +237,12 @@ function saturate_generators_by_variable!(
     push!(coeffs, new_poly_coeffs)
     new_ord = extend_ordering_in_saturation(ring.ord)
     new_ring = PolyRing(new_nvars, new_ord, ring.ch)
-    @log level = -2 """
+    @log :misc """
     Original polynomial ring: 
     $ring
     Saturated polynomial ring: 
     $new_ring"""
-    @log level = -7 """
+    @log :debug """
     Original monomials: 
     $monoms
     Saturated monomials: 

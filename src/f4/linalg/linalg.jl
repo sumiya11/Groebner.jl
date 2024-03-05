@@ -268,8 +268,8 @@ function _linalg_normalform!(
     arithmetic::AbstractArithmetic
 )
     sort_matrix_upper_rows!(matrix)
-    @log level = -3 "linalg_normalform!"
-    @log level = -3 matrix_string_repr(matrix)
+    @log :matrix "linalg_normalform!"
+    @log :matrix matrix_string_repr(matrix)
 
     linalg_reduce_matrix_lower_part_invariant_pivots!(matrix, basis, arithmetic)
 end
@@ -281,8 +281,8 @@ function _linalg_isgroebner!(
 )
     sort_matrix_upper_rows!(matrix)
     sort_matrix_lower_rows!(matrix)
-    @log level = -3 "linalg_isgroebner!"
-    @log level = -3 matrix_string_repr(matrix)
+    @log :matrix "linalg_isgroebner!"
+    @log :matrix matrix_string_repr(matrix)
 
     linalg_reduce_matrix_lower_part_any_nonzero!(matrix, basis, arithmetic)
 end

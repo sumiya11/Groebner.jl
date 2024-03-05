@@ -7,37 +7,47 @@
 # library.
 
 """
-    @log expr
-    @log level=N expr
+    @log loglevel expr
 
-Logs a record with `expr` as a message.
-Allows to specify the logging level with `level=N`.
+Logs a record `expr` as a message with the given logging level.
+
+Available options for `loglevel` are `:all`, `:debug`, `:info`, `:warn`,
+`:error`.
 
 ## Examples
 
 ```jldoctest
-@log "Hello, world!"
-@log level=1 "Hello, world!"
+@log :info "Hello, world!"
+@log :debug "Hello, world!"
 ```
 """
 macro log end
 
-###
-# Some aux. definitions
+const _loglevels_spelled_out = (:all, :debug, :matrix, :misc, :info, :warn, :no)
+const _loglevel_spell_to_int = Dict(
+    :all    => -1_000_000,
+    :debug  => -5,
+    :matrix => -3,
+    :misc   => -2,
+    :info   => 0,
+    :warn   => 1_000,
+    :no     => 1_000_000
+)
+const _loglevel_default = :info
 
 const _groebner_log_lock = Ref{ReentrantLock}(ReentrantLock())
 
 function meta_formatter_groebner end
 
 @static if VERSION >= v"1.7.0"
-    backend_logger(io, level) = Logging.ConsoleLogger(
+    default_logger(io, level) = Logging.ConsoleLogger(
         io,
         level,
         show_limited=false,
         meta_formatter=meta_formatter_groebner
     )
 else
-    backend_logger(io, level) = Logging.ConsoleLogger(io, level)
+    default_logger(io, level) = Logging.ConsoleLogger(io, level)
 end
 
 ###
@@ -48,7 +58,7 @@ struct GroebnerLogger <: Logging.AbstractLogger
 
     GroebnerLogger() = GroebnerLogger(stderr, Logging.LogLevel(0))
     function GroebnerLogger(io, loglevel::Logging.LogLevel)
-        new(backend_logger(io, loglevel))
+        new(default_logger(io, loglevel))
     end
 end
 
@@ -128,27 +138,29 @@ end
 ###
 # The @log macro
 
-@noinline __throw_log_macro_error(file, line, error) =
-    throw(ArgumentError("Invalid syntax for @log macro. $error"))
+@noinline __throw_log_macro_error(file, line, error) = throw(
+    ArgumentError("""$error
+                  Use as `@log loglevel message`, where `loglevel` is the logging level.
+                  Supported logging levels are $_loglevels_spelled_out.""")
+)
 
 const _default_message_loglevel = Logging.Info
 
 # Parses the arguments to the @log macro and returns a tuple of expressions that
 # would evaluate to (loglevel, msg1, msg2, ...).
 function log_macro_pruneargs(file, line, args)
-    length(args) < 1 &&
-        __throw_log_macro_error(file, line, "Argument list must be non-empty")
-    level = _default_message_loglevel
-    length(args) == 1 && return level, args
-    if args[1] isa Expr && args[1].head == :(=)
-        args[1].args[1] != :level && __throw_log_macro_error(
-            file,
-            line,
-            "Use `@log level=N expr` to log a message with a certain loglevel."
-        )
-        level = args[1].args[2]
-        args = args[2:end]
-    end
+    length(args) < 2 &&
+        __throw_log_macro_error(file, line, "Argument list must contain 2 arguments.")
+    !(
+        args[1] isa Integer ||
+        (args[1] isa QuoteNode && args[1].value in _loglevels_spelled_out)
+    ) && __throw_log_macro_error(
+        file,
+        line,
+        "Invalid logging level: $(args[1]) of type $(typeof(args[1]))"
+    )
+    level = args[1] isa Integer ? args[1] : _loglevel_spell_to_int[args[1].value]
+    args = args[2:end]
     level, args
 end
 
@@ -210,7 +222,7 @@ macro log_memory_locals(names...)
             end
             message *=
                 "Joint size: " * "$(Base.format_bytes(Base.summarysize(values(locals))))"
-            @log level = -1 message
+            @log :misc message
         else
             nothing
         end

@@ -9,7 +9,7 @@ function _normalform0(polynomials, to_be_reduced, kws::KeywordsHandler)
     ring, var_to_index1, monoms, coeffs =
         io_convert_to_internal(polynomial_repr, polynomials, kws)
     if isempty(monoms)
-        @log level = -2 "Input basis consisting of zero polynomials only."
+        @log :misc "Input basis consisting of zero polynomials only."
         return to_be_reduced
     end
     ring_to_be_reduced, var_to_index2, monoms_to_be_reduced, coeffs_to_be_reduced =
@@ -17,7 +17,7 @@ function _normalform0(polynomials, to_be_reduced, kws::KeywordsHandler)
     var_to_index = merge(var_to_index1, var_to_index2)
     nonzero_indices = findall(!iszero_coeffs, coeffs_to_be_reduced)
     if isempty(nonzero_indices)
-        @log level = -2 "Polynomials to be reduced are all zero."
+        @log :misc "Polynomials to be reduced are all zero."
         return to_be_reduced
     end
     monoms_to_be_reduced_nonzero = monoms_to_be_reduced[nonzero_indices]
@@ -33,7 +33,7 @@ function _normalform0(polynomials, to_be_reduced, kws::KeywordsHandler)
     )
     @invariant ring.nvars == ring_to_be_reduced.nvars && ring.ch == ring_to_be_reduced.ch
     if kws.check
-        @log level = -2 "As `check=true` was provided, checking that the given input is indeed a Groebner basis"
+        @log :misc "As `check=true` was provided, checking that the given input is indeed a Groebner basis"
         if !_isgroebner1(ring, monoms, coeffs, params)
             __not_a_basis_error(
                 polynomials,
@@ -41,7 +41,7 @@ function _normalform0(polynomials, to_be_reduced, kws::KeywordsHandler)
             )
         end
     end
-    @log level = -2 """
+    @log :misc """
       Finalized polynomial rings:
       Basis: $ring
       To be reduced: $ring_"""
@@ -56,7 +56,7 @@ function _normalform0(polynomials, to_be_reduced, kws::KeywordsHandler)
         coeffs_to_be_reduced_nonzero,
         params
     )
-    @log level = -6 """After normal form: 
+    @log :debug """After normal form: 
     Monoms: $monoms_reduced 
     Coeffs: $coeffs_reduced"""
     monoms_to_be_reduced[nonzero_indices] .= monoms_reduced
@@ -76,7 +76,7 @@ end
     coeffs_to_be_reduced::Vector{Vector{C}},
     params
 ) where {M <: Monom, C <: Coeff}
-    @log level = -3 "Initializing structs for F4"
+    @log :debug "Initializing structs for F4"
     basis, _, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
     tobereduced = basis_initialize_using_existing_hashtable(
         ring,
@@ -84,7 +84,7 @@ end
         coeffs_to_be_reduced,
         hashtable
     )
-    @log level = -7 """
+    @log :debug """
       Polynomials in internal representation before reduction:
       Basis: $basis
       To be reduced: $tobereduced

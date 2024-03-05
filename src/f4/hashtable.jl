@@ -127,7 +127,7 @@ function hashtable_initialize(
     # use_divmask = true
     dmbits = 8 * sizeof(DivisionMask)
     compress_divmask = nvars > dmbits
-    @log level = -5 "Using division masks: $use_divmask. Using $dmbits bits. Compressed: $compress_divmask"
+    @log :debug "Using division masks: $use_divmask. Using $dmbits bits. Compressed: $compress_divmask"
     ndivbits = div(dmbits, nvars)
     # division mask stores at least 1 bit
     # per each of first ndivvars variables

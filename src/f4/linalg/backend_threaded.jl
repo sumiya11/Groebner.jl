@@ -16,8 +16,10 @@ function linalg_deterministic_sparse_threaded!(
 )
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
-    @log level = -3 "linalg_deterministic_sparse!"
-    @log level = -3 matrix_string_repr(matrix)
+
+    @log :matrix "linalg_deterministic_sparse!"
+    @log :matrix matrix_string_repr(matrix)
+
     # Reduce CD with AB
     linalg_reduce_matrix_lower_part_threaded_cas!(matrix, basis, arithmetic)
     # Interreduce CD
@@ -42,7 +44,7 @@ function linalg_reduce_matrix_lower_part_threaded_cas!(
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     if nthreads() == 1
-        @log level = 0 """
+        @log :info """
         Using multi-threaded linear algebra with nthreads() == 1.
         Something probably went wrong."""
     end

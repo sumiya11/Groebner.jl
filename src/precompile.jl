@@ -20,15 +20,23 @@
         isgroebner(arr)
         normalform(arr, arr)
 
+        R, (x, y) =
+            AbstractAlgebra.polynomial_ring(AbstractAlgebra.GF(2^31 - 1), ["x", "y"])
+        arr = [x^2 * y + x * y + 1, x * y^5 + y^4 + 1]
+        gb = groebner(arr, ordering=DegRevLex())
+
+        trace, gb = groebner_learn(arr, ordering=DegRevLex())
+        flag, gb = groebner_apply!(trace, arr)
+
         R, (x, y) = AbstractAlgebra.polynomial_ring(
             AbstractAlgebra.GF(2^31 - 1),
             ["x", "y"],
             internal_ordering=:degrevlex
         )
         arr = [x^2 * y + x * y + 1, x * y^5 + y^4 + 1]
-        gb = groebner(arr, ordering=DegRevLex())
+        gb = groebner(arr)
 
-        trace, gb = groebner_learn(arr, ordering=DegRevLex())
+        trace, gb = groebner_learn(arr)
         flag, gb = groebner_apply!(trace, arr)
     end
 end

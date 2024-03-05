@@ -53,7 +53,7 @@ function trace_initialize(
     permutation::Vector{Int},
     params::AlgorithmParameters
 )
-    @log level = -5 "Initializing the F4 trace"
+    @log :debug "Initializing the F4 trace"
 
     input_signature = Vector{Int}(undef, input_basis.nfilled)
     @inbounds for i in 1:length(input_signature)
@@ -285,7 +285,7 @@ function get_trace!(wrapped_trace::WrappedTraceF4, char, kwargs)
 
     # Handle the case when a wider coefficient type is required
     new_coefftype = io_get_tight_unsigned_int_type(char)
-    @log level = -2 "Creating a new trace with coefficient type $new_coefftype"
+    @log :misc "Creating a new trace with coefficient type $new_coefftype"
     new_trace = trace_copy(trace, new_coefftype, deepcopy=false)
     wrapped_trace.recorded_traces[(new_coefftype, 0)] = new_trace
 
@@ -304,7 +304,7 @@ function get_trace!(
 
     rings = map(extract_ring, batch)
     chars = map(ring -> ring.ch, rings)
-    @log level = -2 """
+    @log :misc """
     Determining a suitable coefficient type for the apply stage with characteristics $chars.
     On the learn stage, the coefficients were of type $coefftype, 
     and the $(typeof(default_trace.params.arithmetic)) arithmetic was used."""
@@ -316,7 +316,7 @@ function get_trace!(
     new_coefftype = if tight_signed_type == signed(tight_unsigned_type)
         tight_signed_type
     else
-        @log level = 1 """
+        @log :info """
         In the given batch of polynomials, the coefficient fields have
         characteristics $(chars) that do not fit into $(signed(tight_unsigned_type)),
         which may affect performance negatively.
@@ -328,13 +328,13 @@ function get_trace!(
     end
     composite_coefftype = CompositeInt{N, new_coefftype}
 
-    @log level = -2 """
+    @log :misc """
     Will be storing polynomial coefficients as $composite_coefftype on the apply stage."""
 
     # Try to find a suitable trace among the existing ones
     for id in keys(wrapped_trace.recorded_traces)
         if id[1] <: composite_coefftype
-            @log level = -2 "Re-using an existing trace with id = $id"
+            @log :misc "Re-using an existing trace with id = $id"
             return wrapped_trace.recorded_traces[id]
         end
     end

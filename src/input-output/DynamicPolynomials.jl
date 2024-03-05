@@ -163,7 +163,7 @@ function _io_convert_to_output(
     ord_dp = MultivariatePolynomials.ordering(origpolys[1])
     _ord_dp = dp_ordering_sym2typed(dp_ord_to_symbol(ord_dp))
     if params.target_ord != _ord_dp
-        @log level = -1 """
+        @log :misc """
           Basis is computed in $(params.target_ord).
           Terms in the output are in $(_ord_dp)"""
     end

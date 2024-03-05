@@ -139,7 +139,7 @@ function matrix_ncols_filled(matrix::MacaulayMatrix)
 end
 
 # Initializes an empty matrix with coefficients of type T
-@timeit function matrix_initialize(ring::PolyRing, ::Type{T}) where {T <: Coeff}
+function matrix_initialize(ring::PolyRing, ::Type{T}) where {T <: Coeff}
     MacaulayMatrix(
         Vector{Vector{ColumnLabel}}(),
         Vector{Vector{ColumnLabel}}(),

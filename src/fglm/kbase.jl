@@ -7,12 +7,12 @@ function _kbase0(polynomials, kws)
         io_convert_to_internal(representation, polynomials, kws)
     params = AlgorithmParameters(ring, representation, kws)
     if isempty(monoms)
-        @log level = -2 "Input consisting of zero polynomials."
+        @log :misc "Input consisting of zero polynomials."
         throw(DomainError("Input consisting of zero polynomials to Groebner.kbase."))
         return io_convert_to_output(ring, polynomials, monoms, coeffs, params)
     end
     if kws.check
-        @log level = -2 "Checking if a Grobner basis"
+        @log :misc "Checking if a Grobner basis"
         if !isgroebner(polynomials)
             throw(DomainError("Input is not a Groebner basis."))
         end

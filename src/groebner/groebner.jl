@@ -15,7 +15,7 @@ function _groebner0(polynomials, kws::KeywordsHandler)
         return _groebner1(polynomials, kws, polynomial_repr)
     catch err
         if isa(err, MonomialDegreeOverflow)
-            @log level = 1 """
+            @log :info """
             Possible overflow of exponent vector detected. 
             Restarting with at least $(32) bits per exponent."""
             polynomial_repr =
@@ -43,7 +43,7 @@ function _groebner1(polynomials, kws::KeywordsHandler, representation)
 
     # Fast path for the input of zeros
     if isempty(monoms)
-        @log level = -2 "Input consisting of zero polynomials. Returning zero."
+        @log :misc "Input consisting of zero polynomials. Returning zero."
         return io_convert_to_output(ring, polynomials, monoms, coeffs, params)
     end
 
@@ -77,7 +77,7 @@ end
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffZp}
     # NOTE: we can mutate ring, monoms, and coeffs here.
-    @log level = -1 "Backend: F4 over Z_$(ring.ch)"
+    @log :misc "Backend: F4 over Z_$(ring.ch)"
     # NOTE: the sorting of input polynomials is not deterministic across
     # different Julia versions when sorting only w.r.t. the leading term
     basis, pairset, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
@@ -139,7 +139,7 @@ function _groebner_learn_and_apply(
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
     # NOTE: we can mutate ring, monoms, and coeffs here.
-    @log level = -1 "Backend: learn & apply multi-modular F4"
+    @log :misc "Backend: learn & apply multi-modular F4"
 
     # Initialize supporting structs
     state = GroebnerState{BigInt, C, CoeffModular}(params)
@@ -150,22 +150,22 @@ function _groebner_learn_and_apply(
 
     # Scale the input coefficients to integers to speed up the subsequent search
     # for lucky primes
-    @log level = -5 "Input polynomials" basis
-    @log level = -2 "Clearing the denominators of the input polynomials"
+    @log :debug "Input polynomials" basis
+    @log :debug "Clearing the denominators of the input polynomials"
     basis_zz = clear_denominators!(state.buffer, basis, deepcopy=false)
-    @log level = -5 "Integer coefficients are" basis_zz.coeffs
+    @log :debug "Integer coefficients are" basis_zz.coeffs
 
     # Handler for lucky primes
     luckyprimes = LuckyPrimes(basis_zz.coeffs)
     prime = next_lucky_prime!(luckyprimes)
-    @log level = -2 "The first lucky prime is $prime"
-    @log level = -2 "Reducing input generators modulo $prime"
+    @log :misc "The first lucky prime is $prime"
+    @log :misc "Reducing input generators modulo $prime"
 
     # Perform reduction modulo prime and store result in basis_ff
     ring_ff, basis_ff = reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
-    @log level = -5 "Reduced coefficients are" basis_ff.coeffs
+    @log :debug "Reduced coefficients are" basis_ff.coeffs
 
-    @log level = -5 "Before F4" basis_ff
+    @log :debug "Before F4" basis_ff
     params_zp = params_mod_p(params, prime)
     trace = trace_initialize(
         ring_ff,
@@ -177,26 +177,26 @@ function _groebner_learn_and_apply(
     )
 
     f4_learn!(trace, ring_ff, trace.gb_basis, pairset, hashtable, params_zp)
-    @log level = -5 "After F4:" trace.gb_basis
+    @log :debug "After F4:" trace.gb_basis
 
     # TODO: no need to deepcopy!
     push!(state.gb_coeffs_ff_all, deepcopy(trace.gb_basis.coeffs))
 
     # Reconstruct coefficients and write results to the accumulator.
     # CRT reconstrction is trivial here.
-    @log level = -2 "Reconstructing coefficients from Z_$prime to QQ"
+    @log :misc "Reconstructing coefficients from Z_$prime to QQ"
     if crt_algorithm === :incremental
         full_incremental_crt_reconstruct!(state, luckyprimes)
     else
         full_simultaneous_crt_reconstruct!(state, luckyprimes)
     end
     success_reconstruct = full_rational_reconstruct!(state, luckyprimes, params.use_flint)
-    @log level = -5 "Reconstructed coefficients" state.gb_coeffs_qq
-    @log level = -2 "Successfull reconstruction: $success_reconstruct"
+    @log :debug "Reconstructed coefficients" state.gb_coeffs_qq
+    @log :misc "Successfull reconstruction: $success_reconstruct"
 
     correct_basis = false
     if success_reconstruct
-        @log level = -2 "Verifying the correctness of reconstruction"
+        @log :misc "Verifying the correctness of reconstruction"
         correct_basis = correctness_check!(
             state,
             luckyprimes,
@@ -207,7 +207,7 @@ function _groebner_learn_and_apply(
             hashtable,
             params
         )
-        @log level = -2 "Passed correctness check: $correct_basis"
+        @log :misc "Passed correctness check: $correct_basis"
         # At this point, if the constructed basis is correct, we return it.
         if correct_basis
             # take monomials from the basis modulo a prime
@@ -223,7 +223,7 @@ function _groebner_learn_and_apply(
     primes_used = 1
     batchsize = 1
     batchsize_scaling = 0.10
-    @log level = -2 """
+    @log :misc """
     Preparing to compute bases in batches.. 
     The initial size of the batch is $batchsize. 
     The batch scale factor is $batchsize_scaling."""
@@ -260,12 +260,12 @@ function _groebner_learn_and_apply(
 
     iters = 0
     while !correct_basis
-        @log level = -2 "Iteration # $iters of modular Groebner, batchsize: $batchsize"
+        @log :misc "Iteration # $iters of modular Groebner, batchsize: $batchsize"
 
         if iszero(batchsize % 4) && params.batched
             for j in 1:4:batchsize
                 prime_4x = ntuple(_ -> Int32(next_lucky_prime!(luckyprimes)), 4)
-                @log level = -3 "The lucky primes are $prime_4x"
+                @log :debug "The lucky primes are $prime_4x"
 
                 # Perform reduction modulo primes and store result in basis_ff_4x
                 ring_ff_4x, basis_ff_4x =
@@ -306,7 +306,7 @@ function _groebner_learn_and_apply(
         else
             for j in 1:batchsize
                 prime = next_lucky_prime!(luckyprimes)
-                @log level = -3 "The lucky prime is $prime"
+                @log :debug "The lucky prime is $prime"
 
                 # Perform reduction modulo prime and store result in basis_ff
                 ring_ff, basis_ff =
@@ -321,7 +321,7 @@ function _groebner_learn_and_apply(
                 push!(state.gb_coeffs_ff_all, deepcopy(trace.gb_basis.coeffs))
 
                 if !majority_vote!(state, trace.gb_basis, nothing, params)
-                    @log level = -3 "Majority vote is not conclusive, aborting reconstruction!"
+                    @log :debug "Majority vote is not conclusive, aborting reconstruction!"
                     continue
                 end
 
@@ -339,22 +339,22 @@ function _groebner_learn_and_apply(
             partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
         end
 
-        @log level = -2 "Partially reconstructing coefficients to QQ"
-        @log level = -4 "Partially reconstructing coefficients from Z_$(luckyprimes.modulo * prime) to QQ"
+        @log :misc "Partially reconstructing coefficients to QQ"
+        @log :debug "Partially reconstructing coefficients from Z_$(luckyprimes.modulo * prime) to QQ"
         success_reconstruct = partial_rational_reconstruct!(
             state,
             luckyprimes,
             indices_selection,
             params.use_flint
         )
-        @log level = -2 "Partial reconstruction successfull: $success_reconstruct"
-        @log level = -2 """
+        @log :misc "Partial reconstruction successfull: $success_reconstruct"
+        @log :misc """
           Used $(primes_used) primes in total over $(iters + 1) iterations.
           The current batch size is $batchsize.
           """
 
         if !success_reconstruct
-            @log level = -2 "Partial rational reconstruction failed"
+            @log :misc "Partial rational reconstruction failed"
             iters += 1
             batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
             continue
@@ -364,7 +364,7 @@ function _groebner_learn_and_apply(
             success_check =
                 heuristic_correctness_check(state.selected_coeffs_qq, luckyprimes.modulo)
             if !success_check
-                @log level = -2 "Heuristic check failed for partial reconstruction"
+                @log :misc "Heuristic check failed for partial reconstruction"
                 iters += 1
                 batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
                 continue
@@ -372,7 +372,7 @@ function _groebner_learn_and_apply(
         end
 
         # Perform full reconstruction
-        @log level = -2 "Performing full CRT and rational reconstruction.."
+        @log :misc "Performing full CRT and rational reconstruction.."
         if crt_algorithm === :incremental
             full_incremental_crt_reconstruct!(state, luckyprimes)
         else
@@ -382,7 +382,7 @@ function _groebner_learn_and_apply(
             full_rational_reconstruct!(state, luckyprimes, params.use_flint)
 
         if !success_reconstruct
-            @log level = -2 "Full reconstruction failed"
+            @log :misc "Full reconstruction failed"
             iters += 1
             batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
             continue
@@ -403,8 +403,8 @@ function _groebner_learn_and_apply(
         batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
     end
 
-    @log level = -2 "Correctness check passed!"
-    @log level = -2 "Used $(primes_used) primes in total over $(iters) iterations"
+    @log :misc "Correctness check passed!"
+    @log :misc "Used $(primes_used) primes in total over $(iters) iterations"
 
     # Construct the output basis.
     # Take monomials from the basis modulo a prime
@@ -425,9 +425,9 @@ function _groebner_learn_and_apply_threaded(
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
     # NOTE: we can mutate ring, monoms, and coeffs here.
-    @log level = -1 "Backend: threaded learn & apply multi-modular F4"
+    @log :misc "Backend: threaded learn & apply multi-modular F4"
     if nthreads() == 1
-        @log level = 0 "Using threaded backend with nthreads() == 1, how did we end up here?"
+        @log :info "Using threaded backend with nthreads() == 1, how did we end up here?"
     end
 
     # Initialize supporting structs
@@ -439,22 +439,22 @@ function _groebner_learn_and_apply_threaded(
 
     # Scale the input coefficients to integers to speed up the subsequent search
     # for lucky primes
-    @log level = -5 "Input polynomials" basis
-    @log level = -2 "Clearing the denominators of the input polynomials"
+    @log :debug "Input polynomials" basis
+    @log :misc "Clearing the denominators of the input polynomials"
     basis_zz = clear_denominators!(state.buffer, basis, deepcopy=false)
-    @log level = -5 "Integer coefficients are" basis_zz.coeffs
+    @log :debug "Integer coefficients are" basis_zz.coeffs
 
     # Handler for lucky primes
     luckyprimes = LuckyPrimes(basis_zz.coeffs)
     prime = next_lucky_prime!(luckyprimes)
-    @log level = -2 "The first lucky prime is $prime"
-    @log level = -2 "Reducing input generators modulo $prime"
+    @log :misc "The first lucky prime is $prime"
+    @log :misc "Reducing input generators modulo $prime"
 
     # Perform reduction modulo prime and store result in basis_ff
     ring_ff, basis_ff = reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
-    @log level = -5 "Reduced coefficients are" basis_ff.coeffs
+    @log :debug "Reduced coefficients are" basis_ff.coeffs
 
-    @log level = -5 "Before F4" basis_ff
+    @log :debug "Before F4" basis_ff
     params_zp = params_mod_p(params, prime)
     trace = trace_initialize(
         ring_ff,
@@ -466,26 +466,26 @@ function _groebner_learn_and_apply_threaded(
     )
 
     f4_learn!(trace, ring_ff, trace.gb_basis, pairset, hashtable, params_zp)
-    @log level = -5 "After F4:" trace.gb_basis
+    @log :debug "After F4:" trace.gb_basis
 
     # TODO: no need to deepcopy!
     push!(state.gb_coeffs_ff_all, deepcopy(trace.gb_basis.coeffs))
 
     # Reconstruct coefficients and write results to the accumulator.
     # CRT reconstrction is trivial here.
-    @log level = -2 "Reconstructing coefficients from Z_$prime to QQ"
+    @log :misc "Reconstructing coefficients from Z_$prime to QQ"
     if crt_algorithm === :incremental
         full_incremental_crt_reconstruct!(state, luckyprimes)
     else
         full_simultaneous_crt_reconstruct!(state, luckyprimes)
     end
     success_reconstruct = full_rational_reconstruct!(state, luckyprimes, params.use_flint)
-    @log level = -5 "Reconstructed coefficients" state.gb_coeffs_qq
-    @log level = -2 "Successfull reconstruction: $success_reconstruct"
+    @log :debug "Reconstructed coefficients" state.gb_coeffs_qq
+    @log :misc "Successfull reconstruction: $success_reconstruct"
 
     correct_basis = false
     if success_reconstruct
-        @log level = -2 "Verifying the correctness of reconstruction"
+        @log :misc "Verifying the correctness of reconstruction"
         correct_basis = correctness_check!(
             state,
             luckyprimes,
@@ -496,7 +496,7 @@ function _groebner_learn_and_apply_threaded(
             hashtable,
             params
         )
-        @log level = -2 "Passed correctness check: $correct_basis"
+        @log :misc "Passed correctness check: $correct_basis"
         # At this point, if the constructed basis is correct, we return it.
         if correct_basis
             # take monomials from the basis modulo a prime
@@ -512,7 +512,7 @@ function _groebner_learn_and_apply_threaded(
     primes_used = 1
     batchsize = (min(32, 4 * nthreads()) + 3) & (~3)
     batchsize_scaling = 0.10
-    @log level = -2 """
+    @log :misc """
     Preparing to compute bases in batches.. 
     The initial size of the batch is $batchsize. 
     The batch scale factor is $batchsize_scaling."""
@@ -559,7 +559,7 @@ function _groebner_learn_and_apply_threaded(
 
     iters = 0
     while !correct_basis
-        @log level = -2 "Iteration # $iters of modular Groebner, batchsize: $batchsize"
+        @log :misc "Iteration # $iters of modular Groebner, batchsize: $batchsize"
 
         @invariant iszero(batchsize % 4)
 
@@ -608,7 +608,7 @@ function _groebner_learn_and_apply_threaded(
 
         threadbuf_gb_coeffs_union = reduce(vcat, threadbuf_gb_coeffs)
 
-        # @log level = -1 "" basis_coeffs_buffer_union
+        # @log :misc "" basis_coeffs_buffer_union
 
         sort!(threadbuf_gb_coeffs_union, by=first)
         for (_, coeffs_ff_) in threadbuf_gb_coeffs_union
@@ -619,22 +619,22 @@ function _groebner_learn_and_apply_threaded(
             partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
         end
 
-        @log level = -2 "Partially reconstructing coefficients to QQ"
-        @log level = -4 "Partially reconstructing coefficients from Z_$(luckyprimes.modulo * prime) to QQ"
+        @log :misc "Partially reconstructing coefficients to QQ"
+        @log :debug "Partially reconstructing coefficients from Z_$(luckyprimes.modulo * prime) to QQ"
         success_reconstruct = partial_rational_reconstruct!(
             state,
             luckyprimes,
             indices_selection,
             params.use_flint
         )
-        @log level = -2 "Partial reconstruction successfull: $success_reconstruct"
-        @log level = -2 """
+        @log :misc "Partial reconstruction successfull: $success_reconstruct"
+        @log :misc """
           Used $(length(luckyprimes.primes)) primes in total over $(iters + 1) iterations.
           The current batch size is $batchsize.
           """
 
         if !success_reconstruct
-            @log level = -2 "Partial rational reconstruction failed"
+            @log :misc "Partial rational reconstruction failed"
             iters += 1
             batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
             continue
@@ -644,7 +644,7 @@ function _groebner_learn_and_apply_threaded(
             success_check =
                 heuristic_correctness_check(state.selected_coeffs_qq, luckyprimes.modulo)
             if !success_check
-                @log level = -2 "Heuristic check failed for partial reconstruction"
+                @log :misc "Heuristic check failed for partial reconstruction"
                 iters += 1
                 batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
                 continue
@@ -652,7 +652,7 @@ function _groebner_learn_and_apply_threaded(
         end
 
         # Perform full reconstruction
-        @log level = -2 "Performing full CRT and rational reconstruction.."
+        @log :misc "Performing full CRT and rational reconstruction.."
         if crt_algorithm === :incremental
             full_incremental_crt_reconstruct!(state, luckyprimes)
         else
@@ -662,7 +662,7 @@ function _groebner_learn_and_apply_threaded(
             full_rational_reconstruct!(state, luckyprimes, params.use_flint)
 
         if !success_reconstruct
-            @log level = -2 "Full reconstruction failed"
+            @log :misc "Full reconstruction failed"
             iters += 1
             batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
             continue
@@ -683,8 +683,8 @@ function _groebner_learn_and_apply_threaded(
         batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
     end
 
-    @log level = -2 "Correctness check passed!"
-    @log level = -2 "Used $(length(luckyprimes.primes)) primes in total over $(iters) iterations"
+    @log :misc "Correctness check passed!"
+    @log :misc "Used $(length(luckyprimes.primes)) primes in total over $(iters) iterations"
 
     # Construct the output basis.
     # Take monomials from the basis modulo a prime
@@ -705,7 +705,7 @@ function _groebner_classic_modular(
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
     # NOTE: we can mutate ring, monoms, and coeffs here.
-    @log level = -1 "Backend: classic multi-modular F4"
+    @log :misc "Backend: classic multi-modular F4"
 
     # Initialize supporting structs
     state = GroebnerState{BigInt, C, CoeffModular}(params)
@@ -717,25 +717,25 @@ function _groebner_classic_modular(
 
     # Scale the input coefficients to integers to speed up the subsequent search
     # for lucky primes
-    @log level = -5 "Input polynomials" basis
-    @log level = -2 "Clearing the denominators of the input polynomials"
+    @log :debug "Input polynomials" basis
+    @log :misc "Clearing the denominators of the input polynomials"
     basis_zz = clear_denominators!(state.buffer, basis, deepcopy=false)
-    @log level = -5 "Integer coefficients are" basis_zz.coeffs
+    @log :debug "Integer coefficients are" basis_zz.coeffs
 
     # Handler for lucky primes
     luckyprimes = LuckyPrimes(basis_zz.coeffs)
     prime = next_lucky_prime!(luckyprimes)
-    @log level = -2 "The first lucky prime is $prime"
-    @log level = -2 "Reducing input generators modulo $prime"
+    @log :misc "The first lucky prime is $prime"
+    @log :misc "Reducing input generators modulo $prime"
 
     # Perform reduction modulo prime and store result in basis_ff
     ring_ff, basis_ff = reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
-    @log level = -5 "Reduced coefficients are" basis_ff.coeffs
+    @log :debug "Reduced coefficients are" basis_ff.coeffs
 
-    @log level = -5 "Before F4" basis_ff
+    @log :debug "Before F4" basis_ff
     params_zp = params_mod_p(params, prime)
     f4!(ring_ff, basis_ff, pairset, hashtable, tracer, params_zp)
-    @log level = -5 "After F4:" basis_ff
+    @log :debug "After F4:" basis_ff
     # NOTE: basis_ff may not own its coefficients, one should not mutate it
     # directly further in the code
 
@@ -743,19 +743,19 @@ function _groebner_classic_modular(
 
     # Reconstruct coefficients and write results to the accumulator.
     # CRT reconstrction is trivial here.
-    @log level = -2 "Reconstructing coefficients from Z_$prime to QQ"
+    @log :misc "Reconstructing coefficients from Z_$prime to QQ"
     if crt_algorithm === :incremental
         full_incremental_crt_reconstruct!(state, luckyprimes)
     else
         full_simultaneous_crt_reconstruct!(state, luckyprimes)
     end
     success_reconstruct = full_rational_reconstruct!(state, luckyprimes, params.use_flint)
-    @log level = -5 "Reconstructed coefficients" state.gb_coeffs_qq
-    @log level = -2 "Successfull reconstruction: $success_reconstruct"
+    @log :debug "Reconstructed coefficients" state.gb_coeffs_qq
+    @log :misc "Successfull reconstruction: $success_reconstruct"
 
     correct_basis = false
     if success_reconstruct
-        @log level = -2 "Verifying the correctness of reconstruction"
+        @log :misc "Verifying the correctness of reconstruction"
         correct_basis = correctness_check!(
             state,
             luckyprimes,
@@ -766,7 +766,7 @@ function _groebner_classic_modular(
             hashtable,
             params
         )
-        @log level = -2 "Passed correctness check: $correct_basis"
+        @log :misc "Passed correctness check: $correct_basis"
         # At this point, if the constructed basis is correct, we return it.
         if correct_basis
             # take monomials from the basis modulo a prime
@@ -782,13 +782,13 @@ function _groebner_classic_modular(
     primes_used = 1
     batchsize = 1
     batchsize_scaling = 0.10
-    @log level = -2 """
+    @log :misc """
     Preparing to compute bases in batches.. 
     The initial size of the batch is $batchsize. 
     The batch scale factor is $batchsize_scaling."""
 
     if !tracer.ready_to_use
-        @log level = -2 """
+        @log :misc """
           The tracer is disabled until the shape of the basis is not determined via majority vote.
           The threshold for the majority vote is $(params.majority_threshold)
           """
@@ -822,12 +822,12 @@ function _groebner_classic_modular(
 
     iters = 0
     while !correct_basis
-        @log level = -2 "Iteration # $iters of modular Groebner"
+        @log :misc "Iteration # $iters of modular Groebner"
 
         for j in 1:batchsize
             prime = next_lucky_prime!(luckyprimes)
-            @log level = -3 "The lucky prime is $prime"
-            @log level = -3 "Reducing input generators modulo $prime"
+            @log :debug "The lucky prime is $prime"
+            @log :debug "Reducing input generators modulo $prime"
 
             # Perform reduction modulo prime and store result in basis_ff
             ring_ff, basis_ff =
@@ -839,7 +839,7 @@ function _groebner_classic_modular(
             push!(state.gb_coeffs_ff_all, basis_ff.coeffs)
 
             if !majority_vote!(state, basis_ff, tracer, params)
-                @log level = -3 "Majority vote is not conclusive, aborting reconstruction!"
+                @log :debug "Majority vote is not conclusive, aborting reconstruction!"
                 continue
             end
 
@@ -852,22 +852,22 @@ function _groebner_classic_modular(
             partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
         end
 
-        @log level = -2 "Partially reconstructing coefficients to QQ"
-        @log level = -4 "Partially reconstructing coefficients from Z_$(luckyprimes.modulo * prime) to QQ"
+        @log :misc "Partially reconstructing coefficients to QQ"
+        @log :debug "Partially reconstructing coefficients from Z_$(luckyprimes.modulo * prime) to QQ"
         success_reconstruct = partial_rational_reconstruct!(
             state,
             luckyprimes,
             indices_selection,
             params.use_flint
         )
-        @log level = -2 "Partial reconstruction successfull: $success_reconstruct"
-        @log level = -2 """
+        @log :misc "Partial reconstruction successfull: $success_reconstruct"
+        @log :misc """
           Used $(length(luckyprimes.primes)) primes in total over $(iters + 1) iterations.
           The current batch size is $batchsize.
           """
 
         if !success_reconstruct
-            @log level = -2 "Partial rational reconstruction failed"
+            @log :misc "Partial rational reconstruction failed"
             iters += 1
             batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
             continue
@@ -877,7 +877,7 @@ function _groebner_classic_modular(
             success_check =
                 heuristic_correctness_check(state.selected_coeffs_qq, luckyprimes.modulo)
             if !success_check
-                @log level = -2 "Heuristic check failed for partial reconstruction"
+                @log :misc "Heuristic check failed for partial reconstruction"
                 iters += 1
                 batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
                 continue
@@ -885,7 +885,7 @@ function _groebner_classic_modular(
         end
 
         # Perform full reconstruction
-        @log level = -2 "Performing full CRT and rational reconstruction.."
+        @log :misc "Performing full CRT and rational reconstruction.."
         if crt_algorithm === :incremental
             full_incremental_crt_reconstruct!(state, luckyprimes)
         else
@@ -895,7 +895,7 @@ function _groebner_classic_modular(
             full_rational_reconstruct!(state, luckyprimes, params.use_flint)
 
         if !success_reconstruct
-            @log level = -2 "Full reconstruction failed"
+            @log :misc "Full reconstruction failed"
             iters += 1
             batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
             continue
@@ -916,8 +916,8 @@ function _groebner_classic_modular(
         batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
     end
 
-    @log level = -2 "Correctness check passed!"
-    @log level = -2 "Used $(length(luckyprimes.primes)) primes in total over $(iters) iterations"
+    @log :misc "Correctness check passed!"
+    @log :misc "Used $(length(luckyprimes.primes)) primes in total over $(iters) iterations"
 
     # Construct the output basis.
     # Take monomials from the basis modulo a prime

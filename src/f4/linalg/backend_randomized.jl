@@ -17,8 +17,10 @@ function linalg_randomized_sparse!(
 )
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
-    @log level = -3 "linalg_randomized_sparse!"
-    @log level = -3 matrix_string_repr(matrix)
+
+    @log :matrix "linalg_randomized_sparse!"
+    @log :matrix matrix_string_repr(matrix)
+
     # Reduce CD with AB
     linalg_randomized_reduce_matrix_lower_part!(matrix, basis, arithmetic, rng)
     # Interreduce CD
@@ -50,9 +52,10 @@ function linalg_randomized_reduce_matrix_lower_part!(
     _, ncols = size(matrix)
     _, nlow = matrix_nrows_filled(matrix)
     if nlow <= 2
-        @log level = -4 """
+        @log :debug """
         Too few rows in the matrix. 
-        Consider switching to another backend to avoid the overhead of randomization."""
+        Consider switching to another backend to avoid the overhead of randomization.
+        TODO"""
     end
 
     # Prepare the matrix
@@ -63,7 +66,7 @@ function linalg_randomized_reduce_matrix_lower_part!(
     nblocks = linalg_nblocks_in_randomized(nlow)
     rem = nlow % nblocks == 0 ? 0 : 1
     rowsperblock = div(nlow, nblocks) + rem
-    @log level = -3 """
+    @log :matrix """
     Rows in the lower part: $nlow
     The bumber of blocks: $nblocks
     Rows per block: $rowsperblock"""

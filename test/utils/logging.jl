@@ -30,6 +30,10 @@ using Logging
         basis2 = @test_logs Groebner.kbase(f2, loglevel=-3)
         @test basis1 == basis2
         @test_throws AssertionError Groebner.kbase(f2, loglevel=:pkrst)
+
+        gb1 = @test_logs Groebner.groebner(f, loglevel=:debug)
+        gb1 = @test_logs Groebner.groebner(f, loglevel=:info)
+        gb1 = @test_logs Groebner.groebner(f, loglevel=:warn)
     end
 
     # Simple tests with logging disabled

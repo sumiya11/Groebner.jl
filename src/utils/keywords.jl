@@ -2,8 +2,6 @@
 
 # Handling keyword arguments in the interface
 
-const _default_loglevel = 0
-
 #! format: off
 # Syntax formatting is disabled for the next several lines.
 #
@@ -18,7 +16,7 @@ const _supported_kw_args = (
         monoms      = :auto,
         arithmetic  = :auto,
         seed        = 42,
-        loglevel    = _default_loglevel,
+        loglevel    = _loglevel_default,
         maxpairs    = typemax(Int),   # NOTE: maybe use Inf?
         selection   = :auto,
         modular     = :auto,
@@ -33,7 +31,7 @@ const _supported_kw_args = (
         check       = false,
         ordering    = InputOrdering(),
         monoms      = :dense,
-        loglevel    = _default_loglevel,
+        loglevel    = _loglevel_default,
         statistics  = :no
     ),
     isgroebner = (
@@ -41,28 +39,28 @@ const _supported_kw_args = (
         certify     = true,
         seed        = 42,
         monoms      = :dense,
-        loglevel    = _default_loglevel,
+        loglevel    = _loglevel_default,
         statistics  = :no
     ),
     kbase = (
         check       = false,
         ordering    = InputOrdering(),
         monoms      = :dense,
-        loglevel    = _default_loglevel,
+        loglevel    = _loglevel_default,
         statistics  = :no
     ),
     fglm = (
         check       = false,
         monoms      = :dense,
         statistics  = :no,
-        loglevel    = _default_loglevel,
+        loglevel    = _loglevel_default,
     ),
     groebner_learn = (
         seed        = 42,
         ordering    = InputOrdering(),
         monoms      = :auto,
         arithmetic  = :auto,
-        loglevel    = _default_loglevel,
+        loglevel    = _loglevel_default,
         homogenize  = :auto,
         sweep       = true,
         statistics  = :no,
@@ -73,7 +71,7 @@ const _supported_kw_args = (
         ordering    = InputOrdering(),
         monoms      = :auto,
         arithmetic  = :auto,
-        loglevel    = _default_loglevel,
+        loglevel    = _loglevel_default,
         sweep       = true,
         statistics  = :no,
         threaded    = :auto,
@@ -148,10 +146,19 @@ struct KeywordsHandler{Ord}
         `:auto`, `:delayed`, `:signed`, `:basic`"""
 
         seed = get(kws, :seed, get(default_kw_args, :seed, 42))
-        loglevel = get(kws, :loglevel, get(default_kw_args, :loglevel, 0))
-        @assert loglevel isa Integer """
-        Not recognized logging level: $loglevel::$(typeof(loglevel))
-        Values passed to keyword "loglevel" must be integers."""
+
+        loglevel_int_or_sym =
+            get(kws, :loglevel, get(default_kw_args, :loglevel, _loglevel_default))
+        @assert loglevel_int_or_sym isa Integer ||
+                loglevel_int_or_sym in _loglevels_spelled_out """
+        Not recognized logging level: $loglevel_int_or_sym.
+        Value passed to keyword "loglevel" must be either an integer or one of $_loglevels_spelled_out."""
+
+        loglevel = if loglevel_int_or_sym in _loglevels_spelled_out
+            _loglevel_spell_to_int[loglevel_int_or_sym]
+        else
+            loglevel_int_or_sym
+        end
 
         maxpairs = get(kws, :maxpairs, get(default_kw_args, :maxpairs, typemax(Int)))
         @assert maxpairs > 0 "The limit on the number of critical pairs must be positive"

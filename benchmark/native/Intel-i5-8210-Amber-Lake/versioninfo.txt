@@ -1,0 +1,9 @@
+Julia Version 1.9.1
+Commit 147bdf428cd (2023-06-07 08:27 UTC)
+Platform Info:
+  OS: macOS (x86_64-apple-darwin22.4.0)
+  CPU: 4 × Intel(R) Core(TM) i5-8210Y CPU @ 1.60GHz
+  WORD_SIZE: 64
+  LIBM: libopenlibm
+  LLVM: libLLVM-14.0.6 (ORCJIT, skylake)
+  Threads: 1 on 4 virtual cores

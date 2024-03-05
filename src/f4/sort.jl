@@ -54,7 +54,7 @@ function sort_polys_by_lead_increasing!(
     abc...;
     ord::Ord=hashtable.ord
 ) where {Ord <: AbstractInternalOrdering}
-    @log level = -4 "Sorting polynomials by their leading terms in non-decreasing order"
+    @log :debug "Sorting polynomials by their leading terms in non-decreasing order"
 
     b_monoms = basis.monoms
     h_monoms = hashtable.monoms

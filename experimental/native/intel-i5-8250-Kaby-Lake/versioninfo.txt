@@ -1,9 +1,0 @@
-Julia Version 1.9.1
-Commit 147bdf428c (2023-06-07 08:27 UTC)
-Platform Info:
-  OS: Windows (x86_64-w64-mingw32)
-  CPU: 8 × Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz
-  WORD_SIZE: 64
-  LIBM: libopenlibm
-  LLVM: libLLVM-14.0.6 (ORCJIT, skylake)
-  Threads: 1 on 8 virtual cores

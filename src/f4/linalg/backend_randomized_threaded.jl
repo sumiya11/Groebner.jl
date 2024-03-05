@@ -17,8 +17,10 @@ function linalg_randomized_sparse_threaded!(
 )
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
-    @log level = -3 "linalg_randomized_sparse_threaded!"
-    @log level = -3 matrix_string_repr(matrix)
+
+    @log :matrix "linalg_randomized_sparse_threaded!"
+    @log :matrix matrix_string_repr(matrix)
+
     # Reduce CD with AB
     if true
         linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
@@ -53,12 +55,13 @@ function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
     _, ncols = size(matrix)
     nup, nlow = matrix_nrows_filled(matrix)
     if nlow <= 2
-        @log level = -4 """
+        @log :debug """
         Too few rows in the matrix. 
-        Consider switching to another backend to avoid the overhead of randomization."""
+        Consider switching to another backend to avoid the overhead of randomization.
+        TODO"""
     end
     if nthreads() == 1
-        @log level = 0 """
+        @log :info """
         Using multi-threaded linear algebra with nthreads() == 1.
         Something probably went wrong."""
     end

@@ -273,7 +273,7 @@ end
 # state.gb_coeffs_zz inplace
 function full_incremental_crt_reconstruct!(state::GroebnerState, lucky::LuckyPrimes)
     if isempty(state.gb_coeffs_zz)
-        @log level = -2 "Using full trivial CRT reconstruction"
+        @log :misc "Using full trivial CRT reconstruction"
         coeffs_ff = state.gb_coeffs_ff_all[1]
         resize_state_if_needed!(state, coeffs_ff)
         gb_coeffs_zz = state.gb_coeffs_zz
@@ -287,7 +287,7 @@ function full_incremental_crt_reconstruct!(state::GroebnerState, lucky::LuckyPri
     end
     # @invariant length(coeffs_ff) == length(state.gb_coeffs_zz)
 
-    @log level = -2 "Using full CRT reconstruction"
+    @log :misc "Using full CRT reconstruction"
     gb_coeffs_zz = state.gb_coeffs_zz
     prev_gb_coeffs_zz = state.prev_gb_coeffs_zz
     is_crt_reconstructed_mask = state.is_crt_reconstructed_mask
@@ -355,7 +355,7 @@ end
 
 function full_simultaneous_crt_reconstruct!(state::GroebnerState, lucky::LuckyPrimes)
     if isempty(state.gb_coeffs_zz)
-        @log level = -2 "Using full trivial CRT reconstruction"
+        @log :misc "Using full trivial CRT reconstruction"
         coeffs_ff = state.gb_coeffs_ff_all[1]
         resize_state_if_needed!(state, coeffs_ff)
         gb_coeffs_zz = state.gb_coeffs_zz
@@ -369,7 +369,7 @@ function full_simultaneous_crt_reconstruct!(state::GroebnerState, lucky::LuckyPr
     end
     # @invariant length(coeffs_ff) == length(state.gb_coeffs_zz)
 
-    @log level = -2 "Using full CRT reconstruction"
+    @log :misc "Using full CRT reconstruction"
     gb_coeffs_zz = state.gb_coeffs_zz
     prev_gb_coeffs_zz = state.prev_gb_coeffs_zz
     is_crt_reconstructed_mask = state.is_crt_reconstructed_mask
@@ -413,7 +413,7 @@ function full_simultaneous_crt_reconstruct!(state::GroebnerState, lucky::LuckyPr
     moduli = lucky.primes
     crt_precompute!(M, n1, n2, mults, moduli)
 
-    @log level = -6 "Using simultaneous CRT with moduli $moduli"
+    @log :debug "Using simultaneous CRT with moduli $moduli"
 
     @inbounds for i in 1:length(gb_coeffs_zz)
         for j in 2:length(gb_coeffs_zz[i])
@@ -454,7 +454,7 @@ end
     is_crt_reconstructed_mask = state.is_crt_reconstructed_mask
 
     if length(selected_prev_coeffs_zz) < length(indices_selection)
-        @log level = -2 "Using partial incremental trivial CRT"
+        @log :misc "Using partial incremental trivial CRT"
         resize!(selected_prev_coeffs_zz, length(indices_selection))
         resize!(selected_coeffs_zz, length(indices_selection))
         resize!(selected_coeffs_qq, length(indices_selection))
@@ -471,7 +471,7 @@ end
         return nothing
     end
 
-    @log level = -3 "Using partial incremental CRT"
+    @log :debug "Using partial incremental CRT"
 
     @inbounds for i in 1:length(indices_selection)
         Base.GMP.MPZ.set!(selected_prev_coeffs_zz[i], selected_coeffs_zz[i])
@@ -502,7 +502,7 @@ end
 
     Base.GMP.MPZ.mul_ui!(lucky.modulo, last(lucky.primes))
     state.prev_index += 1
-    @log level = -3 "After:" lucky.modulo state.prev_index
+    @log :debug "After:" lucky.modulo state.prev_index
 
     nothing
 end
@@ -526,12 +526,12 @@ end
     n = length(lucky.primes) - prev_index
     @invariant n > 0
     if n == 1
-        @log level = -2 "Since there is only 1 new modulo, using incremental CRT"
+        @log :misc "Since there is only 1 new modulo, using incremental CRT"
         partial_incremental_crt_reconstruct!(state, lucky, indices_selection)
         return nothing
     end
 
-    @log level = -2 "Using partial simultaneous CRT on range $(prev_index + 1)..$(length(lucky.primes))"
+    @log :misc "Using partial simultaneous CRT on range $(prev_index + 1)..$(length(lucky.primes))"
 
     @invariant n > 1
     @inbounds for i in 1:length(indices_selection)
@@ -559,7 +559,7 @@ end
     Base.GMP.MPZ.set!(M0, lucky.modulo)
     crt_precompute!(MM0, n1, n2, invm1, M0, invm2, M)
 
-    @log level = -6 "Using simultaneous CRT with moduli $moduli" lucky.modulo M0 M MM0
+    @log :debug "Using simultaneous CRT with moduli $moduli" lucky.modulo M0 M MM0
 
     @inbounds for i in 1:length(indices_selection)
         i1, i2 = indices_selection[i]

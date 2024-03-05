@@ -20,7 +20,7 @@ function _groebner_learn0(polynomials, kws::KeywordsHandler)
         return _groebner_learn1(polynomials, kws, polynomial_repr)
     catch err
         if isa(err, MonomialDegreeOverflow)
-            @log level = 1 """
+            @log :info """
             Possible overflow of exponent vector detected. 
             Restarting with at least $(32) bits per exponent."""
             polynomial_repr =
@@ -37,7 +37,7 @@ function _groebner_learn1(polynomials, kws, representation)
     ring, var_to_index, monoms, coeffs =
         io_convert_to_internal(representation, polynomials, kws)
     if isempty(monoms)
-        @log level = -2 "Input consisting of zero polynomials. Error will follow"
+        @log :misc "Input consisting of zero polynomials. Error will follow"
         throw(DomainError("In learn, input consisting of zero polynomials."))
     end
 
@@ -60,7 +60,7 @@ function _groebner_learn1(polynomials, kws, representation)
     end
     trace.representation = representation
     trace.term_sorting_permutations = term_sorting_permutations
-    @log level = -7 """Sorting permutations:
+    @log :debug """Sorting permutations:
     Terms: $(term_sorting_permutations)
     Polynomials: $(trace.input_permutation)"""
 
@@ -74,13 +74,13 @@ function _groebner_learn2(
     coeffs::Vector{Vector{C}},
     params
 ) where {C <: CoeffZp}
-    @log level = -2 "Groebner learn phase over Z_p"
+    @log :misc "Groebner learn phase over Z_p"
     # Initialize F4 structs
     trace, basis, pairset, hashtable =
         f4_initialize_structs_with_trace(ring, monoms, coeffs, params)
-    @log level = -5 "Before F4:" basis
+    @log :debug "Before F4:" basis
     f4_learn!(trace, ring, trace.gb_basis, pairset, hashtable, params)
-    @log level = -5 "After F4:" basis
+    @log :debug "After F4:" basis
     gb_monoms, gb_coeffs = basis_export_data(trace.gb_basis, trace.hashtable)
     trace, gb_monoms, gb_coeffs
 end
@@ -95,7 +95,7 @@ function _groebner_apply0!(
     kws::KeywordsHandler
 )
     trace = get_trace!(wrapped_trace, polynomials, kws)
-    @log level = -5 "Selected trace" trace.representation.coefftype
+    @log :debug "Selected trace" trace.representation.coefftype
 
     flag, ring = extract_coeffs_raw!(trace, trace.representation, polynomials, kws)
     !flag && return (flag, polynomials)
@@ -127,7 +127,7 @@ function _groebner_apply0!(
     kws::KeywordsHandler
 ) where {N, T <: AbstractVector}
     trace = get_trace!(wrapped_trace, batch, kws)
-    @log level = -5 "Selected trace" trace.representation.coefftype
+    @log :debug "Selected trace" trace.representation.coefftype
 
     flag, ring = io_extract_coeffs_raw_batched!(trace, trace.representation, batch, kws)
     !flag && return flag, batch
@@ -154,8 +154,8 @@ function _groebner_apply0!(
 end
 
 function _groebner_apply1!(ring, trace, params)
-    @log level = -1 "Groebner Apply phase"
-    @log level = -2 "Applying modulo $(ring.ch)"
+    @log :misc "Groebner Apply phase"
+    @log :misc "Applying modulo $(ring.ch)"
 
     flag = f4_apply!(trace, ring, trace.buf_basis, params)
 
@@ -191,7 +191,7 @@ function groebner_applyX!(
     statistics_setup(kws)
 
     trace = get_trace!(wrapped_trace, modulo, kws)
-    @log level = -5 "Selected trace" trace.representation.coefftype
+    @log :debug "Selected trace" trace.representation.coefftype
 
     flag, ring = extract_coeffs_raw_X!(trace, trace.representation, coeffs_zp, modulo, kws)
     !flag && return (flag, coeffs_zp)

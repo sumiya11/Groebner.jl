@@ -32,10 +32,10 @@
     normalize_input=true,
     sort_input=true
 ) where {M <: Monom, C <: Coeff}
-    @log level = -5 "Initializing structs.."
+    @log :debug "Initializing structs.."
 
     tablesize = hashtable_select_initial_size(ring, monoms)
-    @log level = -5 "Initial hashtable size is $tablesize"
+    @log :debug "Initial hashtable size is $tablesize"
 
     # Basis for storing basis elements,
     # Pairset for storing critical pairs of basis elements,
@@ -130,7 +130,7 @@ end
 
     matrix_resize_upper_part_if_needed!(matrix, ncols + symbol_load)
 
-    @log level = -5 "Finding reducers in the basis..." basis.nnonredundant
+    @log :debug "Finding reducers in the basis..." basis.nnonredundant
 
     # 3. Traverse all monomials in symbol_ht and search for a polynomial reducer
     #    for each monomial.
@@ -167,7 +167,7 @@ function f4_autoreduce!(
     symbol_ht::MonomialHashtable{M},
     params
 ) where {M}
-    @log level = -5 "Entering autoreduction" basis
+    @log :debug "Entering autoreduction" basis
 
     etmp = monom_construct_const_monom(M, ht.nvars)
     # etmp is now set to zero, and has zero hash
@@ -493,7 +493,6 @@ function f4_select_critical_pairs!(
     end
     pairset.load -= npairs
 
-    # @log level = -5 "Selected $npairs pairs of degree $deg from pairset, $(pairset.load) pairs left"
     # @stat critical_pairs_deg = deg critical_pairs_count = npairs
 
     deg, npairs
@@ -650,7 +649,7 @@ function basis_well_formed(key, ring, basis, hashtable)
         else
             length(basis.coeffs[i]) == length(basis.monoms[i]) && continue
             if key in (:input_f4_apply!, :output_f4_apply!)
-                @log level = 1_000 """
+                @log :warn """
                 key: $key
                 Unlucky but perhaps not fatal cancellation in polynomial at index $(i) on apply stage.
                 The number of monomials (expected): $(length(basis.monoms[i]))
@@ -696,7 +695,7 @@ end
     @invariant basis_well_formed(:input_f4!, ring, basis, hashtable)
     # @invariant pairset_well_formed(:input_f4!, pairset, basis, ht)
 
-    @log level = -3 "Entering F4."
+    @log :debug "Entering F4."
     basis_normalize!(basis, params.arithmetic)
 
     matrix = matrix_initialize(ring, C)
@@ -706,18 +705,18 @@ end
     symbol_ht = hashtable_initialize_secondary(hashtable)
 
     # add the first batch of critical pairs to the pairset
-    @log level = -4 "Processing initial polynomials, generating first critical pairs"
+    @log :debug "Processing initial polynomials, generating first critical pairs"
     pairset_size = f4_update!(pairset, basis, hashtable, update_ht)
     update_tracer_pairset!(tracer, pairset_size)
-    @log level = -4 "Out of $(basis.nfilled) polynomials, $(basis.nprocessed) are non-redundant"
-    @log level = -4 "Generated $(pairset.load) critical pairs"
+    @log :debug "Out of $(basis.nfilled) polynomials, $(basis.nprocessed) are non-redundant"
+    @log :debug "Generated $(pairset.load) critical pairs"
 
     i = 0
     # While there are pairs to be reduced
     while !isempty(pairset)
         i += 1
-        @log level = -4 "F4: iteration $i"
-        @log level = -4 "F4: available $(pairset.load) pairs"
+        @log :debug "F4: iteration $i"
+        @log :debug "F4: available $(pairset.load) pairs"
 
         @log_memory_locals basis pairset hashtable update_ht symbol_ht
 
@@ -749,7 +748,7 @@ end
             symbol_ht,
             maxpairs=params.maxpairs
         )
-        @log level = -3 "After normal selection: available $(pairset.load) pairs"
+        @log :debug "After normal selection: available $(pairset.load) pairs"
 
         f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
 
@@ -772,7 +771,7 @@ end
         # symbol_ht = hashtable_initialize_secondary(hashtable)
 
         if i > 10_000
-            @log level = 1_000 "Something has gone wrong in F4. Error will follow."
+            @log :warn "Something has gone wrong in F4. Error will follow."
             @log_memory_locals
             __throw_maximum_iterations_exceeded_in_f4(i)
         end
@@ -784,14 +783,14 @@ end
     set_final_basis!(tracer, basis.nfilled)
 
     if params.sweep
-        @log level = -4 "Sweeping redundant elements in the basis"
+        @log :debug "Sweeping redundant elements in the basis"
         basis_sweep_redundant!(basis, hashtable)
     end
 
     basis_mark_redundant_elements!(basis)
 
     if params.reduced
-        @log level = -4 "Autoreducing the final basis.."
+        @log :debug "Autoreducing the final basis.."
         f4_autoreduce!(ring, basis, matrix, hashtable, symbol_ht, params)
     end
 
@@ -815,7 +814,7 @@ end
     matrix = matrix_initialize(ring, C)
     symbol_ht = hashtable_initialize_secondary(hashtable)
     update_ht = hashtable_initialize_secondary(hashtable)
-    @log level = -3 "Forming S-polynomials"
+    @log :debug "Forming S-polynomials"
     f4_update!(pairset, basis, hashtable, update_ht)
     isempty(pairset) && return true
     # Fill the F4 matrix

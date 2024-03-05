@@ -20,8 +20,10 @@ function linalg_randomized_hashcolumns_sparse!(
 )
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
-    @log level = -3 "linalg_randomized_hashcolumns_sparse!"
-    @log level = -3 matrix_string_repr(matrix)
+
+    @log :matrix "linalg_randomized_hashcolumns_sparse!"
+    @log :matrix matrix_string_repr(matrix)
+
     # Reduce CD with AB
     linalg_randomized_hashcolumns_reduce_matrix_lower_part!(matrix, basis, arithmetic, rng)
     # Interreduce CD
@@ -38,8 +40,8 @@ function linalg_direct_rref_sparse!(
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
 
-    @log level = -3 "linalg_direct_rref_sparse!"
-    @log level = -3 matrix_string_repr(matrix)
+    @log :matrix "linalg_direct_rref_sparse!"
+    @log :matrix matrix_string_repr(matrix)
 
     # Produce the RREF of AB
     linalg_interreduce_matrix_upper_part!(matrix, basis, arithmetic)
@@ -59,8 +61,8 @@ function linalg_direct_rref_sparsedense!(
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
 
-    @log level = -3 "linalg_direct_rref_sparse!"
-    @log level = -3 matrix_string_repr(matrix)
+    @log :matrix "linalg_direct_rref_sparse!"
+    @log :matrix matrix_string_repr(matrix)
 
     # Produce the RREF of AB
     linalg_interreduce_matrix_upper_part_sparsedense!(matrix, basis, arithmetic)
