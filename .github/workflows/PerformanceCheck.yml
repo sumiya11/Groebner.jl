@@ -27,4 +27,4 @@ jobs:
             Pkg.add(["ArgParse", "Test", "TestSetExtensions", "Random", "GitHubActions", "Logging", "AbstractAlgebra", "Nemo"]);
             using GitHubActions, Logging;
             global_logger(GitHubActionsLogger());
-            include("perf/CI-scripts/runtests.jl")'
+            include("benchmark/CI-scripts/runtests.jl")'
