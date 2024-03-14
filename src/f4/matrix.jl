@@ -109,6 +109,8 @@ mutable struct MacaulayMatrix{T <: Coeff}
     use_preallocated_buffers::Bool
     preallocated_buffer1_load::Int
     preallocated_buffer1::Vector{Vector{ColumnLabel}}
+
+    changematrix::Vector{Dict{Tuple{Int, MonomId}, T}}
 end
 
 # The number of allocated (not necessarily filled) rows and columns in the
@@ -164,7 +166,8 @@ function matrix_initialize(ring::PolyRing, ::Type{T}) where {T <: Coeff}
         Vector{Int8}(),
         false,
         0,
-        Vector{Vector{ColumnLabel}}()
+        Vector{Vector{ColumnLabel}}(),
+        Vector{Dict{Tuple{Int, MonomId}, T}}()
     )
 end
 
@@ -306,14 +309,28 @@ end
 # end
 
 ###
+# Change matrix
+
+function matrix_changematrix_initialize!(matrix::MacaulayMatrix{T}, n) where {T <: Coeff}
+    resize!(matrix.changematrix, n)
+    for i in 1:length(matrix.changematrix)
+        matrix.changematrix[i] = Dict{Tuple{Int, MonomId}, T}()
+    end
+    nothing
+end
+
+###
+# Stuff
 
 function matrix_convert_rows_to_basis_elements!(
     matrix::MacaulayMatrix,
-    basis::Basis,
+    basis::Basis{C},
     ht::MonomialHashtable,
-    symbol_ht::MonomialHashtable
-)
+    symbol_ht::MonomialHashtable,
+    params::AlgorithmParameters
+) where {C}
     # We mutate the basis directly by adding new elements
+    @log :debug "# new pivots: $(matrix.npivots)"
 
     basis_resize_if_needed!(basis, matrix.npivots)
     rows = matrix.lower_rows
@@ -330,6 +347,25 @@ function matrix_convert_rows_to_basis_elements!(
         basis.coeffs[crs + i] = matrix.some_coeffs[matrix.lower_to_coeffs[colidx]]
         basis.monoms[crs + i] = matrix.lower_rows[i]
         @invariant length(basis.coeffs[crs + i]) == length(basis.monoms[crs + i])
+    end
+
+    if params.changematrix
+        resize!(basis.changematrix, basis.nfilled + matrix.npivots)
+        for i in 1:(matrix.npivots)
+            basis.changematrix[crs + i] = Dict{Int, Dict{MonomId, C}}()
+            for ((poly_idx, poly_mult), cf) in matrix.changematrix[i]
+                basis_changematrix_addmul!(
+                    basis,
+                    ht,
+                    symbol_ht,
+                    crs + i,
+                    poly_idx,
+                    poly_mult,
+                    cf,
+                    params.arithmetic
+                )
+            end
+        end
     end
 
     basis.nfilled += matrix.npivots

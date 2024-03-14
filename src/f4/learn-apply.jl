@@ -55,9 +55,9 @@ function standardize_basis_in_learn!(
     resize!(basis.divmasks, basis.nprocessed)
     resize!(basis.nonredundant, basis.nprocessed)
     resize!(basis.isredundant, basis.nprocessed)
-    perm = sort_polys_by_lead_increasing!(basis, ht, ord=ord)
+    perm = sort_polys_by_lead_increasing!(basis, ht, false, ord=ord)
     trace.output_sort_indices = perm
-    basis_normalize!(basis, arithmetic)
+    basis_normalize!(basis, arithmetic, false)
 end
 
 function matrix_compute_pivot_signature(pivots::Vector{Vector{MonomId}}, from::Int, sz::Int)
@@ -84,7 +84,7 @@ function reduction_learn!(
 )
     matrix_fill_column_to_monom_map!(matrix, symbol_ht)
     linalg_main!(matrix, basis, params, trace, linalg=LinearAlgebra(:learn, :sparse))
-    matrix_convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht)
+    matrix_convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht, params)
     pivot_indices =
         map(i -> Int32(basis.monoms[basis.nprocessed + i][1]), 1:(matrix.npivots))
     push!(trace.matrix_pivot_indices, pivot_indices)
@@ -144,7 +144,7 @@ function f4_reducegb_learn!(
 
     linalg_autoreduce!(matrix, basis, params, trace, linalg=LinearAlgebra(:learn, :sparse))
 
-    matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
+    matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht, params)
 
     basis.nfilled = matrix.npivots + basis.nprocessed
     basis.nprocessed = matrix.npivots
@@ -191,7 +191,7 @@ end
     @invariant params.reduced
 
     @log :debug "Entering F4 Learn phase."
-    basis_normalize!(basis, params.arithmetic)
+    basis_normalize!(basis, params.arithmetic, params.changematrix)
 
     matrix = matrix_initialize(ring, C)
 
@@ -355,7 +355,7 @@ function reduction_apply!(
         return (false, false)
     end
 
-    matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
+    matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht, params)
 
     # Check that the leading terms were not reduced to zero accidentally
     pivot_indices = trace.matrix_pivot_indices[f4_iteration]
@@ -557,7 +557,7 @@ function autoreduce_f4_apply!(
         @log :warn "In apply, the final autoreduction of the basis failed"
         return false
     end
-    matrix_convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht)
+    matrix_convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht, params)
 
     basis.nfilled = matrix.npivots + basis.nprocessed
     basis.nprocessed = matrix.npivots
@@ -585,7 +585,7 @@ function standardize_basis_in_apply!(ring::PolyRing, trace::TraceF4, arithmetic)
     end
     buf.nprocessed = buf.nnonredundant = 0
     buf.nfilled = trace.input_basis.nfilled
-    basis_normalize!(basis, arithmetic)
+    basis_normalize!(basis, arithmetic, false)
 end
 
 @timeit function f4_apply!(
@@ -597,7 +597,7 @@ end
     @invariant basis_well_formed(:input_f4_apply!, ring, basis, trace.hashtable)
     @invariant params.reduced
 
-    basis_normalize!(basis, params.arithmetic)
+    basis_normalize!(basis, params.arithmetic, params.changematrix)
 
     iters_total = length(trace.matrix_infos) - 1
     iters = 0

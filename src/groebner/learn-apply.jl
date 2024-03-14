@@ -9,7 +9,7 @@
 # Proxy function for handling exceptions.
 # NOTE: probably at some point we'd want to merge this with error handling in
 # _groebner. But for now, we keep it simple.
-function _groebner_learn0(polynomials, kws::KeywordsHandler)
+function _groebner_learn0(polynomials, kws::KeywordArguments)
     # We try to select an efficient internal polynomial representation, i.e., a
     # suitable representation of monomials and coefficients.
     polynomial_repr = io_select_polynomial_representation(polynomials, kws)
@@ -92,7 +92,7 @@ end
 function _groebner_apply0!(
     wrapped_trace::WrappedTraceF4,
     polynomials::AbstractVector,
-    kws::KeywordsHandler
+    kws::KeywordArguments
 )
     trace = get_trace!(wrapped_trace, polynomials, kws)
     @log :debug "Selected trace" trace.representation.coefftype
@@ -124,7 +124,7 @@ end
 function _groebner_apply0!(
     wrapped_trace::WrappedTraceF4,
     batch::NTuple{N, T},
-    kws::KeywordsHandler
+    kws::KeywordArguments
 ) where {N, T <: AbstractVector}
     trace = get_trace!(wrapped_trace, batch, kws)
     @log :debug "Selected trace" trace.representation.coefftype
@@ -185,7 +185,7 @@ function groebner_applyX!(
     modulo::UInt32;
     options...
 )
-    kws = KeywordsHandler(:groebner_apply!, options)
+    kws = KeywordArguments(:groebner_apply!, options)
 
     logging_setup(kws)
     statistics_setup(kws)

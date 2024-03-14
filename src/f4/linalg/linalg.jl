@@ -44,6 +44,7 @@ Returns `true` if successful and `false` otherwise.
     if isnothing(linalg)
         linalg = params.linalg
     end
+    changematrix = params.changematrix
 
     # Decide if multi-threading should be used. Further in dispatch, the backend
     # may opt to NOT use multi-threading regardless of this setting.
@@ -65,9 +66,18 @@ Returns `true` if successful and `false` otherwise.
     end
 
     flag = if !isnothing(trace)
-        _linalg_main_with_trace!(trace, matrix, basis, linalg, threaded, arithmetic, rng)
+        _linalg_main_with_trace!(
+            trace,
+            matrix,
+            basis,
+            linalg,
+            threaded,
+            changematrix,
+            arithmetic,
+            rng
+        )
     else
-        _linalg_main!(matrix, basis, linalg, threaded, arithmetic, rng)
+        _linalg_main!(matrix, basis, linalg, threaded, changematrix, arithmetic, rng)
     end
 
     flag
@@ -93,11 +103,12 @@ function linalg_autoreduce!(
     if isnothing(linalg)
         linalg = params.linalg
     end
+    changematrix = params.changematrix
 
     flag = if !isnothing(trace)
-        _linalg_autoreduce_with_trace!(trace, matrix, basis, linalg, arithmetic)
+        _linalg_autoreduce_with_trace!(trace, matrix, basis, linalg, changematrix, arithmetic)
     else
-        _linalg_autoreduce!(matrix, basis, linalg, arithmetic)
+        _linalg_autoreduce!(matrix, basis, linalg, changematrix, arithmetic)
     end
 
     flag
@@ -175,10 +186,13 @@ function _linalg_main!(
     basis::Basis,
     linalg::LinearAlgebra,
     threaded::Symbol,
+    changematrix::Bool,
     arithmetic::AbstractArithmetic,
     rng::AbstractRNG
 )
-    flag = if linalg.algorithm === :deterministic
+    flag = if changematrix
+        linalg_deterministic_sparse_changematrix!(matrix, basis, linalg, arithmetic)
+    elseif linalg.algorithm === :deterministic
         if linalg_should_use_threading(matrix, linalg, threaded)
             linalg_deterministic_sparse_threaded!(matrix, basis, linalg, arithmetic)
         else
@@ -200,9 +214,10 @@ function _linalg_main!(
         linalg_randomized_hashcolumns_sparse!(matrix, basis, linalg, arithmetic, rng)
     else
         __throw_linalg_error("Cannot pick a suitable linear algebra backend for parameters
-                             linalg     = $linalg
-                             threaded   = $threaded
-                             arithmetic = $arithmetic")
+                             linalg         = $linalg
+                             threaded       = $threaded
+                             arithmetic     = $arithmetic
+                             changematrix   = $changematrix")
     end
 
     flag
@@ -214,6 +229,7 @@ function _linalg_main_with_trace!(
     basis::Basis,
     linalg::LinearAlgebra,
     threaded::Symbol,
+    changematrix::Bool,
     arithmetic::AbstractArithmetic,
     rng::AbstractRNG
 )
@@ -236,11 +252,14 @@ function _linalg_autoreduce!(
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
+    changematrix::Bool,
     arithmetic::AbstractArithmetic
 )
-    sort_matrix_upper_rows!(matrix)
-    linalg_deterministic_sparse_interreduction!(matrix, basis, arithmetic)
-    true
+    if changematrix
+        linalg_deterministic_sparse_interreduction_changematrix!(matrix, basis, arithmetic)
+    else
+        linalg_deterministic_sparse_interreduction!(matrix, basis, arithmetic)
+    end
 end
 
 function _linalg_autoreduce_with_trace!(
@@ -248,8 +267,10 @@ function _linalg_autoreduce_with_trace!(
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
+    changematrix::Bool,
     arithmetic::AbstractArithmetic
 )
+    @assert !changematrix
     sort_matrix_upper_rows!(matrix)
 
     if linalg.algorithm === :learn

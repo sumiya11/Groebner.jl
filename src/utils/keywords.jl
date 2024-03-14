@@ -9,23 +9,24 @@
 # arguments with their corresponding default values.
 const _supported_kw_args = (
     groebner = (
-        reduced     = true,
-        ordering    = InputOrdering(),
-        certify     = false,
-        linalg      = :auto,
-        monoms      = :auto,
-        arithmetic  = :auto,
-        seed        = 42,
-        loglevel    = _loglevel_default,
-        maxpairs    = typemax(Int),   # NOTE: maybe use Inf?
-        selection   = :auto,
-        modular     = :auto,
-        threaded    = :auto,
-        sweep       = false,
-        homogenize  = :auto,
-        statistics  = :no,
-        batched     = true,
-        use_flint   = true
+        reduced      = true,
+        ordering     = InputOrdering(),
+        certify      = false,
+        linalg       = :auto,
+        monoms       = :auto,
+        arithmetic   = :auto,
+        seed         = 42,
+        loglevel     = _loglevel_default,
+        maxpairs     = typemax(Int),   # NOTE: maybe use Inf?
+        selection    = :auto,
+        modular      = :auto,
+        threaded     = :auto,
+        sweep        = false,
+        homogenize   = :auto,
+        statistics   = :no,
+        batched      = true,
+        use_flint    = true,
+        changematrix = false
     ),
     normalform = (
         check       = false,
@@ -75,15 +76,42 @@ const _supported_kw_args = (
         sweep       = true,
         statistics  = :no,
         threaded    = :auto,
-    )
+    ),
+    groebner_with_change_matrix = (
+        reduced      = true,
+        ordering     = InputOrdering(),
+        certify      = false,
+        linalg       = :auto,
+        monoms       = :auto,
+        arithmetic   = :auto,
+        seed         = 42,
+        loglevel     = _loglevel_default,
+        maxpairs     = typemax(Int),   # NOTE: maybe use Inf?
+        selection    = :auto,
+        modular      = :auto,
+        threaded     = :auto,
+        sweep        = false,
+        homogenize   = :auto,
+        statistics   = :no,
+        batched      = true,
+        use_flint    = true,
+        changematrix = true
+    ),
 )
 #! format: on
 
 """
-    KeywordsHandler
+    KeywordArguments
 
-Stores keyword arguments passed to one of the functions in the interface."""
-struct KeywordsHandler{Ord}
+Stores keyword arguments passed to a function in the interface in Groebner.jl.
+    
+Can be manually created with 
+
+```julia
+kwargs = Groebner.KeywordArguments(:groebner, seed = 99, reduced = false)
+```
+"""
+struct KeywordArguments{Ord}
     reduced::Bool
     ordering::Ord
     certify::Bool
@@ -102,8 +130,12 @@ struct KeywordsHandler{Ord}
     homogenize::Symbol
     statistics::Symbol
     use_flint::Bool
+    changematrix::Bool
 
-    function KeywordsHandler(function_key, kws)
+    KeywordArguments(function_key::Symbol; passthrough_options...) =
+        KeywordArguments(function_key, passthrough_options)
+
+    function KeywordArguments(function_key::Symbol, kws)
         @assert haskey(_supported_kw_args, function_key)
         default_kw_args = _supported_kw_args[function_key]
         for (key, _) in kws
@@ -189,6 +221,8 @@ struct KeywordsHandler{Ord}
         Possible choices for keyword "statistics" are:
         `:no`, `:timings`, `:stats`, `:all`"""
 
+        changematrix = get(kws, :changematrix, get(default_kw_args, :changematrix, false))
+
         new{typeof(ordering)}(
             reduced,
             ordering,
@@ -207,17 +241,18 @@ struct KeywordsHandler{Ord}
             sweep,
             homogenize,
             statistics,
-            use_flint
+            use_flint,
+            changematrix
         )
     end
 end
 
-function logging_setup(keywords::KeywordsHandler)
+function logging_setup(keywords::KeywordArguments)
     logger_update(loglevel=keywords.loglevel)
     nothing
 end
 
-function statistics_setup(keywords::KeywordsHandler)
+function statistics_setup(keywords::KeywordArguments)
     log_simdinfo()
     if keywords.loglevel <= 0
         performance_counters_refresh()

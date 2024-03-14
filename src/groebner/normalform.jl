@@ -3,7 +3,7 @@
 ###
 # Backend for `normalform`
 
-function _normalform0(polynomials, to_be_reduced, kws::KeywordsHandler)
+function _normalform0(polynomials, to_be_reduced, kws::KeywordArguments)
     polynomial_repr =
         io_select_polynomial_representation(polynomials, kws, hint=:large_exponents)
     ring, var_to_index1, monoms, coeffs =

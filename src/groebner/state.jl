@@ -48,11 +48,9 @@ mutable struct GroebnerState{T1 <: CoeffZZ, T2 <: CoeffQQ, T3}
     prev_gb_coeffs_zz::Vector{Vector{T1}}
     gb_coeffs_qq::Vector{Vector{T2}}
 
-    #
     gb_coeffs_ff_all::Vector{Vector{Vector{T3}}}
     prev_index::Int
 
-    #
     selected_coeffs_zz::Vector{T1}
     selected_prev_coeffs_zz::Vector{T1}
     selected_coeffs_qq::Vector{T2}
@@ -60,6 +58,11 @@ mutable struct GroebnerState{T1 <: CoeffZZ, T2 <: CoeffQQ, T3}
     is_rational_reconstructed_mask::Vector{BitVector}
 
     buffer::CoefficientBuffer
+
+    changematrix_coeffs_ff_all::Vector{Vector{Vector{Vector{T3}}}}
+    changematrix_coeffs_zz::Vector{Vector{Vector{T1}}}
+    changematrix_coeffs_qq::Vector{Vector{Vector{T2}}}
+
     function GroebnerState{T1, T2, T3}(
         params
     ) where {T1 <: CoeffZZ, T2 <: CoeffQQ, T3 <: CoeffZp}
@@ -74,7 +77,10 @@ mutable struct GroebnerState{T1 <: CoeffZZ, T2 <: CoeffQQ, T3}
             Vector{T2}(),
             Vector{BitVector}(),
             Vector{BitVector}(),
-            CoefficientBuffer()
+            CoefficientBuffer(),
+            Vector{Vector{Vector{Vector{T3}}}}(),
+            Vector{Vector{Vector{T1}}}(),
+            Vector{Vector{Vector{T2}}}()
         )
     end
 end
@@ -441,6 +447,89 @@ function full_simultaneous_crt_reconstruct!(state::GroebnerState, lucky::LuckyPr
     nothing
 end
 
+function full_simultaneous_crt_reconstruct_changematrix!(
+    state::GroebnerState,
+    lucky::LuckyPrimes
+)
+    if isempty(state.changematrix_coeffs_zz)
+        @log :misc "Using full trivial CRT reconstruction"
+        coeffs_ff = state.changematrix_coeffs_ff_all[1]
+
+        resize!(state.changematrix_coeffs_zz, length(coeffs_ff))
+        resize!(state.changematrix_coeffs_qq, length(coeffs_ff))
+
+        @inbounds for i in 1:length(coeffs_ff)
+            state.changematrix_coeffs_zz[i] =
+                Vector{Vector{BigInt}}(undef, length(coeffs_ff[i]))
+            state.changematrix_coeffs_qq[i] =
+                Vector{Vector{Rational{BigInt}}}(undef, length(coeffs_ff[i]))
+            for j in 1:length(coeffs_ff[i])
+                state.changematrix_coeffs_zz[i][j] =
+                    [BigInt(0) for _ in 1:length(coeffs_ff[i][j])]
+                state.changematrix_coeffs_qq[i][j] =
+                    [Rational{BigInt}(1) for _ in 1:length(coeffs_ff[i][j])]
+            end
+        end
+
+        changematrix_coeffs_zz = state.changematrix_coeffs_zz
+        @inbounds for i in 1:length(coeffs_ff)
+            for j in 1:length(coeffs_ff[i])
+                for k in 1:length(coeffs_ff[i][j])
+                    Base.GMP.MPZ.set_ui!(
+                        changematrix_coeffs_zz[i][j][k],
+                        coeffs_ff[i][j][k]
+                    )
+                end
+            end
+        end
+        # Base.GMP.MPZ.mul_ui!(lucky.modulo, lucky.primes[1])
+        return nothing
+    end
+    # @invariant length(coeffs_ff) == length(state.changematrix_coeffs_zz)
+
+    @log :misc "Using full CRT reconstruction"
+    changematrix_coeffs_zz = state.changematrix_coeffs_zz
+
+    # Takes the lock..
+    @invariant length(state.changematrix_coeffs_ff_all) == length(lucky.primes)
+
+    # Set the buffers for CRT and precompute some values
+    buffer = state.buffer
+    buf = buffer.reconstructbuf1
+    n1, n2 = buffer.reconstructbuf2, buffer.reconstructbuf3
+    M = buffer.reconstructbuf4
+    invm1, invm2 = buffer.reconstructbuf6, buffer.reconstructbuf7
+    M0 = buffer.reconstructbuf8
+    MM0 = buffer.reconstructbuf9
+
+    n = length(lucky.primes)
+    rems = Vector{CoeffModular}(undef, n)
+    mults = Vector{BigInt}(undef, n)
+    for i in 1:length(mults)
+        mults[i] = BigInt(0)
+    end
+    moduli = lucky.primes
+    crt_precompute!(M, n1, n2, mults, moduli)
+
+    @log :debug "Using simultaneous CRT with moduli $moduli"
+
+    @inbounds for i in 1:length(changematrix_coeffs_zz)
+        for j in 1:length(changematrix_coeffs_zz[i])
+            for k in 1:length(changematrix_coeffs_zz[i][j])
+                for ell in 1:length(lucky.primes)
+                    rems[ell] = state.changematrix_coeffs_ff_all[ell][i][j][k]
+                end
+                crt!(M, buf, n1, n2, rems, mults)
+                Base.GMP.MPZ.set!(changematrix_coeffs_zz[i][j][k], buf)
+            end
+        end
+    end
+
+    # Base.GMP.MPZ.set!(lucky.modulo, M)
+
+    nothing
+end
+
 @timeit function partial_incremental_crt_reconstruct!(
     state::GroebnerState,
     lucky::LuckyPrimes,
@@ -673,6 +762,48 @@ end
             end
 
             @invariant isone(gb_coeffs_qq[i][1])
+        end
+    end
+
+    true
+end
+
+function full_rational_reconstruct_changematrix!(
+    state::GroebnerState,
+    lucky::LuckyPrimes,
+    use_flint::Bool
+)
+    modulo = lucky.modulo
+    @invariant modulo == prod(BigInt, lucky.primes)
+
+    buffer = state.buffer
+    bnd = ratrec_reconstruction_bound(modulo)
+
+    buf, buf1 = buffer.reconstructbuf1, buffer.reconstructbuf2
+    buf2, buf3 = buffer.reconstructbuf3, buffer.reconstructbuf4
+    u1, u2 = buffer.reconstructbuf5, buffer.reconstructbuf6
+    u3, v1 = buffer.reconstructbuf7, buffer.reconstructbuf8
+    v2, v3 = buffer.reconstructbuf9, buffer.reconstructbuf10
+    changematrix_coeffs_zz = state.changematrix_coeffs_zz
+    changematrix_coeffs_qq = state.changematrix_coeffs_qq
+    # is_rational_reconstructed_mask = state.is_rational_reconstructed_mask
+
+    @invariant length(changematrix_coeffs_zz) == length(changematrix_coeffs_qq)
+    @assert use_flint
+    nemo_modulo = Nemo.ZZRingElem(modulo)
+
+    @inbounds for i in 1:length(changematrix_coeffs_zz)
+        @invariant length(changematrix_coeffs_zz[i]) == length(changematrix_coeffs_qq[i])
+        # !!!
+        for j in 1:length(changematrix_coeffs_zz[i])
+            for k in 1:length(changematrix_coeffs_zz[i][j])
+                cz = changematrix_coeffs_zz[i][j][k]
+                nemo_rem = Nemo.ZZRingElem(cz)
+                success, (num, den) = ratrec_nemo(nemo_rem, nemo_modulo)
+                changematrix_coeffs_qq[i][j][k] = Base.unsafe_rational(num, den)
+
+                !success && return false
+            end
         end
     end
 

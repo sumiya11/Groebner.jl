@@ -182,6 +182,7 @@ include("f4/matrix.jl")
 # Linear algebra backends
 include("f4/linalg/linalg.jl")
 include("f4/linalg/backend.jl")
+include("f4/linalg/backend_changematrix.jl")
 include("f4/linalg/backend_threaded.jl")
 include("f4/linalg/backend_randomized.jl")
 include("f4/linalg/backend_randomized_threaded.jl")
@@ -210,6 +211,7 @@ include("groebner/state.jl")
 include("groebner/correctness.jl")
 # `groebner` backend
 include("groebner/groebner.jl")
+include("groebner/groebner_with_change_matrix.jl")
 # `groebner_learn` and `groebner_apply` backend
 include("groebner/learn-apply.jl")
 # `isgroebner` backend
@@ -238,6 +240,7 @@ include("precompile.jl")
 # Exports
 
 export groebner, groebner_learn, groebner_apply!
+export groebner_with_change_matrix
 export isgroebner
 export normalform
 

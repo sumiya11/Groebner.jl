@@ -117,7 +117,7 @@ The function `groebner` is **thread-safe**.
 function groebner(polynomials::AbstractVector; options...)
     Base.require_one_based_indexing(polynomials)
 
-    keywords = KeywordsHandler(:groebner, options)
+    keywords = KeywordArguments(:groebner, options)
 
     logging_setup(keywords)
     statistics_setup(keywords)
@@ -125,6 +125,22 @@ function groebner(polynomials::AbstractVector; options...)
     # NOTE: Type assertion is needed for type stability. This limits us to only
     # accept input arrays with concrete `eltype`
     result = _groebner0(polynomials, keywords)::typeof(polynomials)
+
+    performance_counters_print(keywords)
+    statistics_print(keywords)
+
+    result
+end
+
+function groebner_with_change_matrix(polynomials::AbstractVector; options...)
+    Base.require_one_based_indexing(polynomials)
+
+    keywords = KeywordArguments(:groebner_with_change_matrix, options)
+
+    logging_setup(keywords)
+    statistics_setup(keywords)
+
+    result = _groebner_with_change_matrix0(polynomials, keywords)
 
     performance_counters_print(keywords)
     statistics_print(keywords)
@@ -250,7 +266,7 @@ The function `groebner_learn` is **thread-safe**.
 function groebner_learn(polynomials::AbstractVector; options...)
     Base.require_one_based_indexing(polynomials)
 
-    keywords = KeywordsHandler(:groebner_learn, options)
+    keywords = KeywordArguments(:groebner_learn, options)
 
     logging_setup(keywords)
     statistics_setup(keywords)
@@ -298,7 +314,7 @@ function groebner_apply! end
 function groebner_apply!(trace, polynomials::AbstractVector; options...)
     Base.require_one_based_indexing(polynomials)
 
-    keywords = KeywordsHandler(:groebner_apply!, options)
+    keywords = KeywordArguments(:groebner_apply!, options)
 
     logging_setup(keywords)
     statistics_setup(keywords)
@@ -320,7 +336,7 @@ function groebner_apply!(
     @assert N in (1, 2, 4, 8, 16) "The batch size must be one of the following: 1, 2, 4, 8, 16"
     all(Base.require_one_based_indexing, batch)
 
-    keywords = KeywordsHandler(:groebner_apply!, options)
+    keywords = KeywordArguments(:groebner_apply!, options)
 
     logging_setup(keywords)
     statistics_setup(keywords)
@@ -396,7 +412,7 @@ The function `isgroebner` is **thread-safe**.
 function isgroebner(polynomials::AbstractVector; options...)
     Base.require_one_based_indexing(polynomials)
 
-    keywords = KeywordsHandler(:isgroebner, options)
+    keywords = KeywordArguments(:isgroebner, options)
 
     logging_setup(keywords)
     statistics_setup(keywords)
@@ -469,7 +485,7 @@ function normalform(basis::AbstractVector, to_be_reduced::AbstractVector; option
     Base.require_one_based_indexing(basis)
     Base.require_one_based_indexing(to_be_reduced)
 
-    keywords = KeywordsHandler(:normalform, options)
+    keywords = KeywordArguments(:normalform, options)
 
     logging_setup(keywords)
     statistics_setup(keywords)
@@ -523,7 +539,7 @@ The function `kbase` is **thread-safe**.
 function kbase(basis::AbstractVector; options...)
     Base.require_one_based_indexing(basis)
 
-    keywords = KeywordsHandler(:kbase, options)
+    keywords = KeywordArguments(:kbase, options)
 
     logging_setup(keywords)
     statistics_setup(keywords)
@@ -551,7 +567,7 @@ function fglm(
 )
     Base.require_one_based_indexing(basis)
 
-    keywords = KeywordsHandler(:fglm, options)
+    keywords = KeywordArguments(:fglm, options)
 
     logging_setup(keywords)
     statistics_setup(keywords)

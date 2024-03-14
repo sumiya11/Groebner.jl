@@ -3,7 +3,7 @@
 ### 
 # Backend for `isgroebner`
 
-function _isgroebner0(polynomials, kws::KeywordsHandler)
+function _isgroebner0(polynomials, kws::KeywordArguments)
     polynomial_repr =
         io_select_polynomial_representation(polynomials, kws, hint=:large_exponents)
     ring, var_to_index, monoms, coeffs =

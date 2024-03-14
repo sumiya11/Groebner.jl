@@ -3,7 +3,7 @@
 ### 
 # Select parameters in Groebner basis computation
 
-# It seems there is no Xoshiro rng in Julia v < 1.8.
+# There is no Xoshiro rng in Julia v < 1.8.
 # Use Random.Xoshiro, if available, as it is a bit faster.
 const _default_rng_type = @static if VERSION >= v"1.8.0"
     Random.Xoshiro
@@ -11,7 +11,7 @@ else
     Random.MersenneTwister
 end
 
-# Specifies linear backend algorithm
+# Specifies linear algebra backend algorithm
 struct LinearAlgebra
     # One of :deterministic, :randomized, :experimental_1, :experimental_2,
     # :experimental_3,
@@ -25,14 +25,14 @@ struct LinearAlgebra
 end
 
 # Stores parameters for a single GB computation.
-# NOTE: in principle, MonomOrd1, ..., MonomOrd3 can be subtypes of any type
-# besides the usual Groebner.AbstractInternalOrdering
 mutable struct AlgorithmParameters{
     MonomOrd1,
     MonomOrd2,
     MonomOrd3,
     Arithmetic <: AbstractArithmetic
 }
+    # NOTE: in principle, MonomOrd1, ..., MonomOrd3 can be subtypes of any type
+
     # Desired monomial ordering of output polynomials
     target_ord::MonomOrd1
     # Monomial ordering for the actual computation
@@ -109,12 +109,14 @@ mutable struct AlgorithmParameters{
     statistics::Symbol
 
     use_flint::Bool
+
+    changematrix::Bool
 end
 
 function AlgorithmParameters(
     ring,
     representation,
-    kwargs::KeywordsHandler;
+    kwargs::KeywordArguments;
     orderings=nothing
 )
     # TODO: we should probably document this better
@@ -250,6 +252,16 @@ function AlgorithmParameters(
 
     use_flint = kwargs.use_flint
 
+    changematrix = kwargs.changematrix
+    if changematrix
+        if !(target_ord isa DegRevLex)
+            __throw_input_not_supported(
+                "Only DegRevLex is supported with changematrix = true.",
+                target_ord
+            )
+        end
+    end
+
     @log :misc """
     Selected parameters:
     target_ord = $target_ord
@@ -277,7 +289,8 @@ function AlgorithmParameters(
     rng = $rng
     sweep = $sweep
     statistics = $statistics
-    use_flint = $use_flint"""
+    use_flint = $use_flint
+    changematrix = $changematrix"""
 
     AlgorithmParameters(
         target_ord,
@@ -305,7 +318,8 @@ function AlgorithmParameters(
         rng,
         sweep,
         statistics,
-        use_flint
+        use_flint,
+        changematrix
     )
 end
 
@@ -345,6 +359,7 @@ function params_mod_p(
         params.rng,
         params.sweep,
         params.statistics,
-        params.use_flint
+        params.use_flint,
+        params.changematrix
     )
 end

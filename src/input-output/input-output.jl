@@ -78,7 +78,7 @@ Additionally, `hint` can be specified to one of the following:
 """
 function io_select_polynomial_representation(
     polynomials::AbstractVector,
-    kws::KeywordsHandler;
+    kws::KeywordArguments;
     hint::Symbol=:none
 )
     if !(hint in (:none, :large_exponents))
@@ -288,7 +288,7 @@ representation specified by the given `representation`.
 @timeit function io_convert_to_internal(
     representation::PolynomialRepresentation,
     polynomials,
-    kws::KeywordsHandler;
+    kws::KeywordArguments;
     dropzeros=true
 )
     io_check_input(polynomials, kws)
@@ -404,6 +404,34 @@ reference).
         push!(coeffs, zero_coeffs(C, ring))
     end
     _io_convert_to_output(ring, polynomials, monoms, coeffs, params)
+end
+
+function io_convert_changematrix_to_output(
+    ring::PolyRing,
+    polynomials,
+    npolys::Int,
+    monoms::Vector{Vector{Vector{M}}},
+    coeffs::Vector{Vector{Vector{C}}},
+    params::AlgorithmParameters
+) where {M <: Monom, C <: Coeff}
+    @assert !isempty(polynomials)
+    @log :misc "Converting polynomials from internal representation to output format"
+    changematrix = Matrix{eltype(polynomials)}(undef, length(monoms), length(polynomials))
+    for i in 1:length(monoms)
+        matrix_row = io_convert_to_output(ring, polynomials, monoms[i], coeffs[i], params)
+        matrix_row_full = Vector{eltype(matrix_row)}(undef, length(polynomials))
+        k = 1
+        for j in 1:length(polynomials)
+            if iszero(polynomials[j])
+                matrix_row_full[j] = zero(polynomials[j])
+            else
+                matrix_row_full[j] = matrix_row[k]
+                k += 1
+            end
+        end
+        changematrix[i, :] .= matrix_row_full
+    end
+    changematrix
 end
 
 @timeit function io_convert_to_output_batched(

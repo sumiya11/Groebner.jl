@@ -134,7 +134,7 @@ end
         enumerator_produce_next_monomials!(monom_enumerator, ht, monom)
     end
 
-    basis_standardize!(ring, new_basis, ht, ord, params.arithmetic)
+    basis_standardize!(ring, new_basis, ht, ord, params.arithmetic, params.changematrix)
 
     linbasis = extract_linear_basis(ring, matrix)
     new_basis, linbasis, ht
@@ -223,7 +223,7 @@ function _fglm_residuals_in_batch!(
 
     @label End
 
-    basis_standardize!(ring, new_basis, ht, ord, params.arithmetic)
+    basis_standardize!(ring, new_basis, ht, ord, params.arithmetic, params.changematrix)
 
     linbasis = extract_linear_basis(ring, matrix)
     new_basis, linbasis, ht

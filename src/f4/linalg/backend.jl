@@ -32,6 +32,7 @@ function linalg_deterministic_sparse_interreduction!(
     basis::Basis,
     arithmetic::AbstractArithmetic
 )
+    sort_matrix_upper_rows!(matrix)
     @log :matrix "linalg_deterministic_sparse_interreduction!"
     @log :matrix matrix_string_repr(matrix)
 
@@ -825,7 +826,7 @@ function linalg_normalize_row!(
     @invariant !iszero(row[first_nnz_index])
 
     lead = row[first_nnz_index]
-    isone(lead) && return row
+    isone(lead) && return lead
 
     @inbounds pinv = inv_mod_p(A(lead), arithmetic) % T
     @inbounds row[first_nnz_index] = one(T)
@@ -833,7 +834,7 @@ function linalg_normalize_row!(
         row[i] = mod_p(A(row[i]) * A(pinv), arithmetic) % T
     end
 
-    row
+    pinv
 end
 
 # Normalize the row to have the leading coefficient equal to 1
@@ -845,7 +846,7 @@ function linalg_normalize_row!(
     @invariant !iszero(row[first_nnz_index])
 
     lead = row[first_nnz_index]
-    isone(lead) && return row
+    isone(lead) && return lead
 
     @inbounds pinv = inv(lead)
     @inbounds row[1] = one(T)
@@ -853,7 +854,7 @@ function linalg_normalize_row!(
         row[i] = row[i] * pinv
     end
 
-    row
+    pinv
 end
 
 # Linear combination of dense vector and sparse vector modulo a prime.
@@ -876,7 +877,7 @@ function linalg_vector_addmul_sparsedense_mod_p!(
         row[idx] = mod_p(a, arithmetic)
     end
 
-    nothing
+    mul
 end
 
 # Linear combination of dense vector and sparse vector.

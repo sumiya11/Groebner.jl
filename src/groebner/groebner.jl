@@ -4,7 +4,7 @@
 # Backend for `groebner`
 
 # Proxy function for handling exceptions.
-function _groebner0(polynomials, kws::KeywordsHandler)
+function _groebner0(polynomials, kws::KeywordArguments)
     # We try to select an efficient internal polynomial representation, i.e., a
     # suitable representation of monomials and coefficients.
     polynomial_repr = io_select_polynomial_representation(polynomials, kws)
@@ -28,7 +28,7 @@ function _groebner0(polynomials, kws::KeywordsHandler)
     end
 end
 
-function _groebner1(polynomials, kws::KeywordsHandler, representation)
+function _groebner1(polynomials, kws::KeywordArguments, representation)
     # Extract ring information, exponents, and coefficients from input
     # polynomials. Convert these to an internal polynomial representation. 
     # NOTE: This must copy the input, so that input `polynomials` is never

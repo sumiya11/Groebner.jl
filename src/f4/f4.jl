@@ -48,8 +48,12 @@
     basis_fill_data!(basis, hashtable, monoms, coeffs)
     hashtable_fill_divmasks!(hashtable)
 
+    if params.changematrix
+        basis_changematrix_initialize!(basis, hashtable)
+    end
+
     if sort_input
-        permutation = sort_polys_by_lead_increasing!(basis, hashtable)
+        permutation = sort_polys_by_lead_increasing!(basis, hashtable, params.changematrix)
     else
         permutation = collect(1:(basis.nfilled))
     end
@@ -58,7 +62,7 @@
     # We do not need normalization in some cases, e.g., when computing the
     # normal forms
     if normalize_input
-        basis_normalize!(basis, params.arithmetic)
+        basis_normalize!(basis, params.arithmetic, params.changematrix)
     end
 
     basis, pairset, hashtable, permutation
@@ -78,7 +82,7 @@ end
     # Call the linear algebra backend
     linalg_main!(matrix, basis, params)
     # Extract nonzero rows from the matrix into the basis
-    matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
+    matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht, params)
 end
 
 # F4 update
@@ -208,7 +212,7 @@ function f4_autoreduce!(
 
     linalg_autoreduce!(matrix, basis, params)
 
-    matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht)
+    matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht, params)
 
     basis.nfilled = matrix.npivots + basis.nprocessed
     basis.nprocessed = matrix.npivots
@@ -575,6 +579,8 @@ function f4_add_critical_pairs_to_matrix!(
         # over all polys with same lcm,
         # add them to the lower part of matrix
         for k in 1:npolys
+            # TODO: some lower rows can be discarded as useless on this stage.
+
             # duplicate generator,
             # we can do so as long as generators are sorted
             if polys[k] == prev
@@ -696,7 +702,7 @@ end
     # @invariant pairset_well_formed(:input_f4!, pairset, basis, ht)
 
     @log :debug "Entering F4."
-    basis_normalize!(basis, params.arithmetic)
+    basis_normalize!(basis, params.arithmetic, params.changematrix)
 
     matrix = matrix_initialize(ring, C)
 
@@ -730,16 +736,13 @@ end
                 symbol_ht,
                 maxpairs=params.maxpairs
             )
-            # matrix    = matrix_initialize(ring, C)
-            # symbol_ht = hashtable_initialize_secondary(hashtable)
             matrix_reinitialize!(matrix, 0)
             hashtable_reinitialize!(symbol_ht)
             continue
         end
 
-        # selects pairs for reduction from pairset following normal strategy
-        # (minimal lcm degrees are selected),
-        # and puts these into the matrix rows
+        # selects pairs for reduction from the pairset and puts these pairs into
+        # the matrix rows
         f4_select_critical_pairs!(
             pairset,
             basis,
@@ -794,7 +797,14 @@ end
         f4_autoreduce!(ring, basis, matrix, hashtable, symbol_ht, params)
     end
 
-    basis_standardize!(ring, basis, hashtable, hashtable.ord, params.arithmetic)
+    basis_standardize!(
+        ring,
+        basis,
+        hashtable,
+        hashtable.ord,
+        params.arithmetic,
+        params.changematrix
+    )
 
     # @invariant hashtable_well_formed(:output_f4!, ring, hashtable)
     @invariant basis_well_formed(:output_f4!, ring, basis, hashtable)

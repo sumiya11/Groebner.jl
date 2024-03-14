@@ -51,6 +51,7 @@ end
 function sort_polys_by_lead_increasing!(
     basis::Basis,
     hashtable::MonomialHashtable,
+    changematrix::Bool,
     abc...;
     ord::Ord=hashtable.ord
 ) where {Ord <: AbstractInternalOrdering}
@@ -76,6 +77,11 @@ function sort_polys_by_lead_increasing!(
     @inbounds for a in abc
         @invariant length(a) >= length(permutation)
         a[1:(basis.nfilled)] = a[permutation]
+    end
+
+    if changematrix
+        @invariant length(basis.changematrix) >= basis.nfilled
+        @inbounds basis.changematrix[1:(basis.nfilled)] = basis.changematrix[permutation]
     end
 
     permutation
