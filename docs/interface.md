@@ -15,6 +15,8 @@ using Groebner # hide
 
 {{doc groebner groebner fn}}
 
+{{doc groebner_with_change_matrix groebner_with_change_matrix fn}}
+
 {{doc isgroebner isgroebner fn}}
 
 {{doc normalform normalform fn}}
