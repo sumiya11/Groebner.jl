@@ -55,6 +55,8 @@ end
         "groebner/multi_threading"
     ]
 
+    @time @includetests ["groebner/groebner_with_change_matrix"]
+
     @time @includetests [
         "learn_and_apply/learn_and_apply",
         "learn_and_apply/apply_in_batches"

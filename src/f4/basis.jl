@@ -139,23 +139,25 @@ mutable struct Basis{C <: Coeff}
 
     # Sugar degrees of basis polynomials
     sugar_cubes::Vector{SugarCube}
+
+    changematrix::Vector{Dict{Int, Dict{MonomId, C}}}
 end
 
-# Initialize basis for `ngens` elements with coefficient of type T
-function basis_initialize(ring::PolyRing, ngens::Int, ::Type{T}) where {T <: Coeff}
-    sz = ngens # * 2
-    ndone = 0
-    nfilled = 0
-    nlead = 0
-
-    monoms = Vector{Vector{MonomId}}(undef, sz)
-    coeffs = Vector{Vector{T}}(undef, sz)
-    isred = zeros(Bool, sz)
-    nonred = Vector{Int}(undef, sz)
-    lead = Vector{DivisionMask}(undef, sz)
-    sugar_cubes = Vector{Int}(undef, sz)
-
-    Basis(monoms, coeffs, sz, ndone, nfilled, isred, nonred, lead, nlead, sugar_cubes)
+# Initialize basis for `sz` elements with coefficient of type T
+function basis_initialize(ring::PolyRing, sz::Int, ::Type{T}) where {T <: Coeff}
+    Basis(
+        Vector{Vector{MonomId}}(undef, sz),
+        Vector{Vector{T}}(undef, sz),
+        sz,
+        0,
+        0,
+        zeros(Bool, sz),
+        Vector{Int}(undef, sz),
+        Vector{DivisionMask}(undef, sz),
+        0,
+        Vector{Int}(undef, 0),
+        Vector{Dict{Int, Dict{MonomId, T}}}(undef, 0)
+    )
 end
 
 # initialize basis with the given (already hashed) monomials and coefficients.
@@ -165,16 +167,19 @@ function basis_initialize(
     coeffs::Vector{Vector{T}}
 ) where {T <: Coeff}
     sz = length(hashedexps)
-    ndone = 0
-    nfilled = sz
-    nlead = 0
-
-    isred = zeros(Bool, sz)
-    nonred = Vector{Int}(undef, sz)
-    lead = Vector{DivisionMask}(undef, sz)
-    sugar_cubes = Vector{Int}(undef, sz)
-
-    Basis(hashedexps, coeffs, sz, ndone, nfilled, isred, nonred, lead, nlead, sugar_cubes)
+    Basis(
+        hashedexps,
+        coeffs,
+        sz,
+        0,
+        sz,
+        zeros(Bool, sz),
+        Vector{Int}(undef, sz),
+        Vector{DivisionMask}(undef, sz),
+        0,
+        Vector{Int}(undef, 0),
+        Vector{Dict{Int, Dict{MonomId, T}}}(undef, 0)
+    )
 end
 
 # Same as f4_initialize_structs, but uses an existing hashtable
@@ -187,6 +192,136 @@ function basis_initialize_using_existing_hashtable(
     basis = basis_initialize(ring, length(monoms), C)
     basis_fill_data!(basis, present_ht, monoms, coeffs)
     basis
+end
+
+###
+# Change matrix
+
+function basis_changematrix_initialize!(
+    basis::Basis{C},
+    hashtable::MonomialHashtable{M, Ord}
+) where {C <: Coeff, M <: Monom, Ord}
+    resize!(basis.changematrix, basis.nfilled)
+    id_of_1 = hashtable_insert!(hashtable, monom_construct_const_monom(M, hashtable.nvars))
+    for i in 1:(basis.nfilled)
+        basis.changematrix[i] = Dict{Int, Dict{MonomId, C}}()
+        basis.changematrix[i][i] = Dict{MonomId, C}(id_of_1 => one(C))
+    end
+    nothing
+end
+
+function basis_changematrix_mul!(
+    basis::Basis,
+    idx::Int,
+    cf::C,
+    arithmetic::AbstractArithmetic
+) where {C <: Coeff}
+    row = basis.changematrix[idx]
+    new_row = empty(row)
+    for (pos, poly) in row
+        new_poly = empty(poly)
+        for (monom_id, monom_cf) in poly
+            new_poly[monom_id] = mod_p(monom_cf * cf, arithmetic)
+        end
+        new_row[pos] = new_poly
+    end
+    basis.changematrix[idx] = new_row
+    nothing
+end
+
+function basis_changematrix_addmul!(
+    basis::Basis,
+    ht::MonomialHashtable,
+    symbol_ht,
+    idx::Int,
+    poly_idx,
+    poly_mult,
+    cf::C,
+    arithmetic::AbstractArithmeticZp{AccumType, CoeffType}
+) where {C <: Coeff, AccumType, CoeffType}
+    row = basis.changematrix[idx]
+    if true
+        @inbounds for (ref_poly_idx, ref_quo) in basis.changematrix[poly_idx]
+            if !haskey(row, ref_poly_idx)
+                row[ref_poly_idx] = Dict{MonomId, C}()
+            end
+            poly = row[ref_poly_idx]
+            hashtable_resize_if_needed!(ht, length(ref_quo))
+            for (ref_mult, ref_cf) in ref_quo
+                ref_monom = ht.monoms[ref_mult]
+                quo_monom = ht.monoms[poly_mult]
+                new_monom = monom_copy(ref_monom)
+                new_monom = monom_product!(new_monom, ref_monom, quo_monom)
+                new_monom_id = hashtable_insert!(ht, new_monom)
+                if !haskey(poly, new_monom_id)
+                    poly[new_monom_id] = zero(CoeffType)
+                end
+                poly[new_monom_id] =
+                    mod_p(poly[new_monom_id] + ref_cf * AccumType(cf), arithmetic)
+            end
+        end
+    else
+        if !haskey(row, poly_idx)
+            row[poly_idx] = Dict{MonomId, C}()
+        end
+        poly = row[poly_idx]
+        if !haskey(poly, poly_mult)
+            poly[poly_mult] = zero(CoeffType)
+        end
+        poly[poly_mult] = mod_p(poly[poly_mult] + AccumType(cf), arithmetic)
+    end
+    nothing
+end
+
+function basis_changematrix_deep_copy_with_new_type(
+    changematrix,
+    new_sparse_row_coeffs::Vector{Vector{C}}
+) where {C}
+    new_changematrix = Vector{Dict{Int, Dict{MonomId, C}}}(undef, length(changematrix))
+    for i in 1:length(changematrix)
+        !isassigned(changematrix, i) && continue
+        obj = changematrix[i]
+        new_obj = Dict{Int, Dict{MonomId, C}}()
+        for (k, v) in obj
+            new_obj[k] = Dict{MonomId, C}()
+            for (k2, v2) in v
+                new_obj[k][k2] = C(v2)
+            end
+        end
+        new_changematrix[i] = new_obj
+    end
+    new_changematrix
+end
+
+function basis_changematrix_shallow_copy_with_new_type(changematrix, new_sparse_row_coeffs)
+    basis_changematrix_deep_copy_with_new_type(changematrix, new_sparse_row_coeffs)
+end
+
+function basis_changematrix_export(
+    basis::Basis{C},
+    ht::MonomialHashtable{M},
+    npolys
+) where {C <: Coeff, M <: Monom}
+    @log :debug basis.changematrix
+    matrix_monoms = Vector{Vector{Vector{M}}}(undef, basis.nnonredundant)
+    matrix_coeffs = Vector{Vector{Vector{C}}}(undef, basis.nnonredundant)
+    @inbounds for i in 1:(basis.nnonredundant)
+        matrix_monoms[i] = Vector{Vector{M}}(undef, npolys)
+        matrix_coeffs[i] = Vector{Vector{M}}(undef, npolys)
+        idx = basis.nonredundant[i]
+        row = basis.changematrix[idx]
+        for poly_idx in 1:npolys
+            matrix_monoms[i][poly_idx] = Vector{M}()
+            matrix_coeffs[i][poly_idx] = Vector{C}()
+            !haskey(row, poly_idx) && continue
+            for (monom_id, monom_cf) in row[poly_idx]
+                push!(matrix_monoms[i][poly_idx], ht.monoms[monom_id])
+                push!(matrix_coeffs[i][poly_idx], monom_cf)
+            end
+        end
+        sort_input_terms_to_change_ordering!(matrix_monoms[i], matrix_coeffs[i], ht.ord)
+    end
+    matrix_monoms, matrix_coeffs
 end
 
 ###
@@ -206,7 +341,11 @@ function basis_shallow_copy_with_new_coeffs(
         basis.nonredundant,
         basis.divmasks,
         basis.nnonredundant,
-        basis.sugar_cubes
+        basis.sugar_cubes,
+        basis_changematrix_shallow_copy_with_new_type(
+            basis.changematrix,
+            new_sparse_row_coeffs
+        )
     )
 end
 
@@ -236,7 +375,11 @@ function basis_deep_copy_with_new_coeffs(
         copy(basis.nonredundant),
         copy(basis.divmasks),
         basis.nnonredundant,
-        copy(basis.sugar_cubes)
+        copy(basis.sugar_cubes),
+        basis_changematrix_deep_copy_with_new_type(
+            basis.changematrix,
+            new_sparse_row_coeffs
+        )
     )
 end
 
@@ -274,16 +417,17 @@ function basis_resize_if_needed!(basis::Basis{T}, to_add::Int) where {T}
         @inbounds basis.isredundant[(basis.nprocessed + 1):end] .= false
         resize!(basis.nonredundant, basis.size)
         resize!(basis.divmasks, basis.size)
-        resize!(basis.sugar_cubes, basis.size)
+        # resize!(basis.sugar_cubes, basis.size)
     end
     @invariant basis.size >= basis.nprocessed + to_add
     nothing
 end
 
 # Normalize each element of the basis to have leading coefficient equal to 1
-@timeit function basis_normalize!(
+function basis_normalize!(
     basis::Basis{C},
-    arithmetic::AbstractArithmeticZp{A, C}
+    arithmetic::AbstractArithmeticZp{A, C},
+    changematrix::Bool
 ) where {A <: Union{CoeffZp, CompositeCoeffZp}, C <: Union{CoeffZp, CompositeCoeffZp}}
     @log :debug "Normalizing polynomials in the basis"
     cfs = basis.coeffs
@@ -295,6 +439,9 @@ end
             cfs[i][j] = mod_p(A(cfs[i][j]) * A(mul), arithmetic) % C
         end
         @invariant isone(cfs[i][1])
+        if changematrix
+            basis_changematrix_mul!(basis, i, A(mul), arithmetic)
+        end
     end
     basis
 end
@@ -302,7 +449,8 @@ end
 # Normalize each element of the basis by dividing it by its leading coefficient
 function basis_normalize!(
     basis::Basis{C},
-    arithmetic::AbstractArithmeticQQ
+    arithmetic::AbstractArithmeticQQ,
+    changematrix::Bool
 ) where {C <: CoeffQQ}
     @log :debug "Normalizing polynomials in the basis"
     cfs = basis.coeffs
@@ -560,7 +708,8 @@ end
     basis::Basis,
     ht::MonomialHashtable,
     ord,
-    arithmetic
+    arithmetic,
+    changematrix::Bool
 )
     @inbounds for i in 1:(basis.nnonredundant)
         idx = basis.nonredundant[i]
@@ -568,6 +717,9 @@ end
         basis.isredundant[i] = false
         basis.coeffs[i] = basis.coeffs[idx]
         basis.monoms[i] = basis.monoms[idx]
+        if changematrix
+            basis.changematrix[i] = basis.changematrix[idx]
+        end
     end
     basis.size = basis.nprocessed = basis.nfilled = basis.nnonredundant
     resize!(basis.coeffs, basis.nprocessed)
@@ -575,9 +727,10 @@ end
     resize!(basis.divmasks, basis.nprocessed)
     resize!(basis.nonredundant, basis.nprocessed)
     resize!(basis.isredundant, basis.nprocessed)
-    resize!(basis.sugar_cubes, basis.nprocessed)
-    sort_polys_by_lead_increasing!(basis, ht, ord=ord)
-    basis_normalize!(basis, arithmetic)
+    resize!(basis.changematrix, basis.nprocessed)
+    # resize!(basis.sugar_cubes, basis.nprocessed)
+    sort_polys_by_lead_increasing!(basis, ht, changematrix, ord=ord)
+    basis_normalize!(basis, arithmetic, changematrix)
 end
 
 # Returns the monomials of the polynomials in the basis

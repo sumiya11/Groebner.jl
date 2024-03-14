@@ -239,7 +239,7 @@ function extract_coeffs_raw!(
     trace,
     representation::PolynomialRepresentation,
     polys::Vector{T},
-    kws::KeywordsHandler
+    kws::KeywordArguments
 ) where {T}
     ring = extract_ring(polys)
     !is_input_compatible_in_apply(trace, ring, polys, kws) && __throw_input_not_supported(
@@ -290,7 +290,7 @@ function extract_coeffs_raw_X!(
     representation::PolynomialRepresentation,
     coeffs_zp,
     modulo,
-    kws::KeywordsHandler
+    kws::KeywordArguments
 )
     ring = PolyRing(trace.ring.nvars, trace.ring.ord, UInt64(modulo))
 
@@ -380,7 +380,7 @@ function io_extract_coeffs_raw_batched!(
     trace,
     representation::PolynomialRepresentation,
     batch::NTuple{N, T},
-    kws::KeywordsHandler
+    kws::KeywordArguments
 ) where {N, T <: AbstractVector}
     rings = map(extract_ring, batch)
     chars = (representation.coefftype)(map(ring -> ring.ch, rings))
