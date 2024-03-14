@@ -33,7 +33,7 @@
         end
     end
 
-    f = Groebner.katsuran(4, k=QQ)
+    f = Groebner.katsuran(4, k=QQ, internal_ordering=:lex)
     g, m = Groebner.groebner_with_change_matrix(f, ordering=Groebner.DegRevLex())
     @test m * f == g
     @test_throws DomainError Groebner.groebner_with_change_matrix(
