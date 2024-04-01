@@ -1,5 +1,6 @@
 using Test
 using TestSetExtensions
+using InteractiveUtils
 
 using AbstractAlgebra
 using Random
@@ -11,6 +12,17 @@ using Groebner
 # Check invariants during testing.
 Groebner.invariants_enabled() = true
 Groebner.logging_enabled() = true
+
+function is_github_ci()
+    return parse(Bool, get(ENV, "GITHUB_ACTIONS", "false"))
+end
+
+if is_github_ci()
+    @info "Running in a Github CI job. Printing specs!"
+    versioninfo(verbose=true)
+else
+    versioninfo()
+end
 
 # Taken from JuMP/test/solvers.jl
 function try_import(name::Symbol)
