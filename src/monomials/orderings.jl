@@ -1,22 +1,17 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-# All supported monomial orderings.
+###
+# Monomial orderings.
 #
-# The orderings in this file are exported, and exist mostly for communicating
+# The orderings in this file are exported and exist mostly for communicating
 # with the user. These orderings are converted to an internal representation at
-# some stage of the computation. See monomials/internal-orderings.jl
-
+# some stage of the computation.
+#
 # NOTE: only global monomial orderings are supported.
-
-# NOTE: the functions that implement comparators for monomials are specific to
-# the implementation of a monomial. Thus, monomial comparators for a specific
-# monomial type are defined in the file that implements this monomial type.
 
 # All monomial orderings are subtypes of AbstractMonomialOrdering
 abstract type AbstractMonomialOrdering end
 
-# Tells the algorithm to preserve the monomial ordering defined on the
-# given input polynomials, if any.
 """
     InputOrdering()
 

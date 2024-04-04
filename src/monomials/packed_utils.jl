@@ -1,18 +1,16 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
 ###
-# Utilities for packed integers
+# Utilities for packed integers.
 
-# How many integers of type B can be stored in an integer of type T
 function packed_elperchunk(::Type{T}, ::Type{B}) where {T, B}
-    epc = div(sizeof(T), sizeof(B))
-    @invariant epc * sizeof(B) == sizeof(T)
-    epc
+    div(sizeof(T), sizeof(B))
 end
 
-# the size of total degree.
-# By default, does not differ from the size of other elements
+# How many bytes are allocated for the monomial degree.
 packed_degsize(::Type{T}, ::Type{B}, n) where {T, B} = sizeof(B)
+
+# How many chunks of type T are needed to store n elements of type B.
 packed_nchunks(::Type{T}, ::Type{B}, n) where {T, B} =
     div((n - 1) * sizeof(B) + packed_degsize(T, B, n), sizeof(T)) + 1
 
@@ -59,7 +57,7 @@ end
 end
 
 # Keep the number of Val(...) parametric types small, otherwise these functions
-# will be dispatched in runtime
+# will be dispatched in runtime.
 @inline @generated function packed_is_zero_dot_product(
     a::T,
     b::T,
@@ -82,7 +80,7 @@ end
     :($ans; return $x)
 end
 
-# a >= b
+# a >= b.
 @inline @generated function packed_ge(a::T, b::T, ::Type{B}, ::Val{I}) where {T, B, I}
     ts, bs = sizeof(T), sizeof(B)
     @assert bs * div(ts, bs) == ts

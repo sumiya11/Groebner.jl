@@ -1,15 +1,13 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
 ###
-# Internal monomial orderings
+# Internal monomial orderings.
 
 # Internal representations of monomial orderings that are actually used in the
-# computation. The user interface is defined in monomials/orderings.jl.
-#
-# Here, a user-defined ordering is transformed into a corresponding internal
-# ordering, which is then used in low-level computations.
+# computation. Here, a user-defined ordering is transformed into a corresponding
+# internal ordering, which is then used in low-level computations.
 
-# All internal orderings are a subtype of this
+# All internal orderings are a subtype of this.
 abstract type AbstractInternalOrdering end
 
 @noinline function __throw_monomial_ordering_inconsistent(msg, var_to_index, ord)
@@ -23,12 +21,10 @@ abstract type AbstractInternalOrdering end
     ))
 end
 
-# Represents internal monomial orderings restricted onto a set of variables at
-# some particular indices.
-#
-# `IsTrivial` is a parameter set either to `true` or `false`.
-# If `IsTrivial` is `true`, then the indices in the ordering cover all of the
-# variables (so that monomial comparison can be implemented more efficiently).
+# `IsTrivial` is a parameter that is either `true` or `false`.
+# If `IsTrivial` is `true`, then the ordering is defined on all ring variables.
+# otherwise, the ordering only involves some (possibly not all) ring variables,
+# at particular indices.
 struct _Lex{IsTrivial} <: AbstractInternalOrdering
     indices::Vector{Int}
 end

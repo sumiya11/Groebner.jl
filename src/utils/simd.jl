@@ -17,17 +17,20 @@
 const BitInteger = Union{Int16, Int32, Int64, Int8, UInt16, UInt32, UInt64, UInt8}
 
 function log_simdinfo()
+    # avx512f implies avx512bw everywhere except Xeon Phi
+    has_avx512 = Bool(has_feature(Val(:x86_64_avx512f)))
     @log :misc """
       CPU (host): $(Symbol(cpu_name()))
-      ------------------------
-      fma_fast: \t$(Bool(fma_fast()))
-      registers:\t$(Int(register_count()))
-      simd width:\t<$(Int(pick_vector_width(Int32))) x i32>
+      --------------------------
+      fma_fast   | $(Bool(fma_fast()))
+      registers  | $(Int(register_count()))
+      simd width | <$(Int(pick_vector_width(Int32))) x i32>
+      has avx512 | $(has_avx512)
       """
     nothing
 end
 
-j_to_llvm_t(_::Type{T}) where {T <: BitInteger} = "i$(8*sizeof(T))"
+jl_to_llvm_t(::Type{T}) where {T <: BitInteger} = "i$(8*sizeof(T))"
 align_to(x::Integer, N::Integer) = x ⊻ (N - 1)
 
 function pick_vector_width_clamp_8(::Type{T}) where {T}
@@ -68,9 +71,10 @@ end
     # The case when IntN exists.
     @assert N in (8, 16, 32, 64)
     B = sizeof(T)
-    llvm_t = j_to_llvm_t(T)
+    llvm_t = jl_to_llvm_t(T)
     mask = align_to(typemax(Int), N)
     textir = """
+    declare <$N x $llvm_t> @llvm.masked.load.v$(N)$(llvm_t)(<$N x $llvm_t>*, i32, <$N x i1>, <$N x $llvm_t>);
     define i8 @entry(i64 %0, i64 %1, i64 %2) #0 {
     top:
         %a = inttoptr i64 %0 to $llvm_t*
@@ -163,7 +167,7 @@ end
     # The case when IntN exists.
     @assert N in (8, 16, 32, 64)
     B = sizeof(T)
-    llvm_t = j_to_llvm_t(T)
+    llvm_t = jl_to_llvm_t(T)
     mask = align_to(typemax(Int), N)
     textir = """
     define i8 @entry(i64 %0, i64 %1, i64 %2) #0 {
@@ -262,7 +266,7 @@ end
     # The case when IntN exists.
     @assert N in (8, 16, 32, 64)
     B = sizeof(T)
-    llvm_t = j_to_llvm_t(T)
+    llvm_t = jl_to_llvm_t(T)
     mask = align_to(typemax(Int), N)
     typecast_iN_to_i64(varname) =
         if N == 64
@@ -376,7 +380,7 @@ end
     # The case when IntN exists.
     @assert N in (8, 16, 32, 64)
     B = sizeof(T)
-    llvm_t = j_to_llvm_t(T)
+    llvm_t = jl_to_llvm_t(T)
     mask = align_to(typemax(Int), N)
     typecast_iN_to_i64(varname) =
         if N == 64

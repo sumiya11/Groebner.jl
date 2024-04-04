@@ -2,7 +2,7 @@
 @testset "sparse exponent vector" begin
     PV{T, I, N} = Groebner.SparseExponentVector{T, I, N} where {T, I, N}
 
-    ev = Groebner.monom_construct_const_monom(PV{UInt16, Int, 60}, 60)
+    ev = Groebner.monom_construct_const(PV{UInt16, Int, 60}, 60)
     @test Groebner.monom_totaldeg(ev) == UInt16(0)
     @test Groebner.monom_entrytype(ev) === Groebner.MonomHash
 

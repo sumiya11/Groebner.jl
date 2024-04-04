@@ -1,4 +1,4 @@
-using BenchmarkTools, AbstractAlgebra, PrettyTables, Groebner
+using BenchmarkTools, AbstractAlgebra, PrettyTables # Groebner
 using Base.Threads
 
 Groebner.logging_enabled() = false

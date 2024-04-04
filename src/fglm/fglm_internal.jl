@@ -13,7 +13,7 @@ Base.isempty(m::MonomialEnumerator) = m.load == 0
 
 function enumerator_initialize(ht::MonomialHashtable{M}, ord) where {M}
     hashtable_resize_if_needed!(ht, 1 << 6)
-    zz = monom_construct_const_monom(M, ht.nvars)
+    zz = monom_construct_const(M, ht.nvars)
     vidx = hashtable_insert!(ht, zz)
     monoms = Vector{MonomId}(undef, 1 << 3)
     monoms[1] = vidx

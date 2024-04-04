@@ -1,6 +1,6 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-# Sparse monomial implementation
+# SparseExponentVector implements the monomial interface.
 #
 # SparseExponentVector{T, N} is a sparse vector of integers of type T that
 # implements the interface of a monomial of N variables.
@@ -51,14 +51,11 @@ end
 monom_copy(ev::SparseExponentVector{T, I, N}) where {T, I, N} =
     SparseExponentVector{T, I, N}(Base.copy(ev.inds), Base.copy(ev.vals))
 
-function monom_construct_const_monom(::Type{SparseExponentVector{T}}, n) where {T}
-    monom_construct_const_monom(SparseExponentVector{T, _default_index_type, n}, n)
+function monom_construct_const(::Type{SparseExponentVector{T}}, n) where {T}
+    monom_construct_const(SparseExponentVector{T, _default_index_type, n}, n)
 end
 
-function monom_construct_const_monom(
-    ::Type{SparseExponentVector{T, I, N}},
-    n
-) where {T, I, N}
+function monom_construct_const(::Type{SparseExponentVector{T, I, N}}, n) where {T, I, N}
     SparseExponentVector{T, I, N}(Vector{I}(), Vector{T}())
 end
 
