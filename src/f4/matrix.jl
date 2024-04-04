@@ -402,18 +402,27 @@ function matrix_convert_rows_to_basis_elements_nf!(
     nothing
 end
 
-@timeit function matrix_transform_polynomial_multiple_to_matrix_row!(
+@timeit function matrix_polynomial_multiple_to_matrix_row!(
     matrix::MacaulayMatrix,
-    symbolic_ht::MonomialHashtable{M},
+    symbol_ht::MonomialHashtable{M},
     basis_ht::MonomialHashtable{M},
-    htmp::MonomHash,
-    etmp::M,
-    poly::Vector{MonomId}
+    monom_hash::MonomHash,
+    mult::M,
+    poly::Vector{MonomId},
+    skipfirst::Bool=false
 ) where {M <: Monom}
     row = similar(poly)
-    hashtable_resize_if_needed!(symbolic_ht, length(poly))
+    hashtable_resize_if_needed!(symbol_ht, length(poly))
 
-    hashtable_insert_polynomial_multiple!(row, htmp, etmp, poly, basis_ht, symbolic_ht)
+    hashtable_insert_polynomial_multiple!(
+        row,
+        monom_hash,
+        mult,
+        poly,
+        basis_ht,
+        symbol_ht,
+        skipfirst
+    )
 end
 
 @timeit function matrix_fill_column_to_monom_map!(

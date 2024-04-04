@@ -1,91 +1,76 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
 ###
-# ExponentVector{T} 
+# ExponentVector{T} implements the monomial interface.
+#
+# ExponentVector{T} is a vector of integers of type T. ExponentVector is just an
+# alias for the Vector from the Julia standard library.
+#
+# ExponentVector is commonly used with the UInt8 element type (that is 8 bits
+# per exponent). Some functions that implement monomial arithmetic and monomial
+# comparisons are not automatically vectorized with the use of AVX2 or AVX512
+# for 8 bits (in Julia 1.10), thus we write out the vectorized code manually.
+#
+# NOTE: if AVX512 is not available, our code does not handle scalar tails too well.
 
-# ExponentVector{T} is a dense vector of integers of type T that implements the
-# monomial interface.
-
-# ExponentVector stores the total degree inline with the partial degrees.
-# For example, x^2 y z^5 is stored as a dynamic vector [8, 2, 1, 5].
-
-# ExponentVector is just an alias for a dynamic vector of integers.
 const ExponentVector{T} = Vector{T} where {T <: Integer}
 
-# Checks if there is a risk of exponent overflow. If overflow if possible,
-# throws a MonomialDegreeOverflow.
 function _monom_overflow_check(e::ExponentVector{T}) where {T}
     # ExponentVector overflows if the total degree overflows
     _monom_overflow_check(monom_totaldeg(e), T)
 end
 
-# The maximum number of variables that this monomial implementation can
-# potentially store. 
 monom_max_vars(::Type{ExponentVector{T}}) where {T} = 2^32
 monom_max_vars(p::ExponentVector{T}) where {T} = monom_max_vars(typeof(p))
 
-# The total degree of a monomial
 monom_totaldeg(pv::ExponentVector) = @inbounds pv[1]
-
-# The type of an entry of a ExponentVector{T}. Note that this is not necessarily
-# equal to T.
-# NOTE: this may be a bit awkward
-monom_entrytype(::Type{ExponentVector{T}}) where {T} = MonomHash
-monom_entrytype(p::ExponentVector{T}) where {T} = monom_entrytype(typeof(p))
 
 monom_copy(pv::ExponentVector) = Base.copy(pv)
 
-# Constructs a constant monomial with the room for n variables.
-monom_construct_const_monom(::Type{ExponentVector{T}}, n::Integer) where {T} =
-    zeros(T, n + 1)
+monom_construct_const(::Type{ExponentVector{T}}, n::Integer) where {T} = zeros(T, n + 1)
 
-# Constructs a monomial from the vector `ev`
 function monom_construct_from_vector(::Type{ExponentVector{T}}, ev::Vector{U}) where {T, U}
     v = Vector{T}(undef, length(ev) + 1)
     s = zero(T)
     @inbounds for i in 1:length(ev)
         _monom_overflow_check(ev[i], T)
-        s += ev[i]
+        s += T(ev[i])
+        _monom_overflow_check(s, T)
         v[i + 1] = T(ev[i])
     end
     @inbounds v[1] = s
     ExponentVector{T}(v)
 end
 
-# Writes a monomial to the given vector
 function monom_to_vector!(tmp::Vector{M}, pv::ExponentVector{T}) where {M, T}
     @invariant length(tmp) == length(pv) - 1
     @inbounds tmp[1:end] = pv[2:end]
     tmp
 end
 
-# Returns a monomial that can be used to compute hashes of monomials of type
-# ExponentVector{T}
 function monom_construct_hash_vector(::Type{ExponentVector{T}}, n::Integer) where {T}
     rand(MonomHash, n + 1)
 end
 
-# Computes the hash of `x` with the given hash vector `b`
 function monom_hash(x::ExponentVector{T}, b::Vector{MH}) where {T, MH}
+    @invariant length(x) == length(b)
     h = zero(MH)
-    @inbounds for i in eachindex(x, b)
+    @inbounds for i in 1:length(x)
         h += MH(x[i]) * b[i]
     end
     mod(h, MonomHash)
 end
 
 ###
-# Monomial comparator functions. See monoms/orderings.jl for details.
+# Monomial comparators.
 
-# Checks whether ExponentVector{T} provides an efficient comparator function for
-# the given monomial ordering of type `O`
 function monom_is_supported_ordering(::Type{ExponentVector{T}}, ::O) where {T, O}
     # ExponentVector{T} supports efficient implementation of all monomial
-    # orderings
+    # orderings.
     true
 end
 
-# DegRevLex monomial comparison 
+# DegRevLex monomial comparison. 
 function monom_isless(ea::ExponentVector, eb::ExponentVector, ::_DegRevLex{true})
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
@@ -97,7 +82,7 @@ function monom_isless(ea::ExponentVector, eb::ExponentVector, ::_DegRevLex{true}
     _vec_cmp_revlex(ea, eb)
 end
 
-# DegRevLex monomial comparison (shuffled variables)
+# DegRevLex monomial comparison (shuffled variables).
 function monom_isless(
     ea::ExponentVector{T},
     eb::ExponentVector{T},
@@ -121,14 +106,10 @@ function monom_isless(
     @inbounds while i > 1 && ea[indices[i] + 1] == eb[indices[i] + 1]
         i -= 1
     end
-    @inbounds if ea[indices[i] + 1] <= eb[indices[i] + 1]
-        return false
-    else
-        return true
-    end
+    @inbounds ea[indices[i] + 1] > eb[indices[i] + 1]
 end
 
-# DegLex monomial comparison
+# DegLex monomial comparison.
 function monom_isless(ea::ExponentVector, eb::ExponentVector, ::_DegLex{true})
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
@@ -140,7 +121,7 @@ function monom_isless(ea::ExponentVector, eb::ExponentVector, ::_DegLex{true})
     _vec_cmp_lex(ea, eb)
 end
 
-# DegLex monomial comparison (shuffled variables)
+# DegLex monomial comparison (shuffled variables).
 function monom_isless(
     ea::ExponentVector{T},
     eb::ExponentVector{T},
@@ -164,17 +145,17 @@ function monom_isless(
     @inbounds while i < length(indices) && ea[indices[i] + 1] == eb[indices[i] + 1]
         i += 1
     end
-    @inbounds return ea[indices[i] + 1] < eb[indices[i] + 1] ? true : false
+    @inbounds ea[indices[i] + 1] < eb[indices[i] + 1]
 end
 
-# Lex monomial comparison
+# Lex monomial comparison.
 function monom_isless(ea::ExponentVector, eb::ExponentVector, ::_Lex{true})
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
     _vec_cmp_lex(ea, eb)
 end
 
-# Lex monomial comparison (shuffled variables)
+# Lex monomial comparison (shuffled variables).
 function monom_isless(ea::ExponentVector, eb::ExponentVector, ord::_Lex{false})
     indices = variable_indices(ord)
     @invariant length(ea) == length(eb)
@@ -183,10 +164,10 @@ function monom_isless(ea::ExponentVector, eb::ExponentVector, ord::_Lex{false})
     @inbounds while i < length(indices) && ea[indices[i] + 1] == eb[indices[i] + 1]
         i += 1
     end
-    @inbounds return ea[indices[i] + 1] < eb[indices[i] + 1] ? true : false
+    @inbounds ea[indices[i] + 1] < eb[indices[i] + 1]
 end
 
-# Weighted monomial comparison
+# Weighted monomial comparison.
 function monom_isless(
     ea::ExponentVector{T},
     eb::ExponentVector{T},
@@ -197,7 +178,7 @@ function monom_isless(
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
     sa, sb = zero(U), zero(U)
-    for i in 1:length(weights)
+    @inbounds for i in 1:length(weights)
         sa += ea[i + 1] * weights[i]
         sb += eb[i + 1] * weights[i]
     end
@@ -220,7 +201,7 @@ function monom_isless(ea::ExponentVector, eb::ExponentVector, b::_ProductOrderin
     monom_isless(ea, eb, b.ord2)
 end
 
-# Matrix ordering exponent vector comparison
+# Matrix ordering exponent vector comparison.
 function monom_isless(ea::ExponentVector, eb::ExponentVector, m::_MatrixOrdering)
     rows = m.rows
     @inbounds common_type = promote_type(eltype(rows[1]), eltype(ea))
@@ -240,9 +221,9 @@ function monom_isless(ea::ExponentVector, eb::ExponentVector, m::_MatrixOrdering
 end
 
 ###
-# Monomial-Monomial arithmetic
+# Monomial-monomial arithmetic.
 
-# Returns the lcm of monomials. Also writes the result to ec.
+# Returns the lcm of two monomials. Writes the result to ec.
 function monom_lcm!(
     ec::ExponentVector{T},
     ea::ExponentVector{T},
@@ -265,7 +246,7 @@ function monom_is_gcd_const(ea::ExponentVector{T}, eb::ExponentVector{T}) where 
     _vec_check_orth(ea, eb)
 end
 
-# Returns the product of monomials. Also writes the result to ec.
+# Returns the product of two monomials. Writes the result to ec.
 function monom_product!(
     ec::ExponentVector{T},
     ea::ExponentVector{T},
@@ -279,7 +260,7 @@ function monom_product!(
     ec
 end
 
-# Returns the result of monomial division. Also writes the result to ec.
+# Returns the result of monomial division. Writes the result to ec.
 function monom_division!(
     ec::ExponentVector{T},
     ea::ExponentVector{T},
@@ -293,13 +274,13 @@ function monom_division!(
     ec
 end
 
-# Checks monomial divisibility
+# Checks monomial divisibility.
 function monom_is_divisible(ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
     @invariant length(ea) == length(eb)
     _vec_not_any_lt(ea, eb)
 end
 
-# Checks monomial divisibility, AND performs division
+# Checks monomial divisibility and performs division
 function monom_is_divisible!(
     ec::ExponentVector{T},
     ea::ExponentVector{T},
@@ -319,20 +300,23 @@ end
 ###
 # Monomial division masks.
 
-# Constructs and returns the division mask of type Mask of the given monomial.
+# Returns the division mask of the given monomial.
+#
+# If compressed is true, the mask will be compressed so that more variables can
+# be handled. Compressed and non-compressed division masks are not compatible.
 function monom_create_divmask(
     e::ExponentVector{T},
     _::Type{Mask},
-    ndivvars,
-    divmap,
-    ndivbits,
-    compressed
-) where {T, Mask}
+    ndivvars::Int,
+    divmap::Vector{U},
+    ndivbits::Int,
+    compressed::Bool
+) where {T, Mask, U}
     ctr = one(Mask)
     res = zero(Mask)
     o = one(Mask)
     if !compressed
-        # if the number of variables is <= 32
+        # if the number of variables is small (<= 32)
         @inbounds for i in 1:ndivvars
             for _ in 1:ndivbits
                 if e[i + 1] >= divmap[ctr]
@@ -342,7 +326,7 @@ function monom_create_divmask(
             end
         end
     else
-        # if the number of variables is > 32
+        # if the number of variables is large (> 32)
         @invariant ndivbits == 1
         @invariant length(divmap) == 8 * sizeof(Mask)
         @inbounds for i in 1:length(divmap)

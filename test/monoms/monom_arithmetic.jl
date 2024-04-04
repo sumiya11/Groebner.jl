@@ -253,7 +253,7 @@ end
                 x, y = rand(1:max(t, 1), n), rand(1:max(t, 1), n)
                 a = monom_construct_from_vector(MonomType, x)
                 b = monom_construct_from_vector(MonomType, y)
-                c = Groebner.monom_construct_const_monom(MonomType, n)
+                c = Groebner.monom_construct_const(MonomType, n)
                 c = monom_product!(c, a, b)
                 h = Groebner.monom_construct_hash_vector(MonomType, n)
                 @test typeof(Groebner.monom_hash(a, h)) === Groebner.MonomHash

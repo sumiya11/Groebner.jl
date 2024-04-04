@@ -11,15 +11,18 @@ abstract type AbstractPackedTuple{T <: Unsigned, B <: Unsigned} end
 struct PackedTuple1{T <: Unsigned, B <: Unsigned} <: AbstractPackedTuple{T, B}
     a1::T
 end
+
 struct PackedTuple2{T <: Unsigned, B <: Unsigned} <: AbstractPackedTuple{T, B}
     a1::T
     a2::T
 end
+
 struct PackedTuple3{T <: Unsigned, B <: Unsigned} <: AbstractPackedTuple{T, B}
     a1::T
     a2::T
     a3::T
 end
+
 struct PackedTuple4{T <: Unsigned, B <: Unsigned} <: AbstractPackedTuple{T, B}
     a1::T
     a2::T
@@ -27,57 +30,30 @@ struct PackedTuple4{T <: Unsigned, B <: Unsigned} <: AbstractPackedTuple{T, B}
     a4::T
 end
 
-# a `p` object can store monom_max_vars(p) integers at max. 
 monom_max_vars(p::AbstractPackedTuple) = monom_max_vars(typeof(p))
 
-# checks that there is no risk of overflow for `e`.
-# If overflow if probable, throws.
-function _monom_overflow_check(e::AbstractPackedTuple{T, B}) where {T, B}
-    _monom_overflow_check(monom_totaldeg(e), B)
+# Checks if there is a risk of exponent overflow. Throws if overflow if possible.
+function _monom_overflow_check(a::AbstractPackedTuple{T, B}) where {T, B}
+    _monom_overflow_check(monom_totaldeg(a), B)
 end
 
-const _defined_packed_pairs =
+const _defined_packed_tuples =
     ((:PackedTuple1, 1), (:PackedTuple2, 2), (:PackedTuple3, 3), (:PackedTuple4, 4))
 
 # for each PackedTupleI define something..
-for (op, n) in _defined_packed_pairs
-    # define add-on constructors
+for (op, n) in _defined_packed_tuples
     @eval begin
-        $op(ev) = $op{UInt64}(ev)
-        $op{T}(ev) where {T <: Unsigned} = $op(T, UInt8)(ev)
+        monom_max_vars(::Type{$op{T, B}}) where {T, B} = $n * packed_elperchunk(T, B) - 1
+        monom_totaldeg(a::$op{T, B}) where {T, B} = a.a1 >> (8 * (sizeof(T) - sizeof(B)))
+        monom_copy(a::$op{T, B}) where {T, B} = a
     end
 
-    # extend `Base.eltype` 
-    @eval begin
-        Base.eltype(::$op{T, B}) where {T, B} = MonomHash
-        Base.eltype(::Type{$op{T, B}}) where {T, B} = MonomHash
-    end
-
-    # define `monom_max_vars`
-    @eval begin
-        monom_max_vars(::Type{$op{T, B}}) where {T, B} = $n * div(sizeof(T), sizeof(B)) - 1
-    end
-
-    # define `monom_totaldeg`
-    @eval begin
-        @generated function monom_totaldeg(pv::$op{T, B}) where {T, B}
-            d = 8 * (sizeof(T) - sizeof(B))
-            :(pv.a1 >> $d)
-        end
-    end
-
-    # define `monom_construct_hash_vector`
     @eval begin
         function monom_construct_hash_vector(::Type{$op{T, B}}, n::Integer) where {T, B}
-            rand(MonomHash, $n * div(sizeof(T), sizeof(B)))
+            rand(MonomHash, $n * packed_elperchunk(T, B))
         end
     end
 end
-
-monom_copy(pv::PackedTuple1{T, B}) where {T, B} = pv
-monom_copy(pv::PackedTuple2{T, B}) where {T, B} = pv
-monom_copy(pv::PackedTuple3{T, B}) where {T, B} = pv
-monom_copy(pv::PackedTuple4{T, B}) where {T, B} = pv
 
 # Creates a packed monomial of the given type from regular vector `ev`
 function monom_construct_from_vector(
@@ -202,19 +178,19 @@ function monom_construct_from_vector(
 end
 
 # Creates a constant packed monomial of the given type of length n
-function monom_construct_const_monom(::Type{PackedTuple1{T, B}}, n::Integer) where {T, B}
+function monom_construct_const(::Type{PackedTuple1{T, B}}, n::Integer) where {T, B}
     @invariant n < packed_elperchunk(T, B)
     PackedTuple1{T, B}(zero(T))
 end
-function monom_construct_const_monom(::Type{PackedTuple2{T, B}}, n::Integer) where {T, B}
+function monom_construct_const(::Type{PackedTuple2{T, B}}, n::Integer) where {T, B}
     @invariant n < 2 * packed_elperchunk(T, B)
     PackedTuple2{T, B}(zero(T), zero(T))
 end
-function monom_construct_const_monom(::Type{PackedTuple3{T, B}}, n::Integer) where {T, B}
+function monom_construct_const(::Type{PackedTuple3{T, B}}, n::Integer) where {T, B}
     @invariant n < 3 * packed_elperchunk(T, B)
     PackedTuple3{T, B}(zero(T), zero(T), zero(T))
 end
-function monom_construct_const_monom(::Type{PackedTuple4{T, B}}, n::Integer) where {T, B}
+function monom_construct_const(::Type{PackedTuple4{T, B}}, n::Integer) where {T, B}
     @invariant n < 4 * packed_elperchunk(T, B)
     PackedTuple4{T, B}(zero(T), zero(T), zero(T), zero(T))
 end

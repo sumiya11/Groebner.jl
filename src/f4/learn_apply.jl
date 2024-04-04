@@ -102,7 +102,7 @@ function f4_reducegb_learn!(
     symbol_ht::MonomialHashtable{M},
     params::AlgorithmParameters
 ) where {M <: Monom}
-    etmp = monom_construct_const_monom(M, ht.nvars)
+    etmp = monom_construct_const(M, ht.nvars)
     # etmp is now set to zero, and has zero hash
 
     matrix_reinitialize!(matrix, basis.nnonredundant)
@@ -112,7 +112,7 @@ function f4_reducegb_learn!(
     # as matrix upper rows
     @inbounds for i in 1:(basis.nnonredundant) #
         row_idx = matrix.nrows_filled_upper += 1
-        uprows[row_idx] = matrix_transform_polynomial_multiple_to_matrix_row!(
+        uprows[row_idx] = matrix_polynomial_multiple_to_matrix_row!(
             matrix,
             symbol_ht,
             ht,
@@ -407,7 +407,7 @@ function f4_symbolic_preprocessing!(
     matrix.upper_to_coeffs = Vector{Int}(undef, nup)
 
     hashtable_resize_if_needed!(symbol_ht, nlow + nup + 2)
-    for i in 1:nlow
+    @inbounds for i in 1:nlow
         mult_idx = lowmults[i]
         poly_idx = lowrows[i]
 
@@ -415,7 +415,7 @@ function f4_symbolic_preprocessing!(
         etmp = hashtable.monoms[mult_idx]
         rpoly = basis.monoms[poly_idx]
 
-        matrix.lower_rows[i] = matrix_transform_polynomial_multiple_to_matrix_row!(
+        matrix.lower_rows[i] = matrix_polynomial_multiple_to_matrix_row!(
             matrix,
             symbol_ht,
             hashtable,
@@ -434,7 +434,7 @@ function f4_symbolic_preprocessing!(
     @invariant map(i -> length(matrix.lower_rows[i]), 1:nlow) ==
                map(i -> length(basis.coeffs[matrix.lower_to_coeffs[i]]), 1:nlow)
 
-    for i in 1:nup
+    @inbounds for i in 1:nup
         mult_idx = upmults[i]
         poly_idx = uprows[i]
 
@@ -442,7 +442,7 @@ function f4_symbolic_preprocessing!(
         etmp = hashtable.monoms[mult_idx]
         rpoly = basis.monoms[poly_idx]
 
-        matrix.upper_rows[i] = matrix_transform_polynomial_multiple_to_matrix_row!(
+        matrix.upper_rows[i] = matrix_polynomial_multiple_to_matrix_row!(
             matrix,
             symbol_ht,
             hashtable,
@@ -501,7 +501,7 @@ function autoreduce_f4_apply!(
     matrix.nrows_filled_upper = nup
     matrix.nrows_filled_lower = nlow
 
-    etmp = monom_construct_const_monom(M, hashtable.nvars)
+    etmp = monom_construct_const(M, hashtable.nvars)
     # etmp is now set to zero, and has zero hash
 
     hashtable_resize_if_needed!(symbol_ht, nlow + nup + 2)
@@ -518,7 +518,7 @@ function autoreduce_f4_apply!(
         rpoly = basis.monoms[poly_idx]
 
         # vidx = hashtable_insert!(symbol_ht, etmp)
-        matrix.upper_rows[i] = matrix_transform_polynomial_multiple_to_matrix_row!(
+        matrix.upper_rows[i] = matrix_polynomial_multiple_to_matrix_row!(
             matrix,
             symbol_ht,
             hashtable,

@@ -19,6 +19,8 @@
 ###
 # Pairset
 
+const CRITICAL_PAIR_REDUNDANT = MonomId(0)
+
 # CriticalPair, or, a pair of polynomials,
 struct CriticalPair{Degree}
     # First polynomial given by its index in the basis array
@@ -67,6 +69,7 @@ end
 
 function pairset_resize_lcms_if_needed!(ps::Pairset, nfilled::Int)
     if length(ps.lcms) < nfilled + 1
+        # NOTE: Resizing by a small factor is questionable.
         resize!(ps.lcms, floor(Int, nfilled * 1.1) + 1)
     end
     nothing
@@ -202,7 +205,7 @@ function basis_changematrix_initialize!(
     hashtable::MonomialHashtable{M, Ord}
 ) where {C <: Coeff, M <: Monom, Ord}
     resize!(basis.changematrix, basis.nfilled)
-    id_of_1 = hashtable_insert!(hashtable, monom_construct_const_monom(M, hashtable.nvars))
+    id_of_1 = hashtable_insert!(hashtable, monom_construct_const(M, hashtable.nvars))
     for i in 1:(basis.nfilled)
         basis.changematrix[i] = Dict{Int, Dict{MonomId, C}}()
         basis.changematrix[i][i] = Dict{MonomId, C}(id_of_1 => one(C))
@@ -468,9 +471,6 @@ end
 # Generate new S-pairs from pairs of polynomials
 #   (basis[idx], basis[i])
 # for every i < idx
-#
-# NOTE: discarding redundant critical pairs is unaffected by the current
-# selection strategy
 @timeit function pairset_update!(
     pairset::Pairset,
     basis::Basis{C},
@@ -485,7 +485,7 @@ end
 
     new_lead = basis.monoms[idx][1]
 
-    # generate a pair for each pair
+    # Generate new pairs.
     @inbounds for i in 1:(bl - 1)
         newidx = pl + i
         if !basis.isredundant[i] &&
@@ -494,16 +494,15 @@ end
             deg = update_ht.hashdata[lcms[i]].deg
             ps[newidx] = CriticalPair(Int32(i), Int32(idx), lcms[i], pr(deg))
         else
-            # lcm == 0 will mark redundancy of an S-pair
-            lcms[i] = MonomId(0)
-            # ps[newidx] = CriticalPair(i, idx, MonomId(0), pr(deg))
-            ps[newidx] = CriticalPair{pr}(Int32(i), Int32(idx), MonomId(0), typemax(pr))
+            lcms[i] = CRITICAL_PAIR_REDUNDANT
+            ps[newidx] =
+                CriticalPair{pr}(Int32(i), Int32(idx), CRITICAL_PAIR_REDUNDANT, typemax(pr))
         end
     end
 
-    # traverse existing pairs
+    # Traverse existing pairs...
     @inbounds for i in 1:pl
-        if iszero(ps[i].lcm)
+        if ps[i].lcm == CRITICAL_PAIR_REDUNDANT
             continue
         end
 
@@ -511,15 +510,20 @@ end
         l = ps[i].poly2
         m = max(ps[pl + l].deg, ps[pl + j].deg)
 
-        # if an existing pair is divisible by the lead of new poly
-        # and has a greater degree than newly generated one then
+        # ...if an existing pair is divisible by the lead of the new poly and
+        # has a greater degree than newly generated critical pair, then mark the
+        # existing pair redundant
         if ps[i].deg > m && hashtable_monom_is_divisible(ps[i].lcm, new_lead, ht)
-            # mark an existing pair redundant
-            ps[i] = CriticalPair{pr}(ps[i].poly1, ps[i].poly2, MonomId(0), ps[i].deg)
+            ps[i] = CriticalPair{pr}(
+                ps[i].poly1,
+                ps[i].poly2,
+                CRITICAL_PAIR_REDUNDANT,
+                ps[i].deg
+            )
         end
     end
 
-    # traverse new pairs to move not-redundant ones first 
+    # Traverse new pairs to move non-redundant ones first.
     j = 1
     @inbounds for i in 1:(bl - 1)
         if !basis.isredundant[i]
@@ -533,35 +537,32 @@ end
     @inbounds for i in 1:(j - 1)
         lcms[i] = ps[pl + i].lcm
     end
-    @inbounds lcms[j] = 0
+    @inbounds lcms[j] = CRITICAL_PAIR_REDUNDANT
     pc = j
     pc -= 1
 
-    # mark redundancy of some pairs from lcms array
+    # Mark redundancy of some pairs based on their lcms.
     @inbounds for j in 1:pc
-        # if is not redundant already
-        if !iszero(lcms[j])
+        if !(lcms[j] == CRITICAL_PAIR_REDUNDANT)
             hashtable_check_monomial_division_in_update(lcms, j + 1, pc, lcms[j], update_ht)
         end
     end
 
-    # remove useless pairs from pairset
-    # by moving them to the end
+    # Remove redundant pairs from the pairset.
     j = 1
     @inbounds for i in 1:(pairset.load)
-        iszero(ps[i].lcm) && continue
+        (ps[i].lcm == CRITICAL_PAIR_REDUNDANT) && continue
         ps[j] = ps[i]
         j += 1
     end
 
-    # ensure that basis hashtable can store new lcms
     hashtable_resize_if_needed!(ht, pc)
 
-    # add new lcms to the basis hashtable,
-    # including index j and not including index pc
+    # Add new lcm monomials to the basis hashtable 
+    # (including index j and not including index pc).
     insert_lcms_in_basis_hashtable!(pairset, pl, ht, update_ht, basis, lcms, j, pc + 1)
 
-    # mark redundant polynomials in basis
+    # Mark redundant polynomials in basis.
     nonred = basis.nonredundant
     lml = basis.nnonredundant
     @inbounds for i in 1:lml
@@ -601,48 +602,40 @@ end
     basis.nprocessed = basis.nfilled
 end
 
-# Checks if element of basis at position idx is redundant
+# Checks if the element of basis at position idx is redundant.
 function basis_is_new_polynomial_redundant!(
     pairset::Pairset,
     basis::Basis,
     ht::MonomialHashtable{M},
     update_ht::MonomialHashtable{M},
     idx::Int
-) where {M}
+) where {M <: Monom}
     pt = monom_entrytype(M)
     hashtable_resize_if_needed!(update_ht, 0)
 
-    # lead of new polynomial
-    lead_new = basis.monoms[idx][1]
+    @inbounds lead_new = basis.monoms[idx][1]
     ps = pairset.pairs
 
     @inbounds for i in (idx + 1):(basis.nfilled)
-        i == idx && continue
         basis.isredundant[i] && continue
 
-        # lead of new polynomial at index i > idx
         lead_i = basis.monoms[i][1]
 
-        if hashtable_monom_is_divisible(lead_new, lead_i, ht)
-            # add new S-pair corresponding to Spoly(i, idx)
-            lcm_new = hashtable_get_lcm!(lead_i, lead_new, ht, ht)
-            psidx = pairset.load + 1
-            ps[psidx] = CriticalPair{pt}(
-                Int32(i),
-                Int32(idx),
-                lcm_new,
-                pt(ht.hashdata[lcm_new].deg)
-            )
+        !hashtable_monom_is_divisible(lead_new, lead_i, ht) && continue
 
-            # mark redundant
-            basis.isredundant[idx] = true
-            pairset.load += 1
+        # Add a new critical pair corresponding to Spoly(i, idx).
+        pairset_resize_if_needed!(pairset, 1)
+        lcm_new = hashtable_get_lcm!(lead_i, lead_new, ht, ht)
+        ps[pairset.load + 1] =
+            CriticalPair{pt}(Int32(i), Int32(idx), lcm_new, pt(ht.hashdata[lcm_new].deg))
+        pairset.load += 1
 
-            return true
-        end
+        # Mark the polynomial as redundant.
+        basis.isredundant[idx] = true
+        return true
     end
 
-    return false
+    false
 end
 
 # given input exponent and coefficient vectors hashes exponents into `ht`
@@ -789,7 +782,7 @@ function insert_lcms_in_basis_hashtable!(
     l = 1
     @label Letsgo
     @inbounds while l < ilast
-        if iszero(plcm[l])
+        if plcm[l] == CRITICAL_PAIR_REDUNDANT
             l += 1
             continue
         end

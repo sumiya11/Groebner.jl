@@ -141,16 +141,16 @@ include("utils/examples.jl")
 # The file orderings.jl is the interface for communicating with the user, and
 # the file internal-orderings.jl actually implements monomial orderings
 include("monomials/orderings.jl")
-include("monomials/internal-orderings.jl")
+include("monomials/internal_orderings.jl")
 
 include("utils/keywords.jl")
 
 # Monomial implementations
 include("monomials/common.jl")
-include("monomials/exponentvector.jl")
-include("monomials/packedutils.jl")
-include("monomials/packedtuples.jl")
-include("monomials/sparsevector.jl")
+include("monomials/exponent_vector.jl")
+include("monomials/packed_utils.jl")
+include("monomials/packed_vector.jl")
+include("monomials/sparse_vector.jl")
 
 # Defines some type aliases for Groebner
 include("arithmetic/CompositeInt.jl")
@@ -196,7 +196,7 @@ include("f4/tiny-trace.jl")
 # All together combined in the F4 algorithm
 include("f4/f4.jl")
 # Learn & apply add-on
-include("f4/learn-apply.jl")
+include("f4/learn_apply.jl")
 
 #= rational number reconstruction and CRT =#
 include("reconstruction/crt.jl")
@@ -213,7 +213,7 @@ include("groebner/correctness.jl")
 include("groebner/groebner.jl")
 include("groebner/groebner_with_change_matrix.jl")
 # `groebner_learn` and `groebner_apply` backend
-include("groebner/learn-apply.jl")
+include("groebner/learn_apply.jl")
 # `isgroebner` backend
 include("groebner/isgroebner.jl")
 # `normalform` backend

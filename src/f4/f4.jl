@@ -85,7 +85,6 @@ end
     matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht, params)
 end
 
-# F4 update
 @timeit function f4_update!(
     pairset::Pairset,
     basis::Basis,
@@ -118,32 +117,31 @@ end
     pairset_size
 end
 
-# F4 symbolic preprocessing
 @timeit function f4_symbolic_preprocessing!(
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable
 )
-    # 1. The matrix already has rows added on the critical pair selection stage.
-    #    Here, we find and add polynomial reducers to the matrix.
-    # 2. Monomials that represent the columns of the matrix are stored in the
-    #    symbol_ht hashtable.
+    # The matrix already has rows that correspond to critical pairs. Here, we
+    # find and add polynomial reducers to the matrix.
+    #
+    # Monomials that represent the columns of the matrix are stored in the
+    # symbol_ht hashtable.
     symbol_load = symbol_ht.load
     ncols = matrix.ncols_left
-
     matrix_resize_upper_part_if_needed!(matrix, ncols + symbol_load)
-
     @log :debug "Finding reducers in the basis..." basis.nnonredundant
 
-    # 3. Traverse all monomials in symbol_ht and search for a polynomial reducer
-    #    for each monomial.
-    # NOTE: note that the size of hashtable grows as polynomials with new
-    # monomials are added to the matrix, and the loop accounts for that
-    i = MonomId(symbol_ht.offset)
+    # Traverse all monomials in symbol_ht and search for a polynomial reducer
+    # for each monomial.
+    #
+    # Note that the size of hashtable grows as polynomials with new monomials
+    # are added to the matrix, and the loop accounts for that.
+    i = symbol_ht.offset
     @inbounds while i <= symbol_ht.load
         if symbol_ht.hashdata[i].idx != NON_PIVOT_COLUMN
-            i += MonomId(1)
+            i += 1
             continue
         end
         matrix_resize_upper_part_if_needed!(matrix, matrix.nrows_filled_upper + 1)
@@ -152,11 +150,11 @@ end
         symbol_ht.hashdata[i] =
             Hashvalue(UNKNOWN_PIVOT_COLUMN, hashval.hash, hashval.divmask, hashval.deg)
         matrix.ncols_left += 1
-        f4_find_multiplied_reducer!(basis, matrix, ht, symbol_ht, i)
-        i += MonomId(1)
+        f4_find_multiplied_reducer!(basis, matrix, ht, symbol_ht, MonomId(i))
+        i += 1
     end
 
-    # Shrink the matrix
+    # Shrink the matrix.
     resize!(matrix.upper_rows, matrix.nrows_filled_upper)
 
     nothing
@@ -173,7 +171,7 @@ function f4_autoreduce!(
 ) where {M}
     @log :debug "Entering autoreduction" basis
 
-    etmp = monom_construct_const_monom(M, ht.nvars)
+    etmp = monom_construct_const(M, ht.nvars)
     # etmp is now set to zero, and has zero hash
 
     matrix_reinitialize!(matrix, basis.nnonredundant)
@@ -183,7 +181,7 @@ function f4_autoreduce!(
     # as matrix upper rows
     @inbounds for i in 1:(basis.nnonredundant) #
         row_idx = matrix.nrows_filled_upper += 1
-        uprows[row_idx] = matrix_transform_polynomial_multiple_to_matrix_row!(
+        uprows[row_idx] = matrix_polynomial_multiple_to_matrix_row!(
             matrix,
             symbol_ht,
             ht,
@@ -255,7 +253,7 @@ function f4_select_tobereduced!(
     resize!(matrix.lower_rows, tobereduced.nfilled)
     resize!(matrix.some_coeffs, tobereduced.nfilled)
 
-    etmp = monom_construct_const_monom(M, ht.nvars)
+    etmp = monom_construct_const(M, ht.nvars)
 
     @inbounds for i in 1:(tobereduced.nfilled)
         matrix.nrows_filled_lower += 1
@@ -263,14 +261,8 @@ function f4_select_tobereduced!(
 
         gen = tobereduced.monoms[i]
         h = MonomHash(0)
-        matrix.lower_rows[row_idx] = matrix_transform_polynomial_multiple_to_matrix_row!(
-            matrix,
-            symbol_ht,
-            ht,
-            h,
-            etmp,
-            gen
-        )
+        matrix.lower_rows[row_idx] =
+            matrix_polynomial_multiple_to_matrix_row!(matrix, symbol_ht, ht, h, etmp, gen)
         matrix.lower_to_coeffs[row_idx] = i
         # TODO: not really needed here
         matrix.lower_to_mult[row_idx] = hashtable_insert!(ht, etmp)
@@ -287,7 +279,7 @@ function f4_select_tobereduced!(
     nothing
 end
 
-function f4_find_divisor_among_lead_monoms_use_divmask(i, divmask, basis)
+function f4_find_lead_divisor_use_divmask(i, divmask, basis)
     lead_divmasks = basis.divmasks
     @inbounds while i <= basis.nnonredundant
         if divmask_is_probably_divisible(divmask, lead_divmasks[i])
@@ -298,7 +290,7 @@ function f4_find_divisor_among_lead_monoms_use_divmask(i, divmask, basis)
     i
 end
 
-function f4_find_divisor_among_lead_monoms(i, monom, basis, ht)
+function f4_find_lead_divisor(i, monom, basis, ht)
     @inbounds while i <= basis.nnonredundant
         lead_monom = ht.monoms[basis.monoms[basis.nonredundant[i]][1]]
         if monom_is_divisible(monom, lead_monom)
@@ -309,79 +301,77 @@ function f4_find_divisor_among_lead_monoms(i, monom, basis, ht)
     i
 end
 
-# Finds a polynomial from the `basis` with leading term that divides monomial
-# `vidx`. If such a polynomial has been found, writes a multiple of it to the
-# hashtable `symbol_ht` 
+# Finds a polynomial from the basis with the leading term that divides the given
+# monomial. If such a polynomial is found, writes a multiple of it to the
+# symbolic hashtable.
 function f4_find_multiplied_reducer!(
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable,
-    vidx::MonomId;
+    monomid::MonomId;
     sugar::Bool=false
 )
-    e = symbol_ht.monoms[vidx]
-    etmp = ht.monoms[1]
-    divmask = symbol_ht.hashdata[vidx].divmask
+    @inbounds monom = symbol_ht.monoms[monomid]
+    @inbounds tmp = ht.monoms[1]
+    @inbounds divmask = symbol_ht.hashdata[monomid].divmask
 
-    # Searching for a poly from basis whose leading monom divides the given
-    # exponent e
+    # Start of the search loop.
     i = 1
     @label Letsgo
 
     if ht.use_divmask
-        i = f4_find_divisor_among_lead_monoms_use_divmask(i, divmask, basis)
+        i = f4_find_lead_divisor_use_divmask(i, divmask, basis)
     else
-        i = f4_find_divisor_among_lead_monoms(i, e, basis, ht)
+        i = f4_find_lead_divisor(i, monom, basis, ht)
     end
 
-    # Reducer is not found, yield
+    # Reducer is not found, yield.
     i > basis.nnonredundant && return nothing
 
-    # Here, found polynomial from basis with leading monom
-    # dividing symbol_ht.monoms[vidx]
+    # Here, we have found a polynomial from the basis with the leading monom
+    # that divides the given monom.
+    @inbounds poly = basis.monoms[basis.nonredundant[i]]
+    @inbounds lead = ht.monoms[poly[1]]
 
-    # reducers index and exponent in hash table
-    @inbounds rpoly = basis.monoms[basis.nonredundant[i]]
-    hashtable_resize_if_needed!(ht, length(rpoly))
-
-    @inbounds rexp = ht.monoms[rpoly[1]]
-
-    # precisely, etmp = e .- rexp 
-    flag, etmp = monom_is_divisible!(etmp, e, rexp)
-    if !flag
+    # Compute the monomial quotient.
+    success, tmp = monom_is_divisible!(tmp, monom, lead)
+    if !success # division mask failed for some reason
         i += 1
         @goto Letsgo
     end
-    # now etmp = e // rexp in terms of monomias,
-    # (!) hash is linear
-    @inbounds h = symbol_ht.hashdata[vidx].hash - ht.hashdata[rpoly[1]].hash
+    # Using the fact that the hash is linear.
+    @inbounds quotient_hash = symbol_ht.hashdata[monomid].hash - ht.hashdata[poly[1]].hash
 
-    matrix.upper_rows[matrix.nrows_filled_upper + 1] =
-        matrix_transform_polynomial_multiple_to_matrix_row!(
-            matrix,
-            symbol_ht,
-            ht,
-            h,
-            etmp,
-            rpoly
-        )
+    hashtable_resize_if_needed!(ht, length(poly))
+    row = matrix_polynomial_multiple_to_matrix_row!(
+        matrix,
+        symbol_ht,
+        ht,
+        quotient_hash,
+        tmp,
+        poly,
+        true
+    )
+    @inbounds row[1] = monomid
+    @inbounds matrix.upper_rows[matrix.nrows_filled_upper + 1] = row
     @inbounds matrix.upper_to_coeffs[matrix.nrows_filled_upper + 1] = basis.nonredundant[i]
-    # TODO: this line is here with one sole purpose -- to support tracing.
-    # Probably want to factor it out.
-    matrix.upper_to_mult[matrix.nrows_filled_upper + 1] = hashtable_insert!(ht, etmp)
-    # if sugar
-    #     # updates sugar
-    #     poly = basis.nonredundant[i]
-    #     new_poly_sugar = monom_totaldeg(etmp) + basis.sugar_cubes[poly]
-    #     matrix.upper_to_sugar[matrix.nrows_filled_upper + 1] = new_poly_sugar
-    # end
 
-    hv = symbol_ht.hashdata[vidx]
-    symbol_ht.hashdata[vidx] = Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
+    # Insert the quotient into the main hashtable.
+    # TODO: This line is here with one sole purpose -- to support tracing.
+    #       Probably want to factor it out.
+    @inbounds matrix.upper_to_mult[matrix.nrows_filled_upper + 1] =
+        hashtable_insert!(ht, tmp)
 
+    # Mark the current monomial as a pivot since a reducer has been found.
+    @inbounds monom_hashval = symbol_ht.hashdata[monomid]
+    @inbounds symbol_ht.hashdata[monomid] = Hashvalue(
+        PIVOT_COLUMN,
+        monom_hashval.hash,
+        monom_hashval.divmask,
+        monom_hashval.deg
+    )
     matrix.nrows_filled_upper += 1
-    i += 1
 
     nothing
 end
@@ -458,9 +448,6 @@ function f4_select_critical_pairs!(
     maxpairs::Int=typemax(Int),
     select_all::Bool=false
 ) where {Deg}
-    # 1. The pairset is sorted according to the given selection strategy and the
-    #    number of selected critical pairs is decided.
-
     # TODO: Why is this code type unstable !???
     npairs::Int = pairset.load
     if !select_all
@@ -472,12 +459,10 @@ function f4_select_critical_pairs!(
     ps = pairset.pairs
     deg::Deg = ps[1].deg
 
-    # 2. Selected pairs in the pairset are sorted once again, now with respect
-    #    to a monomial ordering on the LCMs
     sort_pairset_by_lcm!(pairset, npairs, ht)
 
-    # When `maxpairs` limits the number of selected pairs, we still add
-    # some additional pairs which have the same lcm as the selected ones 
+    # When `maxpairs` limits the number of selected pairs, we still add some
+    # additional pairs which have the same lcm as the selected ones. 
     if npairs > maxpairs
         navailable = npairs
         npairs = maxpairs
@@ -487,11 +472,11 @@ function f4_select_critical_pairs!(
         end
     end
 
-    # 3. At this stage, we know that the first `npairs` pairs in the pairset are 
-    #    selected. We add these pairs to the matrix
+    # At this stage, the first smallest pairs are selected. 
+    # Add these pairs to the matrix.
     f4_add_critical_pairs_to_matrix!(pairset, npairs, basis, matrix, ht, symbol_ht)
 
-    # 4. Remove selected parirs from the pairset
+    # Remove selected parirs from the pairset.
     @inbounds for i in 1:(pairset.load - npairs)
         ps[i] = ps[i + npairs]
     end
@@ -502,7 +487,10 @@ function f4_select_critical_pairs!(
     deg, npairs
 end
 
-# Adds the first `npairs` pairs from the pairset to the matrix
+# Adds the first `npairs` pairs from the pairset to the matrix.
+# Write the corresponding monomials to symbolic hashtable.
+#
+# Assumes that the pairset is sorted w.r.t. the lcms of pairs.
 function f4_add_critical_pairs_to_matrix!(
     pairset::Pairset,
     npairs::Int,
@@ -517,8 +505,9 @@ function f4_add_critical_pairs_to_matrix!(
     lowrows = matrix.lower_rows
 
     polys = Vector{Int}(undef, 2 * npairs)
-    # monomial buffer
-    etmp = ht.monoms[1]
+
+    # For each pair...
+    @inbounds etmp = ht.monoms[1]
     i = 1
     @inbounds while i <= npairs
         matrix.ncols_left += 1
@@ -526,6 +515,7 @@ function f4_add_critical_pairs_to_matrix!(
         lcm = pairs[i].lcm
         j = i
 
+        # ...collect all polynomials with the same lcm...
         while j <= npairs && pairs[j].lcm == lcm
             polys[npolys] = pairs[j].poly1
             npolys += 1
@@ -535,31 +525,23 @@ function f4_add_critical_pairs_to_matrix!(
         end
         npolys -= 1
 
-        # sort by the index in the basis (by=identity)
+        # ...and sort them by their position in the basis array.
         sort_generators_by_position!(polys, npolys)
 
-        # now we collect reducers and to-be-reduced polynomials
-
-        # first generator index in groebner basis
         prev = polys[1]
-        # first generator in hash table
         poly_monoms = basis.monoms[prev]
-        # first generator lead monomial index in hash data
         vidx = poly_monoms[1]
 
-        # first generator exponent
         eidx = ht.monoms[vidx]
-        # exponent of lcm corresponding to first generator
         elcm = ht.monoms[lcm]
         etmp = monom_division!(etmp, elcm, eidx)
-        # now etmp contents complement to eidx in elcm
 
-        # hash of complement
+        # hash of the quotient
         htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
 
-        # add row as a reducer
+        # The first polynomial from the pair is a reducer.
         row_idx = matrix.nrows_filled_upper += 1
-        uprows[row_idx] = matrix_transform_polynomial_multiple_to_matrix_row!(
+        uprows[row_idx] = matrix_polynomial_multiple_to_matrix_row!(
             matrix,
             symbol_ht,
             ht,
@@ -567,44 +549,35 @@ function f4_add_critical_pairs_to_matrix!(
             etmp,
             poly_monoms
         )
-        # map upper row to index in basis
         matrix.upper_to_coeffs[row_idx] = prev
         matrix.upper_to_mult[row_idx] = hashtable_insert!(ht, etmp)
 
-        # mark lcm column as reducer in symbolic hashtable
+        # Mark the matrix column that corresponds to the lcm as a pivot.
         hv = symbol_ht.hashdata[uprows[row_idx][1]]
         symbol_ht.hashdata[uprows[row_idx][1]] =
             Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
 
-        # over all polys with same lcm,
-        # add them to the lower part of matrix
+        # Add all polynomials with the same lcm to the lower part of matrix (to
+        # be reduced).
         for k in 1:npolys
-            # TODO: some lower rows can be discarded as useless on this stage.
+            # Duplicate polynomial. We can do so as long as the polynomials are
+            # sorted.
+            polys[k] == prev && continue
 
-            # duplicate generator,
-            # we can do so as long as generators are sorted
-            if polys[k] == prev
-                continue
-            end
-
-            # if the table was reallocated
+            # hashtable could have been reallocated, so refresh the pointer.
             elcm = ht.monoms[lcm]
 
-            # index in gb
             prev = polys[k]
-            # poly of indices of monoms in hash table
             poly_monoms = basis.monoms[prev]
             vidx = poly_monoms[1]
-            # leading monom idx
             eidx = ht.monoms[vidx]
-
             etmp = monom_division!(etmp, elcm, eidx)
-
+            # hash of the quotient
             htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
 
-            # add row to be reduced
+            # The polynomial will be reduced.
             row_idx = matrix.nrows_filled_lower += 1
-            lowrows[row_idx] = matrix_transform_polynomial_multiple_to_matrix_row!(
+            lowrows[row_idx] = matrix_polynomial_multiple_to_matrix_row!(
                 matrix,
                 symbol_ht,
                 ht,
@@ -612,7 +585,6 @@ function f4_add_critical_pairs_to_matrix!(
                 etmp,
                 poly_monoms
             )
-            # map lower row to index in basis
             matrix.lower_to_coeffs[row_idx] = prev
             matrix.lower_to_mult[row_idx] = hashtable_insert!(ht, etmp)
 

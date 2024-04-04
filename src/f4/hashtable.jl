@@ -137,7 +137,7 @@ function hashtable_initialize(
     divmap = zeros(DivisionMask, ndivvars * ndivbits)
 
     # first stored exponent used as buffer lately
-    exponents[1] = monom_construct_const_monom(MonomT, nvars)
+    exponents[1] = monom_construct_const(MonomT, nvars)
 
     MonomialHashtable(
         exponents,
@@ -163,7 +163,7 @@ function hashtable_deep_copy(ht::MonomialHashtable)
     exps = Vector{M}(undef, ht.size)
     table = Vector{MonomId}(undef, ht.size)
     data = Vector{Hashvalue}(undef, ht.size)
-    exps[1] = monom_construct_const_monom(M, ht.nvars)
+    exps[1] = monom_construct_const(M, ht.nvars)
 
     @inbounds for i in 2:(ht.load)
         exps[i] = monom_copy(ht.monoms[i])
@@ -215,7 +215,7 @@ end
     size = initial_size
     offset = 2
 
-    exponents[1] = monom_construct_const_monom(M, nvars)
+    exponents[1] = monom_construct_const(M, nvars)
 
     MonomialHashtable(
         exponents,
@@ -257,7 +257,7 @@ function hashtable_reinitialize!(ht::MonomialHashtable{M}) where {M}
         hashtable[i] = zero(MonomId)
     end
 
-    ht.monoms[1] = monom_construct_const_monom(M, ht.nvars)
+    ht.monoms[1] = monom_construct_const(M, ht.nvars)
 
     nothing
 end
@@ -539,20 +539,18 @@ function hashtable_check_monomial_division_in_update(
     lcm::MonomId,
     ht::MonomialHashtable{M}
 ) where {M <: Monom}
-
-    # pairs are sorted, we only need to check entries above starting point
+    # Pairs are sorted w.r.t. lcm, we only need to check entries above the
+    # starting point.
 
     @inbounds divmask = ht.hashdata[lcm].divmask
     @inbounds lcmexp = ht.monoms[lcm]
 
     j = first
     @inbounds while j <= last
-        # bad lcm
-        if iszero(a[j])
+        if a[j] == CRITICAL_PAIR_REDUNDANT
             j += 1
             continue
         end
-        # fast division check
         if ht.use_divmask &&
            !divmask_is_probably_divisible(ht.hashdata[a[j]].divmask, divmask)
             j += 1
@@ -563,24 +561,23 @@ function hashtable_check_monomial_division_in_update(
             j += 1
             continue
         end
-        # mark as redundant
-        a[j] = 0
+        a[j] = CRITICAL_PAIR_REDUNDANT
     end
 
     nothing
 end
 
+# Inserts a multiple of the polynomial into symbolic hashtable.
+# Writes the resulting monomial identifiers to the given row.
 function hashtable_insert_polynomial_multiple!(
     row::Vector{MonomId},
-    multhash::MonomHash,
+    mult_hash::MonomHash,
     mult::M,
     poly::Vector{MonomId},
     ht::MonomialHashtable{M},
-    symbol_ht::MonomialHashtable{M}
+    symbol_ht::MonomialHashtable{M},
+    skipfirst::Bool
 ) where {M <: Monom}
-    # We iterate over monomials of the given polynomial one by one, multiply
-    # them by a monomial multiple, and insert them into symbolic hashtable. 
-    # We use the fact that the hash function is linear.
     @invariant ispow2(ht.size) && ht.size > 1
     @invariant ispow2(symbol_ht.size) && symbol_ht.size > 1
     @invariant length(row) == length(poly)
@@ -590,31 +587,37 @@ function hashtable_insert_polynomial_multiple!(
 
     ssize = symbol_ht.size % MonomHash
     mod = (symbol_ht.size - 1) % MonomHash
-    buf = symbol_ht.monoms[1]
-    @inbounds for j in 1:len
+    @inbounds buf = symbol_ht.monoms[1]
+    # Iterate over monomials of the given polynomial, multiply them by a
+    # monomial multiple, and insert them into symbolic hashtable. 
+    # We use the fact that the hash function is linear.
+    #
+    # It is often the case that the multiple of the leading monomial is already
+    # in the symbolic hashtable. In this case, skip it.
+    @inbounds for j in (1 + skipfirst):len
         oldmonom = ht.monoms[poly[j]]
         newmonom = monom_product!(buf, mult, oldmonom)
 
         oldhash = ht.hashdata[poly[j]].hash
-        newhash = multhash + oldhash
+        newhash = mult_hash + oldhash
 
         hidx = hashtable_next_lookup_index(newhash, 0 % MonomHash, mod)
-        @inbounds vidx = symbol_ht.hashtable[hidx]
+        vidx = symbol_ht.hashtable[hidx]
 
         hit = !iszero(vidx)
-        @inbounds if hit && !hashtable_is_hash_collision(symbol_ht, vidx, newmonom, newhash)
-            # Hit, go to next monomial
+        if hit && !hashtable_is_hash_collision(symbol_ht, vidx, newmonom, newhash)
+            # Hit, go to next monomial.
             row[j] = vidx
             continue
         end
 
-        # Miss or collision
+        # Miss or collision.
         i = 1 % MonomHash
         while hit && i <= ssize
             hidx = hashtable_next_lookup_index(newhash, i, mod)
             vidx = symbol_ht.hashtable[hidx]
 
-            # if index is free
+            # Found a free bucket.
             hit = !iszero(vidx)
             iszero(vidx) && break
 
@@ -623,16 +626,15 @@ function hashtable_insert_polynomial_multiple!(
                 continue
             end
 
-            # Hit, go to next monomial
+            # Hit, go to next monomial.
             row[j] = vidx
             break
         end
         hit && continue
-        # Miss!
+        # Miss! Add monomial multiple to the hash table.
 
         @invariant !symbol_ht.frozen
 
-        # add multiplied monomial to hash table
         vidx = (symbol_ht.load + 1) % MonomId
         symbol_ht.monoms[vidx] = monom_copy(newmonom)
         symbol_ht.hashtable[hidx] = vidx
@@ -645,7 +647,8 @@ function hashtable_insert_polynomial_multiple!(
             symbol_ht.ndivbits,
             symbol_ht.compress_divmask
         )
-        symbol_ht.hashdata[vidx] = Hashvalue(0, newhash, divmask, monom_totaldeg(newmonom))
+        symbol_ht.hashdata[vidx] =
+            Hashvalue(NON_PIVOT_COLUMN, newhash, divmask, monom_totaldeg(newmonom))
 
         row[j] = vidx
         symbol_ht.load += 1
