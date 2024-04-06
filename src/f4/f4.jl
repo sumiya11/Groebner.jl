@@ -14,7 +14,7 @@
 # matrix    - a struct that is used for F4-style reduction,
 # hashtable - a hashtable that stores monomials.
 
-@noinline __throw_maximum_iterations_exceeded_in_f4(iters) =
+@noinline __f4_throw_maximum_iterations_exceeded(iters) =
     throw("""Something probably went wrong in Groebner.jl/F4. 
           The number of F4 iterations exceeded $iters. 
           Please consider submitting a GitHub issue.""")
@@ -41,6 +41,7 @@
     # Pairset for storing critical pairs of basis elements,
     # Hashtable for hashing monomials stored in the basis
     basis = basis_initialize(ring, length(monoms), C)
+    length(monoms) > typemax(Int16) && __basis_throw_maximum_size_exceeded(length(monoms))
     pairset = pairset_initialize(monom_entrytype(M))
     hashtable = hashtable_initialize(ring, params.rng, M, tablesize)
 
@@ -62,7 +63,7 @@
     # We do not need normalization in some cases, e.g., when computing the
     # normal forms
     if normalize_input
-        basis_normalize!(basis, params.arithmetic, params.changematrix)
+        basis_make_monic!(basis, params.arithmetic, params.changematrix)
     end
 
     basis, pairset, hashtable, permutation
@@ -417,6 +418,7 @@ function f4_discard_normal!(
     npairs = pairset_lowest_degree_pairs!(pairset)
 
     ps = pairset.pairs
+    degs = pairset.degrees
 
     # if maxpairs is set or not
     if maxpairs != typemax(Int)
@@ -434,20 +436,21 @@ function f4_discard_normal!(
 
     @inbounds for i in 1:(pairset.load - npairs)
         ps[i] = ps[i + npairs]
+        degs[i] = degs[i + npairs]
     end
     pairset.load -= npairs
 end
 
 # F4 critical pair selection.
 function f4_select_critical_pairs!(
-    pairset::Pairset{Deg},
+    pairset::Pairset{ExponentType},
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable;
     maxpairs::Int=typemax(Int),
     select_all::Bool=false
-) where {Deg}
+) where {ExponentType}
     # TODO: Why is this code type unstable !???
     npairs::Int = pairset.load
     if !select_all
@@ -455,9 +458,11 @@ function f4_select_critical_pairs!(
     end
     npairs = min(npairs, maxpairs)
     @invariant npairs > 0
+    ret[] += npairs
 
     ps = pairset.pairs
-    deg::Deg = ps[1].deg
+    degs = pairset.degrees
+    @inbounds deg::ExponentType = degs[1]
 
     sort_pairset_by_lcm!(pairset, npairs, ht)
 
@@ -479,6 +484,7 @@ function f4_select_critical_pairs!(
     # Remove selected parirs from the pairset.
     @inbounds for i in 1:(pairset.load - npairs)
         ps[i] = ps[i + npairs]
+        degs[i] = degs[i + npairs]
     end
     pairset.load -= npairs
 
@@ -674,7 +680,7 @@ end
     # @invariant pairset_well_formed(:input_f4!, pairset, basis, ht)
 
     @log :debug "Entering F4."
-    basis_normalize!(basis, params.arithmetic, params.changematrix)
+    basis_make_monic!(basis, params.arithmetic, params.changematrix)
 
     matrix = matrix_initialize(ring, C)
 
@@ -748,7 +754,7 @@ end
         if i > 10_000
             @log :warn "Something has gone wrong in F4. Error will follow."
             @log_memory_locals
-            __throw_maximum_iterations_exceeded_in_f4(i)
+            __f4_throw_maximum_iterations_exceeded(i)
         end
     end
 

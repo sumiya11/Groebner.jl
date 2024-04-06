@@ -21,36 +21,36 @@
 
 const CRITICAL_PAIR_REDUNDANT = MonomId(0)
 
-# CriticalPair, or, a pair of polynomials,
-struct CriticalPair{Degree}
+# A pair of polynomials
+struct CriticalPair
     # First polynomial given by its index in the basis array
-    poly1::Int32
-    # Second polynomial -//-
-    poly2::Int32
+    poly1::Int16
+    # Second polynomial given by its index in the basis array
+    poly2::Int16
     # Index of lcm(lead(poly1), lead(poly2)) in the hashtable
     lcm::MonomId
-    # Total degree of lcm
-    deg::Degree
 end
 
 # Stores S-Pairs and some additional info.
-mutable struct Pairset{Degree}
-    pairs::Vector{CriticalPair{Degree}}
-    # A buffer of monomials represented with indices to a hashtable
-    lcms::Vector{MonomId}
-    # Number of filled pairs, initially zero
+mutable struct Pairset{ExponentType <: Integer}
+    pairs::Vector{CriticalPair}
+    degrees::Vector{ExponentType}   # Buffer for lcms' degrees
+    lcms::Vector{MonomId}           # Buffer for lcms
     load::Int
-    # Scratch space to act as a buffer
-    scratch::Vector{CriticalPair{Degree}}
+    scratch1::Vector{Int}            # Scratch spaces for faster sorting
+    scratch2::Vector{CriticalPair}
+    scratch3::Vector{ExponentType}
 end
 
-# Initializes and returns a pairset with monom_max_vars for `initial_size` pairs.
-function pairset_initialize(::Type{Degree}; initial_size=2^6) where {Degree}
+function pairset_initialize(::Type{ExponentType}; initial_size=2^6) where {ExponentType}
     Pairset(
-        Vector{CriticalPair{Degree}}(undef, initial_size),
+        Vector{CriticalPair}(undef, initial_size),
+        Vector{ExponentType}(undef, initial_size),
         Vector{MonomId}(),
         0,
-        Vector{CriticalPair{Degree}}()
+        Vector{Int}(),
+        Vector{CriticalPair}(),
+        Vector{ExponentType}(),
     )
 end
 
@@ -64,6 +64,7 @@ function pairset_resize_if_needed!(ps::Pairset, to_add::Int)
         newsize = max(2 * newsize, ps.load + to_add)
     end
     resize!(ps.pairs, newsize)
+    resize!(ps.degrees, newsize)
     nothing
 end
 
@@ -76,12 +77,12 @@ function pairset_resize_lcms_if_needed!(ps::Pairset, nfilled::Int)
 end
 
 function pairset_find_smallest_degree_pair(ps::Pairset)
-    @invariant ps.load > 0 && length(ps.pairs) > 0
-    pairs = ps.pairs
-    pair_idx, pair_min_deg = 1, pairs[1].deg
+    @invariant ps.load > 0 && length(ps.pairs) > 0 && length(ps.degrees) > 0
+    degs = ps.degrees
+    @inbounds pair_idx, pair_min_deg = 1, degs[1]
     @inbounds for i in 1:(ps.load)
-        if pairs[i].deg <= pair_min_deg
-            pair_min_deg = pairs[i].deg
+        if degs[i] <= pair_min_deg
+            pair_min_deg = degs[i]
             pair_idx = i
         end
     end
@@ -93,18 +94,20 @@ function pairset_partition_by_degree!(ps::Pairset)
     _, pair_min_deg = pairset_find_smallest_degree_pair(ps)
 
     pairs = ps.pairs
+    degs = ps.degrees
     i, j = 0, ps.load + 1
     @inbounds while true
         i += 1
         j -= 1
-        while i <= ps.load && pairs[i].deg == pair_min_deg
+        while i <= ps.load && degs[i] == pair_min_deg
             i += 1
         end
-        while j > 1 && pairs[j].deg > pair_min_deg
+        while j > 1 && degs[j] > pair_min_deg
             j -= 1
         end
         i >= j && break
         pairs[i], pairs[j] = pairs[j], pairs[i]
+        degs[i], degs[j] = degs[j], degs[i]
     end
 
     i - 1
@@ -115,6 +118,11 @@ end
 
 # The type of the sugar degree
 const SugarCube = Int
+
+@noinline __basis_throw_maximum_size_exceeded(npolys) =
+    throw("""The basis has at least $(npolys) polynomials. 
+        This is too many and is not supported. 
+        Please consider submitting a GitHub issue.""")
 
 # Stores basis generators and some additional info
 mutable struct Basis{C <: Coeff}
@@ -146,7 +154,7 @@ mutable struct Basis{C <: Coeff}
     changematrix::Vector{Dict{Int, Dict{MonomId, C}}}
 end
 
-# Initialize basis for `sz` elements with coefficient of type T
+# Initialize basis with coefficient of type T.
 function basis_initialize(ring::PolyRing, sz::Int, ::Type{T}) where {T <: Coeff}
     Basis(
         Vector{Vector{MonomId}}(undef, sz),
@@ -163,7 +171,7 @@ function basis_initialize(ring::PolyRing, sz::Int, ::Type{T}) where {T <: Coeff}
     )
 end
 
-# initialize basis with the given (already hashed) monomials and coefficients.
+# Initialize basis with the given (already hashed) monomials and coefficients.
 function basis_initialize(
     ring::PolyRing,
     hashedexps::Vector{Vector{MonomId}},
@@ -185,7 +193,7 @@ function basis_initialize(
     )
 end
 
-# Same as f4_initialize_structs, but uses an existing hashtable
+# Same as basis_initialize, but uses an existing hashtable
 function basis_initialize_using_existing_hashtable(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
@@ -412,6 +420,7 @@ function basis_deepcopy(basis::Basis{C}) where {C <: Coeff}
 end
 
 function basis_resize_if_needed!(basis::Basis{T}, to_add::Int) where {T}
+    basis.nprocessed + to_add > typemax(Int16) && __basis_throw_maximum_size_exceeded(basis.nprocessed + to_add)
     while basis.nprocessed + to_add >= basis.size
         basis.size = max(basis.size * 2, basis.nprocessed + to_add)
         resize!(basis.monoms, basis.size)
@@ -427,7 +436,7 @@ function basis_resize_if_needed!(basis::Basis{T}, to_add::Int) where {T}
 end
 
 # Normalize each element of the basis to have leading coefficient equal to 1
-function basis_normalize!(
+function basis_make_monic!(
     basis::Basis{C},
     arithmetic::AbstractArithmeticZp{A, C},
     changematrix::Bool
@@ -450,7 +459,7 @@ function basis_normalize!(
 end
 
 # Normalize each element of the basis by dividing it by its leading coefficient
-function basis_normalize!(
+function basis_make_monic!(
     basis::Basis{C},
     arithmetic::AbstractArithmeticQQ,
     changematrix::Bool
@@ -468,22 +477,30 @@ function basis_normalize!(
     basis
 end
 
+const tot = Ref{Int}(0)
+const rd1 = Ref{Int}(0)
+const rd2 = Ref{Int}(0)
+const rd3 = Ref{Int}(0)
+const ret = Ref{Int}(0)
+
 # Generate new S-pairs from pairs of polynomials
 #   (basis[idx], basis[i])
 # for every i < idx
 @timeit function pairset_update!(
-    pairset::Pairset,
+    pairset::Pairset{D},
     basis::Basis{C},
     ht::MonomialHashtable{M},
     update_ht::MonomialHashtable{M},
     idx::Int
-) where {C <: Coeff, M <: Monom}
-    pr = monom_entrytype(M)
+) where {D, C <: Coeff, M <: Monom}
     pl, bl = pairset.load, idx
     ps = pairset.pairs
     lcms = pairset.lcms
+    degs = pairset.degrees
 
-    new_lead = basis.monoms[idx][1]
+    @inbounds new_lead = basis.monoms[idx][1]
+
+    tot[] += bl
 
     # Generate new pairs.
     @inbounds for i in 1:(bl - 1)
@@ -491,12 +508,13 @@ end
         if !basis.isredundant[i] &&
            !monom_is_gcd_const(ht.monoms[basis.monoms[i][1]], ht.monoms[new_lead])
             lcms[i] = hashtable_get_lcm!(basis.monoms[i][1], new_lead, ht, update_ht)
-            deg = update_ht.hashdata[lcms[i]].deg
-            ps[newidx] = CriticalPair(Int32(i), Int32(idx), lcms[i], pr(deg))
+            degs[newidx] = update_ht.hashdata[lcms[i]].deg
+            ps[newidx] = CriticalPair(Int16(i), Int16(idx), lcms[i])
         else
+            rd1[] += 1
             lcms[i] = CRITICAL_PAIR_REDUNDANT
-            ps[newidx] =
-                CriticalPair{pr}(Int32(i), Int32(idx), CRITICAL_PAIR_REDUNDANT, typemax(pr))
+            degs[newidx] = typemax(D)
+            ps[newidx] = CriticalPair(Int16(i), Int16(idx), CRITICAL_PAIR_REDUNDANT)
         end
     end
 
@@ -508,18 +526,14 @@ end
 
         j = ps[i].poly1
         l = ps[i].poly2
-        m = max(ps[pl + l].deg, ps[pl + j].deg)
+        m = max(degs[pl + l], degs[pl + j])
 
         # ...if an existing pair is divisible by the lead of the new poly and
         # has a greater degree than newly generated critical pair, then mark the
         # existing pair redundant
-        if ps[i].deg > m && hashtable_monom_is_divisible(ps[i].lcm, new_lead, ht)
-            ps[i] = CriticalPair{pr}(
-                ps[i].poly1,
-                ps[i].poly2,
-                CRITICAL_PAIR_REDUNDANT,
-                ps[i].deg
-            )
+        if degs[i] > m && hashtable_monom_is_divisible(ps[i].lcm, new_lead, ht)
+            ps[i] = CriticalPair(ps[i].poly1, ps[i].poly2, CRITICAL_PAIR_REDUNDANT)
+            rd2[] += 1
         end
     end
 
@@ -528,6 +542,7 @@ end
     @inbounds for i in 1:(bl - 1)
         if !basis.isredundant[i]
             ps[pl + j] = ps[pl + i]
+            degs[pl + j] = degs[pl + i]
             j += 1
         end
     end
@@ -553,6 +568,7 @@ end
     @inbounds for i in 1:(pairset.load)
         (ps[i].lcm == CRITICAL_PAIR_REDUNDANT) && continue
         ps[j] = ps[i]
+        degs[j] = degs[i]
         j += 1
     end
 
@@ -610,11 +626,11 @@ function basis_is_new_polynomial_redundant!(
     update_ht::MonomialHashtable{M},
     idx::Int
 ) where {M <: Monom}
-    pt = monom_entrytype(M)
     hashtable_resize_if_needed!(update_ht, 0)
 
     @inbounds lead_new = basis.monoms[idx][1]
     ps = pairset.pairs
+    degs = pairset.degrees
 
     @inbounds for i in (idx + 1):(basis.nfilled)
         basis.isredundant[i] && continue
@@ -626,8 +642,8 @@ function basis_is_new_polynomial_redundant!(
         # Add a new critical pair corresponding to Spoly(i, idx).
         pairset_resize_if_needed!(pairset, 1)
         lcm_new = hashtable_get_lcm!(lead_i, lead_new, ht, ht)
-        ps[pairset.load + 1] =
-            CriticalPair{pt}(Int32(i), Int32(idx), lcm_new, pt(ht.hashdata[lcm_new].deg))
+        ps[pairset.load + 1] = CriticalPair(Int16(i), Int16(idx), lcm_new)
+        degs[pairset.load + 1] = ht.hashdata[lcm_new].deg
         pairset.load += 1
 
         # Mark the polynomial as redundant.
@@ -723,7 +739,7 @@ end
     resize!(basis.changematrix, basis.nprocessed)
     # resize!(basis.sugar_cubes, basis.nprocessed)
     sort_polys_by_lead_increasing!(basis, ht, changematrix, ord=ord)
-    basis_normalize!(basis, arithmetic, changematrix)
+    basis_make_monic!(basis, arithmetic, changematrix)
 end
 
 # Returns the monomials of the polynomials in the basis
@@ -774,6 +790,7 @@ function insert_lcms_in_basis_hashtable!(
 
     monoms = basis.monoms
     ps = pairset.pairs
+    degs = pairset.degrees
 
     mod = MonomHash(ht.size - 1)
     @invariant ispow2(mod + 1)
@@ -797,6 +814,7 @@ function insert_lcms_in_basis_hashtable!(
         end
 
         ps[m] = ps[off + l]
+        degs[m] = degs[off + l]
 
         h = update_ht.hashdata[plcm[l]].hash
         ht.monoms[ht.load + 1] = monom_copy(update_ht.monoms[plcm[l]])
@@ -816,7 +834,7 @@ function insert_lcms_in_basis_hashtable!(
                 continue
             end
 
-            ps[m] = CriticalPair{typeof(ps[m].deg)}(ps[m].poly1, ps[m].poly2, hm, ps[m].deg)
+            ps[m] = CriticalPair(ps[m].poly1, ps[m].poly2, hm)
             m += 1
             l += 1
             @goto Letsgo
@@ -831,12 +849,7 @@ function insert_lcms_in_basis_hashtable!(
         ht.hashdata[ht.load + 1] = Hashvalue(0, h, uhd[ll].divmask, uhd[ll].deg)
 
         ht.load += 1
-        ps[m] = CriticalPair{typeof(ps[m].deg)}(
-            ps[m].poly1,
-            ps[m].poly2,
-            MonomId(pos),
-            ps[m].deg
-        )
+        ps[m] = CriticalPair(ps[m].poly1, ps[m].poly2, MonomId(pos))
         m += 1
         l += 1
     end

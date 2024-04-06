@@ -125,7 +125,7 @@ function linalg_reduce_matrix_lower_part_with_changematrix!(
         end
 
         @invariant length(new_sparse_row_support) == length(new_sparse_row_coeffs)
-        pinv = linalg_normalize_row!(new_sparse_row_coeffs, arithmetic)
+        pinv = linalg_row_make_monic!(new_sparse_row_coeffs, arithmetic)
 
         cm2 = empty(cm)
         for ((poly_idx, quo_idx), quo_cf) in cm

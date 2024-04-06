@@ -4,13 +4,13 @@
 
     ev = Groebner.monom_construct_const(PV{UInt16, Int, 60}, 60)
     @test Groebner.monom_totaldeg(ev) == UInt16(0)
-    @test Groebner.monom_entrytype(ev) === Groebner.MonomHash
+    @test Groebner.monom_entrytype(ev) === UInt16
 
     x = [1, 2, 3, 0, 4]
     ev = Groebner.monom_construct_from_vector(PV{UInt64, Int, 5}, x)
     @test typeof(Groebner.monom_totaldeg(ev)) === UInt64
     @test Groebner.monom_totaldeg(ev) == UInt64(10)
-    @test Groebner.monom_entrytype(ev) === Groebner.MonomHash
+    @test Groebner.monom_entrytype(ev) === UInt64
     tmp = similar(x)
     @test Groebner.monom_to_vector!(tmp, ev) == x
     @test tmp == x
@@ -20,7 +20,7 @@
     ev = Groebner.monom_construct_from_vector(PV{UInt8, Int, 5}, x)
     @test typeof(Groebner.monom_totaldeg(ev)) === UInt8
     @test Groebner.monom_totaldeg(ev) == UInt8(10)
-    @test Groebner.monom_entrytype(ev) === Groebner.MonomHash
+    @test Groebner.monom_entrytype(ev) === UInt8
 
     for T in (UInt64, UInt32, UInt16, UInt8)
         for k in 1:10
@@ -30,7 +30,7 @@
             tmp = similar(x)
             @test x == Groebner.monom_to_vector!(tmp, ev)
             @test x == tmp
-            @test Groebner.monom_entrytype(ev) === Groebner.MonomHash
+            @test Groebner.monom_entrytype(ev) === T
         end
     end
 end

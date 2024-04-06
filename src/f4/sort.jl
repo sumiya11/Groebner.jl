@@ -59,7 +59,7 @@ function sort_polys_by_lead_increasing!(
 
     b_monoms = basis.monoms
     h_monoms = hashtable.monoms
-    permutation = collect(1:(basis.nfilled))
+    permutation = collect(1:basis.nfilled)
     cmps =
         (x, y) -> monom_isless(
             @inbounds(h_monoms[b_monoms[x][1]]),
@@ -94,7 +94,7 @@ function is_sorted_by_lead_increasing(
 ) where {Ord <: AbstractInternalOrdering}
     b_monoms = basis.monoms
     h_monoms = hashtable.monoms
-    permutation = collect(1:(basis.nfilled))
+    permutation = collect(1:basis.nfilled)
     cmps =
         (x, y) -> monom_isless(
             @inbounds(h_monoms[b_monoms[x][1]]),
@@ -106,8 +106,22 @@ end
 
 # Sorts critical pairs from the pairset in the range from..from+sz by the total
 # degree of their lcms in a non-decreasing order
-function sort_pairset_by_degree!(ps::Pairset, from::Int, sz::Int)
-    sort_part!(ps.pairs, from, from + sz, by=pair -> pair.deg, scratch=ps.scratch)
+function sort_pairset_by_degree!(pairset::Pairset, from::Int, sz::Int)
+    pairs = pairset.pairs
+    degs = pairset.degrees
+    permutation = collect(from:from + sz - 1)
+    sort_part!(permutation, 1, sz, by=i -> degs[i], scratch=pairset.scratch1)
+    # @inbounds pairs[from:(from + sz - 1)] = pairs[permutation]
+    # @inbounds degs[from:(from + sz - 1)] = degs[permutation]
+    if length(pairset.scratch2) < length(permutation)
+        resize!(pairset.scratch2, nextpow(2, length(permutation) + 1))
+    end
+    if length(pairset.scratch3) < length(permutation)
+        resize!(pairset.scratch3, nextpow(2, length(permutation) + 1))
+    end
+    permute_array!(pairs, permutation, pairset.scratch2, from)
+    permute_array!(degs, permutation, pairset.scratch3, from)
+    nothing
 end
 
 # Sorts critical pairs from the pairset in the range from..from+sz by their
@@ -136,13 +150,26 @@ end
 # their lcms by the given monomial ordering
 function sort_pairset_by_lcm!(pairset::Pairset, npairs::Int, hashtable::MonomialHashtable)
     monoms = hashtable.monoms
+    pairs = pairset.pairs
     cmps =
-        (pair1, pair2) -> monom_isless(
-            @inbounds(monoms[pair1.lcm]),
-            @inbounds(monoms[pair2.lcm]),
+        (i, j) -> monom_isless(
+            @inbounds(monoms[pairs[i].lcm]),
+            @inbounds(monoms[pairs[j].lcm]),
             hashtable.ord
         )
-    sort_part!(pairset.pairs, 1, npairs, lt=cmps, scratch=pairset.scratch)
+    permutation = collect(1:npairs)
+    sort_part!(permutation, 1, npairs, lt=cmps, scratch=pairset.scratch1)
+    # @inbounds pairs[1:npairs] = pairs[permutation]
+    # @inbounds pairset.degrees[1:npairs] = pairset.degrees[permutation]
+    if length(pairset.scratch2) < length(permutation)
+        resize!(pairset.scratch2, nextpow(2, length(permutation) + 1))
+    end
+    if length(pairset.scratch3) < length(permutation)
+        resize!(pairset.scratch3, nextpow(2, length(permutation) + 1))
+    end
+    permute_array!(pairs, permutation, pairset.scratch2, 1)
+    permute_array!(pairset.degrees, permutation, pairset.scratch3, 1)
+    nothing
 end
 
 function sort_generators_by_position!(polys::Vector{Int}, load::Int)
@@ -217,7 +244,7 @@ end
 function sort_matrix_upper_rows!(matrix::MacaulayMatrix)
     #= smaller means pivot being more left  =#
     #= and density being smaller            =#
-    permutation = collect(1:(matrix.nrows_filled_upper))
+    permutation = collect(1:matrix.nrows_filled_upper)
     # TODO: use "let" here!
     cmp =
         (x, y) -> matrix_row_decreasing_cmp(
@@ -244,7 +271,7 @@ end
 function sort_matrix_lower_rows!(matrix::MacaulayMatrix)
     #= smaller means pivot being more right =#
     #= and density being larger             =#
-    permutation = collect(1:(matrix.nrows_filled_lower))
+    permutation = collect(1:matrix.nrows_filled_lower)
     cmp =
         (x, y) -> matrix_row_increasing_cmp(
             @inbounds(matrix.lower_rows[x]),

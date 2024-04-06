@@ -131,7 +131,7 @@ end
         # If the row is fully reduced
         iszero(pivot) && continue
 
-        linalg_normalize_row!(row2, arithmetic, pivot)
+        linalg_row_make_monic!(row2, arithmetic, pivot)
         matrix.D_coeffs_dense[i] = row2
         matrix.pivot_indices[i] = pivot
     end
@@ -256,7 +256,7 @@ end
         end
 
         first_nnz_column = pivot_indices[i]
-        linalg_normalize_row!(row2, arithmetic, first_nnz_column)
+        linalg_row_make_monic!(row2, arithmetic, first_nnz_column)
 
         for j in 1:nlower
             if j == i
@@ -440,7 +440,7 @@ function linalg_randomized_hashcolumns_reduce_matrix_lower_part!(
             continue
         end
 
-        linalg_normalize_row!(new_sparse_row_coeffs, arithmetic)
+        linalg_row_make_monic!(new_sparse_row_coeffs, arithmetic)
 
         matrix.some_coeffs[i] = new_sparse_row_coeffs
         pivots[new_sparse_row_support[1]] = new_sparse_row_support

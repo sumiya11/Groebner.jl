@@ -43,4 +43,8 @@
     # total degree 2^31
     f = [x^1073741824 * y^1073741824 + y]
     @test f == Groebner.groebner(f)
+
+    # this should fail.
+    # f = [x^4294967295 * y^4294967295 + y]
+    # @test f == Groebner.groebner(f)
 end

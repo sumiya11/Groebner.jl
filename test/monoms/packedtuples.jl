@@ -7,7 +7,7 @@
     @test ev.a1 == 0x0a00000400030201
     @test typeof(Groebner.monom_totaldeg(ev)) === UInt64
     @test Groebner.monom_totaldeg(ev) == UInt64(10)
-    @test Groebner.monom_entrytype(ev) === Groebner.MonomHash
+    @test Groebner.monom_entrytype(ev) === UInt8
     tmp = similar(x)
     @test Groebner.monom_to_vector!(tmp, ev) == [1, 2, 3, 0, 4]
     @test tmp == [1, 2, 3, 0, 4]
@@ -54,7 +54,7 @@ end
     @test ev.a2 == 0x0000000000000000
     @test typeof(Groebner.monom_totaldeg(ev)) === UInt64
     @test Groebner.monom_totaldeg(ev) == UInt64(10)
-    @test Groebner.monom_entrytype(ev) === Groebner.MonomHash
+    @test Groebner.monom_entrytype(ev) === UInt8
     tmp = similar(x)
     @test Groebner.monom_to_vector!(tmp, ev) == [1, 2, 3, 0, 4]
 
@@ -107,7 +107,7 @@ end
     @test ev.a3 == 0x0000000000000000
     @test typeof(Groebner.monom_totaldeg(ev)) === UInt64
     @test Groebner.monom_totaldeg(ev) == UInt64(10)
-    @test Groebner.monom_entrytype(ev) === Groebner.MonomHash
+    @test Groebner.monom_entrytype(ev) === UInt8
     tmp = similar(x)
     @test Groebner.monom_to_vector!(tmp, ev) == [1, 2, 3, 0, 4]
 
@@ -158,7 +158,7 @@ end
     @test ev.a4 == 0x0000000000000000
     @test typeof(Groebner.monom_totaldeg(ev)) === UInt64
     @test Groebner.monom_totaldeg(ev) == UInt64(10)
-    @test Groebner.monom_entrytype(ev) === Groebner.MonomHash
+    @test Groebner.monom_entrytype(ev) === UInt8
     tmp = similar(x)
     @test Groebner.monom_to_vector!(tmp, ev) == [1, 2, 3, 0, 4]
 
