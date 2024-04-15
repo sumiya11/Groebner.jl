@@ -24,7 +24,7 @@ monom_max_vars(::Type{ExponentVector{T}}) where {T} = 2^32
 monom_max_vars(p::ExponentVector{T}) where {T} = monom_max_vars(typeof(p))
 
 monom_totaldeg(pv::ExponentVector) = @inbounds pv[1]
-monom_entrytype(pv::ExponentVector{T}) where {T} = T 
+monom_entrytype(pv::ExponentVector{T}) where {T} = T
 
 monom_copy(pv::ExponentVector) = Base.copy(pv)
 

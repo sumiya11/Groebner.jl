@@ -27,4 +27,4 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.BENCHMARK_KEY }}
         PR_NUMBER: ${{ github.event.number }}
-      run: julia --threads=auto --project=./benchmark/CI-scripts ./benchmark/CI-scripts/runtests.jl ${{ github.event.pull_request.base.ref }}
+      run: julia --threads=auto --project=./benchmark/CI-scripts ./benchmark/CI-scripts/runtests.jl

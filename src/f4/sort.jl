@@ -59,7 +59,7 @@ function sort_polys_by_lead_increasing!(
 
     b_monoms = basis.monoms
     h_monoms = hashtable.monoms
-    permutation = collect(1:basis.nfilled)
+    permutation = collect(1:(basis.nfilled))
     cmps =
         (x, y) -> monom_isless(
             @inbounds(h_monoms[b_monoms[x][1]]),
@@ -94,7 +94,7 @@ function is_sorted_by_lead_increasing(
 ) where {Ord <: AbstractInternalOrdering}
     b_monoms = basis.monoms
     h_monoms = hashtable.monoms
-    permutation = collect(1:basis.nfilled)
+    permutation = collect(1:(basis.nfilled))
     cmps =
         (x, y) -> monom_isless(
             @inbounds(h_monoms[b_monoms[x][1]]),
@@ -109,7 +109,7 @@ end
 function sort_pairset_by_degree!(pairset::Pairset, from::Int, sz::Int)
     pairs = pairset.pairs
     degs = pairset.degrees
-    permutation = collect(from:from + sz - 1)
+    permutation = collect(from:(from + sz - 1))
     sort_part!(permutation, 1, sz, by=i -> degs[i], scratch=pairset.scratch1)
     # @inbounds pairs[from:(from + sz - 1)] = pairs[permutation]
     # @inbounds degs[from:(from + sz - 1)] = degs[permutation]
@@ -244,7 +244,7 @@ end
 function sort_matrix_upper_rows!(matrix::MacaulayMatrix)
     #= smaller means pivot being more left  =#
     #= and density being smaller            =#
-    permutation = collect(1:matrix.nrows_filled_upper)
+    permutation = collect(1:(matrix.nrows_filled_upper))
     # TODO: use "let" here!
     cmp =
         (x, y) -> matrix_row_decreasing_cmp(
@@ -271,7 +271,7 @@ end
 function sort_matrix_lower_rows!(matrix::MacaulayMatrix)
     #= smaller means pivot being more right =#
     #= and density being larger             =#
-    permutation = collect(1:matrix.nrows_filled_lower)
+    permutation = collect(1:(matrix.nrows_filled_lower))
     cmp =
         (x, y) -> matrix_row_increasing_cmp(
             @inbounds(matrix.lower_rows[x]),

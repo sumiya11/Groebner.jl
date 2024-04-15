@@ -3,6 +3,7 @@
 
 # TTFX
 t1 = @timed using Groebner
+using AbstractAlgebra
 
 R, (x, y) = polynomial_ring(QQ, ["x", "y"], internal_ordering=:degrevlex)
 sys = [x^2 + y, x * y^2]
@@ -31,7 +32,6 @@ push!(suite, (problem_name="groebner, allocs qq", result=[a1]))
 push!(suite, (problem_name="groebner, allocs zp", result=[a2]))
 
 # Runtime
-using AbstractAlgebra
 import Primes
 import Nemo
 

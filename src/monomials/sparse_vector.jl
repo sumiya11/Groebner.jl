@@ -48,7 +48,7 @@ function monom_totaldeg(ev::SparseExponentVector{T}) where {T}
     s
 end
 
-monom_entrytype(ev::SparseExponentVector{T, I, N}) where {T, I, N} = T 
+monom_entrytype(ev::SparseExponentVector{T, I, N}) where {T, I, N} = T
 
 monom_copy(ev::SparseExponentVector{T, I, N}) where {T, I, N} =
     SparseExponentVector{T, I, N}(Base.copy(ev.inds), Base.copy(ev.vals))
