@@ -7,7 +7,7 @@ function dump_results(file, key)
         for problem in suite
             problem_name = problem.problem_name
             result = problem.result
-            println(out, "$problem_name: $result")
+            println(out, "$problem_name: $(join(map(string, result), ","))")
         end
     end
 end
@@ -39,8 +39,8 @@ k = Groebner.katsuran(8, k=GF(2^30 + 3), internal_ordering=:degrevlex)
 groebner(k)
 a2 = @allocated groebner(k)
 
-push!(suite, (problem_name="groebner, allocs qq", result=[a1]))
-push!(suite, (problem_name="groebner, allocs zp", result=[a2]))
+# push!(suite, (problem_name="groebner, allocs qq", result=[a1]))
+# push!(suite, (problem_name="groebner, allocs zp", result=[a2]))
 
 # Runtime
 import Primes
