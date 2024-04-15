@@ -1,0 +1,5 @@
+master
+using Groebner: 2.493873
+groebner,ttfx,qq drl: 6.4228005
+groebner,ttfx,zp lex: 7.4296882
+groebner,AA,2^31-1,katsura 9: 0.6911684,0.2251186,0.4978994,0.1943296,0.2565136,0.2365901,0.1948081

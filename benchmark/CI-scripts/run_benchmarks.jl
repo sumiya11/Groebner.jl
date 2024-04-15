@@ -284,7 +284,6 @@ function multimodular_gb_problem(nbits; np=AbstractAlgebra)
     nbits_per_prime = 31
     nprimes = max(div(nbits, nbits_per_prime), 1)
     N = prod(map(BigInt, Primes.nextprimes(2^31 - 100, nprimes)))
-    @info "Constructing a multi-modular problem" np nbits nbits_per_prime nprimes
     system = [
         x1 + x2 + x3 + x4,
         x1 * x2 + x1 * x3 + x1 * x4 + x2 * x3 + x2 * x4 + x3 * x4,
