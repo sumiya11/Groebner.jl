@@ -14,7 +14,7 @@
 # represented with a sorted vector of monomials and a vector of coefficients.
 # Monomials and coefficients are stored in the basis separately. Each monomial
 # is represented with an integer -- a unique identifier that indexes a bucket in
-# the hashtable (see f4/hashtable.jl).
+# the hashtable.
 
 ###
 # Pairset

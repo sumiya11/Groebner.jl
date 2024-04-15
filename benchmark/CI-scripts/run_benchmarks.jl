@@ -7,7 +7,8 @@ function dump_results(file, key)
         for problem in suite
             problem_name = problem.problem_name
             result = problem.result
-            println(out, "$problem_name: $(join(map(string, result), ","))")
+            type = problem.type
+            println(out, "$problem_name:$(String(type)):$(join(map(string, result), ","))")
         end
     end
 end
@@ -26,21 +27,30 @@ t3 = @timed groebner(sys)
 
 suite = []
 
-push!(suite, (problem_name="using Groebner", result=[t1.time]))
-push!(suite, (problem_name="groebner,ttfx,qq drl", result=[t2.time]))
-push!(suite, (problem_name="groebner,ttfx,zp lex", result=[t3.time]))
+push!(suite, (problem_name="using Groebner", type=:time, result=[t1.time]))
+push!(suite, (problem_name="groebner,ttfx,qq drl", type=:time, result=[t2.time]))
+push!(suite, (problem_name="groebner,ttfx,zp lex", type=:time, result=[t3.time]))
 
 # Allocations
-k = Groebner.katsuran(3, internal_ordering=:degrevlex)
+k = Groebner.katsuran(7, internal_ordering=:degrevlex)
 groebner(k)
 a1 = @allocated groebner(k)
 
-k = Groebner.katsuran(8, k=GF(2^30 + 3), internal_ordering=:degrevlex)
+k = Groebner.katsuran(7, k=GF(2^30 + 3), internal_ordering=:degrevlex)
 groebner(k)
 a2 = @allocated groebner(k)
 
-# push!(suite, (problem_name="groebner, allocs qq", result=[a1]))
-# push!(suite, (problem_name="groebner, allocs zp", result=[a2]))
+push!(suite, (problem_name="AA,bytes,QQ,katsura-7", type=:allocs, result=[a1]))
+push!(suite, (problem_name="AA,bytes,2^30+3,katsura-7", type=:allocs, result=[a2]))
+
+k = Groebner.katsuran(7, internal_ordering=:degrevlex)
+a1 = @allocations groebner(k)
+
+k = Groebner.katsuran(7, k=GF(2^30 + 3), internal_ordering=:degrevlex)
+a2 = @allocations groebner(k)
+
+push!(suite, (problem_name="AA,allocs,QQ,katsura-7", type=:allocs, result=[a1]))
+push!(suite, (problem_name="AA,allocs,2^30+3,katsura-7", type=:allocs, result=[a2]))
 
 # Runtime
 import Primes
@@ -69,6 +79,7 @@ push!(
     suite,
     (
         problem_name="groebner,AA,2^31-1,katsura 9",
+        type=:time,
         result=compute_gb(
             Groebner.katsuran(9, internal_ordering=:degrevlex, k=GF(2^31 - 1))
         )
@@ -78,6 +89,7 @@ push!(
     suite,
     (
         problem_name="groebner,AA,2^31-1,katsura 10",
+        type=:time,
         result=compute_gb(
             Groebner.katsuran(10, internal_ordering=:degrevlex, k=GF(2^31 - 1)),
             5
@@ -88,6 +100,7 @@ push!(
     suite,
     (
         problem_name="groebner,AA,2^31-1,katsura 11",
+        type=:time,
         result=compute_gb(
             Groebner.katsuran(11, internal_ordering=:degrevlex, k=GF(2^31 - 1)),
             3
@@ -98,6 +111,7 @@ push!(
     suite,
     (
         problem_name="groebner,AA,2^27+29,katsura 10",
+        type=:time,
         result=compute_gb(
             Groebner.katsuran(10, internal_ordering=:degrevlex, k=GF(2^27 + 29)),
             5
@@ -108,6 +122,7 @@ push!(
     suite,
     (
         problem_name="groebner,AA,2^27+29,cyclic 8",
+        type=:time,
         result=compute_gb(
             Groebner.cyclicn(8, internal_ordering=:degrevlex, k=GF(2^27 + 29)),
             5
@@ -118,6 +133,7 @@ push!(
     suite,
     (
         problem_name="groebner,AA,2^31-1,cyclic 8",
+        type=:time,
         result=compute_gb(
             Groebner.cyclicn(8, internal_ordering=:degrevlex, k=GF(2^31 - 1)),
             5
@@ -128,6 +144,7 @@ push!(
     suite,
     (
         problem_name="groebner,Nemo,2^31-1,cyclic 8",
+        type=:time,
         result=compute_gb(
             Groebner.cyclicn(
                 8,
@@ -149,6 +166,7 @@ push!(
     suite,
     (
         problem_name="groebner,AA,100 vars drl",
+        type=:time,
         result=compute_gb(
             n_variable_set(100, internal_ordering=:degrevlex, k=GF(2^31 - 1))
         )
@@ -159,6 +177,7 @@ push!(
     suite,
     (
         problem_name="groebner,threaded,AA,2^31-1,cyclic 8",
+        type=:time,
         result=compute_gb(
             Groebner.cyclicn(8, internal_ordering=:degrevlex, k=GF(2^31 - 1)),
             5,
@@ -184,6 +203,7 @@ push!(
     suite,
     (
         problem_name="apply,AA,2^31-1,cyclic 7",
+        type=:time,
         result=learn_and_apply(
             Groebner.cyclicn(7, internal_ordering=:degrevlex, k=GF(2^31 - 1))
         )
@@ -193,6 +213,7 @@ push!(
     suite,
     (
         problem_name="apply,Nemo,2^31-1,cyclic 7",
+        type=:time,
         result=learn_and_apply(
             Groebner.cyclicn(
                 7,
@@ -206,6 +227,7 @@ push!(
     suite,
     (
         problem_name="apply,AA,2^31-1,katsura 10",
+        type=:time,
         result=learn_and_apply(
             Groebner.katsuran(10, internal_ordering=:degrevlex, k=GF(2^31 - 1))
         )
@@ -215,6 +237,7 @@ push!(
     suite,
     (
         problem_name="apply,AA,2^27+29,katsura 10",
+        type=:time,
         result=learn_and_apply(
             Groebner.katsuran(10, internal_ordering=:degrevlex, k=GF(2^27 + 29))
         )
@@ -224,6 +247,7 @@ push!(
     suite,
     (
         problem_name="apply,Nemo,2^31-1,katsura 10",
+        type=:time,
         result=learn_and_apply(
             Groebner.katsuran(
                 10,
@@ -239,6 +263,7 @@ push!(
     suite,
     (
         problem_name="groebner,AA,QQ,katsura 8",
+        type=:time,
         result=compute_gb(Groebner.katsuran(8, internal_ordering=:degrevlex, k=QQ))
     )
 )
@@ -246,6 +271,7 @@ push!(
     suite,
     (
         problem_name="groebner,Nemo,QQ,katsura 8",
+        type=:time,
         result=compute_gb(Groebner.katsuran(8, internal_ordering=:degrevlex, k=Nemo.QQ))
     )
 )
@@ -253,6 +279,7 @@ push!(
     suite,
     (
         problem_name="groebner,AA,QQ,eco 10",
+        type=:time,
         result=compute_gb(Groebner.eco10(internal_ordering=:degrevlex, k=QQ))
     )
 )
@@ -260,6 +287,7 @@ push!(
     suite,
     (
         problem_name="groebner,AA,QQ,cyclic 7",
+        type=:time,
         result=compute_gb(Groebner.cyclicn(7, internal_ordering=:degrevlex, k=QQ))
     )
 )
@@ -267,6 +295,7 @@ push!(
     suite,
     (
         problem_name="groebner,AA,QQ,noon 8",
+        type=:time,
         result=compute_gb(Groebner.noonn(8, internal_ordering=:degrevlex, k=QQ), 3)
     )
 )
@@ -274,6 +303,7 @@ push!(
     suite,
     (
         problem_name="groebner,AA,QQ,hexapod",
+        type=:time,
         result=compute_gb(Groebner.hexapod(internal_ordering=:degrevlex, k=QQ), 3)
     )
 )
@@ -297,6 +327,7 @@ push!(
     suite,
     (
         problem_name="groebner,AA,QQ,1000-bit output",
+        type=:time,
         result=compute_gb(multimodular_gb_problem(1000, np=AbstractAlgebra))
     )
 )
@@ -304,6 +335,7 @@ push!(
     suite,
     (
         problem_name="groebner,Nemo,QQ,1000-bit output",
+        type=:time,
         result=compute_gb(multimodular_gb_problem(1000, np=Nemo))
     )
 )
@@ -311,6 +343,7 @@ push!(
     suite,
     (
         problem_name="groebner,AA,QQ,10_000-bit output",
+        type=:time,
         result=compute_gb(multimodular_gb_problem(10000, np=AbstractAlgebra))
     )
 )
@@ -318,6 +351,7 @@ push!(
     suite,
     (
         problem_name="groebner,Nemo,QQ,10_000-bit output",
+        type=:time,
         result=compute_gb(multimodular_gb_problem(10000, np=Nemo))
     )
 )
@@ -325,6 +359,7 @@ push!(
     suite,
     (
         problem_name="groebner,AA,QQ,100_000-bit output",
+        type=:time,
         result=compute_gb(multimodular_gb_problem(100000, np=AbstractAlgebra), 3)
     )
 )
@@ -332,6 +367,7 @@ push!(
     suite,
     (
         problem_name="groebner,Nemo,QQ,100_000-bit output",
+        type=:time,
         result=compute_gb(multimodular_gb_problem(100000, np=Nemo), 3)
     )
 )
@@ -357,6 +393,7 @@ push!(
     suite,
     (
         problem_name="normalform,AA,103,cyclic 8",
+        type=:time,
         result=compute_normalforms(
             Groebner.cyclicn(8, internal_ordering=:degrevlex, k=GF(103))
         )
@@ -366,6 +403,7 @@ push!(
     suite,
     (
         problem_name="normalform,Nemo,103,cyclic 8",
+        type=:time,
         result=compute_normalforms(
             Groebner.cyclicn(
                 8,
@@ -379,6 +417,7 @@ push!(
     suite,
     (
         problem_name="normalform,AA,QQ,katsura 9",
+        type=:time,
         result=compute_normalforms(
             Groebner.katsuran(9, internal_ordering=:degrevlex, k=QQ)
         )

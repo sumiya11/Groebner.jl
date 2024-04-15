@@ -85,54 +85,73 @@ end
 function clean_data(results)
     nrecords = length(results[1][1])
     results_problems = Vector{Any}(undef, nrecords)
+    results_types = Vector{Any}(undef, nrecords)
     results_master = [[] for _ in 1:nrecords]
     results_nightly = [[] for _ in 1:nrecords]
     for i in 1:SAMPLES
         for j in 1:nrecords
             master = results[i].master[j]
             nightly = results[i].nightly[j]
-            problem_name_master, times_master = split(master, ":")
-            problem_name_nightly, times_nightly = split(nightly, ":")
+            problem_name_master, type, times_master = split(master, ":")
+            problem_name_nightly, type, times_nightly = split(nightly, ":")
             @assert problem_name_master == problem_name_nightly
             times_master = map(
-                x -> 1e9 * parse(Float64, String(strip(x, ['[', ']', ' ', '\t']))),
+                x -> parse(Float64, String(strip(x, ['[', ']', ' ', '\t']))),
                 split(times_master, ",")
             )
             times_nightly = map(
-                x -> 1e9 * parse(Float64, String(strip(x, ['[', ']', ' ', '\t']))),
+                x -> parse(Float64, String(strip(x, ['[', ']', ' ', '\t']))),
                 split(times_nightly, ",")
             )
             append!(results_master[j], times_master)
             append!(results_nightly[j], times_nightly)
             results_problems[j] = problem_name_master
+            results_types[j] = type
         end
     end
-    results_problems, results_master, results_nightly
+    results_problems, results_types, results_master, results_nightly
 end
 
 # Compare results
 function compare()
     results = load_data()
-    results_problems, results_master, results_nightly = clean_data(results)
+    results_problems, results_types, results_master, results_nightly = clean_data(results)
     table = Matrix{Any}(undef, length(results_master), 4)
     fail = false
     for (i, (master, nightly)) in enumerate(zip(results_master, results_nightly))
-        f, unit = best_unit(maximum(master))
-        m1 = round(mean(master) / f, digits=2)
-        d1 = round(std(master) / f, digits=2)
-        label_master = "$m1 ± $d1 $unit"
-        m2 = round(mean(nightly) / f, digits=2)
-        d2 = round(std(nightly) / f, digits=2)
-        label_nightly = "$m2 ± $d2 $unit"
-        indicator = if mean(master) < 1e9 * IGNORE_SMALL
-            0, "insignificant"
-        elseif (1 + MAX_DEVIATION) * m1 < m2
-            fail = true
-            2, "**slower**❌"
-        elseif m1 > (1 + MAX_DEVIATION) * m2
-            1, "**faster**✅"
+        if results_types[i] == "time"
+            master = 1e9 .* master
+            nightly = 1e9 .* nightly
+            f, unit = best_unit(maximum(master))
+            m1 = round(mean(master) / f, digits=2)
+            d1 = round(std(master) / f, digits=2)
+            label_master = "$m1 ± $d1 $unit"
+            m2 = round(mean(nightly) / f, digits=2)
+            d2 = round(std(nightly) / f, digits=2)
+            label_nightly = "$m2 ± $d2 $unit"
+            indicator = if mean(master) < 1e9 * IGNORE_SMALL
+                0, "insignificant"
+            elseif (1 + MAX_DEVIATION) * m1 < m2
+                fail = true
+                2, "**slower**❌"
+            elseif m1 > (1 + MAX_DEVIATION) * m2
+                1, "**faster**✅"
+            else
+                0, "insignificant"
+            end
+        elseif results_types[i] == "allocs"
+            label_master = mean(master)
+            label_nightly = mean(nightly)
+            indicator = if label_master < label_nightly
+                fail = true
+                2, "**worse**❌"
+            elseif label_master > label_nightly
+                1, "**better**✅"
+            else
+                0, "same"
+            end
         else
-            0, "insignificant"
+            error("Beda!")
         end
         table[i, 1] = results_problems[i]
         table[i, 2] = label_master
@@ -166,8 +185,8 @@ function main()
     runbench()
     fail, table = compare()
     post(fail, table)
-    @test !fail
     versioninfo(verbose=true)
+    @test !fail
 end
 
 main()

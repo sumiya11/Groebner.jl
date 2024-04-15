@@ -91,30 +91,20 @@ end
     ht::MonomialHashtable{M},
     update_ht::MonomialHashtable{M}
 ) where {M <: Monom}
-    # total number of elements in the basis (old + new)
-    npivs = basis.nfilled
-    # number of potential critical pairs to add
-    npairs = basis.nprocessed * npivs + div((npivs + 1) * npivs, 2)
-
     @invariant basis.nfilled >= basis.nprocessed
     @stat new_basis_elements = basis.nfilled - basis.nprocessed
-
-    # make sure the pairset has enough space
-    pairset_resize_if_needed!(pairset, npairs)
-    pairset_size = length(pairset.pairs)
-
-    # update pairset:
-    # for each new element in basis..
+    # Update pairset: for each new element in the basis..
     @inbounds for i in (basis.nprocessed + 1):(basis.nfilled)
         # ..check redundancy of new polynomial..
         basis_is_new_polynomial_redundant!(pairset, basis, ht, update_ht, i) && continue
         pairset_resize_lcms_if_needed!(pairset, basis.nfilled)
-        # ..if not redundant, then add new S-pairs to pairset
+        pairset_resize_if_needed!(pairset, basis.nfilled)
+        # ..if not redundant, then add new S-pairs to the pairset..
         pairset_update!(pairset, basis, ht, update_ht, i)
     end
-
+    # ..clean up the basis.
     basis_update!(basis, ht)
-    pairset_size
+    length(pairset.pairs)
 end
 
 @timeit function f4_symbolic_preprocessing!(
