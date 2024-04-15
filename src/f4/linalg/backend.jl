@@ -102,7 +102,7 @@ end
         zeroed && continue
 
         @invariant length(new_sparse_row_support) == length(new_sparse_row_coeffs)
-        linalg_normalize_row!(new_sparse_row_coeffs, arithmetic)
+        linalg_row_make_monic!(new_sparse_row_coeffs, arithmetic)
 
         # Store the new row in the matrix, AND add the new row to the list of
         # known pivots
@@ -266,7 +266,7 @@ end
         end
 
         @invariant length(new_sparse_row_coeffs) == length(new_sparse_row_support)
-        linalg_normalize_row!(new_sparse_row_coeffs, arithmetic)
+        linalg_row_make_monic!(new_sparse_row_coeffs, arithmetic)
 
         # Update the support and the coefficients of the vector
         matrix.upper_coeffs[i] = new_sparse_row_coeffs
@@ -818,7 +818,7 @@ function linalg_dense_row_mod_p!(
 end
 
 # Normalize the row to have the leading coefficient equal to 1
-function linalg_normalize_row!(
+function linalg_row_make_monic!(
     row::Vector{T},
     arithmetic::AbstractArithmeticZp{A, T},
     first_nnz_index::Int=1
@@ -838,7 +838,7 @@ function linalg_normalize_row!(
 end
 
 # Normalize the row to have the leading coefficient equal to 1
-function linalg_normalize_row!(
+function linalg_row_make_monic!(
     row::Vector{T},
     arithmetic::AbstractArithmeticQQ{T},
     first_nnz_index::Int=1

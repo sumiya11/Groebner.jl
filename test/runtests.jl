@@ -53,7 +53,7 @@ end
     @time @includetests ["monoms/monom_arithmetic", "monoms/monom_orders"]
 
     # Consistency of input-output
-    @time @includetests ["input-output/AbstractAlgebra"]
+    @time @includetests ["input_output/AbstractAlgebra"]
     # Crt and rational reconstructions
     @time @includetests ["reconstruction/crt", "reconstruction/ratrec"]
 
@@ -85,10 +85,10 @@ end
     # - Nemo.jl  (Nemo.fmpq_mpoly, Nemo.gfp_mpoly)
     # - DynamicPolynomials.jl  (DynamicPolynomials.Polynomial{true, T})
     if try_import(:DynamicPolynomials)
-        @time @includetests ["input-output/DynamicPolynomials"]
+        @time @includetests ["input_output/DynamicPolynomials"]
     end
     if try_import(:Nemo)
-        @time @includetests ["input-output/Nemo"]
+        @time @includetests ["input_output/Nemo"]
     end
 
     @time @includetests ["output_inferred"]

@@ -22,9 +22,9 @@ jobs:
         version: ${{ matrix.julia-version }}
     - name: Build project
       uses: julia-actions/julia-buildpkg@latest
-    - run: julia -e '
-            using Pkg;
-            Pkg.add(["ArgParse", "Test", "TestSetExtensions", "Random", "GitHubActions", "Logging", "AbstractAlgebra", "Nemo"]);
-            using GitHubActions, Logging;
-            global_logger(GitHubActionsLogger());
-            include("benchmark/CI-scripts/runtests.jl")'
+    - name: Benchmark
+      continue-on-error: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.BENCHMARK_KEY }}
+        PR_NUMBER: ${{ github.event.number }}
+      run: julia --threads=auto --project=./benchmark/CI-scripts ./benchmark/CI-scripts/runtests.jl 2

@@ -180,7 +180,7 @@ function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
                     new_pivots_count += 1
                     absolute_row_index = (i - 1) * rowsperblock + new_pivots_count
 
-                    linalg_normalize_row!(new_sparse_row_coeffs, arithmetic)
+                    linalg_row_make_monic!(new_sparse_row_coeffs, arithmetic)
 
                     matrix.some_coeffs[absolute_row_index] = new_sparse_row_coeffs
                     matrix.lower_to_coeffs[new_sparse_row_support[1]] = absolute_row_index

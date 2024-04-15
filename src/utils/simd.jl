@@ -44,6 +44,25 @@ function pick_vector_width_clamp_8(::Type{T}) where {T}
     1
 end
 
+# Permute a part of the array from the given index according to the permutation.
+function permute_array!(
+    arr::AbstractVector{T},
+    perm::Vector{I},
+    buf::Vector{T},
+    from::Int
+) where {T, I}
+    @invariant length(buf) >= length(perm)
+    @invariant from + length(perm) - 1 <= length(arr)
+    # @invariant isperm(perm .- minimum(perm; init=zero(I)) .+ 1)
+    @inbounds for i in 1:length(perm)
+        buf[i] = arr[perm[i]]
+    end
+    @inbounds for i in 1:length(perm)
+        arr[from + i - 1] = buf[i]
+    end
+    nothing
+end
+
 # Vector functions in this file assume that
 # - input vectors are non-negative.
 # - input vectors have the same length.

@@ -113,7 +113,7 @@ function linalg_learn_reduce_matrix_lower_part_threaded!(
             if success
                 @invariant iszero(old)
 
-                linalg_normalize_row!(new_sparse_row_coeffs, arithmetic)
+                linalg_row_make_monic!(new_sparse_row_coeffs, arithmetic)
                 matrix.some_coeffs[i] = new_sparse_row_coeffs
                 matrix.lower_to_coeffs[new_sparse_row_support[1]] = i
                 pivots[new_sparse_row_support[1]] = new_sparse_row_support

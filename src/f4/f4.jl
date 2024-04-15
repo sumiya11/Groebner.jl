@@ -14,7 +14,7 @@
 # matrix    - a struct that is used for F4-style reduction,
 # hashtable - a hashtable that stores monomials.
 
-@noinline __throw_maximum_iterations_exceeded_in_f4(iters) =
+@noinline __f4_throw_maximum_iterations_exceeded(iters) =
     throw("""Something probably went wrong in Groebner.jl/F4. 
           The number of F4 iterations exceeded $iters. 
           Please consider submitting a GitHub issue.""")
@@ -62,7 +62,7 @@
     # We do not need normalization in some cases, e.g., when computing the
     # normal forms
     if normalize_input
-        basis_normalize!(basis, params.arithmetic, params.changematrix)
+        basis_make_monic!(basis, params.arithmetic, params.changematrix)
     end
 
     basis, pairset, hashtable, permutation
@@ -91,30 +91,20 @@ end
     ht::MonomialHashtable{M},
     update_ht::MonomialHashtable{M}
 ) where {M <: Monom}
-    # total number of elements in the basis (old + new)
-    npivs = basis.nfilled
-    # number of potential critical pairs to add
-    npairs = basis.nprocessed * npivs + div((npivs + 1) * npivs, 2)
-
     @invariant basis.nfilled >= basis.nprocessed
     @stat new_basis_elements = basis.nfilled - basis.nprocessed
-
-    # make sure the pairset has enough space
-    pairset_resize_if_needed!(pairset, npairs)
-    pairset_size = length(pairset.pairs)
-
-    # update pairset:
-    # for each new element in basis..
+    # Update pairset: for each new element in the basis..
     @inbounds for i in (basis.nprocessed + 1):(basis.nfilled)
         # ..check redundancy of new polynomial..
         basis_is_new_polynomial_redundant!(pairset, basis, ht, update_ht, i) && continue
         pairset_resize_lcms_if_needed!(pairset, basis.nfilled)
-        # ..if not redundant, then add new S-pairs to pairset
+        pairset_resize_if_needed!(pairset, basis.nfilled)
+        # ..if not redundant, then add new S-pairs to the pairset..
         pairset_update!(pairset, basis, ht, update_ht, i)
     end
-
+    # ..clean up the basis.
     basis_update!(basis, ht)
-    pairset_size
+    length(pairset.pairs)
 end
 
 @timeit function f4_symbolic_preprocessing!(
@@ -417,6 +407,7 @@ function f4_discard_normal!(
     npairs = pairset_lowest_degree_pairs!(pairset)
 
     ps = pairset.pairs
+    degs = pairset.degrees
 
     # if maxpairs is set or not
     if maxpairs != typemax(Int)
@@ -434,20 +425,21 @@ function f4_discard_normal!(
 
     @inbounds for i in 1:(pairset.load - npairs)
         ps[i] = ps[i + npairs]
+        degs[i] = degs[i + npairs]
     end
     pairset.load -= npairs
 end
 
 # F4 critical pair selection.
 function f4_select_critical_pairs!(
-    pairset::Pairset{Deg},
+    pairset::Pairset{ExponentType},
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable;
     maxpairs::Int=typemax(Int),
     select_all::Bool=false
-) where {Deg}
+) where {ExponentType}
     # TODO: Why is this code type unstable !???
     npairs::Int = pairset.load
     if !select_all
@@ -457,7 +449,8 @@ function f4_select_critical_pairs!(
     @invariant npairs > 0
 
     ps = pairset.pairs
-    deg::Deg = ps[1].deg
+    degs = pairset.degrees
+    @inbounds deg::ExponentType = degs[1]
 
     sort_pairset_by_lcm!(pairset, npairs, ht)
 
@@ -479,6 +472,7 @@ function f4_select_critical_pairs!(
     # Remove selected parirs from the pairset.
     @inbounds for i in 1:(pairset.load - npairs)
         ps[i] = ps[i + npairs]
+        degs[i] = degs[i + npairs]
     end
     pairset.load -= npairs
 
@@ -674,7 +668,7 @@ end
     # @invariant pairset_well_formed(:input_f4!, pairset, basis, ht)
 
     @log :debug "Entering F4."
-    basis_normalize!(basis, params.arithmetic, params.changematrix)
+    basis_make_monic!(basis, params.arithmetic, params.changematrix)
 
     matrix = matrix_initialize(ring, C)
 
@@ -748,7 +742,7 @@ end
         if i > 10_000
             @log :warn "Something has gone wrong in F4. Error will follow."
             @log_memory_locals
-            __throw_maximum_iterations_exceeded_in_f4(i)
+            __f4_throw_maximum_iterations_exceeded(i)
         end
     end
 

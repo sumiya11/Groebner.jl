@@ -57,7 +57,7 @@ function standardize_basis_in_learn!(
     resize!(basis.isredundant, basis.nprocessed)
     perm = sort_polys_by_lead_increasing!(basis, ht, false, ord=ord)
     trace.output_sort_indices = perm
-    basis_normalize!(basis, arithmetic, false)
+    basis_make_monic!(basis, arithmetic, false)
 end
 
 function matrix_compute_pivot_signature(pivots::Vector{Vector{MonomId}}, from::Int, sz::Int)
@@ -191,7 +191,7 @@ end
     @invariant params.reduced
 
     @log :debug "Entering F4 Learn phase."
-    basis_normalize!(basis, params.arithmetic, params.changematrix)
+    basis_make_monic!(basis, params.arithmetic, params.changematrix)
 
     matrix = matrix_initialize(ring, C)
 
@@ -585,7 +585,7 @@ function standardize_basis_in_apply!(ring::PolyRing, trace::TraceF4, arithmetic)
     end
     buf.nprocessed = buf.nnonredundant = 0
     buf.nfilled = trace.input_basis.nfilled
-    basis_normalize!(basis, arithmetic, false)
+    basis_make_monic!(basis, arithmetic, false)
 end
 
 @timeit function f4_apply!(
@@ -597,7 +597,7 @@ end
     @invariant basis_well_formed(:input_f4_apply!, ring, basis, trace.hashtable)
     @invariant params.reduced
 
-    basis_normalize!(basis, params.arithmetic, params.changematrix)
+    basis_make_monic!(basis, params.arithmetic, params.changematrix)
 
     iters_total = length(trace.matrix_infos) - 1
     iters = 0

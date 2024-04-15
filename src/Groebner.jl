@@ -165,9 +165,9 @@ include("arithmetic/QQ.jl")
 include("groebner/parameters.jl")
 
 # Input-output conversions for polynomials
-include("input-output/input-output.jl")
-include("input-output/AbstractAlgebra.jl")
-include("input-output/DynamicPolynomials.jl")
+include("input_output/input_output.jl")
+include("input_output/AbstractAlgebra.jl")
+include("input_output/DynamicPolynomials.jl")
 
 #= generic f4 =#
 #= the heart of this library =#
@@ -192,7 +192,7 @@ include("f4/linalg/backend_experimental.jl")
 
 include("f4/sort.jl")
 # Additional tiny tracing
-include("f4/tiny-trace.jl")
+include("f4/tiny_trace.jl")
 # All together combined in the F4 algorithm
 include("f4/f4.jl")
 # Learn & apply add-on

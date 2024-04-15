@@ -1,9 +1,11 @@
 [deps]
-AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
 ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
-Nemo = "2edaba10-b0f1-5616-af89-8c11ac63239a"
+GitHub = "bc5e4493-9b4d-5f90-b8aa-2b2bcaad7a26"
+GitHubActions = "6b79fd1a-b13a-48ab-b6b0-aaee1fee41df"
+PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
 Primes = "27ebfcd6-29c5-5fa9-bf4b-fb8fc14df3ae"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestSetExtensions = "98d24dd4-01ad-11ea-1b02-c9a08f80db04"

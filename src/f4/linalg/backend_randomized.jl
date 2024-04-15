@@ -133,7 +133,7 @@ function linalg_randomized_reduce_matrix_lower_part!(
 
             new_pivots_count += 1
 
-            linalg_normalize_row!(new_sparse_row_coeffs, arithmetic)
+            linalg_row_make_monic!(new_sparse_row_coeffs, arithmetic)
             @invariant length(new_sparse_row_support) == length(new_sparse_row_coeffs)
 
             pivots[new_sparse_row_support[1]] = new_sparse_row_support
