@@ -79,7 +79,6 @@ function load_data()
         results_nightly_i = results_nightly_i[2:end]
         push!(results, (master=results_master_i, nightly=results_nightly_i))
     end
-    @info "" results
     results
 end
 
@@ -108,7 +107,6 @@ function clean_data(results)
             results_problems[j] = problem_name_master
         end
     end
-    @info "" results_problems results_master results_nightly
     results_problems, results_master, results_nightly
 end
 

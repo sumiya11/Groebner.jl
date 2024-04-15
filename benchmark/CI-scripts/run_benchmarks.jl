@@ -303,13 +303,6 @@ push!(
 push!(
     suite,
     (
-        problem_name="groebner,AA,QQ,10000-bit output",
-        result=compute_gb(multimodular_gb_problem(10000, np=AbstractAlgebra))
-    )
-)
-push!(
-    suite,
-    (
         problem_name="groebner,Nemo,QQ,1000-bit output",
         result=compute_gb(multimodular_gb_problem(1000, np=Nemo))
     )
@@ -317,8 +310,29 @@ push!(
 push!(
     suite,
     (
-        problem_name="groebner,Nemo,QQ,10000-bit output",
+        problem_name="groebner,AA,QQ,10_000-bit output",
+        result=compute_gb(multimodular_gb_problem(10000, np=AbstractAlgebra))
+    )
+)
+push!(
+    suite,
+    (
+        problem_name="groebner,Nemo,QQ,10_000-bit output",
         result=compute_gb(multimodular_gb_problem(10000, np=Nemo))
+    )
+)
+push!(
+    suite,
+    (
+        problem_name="groebner,AA,QQ,100_000-bit output",
+        result=compute_gb(multimodular_gb_problem(100000, np=AbstractAlgebra), 3)
+    )
+)
+push!(
+    suite,
+    (
+        problem_name="groebner,Nemo,QQ,100_000-bit output",
+        result=compute_gb(multimodular_gb_problem(100000, np=Nemo), 3)
     )
 )
 
