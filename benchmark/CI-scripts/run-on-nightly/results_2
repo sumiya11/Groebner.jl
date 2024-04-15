@@ -1,5 +1,0 @@
-nightly
-using Groebner: 2.4985977
-groebner,ttfx,qq drl: 6.4489654
-groebner,ttfx,zp lex: 5.1967112
-groebner,AA,2^31-1,katsura 9: 0.6167886,0.1648819,0.1674786,0.1688346,0.1529359,0.1690909,0.19016
