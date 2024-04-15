@@ -561,7 +561,6 @@ function hashtable_check_monomial_division_in_update(
             j += 1
             continue
         end
-        rd3[] += 1
         a[j] = CRITICAL_PAIR_REDUNDANT
     end
 

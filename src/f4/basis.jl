@@ -471,12 +471,6 @@ function basis_make_monic!(
     basis
 end
 
-const tot = Ref{Int}(0)
-const rd1 = Ref{Int}(0)
-const rd2 = Ref{Int}(0)
-const rd3 = Ref{Int}(0)
-const ret = Ref{Int}(0)
-
 # Generate new S-pairs from pairs of polynomials
 #   (basis[idx], basis[i])
 # for every i < idx
@@ -494,8 +488,6 @@ const ret = Ref{Int}(0)
 
     @inbounds new_lead = basis.monoms[idx][1]
 
-    tot[] += bl
-
     # Generate new pairs.
     @inbounds for i in 1:(bl - 1)
         newidx = pl + i
@@ -505,7 +497,6 @@ const ret = Ref{Int}(0)
             degs[newidx] = update_ht.hashdata[lcms[i]].deg
             ps[newidx] = CriticalPair(Int32(i), Int32(idx), lcms[i])
         else
-            rd1[] += 1
             lcms[i] = CRITICAL_PAIR_REDUNDANT
             degs[newidx] = typemax(D)
             ps[newidx] = CriticalPair(Int32(i), Int32(idx), CRITICAL_PAIR_REDUNDANT)
@@ -527,7 +518,6 @@ const ret = Ref{Int}(0)
         # existing pair redundant
         if degs[i] > m && hashtable_monom_is_divisible(ps[i].lcm, new_lead, ht)
             ps[i] = CriticalPair(ps[i].poly1, ps[i].poly2, CRITICAL_PAIR_REDUNDANT)
-            rd2[] += 1
         end
     end
 

@@ -186,7 +186,9 @@ function main()
     fail, table = compare()
     post(fail, table)
     versioninfo(verbose=true)
-    @test !fail
+    @testset "Benchmarks" begin
+        @test !fail
+    end
 end
 
 main()

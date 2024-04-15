@@ -447,7 +447,6 @@ function f4_select_critical_pairs!(
     end
     npairs = min(npairs, maxpairs)
     @invariant npairs > 0
-    ret[] += npairs
 
     ps = pairset.pairs
     degs = pairset.degrees
