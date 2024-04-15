@@ -5,7 +5,7 @@ Pkg.instantiate()
 
 using ArgParse, GitHubActions, GitHub, Random, Logging
 using Test, TestSetExtensions, InteractiveUtils, PrettyTables
-using Base.Threads
+using Base.Threads, Statistics
 
 const MAX_DEVIATION = 0.1
 const IGNORE_SMALL = 1e-3
