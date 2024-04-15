@@ -24,9 +24,9 @@ const CRITICAL_PAIR_REDUNDANT = MonomId(0)
 # A pair of polynomials
 struct CriticalPair
     # First polynomial given by its index in the basis array
-    poly1::Int16
+    poly1::Int32
     # Second polynomial given by its index in the basis array
-    poly2::Int16
+    poly2::Int32
     # Index of lcm(lead(poly1), lead(poly2)) in the hashtable
     lcm::MonomId
 end
@@ -50,7 +50,7 @@ function pairset_initialize(::Type{ExponentType}; initial_size=2^6) where {Expon
         0,
         Vector{Int}(),
         Vector{CriticalPair}(),
-        Vector{ExponentType}(),
+        Vector{ExponentType}()
     )
 end
 
@@ -118,11 +118,6 @@ end
 
 # The type of the sugar degree
 const SugarCube = Int
-
-@noinline __basis_throw_maximum_size_exceeded(npolys) =
-    throw("""The basis has at least $(npolys) polynomials. 
-        This is too many and is not supported. 
-        Please consider submitting a GitHub issue.""")
 
 # Stores basis generators and some additional info
 mutable struct Basis{C <: Coeff}
@@ -420,7 +415,6 @@ function basis_deepcopy(basis::Basis{C}) where {C <: Coeff}
 end
 
 function basis_resize_if_needed!(basis::Basis{T}, to_add::Int) where {T}
-    basis.nprocessed + to_add > typemax(Int16) && __basis_throw_maximum_size_exceeded(basis.nprocessed + to_add)
     while basis.nprocessed + to_add >= basis.size
         basis.size = max(basis.size * 2, basis.nprocessed + to_add)
         resize!(basis.monoms, basis.size)
@@ -509,12 +503,12 @@ const ret = Ref{Int}(0)
            !monom_is_gcd_const(ht.monoms[basis.monoms[i][1]], ht.monoms[new_lead])
             lcms[i] = hashtable_get_lcm!(basis.monoms[i][1], new_lead, ht, update_ht)
             degs[newidx] = update_ht.hashdata[lcms[i]].deg
-            ps[newidx] = CriticalPair(Int16(i), Int16(idx), lcms[i])
+            ps[newidx] = CriticalPair(Int32(i), Int32(idx), lcms[i])
         else
             rd1[] += 1
             lcms[i] = CRITICAL_PAIR_REDUNDANT
             degs[newidx] = typemax(D)
-            ps[newidx] = CriticalPair(Int16(i), Int16(idx), CRITICAL_PAIR_REDUNDANT)
+            ps[newidx] = CriticalPair(Int32(i), Int32(idx), CRITICAL_PAIR_REDUNDANT)
         end
     end
 
@@ -642,7 +636,7 @@ function basis_is_new_polynomial_redundant!(
         # Add a new critical pair corresponding to Spoly(i, idx).
         pairset_resize_if_needed!(pairset, 1)
         lcm_new = hashtable_get_lcm!(lead_i, lead_new, ht, ht)
-        ps[pairset.load + 1] = CriticalPair(Int16(i), Int16(idx), lcm_new)
+        ps[pairset.load + 1] = CriticalPair(Int32(i), Int32(idx), lcm_new)
         degs[pairset.load + 1] = ht.hashdata[lcm_new].deg
         pairset.load += 1
 

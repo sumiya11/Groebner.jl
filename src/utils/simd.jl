@@ -48,7 +48,7 @@ end
 function permute_array!(arr::AbstractVector{T}, perm::Vector{I}, buf::Vector{T}, from::Int) where {T, I}
     @invariant length(buf) >= length(perm)
     @invariant from + length(perm) - 1 <= length(arr)
-    @invariant isperm(perm .- minimum(perm) .+ 1)
+    @invariant isperm(perm .- minimum(perm; init=zero(I)) .+ 1)
     @inbounds for i in 1:length(perm)
         buf[i] = arr[perm[i]]
     end

@@ -1,7 +1,37 @@
 # This script is not intended to be run directly.
 # Instead, see runtests.jl.
 
-using Groebner
+# TTFX
+t1 = @timed using Groebner
+
+R, (x, y) = polynomial_ring(QQ, ["x", "y"], internal_ordering=:degrevlex)
+sys = [x^2 + y, x * y^2]
+t2 = @timed groebner(sys)
+
+R, (x, y) = polynomial_ring(GF(2^30 + 3), ["x", "y"])
+sys = [x^2 + y, x * y^2]
+t3 = @timed groebner(sys)
+
+suite = []
+
+push!(suite, (problem_name="using Groebner", result=t1.time))
+push!(suite, (problem_name="groebner, ttfx, qq drl", result=t2.time))
+push!(suite, (problem_name="groebner, ttfx, zp lex", result=t3.time))
+
+# Allocations
+k = Groebner.katsuran(3, internal_ordering=:degrevlex)
+groebner(k)
+a1 = @allocated groebner(k)
+
+k = Groebner.katsuran(8, k=GF(2^30+3), internal_ordering=:degrevlex)
+groebner(k)
+a2 = @allocated groebner(k)
+
+push!(suite, (problem_name="groebner, allocs 1", result=a1))
+push!(suite, (problem_name="groebner, allocs 2", result=a2))
+
+# Runtime
+
 using AbstractAlgebra
 import Primes
 import Nemo
@@ -13,8 +43,6 @@ function nemo_make_prime_finite_field(p)
         Nemo.FpField(Nemo.ZZRingElem(p), false)
     end
 end
-
-suite = []
 
 function compute_gb(system, trials=7; kws...)
     times = []

@@ -41,7 +41,6 @@
     # Pairset for storing critical pairs of basis elements,
     # Hashtable for hashing monomials stored in the basis
     basis = basis_initialize(ring, length(monoms), C)
-    length(monoms) > typemax(Int16) && __basis_throw_maximum_size_exceeded(length(monoms))
     pairset = pairset_initialize(monom_entrytype(M))
     hashtable = hashtable_initialize(ring, params.rng, M, tablesize)
 
