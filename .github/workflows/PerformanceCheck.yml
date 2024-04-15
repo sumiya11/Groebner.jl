@@ -22,4 +22,9 @@ jobs:
         version: ${{ matrix.julia-version }}
     - name: Build project
       uses: julia-actions/julia-buildpkg@latest
-    - run: julia --threads=auto --project=./benchmark/CI-scripts ./benchmark/CI-scripts/runtests.jl ${{ github.event.pull_request.base.ref }}
+    - name: Benchmark
+      continue-on-error: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.BENCHMARK_KEY }}
+        PR_NUMBER: ${{ github.event.number }}
+      run: julia --threads=auto --project=./benchmark/CI-scripts ./benchmark/CI-scripts/runtests.jl ${{ github.event.pull_request.base.ref }}

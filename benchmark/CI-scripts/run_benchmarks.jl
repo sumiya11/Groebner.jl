@@ -398,7 +398,7 @@ function dump_results(file, key)
         for problem in suite
             problem_name = problem.problem_name
             result = problem.result
-            println(out, "$problem_name, $result")
+            println(out, "$problem_name: $result")
         end
     end
 end
