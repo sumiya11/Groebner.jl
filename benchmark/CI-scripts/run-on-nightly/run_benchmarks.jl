@@ -1,6 +1,7 @@
 import Pkg
+Pkg.activate(@__DIR__)
+Pkg.instantiate()
 Pkg.status()
-Pkg.develop(path=(@__DIR__) * "/../../../")
 
 include("../run_benchmarks.jl")
 

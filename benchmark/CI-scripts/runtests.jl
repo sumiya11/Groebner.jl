@@ -1,64 +1,47 @@
 # Test for performance regressions.
 using Pkg
-# Pkg.activate(".")
+Pkg.activate(@__DIR__)
+Pkg.instantiate()
 
-using Test
-using TestSetExtensions
-using InteractiveUtils
+using ArgParse, GitHubActions, Random, Logging
+using Test, TestSetExtensions, InteractiveUtils
 using Base.Threads
-using ArgParse
 
 const MAX_ACCEPTABLE_RELATIVE_DEVIATION = 0.1
 const IGNORE_SMALL_ABSOLUTE_DEVIATION = 1e-3
 
-const dir_stable = (@__DIR__) * "/run-on-stable"
+const dir_master = (@__DIR__) * "/run-on-master"
 const dir_nightly = (@__DIR__) * "/run-on-nightly"
 
-function parse_commandline()
-    s = ArgParseSettings()
-
-    @add_arg_table! s begin
-        "--commit"
-        help = "Compare to commit hash"
-        required = false
-        default = "master"
-    end
-
-    return parse_args(s)
-end
-
-function runbench(args)
+function runbench()
     @info "Start benchmarking.."
-    @info "Using $(nthreads()) threads in Groebner.jl"
+    @info "Using $(nthreads()) threads"
 
-    commit = args["commit"]
-
-    # Run benchmarks on the latest stable version of Groebner.jl
-    @info "Benchmarking Groebner.jl, stable" dir_stable commit
+    # Run benchmarks on master
+    @info "Benchmarking Groebner.jl, master, running $dir_master"
     @time run(
-        `julia --threads=$(nthreads()) --project=$dir_stable $dir_stable/run_benchmarks.jl $commit`,
+        `$(Base.julia_cmd()) --startup-file=no --threads=$(nthreads()) --project=$dir_master $dir_master/run_benchmarks.jl`,
         wait=true
     )
 
-    # Run benchmarks on the nightly version of Groebner.jl
-    @info "Benchmarking Groebner.jl, nightly" dir_nightly
+    # Run benchmarks on nightly
+    @info "Benchmarking Groebner.jl, nightly, running $dir_nightly" dir_nightly
     @time run(
-        `julia --threads=$(nthreads()) --project=$dir_nightly $dir_nightly/run_benchmarks.jl`,
+        `$(Base.julia_cmd()) --startup-file=no --threads=$(nthreads()) --project=$dir_nightly $dir_nightly/run_benchmarks.jl`,
         wait=true
     )
 end
 
 # Compare results
-function compare(args)
-    commit = args["commit"]
+function compare()
     results_stable = nothing
     results_nightly = nothing
     try
-        results_stable_file = open(dir_stable * "/results", "r")
+        results_stable_file = open(dir_master * "/results", "r")
         results_stable = readlines(results_stable_file)
         close(results_stable_file)
     catch e
-        @warn "Error when reading the file with results, Groebner.jl stable" commit
+        @warn "Error when reading the file with results, Groebner.jl master" commit
     end
     try
         results_nightly_file = open(dir_nightly * "/results", "r")
@@ -102,14 +85,9 @@ function compare(args)
 end
 
 function main()
-    args = parse_commandline()
-    println("Parsed args:")
-    for (arg, val) in args
-        println("  $arg  =>  $val")
-    end
-    runbench(args)
+    runbench()
     @testset "Benchmark results" begin
-        compare(args)
+        compare()
     end
     versioninfo(verbose=true)
 end
