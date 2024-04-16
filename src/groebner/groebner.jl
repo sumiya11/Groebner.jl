@@ -150,10 +150,10 @@ function _groebner_learn_and_apply(
 
     # Scale the input coefficients to integers to speed up the subsequent search
     # for lucky primes
-    @log :debug "Input polynomials" basis
+    @log :all "Input polynomials" basis
     @log :debug "Clearing the denominators of the input polynomials"
     basis_zz = clear_denominators!(state.buffer, basis, deepcopy=false)
-    @log :debug "Integer coefficients are" basis_zz.coeffs
+    @log :all "Integer coefficients are" basis_zz.coeffs
 
     # Handler for lucky primes
     luckyprimes = LuckyPrimes(basis_zz.coeffs)
@@ -163,9 +163,9 @@ function _groebner_learn_and_apply(
 
     # Perform reduction modulo prime and store result in basis_ff
     ring_ff, basis_ff = reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
-    @log :debug "Reduced coefficients are" basis_ff.coeffs
+    @log :all "Reduced coefficients are" basis_ff.coeffs
 
-    @log :debug "Before F4" basis_ff
+    @log :all "Before F4" basis_ff
     params_zp = params_mod_p(params, prime)
     trace = trace_initialize(
         ring_ff,
@@ -177,7 +177,7 @@ function _groebner_learn_and_apply(
     )
 
     f4_learn!(trace, ring_ff, trace.gb_basis, pairset, hashtable, params_zp)
-    @log :debug "After F4:" trace.gb_basis
+    @log :all "After F4:" trace.gb_basis
 
     # TODO: no need to deepcopy!
     push!(state.gb_coeffs_ff_all, deepcopy(trace.gb_basis.coeffs))
@@ -191,7 +191,7 @@ function _groebner_learn_and_apply(
         full_simultaneous_crt_reconstruct!(state, luckyprimes)
     end
     success_reconstruct = full_rational_reconstruct!(state, luckyprimes, params.use_flint)
-    @log :debug "Reconstructed coefficients" state.gb_coeffs_qq
+    @log :all "Reconstructed coefficients" state.gb_coeffs_qq
     @log :misc "Successfull reconstruction: $success_reconstruct"
 
     correct_basis = false
@@ -439,10 +439,10 @@ function _groebner_learn_and_apply_threaded(
 
     # Scale the input coefficients to integers to speed up the subsequent search
     # for lucky primes
-    @log :debug "Input polynomials" basis
+    @log :all "Input polynomials" basis
     @log :misc "Clearing the denominators of the input polynomials"
     basis_zz = clear_denominators!(state.buffer, basis, deepcopy=false)
-    @log :debug "Integer coefficients are" basis_zz.coeffs
+    @log :all "Integer coefficients are" basis_zz.coeffs
 
     # Handler for lucky primes
     luckyprimes = LuckyPrimes(basis_zz.coeffs)
@@ -452,9 +452,9 @@ function _groebner_learn_and_apply_threaded(
 
     # Perform reduction modulo prime and store result in basis_ff
     ring_ff, basis_ff = reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
-    @log :debug "Reduced coefficients are" basis_ff.coeffs
+    @log :all "Reduced coefficients are" basis_ff.coeffs
 
-    @log :debug "Before F4" basis_ff
+    @log :all "Before F4" basis_ff
     params_zp = params_mod_p(params, prime)
     trace = trace_initialize(
         ring_ff,
@@ -466,7 +466,7 @@ function _groebner_learn_and_apply_threaded(
     )
 
     f4_learn!(trace, ring_ff, trace.gb_basis, pairset, hashtable, params_zp)
-    @log :debug "After F4:" trace.gb_basis
+    @log :all "After F4:" trace.gb_basis
 
     # TODO: no need to deepcopy!
     push!(state.gb_coeffs_ff_all, deepcopy(trace.gb_basis.coeffs))
@@ -480,7 +480,7 @@ function _groebner_learn_and_apply_threaded(
         full_simultaneous_crt_reconstruct!(state, luckyprimes)
     end
     success_reconstruct = full_rational_reconstruct!(state, luckyprimes, params.use_flint)
-    @log :debug "Reconstructed coefficients" state.gb_coeffs_qq
+    @log :all "Reconstructed coefficients" state.gb_coeffs_qq
     @log :misc "Successfull reconstruction: $success_reconstruct"
 
     correct_basis = false
@@ -717,10 +717,10 @@ function _groebner_classic_modular(
 
     # Scale the input coefficients to integers to speed up the subsequent search
     # for lucky primes
-    @log :debug "Input polynomials" basis
+    @log :all "Input polynomials" basis
     @log :misc "Clearing the denominators of the input polynomials"
     basis_zz = clear_denominators!(state.buffer, basis, deepcopy=false)
-    @log :debug "Integer coefficients are" basis_zz.coeffs
+    @log :all "Integer coefficients are" basis_zz.coeffs
 
     # Handler for lucky primes
     luckyprimes = LuckyPrimes(basis_zz.coeffs)
@@ -730,12 +730,12 @@ function _groebner_classic_modular(
 
     # Perform reduction modulo prime and store result in basis_ff
     ring_ff, basis_ff = reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
-    @log :debug "Reduced coefficients are" basis_ff.coeffs
+    @log :all "Reduced coefficients are" basis_ff.coeffs
 
-    @log :debug "Before F4" basis_ff
+    @log :all "Before F4" basis_ff
     params_zp = params_mod_p(params, prime)
     f4!(ring_ff, basis_ff, pairset, hashtable, tracer, params_zp)
-    @log :debug "After F4:" basis_ff
+    @log :all "After F4:" basis_ff
     # NOTE: basis_ff may not own its coefficients, one should not mutate it
     # directly further in the code
 
@@ -750,7 +750,7 @@ function _groebner_classic_modular(
         full_simultaneous_crt_reconstruct!(state, luckyprimes)
     end
     success_reconstruct = full_rational_reconstruct!(state, luckyprimes, params.use_flint)
-    @log :debug "Reconstructed coefficients" state.gb_coeffs_qq
+    @log :all "Reconstructed coefficients" state.gb_coeffs_qq
     @log :misc "Successfull reconstruction: $success_reconstruct"
 
     correct_basis = false

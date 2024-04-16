@@ -308,7 +308,7 @@ function basis_changematrix_export(
     ht::MonomialHashtable{M},
     npolys
 ) where {C <: Coeff, M <: Monom}
-    @log :debug basis.changematrix
+    @log :all basis.changematrix
     matrix_monoms = Vector{Vector{Vector{M}}}(undef, basis.nnonredundant)
     matrix_coeffs = Vector{Vector{Vector{C}}}(undef, basis.nnonredundant)
     @inbounds for i in 1:(basis.nnonredundant)

@@ -77,7 +77,7 @@ function homogenize_generators!(
     $ring
     Homogenized polynomial ring: 
     $new_ring"""
-    @log :debug """
+    @log :all """
     Original monomials: 
     $monoms
     Homogenized monomials: 
@@ -132,7 +132,7 @@ function dehomogenize_generators!(
     $ring_desat
     De-homogenized polynomial ring: 
     $new_ring"""
-    @log :debug """
+    @log :all """
     Original monomials: 
     $monoms
     De-homogenized monomials: 
@@ -188,7 +188,7 @@ function desaturate_generators!(
     $ring
     De-saturated polynomial ring: 
     $new_ring"""
-    @log :debug """
+    @log :all """
     Original monomials: 
     $monoms
     De-saturated monomials: 
@@ -242,7 +242,7 @@ function saturate_generators_by_variable!(
     $ring
     Saturated polynomial ring: 
     $new_ring"""
-    @log :debug """
+    @log :all """
     Original monomials: 
     $monoms
     Saturated monomials: 

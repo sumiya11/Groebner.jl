@@ -280,8 +280,8 @@ function extract_coeffs_raw!(
             iszero(ring.ch) ? -one(C) : (ring.ch - one(ring.ch))
     end
 
-    @log :debug "Extracted coefficients from $(length(polys)) polynomials." basis
-    @log :debug "Extracted coefficients" basis.coeffs
+    @log :all "Extracted coefficients from $(length(polys)) polynomials." basis
+    @log :all "Extracted coefficients" basis.coeffs
     flag, ring
 end
 
@@ -324,8 +324,8 @@ function extract_coeffs_raw_X!(
             iszero(ring.ch) ? -one(C) : (ring.ch - one(ring.ch))
     end
 
-    @log :debug "Extracted coefficients from $(length(polys)) polynomials." basis
-    @log :debug "Extracted coefficients" basis.coeffs
+    @log :all "Extracted coefficients from $(length(polys)) polynomials." basis
+    @log :all "Extracted coefficients" basis.coeffs
     flag, ring
 end
 
@@ -344,7 +344,7 @@ function _extract_coeffs_raw_X!(
     @log :misc """
     Permuting input terms: $permute_input_terms
     Permuting for homogenization: $permute_homogenizing_terms"""
-    @log :debug """Permutations:
+    @log :all """Permutations:
       Of polynomials: $input_polys_perm
       Of terms (change of ordering): $term_perms
       Of terms (homogenization): $homog_term_perms"""
@@ -426,8 +426,8 @@ function io_extract_coeffs_raw_batched!(
         basis.coeffs[length(batch[1]) + 1][2] = chars - one(CoeffType)
     end
 
-    @log :debug "Extracted coefficients from $(map(length, batch)) polynomials." basis
-    @log :debug "Extracted coefficients" basis.coeffs
+    @log :all "Extracted coefficients from $(map(length, batch)) polynomials." basis
+    @log :all "Extracted coefficients" basis.coeffs
 
     flag, ring
 end
@@ -450,7 +450,7 @@ function _extract_coeffs_raw!(
     @log :misc """
     Permuting input terms: $permute_input_terms
     Permuting for homogenization: $permute_homogenizing_terms"""
-    @log :debug """Permutations:
+    @log :all """Permutations:
       Of polynomials: $input_polys_perm
       Of terms (change of ordering): $term_perms
       Of terms (homogenization): $homog_term_perms"""
@@ -500,7 +500,7 @@ function _io_extract_coeffs_raw_batched!(
     @log :misc """
     Permuting input terms: $permute_input_terms
     Permuting for homogenization: $permute_homogenizing_terms"""
-    @log :debug """Permutations:
+    @log :all """Permutations:
       Of polynomials: $input_polys_perm
       Of terms (change of ordering): $term_perms
       Of terms (homogenization): $homog_term_perms"""

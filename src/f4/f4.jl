@@ -121,7 +121,7 @@ end
     symbol_load = symbol_ht.load
     ncols = matrix.ncols_left
     matrix_resize_upper_part_if_needed!(matrix, ncols + symbol_load)
-    @log :debug "Finding reducers in the basis..." basis.nnonredundant
+    @log :debug "Finding reducers in the basis..."
 
     # Traverse all monomials in symbol_ht and search for a polynomial reducer
     # for each monomial.
@@ -159,7 +159,7 @@ function f4_autoreduce!(
     symbol_ht::MonomialHashtable{M},
     params
 ) where {M}
-    @log :debug "Entering autoreduction" basis
+    @log :all "Entering autoreduction" basis
 
     etmp = monom_construct_const(M, ht.nvars)
     # etmp is now set to zero, and has zero hash

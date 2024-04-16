@@ -297,7 +297,7 @@ representation specified by the given `representation`.
     ring = extract_ring(polynomials)
     var_to_index, monoms, coeffs = io_extract_polys(representation, ring, polynomials)
     @log :misc "Done converting input polynomials to internal representation."
-    @log :debug """
+    @log :all """
     Polynomials in internal representation:
     Ring: $ring
     Variable to index map: $var_to_index
@@ -345,7 +345,7 @@ function io_remove_zeros_from_input!(
     filter!(!iszero_monoms, monoms)
     @invariant length(monoms) == length(coeffs)
     iszerobasis = isempty(monoms)
-    @log :debug "After removing zero polynomials from input:" monoms coeffs
+    @log :all "After removing zero polynomials from input:" monoms coeffs
     iszerobasis
 end
 
@@ -368,7 +368,7 @@ function io_set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
     end
     @log :misc "Reordering input polynomial terms from $(current_ord) to $(target_ord)"
     permutations = sort_input_terms_to_change_ordering!(monoms, coeffs, internal_ord)
-    @log :debug "Reordered terms:" monoms coeffs
+    @log :all "Reordered terms:" monoms coeffs
     ring, permutations
 end
 

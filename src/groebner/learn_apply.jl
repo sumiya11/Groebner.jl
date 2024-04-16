@@ -60,7 +60,7 @@ function _groebner_learn1(polynomials, kws, representation)
     end
     trace.representation = representation
     trace.term_sorting_permutations = term_sorting_permutations
-    @log :debug """Sorting permutations:
+    @log :all """Sorting permutations:
     Terms: $(term_sorting_permutations)
     Polynomials: $(trace.input_permutation)"""
 
@@ -78,9 +78,9 @@ function _groebner_learn2(
     # Initialize F4 structs
     trace, basis, pairset, hashtable =
         f4_initialize_structs_with_trace(ring, monoms, coeffs, params)
-    @log :debug "Before F4:" basis
+    @log :all "Before F4:" basis
     f4_learn!(trace, ring, trace.gb_basis, pairset, hashtable, params)
-    @log :debug "After F4:" basis
+    @log :all "After F4:" basis
     gb_monoms, gb_coeffs = basis_export_data(trace.gb_basis, trace.hashtable)
     trace, gb_monoms, gb_coeffs
 end

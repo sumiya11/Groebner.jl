@@ -56,7 +56,7 @@ function _normalform0(polynomials, to_be_reduced, kws::KeywordArguments)
         coeffs_to_be_reduced_nonzero,
         params
     )
-    @log :debug """After normal form: 
+    @log :all """After normal form: 
     Monoms: $monoms_reduced 
     Coeffs: $coeffs_reduced"""
     monoms_to_be_reduced[nonzero_indices] .= monoms_reduced
@@ -84,7 +84,7 @@ end
         coeffs_to_be_reduced,
         hashtable
     )
-    @log :debug """
+    @log :all """
       Polynomials in internal representation before reduction:
       Basis: $basis
       To be reduced: $tobereduced
