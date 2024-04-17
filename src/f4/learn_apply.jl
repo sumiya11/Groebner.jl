@@ -463,8 +463,7 @@ function f4_symbolic_preprocessing!(
 
     i = MonomId(symbol_ht.offset)
     @inbounds while i <= symbol_ht.load
-        # not a reducer
-        if iszero(symbol_ht.hashdata[i].idx)
+        if symbol_ht.hashdata[i].idx == NON_PIVOT_COLUMN
             hv = symbol_ht.hashdata[i]
             symbol_ht.hashdata[i] =
                 Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask)

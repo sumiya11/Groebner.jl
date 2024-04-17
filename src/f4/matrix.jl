@@ -327,7 +327,8 @@ function matrix_convert_rows_to_basis_elements!(
     basis::Basis{C},
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable,
-    params::AlgorithmParameters
+    params::AlgorithmParameters;
+    batched_ht_insert::Bool=false
 ) where {C}
     # We mutate the basis directly by adding new elements
     @log :debug "# new pivots: $(matrix.npivots)"
@@ -336,17 +337,52 @@ function matrix_convert_rows_to_basis_elements!(
     rows = matrix.lower_rows
     crs = basis.nprocessed
 
-    @inbounds for i in 1:(matrix.npivots)
-        colidx = rows[i][1]
-        matrix_insert_in_basis_hashtable_pivots!(
-            rows[i],
-            ht,
-            symbol_ht,
-            matrix.column_to_monom
+    _, _, nl, nr = matrix_block_sizes(matrix)
+    @log :debug """
+    After F4 reduction, in the right part of the matrix,
+    # columns:        $nr
+    # rows:           $(matrix.npivots)
+    # monoms (total): $(sum(length, rows; init=0))
+    """
+
+    if batched_ht_insert
+        @log :debug "Using batched insert."
+        column_to_basis_monom = zeros(MonomId, nr)
+        @inbounds for i in 1:(matrix.npivots)
+            for j in rows[i]
+                column_to_basis_monom[j - nl] = 1
+            end
+        end
+        matrix_insert_in_basis_hashtable_pivots_masked!(
+            column_to_basis_monom, 
+            ht, 
+            symbol_ht, 
+            matrix.column_to_monom,
+            nl
         )
-        basis.coeffs[crs + i] = matrix.some_coeffs[matrix.lower_to_coeffs[colidx]]
-        basis.monoms[crs + i] = matrix.lower_rows[i]
-        @invariant length(basis.coeffs[crs + i]) == length(basis.monoms[crs + i])
+        @inbounds for i in 1:(matrix.npivots)
+            colidx = rows[i][1]
+            for j in 1:length(rows[i])
+                columnid = rows[i][j]
+                rows[i][j] = column_to_basis_monom[columnid - nl]
+            end
+            basis.coeffs[crs + i] = matrix.some_coeffs[matrix.lower_to_coeffs[colidx]]
+            basis.monoms[crs + i] = matrix.lower_rows[i]
+            @invariant length(basis.coeffs[crs + i]) == length(basis.monoms[crs + i])
+        end
+    else
+        @inbounds for i in 1:(matrix.npivots)
+            colidx = rows[i][1]
+            matrix_insert_in_basis_hashtable_pivots!(
+                rows[i],
+                ht,
+                symbol_ht,
+                matrix.column_to_monom
+            )
+            basis.coeffs[crs + i] = matrix.some_coeffs[matrix.lower_to_coeffs[colidx]]
+            basis.monoms[crs + i] = matrix.lower_rows[i]
+            @invariant length(basis.coeffs[crs + i]) == length(basis.monoms[crs + i])
+        end
     end
 
     if params.changematrix
@@ -479,7 +515,7 @@ end
     matrix.column_to_monom = column_to_monom
 end
 
-# TODO: this does not belong here!
+# TODO: this does not belong here!...
 function matrix_insert_in_basis_hashtable_pivots!(
     row::Vector{ColumnLabel},
     ht::MonomialHashtable{M},
@@ -500,6 +536,73 @@ function matrix_insert_in_basis_hashtable_pivots!(
     @label Letsgo
     @inbounds while l <= length(row)
         hidx = column_to_monom[row[l]]
+
+        # symbolic hash
+        h = sdata[hidx].hash
+
+        lastidx = ht.load + 1
+        bexps[lastidx] = sexps[hidx]
+        e = bexps[lastidx]
+
+        k = h
+        i = MonomHash(0)
+        @inbounds while i <= ht.size
+            k = hashtable_next_lookup_index(h, i, mod)
+            hm = bhash[k]
+
+            iszero(hm) && break
+
+            if hashtable_is_hash_collision(ht, hm, e, h)
+                i += MonomHash(1)
+                continue
+            end
+
+            row[l] = hm
+            l += 1
+            @goto Letsgo
+        end
+
+        @invariant !ht.frozen
+
+        bhash[k] = pos = lastidx
+        row[l] = pos
+        l += 1
+
+        bdata[pos] = Hashvalue(sdata[hidx].idx, h, sdata[hidx].divmask)
+
+        ht.load += 1
+    end
+
+    nothing
+end
+
+# TODO: ...and this!
+function matrix_insert_in_basis_hashtable_pivots_masked!(
+    row::Vector{ColumnLabel},
+    ht::MonomialHashtable{M},
+    symbol_ht::MonomialHashtable{M},
+    column_to_monom::Vector{MonomId},
+    shift::Int
+) where {M <: Monom}
+    hashtable_resize_if_needed!(ht, length(row))
+
+    sdata = symbol_ht.hashdata
+    sexps = symbol_ht.monoms
+
+    mod = MonomHash(ht.size - 1)
+    bdata = ht.hashdata
+    bexps = ht.monoms
+    bhash = ht.hashtable
+
+    l = 1
+    @label Letsgo
+    @inbounds while l <= length(row)
+        if iszero(row[l])
+            l += 1
+            continue
+        end
+
+        hidx = column_to_monom[shift + l]
 
         # symbolic hash
         h = sdata[hidx].hash

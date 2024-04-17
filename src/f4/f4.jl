@@ -82,7 +82,7 @@ end
     # Call the linear algebra backend
     linalg_main!(matrix, basis, params)
     # Extract nonzero rows from the matrix into the basis
-    matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht, params)
+    matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht, params; batched_ht_insert=true)
 end
 
 @timeit function f4_update!(

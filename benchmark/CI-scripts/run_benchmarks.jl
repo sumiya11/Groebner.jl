@@ -1,17 +1,6 @@
-# This script is not intended to be run directly.
-# Instead, see runtests.jl.
+# This script is not to be run directly. See runtests.jl.
 
-function dump_results(file, key)
-    open(file, "w") do out
-        println(out, key)
-        for problem in suite
-            problem_name = problem.problem_name
-            result = problem.result
-            type = problem.type
-            println(out, "$problem_name:$(String(type)):$(join(map(string, result), ","))")
-        end
-    end
-end
+stopwatch = time_ns()
 
 # TTFX
 t1 = @timed using Groebner
@@ -51,6 +40,16 @@ a2 = @allocations groebner(k)
 
 push!(suite, (problem_name="AA,allocs,QQ,katsura-7", type=:allocs, result=[a1]))
 push!(suite, (problem_name="AA,allocs,2^30+3,katsura-7", type=:allocs, result=[a2]))
+
+k = Groebner.cyclicn(8, k=GF(2^30 + 3), internal_ordering=:degrevlex)
+groebner(k)
+a3 = @allocations groebner(k)
+push!(suite, (problem_name="AA,allocs,2^30+3,cyclic-8", type=:allocs, result=[a3]))
+
+k = Groebner.katsuran(11, k=GF(2^30 + 3), internal_ordering=:degrevlex)
+groebner(k)
+a4 = @allocations groebner(k)
+push!(suite, (problem_name="AA,allocs,2^30+3,katsura-11", type=:allocs, result=[a4]))
 
 # Runtime
 import Primes
@@ -423,3 +422,6 @@ push!(
         )
     )
 )
+
+stopwatch = time_ns() - stopwatch
+push!(suite, (problem_name="total", type=:time, result=[stopwatch / 1e9]))
