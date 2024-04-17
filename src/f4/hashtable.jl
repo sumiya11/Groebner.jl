@@ -645,8 +645,7 @@ function hashtable_insert_polynomial_multiple!(
             symbol_ht.ndivbits,
             symbol_ht.compress_divmask
         )
-        symbol_ht.hashdata[vidx] =
-            Hashvalue(NON_PIVOT_COLUMN, newhash, divmask)
+        symbol_ht.hashdata[vidx] = Hashvalue(NON_PIVOT_COLUMN, newhash, divmask)
 
         row[j] = vidx
         symbol_ht.load += 1

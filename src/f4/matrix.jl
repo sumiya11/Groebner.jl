@@ -338,14 +338,15 @@ function matrix_convert_rows_to_basis_elements!(
     crs = basis.nprocessed
 
     _, _, nl, nr = matrix_block_sizes(matrix)
+    support_size = sum(length, rows; init=0)
     @log :debug """
     After F4 reduction, in the right part of the matrix,
-    # columns:        $nr
-    # rows:           $(matrix.npivots)
-    # monoms (total): $(sum(length, rows; init=0))
+    # columns: $nr
+    # pivots:  $(matrix.npivots)
+    # support: $support_size
     """
 
-    if batched_ht_insert
+    if batched_ht_insert && matrix.npivots > 1 && support_size > 4 * nr
         @log :debug "Using batched insert."
         column_to_basis_monom = zeros(MonomId, nr)
         @inbounds for i in 1:(matrix.npivots)
@@ -354,9 +355,9 @@ function matrix_convert_rows_to_basis_elements!(
             end
         end
         matrix_insert_in_basis_hashtable_pivots_masked!(
-            column_to_basis_monom, 
-            ht, 
-            symbol_ht, 
+            column_to_basis_monom,
+            ht,
+            symbol_ht,
             matrix.column_to_monom,
             nl
         )
