@@ -138,7 +138,7 @@ end
 
         hashval = symbol_ht.hashdata[i]
         symbol_ht.hashdata[i] =
-            Hashvalue(UNKNOWN_PIVOT_COLUMN, hashval.hash, hashval.divmask, hashval.deg)
+            Hashvalue(UNKNOWN_PIVOT_COLUMN, hashval.hash, hashval.divmask)
         matrix.ncols_left += 1
         f4_find_multiplied_reducer!(basis, matrix, ht, symbol_ht, MonomId(i))
         i += 1
@@ -183,7 +183,7 @@ function f4_autoreduce!(
         matrix.upper_to_mult[row_idx] = hashtable_insert!(ht, etmp)
         hv = symbol_ht.hashdata[uprows[row_idx][1]]
         symbol_ht.hashdata[uprows[row_idx][1]] =
-            Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
+            Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask)
     end
 
     # needed for correct column count in symbol hashtable
@@ -193,7 +193,7 @@ function f4_autoreduce!(
     # set all pivots to unknown
     @inbounds for i in (symbol_ht.offset):(symbol_ht.load)
         hv = symbol_ht.hashdata[i]
-        symbol_ht.hashdata[i] = Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
+        symbol_ht.hashdata[i] = Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask)
     end
 
     matrix_fill_column_to_monom_map!(matrix, symbol_ht)
@@ -359,7 +359,6 @@ function f4_find_multiplied_reducer!(
         PIVOT_COLUMN,
         monom_hashval.hash,
         monom_hashval.divmask,
-        monom_hashval.deg
     )
     matrix.nrows_filled_upper += 1
 
@@ -549,7 +548,7 @@ function f4_add_critical_pairs_to_matrix!(
         # Mark the matrix column that corresponds to the lcm as a pivot.
         hv = symbol_ht.hashdata[uprows[row_idx][1]]
         symbol_ht.hashdata[uprows[row_idx][1]] =
-            Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
+            Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask)
 
         # Add all polynomials with the same lcm to the lower part of matrix (to
         # be reduced).
@@ -584,7 +583,7 @@ function f4_add_critical_pairs_to_matrix!(
 
             hv = symbol_ht.hashdata[lowrows[row_idx][1]]
             symbol_ht.hashdata[lowrows[row_idx][1]] =
-                Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
+                Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask)
         end
 
         i = j

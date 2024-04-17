@@ -494,7 +494,7 @@ end
         if !basis.isredundant[i] &&
            !monom_is_gcd_const(ht.monoms[basis.monoms[i][1]], ht.monoms[new_lead])
             lcms[i] = hashtable_get_lcm!(basis.monoms[i][1], new_lead, ht, update_ht)
-            degs[newidx] = update_ht.hashdata[lcms[i]].deg
+            degs[newidx] = monom_totaldeg(update_ht.monoms[lcms[i]])
             ps[newidx] = CriticalPair(Int32(i), Int32(idx), lcms[i])
         else
             lcms[i] = CRITICAL_PAIR_REDUNDANT
@@ -627,7 +627,7 @@ function basis_is_new_polynomial_redundant!(
         pairset_resize_if_needed!(pairset, 1)
         lcm_new = hashtable_get_lcm!(lead_i, lead_new, ht, ht)
         ps[pairset.load + 1] = CriticalPair(Int32(i), Int32(idx), lcm_new)
-        degs[pairset.load + 1] = ht.hashdata[lcm_new].deg
+        degs[pairset.load + 1] = monom_totaldeg(ht.monoms[lcm_new])
         pairset.load += 1
 
         # Mark the polynomial as redundant.
@@ -830,7 +830,7 @@ function insert_lcms_in_basis_hashtable!(
 
         uhd = update_ht.hashdata
         ll = plcm[l]
-        ht.hashdata[ht.load + 1] = Hashvalue(0, h, uhd[ll].divmask, uhd[ll].deg)
+        ht.hashdata[ht.load + 1] = Hashvalue(0, h, uhd[ll].divmask)
 
         ht.load += 1
         ps[m] = CriticalPair(ps[m].poly1, ps[m].poly2, MonomId(pos))

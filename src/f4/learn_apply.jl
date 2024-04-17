@@ -126,7 +126,7 @@ function f4_reducegb_learn!(
         # set lead index as 1
         hv = symbol_ht.hashdata[uprows[row_idx][1]]
         symbol_ht.hashdata[uprows[row_idx][1]] =
-            Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
+            Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask)
     end
     trace.nonredundant_indices_before_reduce = basis.nonredundant[1:(basis.nnonredundant)]
 
@@ -137,7 +137,7 @@ function f4_reducegb_learn!(
     # set all pivots to unknown
     @inbounds for i in (symbol_ht.offset):(symbol_ht.load)
         hv = symbol_ht.hashdata[i]
-        symbol_ht.hashdata[i] = Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
+        symbol_ht.hashdata[i] = Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask)
     end
 
     matrix_fill_column_to_monom_map!(matrix, symbol_ht)
@@ -306,7 +306,7 @@ function matrix_fill_column_to_monom_map!(
     # hash -> column
     @inbounds for k in 1:length(column_to_monom)
         hv = hdata[column_to_monom[k]]
-        hdata[column_to_monom[k]] = Hashvalue(k, hv.hash, hv.divmask, hv.deg)
+        hdata[column_to_monom[k]] = Hashvalue(k, hv.hash, hv.divmask)
     end
 
     @inbounds for k in 1:(matrix.nrows_filled_upper)
@@ -426,7 +426,7 @@ function f4_symbolic_preprocessing!(
 
         hv = symbol_ht.hashdata[matrix.lower_rows[i][1]]
         symbol_ht.hashdata[matrix.lower_rows[i][1]] =
-            Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
+            Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask)
 
         matrix.lower_to_coeffs[i] = poly_idx
     end
@@ -453,7 +453,7 @@ function f4_symbolic_preprocessing!(
 
         hv = symbol_ht.hashdata[matrix.upper_rows[i][1]]
         symbol_ht.hashdata[matrix.upper_rows[i][1]] =
-            Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
+            Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask)
 
         matrix.upper_to_coeffs[i] = poly_idx
     end
@@ -467,7 +467,7 @@ function f4_symbolic_preprocessing!(
         if iszero(symbol_ht.hashdata[i].idx)
             hv = symbol_ht.hashdata[i]
             symbol_ht.hashdata[i] =
-                Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
+                Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask)
         end
         i += MonomId(1)
     end
@@ -533,7 +533,7 @@ function autoreduce_f4_apply!(
     # set all pivots to unknown
     @inbounds for i in (symbol_ht.offset):(symbol_ht.load)
         hv = symbol_ht.hashdata[i]
-        symbol_ht.hashdata[i] = Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask, hv.deg)
+        symbol_ht.hashdata[i] = Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask)
     end
 
     matrix.nrows_filled_lower = nlow

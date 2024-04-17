@@ -459,7 +459,7 @@ end
     # hash -> column
     @inbounds for k in 1:length(column_to_monom)
         hv = hdata[column_to_monom[k]]
-        hdata[column_to_monom[k]] = Hashvalue(k, hv.hash, hv.divmask, hv.deg)
+        hdata[column_to_monom[k]] = Hashvalue(k, hv.hash, hv.divmask)
     end
 
     @inbounds for k in 1:(matrix.nrows_filled_upper)
@@ -532,7 +532,7 @@ function matrix_insert_in_basis_hashtable_pivots!(
         row[l] = pos
         l += 1
 
-        bdata[pos] = Hashvalue(sdata[hidx].idx, h, sdata[hidx].divmask, sdata[hidx].deg)
+        bdata[pos] = Hashvalue(sdata[hidx].idx, h, sdata[hidx].divmask)
 
         ht.load += 1
     end

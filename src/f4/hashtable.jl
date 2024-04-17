@@ -41,8 +41,6 @@ struct Hashvalue
     hash::MonomHash
     # corresponding divmask to speed up divisibility checks,
     divmask::DivisionMask
-    # total degree of the monomial
-    deg::MonomHash
 end
 
 # Hashtable implements open addressing with linear scan.
@@ -393,7 +391,7 @@ function hashtable_insert!(ht::MonomialHashtable{M}, e::M) where {M <: Monom}
         ht.ndivbits,
         ht.compress_divmask
     )
-    @inbounds ht.hashdata[vidx] = Hashvalue(0, he, divmask, monom_totaldeg(e))
+    @inbounds ht.hashdata[vidx] = Hashvalue(0, he, divmask)
 
     ht.load += 1
 
@@ -485,7 +483,7 @@ function hashtable_fill_divmasks!(ht::MonomialHashtable)
             ht.ndivbits,
             ht.compress_divmask
         )
-        ht.hashdata[vidx] = Hashvalue(0, unmasked.hash, divmask, monom_totaldeg(e))
+        ht.hashdata[vidx] = Hashvalue(0, unmasked.hash, divmask)
     end
 
     nothing
@@ -648,7 +646,7 @@ function hashtable_insert_polynomial_multiple!(
             symbol_ht.compress_divmask
         )
         symbol_ht.hashdata[vidx] =
-            Hashvalue(NON_PIVOT_COLUMN, newhash, divmask, monom_totaldeg(newmonom))
+            Hashvalue(NON_PIVOT_COLUMN, newhash, divmask)
 
         row[j] = vidx
         symbol_ht.load += 1
