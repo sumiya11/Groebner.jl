@@ -632,7 +632,7 @@ function hashtable_insert_polynomial_multiple!(
         hit && continue
         # Miss! Add monomial multiple to the hash table.
 
-        @invariant !symbol_ht.frozen    
+        @invariant !symbol_ht.frozen
 
         vidx = (symbol_ht.load + 1) % MonomId
         symbol_ht.monoms[vidx] = monom_copy(newmonom)
