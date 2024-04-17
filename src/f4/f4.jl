@@ -739,8 +739,6 @@ end
         # clear matrix
         matrix_reinitialize!(matrix, 0)
         hashtable_reinitialize!(symbol_ht)
-        # matrix    = matrix_initialize(ring, C)
-        # symbol_ht = hashtable_initialize_secondary(hashtable)
 
         if i > 10_000
             @log :warn "Something has gone wrong in F4. Error will follow."

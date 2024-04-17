@@ -235,6 +235,7 @@ end
 end
 
 function hashtable_reinitialize!(ht::MonomialHashtable{M}) where {M}
+    # NOTE: Preserve division info, hasher, and polynomial ring info
     @invariant !ht.frozen
 
     initial_size = 2^6
@@ -244,8 +245,6 @@ function hashtable_reinitialize!(ht::MonomialHashtable{M}) where {M}
     ht.load = 1
     ht.offset = 2
     ht.size = initial_size
-
-    # NOTE: Preserve division info, hasher, and polynomial ring info
 
     resize!(ht.monoms, ht.size)
     resize!(ht.hashdata, ht.size)
@@ -283,6 +282,8 @@ function hashtable_select_initial_size(ring::PolyRing, monoms::AbstractVector)
 end
 
 function hashtable_resize_if_needed!(ht::MonomialHashtable, added::Int)
+    @invariant ht.load <= div(ht.size, 2)
+
     newsize = ht.size
     while hashtable_needs_resize(newsize, ht.load, added)
         newsize *= 2
@@ -631,7 +632,7 @@ function hashtable_insert_polynomial_multiple!(
         hit && continue
         # Miss! Add monomial multiple to the hash table.
 
-        @invariant !symbol_ht.frozen
+        @invariant !symbol_ht.frozen    
 
         vidx = (symbol_ht.load + 1) % MonomId
         symbol_ht.monoms[vidx] = monom_copy(newmonom)
