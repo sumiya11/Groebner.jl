@@ -188,6 +188,9 @@ function main()
     versioninfo(verbose=true)
     @testset "Benchmarks" begin
         @test !fail
+        if fail
+            exit(1)
+        end
     end
 end
 

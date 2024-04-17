@@ -84,7 +84,14 @@ function reduction_learn!(
 )
     matrix_fill_column_to_monom_map!(matrix, symbol_ht)
     linalg_main!(matrix, basis, params, trace, linalg=LinearAlgebra(:learn, :sparse))
-    matrix_convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht, params)
+    matrix_convert_rows_to_basis_elements!(
+        matrix,
+        basis,
+        hashtable,
+        symbol_ht,
+        params;
+        batched_ht_insert=true
+    )
     pivot_indices =
         map(i -> Int32(basis.monoms[basis.nprocessed + i][1]), 1:(matrix.npivots))
     push!(trace.matrix_pivot_indices, pivot_indices)
@@ -463,11 +470,9 @@ function f4_symbolic_preprocessing!(
 
     i = MonomId(symbol_ht.offset)
     @inbounds while i <= symbol_ht.load
-        # not a reducer
-        if iszero(symbol_ht.hashdata[i].idx)
+        if symbol_ht.hashdata[i].idx == NON_PIVOT_COLUMN
             hv = symbol_ht.hashdata[i]
-            symbol_ht.hashdata[i] =
-                Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask)
+            symbol_ht.hashdata[i] = Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask)
         end
         i += MonomId(1)
     end

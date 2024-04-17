@@ -235,6 +235,7 @@ end
 end
 
 function hashtable_reinitialize!(ht::MonomialHashtable{M}) where {M}
+    # NOTE: Preserve division info, hasher, and polynomial ring info
     @invariant !ht.frozen
 
     initial_size = 2^6
@@ -244,8 +245,6 @@ function hashtable_reinitialize!(ht::MonomialHashtable{M}) where {M}
     ht.load = 1
     ht.offset = 2
     ht.size = initial_size
-
-    # NOTE: Preserve division info, hasher, and polynomial ring info
 
     resize!(ht.monoms, ht.size)
     resize!(ht.hashdata, ht.size)
@@ -645,8 +644,7 @@ function hashtable_insert_polynomial_multiple!(
             symbol_ht.ndivbits,
             symbol_ht.compress_divmask
         )
-        symbol_ht.hashdata[vidx] =
-            Hashvalue(NON_PIVOT_COLUMN, newhash, divmask)
+        symbol_ht.hashdata[vidx] = Hashvalue(NON_PIVOT_COLUMN, newhash, divmask)
 
         row[j] = vidx
         symbol_ht.load += 1

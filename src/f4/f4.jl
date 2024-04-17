@@ -82,7 +82,14 @@ end
     # Call the linear algebra backend
     linalg_main!(matrix, basis, params)
     # Extract nonzero rows from the matrix into the basis
-    matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht, params)
+    matrix_convert_rows_to_basis_elements!(
+        matrix,
+        basis,
+        ht,
+        symbol_ht,
+        params;
+        batched_ht_insert=true
+    )
 end
 
 @timeit function f4_update!(
@@ -355,11 +362,8 @@ function f4_find_multiplied_reducer!(
 
     # Mark the current monomial as a pivot since a reducer has been found.
     @inbounds monom_hashval = symbol_ht.hashdata[monomid]
-    @inbounds symbol_ht.hashdata[monomid] = Hashvalue(
-        PIVOT_COLUMN,
-        monom_hashval.hash,
-        monom_hashval.divmask,
-    )
+    @inbounds symbol_ht.hashdata[monomid] =
+        Hashvalue(PIVOT_COLUMN, monom_hashval.hash, monom_hashval.divmask)
     matrix.nrows_filled_upper += 1
 
     nothing
@@ -735,8 +739,6 @@ end
         # clear matrix
         matrix_reinitialize!(matrix, 0)
         hashtable_reinitialize!(symbol_ht)
-        # matrix    = matrix_initialize(ring, C)
-        # symbol_ht = hashtable_initialize_secondary(hashtable)
 
         if i > 10_000
             @log :warn "Something has gone wrong in F4. Error will follow."
