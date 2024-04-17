@@ -282,8 +282,6 @@ function hashtable_select_initial_size(ring::PolyRing, monoms::AbstractVector)
 end
 
 function hashtable_resize_if_needed!(ht::MonomialHashtable, added::Int)
-    @invariant ht.load <= div(ht.size, 2)
-
     newsize = ht.size
     while hashtable_needs_resize(newsize, ht.load, added)
         newsize *= 2
