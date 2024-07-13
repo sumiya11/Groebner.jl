@@ -91,7 +91,7 @@ end
 
 multivariate_length(p::MultivariatePolynomials.AbstractMonomialLike) = 1
 multivariate_length(p::MultivariatePolynomials.AbstractTermLike) = 1
-multivariate_length(p::AbstractPolynomialLike) = length(p)
+multivariate_length(p::AbstractPolynomialLike) = MultivariatePolynomials.nterms(p)
 
 function extract_monoms(
     representation::PolynomialRepresentation,
