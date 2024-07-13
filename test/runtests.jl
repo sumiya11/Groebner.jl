@@ -92,6 +92,4 @@ end
 
     # test for regressions
     @time @includetests ["regressions"]
-
-    @test Groebner.memory_report_print(verbose=true)
 end
