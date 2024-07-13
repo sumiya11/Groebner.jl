@@ -3,14 +3,14 @@
 ### 
 # Lucky primes for modular computation 
 
-# The sequence of lucky primes is increasing and deterministic, and starts with
-# the FIRST_LUCKY_PRIME_CANDIDATE. Groebner basis is computed modulo a lucky
-# prime, and the correctness of the computed basis is checked modulo some
+# The sequence of lucky prime candidates is decreasing and deterministic, and
+# starts with FIRST_LUCKY_PRIME_CANDIDATE. Groebner basis is computed modulo a
+# lucky prime, and the correctness of the computed basis is checked modulo some
 # another prime.
 
 # TODO: precompute the first k primes..
-const FIRST_LUCKY_PRIME_CANDIDATE = 2^30 + 3 # 2^31-1
-const FIRST_AUX_PRIME_CANDIDATE = 2^27 - 39 # 2^30 + 3
+const FIRST_LUCKY_PRIME_CANDIDATE = 2^31 - 1
+const FIRST_AUX_PRIME_CANDIDATE = 2^30 + 3
 
 @noinline __too_large_coefficient_error(modulo) = throw(
     ErrorException(
@@ -55,6 +55,11 @@ function isluckyprime(lucky::LuckyPrimes, prime::UInt64)
     p   = BigInt(prime)
     @inbounds for coeffs in lucky.coeffs
         @invariant !isempty(coeffs)
+        # for c in coeffs   # TODO!
+        #     if Base.GMP.MPZ.cmp_ui(Base.GMP.MPZ.tdiv_r!(buf, c, p), 0) == 0
+        #         return false
+        #     end
+        # end
         c = coeffs[1]
         if Base.GMP.MPZ.cmp_ui(Base.GMP.MPZ.tdiv_r!(buf, c, p), 0) == 0
             return false
@@ -71,10 +76,9 @@ end
 function next_lucky_prime!(lucky::LuckyPrimes)
     prime = lucky.luckyprime
     while !isluckyprime(lucky, prime)
-        prime = Primes.nextprime(prime + 1)
-        prime >= 2^32 && __too_large_coefficient_error(prime)
+        prime = Primes.prevprime(prime - 1)
     end
-    lucky.luckyprime = Primes.nextprime(prime + 1)
+    lucky.luckyprime = Primes.prevprime(prime - 1)
     @invariant !(prime in lucky.primes)
     push!(lucky.primes, prime)
     prime

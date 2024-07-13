@@ -1,9 +1,10 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
+module CustomUnicodePlots
+# Plotting the sparsity pattern of F4 matrices.
 
-# Automatic plotting of the sparsity pattern of F4 matrices
+using ..Groebner: @log
 
-# Adapted from and entirely inspired by UnicodePlots.jl.
-# The licence is MIT.
+# Adapted from and entirely inspired by UnicodePlots.jl. The licence is MIT.
 # https://github.com/JuliaPlots/UnicodePlots.jl/blob/master/LICENSE.md
 
 const UnicodeType = UInt32
@@ -300,3 +301,7 @@ function _show(io::IO, c::CanvasMatrix2x2)
     end
     nothing
 end
+
+end # module CustomUnicodePlots
+
+using .CustomUnicodePlots

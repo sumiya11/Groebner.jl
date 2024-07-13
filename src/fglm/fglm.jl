@@ -44,8 +44,9 @@ function _fglm1(
     ordering_to,
     params::AlgorithmParameters
 ) where {M <: Monom, C <: Coeff}
-    basis, _, ht = f4_initialize_structs(ring, monoms, coeffs, params)
-    new_basis, _, new_ht = fglm_main!(ring, basis, ht, ordering_to, params)
+    ctx = ctx_initialize()
+    basis, _, ht = f4_initialize_structs(ctx, ring, monoms, coeffs, params)
+    new_basis, _, new_ht = fglm_main!(ctx, ring, basis, ht, ordering_to, params)
     basis_export_data(new_basis, new_ht)
 end
 
@@ -98,7 +99,8 @@ end
     ordering_to,
     params::AlgorithmParameters
 ) where {M <: Monom, C <: Coeff}
-    basis, _, ht = f4_initialize_structs(ring, monoms, coeffs, params)
-    new_basis, _, new_ht = _fglm_residuals_in_batch!(ring, basis, ht, ordering_to, params)
+    ctx = ctx_initialize()
+    basis, _, ht = f4_initialize_structs(ctx, ring, monoms, coeffs, params)
+    new_basis, _, new_ht = _fglm_residuals_in_batch!(ctx, ring, basis, ht, ordering_to, params)
     basis_export_data(new_basis, new_ht)
 end

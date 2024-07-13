@@ -1,3 +1,4 @@
+using AbstractAlgebra
 
 @testset "groebner, change matrix" begin
     R, (x, y, z) =
@@ -19,9 +20,9 @@
             [x, x, x, x, R(0), R(0), x, x, x, x],
             [x + y, R(1), x^5 - y^5],
             [x^200 + y^250, x^100 * y^200 + 1],
-            Groebner.katsuran(4, k=ground),
-            Groebner.noonn(4, k=ground),
-            Groebner.cyclicn(4, k=ground),
+            Groebner.Examples.katsuran(4, k=ground),
+            Groebner.Examples.noonn(4, k=ground),
+            Groebner.Examples.cyclicn(4, k=ground),
             [x^i * y + x for i in 1:500]
         ]
 
@@ -33,7 +34,7 @@
         end
     end
 
-    f = Groebner.katsuran(4, k=QQ, internal_ordering=:lex)
+    f = Groebner.Examples.katsuran(4, k=QQ, internal_ordering=:lex)
     g, m = Groebner.groebner_with_change_matrix(f, ordering=Groebner.DegRevLex())
     @test m * f == g
     @test_throws DomainError Groebner.groebner_with_change_matrix(

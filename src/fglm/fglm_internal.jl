@@ -84,6 +84,7 @@ function staircase_divides_monom(monom, staircase, ht)
 end
 
 @timeit function fglm_main!(
+    ctx::Context,
     ring::PolyRing,
     basis::Basis{C},
     ht::MonomialHashtable{M},
@@ -118,7 +119,7 @@ end
         to_be_reduced = basis_initialize(ring, [[monom]], [[C(1)]])
         to_be_reduced.nfilled = 1
         # ! This call takes most the time
-        f4_normalform!(ring, basis, to_be_reduced, ht, params.arithmetic)
+        f4_normalform!(ctx, ring, basis, to_be_reduced, ht, params.arithmetic)
 
         # Search for a linear relation between all the computed normal forms
         relation_exists, relation =
@@ -143,6 +144,7 @@ end
 const _batchsize = Ref{Int}(100)
 
 function _fglm_residuals_in_batch!(
+    ctx::Context,
     ring::PolyRing,
     basis::Basis{C},
     ht::MonomialHashtable{M},
@@ -193,7 +195,7 @@ function _fglm_residuals_in_batch!(
         to_be_reduced.nfilled = filled
 
         # ! This call takes most the time
-        f4_normalform!(ring, basis, to_be_reduced, ht, params.arithmetic)
+        f4_normalform!(ctx, ring, basis, to_be_reduced, ht, params.arithmetic)
 
         # Search for a linear relation between all the computed normal forms
 

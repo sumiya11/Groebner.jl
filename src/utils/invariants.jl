@@ -1,6 +1,6 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-# Custom assertions for Groebner. Provides the @invariant macro.
+# Provides the @invariant macro for custom assertion checking.
 
 """
     @invariant expr
@@ -19,7 +19,6 @@ long as the code is compiled with `invariants_enabled() = false`.
 ```
 """
 macro invariant(arg)
-    # NOTE: does not propagate the error source path
     expr = quote
         if $(@__MODULE__).invariants_enabled()
             @assert $arg
@@ -35,7 +34,7 @@ macro unreachable()
 end
 
 ###
-# DANGER
+# DANGER # DANGER # DANGER #
 
 """
     unsafe_unreachable() --> Nothing

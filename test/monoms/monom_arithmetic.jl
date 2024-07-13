@@ -1,3 +1,4 @@
+using Random
 
 monom_construct_from_vector = Groebner.monom_construct_from_vector
 monom_to_vector! = Groebner.monom_to_vector!
@@ -255,7 +256,11 @@ end
                 b = monom_construct_from_vector(MonomType, y)
                 c = Groebner.monom_construct_const(MonomType, n)
                 c = monom_product!(c, a, b)
-                h = Groebner.monom_construct_hash_vector(MonomType, n)
+                h = Groebner.monom_construct_hash_vector(
+                    Random.MersenneTwister(),
+                    MonomType,
+                    n
+                )
                 @test typeof(Groebner.monom_hash(a, h)) === Groebner.MonomHash
                 @test Groebner.monom_hash(a, h) + Groebner.monom_hash(b, h) ==
                       Groebner.monom_hash(c, h)

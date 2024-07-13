@@ -1,9 +1,9 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-# Parts of this file were adapted from msolve
-#   https://github.com/algebraic-solving/msolve
-# msolve is distributed under GNU GPL v2+
-#   https://github.com/algebraic-solving/msolve/blob/master/COPYING
+# Parts of this file were adapted from msolve:
+# https://github.com/algebraic-solving/msolve
+# msolve is distributed under GNU GPL v2+:
+# https://github.com/algebraic-solving/msolve/blob/master/COPYING
 
 # These are experimental linear algebra backends. 
 # These are not used and not tested.
@@ -27,15 +27,17 @@ function linalg_randomized_hashcolumns_sparse!(
     # Reduce CD with AB
     linalg_randomized_hashcolumns_reduce_matrix_lower_part!(matrix, basis, arithmetic, rng)
     # Interreduce CD
-    linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic)
+    linalg_interreduce_matrix_pivots!(ctx, matrix, basis, arithmetic)
     true
 end
 
 function linalg_direct_rref_sparse!(
+    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
-    arithmetic::AbstractArithmetic
+    arithmetic::AbstractArithmetic,
+    rng::AbstractRNG
 )
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
@@ -44,15 +46,16 @@ function linalg_direct_rref_sparse!(
     @log :matrix matrix_string_repr(matrix)
 
     # Produce the RREF of AB
-    linalg_interreduce_matrix_upper_part!(matrix, basis, arithmetic)
+    linalg_interreduce_matrix_upper_part!(ctx, matrix, basis, arithmetic)
     # Use the produced RREF to perform reduction of CD
-    linalg_reduce_matrix_lower_part!(matrix, basis, arithmetic)
-    linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic)
+    linalg_randomized_reduce_matrix_lower_part!(ctx, matrix, basis, arithmetic, rng)
+    linalg_interreduce_matrix_pivots!(ctx, matrix, basis, arithmetic)
 
     true
 end
 
 function linalg_direct_rref_sparsedense!(
+    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
@@ -65,10 +68,10 @@ function linalg_direct_rref_sparsedense!(
     @log :matrix matrix_string_repr(matrix)
 
     # Produce the RREF of AB
-    linalg_interreduce_matrix_upper_part_sparsedense!(matrix, basis, arithmetic)
+    linalg_interreduce_matrix_upper_part_sparsedense!(ctx, matrix, basis, arithmetic)
     # Use the produced RREF to perform reduction of CD
-    linalg_reduce_matrix_lower_part_sparsedense!(matrix, basis, arithmetic)
-    linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic)
+    linalg_reduce_matrix_lower_part_sparsedense!(ctx, matrix, basis, arithmetic)
+    linalg_interreduce_matrix_pivots!(ctx, matrix, basis, arithmetic)
 
     true
 end
@@ -77,6 +80,7 @@ end
 # Low level
 
 @timeit function linalg_reduce_matrix_lower_part_sparsedense!(
+    ctx::Context,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
@@ -140,6 +144,7 @@ end
 end
 
 @timeit function linalg_interreduce_matrix_upper_part_sparsedense!(
+    ctx::Context,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
@@ -327,138 +332,474 @@ function linalg_randomized_hashcolumns_reduce_matrix_lower_part!(
     # Prepare the matrix
     pivots, row_index_to_coeffs = linalg_prepare_matrix_pivots!(matrix)
     resize!(matrix.some_coeffs, nlow)
-    resize!(matrix.B_coeffs_dense, ncols)
 
-    # Compute hashes of rows in the B block
-    hash_vector = matrix.buffer_hash_vector
+    indir_up_left, indir_up_right =
+        Vector{Vector{Int}}(undef, nup), Vector{Vector{Int}}(undef, nup)
+
+    @inbounds for i in 1:nup
+        sparse_row_support = matrix.upper_rows[i]
+        sparse_row_coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
+        @invariant length(sparse_row_support) == length(sparse_row_coeffs)
+        indir_up_left[i] = Vector{Int}(undef, length(sparse_row_support))
+        indir_up_right[i] = Vector{Int}(undef, length(sparse_row_support))
+        l, r = 1, 1
+        for j in 1:length(sparse_row_support)
+            idx = sparse_row_support[j]
+            if idx <= nleft
+                indir_up_left[i][l] = j
+                l += 1
+            else
+                indir_up_right[i][r] = j
+                r += 1
+            end
+        end
+        resize!(indir_up_left[i], l - 1)
+        resize!(indir_up_right[i], r - 1)
+    end
+    indir_low_left, indir_low_right =
+        Vector{Vector{Int}}(undef, nlow), Vector{Vector{Int}}(undef, nlow)
+    @inbounds for i in 1:nlow
+        sparse_row_support = matrix.lower_rows[i]
+        sparse_row_coeffs = basis.coeffs[row_index_to_coeffs[i]]
+        @invariant length(sparse_row_support) == length(sparse_row_coeffs)
+        indir_low_left[i] = Vector{Int}(undef, length(sparse_row_support))
+        indir_low_right[i] = Vector{Int}(undef, length(sparse_row_support))
+        l, r = 1, 1
+        for j in 1:length(sparse_row_support)
+            idx = sparse_row_support[j]
+            if idx <= nleft
+                indir_low_left[i][l] = j
+                l += 1
+            else
+                indir_low_right[i][r] = j
+                r += 1
+            end
+        end
+        resize!(indir_low_left[i], l - 1)
+        resize!(indir_low_right[i], r - 1)
+    end
+
+    # Compute hashes of rows
+    hash_vector = matrix.hash_vector
     resize!(hash_vector, nright)
     @inbounds for i in 1:nright
-        hash_vector[i] = mod_p(rand(AccumType), arithmetic)
+        hash_vector[i] = mod_p(rand(rng, AccumType), arithmetic) % CoeffType
     end
+    hashes_up = Vector{AccumType}(undef, nup)
+    hashes_low = Vector{AccumType}(undef, nlow)
+
     @inbounds for i in 1:nup
         row_hash = zero(AccumType)
         sparse_row_support = matrix.upper_rows[i]
         sparse_row_coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
-        for j in 1:length(sparse_row_support)
-            idx = sparse_row_support[j]
-            if idx <= nleft
-                continue
-            end
+        @invariant length(sparse_row_support) == length(sparse_row_coeffs)
+        for j in 1:length(indir_up_right[i])
+            idx = indir_up_right[i][j]
+            col = sparse_row_support[idx]
             row_hash = mod_p(
-                row_hash +
-                AccumType(sparse_row_coeffs[j]) * AccumType(hash_vector[idx - nleft]),
+                row_hash + AccumType(sparse_row_coeffs[idx]) * hash_vector[col - nleft],
                 arithmetic
             )
         end
-        matrix.B_coeffs_dense[sparse_row_support[1]] = [row_hash % CoeffType]
+        hashes_up[i] = row_hash
+    end
+    @inbounds for i in 1:nlow
+        row_hash = zero(AccumType)
+        sparse_row_support = matrix.lower_rows[i]
+        sparse_row_coeffs = basis.coeffs[row_index_to_coeffs[i]]
+        @invariant length(sparse_row_support) == length(sparse_row_coeffs)
+        for j in 1:length(indir_low_right[i])
+            idx = indir_low_right[i][j]
+            col = sparse_row_support[idx]
+            row_hash = mod_p(
+                row_hash + AccumType(sparse_row_coeffs[idx]) * hash_vector[col - nleft],
+                arithmetic
+            )
+        end
+        hashes_low[i] = row_hash
     end
 
+    # @info "hash vector" hash_vector
+    # @info "Hashes are" hashes_low hashes_up
+
     # Allocate the buffers
-    row = zeros(AccumType, ncols)
-    row1 = zeros(AccumType, nleft)
-    row2 = zeros(AccumType, 1)
+    # row = zeros(AccumType, ncols)
+    row_left = zeros(AccumType, nleft)
+    row_right = zeros(AccumType, ncols)
+    mults = Vector{Tuple{Int, CoeffType}}(undef, nleft)
 
     new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
     @inbounds for i in 1:nlow
         sparse_row_support = matrix.lower_rows[i]
         sparse_row_coeffs = basis.coeffs[row_index_to_coeffs[i]]
-        for j in 1:nleft
-            row1[j] = zero(AccumType)
+        @invariant length(sparse_row_support) == length(sparse_row_coeffs)
+
+        hash_low = hashes_low[i]
+        tmp = indir_low_left[i]
+        for j in 1:length(tmp)
+            idx = tmp[j]
+            col = sparse_row_support[idx]
+            row_left[col] = sparse_row_coeffs[idx]
         end
-        row_hash = zero(AccumType)
-        for j in 1:length(sparse_row_support)
-            idx = sparse_row_support[j]
-            if idx <= nleft
-                row1[idx] = sparse_row_coeffs[j]
-            else
-                row_hash = mod_p(
-                    row_hash +
-                    AccumType(sparse_row_coeffs[j]) * AccumType(hash_vector[idx - nleft]),
+        # println("row_left: ", row_left)
+
+        # for j in 1:nleft
+        #     mults[j] = zero(CoeffType)
+        # end
+        nmults = 0
+        first_nnz_column = sparse_row_support[1]
+        for j in first_nnz_column:nleft
+            if iszero(row_left[j])
+                continue
+            end
+
+            if !isassigned(pivots, j)
+                continue
+            end
+
+            # @info "reducing $i with $j"
+
+            indices = pivots[j]
+            coeffs = basis.coeffs[matrix.upper_to_coeffs[j]]
+
+            mult = divisor(arithmetic) - row_left[j]
+            nmults += 1
+            mults[nmults] = (j, mult)
+            hash_up = hashes_up[j]
+            hash_low = mod_p(hash_low + AccumType(mult) * AccumType(hash_up), arithmetic)
+
+            tmp = indir_up_left[j]
+            for w in 1:length(tmp)
+                idx = tmp[w]
+                col = indices[idx]
+                a = row_left[col] + AccumType(mult) * AccumType(coeffs[idx])
+                row_left[col] = mod_p(a, arithmetic)
+            end
+        end
+        # @info "reduced hash" hash_low
+        # println("mults: ", mults)
+
+        # if fully reduced
+        if iszero(hash_low)
+            __ZERO_HASH[] += 1
+            continue
+        end
+
+        # reduce rhs by lhs pivots
+        for j in 1:nright
+            row_right[nleft + j] = zero(AccumType)
+        end
+        sparse_row_support = matrix.lower_rows[i]
+        sparse_row_coeffs = basis.coeffs[row_index_to_coeffs[i]]
+        tmp = indir_low_right[i]
+        for j in 1:length(tmp)
+            idx = tmp[j]
+            col = sparse_row_support[idx]
+            row_right[col] = sparse_row_coeffs[idx]
+        end
+        for _idx in 1:nmults
+            j, mult = mults[_idx]
+
+            indices = pivots[j]
+            coeffs = basis.coeffs[matrix.upper_to_coeffs[j]]
+            @invariant length(indices) == length(coeffs)
+
+            tmp = indir_up_right[j]
+            for w in 1:length(tmp)
+                idx = tmp[w]
+                col = indices[idx]
+                row_right[col] = mod_p(
+                    row_right[col] + AccumType(mult) * AccumType(coeffs[idx]),
                     arithmetic
                 )
             end
         end
-        row2[1] = row_hash
 
-        linalg_load_sparse_row!(row, sparse_row_support, sparse_row_coeffs)
+        # println("row_right reduced to: ", row_right)
 
-        first_nnz_column = sparse_row_support[1]
+        # Must be nonzero.
+
+        # reduce rhs by rhs pivots
         pivot = 0
-        for q in first_nnz_column:ncols
-            if iszero(row[q])
+        n_nonzeros = 0
+        for j in (nleft + 1):ncols
+            if iszero(row_right[j])
                 continue
             end
 
-            if !isassigned(pivots, q)
+            if !isassigned(pivots, j)
+                n_nonzeros += 1
                 if iszero(pivot)
-                    pivot = q
+                    pivot = j
                 end
                 continue
             end
 
-            indices = pivots[q]
-            if q <= nleft
-                # if reducer is from the upper part of the matrix
-                coeffs = basis.coeffs[matrix.upper_to_coeffs[q]]
-            else
-                # if reducer is from the lower part of the matrix
-                coeffs = matrix.some_coeffs[matrix.lower_to_coeffs[q]]
+            indices = pivots[j]
+            coeffs = matrix.some_coeffs[matrix.lower_to_coeffs[j]]
+            @invariant length(indices) == length(coeffs)
+
+            mult = divisor(arithmetic) - row_right[j]
+            for w in 1:length(indices)
+                idx = indices[w]
+                a = row_right[idx] + AccumType(mult) * AccumType(coeffs[w])
+                row_right[idx] = mod_p(a, arithmetic)
             end
-
-            mult = row[q]
-            reducer = matrix.B_coeffs_dense[q]
-
-            linalg_vector_addmul_sparsedense_mod_p!(row, indices, coeffs, arithmetic)
-
-            linalg_vector_addmul_densedense!(row2, reducer, mult, arithmetic)
         end
-        zeroed = iszero(row2[1])
+
+        # println("after all reduction: ", row_right)
 
         # if fully reduced
-        if zeroed && iszero(pivot)
+        if n_nonzeros == 0
+            __ZERO_REDUCED[] += 1
             continue
         end
 
-        linalg_load_sparse_row!(row, sparse_row_support, sparse_row_coeffs)
-
-        # otherwise, reduce once again
-        zeroed = linalg_reduce_dense_row_by_pivots_sparse!(
+        resize!(new_sparse_row_support, n_nonzeros)
+        resize!(new_sparse_row_coeffs, n_nonzeros)
+        linalg_extract_sparse_row!(
             new_sparse_row_support,
             new_sparse_row_coeffs,
-            row,
-            matrix,
-            basis,
-            pivots,
-            first_nnz_column,
-            ncols,
-            arithmetic,
-            tmp_pos=-1
+            row_right,
+            convert(Int, pivot),
+            ncols
         )
 
-        # If the row is fully reduced
-        if zeroed
-            continue
-        end
-
         linalg_row_make_monic!(new_sparse_row_coeffs, arithmetic)
+
+        # println(new_sparse_row_support)
+        # println(new_sparse_row_coeffs)
 
         matrix.some_coeffs[i] = new_sparse_row_coeffs
         pivots[new_sparse_row_support[1]] = new_sparse_row_support
         matrix.lower_to_coeffs[new_sparse_row_support[1]] = i
 
+        new_sparse_row_support, new_sparse_row_coeffs =
+            linalg_new_empty_sparse_row(CoeffType)
+    end
+
+    println("zero: ", __ZERO_REDUCED[], ", ", __ZERO_HASH[])
+    __ZERO_REDUCED[] = 0
+    __ZERO_HASH[] = 0
+
+    true
+end
+
+function linalg_randomized_hashcolumns_reduce_matrix_lower_part_xxx!(
+    matrix::MacaulayMatrix{CoeffType},
+    basis::Basis{CoeffType},
+    arithmetic::AbstractArithmetic{AccumType, CoeffType},
+    rng::AbstractRNG
+) where {CoeffType <: Coeff, AccumType <: Coeff}
+    _, ncols = size(matrix)
+    nup, nlow = matrix_nrows_filled(matrix)
+    nleft, nright = matrix_ncols_filled(matrix)
+
+    # Prepare the matrix
+    pivots, row_index_to_coeffs = linalg_prepare_matrix_pivots!(matrix)
+    resize!(matrix.some_coeffs, nlow)
+
+    # Compute hashes of rows
+    hash_vector = matrix.hash_vector
+    resize!(hash_vector, nright)
+    @inbounds for i in 1:nright
+        hash_vector[i] = mod_p(rand(rng, AccumType), arithmetic) % CoeffType
+    end
+    hashes_up = Vector{AccumType}(undef, nup)
+    hashes_low = Vector{AccumType}(undef, nlow)
+    @inbounds for i in 1:nup
         row_hash = zero(AccumType)
-        for j in 1:length(new_sparse_row_support)
-            idx = new_sparse_row_support[j]
+        sparse_row_support = matrix.upper_rows[i]
+        sparse_row_coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
+        @invariant length(sparse_row_support) == length(sparse_row_coeffs)
+        for j in 1:length(sparse_row_support)
+            idx = sparse_row_support[j]
             if idx <= nleft
                 continue
             end
             row_hash = mod_p(
-                row_hash +
-                AccumType(new_sparse_row_coeffs[j]) * AccumType(hash_vector[idx - nleft]),
+                row_hash + AccumType(sparse_row_coeffs[j]) * hash_vector[idx - nleft],
                 arithmetic
             )
         end
-        matrix.B_coeffs_dense[new_sparse_row_support[1]] = [row_hash]
+        hashes_up[i] = row_hash
+    end
+    @inbounds for i in 1:nlow
+        row_hash = zero(AccumType)
+        sparse_row_support = matrix.lower_rows[i]
+        sparse_row_coeffs = basis.coeffs[row_index_to_coeffs[i]]
+        @invariant length(sparse_row_support) == length(sparse_row_coeffs)
+        for j in 1:length(sparse_row_support)
+            idx = sparse_row_support[j]
+            if idx <= nleft
+                continue
+            end
+            row_hash = mod_p(
+                row_hash + AccumType(sparse_row_coeffs[j]) * hash_vector[idx - nleft],
+                arithmetic
+            )
+        end
+        hashes_low[i] = row_hash
+    end
+
+    # @info "hash vector" hash_vector
+    # @info "Hashes are" hashes_low hashes_up
+
+    # Allocate the buffers
+    # row = zeros(AccumType, ncols)
+    row_left = zeros(AccumType, nleft)
+    row_right = zeros(AccumType, ncols)
+    mults = Vector{Tuple{Int, CoeffType}}(undef, nleft)
+
+    new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
+    @inbounds for i in 1:nlow
+        sparse_row_support = matrix.lower_rows[i]
+        sparse_row_coeffs = basis.coeffs[row_index_to_coeffs[i]]
+        @invariant length(sparse_row_support) == length(sparse_row_coeffs)
+
+        hash_low = hashes_low[i]
+        for j in 1:length(sparse_row_support)
+            idx = sparse_row_support[j]
+            if idx > nleft
+                continue
+            end
+            row_left[idx] = sparse_row_coeffs[j]
+        end
+        # println("row_left: ", row_left)
+
+        # for j in 1:nleft
+        #     mults[j] = zero(CoeffType)
+        # end
+        nmults = 0
+        first_nnz_column = sparse_row_support[1]
+        for j in first_nnz_column:nleft
+            if iszero(row_left[j])
+                continue
+            end
+
+            if !isassigned(pivots, j)
+                continue
+            end
+
+            # @info "reducing $i with $j"
+
+            indices = pivots[j]
+            coeffs = basis.coeffs[matrix.upper_to_coeffs[j]]
+
+            mult = divisor(arithmetic) - row_left[j]
+            nmults += 1
+            mults[nmults] = (j, mult)
+            hash_up = hashes_up[j]
+            hash_low = mod_p(hash_low + AccumType(mult) * AccumType(hash_up), arithmetic)
+
+            @inbounds for w in 1:length(indices)
+                idx = indices[w]
+                if idx > nleft
+                    continue
+                end
+                a = row_left[idx] + AccumType(mult) * AccumType(coeffs[w])
+                row_left[idx] = mod_p(a, arithmetic)
+            end
+        end
+        # @info "reduced hash" hash_low
+        # println("mults: ", mults)
+
+        # if fully reduced
+        if iszero(hash_low)
+            continue
+        end
+
+        # reduce rhs by lhs pivots
+        for j in 1:nright
+            row_right[nleft + j] = zero(AccumType)
+        end
+        sparse_row_support = matrix.lower_rows[i]
+        sparse_row_coeffs = basis.coeffs[row_index_to_coeffs[i]]
+        for j in 1:length(sparse_row_support)
+            idx = sparse_row_support[j]
+            if idx <= nleft
+                continue
+            end
+            row_right[idx] = sparse_row_coeffs[j]
+        end
+        # println("row_right is: ", row_right)
+
+        for _idx in 1:nmults
+            j, mult = mults[_idx]
+
+            indices = pivots[j]
+            coeffs = basis.coeffs[matrix.upper_to_coeffs[j]]
+            @invariant length(indices) == length(coeffs)
+
+            for w in 1:length(indices)
+                idx = indices[w]
+                if idx <= nleft
+                    continue
+                end
+                row_right[idx] = mod_p(
+                    row_right[idx] + AccumType(mult) * AccumType(coeffs[w]),
+                    arithmetic
+                )
+            end
+        end
+
+        # println("row_right reduced to: ", row_right)
+
+        # Must be nonzero.
+
+        # reduce rhs by rhs pivots
+        pivot = 0
+        n_nonzeros = 0
+        for j in (nleft + 1):ncols
+            if iszero(row_right[j])
+                continue
+            end
+
+            if !isassigned(pivots, j)
+                n_nonzeros += 1
+                if iszero(pivot)
+                    pivot = j
+                end
+                continue
+            end
+
+            indices = pivots[j]
+            coeffs = matrix.some_coeffs[matrix.lower_to_coeffs[j]]
+            @invariant length(indices) == length(coeffs)
+
+            mult = divisor(arithmetic) - row_right[j]
+            for w in 1:length(indices)
+                idx = indices[w]
+                a = row_right[idx] + AccumType(mult) * AccumType(coeffs[w])
+                row_right[idx] = mod_p(a, arithmetic)
+            end
+        end
+
+        # println("after all reduction: ", row_right)
+
+        # if fully reduced
+        if n_nonzeros == 0
+            continue
+        end
+
+        resize!(new_sparse_row_support, n_nonzeros)
+        resize!(new_sparse_row_coeffs, n_nonzeros)
+        linalg_extract_sparse_row!(
+            new_sparse_row_support,
+            new_sparse_row_coeffs,
+            row_right,
+            convert(Int, pivot),
+            ncols
+        )
+
+        linalg_row_make_monic!(new_sparse_row_coeffs, arithmetic)
+
+        # println(new_sparse_row_support)
+        # println(new_sparse_row_coeffs)
+
+        matrix.some_coeffs[i] = new_sparse_row_coeffs
+        pivots[new_sparse_row_support[1]] = new_sparse_row_support
+        matrix.lower_to_coeffs[new_sparse_row_support[1]] = i
 
         new_sparse_row_support, new_sparse_row_coeffs =
             linalg_new_empty_sparse_row(CoeffType)

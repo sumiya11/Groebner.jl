@@ -1,11 +1,15 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
-
+module Examples
 # Systems used for testing and benchmarking.
 # Useful references:
 #   - https://github.com/JuliaHomotopyContinuation/PolynomialTestSystems.jl
 #   - https://gitlab.lip6.fr/eder/msolve-examples
 #   - https://web.archive.org/web/20201202185136/http://www.cecm.sfu.ca/%7Erpearcea/mgb.html
 #   - https://github.com/symbolicdata/data
+
+using ..Groebner.AbstractAlgebra
+using ..Groebner.Combinatorics
+using ..Groebner.Random
 
 #! format: off
 # Syntax formatting is off in this file.
@@ -519,53 +523,6 @@ function kinema(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     ]
 end
 
-function sparse5(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
-    _, (x1, x2, x3, x4, x5) =
-        np.polynomial_ring(k, ["x$i" for i in 1:5], internal_ordering=internal_ordering)
-    [
-        x1^2 * x2^2 * x3^2 * x4^2 * x5^2 +
-        3 * x1^2 +
-        x2^2 +
-        x3^2 +
-        x4^2 +
-        x5^2 +
-        x1 * x2 * x3 * x4 * x5 +
-        5,
-        x1^2 * x2^2 * x3^2 * x4^2 * x5^2 +
-        x1^2 +
-        3 * x2^2 +
-        x3^2 +
-        x4^2 +
-        x5^2 +
-        x1 * x2 * x3 * x4 * x5 +
-        5,
-        x1^2 * x2^2 * x3^2 * x4^2 * x5^2 +
-        x1^2 +
-        x2^2 +
-        3 * x3^2 +
-        x4^2 +
-        x5^2 +
-        x1 * x2 * x3 * x4 * x5 +
-        5,
-        x1^2 * x2^2 * x3^2 * x4^2 * x5^2 +
-        x1^2 +
-        x2^2 +
-        x3^2 +
-        3 * x4^2 +
-        x5^2 +
-        x1 * x2 * x3 * x4 * x5 +
-        5,
-        x1^2 * x2^2 * x3^2 * x4^2 * x5^2 +
-        x1^2 +
-        x2^2 +
-        x3^2 +
-        x4^2 +
-        3 * x5^2 +
-        x1 * x2 * x3 * x4 * x5 +
-        5
-    ]
-end
-
 function s9_1(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     _, (a, b, c, d, e, f, g, h) =
         np.polynomial_ring(k, ["x$i" for i in 1:8], internal_ordering=internal_ordering)
@@ -623,85 +580,31 @@ end
 ###
 # Random generation
 
-# generate a random polynomial system with:
-# . `nvariables` variables, 
-# . monomial exponents in range `exps`,
-# . number of terms in range `nterms`,
-# . `npolys` polynomials in total,
-# . coefficients not greater than `csz`,
-# . using `rng` random number generator,
-# . over `k` (must be a field of integers modulo prime),
-# . in `ordering` term ordering
-function generate_set(
-    nvariables,
-    exps,
-    nterms,
-    npolys,
-    csz,
-    rng,
-    k,
-    internal_ordering;
-    np=AbstractAlgebra
-)
-    R, _ = np.polynomial_ring(k, ["x$i" for i in 1:nvariables], internal_ordering=internal_ordering)
+# A random polynomial with integer coefficients.
+function random_poly(rng::AbstractRNG, ring, maxdeg::Int, nterms::Int, coeffsz::Integer)
+    rand(rng, ring, 0:maxdeg, 1:nterms, 1:coeffsz)
+end
 
-    filter!(
-        !iszero,
-        [
-            np.map_coefficients(
-                c -> k(AbstractAlgebra.data(c) % csz),
-                rand(rng, R, exps, nterms)
-            ) for _ in 1:rand(rng, npolys)
-        ]
+# A random polynomial system over k.
+function random_generating_set(
+        rng::AbstractRNG,
+        k,
+        ord::Symbol,
+        nvars::Int,
+        maxdeg::Int,
+        nterms::Int,
+        npolys::Int,
+        coeffsz::Integer;
+        np=AbstractAlgebra
     )
+    R, _ = np.polynomial_ring(np.ZZ, ["x$i" for i in 1:nvars], internal_ordering=ord)
+    polys = [random_poly(rng, R, maxdeg, nterms, coeffsz) for _ in 1:npolys]
+    polys = filter(!iszero, polys)
+    isempty(polys) && return polys
+    polys = map(f -> np.map_coefficients(c -> k(c), f), polys)
+    polys
 end
 
-# -//-
-# over `k` (must be a field of rationals)
-function generate_set(
-    nvariables,
-    exps,
-    nterms,
-    npolys,
-    csz,
-    rng,
-    k::T,
-    internal_ordering;
-    np=AbstractAlgebra
-) where {T <: AbstractAlgebra.Rationals}
-    semik = np.GF(2^31 - 1)
-    R, _ = np.polynomial_ring(semik, ["x$i" for i in 1:nvariables], internal_ordering=internal_ordering)
+end # module Examples
 
-    csz = BigInt(csz)
-    zzbase = BigInt(9223372036854775837)
-    randzz() = rand((-zzbase):zzbase)
-
-    filter!(
-        !iszero,
-        [
-            np.map_coefficients(
-                c -> k(mod(randzz(), csz), mod(randzz(), csz) + 1),
-                rand(rng, R, exps, nterms)
-            ) for _ in 1:rand(rng, npolys)
-        ]
-    )
-end
-
-# -//-
-# over `k` (must be a ring of integers)
-function generate_set(
-    nvariables,
-    exps,
-    nterms,
-    npolys,
-    csz,
-    rng,
-    k::T,
-    internal_ordering;
-    np=AbstractAlgebra
-) where {T <: AbstractAlgebra.Integers}
-    s = generate_set(nvariables, exps, nterms, npolys, csz, rng, QQ, internal_ordering)
-    s = map(f -> np.map_coefficients(c -> numerator(c), f), s)
-    s = map(f -> np.change_coefficient_ring(np.ZZ, f), s)
-    s
-end
+using .Examples

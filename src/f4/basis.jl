@@ -1,45 +1,31 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-# Parts of this file were adapted from msolve
-#   https://github.com/algebraic-solving/msolve
-# msolve is distributed under GNU GPL v2+
-#   https://github.com/algebraic-solving/msolve/blob/master/COPYING
-
-###
-# Pairset and Basis
-
-# Pairset is a list of critical pairs (CriticalPair).
-
-# Basis is a structure that stores a list of polynomials. Each polynomial is
-# represented with a sorted vector of monomials and a vector of coefficients.
-# Monomials and coefficients are stored in the basis separately. Each monomial
-# is represented with an integer -- a unique identifier that indexes a bucket in
-# the hashtable.
+# Parts of this file were adapted from msolve:
+# https://github.com/algebraic-solving/msolve
+# msolve is distributed under GNU GPL v2+:
+# https://github.com/algebraic-solving/msolve/blob/master/COPYING
 
 ###
 # Pairset
 
 const CRITICAL_PAIR_REDUNDANT = MonomId(0)
 
-# A pair of polynomials
 struct CriticalPair
-    # First polynomial given by its index in the basis array
     poly1::Int32
-    # Second polynomial given by its index in the basis array
     poly2::Int32
-    # Index of lcm(lead(poly1), lead(poly2)) in the hashtable
+    # Index of lcm(lm(poly1), lm(poly2)) in the hashtable
     lcm::MonomId
 end
 
-# Stores S-Pairs and some additional info.
 mutable struct Pairset{ExponentType <: Integer}
     pairs::Vector{CriticalPair}
-    degrees::Vector{ExponentType}   # Buffer for lcms' degrees
-    lcms::Vector{MonomId}           # Buffer for lcms
+    degrees::Vector{ExponentType}
+    lcms::Vector{MonomId}
     load::Int
-    scratch1::Vector{Int}            # Scratch spaces for faster sorting
+    scratch1::Vector{Int}           # Scratch spaces for faster sorting
     scratch2::Vector{CriticalPair}
     scratch3::Vector{ExponentType}
+    scratch4::Vector{Int}
 end
 
 function pairset_initialize(::Type{ExponentType}; initial_size=2^6) where {ExponentType}
@@ -50,14 +36,13 @@ function pairset_initialize(::Type{ExponentType}; initial_size=2^6) where {Expon
         0,
         Vector{Int}(),
         Vector{CriticalPair}(),
-        Vector{ExponentType}()
+        Vector{ExponentType}(),
+        Vector{Int}()
     )
 end
 
 Base.isempty(ps::Pairset) = ps.load == 0
 
-# Checks if it is possible to add `to_add` number of pairs to the pairset, and
-# resizes the pairset if not
 function pairset_resize_if_needed!(ps::Pairset, to_add::Int)
     newsize = length(ps.pairs)
     while ps.load + to_add > newsize
@@ -70,7 +55,6 @@ end
 
 function pairset_resize_lcms_if_needed!(ps::Pairset, nfilled::Int)
     if length(ps.lcms) < nfilled + 1
-        # NOTE: Resizing by a small factor is questionable.
         resize!(ps.lcms, floor(Int, nfilled * 1.1) + 1)
     end
     nothing
@@ -113,43 +97,48 @@ function pairset_partition_by_degree!(ps::Pairset)
     i - 1
 end
 
+# Returns N, the number of critical pairs of the smallest degree. Sorts the
+# critical pairs so that the first N pairs in the pairset are the smallest with
+# respect to degree.
+function pairset_lowest_degree_pairs!(pairset::Pairset)
+    n = if true
+        n_lowest_degree_pairs = pairset_partition_by_degree!(pairset)
+        n_lowest_degree_pairs
+    else
+        sort_pairset_by_degree!(pairset, 1, pairset.load - 1)
+        pair_idx, _ = pairset_find_smallest_degree_pair(pairset)
+        pair_idx
+    end
+    @invariant n > 0
+    n
+end
+
 ###
 # Basis
 
-# The type of the sugar degree
-const SugarCube = Int
-
-# Stores basis generators and some additional info
+# Basis is a list of polynomials. A polynomial is represented by a sorted vector
+# of monomials and a sorted vector of coefficients. Monomials and coefficients
+# are stored in the basis separately. A monomial is represented by an integer, a
+# unique identifier provided by the hashtable.
 mutable struct Basis{C <: Coeff}
-    # Vector of polynomials, each polynomial is a vector of monomials,
-    # each monomial is represented with its index in hashtable
+    # Monomial identifiers are integers greater than zero. 
+    # Zero and negative values are reserved.
     monoms::Vector{Vector{MonomId}}
-    # Polynomial coefficients
     coeffs::Vector{Vector{C}}
 
-    # Max. number of polynomials that the basis can hold
     size::Int
-    # Number of processed polynomials, initially zero
     nprocessed::Int
-    # Total number of polys filled, initially zero
     nfilled::Int
 
-    # If element of the basis at some index is redundant
     isredundant::Vector{Bool}
-    # Positions of non-redundant elements in the basis
     nonredundant::Vector{Int}
-    # Division masks of leading monomials of non-redundant basis elements
     divmasks::Vector{DivisionMask}
-    # The number of non redundant elements in the basis
     nnonredundant::Int
 
-    # Sugar degrees of basis polynomials
-    sugar_cubes::Vector{SugarCube}
-
+    # usually empty
     changematrix::Vector{Dict{Int, Dict{MonomId, C}}}
 end
 
-# Initialize basis with coefficient of type T.
 function basis_initialize(ring::PolyRing, sz::Int, ::Type{T}) where {T <: Coeff}
     Basis(
         Vector{Vector{MonomId}}(undef, sz),
@@ -161,12 +150,10 @@ function basis_initialize(ring::PolyRing, sz::Int, ::Type{T}) where {T <: Coeff}
         Vector{Int}(undef, sz),
         Vector{DivisionMask}(undef, sz),
         0,
-        Vector{Int}(undef, 0),
         Vector{Dict{Int, Dict{MonomId, T}}}(undef, 0)
     )
 end
 
-# Initialize basis with the given (already hashed) monomials and coefficients.
 function basis_initialize(
     ring::PolyRing,
     hashedexps::Vector{Vector{MonomId}},
@@ -183,21 +170,39 @@ function basis_initialize(
         Vector{Int}(undef, sz),
         Vector{DivisionMask}(undef, sz),
         0,
-        Vector{Int}(undef, 0),
         Vector{Dict{Int, Dict{MonomId, T}}}(undef, 0)
     )
 end
 
-# Same as basis_initialize, but uses an existing hashtable
+# Same as basis_initialize, but uses an existing hashtable.
 function basis_initialize_using_existing_hashtable(
+    ctx::Context,
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     present_ht::MonomialHashtable;
-) where {M, C <: Coeff}
+) where {M <: Monom, C <: Coeff}
     basis = basis_initialize(ring, length(monoms), C)
-    basis_fill_data!(basis, present_ht, monoms, coeffs)
+    basis_fill_data!(ctx, basis, present_ht, monoms, coeffs)
     basis
+end
+
+function basis_well_formed(ring::PolyRing, basis::Basis, hashtable::MonomialHashtable)
+    (isempty(basis.monoms) || isempty(basis.coeffs)) && error("Basis cannot be empty")
+    (basis.size == 0 || basis.nfilled == 0) && error("Basis cannot be empty")
+    !is_sorted_by_lead_increasing(basis, hashtable) &&
+        error("Basis elements must be sorted")
+    for i in basis.nfilled
+        !(length(basis.monoms[i]) == length(basis.coeffs[i])) && error("Beda!")
+        for j in 1:length(basis.coeffs[i])
+            iszero(basis.coeffs[i][j]) && error("Coefficient is zero")
+            (ring.ch > 0) &&
+                !(basis.coeffs[i][j] < ring.ch) &&
+                error("Coefficients must be normalized")
+            (basis.monoms[i][j] > hashtable.load) && error("Bad monomial")
+        end
+    end
+    true
 end
 
 ###
@@ -347,7 +352,6 @@ function basis_shallow_copy_with_new_coeffs(
         basis.nonredundant,
         basis.divmasks,
         basis.nnonredundant,
-        basis.sugar_cubes,
         basis_changematrix_shallow_copy_with_new_type(
             basis.changematrix,
             new_sparse_row_coeffs
@@ -356,12 +360,10 @@ function basis_shallow_copy_with_new_coeffs(
 end
 
 function basis_deep_copy_with_new_coeffs(
+    ctx::Context,
     basis::Basis{C},
     new_sparse_row_coeffs::Vector{Vector{T}}
 ) where {C <: Coeff, T <: Coeff}
-    # Assume that MonomId is trivially copiable    
-    @invariant isbitstype(MonomId)
-
     monoms = Vector{Vector{MonomId}}(undef, length(basis.monoms))
     @inbounds for i in 1:length(basis.monoms)
         !isassigned(basis.monoms, i) && continue
@@ -381,7 +383,6 @@ function basis_deep_copy_with_new_coeffs(
         copy(basis.nonredundant),
         copy(basis.divmasks),
         basis.nnonredundant,
-        copy(basis.sugar_cubes),
         basis_changematrix_deep_copy_with_new_type(
             basis.changematrix,
             new_sparse_row_coeffs
@@ -389,10 +390,10 @@ function basis_deep_copy_with_new_coeffs(
     )
 end
 
-function basis_deepcopy(basis::Basis{C}) where {C <: Coeff}
+function basis_deepcopy(ctx::Context, basis::Basis{C}) where {C <: Coeff}
     coeffs = Vector{Vector{C}}(undef, length(basis.coeffs))
 
-    if isbitstype(C) # For Z/pZ
+    if isbitstype(C)  # For Z/pZ
         @inbounds for i in 1:length(basis.coeffs)
             !isassigned(basis.coeffs, i) && continue
             coeffs[i] = Vector{C}(undef, length(basis.coeffs[i]))
@@ -400,7 +401,7 @@ function basis_deepcopy(basis::Basis{C}) where {C <: Coeff}
                 coeffs[i][j] = basis.coeffs[i][j]
             end
         end
-    else    # For Z and Q
+    else  # For Z and Q
         @inbounds for i in 1:length(basis.coeffs)
             !isassigned(basis.coeffs, i) && continue
             coeffs[i] = Vector{C}(undef, length(basis.coeffs[i]))
@@ -411,7 +412,7 @@ function basis_deepcopy(basis::Basis{C}) where {C <: Coeff}
         end
     end
 
-    basis_deep_copy_with_new_coeffs(basis, coeffs)
+    basis_deep_copy_with_new_coeffs(ctx, basis, coeffs)
 end
 
 function basis_resize_if_needed!(basis::Basis{T}, to_add::Int) where {T}
@@ -423,13 +424,11 @@ function basis_resize_if_needed!(basis::Basis{T}, to_add::Int) where {T}
         @inbounds basis.isredundant[(basis.nprocessed + 1):end] .= false
         resize!(basis.nonredundant, basis.size)
         resize!(basis.divmasks, basis.size)
-        # resize!(basis.sugar_cubes, basis.size)
     end
     @invariant basis.size >= basis.nprocessed + to_add
     nothing
 end
 
-# Normalize each element of the basis to have leading coefficient equal to 1
 function basis_make_monic!(
     basis::Basis{C},
     arithmetic::AbstractArithmeticZp{A, C},
@@ -438,7 +437,7 @@ function basis_make_monic!(
     @log :debug "Normalizing polynomials in the basis"
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.nfilled)
-        !isassigned(cfs, i) && continue   # TODO: this is kind of bad
+        !isassigned(cfs, i) && continue
         mul = inv_mod_p(A(cfs[i][1]), arithmetic)
         cfs[i][1] = one(C)
         for j in 2:length(cfs[i])
@@ -452,7 +451,6 @@ function basis_make_monic!(
     basis
 end
 
-# Normalize each element of the basis by dividing it by its leading coefficient
 function basis_make_monic!(
     basis::Basis{C},
     arithmetic::AbstractArithmeticQQ,
@@ -576,7 +574,6 @@ end
     nothing
 end
 
-# Updates information about redundant generators in the basis
 @timeit function basis_update!(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
     k = 1
     lead = basis.divmasks
@@ -602,7 +599,6 @@ end
     basis.nprocessed = basis.nfilled
 end
 
-# Checks if the element of basis at position idx is redundant.
 function basis_is_new_polynomial_redundant!(
     pairset::Pairset,
     basis::Basis,
@@ -630,7 +626,6 @@ function basis_is_new_polynomial_redundant!(
         degs[pairset.load + 1] = monom_totaldeg(ht.monoms[lcm_new])
         pairset.load += 1
 
-        # Mark the polynomial as redundant.
         basis.isredundant[idx] = true
         return true
     end
@@ -638,9 +633,8 @@ function basis_is_new_polynomial_redundant!(
     false
 end
 
-# given input exponent and coefficient vectors hashes exponents into `ht`
-# and then constructs hashed polynomials for `basis`
 function basis_fill_data!(
+    ctx::Context,
     basis::Basis,
     ht::MonomialHashtable{M},
     exponents::Vector{Vector{M}},
@@ -648,6 +642,7 @@ function basis_fill_data!(
 ) where {M, T}
     ngens = length(exponents)
     @inbounds for i in 1:ngens
+        @invariant length(exponents[i]) == length(coeffs[i])
         hashtable_resize_if_needed!(ht, length(exponents[i]))
 
         nterms = length(coeffs[i])
@@ -681,7 +676,6 @@ function basis_sweep_redundant!(basis::Basis, hashtable)
     nothing
 end
 
-# Remove redundant elements from the basis by moving all non-redundant up front
 function basis_mark_redundant_elements!(basis::Basis)
     j = 1
     @inbounds for i in 1:(basis.nnonredundant)
@@ -721,12 +715,10 @@ end
     resize!(basis.nonredundant, basis.nprocessed)
     resize!(basis.isredundant, basis.nprocessed)
     resize!(basis.changematrix, basis.nprocessed)
-    # resize!(basis.sugar_cubes, basis.nprocessed)
     sort_polys_by_lead_increasing!(basis, ht, changematrix, ord=ord)
     basis_make_monic!(basis, arithmetic, changematrix)
 end
 
-# Returns the monomials of the polynomials in the basis
 function basis_get_monoms_by_identifiers(
     basis::Basis,
     ht::MonomialHashtable{M}
@@ -743,7 +735,6 @@ function basis_get_monoms_by_identifiers(
     monoms
 end
 
-# Returns the monomials and the coefficients of polynomials in the basis
 @timeit function basis_export_data(
     basis::Basis{C},
     ht::MonomialHashtable{M}

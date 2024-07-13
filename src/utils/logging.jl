@@ -50,6 +50,11 @@ else
     default_logger(io, level) = Logging.ConsoleLogger(io, level)
 end
 
+function gettime()
+    tm = Libc.TmStruct(Libc.TimeVal().sec)
+    (hour=tm.hour, min=tm.min, sec=tm.sec)
+end
+
 ###
 # Groebner logger
 
@@ -89,6 +94,9 @@ end
 function meta_formatter_groebner(level::LogLevel, _module, group, id, file, line)
     @nospecialize
     color = Logging.default_logcolor(level)
+    time = gettime()
+    h, m, s = lpad(time.hour, 2, "0"), lpad(time.min, 2, "0"), lpad(time.sec, 2, "0")
+    timestr = string("[", h, ":", m, ":", s, "]")
     prefix = if level >= Logging.Warn
         "Warning"
     elseif level < Logging.Warn && level >= Logging.Info
@@ -96,7 +104,7 @@ function meta_formatter_groebner(level::LogLevel, _module, group, id, file, line
     else
         "Debug"
     end
-    prefix = string(prefix, ":")
+    prefix = string(timestr, " ", prefix, ":")
     suffix::String = ""
     Logging.Info <= level < Logging.Warn && return color, prefix, suffix
     _module !== nothing && (suffix *= string(_module)::String)
@@ -167,15 +175,18 @@ end
 macro log(args...)
     file, line = String(__source__.file), Int(__source__.line)
     level, msgs = log_macro_pruneargs(file, line, args)
-    esc(:(
-        if $(@__MODULE__).logging_enabled()
-            with_logger($(@__MODULE__)._groebner_logger[]) do
-                @logmsg LogLevel($level) $(msgs...) _file = $file _line = $line
+    esc(
+        :(
+            if $(@__MODULE__).logging_enabled()
+                with_logger($(@__MODULE__)._groebner_logger[]) do
+                    $(Logging).@logmsg LogLevel($level) $(msgs...) _file = $file _line =
+                        $line
+                end
+            else
+                nothing
             end
-        else
-            nothing
-        end
-    ))
+        )
+    )
 end
 
 ###

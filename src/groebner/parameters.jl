@@ -13,15 +13,10 @@ end
 
 # Specifies linear algebra backend algorithm
 struct LinearAlgebra
-    # One of :deterministic, :randomized, :experimental_1, :experimental_2,
-    # :experimental_3,
     algorithm::Symbol
-    # One of :dense, :sparse
     sparsity::Symbol
 
-    function LinearAlgebra(algorithm, sparsity)
-        new(algorithm, sparsity)
-    end
+    LinearAlgebra(algorithm, sparsity) = new(algorithm, sparsity)
 end
 
 # Stores parameters for a single GB computation.
@@ -87,9 +82,6 @@ mutable struct AlgorithmParameters{
     # In modular computation of the basis, compute (at least!) this many bases
     # modulo different primes until a consensus in majority vote is reached
     majority_threshold::Int
-
-    # :simultaneous or :incremental
-    crt_algorithm::Symbol
 
     # Use multi-threading.
     threaded_f4::Symbol
@@ -240,7 +232,6 @@ function AlgorithmParameters(
     batched = kwargs.batched
 
     majority_threshold = 1
-    crt_algorithm = :simultaneous
 
     seed = kwargs.seed
     rng = _default_rng_type(seed)
@@ -284,7 +275,6 @@ function AlgorithmParameters(
     modular_strategy = $modular_strategy
     batched = $batched
     majority_threshold = $majority_threshold
-    crt_algorithm = $crt_algorithm
     seed = $seed
     rng = $rng
     sweep = $sweep
@@ -311,7 +301,6 @@ function AlgorithmParameters(
         modular_strategy,
         batched,
         majority_threshold,
-        crt_algorithm,
         threaded_f4,
         threaded_multimodular,
         useed,
@@ -352,7 +341,6 @@ function params_mod_p(
         params.modular_strategy,
         params.batched,
         params.majority_threshold,
-        params.crt_algorithm,
         params.threaded_f4,
         params.threaded_multimodular,
         params.seed,

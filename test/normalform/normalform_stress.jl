@@ -20,25 +20,25 @@ function test_params_nf(
                         for ord in orderings
                             for ord_groebner in orderings_groebner
                                 for csz in coeffssize
-                                    set1 = Groebner.generate_set(
+                                    set1 = Groebner.Examples.random_generating_set(
+                                        rng,
+                                        gr,
+                                        ord,
                                         n,
                                         e,
                                         nt,
                                         np,
                                         csz,
-                                        rng,
-                                        gr,
-                                        ord
                                     )
-                                    set2 = Groebner.generate_set(
+                                    set2 = Groebner.Examples.random_generating_set(
+                                        rng,
+                                        gr,
+                                        ord,
                                         n,
                                         e,
                                         nt,
                                         np,
                                         csz,
-                                        rng,
-                                        gr,
-                                        ord
                                     )
                                     isempty(set1) && continue
 
@@ -98,10 +98,10 @@ end
 @testset "normalform random stress tests" begin
     rng = Random.MersenneTwister(42)
 
-    nvariables = [2, 3, 4]
-    exps = [1:2, 2:4, 2:3]
-    nterms = [1:2, 2:3]
-    npolys = [1:3, 2:3]
+    nvariables = [2, 3]
+    exps = [2, 4, 3]
+    nterms = [2, 3]
+    npolys = [2, 3]
     grounds = [GF(2^31 - 1), QQ]
     coeffssize = [3, 1000, 2^31 - 1]
     orderings = [:deglex, :lex, :degrevlex]

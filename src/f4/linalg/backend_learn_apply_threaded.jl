@@ -1,14 +1,15 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-# Parts of this file were adapted from msolve
-#   https://github.com/algebraic-solving/msolve
-# msolve is distributed under GNU GPL v2+
-#   https://github.com/algebraic-solving/msolve/blob/master/COPYING
+# Parts of this file were adapted from msolve:
+# https://github.com/algebraic-solving/msolve
+# msolve is distributed under GNU GPL v2+:
+# https://github.com/algebraic-solving/msolve/blob/master/COPYING
 
 ###
 # High level
 
 function linalg_learn_sparse_threaded!(
+    ctx::Context,
     trace::TraceF4,
     matrix::MacaulayMatrix,
     basis::Basis,
@@ -21,9 +22,9 @@ function linalg_learn_sparse_threaded!(
     @log :matrix matrix_string_repr(matrix)
 
     # Reduce CD with AB
-    linalg_learn_reduce_matrix_lower_part_threaded!(trace, matrix, basis, arithmetic)
+    linalg_learn_reduce_matrix_lower_part_threaded!(ctx, trace, matrix, basis, arithmetic)
     # Interreduce CD
-    linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic)
+    linalg_interreduce_matrix_pivots!(ctx, matrix, basis, arithmetic)
 
     true
 end
@@ -32,6 +33,7 @@ end
 # Low level
 
 function linalg_learn_reduce_matrix_lower_part_threaded!(
+    ctx::Context,
     trace::TraceF4,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
@@ -71,6 +73,7 @@ function linalg_learn_reduce_matrix_lower_part_threaded!(
 
         t_id = threadid()
         row = row_buffers[t_id]
+        t_alloc = ctx.t_alloc[t_id]
         useful_reducers = useful_reducers_buffers[t_id]
         new_sparse_row_support, new_sparse_row_coeffs =
             linalg_new_empty_sparse_row(CoeffType)
@@ -82,7 +85,7 @@ function linalg_learn_reduce_matrix_lower_part_threaded!(
             first_nnz_col = sparse_row_support[1]
 
             # Reduce the combination by rows from the upper part of the matrix
-            zeroed = linalg_reduce_dense_row_by_pivots_sparse!(
+            n_nonzeros = linalg_reduce_dense_row_by_pivots_sparse!(
                 new_sparse_row_support,
                 new_sparse_row_coeffs,
                 row,

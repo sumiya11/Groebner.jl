@@ -1,7 +1,11 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-###
-#  Tracing in f4
+# Tracing in F4
+#
+# This file implements two kinds of traces:
+# - "an internal" trace -- a data structure meant for use only in F4, that is
+#   also used in modular computation
+# - 
 
 ###
 # The main struct
@@ -43,9 +47,12 @@ mutable struct TraceF4{C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
     sweep_output::Bool
     representation::PolynomialRepresentation
     homogenize::Bool
+
+    ctx::Context
 end
 
 function trace_initialize(
+    ctx::Context,
     ring::PolyRing,
     input_basis::Basis,
     gb_basis::Basis,
@@ -66,7 +73,7 @@ function trace_initialize(
         params.original_ord,
         input_signature,
         input_basis,
-        basis_deepcopy(gb_basis),
+        basis_deepcopy(ctx, gb_basis),
         gb_basis,
         hashtable,
         permutation,
@@ -86,7 +93,8 @@ function trace_initialize(
         params,
         params.sweep,
         PolynomialRepresentation(ExponentVector{UInt64}, UInt64, false),
-        params.homogenize
+        params.homogenize,
+        ctx
     )
 end
 
@@ -99,9 +107,9 @@ function trace_deepcopy(
         PolyRing(trace.ring.nvars, trace.ring.ord, trace.ring.ch),
         deepcopy(trace.original_ord),
         copy(trace.input_signature),
-        basis_deepcopy(trace.input_basis),
-        basis_deepcopy(trace.buf_basis),
-        basis_deepcopy(trace.gb_basis),
+        basis_deepcopy(trace.ctx, trace.input_basis),
+        basis_deepcopy(trace.ctx, trace.buf_basis),
+        basis_deepcopy(trace.ctx, trace.gb_basis),
         # we are assuming that the hashtable is frozen at this point!
         # maybe set a flag in the hashtable?
         deepcopy(trace.hashtable),
@@ -127,7 +135,8 @@ function trace_deepcopy(
             trace.representation.coefftype,
             trace.representation.using_wide_type_for_coeffs
         ),
-        trace.homogenize
+        trace.homogenize,
+        trace.ctx
     )
 end
 
@@ -138,29 +147,31 @@ function trace_copy(
 ) where {C1 <: Coeff, C3 <: Coeff, M <: Monom, Ord1, Ord2, C2 <: Coeff}
     new_sparse_row_coeffs = Vector{Vector{C2}}()
     new_input_basis = if deepcopy
-        basis_deep_copy_with_new_coeffs(trace.input_basis, new_sparse_row_coeffs)
+        basis_deep_copy_with_new_coeffs(trace.ctx, trace.input_basis, new_sparse_row_coeffs)
     else
         basis_shallow_copy_with_new_coeffs(trace.input_basis, new_sparse_row_coeffs)
     end
 
     new_buf_basis_coeffs = Vector{Vector{C2}}(undef, length(trace.buf_basis.coeffs))
-    for i in 1:length(trace.buf_basis.coeffs)
-        !isassigned(trace.buf_basis.coeffs, i) && continue
+    # for i in 1:length(trace.buf_basis.coeffs)
+    for i in 1:trace.buf_basis.nfilled
+        # !isassigned(trace.buf_basis.coeffs, i) && continue
         new_buf_basis_coeffs[i] = Vector{C2}(undef, length(trace.buf_basis.coeffs[i]))
     end
     new_buf_basis = if deepcopy
-        basis_deep_copy_with_new_coeffs(trace.buf_basis, new_buf_basis_coeffs)
+        basis_deep_copy_with_new_coeffs(trace.ctx, trace.buf_basis, new_buf_basis_coeffs)
     else
         basis_shallow_copy_with_new_coeffs(trace.buf_basis, new_buf_basis_coeffs)
     end
 
     new_gb_basis_coeffs = Vector{Vector{C2}}(undef, length(trace.gb_basis.coeffs))
-    for i in 1:length(trace.gb_basis.coeffs)
-        !isassigned(trace.gb_basis.coeffs, i) && continue
+    # for i in 1:length(trace.gb_basis.coeffs)
+    for i in 1:trace.gb_basis.nfilled
+        # !isassigned(trace.gb_basis.coeffs, i) && continue
         new_gb_basis_coeffs[i] = Vector{C2}(undef, length(trace.gb_basis.coeffs[i]))
     end
     new_gb_basis = if deepcopy
-        basis_deep_copy_with_new_coeffs(trace.gb_basis, new_gb_basis_coeffs)
+        basis_deep_copy_with_new_coeffs(trace.ctx, trace.gb_basis, new_gb_basis_coeffs)
     else
         basis_shallow_copy_with_new_coeffs(trace.gb_basis, new_gb_basis_coeffs)
     end
@@ -194,13 +205,13 @@ function trace_copy(
         trace.params,
         trace.sweep_output,
         new_representation,
-        trace.homogenize
+        trace.homogenize,
+        trace.ctx
     )
 end
 
 function trace_finalize!(trace::TraceF4)
-    # TODO: trim array sizes (Alex: well, this is whatever, memory usage won't be lowered)
-    trace.buf_basis = basis_deepcopy(trace.gb_basis)
+    trace.buf_basis = basis_deepcopy(trace.ctx, trace.gb_basis)
     trace.buf_basis.nnonredundant = trace.input_basis.nnonredundant
     trace.buf_basis.nprocessed = trace.input_basis.nprocessed
     trace.buf_basis.nfilled = trace.input_basis.nfilled
@@ -237,7 +248,7 @@ end
 Returns a deep copy of `trace`. 
 The original object and the copy are independent of each other.
 
-Does not provide the same guarantees as `Base.deepcopy``.
+Does not provide the same guarantees as `Base.deepcopy`.
 """
 function trace_deepcopy(wrapped_trace::WrappedTraceF4)
     WrappedTraceF4(

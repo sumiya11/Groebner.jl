@@ -1,9 +1,9 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-# Parts of this file were adapted from msolve
-#   https://github.com/algebraic-solving/msolve
-# msolve is distributed under GNU GPL v2+
-#   https://github.com/algebraic-solving/msolve/blob/master/COPYING
+# Parts of this file were adapted from msolve:
+# https://github.com/algebraic-solving/msolve
+# msolve is distributed under GNU GPL v2+:
+# https://github.com/algebraic-solving/msolve/blob/master/COPYING
 
 ### 
 # Sorting monomials, polynomials, and other things.
@@ -23,6 +23,7 @@ _default_sorting_alg() = Base.Sort.DEFAULT_UNSTABLE
         by=identity,
         scratch=nothing
     )
+        from > to && return nothing
         ordr = Base.Sort.ord(lt, by, nothing)
         sort!(arr, from, to, alg, ordr, scratch)
         nothing
@@ -37,6 +38,7 @@ else
         by=identity,
         scratch=nothing
     )
+        from > to && return nothing
         ordr = Base.Sort.ord(lt, by, nothing)
         sort!(arr, from, to, alg, ordr)
         nothing
@@ -109,41 +111,23 @@ end
 function sort_pairset_by_degree!(pairset::Pairset, from::Int, sz::Int)
     pairs = pairset.pairs
     degs = pairset.degrees
-    permutation = collect(from:(from + sz - 1))
+    if length(pairset.scratch4) < sz
+        resize!(pairset.scratch4, nextpow(2, sz + 1))
+    end
+    permutation = pairset.scratch4
+    for i in 1:sz
+        permutation[i] = from + i - 1
+    end
     sort_part!(permutation, 1, sz, by=i -> degs[i], scratch=pairset.scratch1)
-    # @inbounds pairs[from:(from + sz - 1)] = pairs[permutation]
-    # @inbounds degs[from:(from + sz - 1)] = degs[permutation]
     if length(pairset.scratch2) < length(permutation)
         resize!(pairset.scratch2, nextpow(2, length(permutation) + 1))
     end
     if length(pairset.scratch3) < length(permutation)
         resize!(pairset.scratch3, nextpow(2, length(permutation) + 1))
     end
-    permute_array!(pairs, permutation, pairset.scratch2, from)
-    permute_array!(degs, permutation, pairset.scratch3, from)
+    permute_array!(pairs, permutation, pairset.scratch2, from, sz)
+    permute_array!(degs, permutation, pairset.scratch3, from, sz)
     nothing
-end
-
-# Sorts critical pairs from the pairset in the range from..from+sz by their
-# sugar in increasing order
-function sort_pairset_by_sugar!(
-    ps::Pairset,
-    from::Int,
-    sz::Int,
-    sugar_cubes::Vector{SugarCube}
-)
-    sort_part!(
-        ps.pairs,
-        from,
-        from + sz,
-        by=pair -> sugar_cubes[pair.poly1] + sugar_cubes[pair.poly2]
-    )
-    sugar = Vector{SugarCube}(undef, from + sz)
-    @inbounds for i in 1:(from + sz)
-        pair = ps.pairs[from + i - 1]
-        sugar[i] = sugar_cubes[pair.poly1] + sugar_cubes[pair.poly2]
-    end
-    sugar
 end
 
 # Sorts the first `npairs` pairs from `pairset` in a non-decreasing order of
@@ -167,8 +151,8 @@ function sort_pairset_by_lcm!(pairset::Pairset, npairs::Int, hashtable::Monomial
     if length(pairset.scratch3) < length(permutation)
         resize!(pairset.scratch3, nextpow(2, length(permutation) + 1))
     end
-    permute_array!(pairs, permutation, pairset.scratch2, 1)
-    permute_array!(pairset.degrees, permutation, pairset.scratch3, 1)
+    permute_array!(pairs, permutation, pairset.scratch2, 1, npairs)
+    permute_array!(pairset.degrees, permutation, pairset.scratch3, 1, npairs)
     nothing
 end
 
@@ -182,7 +166,10 @@ end
 
 # Compare sparse matrix rows a and b.
 # A row is an array of integers, which are the indices of nonzero elements
-function matrix_row_decreasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: ColumnLabel}
+function matrix_row_decreasing_cmp(
+    a::Vector{T},
+    b::Vector{T}
+) where {T <: ColumnLabel}
     #= a, b - rows as arrays of nonzero indices =#
     # va and vb are the leading columns
     @inbounds va = a[1]
@@ -213,7 +200,10 @@ end
 
 # Compare sparse matrix rows a and b.
 # A row is an array of integers, which are the indices of nonzero elements
-function matrix_row_increasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: ColumnLabel}
+function matrix_row_increasing_cmp(
+    a::Vector{T},
+    b::Vector{T}
+) where {T <: ColumnLabel}
     #= a, b - rows as arrays of nonzero indices =#
     # va and vb are the leading columns
     @inbounds va = a[1]
@@ -296,6 +286,15 @@ function sort_columns_by_labels!(
     column_to_monom::Vector{T},
     symbol_ht::MonomialHashtable
 ) where {T}
+    # cmp = let hd = symbol_ht.hashdata, es = symbol_ht.monoms, htord = symbol_ht.ord
+    #     function _cmp(a, b, ord)
+    #         @inbounds ha = hd[a]
+    #         @inbounds hb = hd[b]
+    #         ha.idx > hb.idx
+    #     end
+    #     (x, y) -> _cmp(x, y, htord)
+    # end
+    # sort!(column_to_monom, lt=cmp, alg=_default_sorting_alg())
     cmp = let hd = symbol_ht.hashdata, es = symbol_ht.monoms, htord = symbol_ht.ord
         function _cmp(a, b, ord)
             @inbounds ha = hd[a]
@@ -310,6 +309,36 @@ function sort_columns_by_labels!(
         (x, y) -> _cmp(x, y, htord)
     end
     sort!(column_to_monom, lt=cmp, alg=_default_sorting_alg())
+    # by = let hd = symbol_ht.hashdata
+    #     function _by(a)
+    #         @inbounds -hd[a].idx
+    #     end
+    #     (x) -> _by(x)
+    # end
+    # sort!(column_to_monom, by=by, alg=_default_sorting_alg())
+end
+
+function partition_columns_by_labels!(
+    column_to_monom::Vector{T},
+    symbol_ht::MonomialHashtable
+) where {T}
+    hd = symbol_ht.hashdata
+    m = length(column_to_monom)
+    i, j = 0, m + 1
+    @inbounds while true
+        i += 1
+        j -= 1
+        while i < m && hd[i + 1].idx == PIVOT_COLUMN
+            i += 1
+        end
+        while j > 1 &&
+            (hd[j + 1].idx == NON_PIVOT_COLUMN || hd[j + 1].idx == UNKNOWN_PIVOT_COLUMN)
+            j -= 1
+        end
+        i >= j && break
+        column_to_monom[i], column_to_monom[j] = column_to_monom[j], column_to_monom[i]
+    end
+    nothing
 end
 
 # Given a vector of vectors of exponent vectors and coefficients, sort each

@@ -1,9 +1,9 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-# Parts of this file were adapted from msolve
-#   https://github.com/algebraic-solving/msolve
-# msolve is distributed under GNU GPL v2+
-#   https://github.com/algebraic-solving/msolve/blob/master/COPYING
+# Parts of this file were adapted from msolve:
+# https://github.com/algebraic-solving/msolve
+# msolve is distributed under GNU GPL v2+:
+# https://github.com/algebraic-solving/msolve/blob/master/COPYING
 
 ### 
 # Monomial hashtable.
@@ -108,7 +108,7 @@ function hashtable_initialize(
     ord = ring.ord
 
     # initialize hashing vector
-    hasher = monom_construct_hash_vector(MonomT, nvars)
+    hasher = monom_construct_hash_vector(rng, MonomT, nvars)
 
     # exponents[1:load] covers all stored exponents
     # , also exponents[1] is [0, 0, ..., 0] by default
@@ -153,38 +153,6 @@ function hashtable_initialize(
         load,
         offset,
         false
-    )
-end
-
-# TODO: this function is incorrect, and is not used at the moment
-function hashtable_deep_copy(ht::MonomialHashtable)
-    exps = Vector{M}(undef, ht.size)
-    table = Vector{MonomId}(undef, ht.size)
-    data = Vector{Hashvalue}(undef, ht.size)
-    exps[1] = monom_construct_const(M, ht.nvars)
-
-    @inbounds for i in 2:(ht.load)
-        exps[i] = monom_copy(ht.monoms[i])
-        table[i] = ht.hashtable[i]
-        data[i] = ht.hashdata[i]
-    end
-
-    MonomialHashtable(
-        ht.monoms,
-        ht.hashtable,
-        ht.hashdata,
-        ht.hasher,
-        ht.nvars,
-        ht.ord,
-        ht.use_divmask,
-        ht.compress_divmask,
-        ht.divmap,
-        ht.ndivvars,
-        ht.ndivbits,
-        ht.size,
-        ht.load,
-        ht.offset,
-        ht.frozen
     )
 end
 

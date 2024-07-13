@@ -10,7 +10,7 @@ setup_memuse_tracker()
 const maxpairs = typemax(Int)
 
 # Compile
-n = Groebner.noonn(3);
+n = Groebner.Examples.noonn(3);
 Groebner.groebner(n, ordering=Groebner.DegRevLex(), maxpairs=maxpairs);
 
 # Run!

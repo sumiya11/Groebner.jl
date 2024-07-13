@@ -52,9 +52,7 @@ mutable struct MacaulayMatrix{T <: Coeff}
     # - Either as a pointer to a polynomial in the basis
     # - Or stored explicitly in the matrix, in this struct.
 
-    # Supports of rows from the block AB
     upper_rows::Vector{Vector{ColumnLabel}}
-    # Supports of rows from the block CD
     lower_rows::Vector{Vector{ColumnLabel}}
 
     # Explicitly stored coefficients of upper rows
@@ -88,7 +86,7 @@ mutable struct MacaulayMatrix{T <: Coeff}
     # discovered in the block CD after performing linear reduction by AB
     npivots::Int
     # Maps a column to a pivot row. We have `pivots[i][1] == i`.
-    # NOTE: `pivots[i]` may be un-assigned. Always check with `isassigned` first
+    # NOTE: `pivots[i]` may be un-assigned.
     pivots::Vector{Vector{ColumnLabel}}
     # A lightweight version of the above `pivots`, only for some specific cases.
     pivot_indices::Vector{Int}
@@ -103,12 +101,9 @@ mutable struct MacaulayMatrix{T <: Coeff}
 
     # A vector of random elements from the ground field, which is used to
     # compute hashes of matrix rows
-    buffer_hash_vector::Vector{T}
-    sentinels::Vector{Int8}
+    hash_vector::Vector{T}
 
-    use_preallocated_buffers::Bool
-    preallocated_buffer1_load::Int
-    preallocated_buffer1::Vector{Vector{ColumnLabel}}
+    sentinels::Vector{Int8}
 
     changematrix::Vector{Dict{Tuple{Int, MonomId}, T}}
 end
@@ -164,10 +159,7 @@ function matrix_initialize(ring::PolyRing, ::Type{T}) where {T <: Coeff}
         Vector{MonomId}(),
         Vector{T}(),
         Vector{Int8}(),
-        false,
-        0,
-        Vector{Vector{ColumnLabel}}(),
-        Vector{Dict{Tuple{Int, MonomId}, T}}()
+        Vector{Dict{Tuple{Int, MonomId}, T}}(),
     )
 end
 
@@ -184,8 +176,9 @@ function matrix_string_repr(matrix::MacaulayMatrix{T}) where {T}
     nnz_A, nnz_B, nnz_C, nnz_D = 0, 0, 0, 0
     A_ref, A_rref = true, true
     # NOTE: probably want to adjust this when the terminal shrinks
-    max_canvas_width = DEFAULT_CANVAS_WIDTH
-    canvas = CanvasMatrix2x2(m_A, m_C, n_A, n_B, max_width=max_canvas_width)
+    max_canvas_width = CustomUnicodePlots.DEFAULT_CANVAS_WIDTH
+    canvas =
+        CustomUnicodePlots.CanvasMatrix2x2(m_A, m_C, n_A, n_B, max_width=max_canvas_width)
     @inbounds for i in 1:nupper
         row = matrix.upper_rows[i]
         if row[1] < i
@@ -195,7 +188,7 @@ function matrix_string_repr(matrix::MacaulayMatrix{T}) where {T}
             A_rref = false
         end
         for j in 1:length(row)
-            point!(canvas, i, row[j])
+            CustomUnicodePlots.point!(canvas, i, row[j])
             if row[j] <= nleft
                 if row[j] != i
                     A_rref = false
@@ -209,7 +202,7 @@ function matrix_string_repr(matrix::MacaulayMatrix{T}) where {T}
     @inbounds for i in 1:nlower
         row = matrix.lower_rows[i]
         for j in 1:length(row)
-            point!(canvas, nupper + i, row[j])
+            CustomUnicodePlots.point!(canvas, nupper + i, row[j])
             if row[j] <= nleft
                 nnz_C += 1
             else
@@ -245,15 +238,19 @@ function matrix_well_formed(matrix::MacaulayMatrix)
 end
 
 function matrix_resize_upper_part!(matrix::MacaulayMatrix, size::Int)
+    size <= length(matrix.upper_rows) && return nothing
     resize!(matrix.upper_rows, size)
     resize!(matrix.upper_to_coeffs, size)
     resize!(matrix.upper_to_mult, size)
+    nothing
 end
 
 function matrix_resize_lower_part!(matrix::MacaulayMatrix, size::Int)
+    size <= length(matrix.lower_rows) && return nothing
     resize!(matrix.lower_rows, size)
     resize!(matrix.lower_to_coeffs, size)
     resize!(matrix.lower_to_mult, size)
+    nothing
 end
 
 # statistics_refresh and partially initialize the matrix
@@ -267,7 +264,6 @@ function matrix_reinitialize!(matrix::MacaulayMatrix, size::Int)
     matrix.nrows_filled_upper = 0
     matrix.nrows_filled_lower = 0
     matrix.npivots = 0
-    matrix.preallocated_buffer1_load = 0
     matrix
 end
 
@@ -284,30 +280,6 @@ end
 
 ###
 
-# # Returns a Vector{ColumnLabel} of length at least length(vec). This vector can
-# # be then used as a single row of the matrix, and it is guaranteed that the
-# # underlying memory is not shared for the duration of a single F4 iteration.
-# function allocate_matrix_row_similar!(matrix::MacaulayMatrix, vec::Vector{MonomId})
-#     !matrix.use_preallocated_buffers && return similar(vec)
-
-#     # TODO: This is broken
-#     load = matrix.preallocated_buffer1_load
-#     if load <= length(matrix.preallocated_buffer1)
-#         resize!(matrix.preallocated_buffer1, 2 * (length(matrix.preallocated_buffer1) + 1))
-#     end
-#     @invariant load < length(matrix.preallocated_buffer1)
-
-#     load += 1
-#     matrix.preallocated_buffer1_load = load
-#     newvec = if isassigned(matrix.preallocated_buffer1, load)
-#         resize!(matrix.preallocated_buffer1[load], length(vec))
-#     else
-#         matrix.preallocated_buffer1[load] = Vector{ColumnLabel}(undef, length(vec))
-#     end
-
-#     newvec
-# end
-
 ###
 # Change matrix
 
@@ -323,6 +295,7 @@ end
 # Stuff
 
 function matrix_convert_rows_to_basis_elements!(
+    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis{C},
     ht::MonomialHashtable,
@@ -350,8 +323,9 @@ function matrix_convert_rows_to_basis_elements!(
         @log :debug "Using batched insert."
         column_to_basis_monom = zeros(MonomId, nr)
         @inbounds for i in 1:(matrix.npivots)
-            for j in rows[i]
-                column_to_basis_monom[j - nl] = 1
+            for j in 1:length(rows[i])
+                idx = rows[i][j]
+                column_to_basis_monom[idx - nl] = 1
             end
         end
         matrix_insert_in_basis_hashtable_pivots_masked!(
@@ -409,14 +383,16 @@ function matrix_convert_rows_to_basis_elements!(
 end
 
 function matrix_convert_rows_to_basis_elements_nf!(
+    ctx::Context,
     matrix::MacaulayMatrix,
-    basis::Basis,
+    basis::Basis{C},
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable
-)
+) where {C}
+    _, nlow = matrix_nrows_filled(matrix)
     basis_resize_if_needed!(basis, matrix.npivots)
 
-    @inbounds for i in 1:(matrix.npivots)
+    @inbounds for i in 1:nlow
         basis.nprocessed += 1
         basis.nnonredundant += 1
         basis.nonredundant[basis.nnonredundant] = basis.nprocessed
@@ -439,7 +415,8 @@ function matrix_convert_rows_to_basis_elements_nf!(
     nothing
 end
 
-@timeit function matrix_polynomial_multiple_to_matrix_row!(
+@timeit function matrix_polynomial_multiple_to_row!(
+    ctx::Context,
     matrix::MacaulayMatrix,
     symbol_ht::MonomialHashtable{M},
     basis_ht::MonomialHashtable{M},
@@ -468,16 +445,14 @@ end
 )
     @invariant !symbol_ht.frozen
 
-    # monoms from symbolic table represent one column in the matrix
     hdata = symbol_ht.hashdata
+    monoms = symbol_ht.monoms
     load = symbol_ht.load
 
     column_to_monom = Vector{MonomId}(undef, load - 1)
     j = 1
-    # number of pivotal cols
     k = 0
     @inbounds for i in (symbol_ht.offset):load
-        # column to hash index
         column_to_monom[j] = i
         j += 1
         # meaning the column is pivoted
@@ -486,9 +461,18 @@ end
         end
     end
 
-    sort_columns_by_labels!(column_to_monom, symbol_ht)
+    partition_columns_by_labels!(column_to_monom, symbol_ht)
 
-    matrix.ncols_left = k  # CHECK!
+    cmp = let monoms = symbol_ht.monoms, ord = symbol_ht.ord
+        function _cmp(x, y, ord)
+            monom_isless(@inbounds(monoms[y]), @inbounds(monoms[x]), ord)
+        end
+        (x, y) -> _cmp(x, y, ord)
+    end
+    sort_part!(column_to_monom, 1, k, lt=cmp)
+    sort_part!(column_to_monom, k + 1, length(column_to_monom), lt=cmp)
+
+    matrix.ncols_left = k
     # -1 as long as hashtable load is always 1 more than actual
     matrix.ncols_right = load - matrix.ncols_left - 1
 

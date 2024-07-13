@@ -14,6 +14,7 @@
 # Usually, by default, only the first two are active, which gives the correct
 # basis with a high probability
 @timeit function correctness_check!(
+    ctx,
     state,
     lucky,
     ring,
@@ -35,6 +36,7 @@
     # Then check that a basis is also a basis modulo a prime
     if params.randomized_check
         if !randomized_correctness_check!(
+            ctx,
             state,
             ring,
             basis_zz,
@@ -55,6 +57,7 @@
     end
     if params.certify_check
         return certify_correctness_check!(
+            ctx,
             state,
             ring,
             basis_qq,
@@ -67,7 +70,7 @@
 end
 
 # Heuristic bound on the size of coefficients of the basis.
-threshold_in_heuristic_check(sznum, szden, szmod) = 1.15 * (sznum + szden) >= szmod
+threshold_in_heuristic_check(sznum, szden, szmod) = 1.10 * (sznum + szden) >= szmod
 
 # Checks that 
 #   ln(num) + ln(den) < C ln(modulo)
@@ -109,6 +112,7 @@ function heuristic_correctness_check(
 end
 
 function randomized_correctness_check!(
+    ctx,
     state,
     ring,
     input_zz,
@@ -120,17 +124,16 @@ function randomized_correctness_check!(
     # NOTE: this function may modify the given hashtable!
     prime = next_check_prime!(lucky)
     @log :misc "Checking the correctness of reconstrcted basis modulo $prime"
-    ring_ff, input_ff = reduce_modulo_p!(state.buffer, ring, input_zz, prime, deepcopy=true)
+    ring_ff, input_ff = reduce_modulo_p!(ctx, state.buffer, ring, input_zz, prime, deepcopy=true)
     # TODO: do we really need to re-scale things to be fraction-free?
-    gb_coeffs_zz = clear_denominators!(state.buffer, state.gb_coeffs_qq)
-    gb_zz = basis_deep_copy_with_new_coeffs(gb_ff, gb_coeffs_zz)
-    ring_ff, gb_ff = reduce_modulo_p!(state.buffer, ring, gb_zz, prime, deepcopy=false)
+    gb_coeffs_zz = _clear_denominators!(ctx, state.buffer, state.gb_coeffs_qq)
+    gb_zz = basis_deep_copy_with_new_coeffs(ctx, gb_ff, gb_coeffs_zz)
+    ring_ff, gb_ff = reduce_modulo_p!(ctx, state.buffer, ring, gb_zz, prime, deepcopy=false)
     # Check that initial ideal contains in the computed groebner basis modulo a
     # random prime
     arithmetic = select_arithmetic(CoeffModular, prime, :auto, false)
-    # TODO: Why is this here? F4 normalizes the basis on entry
     basis_make_monic!(gb_ff, arithmetic, params.changematrix)
-    f4_normalform!(ring_ff, gb_ff, input_ff, hashtable, arithmetic)
+    f4_normalform!(ctx, ring_ff, gb_ff, input_ff, hashtable, arithmetic)
     for i in 1:(input_ff.nprocessed)
         # meaning that something is not reduced
         if !iszero_coeffs(input_ff.coeffs[i])
@@ -140,18 +143,18 @@ function randomized_correctness_check!(
     end
     # Check that the basis is a groebner basis modulo a prime
     pairset = pairset_initialize(UInt64)
-    if !f4_isgroebner!(ring_ff, gb_ff, pairset, hashtable, arithmetic)
+    if !f4_isgroebner!(ctx, ring_ff, gb_ff, pairset, hashtable, arithmetic)
         @log :misc "Not all of S-polynomials reduce to zero modulo $prime"
         return false
     end
     true
 end
 
-function certify_correctness_check!(state, ring, input_qq, gb_ff, hashtable, params)
+function certify_correctness_check!(ctx, state, ring, input_qq, gb_ff, hashtable, params)
     @log :misc "Checking the correctness of reconstructed basis over the rationals"
-    gb_qq = basis_deep_copy_with_new_coeffs(gb_ff, state.gb_coeffs_qq)
-    input_qq = basis_deepcopy(input_qq)
-    f4_normalform!(ring, gb_qq, input_qq, hashtable, params.arithmetic)
+    gb_qq = basis_deep_copy_with_new_coeffs(ctx, gb_ff, state.gb_coeffs_qq)
+    input_qq = basis_deepcopy(ctx, input_qq)
+    f4_normalform!(ctx, ring, gb_qq, input_qq, hashtable, params.arithmetic)
     for i in 1:(input_qq.nprocessed)
         # Meaning that some polynomial is not reduced to zero
         if !iszero_coeffs(input_qq.coeffs[i])
@@ -161,7 +164,7 @@ function certify_correctness_check!(state, ring, input_qq, gb_ff, hashtable, par
     end
     # Check that the basis is a groebner basis modulo a prime
     pairset = pairset_initialize(UInt64)
-    if !f4_isgroebner!(ring, gb_qq, pairset, hashtable, params.arithmetic)
+    if !f4_isgroebner!(ctx, ring, gb_qq, pairset, hashtable, params.arithmetic)
         @log :misc "Not all of S-polynomials reduce to zero"
         return false
     end
@@ -169,6 +172,6 @@ function certify_correctness_check!(state, ring, input_qq, gb_ff, hashtable, par
 end
 
 # TODO :)
-function majority_vote!(state, basis_ff, tracer, params)
+function majority_vote!(state, basis_ff, params)
     true
 end

@@ -24,21 +24,20 @@ params = (loglevel=0, sweep=true)
         (system=[x + 1, y + 2, x * y + 3],),
         (system=[x^20 * y + x + 1, x * y^20 + y + 1],),
         (system=[x^20 * y + x + 1, x * y^20 + y + 1],),
-        (system=Groebner.noonn(3, internal_ordering=:degrevlex, k=K),),
-        (system=Groebner.noonn(4, internal_ordering=:degrevlex, k=K),),
-        (system=Groebner.noonn(5, internal_ordering=:degrevlex, k=K),),
-        (system=Groebner.katsuran(3, internal_ordering=:degrevlex, k=K),),
-        (system=Groebner.katsuran(4, internal_ordering=:degrevlex, k=K),),
-        (system=Groebner.katsuran(5, internal_ordering=:degrevlex, k=K),),
-        (system=Groebner.cyclicn(5, internal_ordering=:degrevlex, k=K),),
-        (system=Groebner.rootn(5, internal_ordering=:lex, k=K),),
-        (system=Groebner.rootn(5, internal_ordering=:deglex, k=K),),
-        (system=Groebner.rootn(6, internal_ordering=:degrevlex, k=K),),
-        (system=Groebner.eco5(internal_ordering=:degrevlex, k=K),),
-        (system=Groebner.ku10(internal_ordering=:degrevlex, k=K),),
-        (system=Groebner.kinema(internal_ordering=:degrevlex, k=K),),
-        (system=Groebner.sparse5(internal_ordering=:degrevlex, k=K),),
-        (system=Groebner.s9_1(internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.Examples.noonn(3, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.Examples.noonn(4, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.Examples.noonn(5, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.Examples.katsuran(3, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.Examples.katsuran(4, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.Examples.katsuran(5, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.Examples.cyclicn(5, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.Examples.rootn(5, internal_ordering=:lex, k=K),),
+        (system=Groebner.Examples.rootn(5, internal_ordering=:deglex, k=K),),
+        (system=Groebner.Examples.rootn(6, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.Examples.eco5(internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.Examples.ku10(internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.Examples.kinema(internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.Examples.s9_1(internal_ordering=:degrevlex, k=K),),
         (system=[sum(xs) + prod(xs), sum(xs)^2, prod(xs) - 1],)
     ]
 
@@ -150,24 +149,23 @@ end
         (system=[x + 1, y + 2, x * y + 3],),
         (system=[x^20 * y + x + 1, x * y^20 + y + 1],),
         (system=[x^20 * y + x + 1, x * y^20 + y + 1],),
-        (system=Groebner.noonn(3, internal_ordering=:lex, k=ZZ),),
-        (system=Groebner.noonn(4, internal_ordering=:deglex, k=ZZ),),
-        (system=Groebner.noonn(5, internal_ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.katsuran(3, internal_ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.katsuran(4, internal_ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.katsuran(5, internal_ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.katsuran(6, internal_ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.katsuran(7, internal_ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.cyclicn(5, internal_ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.cyclicn(6, internal_ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.rootn(5, internal_ordering=:lex, k=ZZ),),
-        (system=Groebner.rootn(5, internal_ordering=:deglex, k=ZZ),),
-        (system=Groebner.rootn(6, internal_ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.eco5(internal_ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.ku10(internal_ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.kinema(internal_ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.sparse5(internal_ordering=:degrevlex, k=ZZ),),
-        (system=Groebner.s9_1(internal_ordering=:degrevlex, k=ZZ),)
+        (system=Groebner.Examples.noonn(3, internal_ordering=:lex, k=ZZ),),
+        (system=Groebner.Examples.noonn(4, internal_ordering=:deglex, k=ZZ),),
+        (system=Groebner.Examples.noonn(5, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.Examples.katsuran(3, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.Examples.katsuran(4, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.Examples.katsuran(5, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.Examples.katsuran(6, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.Examples.katsuran(7, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.Examples.cyclicn(5, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.Examples.cyclicn(6, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.Examples.rootn(5, internal_ordering=:lex, k=ZZ),),
+        (system=Groebner.Examples.rootn(5, internal_ordering=:deglex, k=ZZ),),
+        (system=Groebner.Examples.rootn(6, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.Examples.eco5(internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.Examples.ku10(internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.Examples.kinema(internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.Examples.s9_1(internal_ordering=:degrevlex, k=ZZ),)
     ]
 
     # Some bigger tests
@@ -345,8 +343,8 @@ end
     # Input is a Groebner basis already:
     N = 3
     for system in [
-        Groebner.noonn(4, internal_ordering=:degrevlex, k=K),
-        Groebner.katsuran(5, internal_ordering=:degrevlex, k=K),
+        Groebner.Examples.noonn(4, internal_ordering=:degrevlex, k=K),
+        Groebner.Examples.katsuran(5, internal_ordering=:degrevlex, k=K),
         [x, x^2, y^2, x * y, x^3, y^4, x^10, y^10, x * y^10]
     ]
         gb = Groebner.groebner(system; params...)
@@ -389,7 +387,7 @@ end
     # stress test for small primes for errors
     Random.seed!(42)
     R, (x, y) = polynomial_ring(QQ, ["x", "y"], internal_ordering=:degrevlex)
-    for sys in [[x * y + y, x * y + x + y], Groebner.cyclicn(5)]
+    for sys in [[x * y + y, x * y + x + y], Groebner.Examples.cyclicn(5)]
         A, B = 0, 0
         boot = 10
         primes1 = vcat(Primes.nextprimes(2, 10), 1031, 2^20 + 7, 2^27 - 39, 2^27 + 29)

@@ -75,11 +75,12 @@ function _groebner_learn2(
     params
 ) where {C <: CoeffZp}
     @log :misc "Groebner learn phase over Z_p"
+    ctx = ctx_initialize()
     # Initialize F4 structs
     trace, basis, pairset, hashtable =
-        f4_initialize_structs_with_trace(ring, monoms, coeffs, params)
+        f4_initialize_structs_with_trace(ctx, ring, monoms, coeffs, params)
     @log :all "Before F4:" basis
-    f4_learn!(trace, ring, trace.gb_basis, pairset, hashtable, params)
+    f4_learn!(ctx, trace, ring, trace.gb_basis, pairset, hashtable, params)
     @log :all "After F4:" basis
     gb_monoms, gb_coeffs = basis_export_data(trace.gb_basis, trace.hashtable)
     trace, gb_monoms, gb_coeffs
@@ -157,12 +158,15 @@ function _groebner_apply1!(ring, trace, params)
     @log :misc "Groebner Apply phase"
     @log :misc "Applying modulo $(ring.ch)"
 
-    flag = f4_apply!(trace, ring, trace.buf_basis, params)
+    ctx = ctx_initialize()
+    flag = f4_apply!(ctx, trace, ring, trace.buf_basis, params)
 
     gb_monoms, gb_coeffs = basis_export_data(trace.gb_basis, trace.hashtable)
 
     # Check once again that the sizes coincide
-    length(gb_monoms) != length(gb_coeffs) && return false, gb_monoms, gb_coeffs
+    if length(gb_monoms) != length(gb_coeffs)
+        return false, gb_monoms, gb_coeffs
+    end
     @inbounds for i in 1:length(gb_monoms)
         if length(gb_monoms[i]) != length(gb_coeffs[i])
             return false, gb_monoms, gb_coeffs

@@ -31,65 +31,65 @@ function create_systems(p)
     systems = [
         (
             "kat5",
-            Groebner.katsuran(5, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
+            Groebner.Examples.katsuran(5, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
         ),
         (
             "kat6",
-            Groebner.katsuran(6, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
+            Groebner.Examples.katsuran(6, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
         ),
         (
             "kat7",
-            Groebner.katsuran(7, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
+            Groebner.Examples.katsuran(7, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
         ),
         (
             "kat8",
-            Groebner.katsuran(8, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
+            Groebner.Examples.katsuran(8, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
         ),
         (
             "kat9",
-            Groebner.katsuran(9, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
+            Groebner.Examples.katsuran(9, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
         ),
         (
             "kat10",
-            Groebner.katsuran(10, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
+            Groebner.Examples.katsuran(10, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
         ),
-        ("hen5", Groebner.henrion5(internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
+        ("hen5", Groebner.Examples.henrion5(internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
         (
             "reim4",
-            Groebner.reimern(4, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
+            Groebner.Examples.reimern(4, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
         ),
         (
             "reim5",
-            Groebner.reimern(5, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
+            Groebner.Examples.reimern(5, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
         ),
         (
             "cyc4",
-            Groebner.cyclicn(4, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
+            Groebner.Examples.cyclicn(4, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
         ),
         (
             "cyc5",
-            Groebner.cyclicn(5, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
+            Groebner.Examples.cyclicn(5, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
         ),
         (
             "cyc6",
-            Groebner.cyclicn(6, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
+            Groebner.Examples.cyclicn(6, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
         ),
         (
             "cyc7",
-            Groebner.cyclicn(7, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
+            Groebner.Examples.cyclicn(7, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
         ),
         (
             "cyc8",
-            Groebner.cyclicn(8, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
+            Groebner.Examples.cyclicn(8, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
         ),
-        ("eco10", Groebner.eco10(internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
-        ("eco11", Groebner.eco11(internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
-        ("eco12", Groebner.eco12(internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
-        ("noon4", Groebner.noonn(4, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
-        ("noon5", Groebner.noonn(5, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
-        ("noon6", Groebner.noonn(6, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
-        ("noon7", Groebner.noonn(7, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
-        ("noon8", Groebner.noonn(8, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
+        ("eco10", Groebner.Examples.eco10(internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
+        ("eco11", Groebner.Examples.eco11(internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
+        ("eco12", Groebner.Examples.eco12(internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
+        ("noon4", Groebner.Examples.noonn(4, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
+        ("noon5", Groebner.Examples.noonn(5, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
+        ("noon6", Groebner.Examples.noonn(6, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
+        ("noon7", Groebner.Examples.noonn(7, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
+        ("noon8", Groebner.Examples.noonn(8, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
         ("hexapod", hexapod)
     ]
 end
