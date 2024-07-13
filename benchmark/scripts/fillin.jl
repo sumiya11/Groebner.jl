@@ -75,9 +75,9 @@ function decompose(mat::MyMatrix)
 end
 
 A = [
-    1 0 1;
-    0 1 0;
-    0 0 1;
+    1 0 1
+    0 1 0
+    0 0 1
 ]
 B = matrix_from_dense(A)
 A = matrix_to_sparse(B)
@@ -87,8 +87,8 @@ begin
     n = 100
     A = sprand(Int, n, n, 0.2) + I
     for i in 1:n
-        for j in (i+1):n
-            A[j,i] = 0
+        for j in (i + 1):n
+            A[j, i] = 0
         end
     end
     dropzeros!(A)
@@ -108,7 +108,7 @@ UInt32[0x00000001, 0x40000002, 0x20000002, 0x20000001]
 
 include("../../../Groebner.jl/src/Groebner.jl")
 using AbstractAlgebra, JLD2, Random
-c = Groebner.Examples.noonn(8, k=GF(2^30+3), internal_ordering=:degrevlex)
+c = Groebner.Examples.noonn(8, k=GF(2^30 + 3), internal_ordering=:degrevlex)
 
 Groebner.__SAVE[] = true
 gb1 = Groebner.groebner(c, loglevel=-0, linalg=:deterministic);
@@ -144,17 +144,17 @@ for fn in readdir((@__DIR__), join=true)
         println(Groebner.matrix_block_sizes(matrix))
         arithmetic = Groebner.SpecializedArithmeticZp(UInt64, UInt32, 2^30 + 3)
         @time Groebner.linalg_deterministic_sparse!(
-            matrix, 
-            basis, 
-            Groebner.LinearAlgebra(:a, :b), 
-            arithmetic,
+            matrix,
+            basis,
+            Groebner.LinearAlgebra(:a, :b),
+            arithmetic
         )
 
         matrix = load(fn)["matrix"]
         basis = load(fn)["basis"]
         @time Groebner.linalg_randomized_sparse!(
-            matrix, 
-            basis, 
+            matrix,
+            basis,
             Groebner.LinearAlgebra(:a, :b),
             arithmetic,
             Random.MersenneTwister(42)
@@ -163,8 +163,8 @@ for fn in readdir((@__DIR__), join=true)
         matrix = load(fn)["matrix"]
         basis = load(fn)["basis"]
         @time Groebner.linalg_randomized_hashcolumns_sparse!(
-            matrix, 
-            basis, 
+            matrix,
+            basis,
             Groebner.LinearAlgebra(:a, :b),
             arithmetic,
             Random.MersenneTwister(42)

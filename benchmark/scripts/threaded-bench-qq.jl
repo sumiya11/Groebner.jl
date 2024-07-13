@@ -19,9 +19,18 @@ systems = [
     # ("kat5", Groebner.Examples.katsuran(5, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
     # ("kat6", Groebner.Examples.katsuran(6, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
     # ("kat7", Groebner.Examples.katsuran(7, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
-    ("kat8", Groebner.Examples.katsuran(8, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
-    ("kat9", Groebner.Examples.katsuran(9, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
-    ("kat10", Groebner.Examples.katsuran(10, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
+    (
+        "kat8",
+        Groebner.Examples.katsuran(8, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)
+    ),
+    (
+        "kat9",
+        Groebner.Examples.katsuran(9, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)
+    ),
+    (
+        "kat10",
+        Groebner.Examples.katsuran(10, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)
+    ),
     # ("kat11", Groebner.Examples.katsuran(11, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
     # ("kat12", Groebner.Examples.katsuran(12, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
     # ("hen5", Groebner.Examples.henrion5(internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
@@ -29,9 +38,18 @@ systems = [
     # ("reim5", Groebner.Examples.reimern(5, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
     # ("cyc4", Groebner.Examples.cyclicn(4, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
     # ("cyc5", Groebner.Examples.cyclicn(5, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
-    ("cyc6", Groebner.Examples.cyclicn(6, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
-    ("cyc7", Groebner.Examples.cyclicn(7, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
-    ("cyc8", Groebner.Examples.cyclicn(8, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
+    (
+        "cyc6",
+        Groebner.Examples.cyclicn(6, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)
+    ),
+    (
+        "cyc7",
+        Groebner.Examples.cyclicn(7, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)
+    ),
+    (
+        "cyc8",
+        Groebner.Examples.cyclicn(8, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)
+    ),
     ("eco10", Groebner.Examples.eco10(internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
     ("eco11", Groebner.Examples.eco11(internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
     # ("eco12", Groebner.Examples.eco12(internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
@@ -39,8 +57,14 @@ systems = [
     # ("noon4", Groebner.Examples.noonn(4, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
     # ("noon5", Groebner.Examples.noonn(5, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
     # ("noon6", Groebner.Examples.noonn(6, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
-    ("noon7", Groebner.Examples.noonn(7, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
-    ("noon8", Groebner.Examples.noonn(8, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)),
+    (
+        "noon7",
+        Groebner.Examples.noonn(7, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)
+    ),
+    (
+        "noon8",
+        Groebner.Examples.noonn(8, internal_ordering=:degrevlex, k=AbstractAlgebra.QQ)
+    ),
     ("hexapod", hexapod)
 ]
 
