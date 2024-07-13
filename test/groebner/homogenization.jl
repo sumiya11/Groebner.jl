@@ -26,11 +26,11 @@ import Random
             end
 
             for case in [
-                Groebner.katsuran(2, k=field, internal_ordering=ordering),
-                Groebner.katsuran(3, k=field, internal_ordering=ordering),
-                Groebner.katsuran(4, k=field, internal_ordering=ordering),
-                Groebner.noonn(2, k=field, internal_ordering=ordering),
-                Groebner.noonn(3, k=field, internal_ordering=ordering)
+                Groebner.Examples.katsuran(2, k=field, internal_ordering=ordering),
+                Groebner.Examples.katsuran(3, k=field, internal_ordering=ordering),
+                Groebner.Examples.katsuran(4, k=field, internal_ordering=ordering),
+                Groebner.Examples.noonn(2, k=field, internal_ordering=ordering),
+                Groebner.Examples.noonn(3, k=field, internal_ordering=ordering)
             ]
                 gb = Groebner.groebner(case, homogenize=:yes)
                 @test Groebner.isgroebner(gb)
@@ -70,10 +70,9 @@ end
                 system=[x * y^2 + x + 1, y * z^2 + y + 1, x * y * z^4 - x * z^2 - y + z],
                 ord=Groebner.DegRevLex(y) * Groebner.DegRevLex(z, x)
             ),
-            (system=Groebner.katsuran(4, k=field), ord=Groebner.DegRevLex()),
-            (system=Groebner.rootn(5, k=field), ord=Groebner.Lex()),
-            (system=Groebner.sparse5(k=field), ord=Groebner.Lex()),
-            (system=Groebner.reimern(5, k=field), ord=Groebner.DegRevLex())
+            (system=Groebner.Examples.katsuran(4, k=field), ord=Groebner.DegRevLex()),
+            (system=Groebner.Examples.rootn(5, k=field), ord=Groebner.Lex()),
+            (system=Groebner.Examples.reimern(5, k=field), ord=Groebner.DegRevLex())
         ]
             ord = case.ord
             system = case.system

@@ -25,6 +25,7 @@ Base.widen(::Type{CompositeInt{N, T}}) where {N, T} = CompositeInt{N, widen(T)}
 Base.isless(ci::CompositeInt{N, T}, cj::CompositeInt{N, U}) where {N, T, U} =
     all(ci.data .< cj.data)
 Base.isless(ci::CompositeInt{N, T}, x::U) where {N, T, U <: Integer} = all(<(x), ci.data)
+Base.isless(x::U, ci::CompositeInt{N, T}) where {N, T, U <: Integer} = all(x .< ci.data)
 
 Base.iszero(ci::CompositeInt) = all(iszero, ci.data)
 Base.isone(ci::CompositeInt)  = all(isone, ci.data)

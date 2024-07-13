@@ -67,8 +67,8 @@ import Primes
         @test collect(gbs) == map(Groebner.groebner, systems_zp[2:5])
     end
 
-    kat = Groebner.katsuran(8, k=ZZ, internal_ordering=:degrevlex)
-    cyc = Groebner.cyclicn(6, k=ZZ, internal_ordering=:degrevlex)
+    kat = Groebner.Examples.katsuran(8, k=ZZ, internal_ordering=:degrevlex)
+    cyc = Groebner.Examples.cyclicn(6, k=ZZ, internal_ordering=:degrevlex)
 
     ps1 = Primes.nextprimes(2^30, 5)
     ps2 = [2^31 - 1, 2^30 + 3, 2^32 + 15, 2^40 + 15, 2^30 + 3]

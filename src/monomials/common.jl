@@ -46,7 +46,7 @@ comparator function for the monomial ordering `ord`.
 function monom_is_supported_ordering end
 
 """
-    monom_construct_hash_vector(::Type{Monom}, n)
+    monom_construct_hash_vector(rng, ::Type{Monom}, n)
 
 Returns a vector of type Vector{MonomHash}. This vector will be later used for
 hashing monomials of type `Monom` with `n` variables via `monom_hash`.
@@ -77,7 +77,7 @@ function monom_max_vars end
     monom_copy(monom::Monom)
 
 Returns a copy of `monom`.
-The returned copy and the original object must be independent in memory.
+The returned copy and the original object must not alias in memory.
 """
 function monom_copy end
 

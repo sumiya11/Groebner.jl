@@ -1,6 +1,6 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-# Handling keyword arguments in the interface
+# Handling keyword arguments for functions in the interface.
 
 #! format: off
 # Syntax formatting is disabled for the next several lines.
@@ -256,7 +256,6 @@ function statistics_setup(keywords::KeywordArguments)
     log_simdinfo()
     if keywords.loglevel <= 0
         performance_counters_refresh()
-        statistics_refresh()
     end
     nothing
 end

@@ -31,7 +31,7 @@ end
 using Nemo
 include((@__DIR__) * "/aa-runge-kutta-6-6.jl");
 
-n = Groebner.noonn(3)
+n = Groebner.Examples.noonn(3)
 Groebner.groebner(n, ordering=Groebner.DegRevLex());
 
 @time gb = Groebner.groebner(system, ordering=Groebner.DegRevLex());

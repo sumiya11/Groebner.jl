@@ -112,11 +112,11 @@ groebner([x*y^2 + x, y*x^2 + y], ordering=DegRevLex())
 
 ## Notes
 
-The function `groebner` is **thread-safe**.
+The function `groebner` is thread-safe.
 
-The default algorithm is **probabilistic** (with `certify=false`). 
-Results are correct with high probability, 
-however, no precise bound on the probability is known.
+The default algorithm is probabilistic (with `certify=false`). Results are
+correct with high probability, however, no precise bound on the probability is
+known.
 """
 function groebner(polynomials::AbstractVector; options...)
     Base.require_one_based_indexing(polynomials)
@@ -126,12 +126,10 @@ function groebner(polynomials::AbstractVector; options...)
     logging_setup(keywords)
     statistics_setup(keywords)
 
-    # NOTE: Type assertion is needed for type stability. This limits us to only
-    # accept input arrays with concrete `eltype`
+    # NOTE: Type assertion is needed for type stability.
     result = _groebner0(polynomials, keywords)::typeof(polynomials)
 
     performance_counters_print(keywords)
-    statistics_print(keywords)
 
     result
 end
@@ -183,7 +181,6 @@ function groebner_with_change_matrix(polynomials::AbstractVector; options...)
     result = _groebner_with_change_matrix0(polynomials, keywords)
 
     performance_counters_print(keywords)
-    statistics_print(keywords)
 
     result
 end
@@ -274,7 +271,7 @@ Katsura-9 system:
 using Groebner, AbstractAlgebra, BenchmarkTools
 
 # Create the system
-kat = Groebner.katsuran(9, k=ZZ, internal_ordering=:degrevlex)
+kat = Groebner.Examples.katsuran(9, k=ZZ, internal_ordering=:degrevlex)
 
 # Reduce the coefficients modulo 5 different primes
 kat_0 = map(f -> map_coefficients(c -> GF(2^30 + 3)(c), f), kat)
@@ -301,7 +298,7 @@ Observe the better amortized performance of the batched `groebner_apply!`.
 
 ## Notes
 
-The function `groebner_learn` is **thread-safe**.
+The function `groebner_learn` is thread-safe.
 """
 function groebner_learn(polynomials::AbstractVector; options...)
     Base.require_one_based_indexing(polynomials)
@@ -314,7 +311,6 @@ function groebner_learn(polynomials::AbstractVector; options...)
     result = _groebner_learn0(polynomials, keywords)
 
     performance_counters_print(keywords)
-    statistics_print(keywords)
 
     result
 end
@@ -363,7 +359,6 @@ function groebner_apply!(trace, polynomials::AbstractVector; options...)
         _groebner_apply0!(trace, polynomials, keywords)::Tuple{Bool, typeof(polynomials)}
 
     performance_counters_print(keywords)
-    statistics_print(keywords)
 
     result
 end
@@ -384,7 +379,6 @@ function groebner_apply!(
     result = _groebner_apply0!(trace, batch, keywords)::Tuple{Bool, typeof(batch)}
 
     performance_counters_print(keywords)
-    statistics_print(keywords)
 
     result
 end
@@ -447,7 +441,7 @@ isgroebner([x*y^2 + x, y*x^2 + y])
 
 ## Notes
 
-The function `isgroebner` is **thread-safe**.
+The function `isgroebner` is thread-safe.
 """
 function isgroebner(polynomials::AbstractVector; options...)
     Base.require_one_based_indexing(polynomials)
@@ -460,7 +454,6 @@ function isgroebner(polynomials::AbstractVector; options...)
     result = _isgroebner0(polynomials, keywords)::Bool
 
     performance_counters_print(keywords)
-    statistics_print(keywords)
 
     result
 end
@@ -519,7 +512,7 @@ normalform([y^2 + x, x^2 + y], [x^2 + y^2 + 1, x^10*y^10])
 
 ## Notes
 
-The function `normalform` is **thread-safe**.
+The function `normalform` is thread-safe.
 """
 function normalform(basis::AbstractVector, to_be_reduced::AbstractVector; options...)
     Base.require_one_based_indexing(basis)
@@ -533,7 +526,6 @@ function normalform(basis::AbstractVector, to_be_reduced::AbstractVector; option
     result = _normalform0(basis, to_be_reduced, keywords)::typeof(to_be_reduced)
 
     performance_counters_print(keywords)
-    statistics_print(keywords)
 
     result
 end
@@ -574,7 +566,7 @@ kbase([y^2 + x, x^2 + y])
 
 ## Notes
 
-The function `kbase` is **thread-safe**.
+The function `kbase` is thread-safe.
 """
 function kbase(basis::AbstractVector; options...)
     Base.require_one_based_indexing(basis)
@@ -587,7 +579,6 @@ function kbase(basis::AbstractVector; options...)
     result = _kbase0(basis, keywords)::typeof(basis)
 
     performance_counters_print(keywords)
-    statistics_print(keywords)
 
     result
 end
@@ -615,7 +606,6 @@ function fglm(
     result = _fglm0(basis, ordering_from, ordering_to, keywords)::typeof(basis)
 
     performance_counters_print(keywords)
-    statistics_print(keywords)
 
     result
 end

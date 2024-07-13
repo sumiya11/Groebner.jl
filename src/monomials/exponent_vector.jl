@@ -28,10 +28,18 @@ monom_entrytype(pv::ExponentVector{T}) where {T} = T
 
 monom_copy(pv::ExponentVector) = Base.copy(pv)
 
+function monom_copy!(dst::ExponentVector, src::ExponentVector)
+    @invariant length(dst) == length(src)
+    @inbounds for i in 1:length(src)
+        dst[i] = src[i]
+    end
+    dst
+end
+
 monom_construct_const(::Type{ExponentVector{T}}, n::Integer) where {T} = zeros(T, n + 1)
 
 function monom_construct_from_vector(::Type{ExponentVector{T}}, ev::Vector{U}) where {T, U}
-    v = Vector{T}(undef, length(ev) + 1)
+    v = ExponentVector{T}(undef, length(ev) + 1)
     s = zero(T)
     @inbounds for i in 1:length(ev)
         _monom_overflow_check(ev[i], T)
@@ -40,7 +48,7 @@ function monom_construct_from_vector(::Type{ExponentVector{T}}, ev::Vector{U}) w
         v[i + 1] = T(ev[i])
     end
     @inbounds v[1] = s
-    ExponentVector{T}(v)
+    v
 end
 
 function monom_to_vector!(tmp::Vector{M}, pv::ExponentVector{T}) where {M, T}
@@ -49,8 +57,12 @@ function monom_to_vector!(tmp::Vector{M}, pv::ExponentVector{T}) where {M, T}
     tmp
 end
 
-function monom_construct_hash_vector(::Type{ExponentVector{T}}, n::Integer) where {T}
-    rand(MonomHash, n + 1)
+function monom_construct_hash_vector(
+    rng::AbstractRNG,
+    ::Type{ExponentVector{T}},
+    n::Integer
+) where {T}
+    rand(rng, MonomHash, n + 1)
 end
 
 function monom_hash(x::ExponentVector{T}, b::Vector{MH}) where {T, MH}

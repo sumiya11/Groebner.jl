@@ -10,7 +10,7 @@ setup_memuse_tracker()
 const maxpairs = 500
 
 # Compile
-n = Groebner.noonn(3);
+n = Groebner.Examples.noonn(3);
 Groebner.groebner(n, ordering=DegRevLex(), maxpairs=maxpairs);
 
 # Run!

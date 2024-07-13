@@ -46,12 +46,17 @@ for (op, n) in _defined_packed_tuples
         monom_max_vars(::Type{$op{T, B}}) where {T, B} = $n * packed_elperchunk(T, B) - 1
         monom_totaldeg(a::$op{T, B}) where {T, B} = a.a1 >> (8 * (sizeof(T) - sizeof(B)))
         monom_copy(a::$op{T, B}) where {T, B} = a
+        monom_copy!(b::$op{T, B}, a::$op{T, B}) where {T, B} = a
         monom_entrytype(a::$op{T, B}) where {T, B} = B
     end
 
     @eval begin
-        function monom_construct_hash_vector(::Type{$op{T, B}}, n::Integer) where {T, B}
-            rand(MonomHash, $n * packed_elperchunk(T, B))
+        function monom_construct_hash_vector(
+            rng::AbstractRNG,
+            ::Type{$op{T, B}},
+            n::Integer
+        ) where {T, B}
+            rand(rng, MonomHash, $n * packed_elperchunk(T, B))
         end
     end
 end

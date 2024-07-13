@@ -1,7 +1,7 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
 ###
-# This file provides some very fast operations on vectors of integers.
+# This file provides some fast operations on vectors of integers.
 
 # NOTE. The use of these functions must be limited.
 #
@@ -31,7 +31,12 @@ function log_simdinfo()
 end
 
 jl_to_llvm_t(::Type{T}) where {T <: BitInteger} = "i$(8*sizeof(T))"
-align_to(x::Integer, N::Integer) = x ⊻ (N - 1)
+
+# y, s.t. y >= x and n | y.
+align_up(x::Integer, n::Integer) = (x + (n - 1)) & (~(n - 1))
+
+# y, s.t y <= x and n | y.
+align_down(x::Integer, n::Integer) = x ⊻ (n - 1)
 
 function pick_vector_width_clamp_8(::Type{T}) where {T}
     N = pick_vector_width(T)
@@ -49,15 +54,15 @@ function permute_array!(
     arr::AbstractVector{T},
     perm::Vector{I},
     buf::Vector{T},
-    from::Int
+    from::Int,
+    sz::Int
 ) where {T, I}
-    @invariant length(buf) >= length(perm)
-    @invariant from + length(perm) - 1 <= length(arr)
-    # @invariant isperm(perm .- minimum(perm; init=zero(I)) .+ 1)
-    @inbounds for i in 1:length(perm)
+    @invariant length(buf) >= sz && sz <= length(perm)
+    @invariant from + sz - 1 <= length(arr)
+    @inbounds for i in 1:sz
         buf[i] = arr[perm[i]]
     end
-    @inbounds for i in 1:length(perm)
+    @inbounds for i in 1:sz
         arr[from + i - 1] = buf[i]
     end
     nothing
@@ -91,7 +96,7 @@ end
     @assert N in (8, 16, 32, 64)
     B = sizeof(T)
     llvm_t = jl_to_llvm_t(T)
-    mask = align_to(typemax(Int), N)
+    mask = align_down(typemax(Int), N)
     textir = """
     declare <$N x $llvm_t> @llvm.masked.load.v$(N)$(llvm_t)(<$N x $llvm_t>*, i32, <$N x i1>, <$N x $llvm_t>);
     define i8 @entry(i64 %0, i64 %1, i64 %2) #0 {
@@ -187,7 +192,7 @@ end
     @assert N in (8, 16, 32, 64)
     B = sizeof(T)
     llvm_t = jl_to_llvm_t(T)
-    mask = align_to(typemax(Int), N)
+    mask = align_down(typemax(Int), N)
     textir = """
     define i8 @entry(i64 %0, i64 %1, i64 %2) #0 {
     top:
@@ -286,7 +291,7 @@ end
     @assert N in (8, 16, 32, 64)
     B = sizeof(T)
     llvm_t = jl_to_llvm_t(T)
-    mask = align_to(typemax(Int), N)
+    mask = align_down(typemax(Int), N)
     typecast_iN_to_i64(varname) =
         if N == 64
             ""
@@ -400,7 +405,7 @@ end
     @assert N in (8, 16, 32, 64)
     B = sizeof(T)
     llvm_t = jl_to_llvm_t(T)
-    mask = align_to(typemax(Int), N)
+    mask = align_down(typemax(Int), N)
     typecast_iN_to_i64(varname) =
         if N == 64
             ""

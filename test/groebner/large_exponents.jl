@@ -1,6 +1,8 @@
 # For Lex, DegLex, and DegRevLex, we can guarantee correctness up to total
 # degrees of 2^31
 
+using AbstractAlgebra
+
 @testset "handling large exponents" begin
     R, (x, y) = polynomial_ring(QQ, ["x", "y"], internal_ordering=:degrevlex)
 
@@ -47,4 +49,10 @@
     # this should fail.
     # f = [x^4294967295 * y^4294967295 + y]
     # @test f == Groebner.groebner(f)
+
+    for i in [8, 16, 32, 64]
+        u, v = i >> 1, i
+        f = [x^u * y^v + y^8, x^8 - y^8]
+        gb = Groebner.groebner(f)
+    end
 end

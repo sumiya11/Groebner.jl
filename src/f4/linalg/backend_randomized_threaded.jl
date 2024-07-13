@@ -1,14 +1,15 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-# Parts of this file were adapted from msolve
-#   https://github.com/algebraic-solving/msolve
-# msolve is distributed under GNU GPL v2+
-#   https://github.com/algebraic-solving/msolve/blob/master/COPYING
+# Parts of this file were adapted from msolve:
+# https://github.com/algebraic-solving/msolve
+# msolve is distributed under GNU GPL v2+:
+# https://github.com/algebraic-solving/msolve/blob/master/COPYING
 
 ###
 # High level
 
 function linalg_randomized_sparse_threaded!(
+    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
@@ -24,6 +25,7 @@ function linalg_randomized_sparse_threaded!(
     # Reduce CD with AB
     if true
         linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
+            ctx,
             matrix,
             basis,
             arithmetic,
@@ -31,6 +33,7 @@ function linalg_randomized_sparse_threaded!(
         )
     else
         linalg_randomized_reduce_matrix_lower_part_threaded_cas_fair!(
+            ctx,
             matrix,
             basis,
             arithmetic,
@@ -38,7 +41,7 @@ function linalg_randomized_sparse_threaded!(
         )
     end
     # Interreduce CD
-    linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic)
+    linalg_interreduce_matrix_pivots!(ctx, matrix, basis, arithmetic)
     true
 end
 
@@ -47,6 +50,7 @@ end
 
 # This function is incorrect.
 function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
+    ctx::Context,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType},

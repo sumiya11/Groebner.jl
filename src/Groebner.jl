@@ -1,14 +1,14 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 module Groebner
 # Groebner is a package for computing Gröbner bases. This is the main file.
-
+#
 # Groebner works over integers modulo a prime and over the rationals. At its
 # heart, Groebner implements F4, multi-modular techniques, and tracing.
 #
-# Parts of Groebner were adapted from msolve
-#   https://github.com/algebraic-solving/msolve
-# msolve is distributed under GNU GPL v2+
-#   https://github.com/algebraic-solving/msolve/blob/master/COPYING
+# Parts of Groebner were adapted from msolve:
+# https://github.com/algebraic-solving/msolve
+# msolve is distributed under GNU GPL v2+:
+# https://github.com/algebraic-solving/msolve/blob/master/COPYING
 #
 # More precisely, the F4 implementation in Groebner adapts monomial hashtable
 # implementation and routines for critical pair handling, symbolic
@@ -119,27 +119,17 @@ end
 ###
 # Includes
 
-# Provides the `@log` macro for logging stuff
 include("utils/logging.jl")
-# Provides the `@invariant` macro
 include("utils/invariants.jl")
-# Provides the macro `@timeit` for measuring performance of the internals
 include("utils/timeit.jl")
-# Provides the macro `@stat` for collecting statistics
-include("utils/statistics.jl")
-# For fast and very specific dense vector arithmetic
 include("utils/simd.jl")
-# include("utils/versioninfo.jl")
-
-# Minimalistic plotting with Unicode
 include("utils/plots.jl")
+include("utils/context.jl")
 
 # Test systems, such as katsura, cyclic, etc
 include("utils/examples.jl")
 
 # Monomial orderings.
-# The file orderings.jl is the interface for communicating with the user, and
-# the file internal-orderings.jl actually implements monomial orderings
 include("monomials/orderings.jl")
 include("monomials/internal_orderings.jl")
 
@@ -152,7 +142,7 @@ include("monomials/packed_utils.jl")
 include("monomials/packed_vector.jl")
 include("monomials/sparse_vector.jl")
 
-# Defines some type aliases for Groebner
+# Defines some type aliases
 include("arithmetic/CompositeInt.jl")
 include("utils/types.jl")
 
@@ -170,15 +160,11 @@ include("input_output/AbstractAlgebra.jl")
 include("input_output/DynamicPolynomials.jl")
 
 #= generic f4 =#
-#= the heart of this library =#
-# `MonomialHashtable` implementation
 include("f4/hashtable.jl")
-# `Pairset` and `Basis` implementations
 include("f4/basis.jl")
-# Tracing for F4
 include("f4/trace.jl")
-# `MacaulayMatrix` implementation
 include("f4/matrix.jl")
+
 # Linear algebra backends
 include("f4/linalg/linalg.jl")
 include("f4/linalg/backend.jl")
@@ -191,36 +177,21 @@ include("f4/linalg/backend_learn_apply_threaded.jl")
 include("f4/linalg/backend_experimental.jl")
 
 include("f4/sort.jl")
-# Additional tiny tracing
-include("f4/tiny_trace.jl")
-# All together combined in the F4 algorithm
 include("f4/f4.jl")
-# Learn & apply add-on
 include("f4/learn_apply.jl")
-
-#= rational number reconstruction and CRT =#
 include("reconstruction/crt.jl")
 include("reconstruction/ratrec.jl")
 
 #= more high level functions =#
-# Lucky prime numbers
 include("groebner/lucky.jl")
-# GB state
 include("groebner/state.jl")
-# Correctness checks
 include("groebner/correctness.jl")
-# `groebner` backend
 include("groebner/groebner.jl")
 include("groebner/groebner_with_change_matrix.jl")
-# `groebner_learn` and `groebner_apply` backend
 include("groebner/learn_apply.jl")
-# `isgroebner` backend
 include("groebner/isgroebner.jl")
-# `normalform` backend
 include("groebner/normalform.jl")
-# `autoreduce` backend (not exported)
 include("groebner/autoreduce.jl")
-# some tricks (which are used to compute in Lex and Product orderings)
 include("groebner/homogenization.jl")
 
 #= generic fglm implementation =#

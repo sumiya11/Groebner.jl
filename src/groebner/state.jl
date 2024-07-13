@@ -45,7 +45,6 @@ end
 # The state of the modular GB 
 mutable struct GroebnerState{T1 <: CoeffZZ, T2 <: CoeffQQ, T3}
     gb_coeffs_zz::Vector{Vector{T1}}
-    prev_gb_coeffs_zz::Vector{Vector{T1}}
     gb_coeffs_qq::Vector{Vector{T2}}
 
     gb_coeffs_ff_all::Vector{Vector{Vector{T3}}}
@@ -68,7 +67,6 @@ mutable struct GroebnerState{T1 <: CoeffZZ, T2 <: CoeffQQ, T3}
     ) where {T1 <: CoeffZZ, T2 <: CoeffQQ, T3 <: CoeffZp}
         new(
             Vector{Vector{T1}}(),
-            Vector{Vector{T1}}(),
             Vector{Vector{T2}}(),
             Vector{Vector{Vector{T3}}}(),
             0,
@@ -85,33 +83,57 @@ mutable struct GroebnerState{T1 <: CoeffZZ, T2 <: CoeffQQ, T3}
     end
 end
 
+function gb_modular_select_indices0(gb_coeffs, params::AlgorithmParameters)
+    indices_selection = Vector{Tuple{Int, Int}}(undef, length(gb_coeffs))
+    rng = params.rng
+    k = 1
+    tot = 0
+    @inbounds for i in 1:length(gb_coeffs)
+        l = length(gb_coeffs[i])
+        tot += l
+        isone(l) && continue
+        nl = max(floor(Int, log2(l)) - 1, 1)
+        while k + nl + 1 > length(indices_selection)
+            resize!(indices_selection, 2 * length(indices_selection))
+        end
+        for j in 1:nl
+            indices_selection[k] = (i, rand(rng, 2:l))
+            k += 1
+        end
+        indices_selection[k] = (i, l)
+        k += 1
+    end
+    resize!(indices_selection, k - 1)
+    unique!(indices_selection)
+    tot, indices_selection
+end
+
 function common_denominator!(den::BigInt, coeffs::Vector{T}) where {T <: CoeffQQ}
     Base.GMP.MPZ.set_si!(den, 1)
-    for c in coeffs
+    @inbounds for i in 1:length(coeffs)
+        c = coeffs[i]
         Base.GMP.MPZ.lcm!(den, denominator(c))
     end
     den
 end
+
 function common_denominator(coeffs::Vector{T}) where {T <: CoeffQQ}
     common_denominator!(BigInt(), coeffs)
 end
 
-# TODO: scale numerators inplace and do not allocate new GMP instances
-function clear_denominators!(
+function _clear_denominators!(
+    ctx::Context,
     buffer::CoefficientBuffer,
-    coeffs_zz::Vector{Vector{C1}},
-    coeffs_qq::Vector{Vector{C2}}
-) where {C1 <: CoeffZZ, C2 <: CoeffQQ}
-    @invariant length(coeffs_zz) == length(coeffs_qq)
+    coeffs_qq::Vector{Vector{T}}
+) where {T <: CoeffQQ}
+    coeffs_zz = [[BigInt(0) for _ in 1:length(c)] for c in coeffs_qq]
     den, buf = buffer.scalebuf1, buffer.scalebuf2
     @inbounds for i in 1:length(coeffs_qq)
         @invariant length(coeffs_zz[i]) == length(coeffs_qq[i])
         den = common_denominator!(den, coeffs_qq[i])
-        # sz  = Base.GMP.MPZ.sizeinbase(den, 2)
         for j in 1:length(coeffs_qq[i])
             num = numerator(coeffs_qq[i][j])
             Base.GMP.MPZ.tdiv_q!(buf, den, denominator(coeffs_qq[i][j]))
-            # Base.GMP.MPZ.realloc2!(coeffs_zz[i][j], sz)
             Base.GMP.MPZ.mul!(coeffs_zz[i][j], num, buf)
         end
     end
@@ -119,36 +141,20 @@ function clear_denominators!(
 end
 
 function clear_denominators!(
-    buffer::CoefficientBuffer,
-    coeffs_qq::Vector{Vector{T}}
-) where {T <: CoeffQQ}
-    coeffs_zz = [[BigInt(0) for _ in 1:length(c)] for c in coeffs_qq]
-    clear_denominators!(buffer, coeffs_zz, coeffs_qq)
-end
-
-function clear_denominators(coeffs_qq::Vector{Vector{T}}) where {T <: CoeffQQ}
-    clear_denominators!(CoefficientBuffer(), coeffs_qq)
-end
-
-function clear_denominators(coeffs_qq::Vector{T}) where {T <: CoeffQQ}
-    first(clear_denominators([coeffs_qq]))
-end
-
-function clear_denominators!(
+    ctx::Context,
     buffer::CoefficientBuffer,
     basis::Basis{T};
     deepcopy=false
 ) where {T <: CoeffQQ}
-    coeffs_zz = clear_denominators!(buffer, basis.coeffs)
+    coeffs_zz = _clear_denominators!(ctx, buffer, basis.coeffs)
     if deepcopy
-        basis_deep_copy_with_new_coeffs(basis, coeffs_zz)
+        basis_deep_copy_with_new_coeffs(ctx, basis, coeffs_zz)
     else
         basis_shallow_copy_with_new_coeffs(basis, coeffs_zz)
     end
 end
 
-# Reduce x modulo a prime
-function reduce_mod_p!(buf::BigInt, x::BigInt, prime::Unsigned, prime_big::BigInt)
+function bigint_mod_p!(buf::BigInt, x::BigInt, prime::Unsigned, prime_big::BigInt)
     if Base.GMP.MPZ.cmp_ui(x, 0) < 0
         Base.GMP.MPZ.fdiv_q!(buf, x, prime_big)
         Base.GMP.MPZ.neg!(buf)
@@ -175,7 +181,7 @@ function reduce_modulo_p!(
         cfs_zz_i = coeffs_zz[i]
         for j in 1:length(cfs_zz_i)
             Base.GMP.MPZ.set!(c, cfs_zz_i[j])
-            reduce_mod_p!(buf, c, prime, p)
+            bigint_mod_p!(buf, c, prime, p)
             coeffs_ff[i][j] = CoeffModular(buf)
         end
     end
@@ -184,8 +190,9 @@ function reduce_modulo_p!(
 end
 
 function reduce_modulo_p!(
+    ctx::Context,
     coeffbuff::CoefficientBuffer,
-    ring,
+    ring::PolyRing,
     coeffs_zz::Vector{Vector{T1}},
     prime::T2
 ) where {T1 <: CoeffZZ, T2 <: CoeffZp}
@@ -195,15 +202,16 @@ function reduce_modulo_p!(
 end
 
 function reduce_modulo_p!(
+    ctx::Context,
     buffer::CoefficientBuffer,
     ring::PolyRing,
-    basis::Basis{<:CoeffZZ},
-    prime;
+    basis::Basis{T1},
+    prime::T2;
     deepcopy=true
-)
-    ring_ff, coeffs_ff = reduce_modulo_p!(buffer, ring, basis.coeffs, prime)
+) where {T1 <: CoeffZZ, T2 <: CoeffZp}
+    ring_ff, coeffs_ff = reduce_modulo_p!(ctx, buffer, ring, basis.coeffs, prime)
     new_basis = if deepcopy
-        basis_deep_copy_with_new_coeffs(basis, coeffs_ff)
+        basis_deep_copy_with_new_coeffs(ctx, basis, coeffs_ff)
     else
         basis_shallow_copy_with_new_coeffs(basis, coeffs_ff)
     end
@@ -211,6 +219,7 @@ function reduce_modulo_p!(
 end
 
 function reduce_modulo_p_in_batch!(
+    ctx::Context,
     coeffbuff::CoefficientBuffer,
     ring::PolyRing,
     basis::Basis{C},
@@ -232,14 +241,14 @@ function reduce_modulo_p_in_batch!(
                 Base.GMP.MPZ.set!(xn[k], cfs_zz_i[j])
             end
             data = ntuple(
-                k -> T(reduce_mod_p!(buf, xn[k], UInt(prime_xn[k]), prime_big_xn[k])),
+                k -> T(bigint_mod_p!(buf, xn[k], UInt(prime_xn[k]), prime_big_xn[k])),
                 N
             )
             coeffs_ff_xn[i][j] = CompositeInt{N, T}(data)
         end
     end
     ring_ff_4x = PolyRing(ring.nvars, ring.ord, CompositeInt{N, T}(prime_xn))
-    basis_ff_4x = basis_deep_copy_with_new_coeffs(basis, coeffs_ff_xn)
+    basis_ff_4x = basis_deep_copy_with_new_coeffs(ctx, basis, coeffs_ff_xn)
 
     ring_ff_4x, basis_ff_4x
 end
@@ -251,14 +260,12 @@ function resize_state_if_needed!(
     gb_coeffs::Vector{Vector{T}}
 ) where {T}
     resize!(state.gb_coeffs_zz, length(gb_coeffs))
-    resize!(state.prev_gb_coeffs_zz, length(gb_coeffs))
     resize!(state.gb_coeffs_qq, length(gb_coeffs))
     resize!(state.is_crt_reconstructed_mask, length(gb_coeffs))
     resize!(state.is_rational_reconstructed_mask, length(gb_coeffs))
 
     @inbounds for i in 1:length(gb_coeffs)
         state.gb_coeffs_zz[i] = [BigInt(0) for _ in 1:length(gb_coeffs[i])]
-        state.prev_gb_coeffs_zz[i] = [BigInt(0) for _ in 1:length(gb_coeffs[i])]
         state.gb_coeffs_qq[i] = [Rational{BigInt}(1) for _ in 1:length(gb_coeffs[i])]
         state.is_crt_reconstructed_mask[i] = falses(length(gb_coeffs[i]))
         state.is_rational_reconstructed_mask[i] = falses(length(gb_coeffs[i]))
@@ -269,95 +276,6 @@ end
 
 ###
 # CRT
-
-# Reconstruct coefficients of the basis using CRT.
-#
-# state.gb_coeffs_zz -- coefficients of the basis modulo P1*P2*...*Pk.
-# basis_ff.coeffs -- coefficients of the basis modulo new prime P.
-# 
-# Writes the coefficients of the basis modulo P * P1*P2*...*Pk to
-# state.gb_coeffs_zz inplace
-function full_incremental_crt_reconstruct!(state::GroebnerState, lucky::LuckyPrimes)
-    if isempty(state.gb_coeffs_zz)
-        @log :misc "Using full trivial CRT reconstruction"
-        coeffs_ff = state.gb_coeffs_ff_all[1]
-        resize_state_if_needed!(state, coeffs_ff)
-        gb_coeffs_zz = state.gb_coeffs_zz
-        @inbounds for i in 1:length(coeffs_ff)
-            for j in 1:length(coeffs_ff[i])
-                Base.GMP.MPZ.set_ui!(gb_coeffs_zz[i][j], coeffs_ff[i][j])
-            end
-        end
-        Base.GMP.MPZ.mul_ui!(lucky.modulo, lucky.primes[1])
-        return nothing
-    end
-    # @invariant length(coeffs_ff) == length(state.gb_coeffs_zz)
-
-    @log :misc "Using full CRT reconstruction"
-    gb_coeffs_zz = state.gb_coeffs_zz
-    prev_gb_coeffs_zz = state.prev_gb_coeffs_zz
-    is_crt_reconstructed_mask = state.is_crt_reconstructed_mask
-
-    # Takes the lock..
-    @invariant length(state.gb_coeffs_ff_all) == length(lucky.primes)
-
-    # Set the buffers for CRT and precompute some values
-    buffer = state.buffer
-    buf = buffer.reconstructbuf1
-    n1, n2 = buffer.reconstructbuf2, buffer.reconstructbuf3
-    M = buffer.reconstructbuf4
-    invm1, invm2 = buffer.reconstructbuf6, buffer.reconstructbuf7
-
-    Base.GMP.MPZ.set_ui!(lucky.modulo, lucky.primes[1])
-
-    @inbounds for i in 1:length(gb_coeffs_zz)
-        @invariant length(gb_coeffs_zz[i]) == length(prev_gb_coeffs_zz[i])
-        for j in 1:length(gb_coeffs_zz[i])
-            if is_crt_reconstructed_mask[i][j]
-                continue
-            end
-            Base.GMP.MPZ.set_ui!(gb_coeffs_zz[i][j], state.gb_coeffs_ff_all[1][i][j])
-        end
-    end
-
-    @inbounds for i in 1:length(gb_coeffs_zz)
-        if is_crt_reconstructed_mask[i][1]
-            continue
-        end
-        Base.GMP.MPZ.set_ui!(gb_coeffs_zz[i][1], CoeffModular(1))
-    end
-
-    for idx in 2:length(lucky.primes)
-        crt_precompute!(M, n1, n2, invm1, lucky.modulo, invm2, lucky.primes[idx])
-        gb_coeffs_ff = state.gb_coeffs_ff_all[idx]
-
-        @invariant length(gb_coeffs_zz) == length(gb_coeffs_ff)
-        @inbounds for i in 1:length(gb_coeffs_zz)
-            @invariant length(gb_coeffs_zz[i]) == length(gb_coeffs_ff[i])
-
-            # Skip reconstruction of the first coefficient
-            for j in 2:length(gb_coeffs_zz[i])
-                if is_crt_reconstructed_mask[i][j]
-                    continue
-                end
-
-                # Copy current basis coefficients to the previous array
-                # Base.GMP.MPZ.set!(prev_gb_coeffs_zz[i][j], gb_coeffs_zz[i][j])
-
-                c_zz = gb_coeffs_zz[i][j]
-                c_ff = gb_coeffs_ff[i][j]
-
-                crt!(M, buf, n1, n2, c_zz, invm1, c_ff, invm2)
-
-                Base.GMP.MPZ.set!(gb_coeffs_zz[i][j], buf)
-            end
-        end
-
-        Base.GMP.MPZ.mul_ui!(lucky.modulo, lucky.primes[idx])
-    end
-
-    nothing
-end
 
 function full_simultaneous_crt_reconstruct!(state::GroebnerState, lucky::LuckyPrimes)
     if isempty(state.gb_coeffs_zz)
@@ -377,7 +295,6 @@ function full_simultaneous_crt_reconstruct!(state::GroebnerState, lucky::LuckyPr
 
     @log :misc "Using full CRT reconstruction"
     gb_coeffs_zz = state.gb_coeffs_zz
-    prev_gb_coeffs_zz = state.prev_gb_coeffs_zz
     is_crt_reconstructed_mask = state.is_crt_reconstructed_mask
 
     # Takes the lock..
@@ -393,8 +310,6 @@ function full_simultaneous_crt_reconstruct!(state::GroebnerState, lucky::LuckyPr
     MM0 = buffer.reconstructbuf9
 
     @inbounds for i in 1:length(gb_coeffs_zz)
-        @invariant length(gb_coeffs_zz[i]) == length(prev_gb_coeffs_zz[i])
-
         for j in 1:length(gb_coeffs_zz[i])
             if is_crt_reconstructed_mask[i][j]
                 continue
@@ -411,7 +326,7 @@ function full_simultaneous_crt_reconstruct!(state::GroebnerState, lucky::LuckyPr
     end
 
     n = length(lucky.primes)
-    rems = Vector{CoeffModular}(undef, n)
+    rems = Vector{UInt64}(undef, n)
     mults = Vector{BigInt}(undef, n)
     for i in 1:length(mults)
         mults[i] = BigInt(0)
@@ -428,7 +343,7 @@ function full_simultaneous_crt_reconstruct!(state::GroebnerState, lucky::LuckyPr
             end
 
             for ell in 1:length(lucky.primes)
-                rems[ell] = state.gb_coeffs_ff_all[ell][i][j]
+                rems[ell] = state.gb_coeffs_ff_all[ell][i][j] % UInt64
             end
 
             crt!(M, buf, n1, n2, rems, mults)
@@ -503,7 +418,7 @@ function full_simultaneous_crt_reconstruct_changematrix!(
     MM0 = buffer.reconstructbuf9
 
     n = length(lucky.primes)
-    rems = Vector{CoeffModular}(undef, n)
+    rems = Vector{UInt64}(undef, n)
     mults = Vector{BigInt}(undef, n)
     for i in 1:length(mults)
         mults[i] = BigInt(0)
@@ -517,7 +432,7 @@ function full_simultaneous_crt_reconstruct_changematrix!(
         for j in 1:length(changematrix_coeffs_zz[i])
             for k in 1:length(changematrix_coeffs_zz[i][j])
                 for ell in 1:length(lucky.primes)
-                    rems[ell] = state.changematrix_coeffs_ff_all[ell][i][j][k]
+                    rems[ell] = state.changematrix_coeffs_ff_all[ell][i][j][k] % UInt64
                 end
                 crt!(M, buf, n1, n2, rems, mults)
                 Base.GMP.MPZ.set!(changematrix_coeffs_zz[i][j][k], buf)
@@ -579,7 +494,7 @@ end
         i1, i2 = indices_selection[i]
 
         c_zz = selected_coeffs_zz[i]
-        c_ff = gb_coeffs_ff[i1][i2]
+        c_ff = gb_coeffs_ff[i1][i2] % UInt64
         crt!(M, buf, n1, n2, c_zz, invm1, c_ff, invm2)
 
         Base.GMP.MPZ.set!(selected_coeffs_zz[i], buf)
@@ -596,11 +511,11 @@ end
     nothing
 end
 
-@timeit function partial_simultaneous_crt_reconstruct!(
-    state::GroebnerState,
+function partial_simultaneous_crt_reconstruct!(
+    state::GroebnerState{T1, T2, T3},
     lucky::LuckyPrimes,
     indices_selection::Vector{Tuple{Int, Int}}
-)
+) where {T1, T2, T3}
     selected_coeffs_zz = state.selected_coeffs_zz
     selected_prev_coeffs_zz = state.selected_prev_coeffs_zz
     selected_coeffs_qq = state.selected_coeffs_qq
@@ -637,7 +552,7 @@ end
     M0 = buffer.reconstructbuf8
     MM0 = buffer.reconstructbuf9
 
-    rems = Vector{CoeffModular}(undef, n)
+    rems = Vector{UInt}(undef, n)
     mults = Vector{BigInt}(undef, n)
     for i in 1:length(mults)
         mults[i] = BigInt(0)
@@ -654,7 +569,7 @@ end
         i1, i2 = indices_selection[i]
 
         for j in (prev_index + 1):length(lucky.primes)
-            rems[j - prev_index] = state.gb_coeffs_ff_all[j][i1][i2]
+            rems[j - prev_index] = state.gb_coeffs_ff_all[j][i1][i2] % UInt64
         end
 
         crt!(M, buf, n1, n2, rems, mults)
@@ -706,6 +621,7 @@ end
     @invariant length(gb_coeffs_zz) == length(gb_coeffs_qq)
 
     if use_flint
+        nemo_bnd = Nemo.ZZRingElem(bnd)
         nemo_modulo = Nemo.ZZRingElem(modulo)
 
         @inbounds for i in 1:length(gb_coeffs_zz)
@@ -719,10 +635,10 @@ end
 
                 cz = gb_coeffs_zz[i][j]
                 nemo_rem = Nemo.ZZRingElem(cz)
-                success, (num, den) = ratrec_nemo(nemo_rem, nemo_modulo)
-                gb_coeffs_qq[i][j] = Base.unsafe_rational(num, den)
-
+                success, pq = ratrec_nemo_2(nemo_rem, nemo_modulo, nemo_bnd, nemo_bnd)
                 !success && return false
+
+                gb_coeffs_qq[i][j] = pq
             end
 
             @invariant isone(gb_coeffs_qq[i][1])
@@ -791,6 +707,7 @@ function full_rational_reconstruct_changematrix!(
     @invariant length(changematrix_coeffs_zz) == length(changematrix_coeffs_qq)
     @assert use_flint
     nemo_modulo = Nemo.ZZRingElem(modulo)
+    nemo_bnd = Nemo.ZZRingElem(bnd)
 
     @inbounds for i in 1:length(changematrix_coeffs_zz)
         @invariant length(changematrix_coeffs_zz[i]) == length(changematrix_coeffs_qq[i])
@@ -799,10 +716,10 @@ function full_rational_reconstruct_changematrix!(
             for k in 1:length(changematrix_coeffs_zz[i][j])
                 cz = changematrix_coeffs_zz[i][j][k]
                 nemo_rem = Nemo.ZZRingElem(cz)
-                success, (num, den) = ratrec_nemo(nemo_rem, nemo_modulo)
-                changematrix_coeffs_qq[i][j][k] = Base.unsafe_rational(num, den)
-
+                success, pq = ratrec_nemo_2(nemo_rem, nemo_modulo, nemo_bnd, nemo_bnd)
                 !success && return false
+
+                changematrix_coeffs_qq[i][j][k] = pq
             end
         end
     end
@@ -835,22 +752,23 @@ end
 
     if use_flint
         nemo_modulo = Nemo.ZZRingElem(modulo)
+        nemo_bnd = Nemo.ZZRingElem(bnd)
 
         @inbounds for i in 1:length(indices_selection)
             i1, i2 = indices_selection[i]
             cz = selected_coeffs_zz[i]
             nemo_rem = Nemo.ZZRingElem(cz)
 
-            success, (num, den) = ratrec_nemo(nemo_rem, nemo_modulo)
-            selected_coeffs_qq[i] = Base.unsafe_rational(num, den)
-
+            success, pq = ratrec_nemo_2(nemo_rem, nemo_modulo, nemo_bnd, nemo_bnd)
             !success && return false
+
+            selected_coeffs_qq[i] = pq
 
             # Mark that the coefficient is already reconstructed
             is_rational_reconstructed_mask[i1][i2] = true
             tnum, tden = numerator(gb_coeffs_qq[i1][i2]), denominator(gb_coeffs_qq[i1][i2])
-            Base.GMP.MPZ.set!(tnum, num)
-            Base.GMP.MPZ.set!(tden, den)
+            Base.GMP.MPZ.set!(tnum, numerator(pq))
+            Base.GMP.MPZ.set!(tden, denominator(pq))
         end
     else
         @inbounds for i in 1:length(indices_selection)

@@ -1,14 +1,15 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-# Parts of this file were adapted from msolve
-#   https://github.com/algebraic-solving/msolve
-# msolve is distributed under GNU GPL v2+
-#   https://github.com/algebraic-solving/msolve/blob/master/COPYING
+# Parts of this file were adapted from msolve:
+# https://github.com/algebraic-solving/msolve
+# msolve is distributed under GNU GPL v2+:
+# https://github.com/algebraic-solving/msolve/blob/master/COPYING
 
 ###
 # High level
 
 function linalg_deterministic_sparse!(
+    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
@@ -21,13 +22,14 @@ function linalg_deterministic_sparse!(
     @log :matrix matrix_string_repr(matrix)
 
     # Reduce CD with AB
-    linalg_reduce_matrix_lower_part!(matrix, basis, arithmetic)
+    linalg_reduce_matrix_lower_part!(ctx, matrix, basis, arithmetic)
     # Interreduce CD
-    linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic)
+    linalg_interreduce_matrix_pivots!(ctx, matrix, basis, arithmetic)
     true
 end
 
 function linalg_deterministic_sparse_interreduction!(
+    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
@@ -37,9 +39,9 @@ function linalg_deterministic_sparse_interreduction!(
     @log :matrix matrix_string_repr(matrix)
 
     # Prepare the matrix
-    linalg_prepare_matrix_pivots_in_interreduction!(matrix, basis)
+    linalg_prepare_matrix_pivots_in_interreduction!(ctx, matrix, basis)
     # Interreduce AB
-    linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic, reversed_rows=true)
+    linalg_interreduce_matrix_pivots!(ctx, matrix, basis, arithmetic, reversed_rows=true)
     true
 end
 
@@ -55,6 +57,7 @@ end
 #   0 D'
 # The new pivots in the D' block are known, but possibly not fully interreduced.
 @timeit function linalg_reduce_matrix_lower_part!(
+    ctx::Context,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
@@ -127,6 +130,7 @@ end
 # 
 # Returns the indices of the rows that did not reduce to zero.
 @timeit function linalg_interreduce_matrix_pivots!(
+    ctx::Context,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType};
@@ -216,6 +220,7 @@ end
 
 # Puts the AB part of the matrix in the RREF, inplace.
 @timeit function linalg_interreduce_matrix_upper_part!(
+    ctx::Context,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
@@ -225,6 +230,7 @@ end
 
     # Prepare the matrix
     resize!(matrix.upper_coeffs, nup)
+    resize!(matrix.upper_rows, ncols)
     resize!(matrix.some_coeffs, matrix.nrows_filled_lower)
 
     # Allocate the buffers
@@ -236,6 +242,7 @@ end
         # of the matrix
         sparse_row_support = matrix.upper_rows[i]
         sparse_row_coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
+        @invariant length(sparse_row_support) == length(sparse_row_coeffs)
 
         # Extract the coefficients into a dense array
         @invariant isone(sparse_row_coeffs[1])
@@ -282,6 +289,7 @@ end
 end
 
 function linalg_reduce_matrix_lower_part_invariant_pivots!(
+    ctx::Context,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
@@ -337,6 +345,7 @@ function linalg_reduce_matrix_lower_part_invariant_pivots!(
 end
 
 function linalg_reduce_matrix_lower_part_any_nonzero!(
+    ctx::Context,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
@@ -406,9 +415,10 @@ function linalg_prepare_matrix_pivots!(matrix::MacaulayMatrix)
 end
 
 function linalg_prepare_matrix_pivots_in_interreduction!(
+    ctx::Context,
     matrix::MacaulayMatrix,
-    basis::Basis
-)
+    basis::Basis{C}
+) where {C}
     _, ncols = size(matrix)
     nup, nlow = matrix_nrows_filled(matrix)
 
@@ -691,7 +701,6 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
         @invariant iszero(row[i])
     end
 
-    # all reduced to zero!
     if n_nonzeros == 0
         return true
     end

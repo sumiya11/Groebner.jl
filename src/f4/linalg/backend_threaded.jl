@@ -1,14 +1,15 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-# Parts of this file were adapted from msolve
-#   https://github.com/algebraic-solving/msolve
-# msolve is distributed under GNU GPL v2+
-#   https://github.com/algebraic-solving/msolve/blob/master/COPYING
+# Parts of this file were adapted from msolve:
+# https://github.com/algebraic-solving/msolve
+# msolve is distributed under GNU GPL v2+:
+# https://github.com/algebraic-solving/msolve/blob/master/COPYING
 
 ###
 # High level
 
 function linalg_deterministic_sparse_threaded!(
+    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
@@ -21,9 +22,9 @@ function linalg_deterministic_sparse_threaded!(
     @log :matrix matrix_string_repr(matrix)
 
     # Reduce CD with AB
-    linalg_reduce_matrix_lower_part_threaded_cas!(matrix, basis, arithmetic)
+    linalg_reduce_matrix_lower_part_threaded_cas!(ctx, matrix, basis, arithmetic)
     # Interreduce CD
-    linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic)
+    linalg_interreduce_matrix_pivots!(ctx, matrix, basis, arithmetic)
     true
 end
 
@@ -39,6 +40,7 @@ end
 #   0 D'
 # The new pivots in the D' block are known, but possibly not fully interreduced.
 function linalg_reduce_matrix_lower_part_threaded_cas!(
+    ctx::Context,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}

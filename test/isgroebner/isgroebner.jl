@@ -18,25 +18,25 @@ using AbstractAlgebra
     @test !Groebner.isgroebner([x + y, x])
     @test Groebner.isgroebner([z * x, z * x, R(1)])
 
-    fs = Groebner.rootn(3, internal_ordering=:degrevlex)
+    fs = Groebner.Examples.rootn(3, internal_ordering=:degrevlex)
     @test !Groebner.isgroebner(fs)
     @test Groebner.isgroebner(Groebner.groebner(fs))
 
-    fs = Groebner.rootn(5, internal_ordering=:degrevlex)
-    @test !Groebner.isgroebner(fs)
-    @test Groebner.isgroebner(Groebner.groebner(fs))
-    @test Groebner.isgroebner(Groebner.groebner(fs, reduced=false))
-
-    fs = Groebner.noonn(2, internal_ordering=:degrevlex)
-    @test !Groebner.isgroebner(fs)
-    @test Groebner.isgroebner(Groebner.groebner(fs))
-
-    fs = Groebner.noonn(3, internal_ordering=:degrevlex)
+    fs = Groebner.Examples.rootn(5, internal_ordering=:degrevlex)
     @test !Groebner.isgroebner(fs)
     @test Groebner.isgroebner(Groebner.groebner(fs))
     @test Groebner.isgroebner(Groebner.groebner(fs, reduced=false))
 
-    fs = Groebner.noonn(6, internal_ordering=:degrevlex)
+    fs = Groebner.Examples.noonn(2, internal_ordering=:degrevlex)
+    @test !Groebner.isgroebner(fs)
+    @test Groebner.isgroebner(Groebner.groebner(fs))
+
+    fs = Groebner.Examples.noonn(3, internal_ordering=:degrevlex)
+    @test !Groebner.isgroebner(fs)
+    @test Groebner.isgroebner(Groebner.groebner(fs))
+    @test Groebner.isgroebner(Groebner.groebner(fs, reduced=false))
+
+    fs = Groebner.Examples.noonn(6, internal_ordering=:degrevlex)
     @test !Groebner.isgroebner(fs)
     @test Groebner.isgroebner(Groebner.groebner(fs))
 end
@@ -68,24 +68,24 @@ end
             @test !Groebner.isgroebner([x + y, x], certify=certify)
             @test Groebner.isgroebner([z * x, z * x, R(1)], certify=certify)
         end
-        fs = Groebner.rootn(3, k=GF(2^31 - 1), internal_ordering=:degrevlex)
+        fs = Groebner.Examples.rootn(3, k=GF(2^31 - 1), internal_ordering=:degrevlex)
         @test !Groebner.isgroebner(fs, certify=certify)
         @test Groebner.isgroebner(Groebner.groebner(fs), certify=certify)
 
-        fs = Groebner.rootn(3, k=QQ, internal_ordering=:degrevlex)
+        fs = Groebner.Examples.rootn(3, k=QQ, internal_ordering=:degrevlex)
         @test !Groebner.isgroebner(fs, certify=certify)
         @test Groebner.isgroebner(Groebner.groebner(fs), certify=certify)
 
-        fs = Groebner.noonn(2, k=GF(2^31 - 1), internal_ordering=:degrevlex)
+        fs = Groebner.Examples.noonn(2, k=GF(2^31 - 1), internal_ordering=:degrevlex)
         @test !Groebner.isgroebner(fs, certify=certify)
         @test Groebner.isgroebner(Groebner.groebner(fs), certify=certify)
 
         # TODO: figure out why this is broken!
-        # fs = Groebner.noonn(2, internal_ordering=:degrevlex)
+        # fs = Groebner.Examples.noonn(2, internal_ordering=:degrevlex)
         # @test !Groebner.isgroebner(fs, certify=certify)
         # @test Groebner.isgroebner(Groebner.groebner(fs), certify=certify)
 
-        fs = Groebner.noonn(6, k=GF(2^31 - 1), internal_ordering=:degrevlex)
+        fs = Groebner.Examples.noonn(6, k=GF(2^31 - 1), internal_ordering=:degrevlex)
         @test !Groebner.isgroebner(fs, certify=certify)
         @test Groebner.isgroebner(Groebner.groebner(fs), certify=certify)
     end

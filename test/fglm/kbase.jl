@@ -48,31 +48,31 @@ end
 end
 
 @testset "kbase big" begin
-    root4 = Groebner.rootn(4)
+    root4 = Groebner.Examples.rootn(4)
     gb = Groebner.groebner(root4)
     R = parent(first(root4))
     (x1, x2, x3, x4) = gens(R)
     @test length(Groebner.kbase(gb)) == 24
 
-    root6 = Groebner.rootn(6)
+    root6 = Groebner.Examples.rootn(6)
     gb = Groebner.groebner(root6)
     @test length(Groebner.kbase(gb)) == 720
-    root6 = Groebner.rootn(6)
+    root6 = Groebner.Examples.rootn(6)
     gb = Groebner.groebner(root6, ordering=Groebner.DegRevLex())
     @test length(Groebner.kbase(gb)) == 720
 
-    noon2 = Groebner.noonn(2, internal_ordering=:degrevlex)
+    noon2 = Groebner.Examples.noonn(2, internal_ordering=:degrevlex)
     R = parent(first(noon2))
     (x1, x2) = gens(R)
     gb = Groebner.groebner(noon2, ordering=Groebner.DegRevLex())
     @test Groebner.kbase(gb) == [R(1), x2, x1, x2^2, x1 * x2]
 
-    noon = Groebner.noonn(3)
+    noon = Groebner.Examples.noonn(3)
     R = parent(first(noon))
     gb = Groebner.groebner(noon, ordering=Groebner.DegRevLex())
     @test length(Groebner.kbase(gb, ordering=Groebner.DegRevLex())) == 21
 
-    sys = Groebner.eco10(k=GF(2^31 - 1), internal_ordering=:degrevlex)
+    sys = Groebner.Examples.eco10(k=GF(2^31 - 1), internal_ordering=:degrevlex)
     R = parent(first(sys))
     gb = Groebner.groebner(sys, ordering=Groebner.DegRevLex())
     @test length(Groebner.kbase(gb, ordering=Groebner.DegRevLex())) == 256

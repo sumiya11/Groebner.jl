@@ -28,6 +28,7 @@ In other words, computes the reduced row echelon form of
 Returns `true` if successful and `false` otherwise.
 """
 @timeit function linalg_main!(
+    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis,
     params::AlgorithmParameters,
@@ -35,9 +36,6 @@ Returns `true` if successful and `false` otherwise.
     linalg=nothing
 )
     @invariant matrix_well_formed(matrix)
-
-    @stat matrix_block_sizes = matrix_block_sizes(matrix)
-    @stat matrix_nnz = sum(i -> length(matrix.upper_rows[i]), 1:length(matrix.upper_rows))
 
     rng = params.rng
     arithmetic = params.arithmetic
@@ -67,6 +65,7 @@ Returns `true` if successful and `false` otherwise.
 
     flag = if !isnothing(trace)
         _linalg_main_with_trace!(
+            ctx,
             trace,
             matrix,
             basis,
@@ -77,7 +76,7 @@ Returns `true` if successful and `false` otherwise.
             rng
         )
     else
-        _linalg_main!(matrix, basis, linalg, threaded, changematrix, arithmetic, rng)
+        _linalg_main!(ctx, matrix, basis, linalg, threaded, changematrix, arithmetic, rng)
     end
 
     flag
@@ -91,6 +90,7 @@ Interreduces the rows of the given `MacaulayMatrix`.
 Returns `true` if successful and `false` otherwise.
 """
 function linalg_autoreduce!(
+    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis,
     params::AlgorithmParameters,
@@ -106,9 +106,17 @@ function linalg_autoreduce!(
     changematrix = params.changematrix
 
     flag = if !isnothing(trace)
-        _linalg_autoreduce_with_trace!(trace, matrix, basis, linalg, changematrix, arithmetic)
+        _linalg_autoreduce_with_trace!(
+            ctx,
+            trace,
+            matrix,
+            basis,
+            linalg,
+            changematrix,
+            arithmetic
+        )
     else
-        _linalg_autoreduce!(matrix, basis, linalg, changematrix, arithmetic)
+        _linalg_autoreduce!(ctx, matrix, basis, linalg, changematrix, arithmetic)
     end
 
     flag
@@ -130,12 +138,13 @@ interreduction (or, autoreduction) of the matrix rows.
 Returns `true` if successful and `false` otherwise.
 """
 function linalg_normalform!(
+    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
 )
     @invariant matrix_well_formed(matrix)
-    _linalg_normalform!(matrix, basis, arithmetic)
+    _linalg_normalform!(ctx, matrix, basis, arithmetic)
 end
 
 """
@@ -153,12 +162,13 @@ returns `true` if
 is zero and `false`, otherwise.
 """
 function linalg_isgroebner!(
+    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
 )
     @invariant matrix_well_formed(matrix)
-    _linalg_isgroebner!(matrix, basis, arithmetic)
+    _linalg_isgroebner!(ctx, matrix, basis, arithmetic)
 end
 
 ###
@@ -182,6 +192,7 @@ function linalg_should_use_threading(matrix, linalg, threaded)
 end
 
 function _linalg_main!(
+    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
@@ -191,27 +202,27 @@ function _linalg_main!(
     rng::AbstractRNG
 )
     flag = if changematrix
-        linalg_deterministic_sparse_changematrix!(matrix, basis, linalg, arithmetic)
+        linalg_deterministic_sparse_changematrix!(ctx, matrix, basis, linalg, arithmetic)
     elseif linalg.algorithm === :deterministic
         if linalg_should_use_threading(matrix, linalg, threaded)
-            linalg_deterministic_sparse_threaded!(matrix, basis, linalg, arithmetic)
+            linalg_deterministic_sparse_threaded!(ctx, matrix, basis, linalg, arithmetic)
         else
-            linalg_deterministic_sparse!(matrix, basis, linalg, arithmetic)
+            linalg_deterministic_sparse!(ctx, matrix, basis, linalg, arithmetic)
         end
     elseif linalg.algorithm === :randomized
         if linalg_should_use_threading(matrix, linalg, threaded)
-            linalg_randomized_sparse_threaded!(matrix, basis, linalg, arithmetic, rng)
+            linalg_randomized_sparse_threaded!(ctx, matrix, basis, linalg, arithmetic, rng)
         else
-            linalg_randomized_sparse!(matrix, basis, linalg, arithmetic, rng)
+            linalg_randomized_sparse!(ctx, matrix, basis, linalg, arithmetic, rng)
         end
     elseif linalg.algorithm === :experimental_1
         if linalg.sparsity === :sparse
-            linalg_direct_rref_sparse!(matrix, basis, linalg, arithmetic)
+            linalg_direct_rref_sparse!(ctx, matrix, basis, linalg, arithmetic, rng)
         else
-            linalg_direct_rref_sparsedense!(matrix, basis, linalg, arithmetic)
+            linalg_direct_rref_sparsedense!(ctx, matrix, basis, linalg, arithmetic)
         end
     elseif linalg.algorithm === :experimental_2
-        linalg_randomized_hashcolumns_sparse!(matrix, basis, linalg, arithmetic, rng)
+        linalg_randomized_hashcolumns_sparse!(ctx, matrix, basis, linalg, arithmetic, rng)
     else
         __throw_linalg_error("Cannot pick a suitable linear algebra backend for parameters
                              linalg         = $linalg
@@ -224,6 +235,7 @@ function _linalg_main!(
 end
 
 function _linalg_main_with_trace!(
+    ctx::Context,
     trace::TraceF4,
     matrix::MacaulayMatrix,
     basis::Basis,
@@ -236,19 +248,20 @@ function _linalg_main_with_trace!(
     flag = if linalg.algorithm === :learn
         # At the moment, this never opts for multi-threading
         if false && threaded === :yes
-            linalg_learn_sparse_threaded!(trace, matrix, basis, arithmetic)
+            linalg_learn_sparse_threaded!(ctx, trace, matrix, basis, arithmetic)
         else
-            linalg_learn_sparse!(trace, matrix, basis, arithmetic)
+            linalg_learn_sparse!(ctx, trace, matrix, basis, arithmetic)
         end
     else
         @assert linalg.algorithm === :apply
-        linalg_apply_sparse!(trace, matrix, basis, arithmetic)
+        linalg_apply_sparse!(ctx, trace, matrix, basis, arithmetic)
     end
 
     flag
 end
 
 function _linalg_autoreduce!(
+    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
@@ -256,13 +269,19 @@ function _linalg_autoreduce!(
     arithmetic::AbstractArithmetic
 )
     if changematrix
-        linalg_deterministic_sparse_interreduction_changematrix!(matrix, basis, arithmetic)
+        linalg_deterministic_sparse_interreduction_changematrix!(
+            ctx,
+            matrix,
+            basis,
+            arithmetic
+        )
     else
-        linalg_deterministic_sparse_interreduction!(matrix, basis, arithmetic)
+        linalg_deterministic_sparse_interreduction!(ctx, matrix, basis, arithmetic)
     end
 end
 
 function _linalg_autoreduce_with_trace!(
+    ctx::Context,
     trace::TraceF4,
     matrix::MacaulayMatrix,
     basis::Basis,
@@ -274,16 +293,29 @@ function _linalg_autoreduce_with_trace!(
     sort_matrix_upper_rows!(matrix)
 
     if linalg.algorithm === :learn
-        linalg_learn_deterministic_sparse_interreduction!(trace, matrix, basis, arithmetic)
+        linalg_learn_deterministic_sparse_interreduction!(
+            ctx,
+            trace,
+            matrix,
+            basis,
+            arithmetic
+        )
     else
         @assert linalg.algorithm === :apply
-        linalg_apply_deterministic_sparse_interreduction!(trace, matrix, basis, arithmetic)
+        linalg_apply_deterministic_sparse_interreduction!(
+            ctx,
+            trace,
+            matrix,
+            basis,
+            arithmetic
+        )
     end
 
     true
 end
 
 function _linalg_normalform!(
+    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
@@ -292,10 +324,11 @@ function _linalg_normalform!(
     @log :matrix "linalg_normalform!"
     @log :matrix matrix_string_repr(matrix)
 
-    linalg_reduce_matrix_lower_part_invariant_pivots!(matrix, basis, arithmetic)
+    linalg_reduce_matrix_lower_part_invariant_pivots!(ctx, matrix, basis, arithmetic)
 end
 
 function _linalg_isgroebner!(
+    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
@@ -305,5 +338,5 @@ function _linalg_isgroebner!(
     @log :matrix "linalg_isgroebner!"
     @log :matrix matrix_string_repr(matrix)
 
-    linalg_reduce_matrix_lower_part_any_nonzero!(matrix, basis, arithmetic)
+    linalg_reduce_matrix_lower_part_any_nonzero!(ctx, matrix, basis, arithmetic)
 end

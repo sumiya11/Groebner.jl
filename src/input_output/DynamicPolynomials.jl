@@ -91,7 +91,7 @@ end
 
 multivariate_length(p::MultivariatePolynomials.AbstractMonomialLike) = 1
 multivariate_length(p::MultivariatePolynomials.AbstractTermLike) = 1
-multivariate_length(p::AbstractPolynomialLike) = length(p)
+multivariate_length(p::AbstractPolynomialLike) = MultivariatePolynomials.nterms(p)
 
 function extract_monoms(
     representation::PolynomialRepresentation,
@@ -143,6 +143,11 @@ function convert_coeffs_to_output(
     ::Type{T}
 ) where {Q <: CoeffQQ, T <: Rational}
     check_and_convert_coeffs(coeffs, T)
+end
+
+function clear_denominators(vec)
+    mult = reduce(lcm, map(denominator, vec))
+    map(numerator, vec .* mult)
 end
 
 function convert_coeffs_to_output(

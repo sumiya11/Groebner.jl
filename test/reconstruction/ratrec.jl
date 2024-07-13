@@ -9,10 +9,11 @@ import Primes
         bnd = Groebner.ratrec_reconstruction_bound(m)
         for a in numbers
             ac = mod(numerator(a) * invmod(denominator(a), m), m)
-            success, (num, den) = Groebner.ratrec_nemo(
+            success, pq = Groebner.ratrec_nemo(
                 Groebner.Nemo.ZZRingElem(ac),
                 Groebner.Nemo.ZZRingElem(m)
             )
+            (num, den) = numerator(pq), denominator(pq)
             @test Base.unsafe_rational(num, den) == a
         end
     end
@@ -30,10 +31,11 @@ import Primes
         for i in 1:samples
             a = BigInt(rand(0:(m - 1)))
             ac = mod(numerator(a) * invmod(denominator(a), m), m)
-            success, (num, den) = Groebner.ratrec_nemo(
+            success, pq = Groebner.ratrec_nemo(
                 Groebner.Nemo.ZZRingElem(ac),
                 Groebner.Nemo.ZZRingElem(m)
             )
+            (num, den) = numerator(pq), denominator(pq)
             if a < sqrt(div(m, 2))
                 @test success
             end

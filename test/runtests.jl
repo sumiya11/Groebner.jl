@@ -1,9 +1,7 @@
-using Test
-using TestSetExtensions
-using InteractiveUtils
+using Test, TestSetExtensions
+using InteractiveUtils, Random
 
 using AbstractAlgebra
-using Random
 using Groebner
 
 # TODO: test examples in README.md (https://github.com/thchr/TestReadme.jl)
@@ -35,9 +33,6 @@ function try_import(name::Symbol)
 end
 
 @test isempty(Test.detect_ambiguities(Groebner))
-
-⊂(xs, ys) = all(in(ys), xs)
-≂(xs, ys) = ⊂(xs, ys) && ⊂(ys, xs)
 
 @time @testset "All tests" verbose = true begin
     # Basic tests for addition in Zp

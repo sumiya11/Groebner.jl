@@ -4,7 +4,7 @@
 import AbstractAlgebra
 
 function Cholera_with_weights(; np=AbstractAlgebra, internal_ordering=:degrevlex, k=np.QQ)
-    R, (i_9,i_8,w_8,s_8,i_7,w_7,r_7,s_7,i_6,w_6,r_6,s_6,i_5,w_5,r_5,s_5,i_4,w_4,r_4,s_4,i_3,w_3,r_3,s_3,i_2,w_2,r_2,s_2,i_1,w_1,r_1,s_1,i_0,w_0,r_0,s_0,z_aux,mu_0,bi_0,bw_0,al_0,g_0,dz_0,k_0) = np.PolynomialRing(k, [:i_9,:i_8,:w_8,:s_8,:i_7,:w_7,:r_7,:s_7,:i_6,:w_6,:r_6,:s_6,:i_5,:w_5,:r_5,:s_5,:i_4,:w_4,:r_4,:s_4,:i_3,:w_3,:r_3,:s_3,:i_2,:w_2,:r_2,:s_2,:i_1,:w_1,:r_1,:s_1,:i_0,:w_0,:r_0,:s_0,:z_aux,:mu_0,:bi_0,:bw_0,:al_0,:g_0,:dz_0,:k_0], ordering=ordering)
+    R, (i_9,i_8,w_8,s_8,i_7,w_7,r_7,s_7,i_6,w_6,r_6,s_6,i_5,w_5,r_5,s_5,i_4,w_4,r_4,s_4,i_3,w_3,r_3,s_3,i_2,w_2,r_2,s_2,i_1,w_1,r_1,s_1,i_0,w_0,r_0,s_0,z_aux,mu_0,bi_0,bw_0,al_0,g_0,dz_0,k_0) = np.polynomial_ring(k, [:i_9,:i_8,:w_8,:s_8,:i_7,:w_7,:r_7,:s_7,:i_6,:w_6,:r_6,:s_6,:i_5,:w_5,:r_5,:s_5,:i_4,:w_4,:r_4,:s_4,:i_3,:w_3,:r_3,:s_3,:i_2,:w_2,:r_2,:s_2,:i_1,:w_1,:r_1,:s_1,:i_0,:w_0,:r_0,:s_0,:z_aux,:mu_0,:bi_0,:bw_0,:al_0,:g_0,:dz_0,:k_0], internal_ordering=internal_ordering)
     sys = [
     		-i_0 - r_0 - s_0 + 2911528469008759170608,
 		r_0*al_0^3 + r_0*mu_0 - i_0*g_0 + r_1,

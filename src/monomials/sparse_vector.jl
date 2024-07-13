@@ -50,6 +50,15 @@ end
 
 monom_entrytype(ev::SparseExponentVector{T, I, N}) where {T, I, N} = T
 
+function monom_copy!(
+    ev2::SparseExponentVector{T, I, N},
+    ev::SparseExponentVector{T, I, N}
+) where {T, I, N}
+    Base.copy!(ev2.inds, ev.inds)
+    Base.copy!(ev2.vals, ev.vals)
+    ev2
+end
+
 monom_copy(ev::SparseExponentVector{T, I, N}) where {T, I, N} =
     SparseExponentVector{T, I, N}(Base.copy(ev.inds), Base.copy(ev.vals))
 
@@ -94,16 +103,21 @@ function monom_to_vector!(tmp::Vector{M}, pv::SparseExponentVector{T}) where {M,
     tmp
 end
 
-function monom_construct_hash_vector(::Type{SparseExponentVector{T}}, n::Integer) where {T}
-    monom_construct_hash_vector(SparseExponentVector{T, _default_index_type, n}, n)
+function monom_construct_hash_vector(
+    rng::AbstractRNG,
+    ::Type{SparseExponentVector{T}},
+    n::Integer
+) where {T}
+    monom_construct_hash_vector(rng, SparseExponentVector{T, _default_index_type, n}, n)
 end
 
 function monom_construct_hash_vector(
+    rng::AbstractRNG,
     ::Type{SparseExponentVector{T, I, N}},
     n::Integer
 ) where {T, I, N}
     @invariant n == N
-    rand(MonomHash, n)
+    rand(rng, MonomHash, n)
 end
 
 function monom_hash(ev::SparseExponentVector{T}, b::Vector{MH}) where {T, MH}

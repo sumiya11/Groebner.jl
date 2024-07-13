@@ -5,6 +5,7 @@
 
 # Proxy function for handling exceptions.
 function _groebner0(polynomials, kws::KeywordArguments)
+    ctx = ctx_initialize()
     # We try to select an efficient internal polynomial representation, i.e., a
     # suitable representation of monomials and coefficients.
     polynomial_repr = io_select_polynomial_representation(polynomials, kws)
@@ -12,7 +13,7 @@ function _groebner0(polynomials, kws::KeywordArguments)
         # The backend is wrapped in a try/catch to catch exceptions that one can
         # hope to recover from (and, perhaps, restart the computation with safer
         # parameters).
-        return _groebner1(polynomials, kws, polynomial_repr)
+        return _groebner1(ctx, polynomials, kws, polynomial_repr)
     catch err
         if isa(err, MonomialDegreeOverflow)
             @log :info """
@@ -20,7 +21,7 @@ function _groebner0(polynomials, kws::KeywordArguments)
             Restarting with at least $(32) bits per exponent."""
             polynomial_repr =
                 io_select_polynomial_representation(polynomials, kws, hint=:large_exponents)
-            return _groebner1(polynomials, kws, polynomial_repr)
+            return _groebner1(ctx, polynomials, kws, polynomial_repr)
         else
             # Something bad happened.
             rethrow(err)
@@ -28,7 +29,7 @@ function _groebner0(polynomials, kws::KeywordArguments)
     end
 end
 
-function _groebner1(polynomials, kws::KeywordArguments, representation)
+function _groebner1(ctx::Context, polynomials, kws::KeywordArguments, representation)
     # Extract ring information, exponents, and coefficients from input
     # polynomials. Convert these to an internal polynomial representation. 
     # NOTE: This must copy the input, so that input `polynomials` is never
@@ -53,7 +54,7 @@ function _groebner1(polynomials, kws::KeywordArguments, representation)
     end
 
     # Compute a groebner basis!
-    gbmonoms, gbcoeffs = _groebner2(ring, monoms, coeffs, params)
+    gbmonoms, gbcoeffs = _groebner2(ctx, ring, monoms, coeffs, params)
 
     if params.homogenize
         ring, gbmonoms, gbcoeffs =
@@ -71,6 +72,7 @@ end
 # Just calls f4 directly.
 
 @timeit function _groebner2(
+    ctx::Context,
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -80,9 +82,8 @@ end
     @log :misc "Backend: F4 over Z_$(ring.ch)"
     # NOTE: the sorting of input polynomials is not deterministic across
     # different Julia versions when sorting only w.r.t. the leading term
-    basis, pairset, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
-    tracer = TinyTraceF4()
-    f4!(ring, basis, pairset, hashtable, tracer, params)
+    basis, pairset, hashtable = f4_initialize_structs(ctx, ring, monoms, coeffs, params)
+    f4!(ctx, ring, basis, pairset, hashtable, params)
     # Extract monomials and coefficients from basis and hashtable
     gbmonoms, gbcoeffs = basis_export_data(basis, hashtable)
     gbmonoms, gbcoeffs
@@ -93,6 +94,7 @@ end
 
 # GB over the rationals uses modular computation.
 @timeit function _groebner2(
+    ctx::Context,
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -100,39 +102,39 @@ end
 ) where {M <: Monom, C <: CoeffQQ}
     if params.modular_strategy === :learn_and_apply
         if params.threaded_multimodular === :yes && nthreads() > 1
-            _groebner_learn_and_apply_threaded(ring, monoms, coeffs, params)
+            _groebner_learn_and_apply_threaded(ctx, ring, monoms, coeffs, params)
         else
-            _groebner_learn_and_apply(ring, monoms, coeffs, params)
+            _groebner_learn_and_apply(ctx, ring, monoms, coeffs, params)
         end
     else
         @assert params.modular_strategy === :classic_modular
-        _groebner_classic_modular(ring, monoms, coeffs, params)
+        _groebner_classic_modular(ctx, ring, monoms, coeffs, params)
     end
 end
 
 ###
 # Learn & Apply startegy
 
-function get_next_batchsize(primes_used, batchsize, batchsize_scaling)
-    # new_batchsize = max(batchsize + 1, round(Int, batchsize * batchsize_scaling))
-    # # round to the nearest number divisible by 4
-    # if new_batchsize > 2
-    #     new_batchsize::Int = (new_batchsize + 3) & (~3)
-    # end
-    # new_batchsize
-    new_batchsize = if batchsize == 1
+# The next batchsize is a multiple of the previous one aligned to some nice
+# power of two.
+function get_next_batchsize(
+    primes_used::Int,
+    prev_batchsize::Int,
+    batchsize_scaling::Float64
+)
+    new_batchsize = if prev_batchsize == 1
         4
     else
         max(4, round(Int, primes_used * batchsize_scaling))
     end
-    # round to the nearest number divisible by 4
     if new_batchsize > 2
-        new_batchsize::Int = (new_batchsize + 3) & (~3)
+        new_batchsize::Int = align_up(new_batchsize, 4)
     end
-    max(new_batchsize, batchsize)
+    max(new_batchsize, prev_batchsize)
 end
 
 function _groebner_learn_and_apply(
+    ctx::Context,
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -142,17 +144,15 @@ function _groebner_learn_and_apply(
     @log :misc "Backend: learn & apply multi-modular F4"
 
     # Initialize supporting structs
-    state = GroebnerState{BigInt, C, CoeffModular}(params)
-    # Initialize F4 structs
+    state = GroebnerState{BigInt, C, Int32}(params)
     basis, pairset, hashtable, permutation =
-        f4_initialize_structs(ring, monoms, coeffs, params, normalize_input=false)
-    crt_algorithm = params.crt_algorithm
+        f4_initialize_structs(ctx, ring, monoms, coeffs, params, make_monic=false)
 
-    # Scale the input coefficients to integers to speed up the subsequent search
-    # for lucky primes
+    # Scale the input coefficients to integers to maybe speed up the subsequent
+    # search for lucky primes
     @log :all "Input polynomials" basis
     @log :debug "Clearing the denominators of the input polynomials"
-    basis_zz = clear_denominators!(state.buffer, basis, deepcopy=false)
+    basis_zz = clear_denominators!(ctx, state.buffer, basis, deepcopy=false)
     @log :all "Integer coefficients are" basis_zz.coeffs
 
     # Handler for lucky primes
@@ -162,21 +162,24 @@ function _groebner_learn_and_apply(
     @log :misc "Reducing input generators modulo $prime"
 
     # Perform reduction modulo prime and store result in basis_ff
-    ring_ff, basis_ff = reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
+    ring_ff, basis_ff =
+        reduce_modulo_p!(ctx, state.buffer, ring, basis_zz, prime, deepcopy=true)
     @log :all "Reduced coefficients are" basis_ff.coeffs
 
     @log :all "Before F4" basis_ff
     params_zp = params_mod_p(params, prime)
     trace = trace_initialize(
+        ctx,
         ring_ff,
-        basis_deepcopy(basis_ff),
+        basis_deepcopy(ctx, basis_ff),
         basis_ff,
         hashtable,
         permutation,
         params_zp
     )
 
-    f4_learn!(trace, ring_ff, trace.gb_basis, pairset, hashtable, params_zp)
+    @log :misc "Learning..."
+    f4_learn!(ctx, trace, ring_ff, trace.gb_basis, pairset, hashtable, params_zp)
     @log :all "After F4:" trace.gb_basis
 
     # TODO: no need to deepcopy!
@@ -185,11 +188,8 @@ function _groebner_learn_and_apply(
     # Reconstruct coefficients and write results to the accumulator.
     # CRT reconstrction is trivial here.
     @log :misc "Reconstructing coefficients from Z_$prime to QQ"
-    if crt_algorithm === :incremental
-        full_incremental_crt_reconstruct!(state, luckyprimes)
-    else
-        full_simultaneous_crt_reconstruct!(state, luckyprimes)
-    end
+    full_simultaneous_crt_reconstruct!(state, luckyprimes)
+
     success_reconstruct = full_rational_reconstruct!(state, luckyprimes, params.use_flint)
     @log :all "Reconstructed coefficients" state.gb_coeffs_qq
     @log :misc "Successfull reconstruction: $success_reconstruct"
@@ -198,6 +198,7 @@ function _groebner_learn_and_apply(
     if success_reconstruct
         @log :misc "Verifying the correctness of reconstruction"
         correct_basis = correctness_check!(
+            ctx,
             state,
             luckyprimes,
             ring_ff,
@@ -229,31 +230,11 @@ function _groebner_learn_and_apply(
     The batch scale factor is $batchsize_scaling."""
 
     # CRT and rational reconstrction settings
-    indices_selection = Vector{Tuple{Int, Int}}(undef, length(state.gb_coeffs_zz))
-    k = 1
-    for i in 1:length(state.gb_coeffs_zz)
-        l = length(state.gb_coeffs_zz[i])
-        nl = max(isqrt(l) - 1, 1)
-        if isone(l)
-            continue
-        end
-        for j in 1:nl
-            if k > length(indices_selection)
-                resize!(indices_selection, 2 * length(indices_selection))
-            end
-            indices_selection[k] = (i, rand(2:l))
-            k += 1
-        end
-    end
-    resize!(indices_selection, k - 1)
-    unique!(indices_selection)
+    tot, indices_selection = gb_modular_select_indices0(state.gb_coeffs_zz, params)
+    @log :misc "Partial reconstruction: $(length(indices_selection)) indices out of $tot"
 
     # Initialize partial CRT reconstruction
-    if crt_algorithm === :incremental
-        partial_incremental_crt_reconstruct!(state, luckyprimes, indices_selection)
-    else
-        partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
-    end
+    partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
 
     # Initialize a tracer that computes the bases in batches of 4
     trace_4x = trace_copy(trace, CompositeInt{4, Int32})
@@ -269,7 +250,7 @@ function _groebner_learn_and_apply(
 
                 # Perform reduction modulo primes and store result in basis_ff_4x
                 ring_ff_4x, basis_ff_4x =
-                    reduce_modulo_p_in_batch!(state.buffer, ring, basis_zz, prime_4x)
+                    reduce_modulo_p_in_batch!(ctx, state.buffer, ring, basis_zz, prime_4x)
                 params_zp_4x = params_mod_p(
                     params,
                     CompositeInt{4, Int32}(prime_4x),
@@ -278,29 +259,15 @@ function _groebner_learn_and_apply(
                 trace_4x.buf_basis = basis_ff_4x
                 trace_4x.ring = ring_ff_4x
 
-                f4_apply!(trace_4x, ring_ff_4x, trace_4x.buf_basis, params_zp_4x)
-
+                f4_apply!(ctx, trace_4x, ring_ff_4x, trace_4x.buf_basis, params_zp_4x)
                 gb_coeffs_1, gb_coeffs_2, gb_coeffs_3, gb_coeffs_4 =
                     io_unpack_composite_coefficients(trace_4x.gb_basis.coeffs)
 
                 # TODO: (I) This causes unnecessary conversions of arrays.
-                # Can use
-                #   Base.convert(::Type{Vector{T}}, y::Vector{T}) where {T} = (Vector{T}(y))
-                #   Base.convert(::Type{Vector{T}}, y::Vector{U}) where {T,U} = (display(stacktrace()); Vector{T}(y))
-                # to detect this systematically.
                 push!(state.gb_coeffs_ff_all, gb_coeffs_1)
                 push!(state.gb_coeffs_ff_all, gb_coeffs_2)
                 push!(state.gb_coeffs_ff_all, gb_coeffs_3)
                 push!(state.gb_coeffs_ff_all, gb_coeffs_4)
-
-                if crt_algorithm === :incremental
-                    # this might not work as intended
-                    partial_incremental_crt_reconstruct!(
-                        state,
-                        luckyprimes,
-                        indices_selection
-                    )
-                end
                 primes_used += 4
             end
         else
@@ -309,35 +276,32 @@ function _groebner_learn_and_apply(
                 @log :debug "The lucky prime is $prime"
 
                 # Perform reduction modulo prime and store result in basis_ff
-                ring_ff, basis_ff =
-                    reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
+                ring_ff, basis_ff = reduce_modulo_p!(
+                    ctx,
+                    state.buffer,
+                    ring,
+                    basis_zz,
+                    prime,
+                    deepcopy=true
+                )
                 params_zp = params_mod_p(params, prime)
 
                 trace.buf_basis = basis_ff
                 trace.ring = ring_ff
 
-                f4_apply!(trace, ring_ff, trace.buf_basis, params_zp)
+                f4_apply!(ctx, trace, ring_ff, trace.buf_basis, params_zp)
 
                 push!(state.gb_coeffs_ff_all, deepcopy(trace.gb_basis.coeffs))
 
-                if !majority_vote!(state, trace.gb_basis, nothing, params)
+                if !majority_vote!(state, trace.gb_basis, params)
                     @log :debug "Majority vote is not conclusive, aborting reconstruction!"
                     continue
-                end
-
-                if crt_algorithm === :incremental
-                    partial_incremental_crt_reconstruct!(
-                        state,
-                        luckyprimes,
-                        indices_selection
-                    )
                 end
                 primes_used += 1
             end
         end
-        if crt_algorithm === :simultaneous
-            partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
-        end
+
+        partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
 
         @log :misc "Partially reconstructing coefficients to QQ"
         @log :debug "Partially reconstructing coefficients from Z_$(luckyprimes.modulo * prime) to QQ"
@@ -373,11 +337,8 @@ function _groebner_learn_and_apply(
 
         # Perform full reconstruction
         @log :misc "Performing full CRT and rational reconstruction.."
-        if crt_algorithm === :incremental
-            full_incremental_crt_reconstruct!(state, luckyprimes)
-        else
-            full_simultaneous_crt_reconstruct!(state, luckyprimes)
-        end
+        full_simultaneous_crt_reconstruct!(state, luckyprimes)
+
         success_reconstruct =
             full_rational_reconstruct!(state, luckyprimes, params.use_flint)
 
@@ -389,6 +350,7 @@ function _groebner_learn_and_apply(
         end
 
         correct_basis = correctness_check!(
+            ctx,
             state,
             luckyprimes,
             ring_ff,
@@ -419,6 +381,7 @@ end
 # Threaded Learn & Apply startegy
 
 function _groebner_learn_and_apply_threaded(
+    ctx::Context,
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -431,17 +394,15 @@ function _groebner_learn_and_apply_threaded(
     end
 
     # Initialize supporting structs
-    state = GroebnerState{BigInt, C, CoeffModular}(params)
-    # Initialize F4 structs
+    state = GroebnerState{BigInt, C, Int32}(params)
     basis, pairset, hashtable, permutation =
-        f4_initialize_structs(ring, monoms, coeffs, params, normalize_input=false)
-    crt_algorithm = params.crt_algorithm
+        f4_initialize_structs(ctx, ring, monoms, coeffs, params, make_monic=false)
 
     # Scale the input coefficients to integers to speed up the subsequent search
     # for lucky primes
     @log :all "Input polynomials" basis
     @log :misc "Clearing the denominators of the input polynomials"
-    basis_zz = clear_denominators!(state.buffer, basis, deepcopy=false)
+    basis_zz = clear_denominators!(ctx, state.buffer, basis, deepcopy=false)
     @log :all "Integer coefficients are" basis_zz.coeffs
 
     # Handler for lucky primes
@@ -451,21 +412,24 @@ function _groebner_learn_and_apply_threaded(
     @log :misc "Reducing input generators modulo $prime"
 
     # Perform reduction modulo prime and store result in basis_ff
-    ring_ff, basis_ff = reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
+    ring_ff, basis_ff =
+        reduce_modulo_p!(ctx, state.buffer, ring, basis_zz, prime, deepcopy=true)
     @log :all "Reduced coefficients are" basis_ff.coeffs
 
     @log :all "Before F4" basis_ff
     params_zp = params_mod_p(params, prime)
     trace = trace_initialize(
+        ctx,
         ring_ff,
-        basis_deepcopy(basis_ff),
+        basis_deepcopy(ctx, basis_ff),
         basis_ff,
         hashtable,
         permutation,
         params_zp
     )
 
-    f4_learn!(trace, ring_ff, trace.gb_basis, pairset, hashtable, params_zp)
+    @log :misc "Learning..."
+    f4_learn!(ctx, trace, ring_ff, trace.gb_basis, pairset, hashtable, params_zp)
     @log :all "After F4:" trace.gb_basis
 
     # TODO: no need to deepcopy!
@@ -474,11 +438,8 @@ function _groebner_learn_and_apply_threaded(
     # Reconstruct coefficients and write results to the accumulator.
     # CRT reconstrction is trivial here.
     @log :misc "Reconstructing coefficients from Z_$prime to QQ"
-    if crt_algorithm === :incremental
-        full_incremental_crt_reconstruct!(state, luckyprimes)
-    else
-        full_simultaneous_crt_reconstruct!(state, luckyprimes)
-    end
+    full_simultaneous_crt_reconstruct!(state, luckyprimes)
+
     success_reconstruct = full_rational_reconstruct!(state, luckyprimes, params.use_flint)
     @log :all "Reconstructed coefficients" state.gb_coeffs_qq
     @log :misc "Successfull reconstruction: $success_reconstruct"
@@ -487,6 +448,7 @@ function _groebner_learn_and_apply_threaded(
     if success_reconstruct
         @log :misc "Verifying the correctness of reconstruction"
         correct_basis = correctness_check!(
+            ctx,
             state,
             luckyprimes,
             ring_ff,
@@ -510,7 +472,7 @@ function _groebner_learn_and_apply_threaded(
     # At this point, either the reconstruction or the correctness check failed.
     # Continue to compute Groebner bases modulo different primes in batches. 
     primes_used = 1
-    batchsize = (min(32, 4 * nthreads()) + 3) & (~3)
+    batchsize = align_up(min(32, 4 * nthreads()), 4)
     batchsize_scaling = 0.10
     @log :misc """
     Preparing to compute bases in batches.. 
@@ -518,31 +480,11 @@ function _groebner_learn_and_apply_threaded(
     The batch scale factor is $batchsize_scaling."""
 
     # CRT and rational reconstrction settings
-    indices_selection = Vector{Tuple{Int, Int}}(undef, length(state.gb_coeffs_zz))
-    k = 1
-    for i in 1:length(state.gb_coeffs_zz)
-        l = length(state.gb_coeffs_zz[i])
-        nl = max(isqrt(l) - 1, 1)
-        if isone(l)
-            continue
-        end
-        for j in 1:nl
-            if k > length(indices_selection)
-                resize!(indices_selection, 2 * length(indices_selection))
-            end
-            indices_selection[k] = (i, rand(2:l))
-            k += 1
-        end
-    end
-    resize!(indices_selection, k - 1)
-    unique!(indices_selection)
+    tot, indices_selection = gb_modular_select_indices0(state.gb_coeffs_zz, params)
+    @log :misc "Partial reconstruction: $(length(indices_selection)) indices out of $tot"
 
     # Initialize partial CRT reconstruction
-    if crt_algorithm === :incremental
-        partial_incremental_crt_reconstruct!(state, luckyprimes, indices_selection)
-    else
-        partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
-    end
+    partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
 
     # Initialize a tracer that computes the bases in batches of 4
     trace_4x = trace_copy(trace, CompositeInt{4, Int32})
@@ -556,6 +498,7 @@ function _groebner_learn_and_apply_threaded(
     end
     threadbuf_bigint_buffer = map(_ -> CoefficientBuffer(), 1:nthreads())
     threadbuf_params = map(_ -> deepcopy(params), 1:nthreads())
+    threadbuf_ctx = map(_ -> ctx_initialize(tlocal=true), 1:nthreads())
 
     iters = 0
     while !correct_basis
@@ -568,14 +511,16 @@ function _groebner_learn_and_apply_threaded(
             empty!(threadbuf_gb_coeffs[i])
         end
 
-        Base.Threads.@threads for j in 1:4:batchsize
+        Base.Threads.@threads :static for j in 1:4:batchsize
             t_id = threadid()
             threadlocal_trace_4x = threadbuf_trace_4x[t_id]
             threadlocal_prime_4x = ntuple(k -> threadbuf_primes[j + k - 1], 4)
             threadlocal_bigint_buffer = threadbuf_bigint_buffer[t_id]
             threadlocal_params = threadbuf_params[t_id]
+            threadlocal_ctx = threadbuf_ctx[t_id]
 
             ring_ff_4x, basis_ff_4x = reduce_modulo_p_in_batch!(
+                threadlocal_ctx,
                 threadlocal_bigint_buffer,  # is modified
                 ring,                       # is not modified
                 basis_zz,                   # is not modified
@@ -590,6 +535,7 @@ function _groebner_learn_and_apply_threaded(
             threadlocal_trace_4x.ring = ring_ff_4x
 
             f4_apply!(
+                threadlocal_ctx,
                 threadlocal_trace_4x,
                 ring_ff_4x,
                 threadlocal_trace_4x.buf_basis,
@@ -610,14 +556,12 @@ function _groebner_learn_and_apply_threaded(
 
         # @log :misc "" basis_coeffs_buffer_union
 
-        sort!(threadbuf_gb_coeffs_union, by=first)
+        sort!(threadbuf_gb_coeffs_union, by=first, rev=true)
         for (_, coeffs_ff_) in threadbuf_gb_coeffs_union
             push!(state.gb_coeffs_ff_all, coeffs_ff_)
         end
 
-        if crt_algorithm === :simultaneous
-            partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
-        end
+        partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
 
         @log :misc "Partially reconstructing coefficients to QQ"
         @log :debug "Partially reconstructing coefficients from Z_$(luckyprimes.modulo * prime) to QQ"
@@ -653,11 +597,7 @@ function _groebner_learn_and_apply_threaded(
 
         # Perform full reconstruction
         @log :misc "Performing full CRT and rational reconstruction.."
-        if crt_algorithm === :incremental
-            full_incremental_crt_reconstruct!(state, luckyprimes)
-        else
-            full_simultaneous_crt_reconstruct!(state, luckyprimes)
-        end
+        full_simultaneous_crt_reconstruct!(state, luckyprimes)
         success_reconstruct =
             full_rational_reconstruct!(state, luckyprimes, params.use_flint)
 
@@ -669,6 +609,7 @@ function _groebner_learn_and_apply_threaded(
         end
 
         correct_basis = correctness_check!(
+            ctx,
             state,
             luckyprimes,
             ring_ff,
@@ -699,6 +640,7 @@ end
 # Classic multi-modular strategy
 
 function _groebner_classic_modular(
+    ctx::Context,
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -711,15 +653,13 @@ function _groebner_classic_modular(
     state = GroebnerState{BigInt, C, CoeffModular}(params)
     # Initialize F4 structs
     basis, pairset, hashtable =
-        f4_initialize_structs(ring, monoms, coeffs, params, normalize_input=false)
-    tracer = TinyTraceF4(params)
-    crt_algorithm = params.crt_algorithm
+        f4_initialize_structs(ctx, ring, monoms, coeffs, params, make_monic=false)
 
     # Scale the input coefficients to integers to speed up the subsequent search
     # for lucky primes
     @log :all "Input polynomials" basis
     @log :misc "Clearing the denominators of the input polynomials"
-    basis_zz = clear_denominators!(state.buffer, basis, deepcopy=false)
+    basis_zz = clear_denominators!(ctx, state.buffer, basis, deepcopy=false)
     @log :all "Integer coefficients are" basis_zz.coeffs
 
     # Handler for lucky primes
@@ -729,12 +669,13 @@ function _groebner_classic_modular(
     @log :misc "Reducing input generators modulo $prime"
 
     # Perform reduction modulo prime and store result in basis_ff
-    ring_ff, basis_ff = reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
+    ring_ff, basis_ff =
+        reduce_modulo_p!(ctx, state.buffer, ring, basis_zz, prime, deepcopy=true)
     @log :all "Reduced coefficients are" basis_ff.coeffs
 
     @log :all "Before F4" basis_ff
     params_zp = params_mod_p(params, prime)
-    f4!(ring_ff, basis_ff, pairset, hashtable, tracer, params_zp)
+    f4!(ctx, ring_ff, basis_ff, pairset, hashtable, params_zp)
     @log :all "After F4:" basis_ff
     # NOTE: basis_ff may not own its coefficients, one should not mutate it
     # directly further in the code
@@ -744,11 +685,8 @@ function _groebner_classic_modular(
     # Reconstruct coefficients and write results to the accumulator.
     # CRT reconstrction is trivial here.
     @log :misc "Reconstructing coefficients from Z_$prime to QQ"
-    if crt_algorithm === :incremental
-        full_incremental_crt_reconstruct!(state, luckyprimes)
-    else
-        full_simultaneous_crt_reconstruct!(state, luckyprimes)
-    end
+    full_simultaneous_crt_reconstruct!(state, luckyprimes)
+
     success_reconstruct = full_rational_reconstruct!(state, luckyprimes, params.use_flint)
     @log :all "Reconstructed coefficients" state.gb_coeffs_qq
     @log :misc "Successfull reconstruction: $success_reconstruct"
@@ -757,6 +695,7 @@ function _groebner_classic_modular(
     if success_reconstruct
         @log :misc "Verifying the correctness of reconstruction"
         correct_basis = correctness_check!(
+            ctx,
             state,
             luckyprimes,
             ring_ff,
@@ -787,38 +726,11 @@ function _groebner_classic_modular(
     The initial size of the batch is $batchsize. 
     The batch scale factor is $batchsize_scaling."""
 
-    if !tracer.ready_to_use
-        @log :misc """
-          The tracer is disabled until the shape of the basis is not determined via majority vote.
-          The threshold for the majority vote is $(params.majority_threshold)
-          """
-    end
-
     # CRT and rational reconstrction settings
-    indices_selection = Vector{Tuple{Int, Int}}(undef, length(state.gb_coeffs_zz))
-    k = 1
-    for i in 1:length(state.gb_coeffs_zz)
-        l = length(state.gb_coeffs_zz[i])
-        nl = max(isqrt(l) - 1, 1)
-        if isone(l)
-            continue
-        end
-        for j in 1:nl
-            if k > length(indices_selection)
-                resize!(indices_selection, 2 * length(indices_selection))
-            end
-            indices_selection[k] = (i, rand(2:l))
-            k += 1
-        end
-    end
-    resize!(indices_selection, k - 1)
-    unique!(indices_selection)
+    tot, indices_selection = gb_modular_select_indices0(state.gb_coeffs_zz, params)
+    @log :misc "Partial reconstruction: $(length(indices_selection)) indices out of $tot"
 
-    if crt_algorithm === :incremental
-        partial_incremental_crt_reconstruct!(state, luckyprimes, indices_selection)
-    else
-        partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
-    end
+    partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
 
     iters = 0
     while !correct_basis
@@ -831,26 +743,21 @@ function _groebner_classic_modular(
 
             # Perform reduction modulo prime and store result in basis_ff
             ring_ff, basis_ff =
-                reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
+                reduce_modulo_p!(ctx, state.buffer, ring, basis_zz, prime, deepcopy=true)
             params_zp = params_mod_p(params, prime)
 
-            f4!(ring_ff, basis_ff, pairset, hashtable, tracer, params_zp)
+            f4!(ctx, ring_ff, basis_ff, pairset, hashtable, params_zp)
 
             push!(state.gb_coeffs_ff_all, basis_ff.coeffs)
 
-            if !majority_vote!(state, basis_ff, tracer, params)
+            if !majority_vote!(state, basis_ff, params)
                 @log :debug "Majority vote is not conclusive, aborting reconstruction!"
                 continue
             end
-
-            if crt_algorithm === :incremental
-                partial_incremental_crt_reconstruct!(state, luckyprimes, indices_selection)
-            end
             primes_used += 1
         end
-        if crt_algorithm === :simultaneous
-            partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
-        end
+
+        partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
 
         @log :misc "Partially reconstructing coefficients to QQ"
         @log :debug "Partially reconstructing coefficients from Z_$(luckyprimes.modulo * prime) to QQ"
@@ -886,11 +793,7 @@ function _groebner_classic_modular(
 
         # Perform full reconstruction
         @log :misc "Performing full CRT and rational reconstruction.."
-        if crt_algorithm === :incremental
-            full_incremental_crt_reconstruct!(state, luckyprimes)
-        else
-            full_simultaneous_crt_reconstruct!(state, luckyprimes)
-        end
+        full_simultaneous_crt_reconstruct!(state, luckyprimes)
         success_reconstruct =
             full_rational_reconstruct!(state, luckyprimes, params.use_flint)
 
@@ -902,6 +805,7 @@ function _groebner_classic_modular(
         end
 
         correct_basis = correctness_check!(
+            ctx,
             state,
             luckyprimes,
             ring_ff,
