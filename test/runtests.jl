@@ -75,10 +75,6 @@ end
     @time @includetests ["normalform/normalform", "normalform/normalform_stress"]
     @time @includetests ["fglm/kbase", "fglm/fglm"]
 
-    # Test for different frontends: 
-    # - AbstractAlgebra.jl  (AbstractAlgebra.Generic.MPoly{T})
-    # - Nemo.jl  (Nemo.fmpq_mpoly, Nemo.gfp_mpoly)
-    # - DynamicPolynomials.jl  (DynamicPolynomials.Polynomial{true, T})
     if try_import(:DynamicPolynomials)
         @time @includetests ["input_output/DynamicPolynomials"]
     end
@@ -90,6 +86,5 @@ end
 
     @time @includetests ["utils/logging", "utils/timings"]
 
-    # test for regressions
     @time @includetests ["regressions"]
 end
