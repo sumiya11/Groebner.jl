@@ -8,17 +8,8 @@
 ### 
 # Main file that defines the f4! function.
 
-# Functions here mostly work with a subset of these objects:
-# ring      - current polynomial ring,
-# basis     - a struct that stores polynomials,
-# matrix    - a struct that is used for F4-style reduction,
-# hashtable - a hashtable that identifies monomials.
-
 # Given the polynomial ring and the arrays of monomials and coefficients,
-# initializes and returns the structs that are necessary for calling F4
-#
-# If `make_monic=true` is provided, also normalizes the polynomials. 
-# If `sort_input=true` is provided, also sorts the polynomials.
+# initializes and returns the structs that are necessary for calling F4.
 @timeit function f4_initialize_structs(
     ctx::Context,
     ring::PolyRing,

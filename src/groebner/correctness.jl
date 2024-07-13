@@ -154,8 +154,9 @@ end
 function certify_correctness_check!(ctx, state, ring, input_qq, gb_ff, hashtable, params)
     @log :misc "Checking the correctness of reconstructed basis over the rationals"
     gb_qq = basis_deep_copy_with_new_coeffs(ctx, gb_ff, state.gb_coeffs_qq)
+    ring_qq = PolyRing(ring.nvars, ring.ord, 0)
     input_qq = basis_deepcopy(ctx, input_qq)
-    f4_normalform!(ctx, ring, gb_qq, input_qq, hashtable, params.arithmetic)
+    f4_normalform!(ctx, ring_qq, gb_qq, input_qq, hashtable, params.arithmetic)
     for i in 1:(input_qq.nprocessed)
         # Meaning that some polynomial is not reduced to zero
         if !iszero_coeffs(input_qq.coeffs[i])
@@ -165,7 +166,7 @@ function certify_correctness_check!(ctx, state, ring, input_qq, gb_ff, hashtable
     end
     # Check that the basis is a groebner basis modulo a prime
     pairset = pairset_initialize(UInt64)
-    if !f4_isgroebner!(ctx, ring, gb_qq, pairset, hashtable, params.arithmetic)
+    if !f4_isgroebner!(ctx, ring_qq, gb_qq, pairset, hashtable, params.arithmetic)
         @log :misc "Not all of S-polynomials reduce to zero"
         return false
     end
