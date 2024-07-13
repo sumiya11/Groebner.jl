@@ -29,7 +29,7 @@ using Base.Threads
             Groebner.Examples.eco5(internal_ordering=:degrevlex, k=GF(2^20 + 7)),
             Groebner.Examples.cyclicn(5, internal_ordering=:degrevlex, k=GF(2^20 + 7)),
             Groebner.Examples.cyclicn(6, internal_ordering=:degrevlex, k=GF(2^20 + 7)),
-            Groebner.ojika4(internal_ordering=:lex, k=GF(2^20 + 7)),
+            Groebner.Examples.ojika4(internal_ordering=:lex, k=GF(2^20 + 7)),
             Groebner.Examples.henrion5(internal_ordering=:degrevlex, k=GF(2^20 + 7)),
             Groebner.Examples.noonn(6, internal_ordering=:degrevlex, k=GF(2^10 + 7)),
             Groebner.Examples.ku10(internal_ordering=:degrevlex, k=GF(2^10 + 7))
@@ -65,7 +65,7 @@ end
             Groebner.Examples.katsuran(4, internal_ordering=:lex, k=QQ),
             Groebner.Examples.eco5(internal_ordering=:degrevlex, k=QQ),
             Groebner.Examples.cyclicn(5, internal_ordering=:degrevlex, k=QQ),
-            Groebner.ojika4(internal_ordering=:lex, k=QQ),
+            Groebner.Examples.ojika4(internal_ordering=:lex, k=QQ),
             Groebner.Examples.noonn(6, internal_ordering=:degrevlex, k=QQ),
             Groebner.Examples.ku10(internal_ordering=:degrevlex, k=QQ),
             [x + BigInt(2)^1_000 // (BigInt(2)^1_000 - 1), y - BigInt(2)^1_000],
