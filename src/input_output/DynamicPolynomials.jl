@@ -145,6 +145,11 @@ function convert_coeffs_to_output(
     check_and_convert_coeffs(coeffs, T)
 end
 
+function clear_denominators(vec)
+    mult = reduce(lcm, map(denominator, vec))
+    map(numerator, vec .* mult)
+end
+
 function convert_coeffs_to_output(
     coeffs::Vector{Q},
     ::Type{T}
