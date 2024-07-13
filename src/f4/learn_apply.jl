@@ -30,8 +30,15 @@ function f4_initialize_structs_with_trace(
         sort_input=sort_input
     )
 
-    trace =
-        trace_initialize(ctx, ring, basis_deepcopy(ctx, basis), basis, hashtable, permutation, params)
+    trace = trace_initialize(
+        ctx,
+        ring,
+        basis_deepcopy(ctx, basis),
+        basis,
+        hashtable,
+        permutation,
+        params
+    )
 
     trace, basis, pairset, hashtable, permutation
 end
@@ -446,7 +453,6 @@ function f4_symbolic_preprocessing!(
     nlow = length(nonzeroed_rows) # matrix_info.nlow # length(nonzeroed_rows)
     nup = length(uprows) # matrix_info.nup # length(uprows)
 
-    # TODOTODO
     resize!(matrix.upper_rows, nup)
     resize!(matrix.lower_rows, nlow)
     resize!(matrix.lower_to_coeffs, nlow)
@@ -544,7 +550,6 @@ function f4_autoreduce_apply!(
     # nlow = trace.matrix_infos[end].nlow
     # nup = trace.matrix_infos[end].nup
 
-    # TODOTODO
     # matrix.upper_rows = Vector{Vector{ColumnLabel}}(undef, nup)
     # matrix.lower_rows = Vector{Vector{ColumnLabel}}(undef, nlow)
     # matrix.lower_to_coeffs = Vector{Int}(undef, nlow)

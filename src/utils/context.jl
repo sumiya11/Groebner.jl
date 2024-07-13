@@ -1,5 +1,4 @@
 
-struct Context
-end
+struct Context end
 
 ctx_initialize() = Context()

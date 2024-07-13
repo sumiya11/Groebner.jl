@@ -159,7 +159,7 @@ function matrix_initialize(ring::PolyRing, ::Type{T}) where {T <: Coeff}
         Vector{MonomId}(),
         Vector{T}(),
         Vector{Int8}(),
-        Vector{Dict{Tuple{Int, MonomId}, T}}(),
+        Vector{Dict{Tuple{Int, MonomId}, T}}()
     )
 end
 

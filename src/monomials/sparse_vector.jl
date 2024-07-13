@@ -50,7 +50,10 @@ end
 
 monom_entrytype(ev::SparseExponentVector{T, I, N}) where {T, I, N} = T
 
-function monom_copy!(ev2::SparseExponentVector{T, I, N}, ev::SparseExponentVector{T, I, N}) where {T, I, N}
+function monom_copy!(
+    ev2::SparseExponentVector{T, I, N},
+    ev::SparseExponentVector{T, I, N}
+) where {T, I, N}
     Base.copy!(ev2.inds, ev.inds)
     Base.copy!(ev2.vals, ev.vals)
     ev2

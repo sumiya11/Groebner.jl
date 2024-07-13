@@ -2,7 +2,7 @@ using AbstractAlgebra
 using Primes
 
 function get_test_system1(R, N)
-    (x1,x2,x3,x4) = AbstractAlgebra.gens(R)
+    (x1, x2, x3, x4) = AbstractAlgebra.gens(R)
     system = [
         x1 + x2 + x3 + x4,
         x1 * x2 + x1 * x3 + x1 * x4 + x2 * x3 + x2 * x4 + x3 * x4,
@@ -62,10 +62,10 @@ end
 
 @testset "groebner strange poly" begin
     get_rand_poly(x, d, n) = sum([rand(1:5) * prod(x .^ rand(0:d, length(x))) for _ in 1:n])
-    
+
     n = 10
     R, x = polynomial_ring(GF(17), ["x$i" for i in 1:n], internal_ordering=:degrevlex)
-    f1 = get_rand_poly(x, 10, 2^15);
+    f1 = get_rand_poly(x, 10, 2^15)
     @test Groebner.groebner([f1]) == [divexact(f1, leading_coefficient(f1))]
 
     n = 6

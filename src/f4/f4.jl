@@ -572,7 +572,6 @@ end
 
         matrix_reinitialize!(matrix, 0)
         hashtable_reinitialize!(symbol_ht)
-
     end
 
     if params.sweep

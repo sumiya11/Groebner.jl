@@ -152,7 +152,8 @@ function _groebner_with_change_classic_modular(
     @log :misc "Reducing input generators modulo $prime"
 
     # Perform reduction modulo prime and store result in basis_ff
-    ring_ff, basis_ff = reduce_modulo_p!(ctx, state.buffer, ring, basis_zz, prime, deepcopy=true)
+    ring_ff, basis_ff =
+        reduce_modulo_p!(ctx, state.buffer, ring, basis_zz, prime, deepcopy=true)
     @log :all "Reduced coefficients are" basis_ff.coeffs
 
     @log :all "Before F4" basis_ff
@@ -323,7 +324,6 @@ function _groebner_with_change_classic_modular(
 
         iters += 1
         batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
-
     end
 
     @log :misc "Correctness check passed!"

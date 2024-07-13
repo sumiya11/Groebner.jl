@@ -154,7 +154,7 @@ function trace_copy(
 
     new_buf_basis_coeffs = Vector{Vector{C2}}(undef, length(trace.buf_basis.coeffs))
     # for i in 1:length(trace.buf_basis.coeffs)
-    for i in 1:trace.buf_basis.nfilled
+    for i in 1:(trace.buf_basis.nfilled)
         # !isassigned(trace.buf_basis.coeffs, i) && continue
         new_buf_basis_coeffs[i] = Vector{C2}(undef, length(trace.buf_basis.coeffs[i]))
     end
@@ -166,7 +166,7 @@ function trace_copy(
 
     new_gb_basis_coeffs = Vector{Vector{C2}}(undef, length(trace.gb_basis.coeffs))
     # for i in 1:length(trace.gb_basis.coeffs)
-    for i in 1:trace.gb_basis.nfilled
+    for i in 1:(trace.gb_basis.nfilled)
         # !isassigned(trace.gb_basis.coeffs, i) && continue
         new_gb_basis_coeffs[i] = Vector{C2}(undef, length(trace.gb_basis.coeffs[i]))
     end

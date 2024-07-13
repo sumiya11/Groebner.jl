@@ -124,7 +124,8 @@ function randomized_correctness_check!(
     # NOTE: this function may modify the given hashtable!
     prime = next_check_prime!(lucky)
     @log :misc "Checking the correctness of reconstrcted basis modulo $prime"
-    ring_ff, input_ff = reduce_modulo_p!(ctx, state.buffer, ring, input_zz, prime, deepcopy=true)
+    ring_ff, input_ff =
+        reduce_modulo_p!(ctx, state.buffer, ring, input_zz, prime, deepcopy=true)
     # TODO: do we really need to re-scale things to be fraction-free?
     gb_coeffs_zz = _clear_denominators!(ctx, state.buffer, state.gb_coeffs_qq)
     gb_zz = basis_deep_copy_with_new_coeffs(ctx, gb_ff, gb_coeffs_zz)

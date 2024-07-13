@@ -117,7 +117,11 @@ end
 
 # The next batchsize is a multiple of the previous one aligned to some nice
 # power of two.
-function get_next_batchsize(primes_used::Int, prev_batchsize::Int, batchsize_scaling::Float64)
+function get_next_batchsize(
+    primes_used::Int,
+    prev_batchsize::Int,
+    batchsize_scaling::Float64
+)
     new_batchsize = if prev_batchsize == 1
         4
     else
@@ -158,7 +162,8 @@ function _groebner_learn_and_apply(
     @log :misc "Reducing input generators modulo $prime"
 
     # Perform reduction modulo prime and store result in basis_ff
-    ring_ff, basis_ff = reduce_modulo_p!(ctx, state.buffer, ring, basis_zz, prime, deepcopy=true)
+    ring_ff, basis_ff =
+        reduce_modulo_p!(ctx, state.buffer, ring, basis_zz, prime, deepcopy=true)
     @log :all "Reduced coefficients are" basis_ff.coeffs
 
     @log :all "Before F4" basis_ff
@@ -271,8 +276,14 @@ function _groebner_learn_and_apply(
                 @log :debug "The lucky prime is $prime"
 
                 # Perform reduction modulo prime and store result in basis_ff
-                ring_ff, basis_ff =
-                    reduce_modulo_p!(ctx, state.buffer, ring, basis_zz, prime, deepcopy=true)
+                ring_ff, basis_ff = reduce_modulo_p!(
+                    ctx,
+                    state.buffer,
+                    ring,
+                    basis_zz,
+                    prime,
+                    deepcopy=true
+                )
                 params_zp = params_mod_p(params, prime)
 
                 trace.buf_basis = basis_ff
@@ -401,7 +412,8 @@ function _groebner_learn_and_apply_threaded(
     @log :misc "Reducing input generators modulo $prime"
 
     # Perform reduction modulo prime and store result in basis_ff
-    ring_ff, basis_ff = reduce_modulo_p!(ctx, state.buffer, ring, basis_zz, prime, deepcopy=true)
+    ring_ff, basis_ff =
+        reduce_modulo_p!(ctx, state.buffer, ring, basis_zz, prime, deepcopy=true)
     @log :all "Reduced coefficients are" basis_ff.coeffs
 
     @log :all "Before F4" basis_ff
@@ -548,7 +560,7 @@ function _groebner_learn_and_apply_threaded(
         for (_, coeffs_ff_) in threadbuf_gb_coeffs_union
             push!(state.gb_coeffs_ff_all, coeffs_ff_)
         end
-        
+
         partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
 
         @log :misc "Partially reconstructing coefficients to QQ"
@@ -657,7 +669,8 @@ function _groebner_classic_modular(
     @log :misc "Reducing input generators modulo $prime"
 
     # Perform reduction modulo prime and store result in basis_ff
-    ring_ff, basis_ff = reduce_modulo_p!(ctx, state.buffer, ring, basis_zz, prime, deepcopy=true)
+    ring_ff, basis_ff =
+        reduce_modulo_p!(ctx, state.buffer, ring, basis_zz, prime, deepcopy=true)
     @log :all "Reduced coefficients are" basis_ff.coeffs
 
     @log :all "Before F4" basis_ff

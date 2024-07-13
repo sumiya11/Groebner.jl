@@ -28,7 +28,7 @@ function test_params_nf(
                                         e,
                                         nt,
                                         np,
-                                        csz,
+                                        csz
                                     )
                                     set2 = Groebner.Examples.random_generating_set(
                                         rng,
@@ -38,7 +38,7 @@ function test_params_nf(
                                         e,
                                         nt,
                                         np,
-                                        csz,
+                                        csz
                                     )
                                     isempty(set1) && continue
 

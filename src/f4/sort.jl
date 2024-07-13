@@ -166,10 +166,7 @@ end
 
 # Compare sparse matrix rows a and b.
 # A row is an array of integers, which are the indices of nonzero elements
-function matrix_row_decreasing_cmp(
-    a::Vector{T},
-    b::Vector{T}
-) where {T <: ColumnLabel}
+function matrix_row_decreasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: ColumnLabel}
     #= a, b - rows as arrays of nonzero indices =#
     # va and vb are the leading columns
     @inbounds va = a[1]
@@ -200,10 +197,7 @@ end
 
 # Compare sparse matrix rows a and b.
 # A row is an array of integers, which are the indices of nonzero elements
-function matrix_row_increasing_cmp(
-    a::Vector{T},
-    b::Vector{T}
-) where {T <: ColumnLabel}
+function matrix_row_increasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: ColumnLabel}
     #= a, b - rows as arrays of nonzero indices =#
     # va and vb are the leading columns
     @inbounds va = a[1]

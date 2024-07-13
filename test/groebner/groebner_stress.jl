@@ -16,49 +16,50 @@ function test_params(
 )
     boot = 1
     for _ in 1:boot
-    for nv in nvariables
-        for md in maxdegs
-            for nt in nterms
-                for np in npolys
-                    for k in grounds
-                        for ord in orderings
-                            for cf in coeffssize
-                                set = Groebner.Examples.random_generating_set(
-                                    rng,
-                                    k,
-                                    ord,
-                                    nv,
-                                    md,
-                                    nt,
-                                    np,
-                                    cf
-                                )
-                                isempty(set) && continue
+        for nv in nvariables
+            for md in maxdegs
+                for nt in nterms
+                    for np in npolys
+                        for k in grounds
+                            for ord in orderings
+                                for cf in coeffssize
+                                    set = Groebner.Examples.random_generating_set(
+                                        rng,
+                                        k,
+                                        ord,
+                                        nv,
+                                        md,
+                                        nt,
+                                        np,
+                                        cf
+                                    )
+                                    isempty(set) && continue
 
-                                for linalg in linalgs
-                                    for monom in monoms
-                                        for homogenize in homogenizes
-                                            try
-                                                gb = Groebner.groebner(
-                                                    set,
-                                                    linalg=linalg,
-                                                    monoms=monom,
-                                                    homogenize=homogenize
-                                                )
-                                                flag = Groebner.isgroebner(gb)
-                                                if !flag
+                                    for linalg in linalgs
+                                        for monom in monoms
+                                            for homogenize in homogenizes
+                                                try
+                                                    gb = Groebner.groebner(
+                                                        set,
+                                                        linalg=linalg,
+                                                        monoms=monom,
+                                                        homogenize=homogenize
+                                                    )
+                                                    flag = Groebner.isgroebner(gb)
+                                                    if !flag
+                                                        @error "Beda!" nv md nt np k ord monom
+                                                        println("Rng:\n", rng)
+                                                        println("Set:\n", set)
+                                                        println("Gb:\n", gb)
+                                                    end
+                                                    @test flag
+                                                catch err
                                                     @error "Beda!" nv md nt np k ord monom
+                                                    println(err)
                                                     println("Rng:\n", rng)
                                                     println("Set:\n", set)
-                                                    println("Gb:\n", gb)
+                                                    rethrow(err)
                                                 end
-                                                @test flag
-                                            catch err
-                                                @error "Beda!" nv md nt np k ord monom
-                                                println(err)
-                                                println("Rng:\n", rng)
-                                                println("Set:\n", set)
-                                                rethrow(err)
                                             end
                                         end
                                     end
@@ -69,7 +70,6 @@ function test_params(
                 end
             end
         end
-    end
     end
 end
 
@@ -88,7 +88,7 @@ end
     homogenize = [:yes, :auto]
     p          = prod(map(length, (nvariables, maxdegs, nterms, npolys, grounds, orderings, coeffssize, linalgs, monoms, homogenize)))
     @info "Producing $p small random tests for groebner. This may take a minute"
-    
+
     test_params(
         rng,
         nvariables,

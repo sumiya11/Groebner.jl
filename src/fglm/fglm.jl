@@ -101,6 +101,7 @@ end
 ) where {M <: Monom, C <: Coeff}
     ctx = ctx_initialize()
     basis, _, ht = f4_initialize_structs(ctx, ring, monoms, coeffs, params)
-    new_basis, _, new_ht = _fglm_residuals_in_batch!(ctx, ring, basis, ht, ordering_to, params)
+    new_basis, _, new_ht =
+        _fglm_residuals_in_batch!(ctx, ring, basis, ht, ordering_to, params)
     basis_export_data(new_basis, new_ht)
 end
