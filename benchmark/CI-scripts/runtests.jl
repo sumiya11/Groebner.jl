@@ -21,11 +21,11 @@ function runbench()
 
     for i in 1:SAMPLES
         # Run benchmarks on master
-        # @info "Benchmarking Groebner.jl, master, running $dir_master"
-        # @time run(
-        #     `$(Base.julia_cmd()) --startup-file=no --threads=$(nthreads()) --project=$dir_master $dir_master/run_benchmarks.jl $i`,
-        #     wait=true
-        # )
+        @info "Benchmarking Groebner.jl, master, running $dir_master"
+        @time run(
+            `$(Base.julia_cmd()) --startup-file=no --threads=$(nthreads()) --project=$dir_master $dir_master/run_benchmarks.jl $i`,
+            wait=true
+        )
 
         # Run benchmarks on nightly
         @info "Benchmarking Groebner.jl, nightly, running $dir_nightly"
