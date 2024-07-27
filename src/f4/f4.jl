@@ -410,7 +410,7 @@ function f4_add_critical_pairs_to_matrix!(
 )
     @invariant issorted(
         pairset.pairs[1:npairs],
-        by=pair -> monom_totaldeg(ht.monoms[pair.lcm])
+        lt=(a,b) -> monom_isless(ht.monoms[a.lcm], ht.monoms[b.lcm], ht.ord)
     )
 
     matrix_reinitialize!(matrix, npairs)

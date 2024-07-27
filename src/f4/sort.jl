@@ -143,8 +143,6 @@ function sort_pairset_by_lcm!(pairset::Pairset, npairs::Int, hashtable::Monomial
         )
     permutation = collect(1:npairs)
     sort_part!(permutation, 1, npairs, lt=cmps, scratch=pairset.scratch1)
-    # @inbounds pairs[1:npairs] = pairs[permutation]
-    # @inbounds pairset.degrees[1:npairs] = pairset.degrees[permutation]
     if length(pairset.scratch2) < length(permutation)
         resize!(pairset.scratch2, nextpow(2, length(permutation) + 1))
     end
@@ -174,25 +172,7 @@ function matrix_row_decreasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: Colum
     if va > vb
         return false
     end
-    if va < vb
-        return true
-    end
-
-    @unreachable
-
-    # If there are two rows in the upper part of the matrix with the same
-    # leading term, something went wrong
-    @invariant false
-    # If the same leading column => compare the density of rows
-    va = length(a)
-    vb = length(b)
-    if va > vb
-        return true
-    end
-    if va < vb
-        return false
-    end
-    false
+    va < vb
 end
 
 # Compare sparse matrix rows a and b.
