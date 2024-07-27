@@ -37,7 +37,6 @@ function dp_ord_to_symbol(ord)
 end
 
 function peek_at_polynomials(polynomials::Vector{<:AbstractPolynomialLike{T}}) where {T}
-    @assert !isempty(polynomials) "Input must not be empty"
     nv = MultivariatePolynomials.nvariables(polynomials)
     ord = dp_ord_to_symbol(MultivariatePolynomials.ordering(polynomials[1]))
     @assert length(unique(MultivariatePolynomials.ordering, polynomials)) == 1

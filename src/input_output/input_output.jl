@@ -66,6 +66,9 @@ struct PolynomialRepresentation
     using_wide_type_for_coeffs::Bool
 end
 
+peek_at_polynomials(polynomials::AbstractVector) =
+    __throw_input_not_supported("", polynomials)
+
 """
     io_select_polynomial_representation(polynomials, keywords; hint=:none)
 
@@ -81,6 +84,7 @@ function io_select_polynomial_representation(
     kws::KeywordArguments;
     hint::Symbol=:none
 )
+    isempty(polynomials) && __throw_input_not_supported("Empty input.", polynomials)
     if !(hint in (:none, :large_exponents))
         @log :warn "The given hint=$hint was discarded"
     end

@@ -16,10 +16,7 @@ AA_is_multivariate_ring(ring) = AbstractAlgebra.nvars(ring) > 1
 ###
 # Converting from AbstractAlgebra to internal representation.
 
-function peek_at_polynomials(polynomials::Vector{T}) where {T}
-    if isempty(polynomials)
-        __throw_input_not_supported(polynomials, "Input must not be empty")
-    end
+function peek_at_polynomials(polynomials::Vector{T}) where {T <: AbstractAlgebra.RingElem}
     R = AbstractAlgebra.parent(first(polynomials))
     nvars = AbstractAlgebra.nvars(R)
     ord = if AA_is_multivariate_ring(R)
