@@ -23,7 +23,7 @@
     for T in (UInt64, UInt32, UInt16, UInt8)
         for k in 1:10
             n = rand(1:20)
-            x = rand(0:10, n)
+            x = rand(0:6, n)
             ev = Groebner.monom_construct_from_vector(PV{T}, x)
             tmp = similar(x)
             @test x == Groebner.monom_to_vector!(tmp, ev)

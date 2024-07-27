@@ -273,45 +273,6 @@ function sort_matrix_lower_rows!(matrix::MacaulayMatrix)
     matrix
 end
 
-# Sorts the columns of the matrix (encoded in `column_to_monom` vector) by the
-# role of the corresponding monomial in the matrix, and then by the current
-# monomial ordering decreasingly.
-function sort_columns_by_labels!(
-    column_to_monom::Vector{T},
-    symbol_ht::MonomialHashtable
-) where {T}
-    # cmp = let hd = symbol_ht.hashdata, es = symbol_ht.monoms, htord = symbol_ht.ord
-    #     function _cmp(a, b, ord)
-    #         @inbounds ha = hd[a]
-    #         @inbounds hb = hd[b]
-    #         ha.idx > hb.idx
-    #     end
-    #     (x, y) -> _cmp(x, y, htord)
-    # end
-    # sort!(column_to_monom, lt=cmp, alg=_default_sorting_alg())
-    cmp = let hd = symbol_ht.hashdata, es = symbol_ht.monoms, htord = symbol_ht.ord
-        function _cmp(a, b, ord)
-            @inbounds ha = hd[a]
-            @inbounds hb = hd[b]
-            if ha.idx != hb.idx
-                return ha.idx > hb.idx
-            end
-            @inbounds ea = es[a]
-            @inbounds eb = es[b]
-            monom_isless(eb, ea, ord)
-        end
-        (x, y) -> _cmp(x, y, htord)
-    end
-    sort!(column_to_monom, lt=cmp, alg=_default_sorting_alg())
-    # by = let hd = symbol_ht.hashdata
-    #     function _by(a)
-    #         @inbounds -hd[a].idx
-    #     end
-    #     (x) -> _by(x)
-    # end
-    # sort!(column_to_monom, by=by, alg=_default_sorting_alg())
-end
-
 function partition_columns_by_labels!(
     column_to_monom::Vector{T},
     symbol_ht::MonomialHashtable
