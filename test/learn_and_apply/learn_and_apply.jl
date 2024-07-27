@@ -9,6 +9,8 @@ params = (loglevel=0, sweep=true)
     flag, gb2 = Groebner.groebner_apply!(trace, [x, y])
     @assert gb1 == gb2 && flag
 
+    show(trace)
+
     K = AbstractAlgebra.GF(2^31 - 1)
     R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:degrevlex)
     R2, xs = polynomial_ring(K, ["x$i" for i in 1:30], internal_ordering=:degrevlex)

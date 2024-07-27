@@ -46,11 +46,6 @@
             params
         )
             @log :misc "Randomized check failed."
-
-            # Freeze the hashtable.
-            # TODO: this is a strange place to do it, but OK
-            # hashtable.frozen = true
-
             return false
         end
         @log :misc "Randomized check passed!"

@@ -1066,8 +1066,7 @@ function linalg_extract_sparse_row!(
     from::J,
     to::J
 ) where {I, J, T <: Coeff, A <: Coeff}
-    # NOTE: also assumes that the provided sparse row has the necessary capacity
-    # allocated
+    # NOTE: assumes that the sparse row has the necessary capacity allocated
     @invariant length(indices) == length(coeffs)
     @invariant 1 <= from <= to <= length(row)
 
@@ -1082,6 +1081,7 @@ function linalg_extract_sparse_row!(
         end
     end
 
+    @invariant j - 1 <= length(coeffs)
     j - 1
 end
 
@@ -1096,8 +1096,7 @@ function linalg_extract_sparse_row!(
     from::J,
     to::J
 ) where {I, J, T <: Coeff}
-    # NOTE: also assumes that the provided sparse row has the necessary capacity
-    # allocated
+    # NOTE: assumes that the sparse row has the necessary capacity allocated
     @invariant length(indices) == length(coeffs)
     @invariant 1 <= from <= to <= length(row)
 
@@ -1111,5 +1110,6 @@ function linalg_extract_sparse_row!(
         end
     end
 
+    @invariant j - 1 <= length(coeffs)
     j - 1
 end
