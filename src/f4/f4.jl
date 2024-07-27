@@ -354,7 +354,7 @@ function f4_select_critical_pairs!(
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable;
-    maxpairs::Int=typemax(Int),
+    maxpairs::Int=INT_INF,
     select_all::Bool=false
 ) where {ExponentType}
     # TODO: Why is this code type unstable !???

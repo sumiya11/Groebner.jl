@@ -2,6 +2,8 @@
 
 # Handling keyword arguments for functions in the interface.
 
+const INT_INF = typemax(Int)
+
 #! format: off
 # Syntax formatting is disabled for the next several lines.
 #
@@ -17,7 +19,7 @@ const _supported_kw_args = (
         arithmetic   = :auto,
         seed         = 42,
         loglevel     = _loglevel_default,
-        maxpairs     = typemax(Int),   # NOTE: maybe use Inf?
+        maxpairs     = INT_INF,
         selection    = :auto,
         modular      = :auto,
         threaded     = :auto,
@@ -86,7 +88,7 @@ const _supported_kw_args = (
         arithmetic   = :auto,
         seed         = 42,
         loglevel     = _loglevel_default,
-        maxpairs     = typemax(Int),   # NOTE: maybe use Inf?
+        maxpairs     = INT_INF,
         selection    = :auto,
         modular      = :auto,
         threaded     = :auto,
@@ -192,7 +194,7 @@ struct KeywordArguments{Ord}
             loglevel_int_or_sym
         end
 
-        maxpairs = get(kws, :maxpairs, get(default_kw_args, :maxpairs, typemax(Int)))
+        maxpairs = get(kws, :maxpairs, get(default_kw_args, :maxpairs, INT_INF))
         @assert maxpairs > 0 "The limit on the number of critical pairs must be positive"
 
         modular = get(kws, :modular, get(default_kw_args, :modular, :auto))
