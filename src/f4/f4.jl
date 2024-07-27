@@ -40,8 +40,7 @@
         permutation = collect(1:(basis.nfilled))
     end
 
-    # Divide each polynomial by the leading coefficient. We do not need
-    # normalization in some cases, e.g., when computing the normal forms
+    # We do not need normalization when computing normal forms
     if make_monic
         basis_make_monic!(basis, params.arithmetic, params.changematrix)
     end
@@ -400,8 +399,6 @@ end
 
 # Adds the first `npairs` pairs from the pairset to the matrix.
 # Write the corresponding monomials to symbolic hashtable.
-#
-# Assumes that the pairset is sorted w.r.t. the lcms of pairs.
 function f4_add_critical_pairs_to_matrix!(
     ctx::Context,
     pairset::Pairset,
@@ -411,6 +408,11 @@ function f4_add_critical_pairs_to_matrix!(
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable
 )
+    @invariant issorted(
+        pairset.pairs[1:npairs],
+        by=pair -> monom_totaldeg(ht.monoms[pair.lcm])
+    )
+
     matrix_reinitialize!(matrix, npairs)
     pairs = pairset.pairs
     uprows = matrix.upper_rows
@@ -488,7 +490,6 @@ function f4_add_critical_pairs_to_matrix!(
             # hash of the quotient
             htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
 
-            # The polynomial will be reduced.
             row_idx = matrix.nrows_filled_lower += 1
             lowrows[row_idx] = matrix_polynomial_multiple_to_row!(
                 ctx,
@@ -566,7 +567,7 @@ end
     end
 
     if params.sweep
-        @log :debug "Sweeping redundant elements in the basis"
+        @log :debug "Sweeping redundant elements in the basis.."
         basis_sweep_redundant!(basis, hashtable)
     end
 
@@ -591,8 +592,6 @@ end
     nothing
 end
 
-# Checks that all S-polynomials formed by the elements of the given basis reduce
-# to zero.
 @timeit function f4_isgroebner!(
     ctx::Context,
     ring::PolyRing,
@@ -624,7 +623,6 @@ end
     linalg_isgroebner!(ctx, matrix, basis, arithmetic)
 end
 
-# Reduces each polynomial in the `tobereduced` by the polynomials from the `basis`.
 @timeit function f4_normalform!(
     ctx::Context,
     ring::PolyRing,

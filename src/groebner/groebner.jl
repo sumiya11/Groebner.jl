@@ -498,7 +498,7 @@ function _groebner_learn_and_apply_threaded(
     end
     threadbuf_bigint_buffer = map(_ -> CoefficientBuffer(), 1:nthreads())
     threadbuf_params = map(_ -> deepcopy(params), 1:nthreads())
-    threadbuf_ctx = map(_ -> ctx_initialize(tlocal=true), 1:nthreads())
+    threadbuf_ctx = map(_ -> ctx_initialize(), 1:nthreads())
 
     iters = 0
     while !correct_basis
