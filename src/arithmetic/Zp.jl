@@ -376,11 +376,9 @@ end
 divisor(arithm::FloatingPointArithmeticZp) = arithm.divisor
 
 @inline function mod_p(a::T, mod::FloatingPointArithmeticZp{T, C}) where {T, C}
-    @fastmath begin
-        b = a * mod.multiplier
-        c = floor(b)
-        a - mod.divisor * c # may be fused
-    end
+    b = a * mod.multiplier
+    c = floor(b)
+    a - mod.divisor * c # may be fused
 end
 
 @inline function fma_mod_p(
@@ -389,10 +387,8 @@ end
     a3::T,
     mod::FloatingPointArithmeticZp{T, C}
 ) where {T, C}
-    @fastmath begin
-        b = fma(a1, a2, a3)
-        mod_p(b, mod)
-    end
+    b = muladd(a1, a2, a3)
+    mod_p(b, mod)
 end
 
 inv_mod_p(a::T, arithm::FloatingPointArithmeticZp{T}) where {T} =
@@ -422,11 +418,19 @@ end
 divisor(arithm::FloatingPointCompositeArithmeticZp) = arithm.divisor
 
 @inline function mod_p(a::T, mod::FloatingPointCompositeArithmeticZp{T, C}) where {T, C}
-    @fastmath begin
-        b = a * mod.multiplier
-        c = T(floor.(b.data))
-        a - mod.divisor * c # may be fused
-    end
+    b = a * mod.multiplier
+    c = T(floor.(b.data))
+    a - mod.divisor * c # may be fused
+end
+
+@inline function fma_mod_p(
+    a1::T,
+    a2::T,
+    a3::T,
+    mod::FloatingPointCompositeArithmeticZp{T, C}
+) where {T, C}
+    b = CompositeNumber(muladd.(a1.data, a2.data, a3.data))
+    mod_p(b, mod)
 end
 
 inv_mod_p(a::T, arithm::FloatingPointCompositeArithmeticZp{T}) where {T} =

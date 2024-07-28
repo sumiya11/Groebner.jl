@@ -358,7 +358,8 @@ function get_trace!(
     # Otherwise, create a new trace based on one of the existing ones
     default_trace = get_default_trace(wrapped_trace)
     new_trace = trace_copy(default_trace, composite_coefftype, deepcopy=false)
-    new_trace.representation = PolynomialRepresentation(monomtype, composite_coefftype, wide_coeff_type)
+    new_trace.representation =
+        PolynomialRepresentation(monomtype, composite_coefftype, wide_coeff_type)
     wrapped_trace.recorded_traces[(composite_coefftype, 1)] = new_trace
 
     # NOTE: the returned trace may be in a invalid state, and needs to be filled

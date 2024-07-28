@@ -847,7 +847,10 @@ end
 
 function linalg_row_make_monic!(
     row::Vector{T},
-    arithmetic::Union{FloatingPointCompositeArithmeticZp{A, T}, FloatingPointArithmeticZp{A, T}},
+    arithmetic::Union{
+        FloatingPointCompositeArithmeticZp{A, T},
+        FloatingPointArithmeticZp{A, T}
+    },
     first_nnz_index::Int=1
 ) where {A <: Union{CoeffZp, CompositeCoeffZp}, T <: Union{CoeffZp, CompositeCoeffZp}}
     @invariant !iszero(row[first_nnz_index])
@@ -940,8 +943,7 @@ function linalg_vector_addmul_sparsedense_mod_p!(
     @inbounds mul = divisor(arithmetic) - row[indices[1]]
     @fastmath @inbounds for j in 1:length(indices)
         idx = indices[j]
-        a = fma(mul, coeffs[j], row[idx])
-        row[idx] = mod_p(a, arithmetic)
+        row[idx] = fma_mod_p(mul, coeffs[j], row[idx], arithmetic)
     end
 
     mul

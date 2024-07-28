@@ -57,11 +57,3 @@ function Base.muladd(
 ) where {N, T}
     CompositeNumber(c.data .* a.data .+ b.data)
 end
-
-function Base.fma(
-    c::CompositeNumber{N, T},
-    a::CompositeNumber{N, T},
-    b::CompositeNumber{N, T}
-) where {N, T}
-    CompositeNumber(fma.(c.data, a.data, b.data))
-end
