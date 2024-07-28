@@ -719,12 +719,12 @@ end
         gb2 = Groebner.groebner(sys)
         @test gb1 == gb2 == [x1 + x2 + x3, x2^2 + x2 * x3 + x3^2, x3^3 + 10006]
 
-        sys = Groebner.Examples.cyclicn(7, k=GF(65537))
+        sys = Groebner.Examples.cyclicn(7, k=GF(2^25 - 39))
         gb1 = Groebner.groebner(sys, arithmetic=arithmetic, linalg=:deterministic)
         gb2 = Groebner.groebner(sys)
         @test gb1 == gb2
 
-        sys = Groebner.Examples.noonn(7, k=GF(17))
+        sys = Groebner.Examples.noonn(7, k=GF(2^25 - 39))
         gb1 = Groebner.groebner(sys, arithmetic=arithmetic, linalg=:deterministic)
         gb2 = Groebner.groebner(sys)
         @test gb1 == gb2

@@ -31,7 +31,7 @@ Base.iszero(ci::CompositeNumber) = all(iszero, ci.data)
 Base.isone(ci::CompositeNumber)  = all(isone, ci.data)
 
 Base.zero(::Type{CompositeNumber{N, T}}) where {N, T} =
-    CompositeNumber(ntuple(_ -> zero(T), N))
+    CompositeNumber(ntuple(_ -> zero(T), Val(N)))
 Base.one(::Type{CompositeNumber{N, T}}) where {N, T} =
     CompositeNumber(ntuple(_ -> one(T), N))
 

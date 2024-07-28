@@ -366,7 +366,7 @@ struct FloatingPointArithmeticZp{AccumType, CoeffType} <:
         p::CoeffType
     ) where {AccumType <: CoeffZp, CoeffType <: CoeffZp}
         @invariant AccumType === Float64
-        @invariant 0 < p < 2^17  # < 52 / 3
+        @invariant 0 < p < 2^25  # < 52 / 2 - 1
         @invariant Primes.isprime(Int(p))
         multiplier = 1 / p
         new{AccumType, CoeffType}(multiplier, p)

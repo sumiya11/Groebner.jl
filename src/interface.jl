@@ -368,7 +368,7 @@ function groebner_apply!(
     batch::NTuple{N, T}; # deliberately not using ::Tuple{T, Vararg{T, Nminus1}}
     options...
 ) where {N, T <: AbstractVector}
-    @assert N in (1, 2, 4, 8, 16) "The batch size must be one of the following: 1, 2, 4, 8, 16"
+    @assert N in (1, 2, 4, 8, 16, 32, 64, 128) "The batch size must be one of the following: 1, 2, 4, 8, 16, 32, 64, 128"
     all(Base.require_one_based_indexing, batch)
 
     keywords = KeywordArguments(:groebner_apply!, options)
