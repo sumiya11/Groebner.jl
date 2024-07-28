@@ -226,7 +226,7 @@ function reduce_modulo_p_in_batch!(
     prime_xn::NTuple{N, T}
 ) where {C, N, T}
     coeffs_zz = basis.coeffs
-    coeffs_ff_xn = [Vector{CompositeInt{N, T}}(undef, length(c)) for c in coeffs_zz]
+    coeffs_ff_xn = [Vector{CompositeNumber{N, T}}(undef, length(c)) for c in coeffs_zz]
 
     p = coeffbuff.reducebuf1
     buf = coeffbuff.reducebuf2
@@ -244,10 +244,10 @@ function reduce_modulo_p_in_batch!(
                 k -> T(bigint_mod_p!(buf, xn[k], UInt(prime_xn[k]), prime_big_xn[k])),
                 N
             )
-            coeffs_ff_xn[i][j] = CompositeInt{N, T}(data)
+            coeffs_ff_xn[i][j] = CompositeNumber{N, T}(data)
         end
     end
-    ring_ff_4x = PolyRing(ring.nvars, ring.ord, CompositeInt{N, T}(prime_xn))
+    ring_ff_4x = PolyRing(ring.nvars, ring.ord, CompositeNumber{N, T}(prime_xn))
     basis_ff_4x = basis_deep_copy_with_new_coeffs(ctx, basis, coeffs_ff_xn)
 
     ring_ff_4x, basis_ff_4x

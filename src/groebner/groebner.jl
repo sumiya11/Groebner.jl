@@ -237,7 +237,7 @@ function _groebner_learn_and_apply(
     partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
 
     # Initialize a tracer that computes the bases in batches of 4
-    trace_4x = trace_copy(trace, CompositeInt{4, Int32})
+    trace_4x = trace_copy(trace, CompositeNumber{4, Int32})
 
     iters = 0
     while !correct_basis
@@ -253,7 +253,7 @@ function _groebner_learn_and_apply(
                     reduce_modulo_p_in_batch!(ctx, state.buffer, ring, basis_zz, prime_4x)
                 params_zp_4x = params_mod_p(
                     params,
-                    CompositeInt{4, Int32}(prime_4x),
+                    CompositeNumber{4, Int32}(prime_4x),
                     using_wide_type_for_coeffs=false
                 )
                 trace_4x.buf_basis = basis_ff_4x
@@ -487,7 +487,7 @@ function _groebner_learn_and_apply_threaded(
     partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
 
     # Initialize a tracer that computes the bases in batches of 4
-    trace_4x = trace_copy(trace, CompositeInt{4, Int32})
+    trace_4x = trace_copy(trace, CompositeNumber{4, Int32})
 
     # Thread buffers
     threadbuf_trace_4x = map(_ -> trace_deepcopy(trace_4x), 1:nthreads())
@@ -528,7 +528,7 @@ function _groebner_learn_and_apply_threaded(
             )
             threadlocal_params_zp_4x = params_mod_p(
                 threadlocal_params,               # can be modified later
-                CompositeInt{4, Int32}(threadlocal_prime_4x),
+                CompositeNumber{4, Int32}(threadlocal_prime_4x),
                 using_wide_type_for_coeffs=false
             )
             threadlocal_trace_4x.buf_basis = basis_ff_4x

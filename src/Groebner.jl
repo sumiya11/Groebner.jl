@@ -143,7 +143,7 @@ include("monomials/packed_vector.jl")
 include("monomials/sparse_vector.jl")
 
 # Defines some type aliases
-include("arithmetic/CompositeInt.jl")
+include("arithmetic/CompositeNumber.jl")
 include("utils/types.jl")
 
 # Fast arithmetic modulo a prime

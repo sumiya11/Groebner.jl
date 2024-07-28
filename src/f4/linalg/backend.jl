@@ -818,15 +818,14 @@ function linalg_dense_row_mod_p!(
     from::Int=1,
     to::Int=length(row)
 ) where {T <: Union{CoeffZp, CompositeCoeffZp}}
-    # NOTE: This loop is usually successfully vectorized by the compiler for all
-    # kinds of arithmetic. Still, the resulting native code may be not optimal
+    # This loop is usually successfully vectorized for all kinds of arithmetic.
+    # Still, the resulting code may be not optimal
     @fastmath @inbounds for i in from:to
         row[i] = mod_p(row[i], arithmetic)
     end
     nothing
 end
 
-# Normalize the row to have the leading coefficient equal to 1
 function linalg_row_make_monic!(
     row::Vector{T},
     arithmetic::AbstractArithmeticZp{A, T},
@@ -846,7 +845,25 @@ function linalg_row_make_monic!(
     pinv
 end
 
-# Normalize the row to have the leading coefficient equal to 1
+function linalg_row_make_monic!(
+    row::Vector{T},
+    arithmetic::FloatingPointArithmeticZp{A, T},
+    first_nnz_index::Int=1
+) where {A <: CoeffZp, T <: CoeffZp}
+    @invariant !iszero(row[first_nnz_index])
+
+    lead = row[first_nnz_index]
+    isone(lead) && return lead
+
+    @inbounds pinv = inv_mod_p(A(lead), arithmetic)
+    @inbounds row[first_nnz_index] = one(T)
+    @inbounds for i in (first_nnz_index + 1):length(row)
+        row[i] = mod_p(A(row[i]) * A(pinv), arithmetic)
+    end
+
+    pinv
+end
+
 function linalg_row_make_monic!(
     row::Vector{T},
     arithmetic::AbstractArithmeticQQ{T},
@@ -884,6 +901,26 @@ function linalg_vector_addmul_sparsedense_mod_p!(
         # if A === T, then the type cast is a no-op
         a = row[idx] + A(mul) * A(coeffs[j])
         row[idx] = mod_p(a, arithmetic)
+    end
+
+    mul
+end
+
+# Linear combination of dense vector and sparse vector modulo a prime.
+function linalg_vector_addmul_sparsedense_mod_p!(
+    row::Vector{A},
+    indices::Vector{I},
+    coeffs::Vector{T},
+    arithmetic::FloatingPointArithmeticZp
+) where {I, A <: CoeffZp, T <: CoeffZp}
+    @invariant isone(coeffs[1])
+    @invariant length(indices) == length(coeffs)
+    @invariant !isempty(indices)
+
+    @inbounds mul = divisor(arithmetic) - row[indices[1]]
+    @inbounds for j in 1:length(indices)
+        idx = indices[j]
+        row[idx] = fma_mod_p(mul, coeffs[j], row[idx], arithmetic)
     end
 
     mul
@@ -941,10 +978,10 @@ end
 # Linear combination of dense vector and sparse vector.
 # Specialization for SignedCompositeArithmeticZp.
 function linalg_vector_addmul_sparsedense!(
-    row::Vector{CompositeInt{N, A}},
+    row::Vector{CompositeNumber{N, A}},
     indices::Vector{I},
-    coeffs::Vector{CompositeInt{N, T}},
-    arithmetic::SignedCompositeArithmeticZp{CompositeInt{N, A}, CompositeInt{N, T}}
+    coeffs::Vector{CompositeNumber{N, T}},
+    arithmetic::SignedCompositeArithmeticZp{CompositeNumber{N, A}, CompositeNumber{N, T}}
 ) where {I, A <: CoeffZp, T <: CoeffZp, N}
     @invariant isone(coeffs[1])
     @invariant length(indices) == length(coeffs)
@@ -958,7 +995,7 @@ function linalg_vector_addmul_sparsedense!(
         idx = indices[j]
         a = row[idx].data .- A.(mul) .* A.(coeffs[j].data)
         a = a .+ ((a .>> (8 * sizeof(A) - 1)) .& p2.data)
-        row[idx] = CompositeInt(a)
+        row[idx] = CompositeNumber(a)
     end
 
     nothing

@@ -15,9 +15,9 @@ Base.showerror(io::IO, e::MonomialDegreeOverflow) = print(io, e.msg)
 # All supported coefficient types
 
 # CoeffZp is a supertype of polynomial coefficients modulo a prime
-const CoeffZp = Union{Unsigned, Signed}
+const CoeffZp = Union{AbstractFloat, Unsigned, Signed}
 
-const CompositeCoeffZp = CompositeInt{N, T} where {N, T <: CoeffZp}
+const CompositeCoeffZp = CompositeNumber{N, T} where {N, T <: CoeffZp}
 
 # CoeffQQ is a supertype of polynomial coefficients in the rationals
 const CoeffQQ = Union{Rational{BigInt}}

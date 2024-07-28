@@ -453,6 +453,28 @@ end
 
 function basis_make_monic!(
     basis::Basis{C},
+    arithmetic::FloatingPointArithmeticZp{A, C},
+    changematrix::Bool
+) where {A <: CoeffZp, C <: CoeffZp}
+    @log :debug "Normalizing polynomials in the basis"
+    cfs = basis.coeffs
+    @inbounds for i in 1:(basis.nfilled)
+        !isassigned(cfs, i) && continue
+        mul = inv_mod_p(A(cfs[i][1]), arithmetic)
+        cfs[i][1] = one(C)
+        for j in 2:length(cfs[i])
+            cfs[i][j] = mod_p(A(cfs[i][j]) * A(mul), arithmetic)
+        end
+        @invariant isone(cfs[i][1])
+        if changematrix
+            basis_changematrix_mul!(basis, i, A(mul), arithmetic)
+        end
+    end
+    basis
+end
+
+function basis_make_monic!(
+    basis::Basis{C},
     arithmetic::AbstractArithmeticQQ,
     changematrix::Bool
 ) where {C <: CoeffQQ}

@@ -174,10 +174,10 @@ struct KeywordArguments{Ord}
         `:auto`, `:dense`, `:packed`, `:sparse`"""
 
         arithmetic = get(kws, :arithmetic, get(default_kw_args, :arithmetic, :auto))
-        @assert arithmetic in (:auto, :delayed, :signed, :basic) """
+        @assert arithmetic in (:auto, :delayed, :signed, :basic, :floating) """
         Not recognized arithmetic: $arithmetic
         Possible choices for keyword "arithmetic" are:
-        `:auto`, `:delayed`, `:signed`, `:basic`"""
+        `:auto`, `:delayed`, `:signed`, `:basic`, `:floating`"""
 
         seed = get(kws, :seed, get(default_kw_args, :seed, 42))
 

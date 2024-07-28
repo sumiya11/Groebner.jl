@@ -13,6 +13,11 @@ const _AA_exponent_type = UInt64
 
 AA_is_multivariate_ring(ring) = AbstractAlgebra.nvars(ring) > 1
 
+# TODO TODO TODO: type piracy!
+(F::AbstractAlgebra.FinField)(x::AbstractFloat) = F(Int(x))
+(F::AbstractAlgebra.GFField{Int64})(x::AbstractFloat) = F(Int(x))
+(F::AbstractAlgebra.Rationals{BigInt})(x::AbstractFloat) = F(BigInt(x))
+
 ###
 # Converting from AbstractAlgebra to internal representation.
 
@@ -803,10 +808,6 @@ function _io_convert_to_output(
         cfs  = map(ground, gbcoeffs[i])
         exps = Matrix{_AA_exponent_type}(undef, nv + 1, length(gbcoeffs[i]))
         for jt in 1:length(gbcoeffs[i])
-            # for je in 1:nv
-            #     exps[je, jt] = gbexps[i][jt][je]
-            # end
-            # exps[nv + 1, jt] = gbexps[i][jt][end]
             monom_to_vector!(tmp, gbexps[i][jt])
             for k in 1:length(tmp)
                 exps[k, jt] = tmp[k]
@@ -834,13 +835,9 @@ function _io_convert_to_output(
         cfs  = map(ground, gbcoeffs[i])
         exps = Matrix{_AA_exponent_type}(undef, nv, length(gbcoeffs[i]))
         for jt in 1:length(gbcoeffs[i])
-            # for je in 1:nv
-            #     exps[je, jt] = gbexps[i][jt][nv - je + 1]
-            # end
             monom_to_vector!(tmp, gbexps[i][jt])
             exps[end:-1:1, jt] .= tmp
         end
-        # exps   = UInt64.(hcat(map(x -> x[end-1:-1:1], gbexps[i])...))
         exported[i] = create_aa_polynomial(origring, cfs, exps)
     end
     exported
@@ -862,10 +859,6 @@ function _io_convert_to_output(
         cfs  = map(ground, gbcoeffs[i])
         exps = Matrix{_AA_exponent_type}(undef, nv + 1, length(gbcoeffs[i]))
         for jt in 1:length(gbcoeffs[i])
-            # for je in 1:nv
-            #     exps[je, jt] = gbexps[i][jt][nv - je + 1]
-            # end
-            # exps[nv + 1, jt] = gbexps[i][jt][end]
             monom_to_vector!(tmp, gbexps[i][jt])
             exps[(end - 1):-1:1, jt] .= tmp
             exps[end, jt] = monom_totaldeg(gbexps[i][jt])

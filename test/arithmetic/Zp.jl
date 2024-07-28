@@ -54,8 +54,8 @@ end
 
 @testset "arithmetic in Zp x 4" begin
     m = (Primes.nextprimes(2^30 + 3, 4)...,)
-    i32_4x = Groebner.CompositeInt{4, Int32}
-    i64_4x = Groebner.CompositeInt{4, Int64}
+    i32_4x = Groebner.CompositeNumber{4, Int32}
+    i64_4x = Groebner.CompositeNumber{4, Int64}
     m_4x = i32_4x(m)
     arithmetic = Groebner.SignedCompositeArithmeticZp(i64_4x, i32_4x, m_4x)
 

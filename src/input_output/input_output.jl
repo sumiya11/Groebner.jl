@@ -257,7 +257,10 @@ function io_select_coefftype(
 
     tight_signed_type = io_get_tight_signed_int_type(char)
 
-    # If the requested arithmetic requires a signed representation
+    if kws.arithmetic === :floating
+        return Float64, true
+    end
+
     if kws.arithmetic === :signed
         if typemax(Int32) < char < typemax(UInt32) ||
            typemax(Int64) < char < typemax(UInt64)
@@ -465,7 +468,7 @@ end
 # Utilities for composite coefficients
 
 function io_unpack_composite_coefficients(
-    composite_coeffs::Vector{Vector{CompositeInt{2, T}}}
+    composite_coeffs::Vector{Vector{CompositeNumber{2, T}}}
 ) where {T <: CoeffZp}
     coeffs_part_1 = Vector{Vector{T}}(undef, length(composite_coeffs))
     coeffs_part_2 = Vector{Vector{T}}(undef, length(composite_coeffs))
@@ -474,7 +477,7 @@ function io_unpack_composite_coefficients(
         coeffs_part_1[i] = Vector{T}(undef, length(composite_coeffs[i]))
         coeffs_part_2[i] = Vector{T}(undef, length(composite_coeffs[i]))
         for j in 1:length(composite_coeffs[i])
-            a1, a2 = composite_int_unpack(composite_coeffs[i][j])
+            a1, a2 = composite_coeffs[i][j].data
             coeffs_part_1[i][j] = a1
             coeffs_part_2[i][j] = a2
         end
@@ -483,7 +486,7 @@ function io_unpack_composite_coefficients(
 end
 
 function io_unpack_composite_coefficients(
-    composite_coeffs::Vector{Vector{CompositeInt{N, T}}}
+    composite_coeffs::Vector{Vector{CompositeNumber{N, T}}}
 ) where {N, T <: CoeffZp}
     coeffs_part_i = ntuple(_ -> Vector{Vector{T}}(undef, length(composite_coeffs)), N)
     @inbounds for i in 1:length(composite_coeffs)
@@ -491,7 +494,7 @@ function io_unpack_composite_coefficients(
             coeffs_part_i[k][i] = Vector{T}(undef, length(composite_coeffs[i]))
         end
         for j in 1:length(composite_coeffs[i])
-            ai = composite_int_unpack(composite_coeffs[i][j])
+            ai = composite_coeffs[i][j].data
             for k in 1:N
                 coeffs_part_i[k][i][j] = ai[k]
             end

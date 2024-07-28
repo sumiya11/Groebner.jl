@@ -337,7 +337,7 @@ function get_trace!(
         """
         tight_unsigned_type
     end
-    composite_coefftype = CompositeInt{N, new_coefftype}
+    composite_coefftype = CompositeNumber{N, new_coefftype}
 
     @log :misc """
     Will be storing polynomial coefficients as $composite_coefftype on the apply stage."""

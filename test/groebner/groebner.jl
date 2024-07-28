@@ -6,6 +6,7 @@ using Test, TestSetExtensions
     R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], internal_ordering=:degrevlex)
 
     @test_throws DomainError Groebner.groebner([])
+    @test_throws DomainError Groebner.groebner([1])
     @test_throws DomainError Groebner.groebner(Vector{elem_type(R)}())
 
     fs = [x, x, x]
@@ -702,6 +703,32 @@ end
     end
     @test_throws DomainError Groebner.kbase([x, x + 1], check=true)
     @test_throws DomainError Groebner.kbase([x, x + 1], check=true)
+end
+
+@testset "groebner arithmetic" begin
+    R, (x, y, z) = polynomial_ring(GF(10007), ["x", "y", "z"], internal_ordering=:degrevlex)
+
+    for arithmetic in [:auto, :delayed, :signed, :basic, :floating]
+        @test Groebner.groebner([x, y], arithmetic=arithmetic, linalg=:deterministic) ==
+              Groebner.groebner([y, x]) ==
+              [y, x]
+
+        sys = Groebner.Examples.rootn(3, k=GF(10007), internal_ordering=:degrevlex)
+        x1, x2, x3 = gens(parent(first(sys)))
+        gb1 = Groebner.groebner(sys, arithmetic=arithmetic, linalg=:deterministic)
+        gb2 = Groebner.groebner(sys)
+        @test gb1 == gb2 == [x1 + x2 + x3, x2^2 + x2 * x3 + x3^2, x3^3 + 10006]
+
+        sys = Groebner.Examples.cyclicn(7, k=GF(65537))
+        gb1 = Groebner.groebner(sys, arithmetic=arithmetic, linalg=:deterministic)
+        gb2 = Groebner.groebner(sys)
+        @test gb1 == gb2
+
+        sys = Groebner.Examples.noonn(7, k=GF(17))
+        gb1 = Groebner.groebner(sys, arithmetic=arithmetic, linalg=:deterministic)
+        gb2 = Groebner.groebner(sys)
+        @test gb1 == gb2
+    end
 end
 
 @testset "groebner linear algebra" begin
