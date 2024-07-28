@@ -123,6 +123,7 @@ include("utils/logging.jl")
 include("utils/invariants.jl")
 include("utils/timeit.jl")
 include("utils/simd.jl")
+include("utils/pretty_print.jl")
 include("utils/plots.jl")
 include("utils/context.jl")
 

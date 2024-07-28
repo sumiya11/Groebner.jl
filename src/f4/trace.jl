@@ -311,6 +311,7 @@ function get_trace!(
     # First, determine a suitable coefficient type for the given polynomials and
     # the learned trace
     default_trace = get_default_trace(wrapped_trace)
+    monomtype = default_trace.representation.monomtype
     coefftype = default_trace.representation.coefftype
 
     rings = map(extract_ring, batch)
@@ -322,9 +323,13 @@ function get_trace!(
 
     tight_signed_type = mapreduce(io_get_tight_signed_int_type, promote_type, chars)
     tight_unsigned_type = mapreduce(io_get_tight_unsigned_int_type, promote_type, chars)
+    wide_coeff_type = false
 
     # The type of coefficients that will be used
-    new_coefftype = if tight_signed_type == signed(tight_unsigned_type)
+    new_coefftype = if kwargs.arithmetic === :floating && all(chars .< 2^25)
+        wide_coeff_type = true
+        Float64
+    elseif tight_signed_type == signed(tight_unsigned_type)
         tight_signed_type
     else
         @log :info """
@@ -353,6 +358,7 @@ function get_trace!(
     # Otherwise, create a new trace based on one of the existing ones
     default_trace = get_default_trace(wrapped_trace)
     new_trace = trace_copy(default_trace, composite_coefftype, deepcopy=false)
+    new_trace.representation = PolynomialRepresentation(monomtype, composite_coefftype, wide_coeff_type)
     wrapped_trace.recorded_traces[(composite_coefftype, 1)] = new_trace
 
     # NOTE: the returned trace may be in a invalid state, and needs to be filled

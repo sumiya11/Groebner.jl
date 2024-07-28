@@ -134,14 +134,23 @@ struct KeywordArguments{Ord}
     use_flint::Bool
     changematrix::Bool
 
-    KeywordArguments(function_key::Symbol; passthrough_options...) =
-        KeywordArguments(function_key, passthrough_options)
+    KeywordArguments(function_key::Symbol; passthrough...) =
+        KeywordArguments(function_key, passthrough)
 
     function KeywordArguments(function_key::Symbol, kws)
         @assert haskey(_supported_kw_args, function_key)
         default_kw_args = _supported_kw_args[function_key]
         for (key, _) in kws
-            @assert haskey(default_kw_args, key) "Not recognized keyword: $key"
+            if !haskey(default_kw_args, key)
+                io = IOBuffer()
+                columnlist(io, sort(map(string, collect(keys(default_kw_args)))))
+                _columns = String(take!(io))
+                throw(
+                    AssertionError("""
+              Keyword \"$key\" is not supported by Groebner.$(function_key).
+              Supported keyword arguments for Groebner.$(function_key) are:\n$_columns""")
+                )
+            end
         end
 
         reduced = get(kws, :reduced, get(default_kw_args, :reduced, true))

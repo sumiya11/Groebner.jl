@@ -453,9 +453,9 @@ end
 
 function basis_make_monic!(
     basis::Basis{C},
-    arithmetic::FloatingPointArithmeticZp{A, C},
+    arithmetic::Union{FloatingPointCompositeArithmeticZp{A, C}, FloatingPointArithmeticZp{A, C}},
     changematrix::Bool
-) where {A <: CoeffZp, C <: CoeffZp}
+) where {A <: Union{CoeffZp, CompositeCoeffZp}, C <: Union{CoeffZp, CompositeCoeffZp}}
     @log :debug "Normalizing polynomials in the basis"
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.nfilled)

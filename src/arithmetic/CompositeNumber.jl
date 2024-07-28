@@ -10,6 +10,10 @@ function CompositeNumber{N, T}(a::CompositeNumber{N, U}) where {N, T, U}
     CompositeNumber{N, T}(a.data .% T)
 end
 
+function CompositeNumber{N, FP}(a::CompositeNumber{N, U}) where {N, FP <: AbstractFloat, U}
+    CompositeNumber{N, FP}(a.data)
+end
+
 Base.isinteger(ci::CompositeNumber{N, T}) where {N, T} = all(isinteger.(ci.data))
 
 Base.typemax(::Type{CompositeNumber{N, T}}) where {N, T} =
@@ -35,6 +39,8 @@ Base.zero(::Type{CompositeNumber{N, T}}) where {N, T} =
 Base.one(::Type{CompositeNumber{N, T}}) where {N, T} =
     CompositeNumber(ntuple(_ -> one(T), N))
 
+Base.inv(a::CompositeNumber{N, T}) where {N, T} = CompositeNumber(inv.(a.data))
+
 Base.:+(a::CompositeNumber{N, T}, b::CompositeNumber{N, T}) where {N, T} =
     CompositeNumber(a.data .+ b.data)
 
@@ -50,4 +56,12 @@ function Base.muladd(
     b::CompositeNumber{N, T}
 ) where {N, T}
     CompositeNumber(c.data .* a.data .+ b.data)
+end
+
+function Base.fma(
+    c::CompositeNumber{N, T},
+    a::CompositeNumber{N, T},
+    b::CompositeNumber{N, T}
+) where {N, T}
+    CompositeNumber(fma.(c.data, a.data, b.data))
 end

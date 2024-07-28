@@ -8,19 +8,13 @@
 ### 
 # Monomial hashtable.
 
-# This hashtable implementation assumes that the hash function is linear.
-
-# The hashtable size is always the power of two. The hashtable size is doubled
-# each time the load factor exceeds a threshold, which can be a bit smaller than
-# 0.5, since the number of hits greatly exceeds the number of misses usually.
-
-# Some monomial implementations are mutable, and some are not. In order to
-# maintain generic code that will work for both, we usually write something
-# like: m3 = monom_product!(m3, m1, m2). Then, if a mutable implementation is
-#   used, m3 would be overwritten inside of monom_product!. Otherwise,
-# monom_product! would return a new immutable object that is then assigned to
-# m3. That allows us to write more or less independently of the monomial
-# implementation.
+# Some monomial implementations are mutable and some are not. To
+# maintain generic code that will work for both, we usually write
+#   m3 = monom_product!(m3, m1, m2). 
+# If a mutable implementation is used, m3 would be overwritten inside
+# monom_product!. Otherwise, monom_product! would return a new immutable object
+# that is then assigned to m3. That allows us to write more or less
+# independently of the monomial implementation.
 
 # Hash of a monomial in the hashtable
 const MonomHash = UInt32
@@ -35,11 +29,11 @@ const DivisionMask = UInt32
 
 # Hashvalue of a single monomial
 struct Hashvalue
-    # index of the monomial in the F4 matrix (defaults to NON_PIVOT_COLUMN, or 0),
+    # index of a monomial in the F4 matrix
     idx::Int32
-    # hash of the monomial,
+    # hash of a monomial
     hash::MonomHash
-    # corresponding divmask to speed up divisibility checks,
+    # divisibility mask to speed up divisibility checks
     divmask::DivisionMask
 end
 
@@ -47,49 +41,34 @@ end
 mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractInternalOrdering}
     #= Data =#
     monoms::Vector{M}
-    # Maps monomial id to its position in the `monoms` array
     hashtable::Vector{MonomId}
-    # Stores hashes, division masks, and other valuable info for each hashtable
-    # enrty
     hashdata::Vector{Hashvalue}
-    # Hash vector. Hash of a monomial is a dot product of the `hasher` vector
-    # and the monomial exponent vector
     hasher::Vector{MonomHash}
 
     #= Ring information =#
-    # number of variables
     nvars::Int
-    # ring monomial ordering
     ord::Ord
 
     #= Monom divisibility =#
     use_divmask::Bool
     compress_divmask::Bool
-    # Divisor map to check divisibility faster
     divmap::Vector{UInt32}
     ndivvars::Int
-    # Number of bits per div variable
     ndivbits::Int
 
-    # Hashtable size 
-    # (always a power of two)
-    # (always greater than 1)
+    # Hashtable sizes 
     size::Int
-    # Elements currently added
     load::Int
     offset::Int
 
-    # If the hashtable is frozen, any operation that tries to modify it will
-    # result in an error.
+    # If is frozen. If the hashtable is frozen, any operation that tries to
+    # modify it will result in an error.
     frozen::Bool
 end
 
 ###
-# Initialization and resizing
+# Initialization
 
-# Resize hashtable if load factor exceeds hashtable_resize_threshold. Load factor of a
-# hashtable must be smaller than hashtable_resize_threshold at any point of its
-# lifetime
 hashtable_resize_threshold() = 0.4
 hashtable_needs_resize(size, load, added) =
     (load + added) / size > hashtable_resize_threshold()
@@ -107,22 +86,18 @@ function hashtable_initialize(
     nvars = ring.nvars
     ord = ring.ord
 
-    # initialize hashing vector
     hasher = monom_construct_hash_vector(rng, MonomT, nvars)
 
-    # exponents[1:load] covers all stored exponents
-    # , also exponents[1] is [0, 0, ..., 0] by default
     load = 1
     @invariant initial_size > 1
     size = initial_size
 
-    # exponents array starts from index offset,
-    # We store buffer array at index 1
+    # Exponents array starts from index 2,
+    # We store buffer array at index 1.
     offset = 2
 
     # Initialize fast divisibility parameters.
     use_divmask = nvars <= 32 || (MonomT <: ExponentVector)
-    # use_divmask = true
     dmbits = 8 * sizeof(DivisionMask)
     compress_divmask = nvars > dmbits
     @log :debug "Using division masks: $use_divmask. Using $dmbits bits. Compressed: $compress_divmask"
@@ -306,13 +281,10 @@ function hashtable_is_hash_collision(ht::MonomialHashtable, vidx, e, he)
 end
 
 function hashtable_insert!(ht::MonomialHashtable{M}, e::M) where {M <: Monom}
-    # NOTE: trying to optimize for the case when the monomial is already in the
-    # table.
-    # NOTE: all of the functions called here are inlined. The only potential
-    # exception is monom_create_divmask
+    # NOTE: optimizing for the case when the monomial is already in the table.
+    # NOTE: all of the functions in the main code path are inlined.
     @invariant ispow2(ht.size) && ht.size > 1
 
-    # generate hash
     he = monom_hash(e, ht.hasher)
 
     hsize = ht.size
@@ -372,8 +344,6 @@ function divmask_is_probably_divisible(d1::DivisionMask, d2::DivisionMask)
     iszero(~d1 & d2)
 end
 
-# Having `ht` filled with monomials from input polys,
-# computes ht.divmap and divmask for each of already stored monomials
 function hashtable_fill_divmasks!(ht::MonomialHashtable)
     @invariant !ht.frozen
 
@@ -459,7 +429,6 @@ end
 ###
 # Monomial arithmetic
 
-# h1 divisible by h2
 function hashtable_monom_is_divisible(h1::MonomId, h2::MonomId, ht::MonomialHashtable)
     @inbounds if ht.use_divmask
         if !divmask_is_probably_divisible(ht.hashdata[h1].divmask, ht.hashdata[h2].divmask)
@@ -471,7 +440,6 @@ function hashtable_monom_is_divisible(h1::MonomId, h2::MonomId, ht::MonomialHash
     monom_is_divisible(e1, e2)
 end
 
-# checks that gcd(g1, h2) is one
 function hashtable_monom_is_gcd_const(h1::MonomId, h2::MonomId, ht::MonomialHashtable)
     @inbounds e1 = ht.monoms[h1]
     @inbounds e2 = ht.monoms[h2]
