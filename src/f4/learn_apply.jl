@@ -259,6 +259,7 @@ end
             matrix,
             hashtable,
             symbol_ht,
+            0,
             maxpairs=params.maxpairs
         )
         push!(trace.critical_pair_sequence, (degree_i, npairs_i))

@@ -130,6 +130,29 @@ function sort_pairset_by_degree!(pairset::Pairset, from::Int, sz::Int)
     nothing
 end
 
+function sort_pairset_by_multidegree!(pairset::Pairset, from::Int, sz::Int, ht, block::Int)
+    pairs = pairset.pairs
+    degs = pairset.degrees
+    if length(pairset.scratch4) < sz
+        resize!(pairset.scratch4, nextpow(2, sz + 1))
+    end
+    permutation = pairset.scratch4
+    for i in 1:sz
+        permutation[i] = from + i - 1
+    end
+    fun(ev) = (ev[1], sum(ev[2:block+1]), sum(ev[block+2:end]))
+    sort_part!(permutation, 1, sz, by=i -> fun(ht.monoms[pairs[i].lcm]), scratch=pairset.scratch1)
+    if length(pairset.scratch2) < length(permutation)
+        resize!(pairset.scratch2, nextpow(2, length(permutation) + 1))
+    end
+    if length(pairset.scratch3) < length(permutation)
+        resize!(pairset.scratch3, nextpow(2, length(permutation) + 1))
+    end
+    permute_array!(pairs, permutation, pairset.scratch2, from, sz)
+    permute_array!(degs, permutation, pairset.scratch3, from, sz)
+    nothing
+end
+
 # Sorts the first `npairs` pairs from `pairset` in a non-decreasing order of
 # their lcms by the given monomial ordering
 function sort_pairset_by_lcm!(pairset::Pairset, npairs::Int, hashtable::MonomialHashtable)

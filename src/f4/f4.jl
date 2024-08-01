@@ -352,13 +352,18 @@ function f4_select_critical_pairs!(
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
-    symbol_ht::MonomialHashtable;
+    symbol_ht::MonomialHashtable,
+    multihom::Int;
     maxpairs::Int=INT_INF,
     select_all::Bool=false
 ) where {ExponentType}
     # TODO: Why is this code type unstable !???
     npairs::Int = pairset.load
-    if !select_all
+    if select_all
+        
+    elseif multihom > 0
+        npairs = pairset_lowest_multidegree_pairs!(pairset, ht, multihom)
+    else
         npairs = pairset_lowest_degree_pairs!(pairset)
     end
     npairs = min(npairs, maxpairs)
@@ -553,6 +558,7 @@ end
             matrix,
             hashtable,
             symbol_ht,
+            params.multihom,
             maxpairs=params.maxpairs
         )
 
@@ -615,6 +621,7 @@ end
         matrix,
         hashtable,
         symbol_ht,
+        0,
         select_all=true
     )
     f4_symbolic_preprocessing!(ctx, basis, matrix, hashtable, symbol_ht)

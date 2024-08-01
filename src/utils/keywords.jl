@@ -28,7 +28,8 @@ const _supported_kw_args = (
         statistics   = :no,
         batched      = true,
         use_flint    = true,
-        changematrix = false
+        changematrix = false,
+        multihom     = 0
     ),
     normalform = (
         check       = false,
@@ -133,6 +134,7 @@ struct KeywordArguments{Ord}
     statistics::Symbol
     use_flint::Bool
     changematrix::Bool
+    multihom::Int
 
     KeywordArguments(function_key::Symbol; passthrough...) =
         KeywordArguments(function_key, passthrough)
@@ -234,6 +236,8 @@ struct KeywordArguments{Ord}
 
         changematrix = get(kws, :changematrix, get(default_kw_args, :changematrix, false))
 
+        multihom = get(kws, :multihom, get(default_kw_args, :multihom, false))
+
         new{typeof(ordering)}(
             reduced,
             ordering,
@@ -253,7 +257,8 @@ struct KeywordArguments{Ord}
             homogenize,
             statistics,
             use_flint,
-            changematrix
+            changematrix,
+            multihom
         )
     end
 end

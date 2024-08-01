@@ -113,6 +113,25 @@ function pairset_lowest_degree_pairs!(pairset::Pairset)
     n
 end
 
+function pairset_lowest_multidegree_pairs!(pairset::Pairset, ht, block::Int)
+    sort_pairset_by_multidegree!(pairset, 1, pairset.load - 1, ht, block)
+    fun(ev) = (ev[1], sum(ev[2:block+1]), sum(ev[block+2:end]))
+    @inbounds pair_idx, pair_min_deg = 1, fun(ht.monoms[pairset.pairs[1].lcm])
+    println("Critical pairs:")
+    @inbounds for i in 1:(pairset.load)
+        print(pairset.pairs[i], ",   ")
+        if fun(ht.monoms[pairset.pairs[i].lcm]) <= pair_min_deg
+            pair_min_deg = fun(ht.monoms[pairset.pairs[i].lcm])
+            pair_idx = i
+        end
+    end
+    println()
+    @log :info "Preparing to select $pair_idx pairs of degree $pair_min_deg."
+    pair_idx, pair_min_deg
+    @invariant n > 0
+    pair_idx
+end
+
 ###
 # Basis
 

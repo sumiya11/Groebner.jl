@@ -103,6 +103,8 @@ mutable struct AlgorithmParameters{
     use_flint::Bool
 
     changematrix::Bool
+
+    multihom::Int
 end
 
 function AlgorithmParameters(
@@ -253,6 +255,8 @@ function AlgorithmParameters(
         end
     end
 
+    multihom = kwargs.multihom
+
     @log :misc """
     Selected parameters:
     target_ord = $target_ord
@@ -308,7 +312,8 @@ function AlgorithmParameters(
         sweep,
         statistics,
         use_flint,
-        changematrix
+        changematrix,
+        multihom
     )
 end
 
@@ -348,6 +353,7 @@ function params_mod_p(
         params.sweep,
         params.statistics,
         params.use_flint,
-        params.changematrix
+        params.changematrix,
+        params.multihom
     )
 end
