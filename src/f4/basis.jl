@@ -634,6 +634,8 @@ function basis_is_new_polynomial_redundant!(
     update_ht::MonomialHashtable{M},
     idx::Int
 ) where {M <: Monom}
+    hashtable_resize_if_needed!(update_ht, 0)
+
     if PHENOMENA[]
     @inbounds lead_new = basis.monoms[idx][1]
     ps = pairset.pairs

@@ -40,7 +40,8 @@ function rootn(n; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     ans
 end
 
-# source...?
+# reimern(7)
+# Critical pair degree sequence: 3,4,5,6,7,8,9,8,7,7,6,6,5,6,5,5,5,4,4,3,4,5,6,7,8,9,10,11,12,13,14,15
 function reimern(n; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     _, xs = np.polynomial_ring(k, ["x$i" for i in 1:n], internal_ordering=internal_ordering)
     [sum((-1)^(i + 1) * 2 * xs[i]^j for i in 1:n) - 1 for j in 2:(n + 1)]
@@ -64,6 +65,8 @@ function katsuran(n; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     ]
 end
 
+# noonn(8):
+# Critical pair degree sequence: 4,5,6,7,8,9,10,11,12,13,14,15,16,15,16
 function noonn(n; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     without(x, k) = x[1:end .!= k]
 
