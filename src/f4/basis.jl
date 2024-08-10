@@ -634,8 +634,6 @@ function basis_is_new_polynomial_redundant!(
     update_ht::MonomialHashtable{M},
     idx::Int
 ) where {M <: Monom}
-    hashtable_resize_if_needed!(update_ht, 0)
-
     if PHENOMENA[]
     @inbounds lead_new = basis.monoms[idx][1]
     ps = pairset.pairs
@@ -648,6 +646,7 @@ function basis_is_new_polynomial_redundant!(
         !hashtable_monom_is_divisible(lead_i, lead_new, ht) && continue
 
         # Add a new critical pair corresponding to Spoly(i, idx).
+        pairset_resize_if_needed!(pairset, 1)
         ps[pairset.load + 1] = CriticalPair(Int32(i), Int32(idx), lead_i)
         degs[pairset.load + 1] = monom_totaldeg(ht.monoms[lead_i])
         pairset.load += 1
