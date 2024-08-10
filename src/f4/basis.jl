@@ -10,8 +10,6 @@
 
 const CRITICAL_PAIR_REDUNDANT = MonomId(0)
 
-const PHENOMENA_COUNT = Ref{Int}(0)
-
 struct CriticalPair
     poly1::Int32
     poly2::Int32
@@ -634,6 +632,7 @@ function basis_is_new_polynomial_redundant!(
     idx::Int
 ) where {M <: Monom}
     hashtable_resize_if_needed!(update_ht, 0)
+    @inbounds basis.isredundant[idx] && return false
 
     @inbounds lead_new = basis.monoms[idx][1]
     ps = pairset.pairs
@@ -642,26 +641,15 @@ function basis_is_new_polynomial_redundant!(
         basis.isredundant[i] && continue
 
         lead_i = basis.monoms[i][1]
-
-        # println(ht.monoms[lead_new])
-        # println("..is divisible by..")
-        # println(ht.monoms[lead_i])
-        # println()
+        @invariant !monom_isless(ht.monoms[lead_i], ht.monoms[lead_new], ht.ord)
         !hashtable_monom_is_divisible(lead_i, lead_new, ht) && continue
 
-        PHENOMENA_COUNT[] += 1
-        # @warn "" ht.monoms[lead_i] ht.monoms[lead_new]
-
         # Add a new critical pair corresponding to Spoly(i, idx).
-        pairset_resize_if_needed!(pairset, 1)
-        lcm_new = hashtable_get_lcm!(lead_i, lead_new, ht, ht)
-        ps[pairset.load + 1] = CriticalPair(Int32(i), Int32(idx), lcm_new)
-        degs[pairset.load + 1] = monom_totaldeg(ht.monoms[lcm_new])
+        ps[pairset.load + 1] = CriticalPair(Int32(i), Int32(idx), lead_i)
+        degs[pairset.load + 1] = monom_totaldeg(ht.monoms[lead_i])
         pairset.load += 1
 
         basis.isredundant[i] = true
-        # return true
-        return false
     end
 
     false
