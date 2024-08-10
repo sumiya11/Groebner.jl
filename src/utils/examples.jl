@@ -19,6 +19,9 @@ using ..Groebner.Random
 # n-roots', in J. Symbolic Computation (1991) 12, pp 329–336.
 #
 # source: https://github.com/JuliaHomotopyContinuation/PolynomialTestSystems.jl/blob/v0.1.6/src/systems.jl
+#
+# cyclic(8)
+# Critical pair degree sequence: 2,3,4,5,6,7,8,9,10,11,12,5,6,7,8,9,10,11,12,13,6,7,8,9,10,11,12,13,6,7,8,9,10,11,12,13,14,15
 function cyclicn(n; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     _, z = np.polynomial_ring(k, ["z$i" for i in 1:n], internal_ordering=internal_ordering)
     [
@@ -215,6 +218,7 @@ function eco10(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     ]
 end
 
+# Critical pair degree sequence: 3,3,3,3,4,3,4,5,5,5,6,7,7,7,7,7,7,7,8,9
 function eco11(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     _, (x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) =
         np.polynomial_ring(k, ["x$i" for i in 0:10], internal_ordering=internal_ordering)
@@ -334,6 +338,8 @@ end
 
 # Source:
 # https://github.com/JuliaHomotopyContinuation/PolynomialTestSystems.jl/blob/master/src/systems.jl
+# chandran(10): 
+# Critical pair degree sequence: 3,2,3,4,5,6,7,8,9,10,11
 function chandran(n; tol=0, np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     _, H = np.polynomial_ring(k, ["H$i" for i in 1:n], internal_ordering=internal_ordering)
     c = rationalize(BigInt, 0.51234, tol=tol)
@@ -421,6 +427,7 @@ function yang1(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
 end
 
 # Source: https://web.archive.org/web/20201202185136/http://www.cecm.sfu.ca/%7Erpearcea/mgb.html
+# Critical pair degree sequence: 3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
 function bayes148(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     R, (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32) = np.polynomial_ring(
         k, [:x1, :x2, :x3, :x4, :x5, :x6, :x7, :x8, :x9, :x10, :x11, :x12, :x13, :x14, :x15, :x16, :x17, :x18, :x19, :x20, :x21, :x22, :x23, :x24, :x25, :x26, :x27, :x28, :x29, :x30, :x31, :x32], internal_ordering=internal_ordering)
@@ -455,6 +462,7 @@ function jason210(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
 end
 
 # Source: https://web.archive.org/web/20201202185136/http://www.cecm.sfu.ca/%7Erpearcea/mgb.html
+# Critical pair degree sequence: 3,4,5,6,7,7,8,8,7,7,7,8,8,8,8,9,10
 function alea6(; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     R, (x0, x1, x2, x3, x4, x5) = np.polynomial_ring(k, [:x0, :x1, :x2, :x3, :x4, :x5], internal_ordering=internal_ordering)
     sys = [
