@@ -636,23 +636,20 @@ function basis_is_new_polynomial_redundant!(
     @inbounds lead_new = basis.monoms[idx][1]
     ps = pairset.pairs
     degs = pairset.degrees
-
     @inbounds for i in (idx + 1):(basis.nfilled)
         basis.isredundant[i] && continue
 
         lead_i = basis.monoms[i][1]
-
-        !hashtable_monom_is_divisible(lead_new, lead_i, ht) && continue
+        @invariant !monom_isless(ht.monoms[lead_i], ht.monoms[lead_new], ht.ord)
+        !hashtable_monom_is_divisible(lead_i, lead_new, ht) && continue
 
         # Add a new critical pair corresponding to Spoly(i, idx).
         pairset_resize_if_needed!(pairset, 1)
-        lcm_new = hashtable_get_lcm!(lead_i, lead_new, ht, ht)
-        ps[pairset.load + 1] = CriticalPair(Int32(i), Int32(idx), lcm_new)
-        degs[pairset.load + 1] = monom_totaldeg(ht.monoms[lcm_new])
+        ps[pairset.load + 1] = CriticalPair(Int32(i), Int32(idx), lead_i)
+        degs[pairset.load + 1] = monom_totaldeg(ht.monoms[lead_i])
         pairset.load += 1
 
-        basis.isredundant[idx] = true
-        return true
+        basis.isredundant[i] = true
     end
 
     false

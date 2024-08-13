@@ -4,7 +4,7 @@
 import AbstractAlgebra
 
 function SIRSForced_with_weights(; np=AbstractAlgebra, internal_ordering=:degrevlex, k=np.QQ)
-    R, (i_7,i_6,x1_6,s_6,i_5,x2_5,r_5,x1_5,s_5,i_4,x2_4,r_4,x1_4,s_4,i_3,x2_3,r_3,x1_3,s_3,i_2,x2_2,r_2,x1_2,s_2,i_1,x2_1,r_1,x1_1,s_1,i_0,x2_0,r_0,x1_0,s_0,z_aux,mu_0,b0_0,b1_0,g_0,nu_0,M_0) = np.PolynomialRing(k, [:i_7,:i_6,:x1_6,:s_6,:i_5,:x2_5,:r_5,:x1_5,:s_5,:i_4,:x2_4,:r_4,:x1_4,:s_4,:i_3,:x2_3,:r_3,:x1_3,:s_3,:i_2,:x2_2,:r_2,:x1_2,:s_2,:i_1,:x2_1,:r_1,:x1_1,:s_1,:i_0,:x2_0,:r_0,:x1_0,:s_0,:z_aux,:mu_0,:b0_0,:b1_0,:g_0,:nu_0,:M_0], ordering=ordering)
+    R, (i_7,i_6,x1_6,s_6,i_5,x2_5,r_5,x1_5,s_5,i_4,x2_4,r_4,x1_4,s_4,i_3,x2_3,r_3,x1_3,s_3,i_2,x2_2,r_2,x1_2,s_2,i_1,x2_1,r_1,x1_1,s_1,i_0,x2_0,r_0,x1_0,s_0,z_aux,mu_0,b0_0,b1_0,g_0,nu_0,M_0) = np.polynomial_ring(k, [:i_7,:i_6,:x1_6,:s_6,:i_5,:x2_5,:r_5,:x1_5,:s_5,:i_4,:x2_4,:r_4,:x1_4,:s_4,:i_3,:x2_3,:r_3,:x1_3,:s_3,:i_2,:x2_2,:r_2,:x1_2,:s_2,:i_1,:x2_1,:r_1,:x1_1,:s_1,:i_0,:x2_0,:r_0,:x1_0,:s_0,:z_aux,:mu_0,:b0_0,:b1_0,:g_0,:nu_0,:M_0], internal_ordering=internal_ordering)
     sys = [
     		-r_0 + 14228652277668367766,
 		r_0*mu_0 + r_0*g_0 - i_0*nu_0 + r_1,

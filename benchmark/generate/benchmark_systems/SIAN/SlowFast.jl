@@ -4,7 +4,7 @@
 import AbstractAlgebra
 
 function SlowFast(; np=AbstractAlgebra, internal_ordering=:degrevlex, k=np.QQ)
-    R, (eC_3,xA_3,xB_3,xC_3,eA_3,eC_2,xA_2,xB_2,xC_2,eA_2,eC_1,xA_1,xB_1,xC_1,eA_1,eC_0,xA_0,xB_0,xC_0,eA_0,z_aux,k1_0,k2_0,eB_0) = np.PolynomialRing(k, [:eC_3,:xA_3,:xB_3,:xC_3,:eA_3,:eC_2,:xA_2,:xB_2,:xC_2,:eA_2,:eC_1,:xA_1,:xB_1,:xC_1,:eA_1,:eC_0,:xA_0,:xB_0,:xC_0,:eA_0,:z_aux,:k1_0,:k2_0,:eB_0], ordering=ordering)
+    R, (eC_3,xA_3,xB_3,xC_3,eA_3,eC_2,xA_2,xB_2,xC_2,eA_2,eC_1,xA_1,xB_1,xC_1,eA_1,eC_0,xA_0,xB_0,xC_0,eA_0,z_aux,k1_0,k2_0,eB_0) = np.polynomial_ring(k, [:eC_3,:xA_3,:xB_3,:xC_3,:eA_3,:eC_2,:xA_2,:xB_2,:xC_2,:eA_2,:eC_1,:xA_1,:xB_1,:xC_1,:eA_1,:eC_0,:xA_0,:xB_0,:xC_0,:eA_0,:z_aux,:k1_0,:k2_0,:eB_0], internal_ordering=internal_ordering)
     sys = [
     		-eA_0 + 200461933,
 		eA_1,

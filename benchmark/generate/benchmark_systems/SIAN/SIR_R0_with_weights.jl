@@ -4,7 +4,7 @@
 import AbstractAlgebra
 
 function SIR_R0_with_weights(; np=AbstractAlgebra, internal_ordering=:degrevlex, k=np.QQ)
-    R, (In_4,S_3,In_3,S_2,In_2,aux_1,S_1,In_1,aux_0,S_0,In_0,z_aux,R_0,b_0,g_0) = np.PolynomialRing(k, [:In_4,:S_3,:In_3,:S_2,:In_2,:aux_1,:S_1,:In_1,:aux_0,:S_0,:In_0,:z_aux,:R_0,:b_0,:g_0], ordering=ordering)
+    R, (In_4,S_3,In_3,S_2,In_2,aux_1,S_1,In_1,aux_0,S_0,In_0,z_aux,R_0,b_0,g_0) = np.polynomial_ring(k, [:In_4,:S_3,:In_3,:S_2,:In_2,:aux_1,:S_1,:In_1,:aux_0,:S_0,:In_0,:z_aux,:R_0,:b_0,:g_0], internal_ordering=internal_ordering)
     sys = [
     		-In_0 + 61627613,
 		-S_0^2*In_0*b_0 + In_0*g_0 + In_1,

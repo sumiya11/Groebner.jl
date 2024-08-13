@@ -4,7 +4,7 @@
 import AbstractAlgebra
 
 function Goodwin(; np=AbstractAlgebra, internal_ordering=:degrevlex, k=np.QQ)
-    R, (x1_9,x1_8,x4_8,x1_7,x2_7,x3_7,x4_7,x1_6,x2_6,x3_6,x4_6,x1_5,x2_5,x3_5,x4_5,x1_4,x2_4,x3_4,x4_4,x1_3,x2_3,x3_3,x4_3,x1_2,x2_2,x3_2,x4_2,x1_1,x2_1,x3_1,x4_1,x1_0,x2_0,x3_0,x4_0,z_aux,b_0,c_0,alpha_0,beta_0,gama_0,delta_0,sigma_0) = np.PolynomialRing(k, [:x1_9,:x1_8,:x4_8,:x1_7,:x2_7,:x3_7,:x4_7,:x1_6,:x2_6,:x3_6,:x4_6,:x1_5,:x2_5,:x3_5,:x4_5,:x1_4,:x2_4,:x3_4,:x4_4,:x1_3,:x2_3,:x3_3,:x4_3,:x1_2,:x2_2,:x3_2,:x4_2,:x1_1,:x2_1,:x3_1,:x4_1,:x1_0,:x2_0,:x3_0,:x4_0,:z_aux,:b_0,:c_0,:alpha_0,:beta_0,:gama_0,:delta_0,:sigma_0], ordering=ordering)
+    R, (x1_9,x1_8,x4_8,x1_7,x2_7,x3_7,x4_7,x1_6,x2_6,x3_6,x4_6,x1_5,x2_5,x3_5,x4_5,x1_4,x2_4,x3_4,x4_4,x1_3,x2_3,x3_3,x4_3,x1_2,x2_2,x3_2,x4_2,x1_1,x2_1,x3_1,x4_1,x1_0,x2_0,x3_0,x4_0,z_aux,b_0,c_0,alpha_0,beta_0,gama_0,delta_0,sigma_0) = np.polynomial_ring(k, [:x1_9,:x1_8,:x4_8,:x1_7,:x2_7,:x3_7,:x4_7,:x1_6,:x2_6,:x3_6,:x4_6,:x1_5,:x2_5,:x3_5,:x4_5,:x1_4,:x2_4,:x3_4,:x4_4,:x1_3,:x2_3,:x3_3,:x4_3,:x1_2,:x2_2,:x3_2,:x4_2,:x1_1,:x2_1,:x3_1,:x4_1,:x1_0,:x2_0,:x3_0,:x4_0,:z_aux,:b_0,:c_0,:alpha_0,:beta_0,:gama_0,:delta_0,:sigma_0], internal_ordering=internal_ordering)
     sys = [
     		-x1_0 + 75630587615098605042,
 		x1_0*x4_0*b_0 + x1_0*b_0*c_0 + x1_1*x4_0 + x1_1*c_0 - 1,

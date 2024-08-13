@@ -4,7 +4,7 @@
 import AbstractAlgebra
 
 function Treatment_with_weights(; np=AbstractAlgebra, internal_ordering=:degrevlex, k=np.QQ)
-    R, (Tr_7,In_6,Tr_6,In_5,Tr_5,S_5,N_5,In_4,Tr_4,S_4,N_4,In_3,Tr_3,S_3,N_3,In_2,Tr_2,S_2,N_2,In_1,Tr_1,S_1,N_1,In_0,Tr_0,S_0,N_0,z_aux,b_0,d_0,a_0,g_0,nu_0) = np.PolynomialRing(k, [:Tr_7,:In_6,:Tr_6,:In_5,:Tr_5,:S_5,:N_5,:In_4,:Tr_4,:S_4,:N_4,:In_3,:Tr_3,:S_3,:N_3,:In_2,:Tr_2,:S_2,:N_2,:In_1,:Tr_1,:S_1,:N_1,:In_0,:Tr_0,:S_0,:N_0,:z_aux,:b_0,:d_0,:a_0,:g_0,:nu_0], ordering=ordering)
+    R, (Tr_7,In_6,Tr_6,In_5,Tr_5,S_5,N_5,In_4,Tr_4,S_4,N_4,In_3,Tr_3,S_3,N_3,In_2,Tr_2,S_2,N_2,In_1,Tr_1,S_1,N_1,In_0,Tr_0,S_0,N_0,z_aux,b_0,d_0,a_0,g_0,nu_0) = np.polynomial_ring(k, [:Tr_7,:In_6,:Tr_6,:In_5,:Tr_5,:S_5,:N_5,:In_4,:Tr_4,:S_4,:N_4,:In_3,:Tr_3,:S_3,:N_3,:In_2,:Tr_2,:S_2,:N_2,:In_1,:Tr_1,:S_1,:N_1,:In_0,:Tr_0,:S_0,:N_0,:z_aux,:b_0,:d_0,:a_0,:g_0,:nu_0], internal_ordering=internal_ordering)
     sys = [
     		-Tr_0 + 48912847078777,
 		-In_0^2*g_0 + Tr_0*nu_0 + Tr_1,

@@ -5,7 +5,7 @@ function BIOMD0000000123(; k=AbstractAlgebra.QQ, internal_ordering=:degrevlex)
         AbstractAlgebra.polynomial_ring(
             k,
             [:x1, :x2, :x3, :x4, :x5, :x6, :x7, :x8, :x9, :x10, :x11, :x12, :x13, :x14],
-            ordering=ordering
+            internal_ordering=internal_ordering
         )
     [
         -3 * x1^3 * x8 - 1 // k(2) * x1 + 5649 // k(11300) * x2 + 3 * x4,
@@ -68,7 +68,7 @@ function BIOMD0000000103(; k=AbstractAlgebra.QQ, internal_ordering=:degrevlex)
                 :x16,
                 :x17
             ],
-            ordering=ordering
+            internal_ordering=internal_ordering
         )
     [
         -1 // k(500) * x1 * x2 - 1 // k(500) * x1 * x3 - 1 // k(500) * x1 * x10 -

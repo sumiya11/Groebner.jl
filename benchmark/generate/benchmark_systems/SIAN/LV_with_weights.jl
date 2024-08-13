@@ -4,7 +4,7 @@
 import AbstractAlgebra
 
 function LV_with_weights(; np=AbstractAlgebra, internal_ordering=:degrevlex, k=np.QQ)
-    R, (x1_5,x2_4,x1_4,x2_3,x1_3,x2_2,x1_2,x2_1,x1_1,x2_0,x1_0,z_aux,a_0,b_0,c_0,d_0) = np.PolynomialRing(k, [:x1_5,:x2_4,:x1_4,:x2_3,:x1_3,:x2_2,:x1_2,:x2_1,:x1_1,:x2_0,:x1_0,:z_aux,:a_0,:b_0,:c_0,:d_0], ordering=ordering)
+    R, (x1_5,x2_4,x1_4,x2_3,x1_3,x2_2,x1_2,x2_1,x1_1,x2_0,x1_0,z_aux,a_0,b_0,c_0,d_0) = np.polynomial_ring(k, [:x1_5,:x2_4,:x1_4,:x2_3,:x1_3,:x2_2,:x1_2,:x2_1,:x1_1,:x2_0,:x1_0,:z_aux,:a_0,:b_0,:c_0,:d_0], internal_ordering=internal_ordering)
     sys = [
     		-x1_0 + 1722549543,
 		x2_0^2*x1_0*b_0 - x1_0*a_0 + x1_1,
