@@ -27,7 +27,7 @@ It is useful to enable this when debugging the Groebner package.
 
 See also `@invariant` in `src/utils/invariants.jl`.
 """
-invariants_enabled() = true
+invariants_enabled() = false
 
 """
     logging_enabled() -> Bool

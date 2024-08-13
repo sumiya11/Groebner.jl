@@ -4,7 +4,7 @@
 import AbstractAlgebra
 
 function HIV2_with_weights(; np=AbstractAlgebra, internal_ordering=:degrevlex, k=np.QQ)
-    R, (z_9,w_8,y_8,z_8,x_7,v_7,w_7,y_7,z_7,x_6,v_6,w_6,y_6,z_6,x_5,v_5,w_5,y_5,z_5,x_4,v_4,w_4,y_4,z_4,x_3,v_3,w_3,y_3,z_3,x_2,v_2,w_2,y_2,z_2,x_1,v_1,w_1,y_1,z_1,x_0,v_0,w_0,y_0,z_0,z_aux,lm_0,d_0,beta_0,a_0,k_0,u_0,c_0,q_0,b_0,h_0) = np.PolynomialRing(k, [:z_9,:w_8,:y_8,:z_8,:x_7,:v_7,:w_7,:y_7,:z_7,:x_6,:v_6,:w_6,:y_6,:z_6,:x_5,:v_5,:w_5,:y_5,:z_5,:x_4,:v_4,:w_4,:y_4,:z_4,:x_3,:v_3,:w_3,:y_3,:z_3,:x_2,:v_2,:w_2,:y_2,:z_2,:x_1,:v_1,:w_1,:y_1,:z_1,:x_0,:v_0,:w_0,:y_0,:z_0,:z_aux,:lm_0,:d_0,:beta_0,:a_0,:k_0,:u_0,:c_0,:q_0,:b_0,:h_0], ordering=ordering)
+    R, (z_9,w_8,y_8,z_8,x_7,v_7,w_7,y_7,z_7,x_6,v_6,w_6,y_6,z_6,x_5,v_5,w_5,y_5,z_5,x_4,v_4,w_4,y_4,z_4,x_3,v_3,w_3,y_3,z_3,x_2,v_2,w_2,y_2,z_2,x_1,v_1,w_1,y_1,z_1,x_0,v_0,w_0,y_0,z_0,z_aux,lm_0,d_0,beta_0,a_0,k_0,u_0,c_0,q_0,b_0,h_0) = np.polynomial_ring(k, [:z_9,:w_8,:y_8,:z_8,:x_7,:v_7,:w_7,:y_7,:z_7,:x_6,:v_6,:w_6,:y_6,:z_6,:x_5,:v_5,:w_5,:y_5,:z_5,:x_4,:v_4,:w_4,:y_4,:z_4,:x_3,:v_3,:w_3,:y_3,:z_3,:x_2,:v_2,:w_2,:y_2,:z_2,:x_1,:v_1,:w_1,:y_1,:z_1,:x_0,:v_0,:w_0,:y_0,:z_0,:z_aux,:lm_0,:d_0,:beta_0,:a_0,:k_0,:u_0,:c_0,:q_0,:b_0,:h_0], internal_ordering=internal_ordering)
     sys = [
     		-z_0 + 7753100191911095627405452,
 		-w_0*y_0^2*c_0*q_0 + z_0*h_0 + z_1,

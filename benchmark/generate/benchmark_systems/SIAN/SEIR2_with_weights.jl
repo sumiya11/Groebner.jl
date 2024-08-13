@@ -4,7 +4,7 @@
 import AbstractAlgebra
 
 function SEIR2_with_weights(; np=AbstractAlgebra, internal_ordering=:degrevlex, k=np.QQ)
-    R, (Cu_7,Cu_6,E_6,S_5,In_5,Cu_5,E_5,N_5,S_4,In_4,Cu_4,E_4,N_4,S_3,In_3,Cu_3,E_3,N_3,S_2,In_2,Cu_2,E_2,N_2,S_1,In_1,Cu_1,E_1,N_1,S_0,In_0,Cu_0,E_0,N_0,z_aux,b_0,nu_0,a_0) = np.PolynomialRing(k, [:Cu_7,:Cu_6,:E_6,:S_5,:In_5,:Cu_5,:E_5,:N_5,:S_4,:In_4,:Cu_4,:E_4,:N_4,:S_3,:In_3,:Cu_3,:E_3,:N_3,:S_2,:In_2,:Cu_2,:E_2,:N_2,:S_1,:In_1,:Cu_1,:E_1,:N_1,:S_0,:In_0,:Cu_0,:E_0,:N_0,:z_aux,:b_0,:nu_0,:a_0], ordering=ordering)
+    R, (Cu_7,Cu_6,E_6,S_5,In_5,Cu_5,E_5,N_5,S_4,In_4,Cu_4,E_4,N_4,S_3,In_3,Cu_3,E_3,N_3,S_2,In_2,Cu_2,E_2,N_2,S_1,In_1,Cu_1,E_1,N_1,S_0,In_0,Cu_0,E_0,N_0,z_aux,b_0,nu_0,a_0) = np.polynomial_ring(k, [:Cu_7,:Cu_6,:E_6,:S_5,:In_5,:Cu_5,:E_5,:N_5,:S_4,:In_4,:Cu_4,:E_4,:N_4,:S_3,:In_3,:Cu_3,:E_3,:N_3,:S_2,:In_2,:Cu_2,:E_2,:N_2,:S_1,:In_1,:Cu_1,:E_1,:N_1,:S_0,:In_0,:Cu_0,:E_0,:N_0,:z_aux,:b_0,:nu_0,:a_0], internal_ordering=internal_ordering)
     sys = [
     		-N_0 + 99317849184429,
 		N_1,

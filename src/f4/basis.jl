@@ -624,9 +624,6 @@ end
     basis.nprocessed = basis.nfilled
 end
 
-const PHENOMENA = Ref{Bool}(true)
-const PHENOMENA_COUNT = Ref{Int}(0)
-
 function basis_is_new_polynomial_redundant!(
     pairset::Pairset,
     basis::Basis,
@@ -636,7 +633,6 @@ function basis_is_new_polynomial_redundant!(
 ) where {M <: Monom}
     hashtable_resize_if_needed!(update_ht, 0)
 
-    if PHENOMENA[]
     @inbounds lead_new = basis.monoms[idx][1]
     ps = pairset.pairs
     degs = pairset.degrees
@@ -654,7 +650,6 @@ function basis_is_new_polynomial_redundant!(
         pairset.load += 1
 
         basis.isredundant[i] = true
-    end
     end
 
     false
