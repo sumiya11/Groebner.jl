@@ -51,7 +51,7 @@ function generate_benchmark_source_for_singular(
     )
 end
 
-function generate_benchmark_source_for_maple(
+function generate_benchmark_source_for_maplefgb(
     name,
     system,
     dir,
@@ -77,6 +77,61 @@ function generate_benchmark_source_for_maple(
     println(
         buf,
         "\tG := Groebner[Basis](J, tdeg($vars_repr), method=fgb, characteristic=$(characteristic(field))):"
+    )
+    println(buf, "\tprint(\"$name: \", time[real]() - st):")
+    println(buf, "\truntime := min(runtime, time[real]() - st):")
+    println(buf, "end do:")
+    println(buf, "")
+    println(buf, "timings_fn := \"$time_filename\":")
+    println(buf, "FileTools[Text][WriteLine](timings_fn, \"$name\");")
+    println(
+        buf,
+        "FileTools[Text][WriteLine](timings_fn, cat(\"total_time, \", String(runtime))):"
+    )
+    if validate
+        println(buf)
+        output_fn = output_filename()
+        println(buf, "output_fn := \"$dir/$output_fn\":")
+        println(buf, "FileTools[Text][WriteLine](output_fn, \"$vars_repr\");")
+        println(buf, "FileTools[Text][WriteLine](output_fn, \"$(characteristic(field))\");")
+        println(
+            buf,
+            """
+            for poly in G do
+                FileTools[Text][WriteLine](output_fn, cat(String(poly), \",\")):
+            end do:
+            """
+        )
+    end
+    String(take!(buf))
+end
+
+function generate_benchmark_source_for_mgb(
+    name,
+    system,
+    dir,
+    validate,
+    nruns,
+    time_filename
+)
+    ring = parent(system[1])
+    field = base_ring(ring)
+    buf = IOBuffer()
+    println(buf, "# $name")
+    println(buf, "with(Groebner):")
+    println(buf, "with(PolynomialIdeals):")
+    println(buf, "kernelopts(numcpus=1);")
+    system_repr = replace(join(map(s -> "\t\t" * s, map(repr, system)), ",\n"), "//" => "/")
+    vars_repr = join(map(string, gens(ring)), ", ")
+    println(buf, "")
+    println(buf, "runtime := 2^1000:")
+    println(buf, "for i from 1 by 1 to 1 do")
+    println(buf, "\tJ := [\n$system_repr\n\t]:")
+    println(buf, "\tprint(\"Running $name\");")
+    println(buf, "\tst := time[real]():")
+    println(
+        buf,
+        "\tG := libmgb:-gbasis($(characteristic(field)),0,[$vars_repr],J):"
     )
     println(buf, "\tprint(\"$name: \", time[real]() - st):")
     println(buf, "\truntime := min(runtime, time[real]() - st):")

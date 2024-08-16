@@ -1,13 +1,13 @@
 ## Benchmark results
 
-2024-02-23T02:25:34.128
+2024-08-16T07:41:28.290
 
 Benchmarked backend: groebner
 
 Benchmark suite: dummy benchmark set
 
-- Workers: 4
-- Timeout: 700 s
+- Workers: 16
+- Timeout: 600 s
 - Aggregated over: 1 runs
 
 **All timings in seconds.**
@@ -19,20 +19,20 @@ Benchmark suite: dummy benchmark set
 
 *Benchmarking environment:*
 
-* Total RAM (GiB): 7
-* Processor: Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz
-* Julia version: 1.10.1
+* Total RAM (GiB): 188
+* Processor: Intel(R) Xeon(R) Gold 6130 CPU @ 2.10GHz
+* Julia version: 1.10.2
 
 Versions of the dependencies:
 
 * Primes : 0.5.6
-* TimerOutputs : 0.5.23
-* PrecompileTools : 1.2.0
-* MultivariatePolynomials : 0.5.4
+* TimerOutputs : 0.5.24
+* PrecompileTools : 1.2.1
+* MultivariatePolynomials : 0.5.6
 * Combinatorics : 1.0.2
-* HostCPUFeatures : 0.1.16
-* AbstractAlgebra : 0.40.0
-* Nemo : 0.43.0
+* HostCPUFeatures : 0.1.17
+* AbstractAlgebra : 0.42.0
+* Nemo : 0.46.0
 * Atomix : 0.1.0
 * ExprTools : 0.1.10
 * PrettyTables : 2.3.1

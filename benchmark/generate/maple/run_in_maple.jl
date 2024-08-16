@@ -16,11 +16,12 @@ const NUM_RUNS = parse(Int, ARGS[2])
 const BENCHMARK_SET = parse(Int, ARGS[3])
 const VALIDATE = parse(Bool, ARGS[4])
 const BIN_PATH = ARGS[5]
+const BACKEND = ARGS[6]
 index1 = startswith(BIN_PATH, "/") ? 1 : 1
 index2 = endswith(BIN_PATH, "/") ? length(BIN_PATH) - 1 : length(BIN_PATH)
 const BIN_PATH_NORM = BIN_PATH[index1:index2]
 
-const BENCHMARK_DIR = "../../" * get_benchmark_dir("maple", BENCHMARK_SET)
+const BENCHMARK_DIR = "../../" * get_benchmark_dir(BACKEND, BENCHMARK_SET)
 
 @info "" ARGS
 @info "" PROBLEM_NAME

@@ -49,7 +49,7 @@ function benchmark_set_1()
         ("noon 7", Groebner.Examples.noonn(7, k=ground_field)),
         ("noon 8", Groebner.Examples.noonn(8, k=ground_field)),
         ("noon 9", Groebner.Examples.noonn(9, k=ground_field)),
-        # ("noon 10", Groebner.Examples.noonn(10, k=ground_field)),
+        ("noon 10", Groebner.Examples.noonn(10, k=ground_field)),
         # ("noon 11", Groebner.Examples.noonn(11, k=ground_field)),
         ("henrion 5", Groebner.Examples.henrion5(k=ground_field)),
         ("henrion 6", Groebner.Examples.henrion6(k=ground_field)),
@@ -57,12 +57,24 @@ function benchmark_set_1()
         ("henrion 8", Groebner.Examples.henrion8(k=ground_field)),
         ("reimer 6", Groebner.Examples.reimern(6, k=ground_field)),
         ("reimer 7", Groebner.Examples.reimern(7, k=ground_field)),
-        ("reimer 8", Groebner.Examples.reimern(8, k=ground_field))
+        ("reimer 8", Groebner.Examples.reimern(8, k=ground_field)),
         # ("reimer 9", Groebner.Examples.reimern(9, k=ground_field)),
         # ("chandra 11", Groebner.chandran(11, k=ground_field)),
         # ("chandra 12", Groebner.chandran(12, k=ground_field)),
         # ("chandra 13", Groebner.chandran(13, k=ground_field)),
-        # ("chandra 14", Groebner.chandran(14, k=ground_field))
+        # ("chandra 14", Groebner.chandran(14, k=ground_field)),
+        ("Cholera", Cholera(k=ground_field)),
+        ("HIV2", HIV2(k=ground_field)),
+        ("NFkB (w.)", NFkB_with_weights(k=ground_field)),
+        ("Goodwin (w.)", Goodwin_with_weights(k=ground_field)),
+        ("yang1", Groebner.Examples.yang1(internal_ordering=:degrevlex, k=ground_field)),
+        ("bayes148", Groebner.Examples.bayes148(internal_ordering=:degrevlex, k=ground_field)),
+        ("gametwo2", Groebner.Examples.gametwo2(internal_ordering=:degrevlex, k=ground_field)),
+        ("jason210", Groebner.Examples.jason210(internal_ordering=:degrevlex, k=ground_field)),
+        ("alea6", Groebner.Examples.alea6(internal_ordering=:degrevlex, k=ground_field)),
+        ("mayr42", Groebner.Examples.mayr42(internal_ordering=:degrevlex, k=ground_field)),
+        ("BIOMD0000000103", BIOMD0000000103(k=ground_field)),
+        ("BIOMD0000000123", BIOMD0000000123(k=ground_field)),
     ]
 
     (name="Integers modulo 2^30 + 3", field=ground_field, systems=systems)
@@ -129,12 +141,12 @@ function benchmark_set_3()
         ("reimer 6", Groebner.Examples.reimern(6, k=ground_field)),
         ("reimer 7", Groebner.Examples.reimern(7, k=ground_field)),
         ("reimer 8", Groebner.Examples.reimern(8, k=ground_field)),
-        ("chandra 9", Groebner.chandran(9, k=ground_field, internal_ordering=:degrevlex)),
-        ("chandra 10", Groebner.chandran(10, k=ground_field, internal_ordering=:degrevlex)),
-        ("chandra 11", Groebner.chandran(11, k=ground_field, internal_ordering=:degrevlex)),
-        ("chandra 12", Groebner.chandran(12, k=ground_field, internal_ordering=:degrevlex)),
-        ("chandra 13", Groebner.chandran(13, k=ground_field, internal_ordering=:degrevlex)),
-        ("ipp", Groebner.ipp(k=ground_field, tol=0.0, internal_ordering=:degrevlex))
+        ("chandra 9", Groebner.Examples.chandran(9, k=ground_field, internal_ordering=:degrevlex)),
+        ("chandra 10", Groebner.Examples.chandran(10, k=ground_field, internal_ordering=:degrevlex)),
+        ("chandra 11", Groebner.Examples.chandran(11, k=ground_field, internal_ordering=:degrevlex)),
+        ("chandra 12", Groebner.Examples.chandran(12, k=ground_field, internal_ordering=:degrevlex)),
+        ("chandra 13", Groebner.Examples.chandran(13, k=ground_field, internal_ordering=:degrevlex)),
+        ("ipp", Groebner.Examples.ipp(k=ground_field, tol=0.0, internal_ordering=:degrevlex))
     ]
 
     (name="The rationals", field=ground_field, systems=systems)

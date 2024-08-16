@@ -1,8 +1,8 @@
 ## Benchmark results
 
-2024-08-16T09:26:06.425
+2024-08-16T09:48:56.801
 
-Benchmarked backend: groebner
+Benchmarked backend: maplefgb
 
 Benchmark suite: Integers modulo 2^30 + 3
 
@@ -14,41 +14,41 @@ Benchmark suite: Integers modulo 2^30 + 3
 
 |Model|Total, s|
 |:----|---|
-|BIOMD0000000103|0.18|
-|BIOMD0000000123|0.77|
-|Cholera|42.38|
-|Goodwin (w.)|311.96|
-|HIV2|2.00|
-|NFkB (w.)|356.92|
-|alea6|0.14|
-|bayes148|35.39|
+|BIOMD0000000103|0.20|
+|BIOMD0000000123|1.77|
+|Cholera|53.67|
+|Goodwin (w.)|273.11|
+|HIV2|3.00|
+|NFkB (w.)|434.36|
+|alea6|0.11|
+|bayes148|30.44|
 |cyclic 7|0.10|
-|cyclic 8|1.42|
-|cyclic 9|155.86|
-|dummy|0.00|
-|eco 11|0.55|
-|eco 12|2.14|
-|eco 13|8.98|
-|eco 14|106.58|
-|gametwo2|10.59|
-|henrion 5|0.00|
+|cyclic 8|1.29|
+|cyclic 9|195.90|
+|dummy|0.02|
+|eco 11|0.36|
+|eco 12|2.05|
+|eco 13|11.58|
+|eco 14|104.79|
+|gametwo2|13.40|
+|henrion 5|0.01|
 |henrion 6|0.05|
-|henrion 7|2.22|
+|henrion 7|3.25|
 |henrion 8| - |
-|jason210|5.50|
-|katsura 10|0.78|
-|katsura 11|5.81|
-|katsura 12|33.74|
-|katsura 13|723.35|
-|mayr42|48.07|
-|noon 7|0.15|
-|noon 8|1.55|
-|noon 9|14.02|
-|noon 10|230.04|
+|jason210|7.76|
+|katsura 10|1.18|
+|katsura 11|11.36|
+|katsura 12|53.16|
+|katsura 13|879.25|
+|mayr42|52.03|
+|noon 7|0.19|
+|noon 8|1.48|
+|noon 9|14.80|
+|noon 10|182.06|
 |reimer 6|0.05|
-|reimer 7|1.57|
-|reimer 8|18.06|
-|yang1|16.29|
+|reimer 7|1.18|
+|reimer 8|31.03|
+|yang1|40.33|
 
 *Benchmarking environment:*
 

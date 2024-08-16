@@ -1,8 +1,8 @@
 ## Benchmark results
 
-2024-08-16T07:42:39.862
+2024-08-16T07:42:08.475
 
-Benchmarked backend: msolve
+Benchmarked backend: maplefgb
 
 Benchmark suite: dummy benchmark set
 
@@ -14,8 +14,8 @@ Benchmark suite: dummy benchmark set
 
 |Model|Total, s|
 |:----|---|
-|dummy 1| - |
-|dummy 2| - |
+|dummy 1|0.01|
+|dummy 2|0.01|
 
 *Benchmarking environment:*
 

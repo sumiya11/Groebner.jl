@@ -32,7 +32,7 @@ const _progressbar_value_color = :light_green
 progressbar_enabled() =
     Logging.Info <= Logging.min_enabled_level(current_logger()) < Logging.Warn
 
-const _available_backends = ["groebner", "singular", "maple", "msolve", "openf4"]
+const _available_backends = ["groebner", "singular", "maplefgb", "mgb", "msolve", "openf4"]
 
 const _skip_singular = false
 const _skip_openf4 = false
@@ -49,7 +49,8 @@ function parse_commandline()
             - groebner
             - learn_apply
             - singular
-            - maple
+            - maplefgb
+            - mgb
             - msolve
             - openf4
             - ALL"""
@@ -160,8 +161,20 @@ function generate_benchmark_file(
         fd = open("$dir/$name.jl", "w")
         println(fd, benchmark_source)
         close(fd)
-    elseif backend == "maple"
-        benchmark_source = generate_benchmark_source_for_maple(
+    elseif backend == "maplefgb"
+        benchmark_source = generate_benchmark_source_for_maplefgb(
+            name,
+            system,
+            dir,
+            validate,
+            nruns,
+            time_filename
+        )
+        fd = open("$dir/$name.mpl", "w")
+        println(fd, benchmark_source)
+        close(fd)
+    elseif backend == "mgb"
+        benchmark_source = generate_benchmark_source_for_mgb(
             name,
             system,
             dir,
@@ -234,7 +247,7 @@ function get_command_to_run_benchmark(
             "$problem_set_id",
             "$validate"
         ])
-    elseif backend == "maple"
+    elseif backend == "maplefgb" || backend == "mgb"
         return Cmd([
             "julia",
             (@__DIR__) * "/generate/maple/run_in_maple.jl",
@@ -242,7 +255,8 @@ function get_command_to_run_benchmark(
             "$problem_num_runs",
             "$problem_set_id",
             "$validate",
-            "$(args["bmaple"])"
+            "$(args["bmaple"])",
+            "$backend"
         ])
     elseif backend == "msolve"
         return Cmd([
@@ -359,6 +373,8 @@ function run_benchmarks(args)
     errored = []
     timedout = []
 
+    global_start_time = time_ns()
+
     generate_showvalues(processes) =
         () -> [(
             :Active,
@@ -369,7 +385,9 @@ function run_benchmarks(args)
                 ),
                 ", "
             )
-        )]
+        ),
+        (:Time, "$(round(seconds_passed(global_start_time); digits=0)) / $(round(seconds_passed(global_start_time) + timeout - seconds_passed(maximum(proc -> proc.start_time, filter(proc -> process_running(proc.julia_process), processes); init=0)); digits=0)) s")
+    ]
 
     prog = Progress(
         length(queue),
@@ -900,7 +918,7 @@ end
 function check_args(args)
     backend = args["backend"]
     @assert backend in
-            ("groebner", "singular", "maple", "openf4", "msolve", "learn_apply", "ALL")
+            ("groebner", "singular", "maplefgb", "mgb", "openf4", "msolve", "learn_apply", "ALL")
     if backend == "openf4" && args["suite"] in [3, 7]
         throw("Running benchmarks over the rationals is not possible for openf4")
     end
