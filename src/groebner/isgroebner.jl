@@ -25,9 +25,8 @@ end
     coeffs::Vector{Vector{C}},
     params
 ) where {M <: Monom, C <: CoeffZp}
-    ctx = ctx_initialize()
-    basis, pairset, hashtable = f4_initialize_structs(ctx, ring, monoms, coeffs, params)
-    res = f4_isgroebner!(ctx, ring, basis, pairset, hashtable, params.arithmetic)
+    basis, pairset, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
+    res = f4_isgroebner!(ring, basis, pairset, hashtable, params.arithmetic)
     res
 end
 
@@ -38,27 +37,26 @@ end
     coeffs::Vector{Vector{C}},
     params
 ) where {M <: Monom, C <: CoeffQQ}
-    ctx = ctx_initialize()
     buffer = CoefficientBuffer()
-    basis, pairset, hashtable = f4_initialize_structs(ctx, ring, monoms, coeffs, params)
+    basis, pairset, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
     # If an honest computation over the rationals is needed
     if params.certify_check
         @log :misc """
         Keyword argument `certify=true` was provided. 
         Checking that the given input is a Groebner basis directly over the rationals"""
-        flag = f4_isgroebner!(ctx, ring, basis, pairset, hashtable, params.arithmetic)
+        flag = f4_isgroebner!(ring, basis, pairset, hashtable, params.arithmetic)
         return flag
     end
     # Otherwise, check modulo a prime
     @log :misc "Checking if a Grobner basis modulo a prime"
     buffer = CoefficientBuffer()
     @log :misc "Clearning denominators in the input generators"
-    basis_zz = clear_denominators!(ctx, buffer, basis, deepcopy=false)
+    basis_zz = clear_denominators!(buffer, basis, deepcopy=false)
     luckyprimes = LuckyPrimes(basis_zz.coeffs)
     prime = next_check_prime!(luckyprimes)
     @log :misc "Reducing input generators modulo $prime"
-    ring_ff, basis_ff = reduce_modulo_p!(ctx, buffer, ring, basis_zz, prime, deepcopy=true)
+    ring_ff, basis_ff = reduce_modulo_p!(buffer, ring, basis_zz, prime, deepcopy=true)
     arithmetic = select_arithmetic(CoeffModular, prime, :auto, false)
-    flag = f4_isgroebner!(ctx, ring_ff, basis_ff, pairset, hashtable, arithmetic)
+    flag = f4_isgroebner!(ring_ff, basis_ff, pairset, hashtable, arithmetic)
     flag
 end

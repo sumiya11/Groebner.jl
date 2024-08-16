@@ -27,13 +27,12 @@ function linalg_randomized_hashcolumns_sparse!(
     # Reduce CD with AB
     linalg_randomized_hashcolumns_reduce_matrix_lower_part!(matrix, basis, arithmetic, rng)
     # Interreduce CD
-    linalg_interreduce_matrix_pivots!(ctx, matrix, basis, arithmetic)
+    linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic)
     true
 end
 
 function linalg_direct_rref_sparse!(
-    ctx::Context,
-    matrix::MacaulayMatrix,
+        matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
     arithmetic::AbstractArithmetic,
@@ -46,17 +45,16 @@ function linalg_direct_rref_sparse!(
     @log :matrix matrix_string_repr(matrix)
 
     # Produce the RREF of AB
-    linalg_interreduce_matrix_upper_part!(ctx, matrix, basis, arithmetic)
+    linalg_interreduce_matrix_upper_part!(matrix, basis, arithmetic)
     # Use the produced RREF to perform reduction of CD
-    linalg_randomized_reduce_matrix_lower_part!(ctx, matrix, basis, arithmetic, rng)
-    linalg_interreduce_matrix_pivots!(ctx, matrix, basis, arithmetic)
+    linalg_randomized_reduce_matrix_lower_part!(matrix, basis, arithmetic, rng)
+    linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic)
 
     true
 end
 
 function linalg_direct_rref_sparsedense!(
-    ctx::Context,
-    matrix::MacaulayMatrix,
+        matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
     arithmetic::AbstractArithmetic
@@ -68,10 +66,10 @@ function linalg_direct_rref_sparsedense!(
     @log :matrix matrix_string_repr(matrix)
 
     # Produce the RREF of AB
-    linalg_interreduce_matrix_upper_part_sparsedense!(ctx, matrix, basis, arithmetic)
+    linalg_interreduce_matrix_upper_part_sparsedense!(matrix, basis, arithmetic)
     # Use the produced RREF to perform reduction of CD
-    linalg_reduce_matrix_lower_part_sparsedense!(ctx, matrix, basis, arithmetic)
-    linalg_interreduce_matrix_pivots!(ctx, matrix, basis, arithmetic)
+    linalg_reduce_matrix_lower_part_sparsedense!(matrix, basis, arithmetic)
+    linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic)
 
     true
 end
@@ -80,8 +78,7 @@ end
 # Low level
 
 @timeit function linalg_reduce_matrix_lower_part_sparsedense!(
-    ctx::Context,
-    matrix::MacaulayMatrix{CoeffType},
+        matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
@@ -144,8 +141,7 @@ end
 end
 
 @timeit function linalg_interreduce_matrix_upper_part_sparsedense!(
-    ctx::Context,
-    matrix::MacaulayMatrix{CoeffType},
+        matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}

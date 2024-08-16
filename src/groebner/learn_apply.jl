@@ -6,26 +6,29 @@
 ###
 # Learn stage
 
+function groebner_learn0(polynomials, options)
+    ring, monoms, coeffs =
+        io_convert_polynomials_to_ir(polynomials, options)
+    trace, gb_monoms, gb_coeffs = groebner_learn1(ring, monoms, coeffs, options)
+    result = io_convert_ir_to_polynomials(
+        ring, polynomials, gb_monoms, gb_coeffs, options)
+    trace, result
+end
+
 # Proxy function for handling exceptions.
-# NOTE: probably at some point we'd want to merge this with error handling in
-# _groebner. But for now, we keep it simple.
-function _groebner_learn0(polynomials, kws::KeywordArguments)
-    # We try to select an efficient internal polynomial representation, i.e., a
-    # suitable representation of monomials and coefficients.
-    polynomial_repr = io_select_polynomial_representation(polynomials, kws)
+function groebner_learn1(ring::PolyRing, monoms, coeffs, options)
     try
-        # The backend is wrapped in a try/catch to catch exceptions that one can
-        # hope to recover from (and, perhaps, restart the computation with safer
-        # parameters).
-        return _groebner_learn1(polynomials, kws, polynomial_repr)
+        repr = io_select_polynomial_representation(ring, options)
+        params = AlgorithmParameters(ring, repr, options)
+        return _groebner_learn1(ring, monoms, coeffs, params, repr)
     catch err
         if isa(err, MonomialDegreeOverflow)
             @log :info """
             Possible overflow of exponent vector detected. 
-            Restarting with at least $(32) bits per exponent."""
-            polynomial_repr =
-                io_select_polynomial_representation(polynomials, kws, hint=:large_exponents)
-            return _groebner_learn1(polynomials, kws, polynomial_repr)
+            Restarting with at least 32 bits per exponent."""
+            repr = io_select_polynomial_representation(ring, options; large_exponents=true)
+            params = AlgorithmParameters(ring, repr, options)
+            return _groebner_learn1(ring, monoms, coeffs, params, repr)
         else
             # Something bad happened.
             rethrow(err)
@@ -33,39 +36,29 @@ function _groebner_learn0(polynomials, kws::KeywordArguments)
     end
 end
 
-function _groebner_learn1(polynomials, kws, representation)
-    ring, var_to_index, monoms, coeffs =
-        io_convert_to_internal(representation, polynomials, kws)
-    if isempty(monoms)
-        @log :misc "Input consisting of zero polynomials. Error will follow"
-        throw(DomainError("In learn, input consisting of zero polynomials."))
-    end
+function _groebner_learn1(ring, monoms, coeffs, params, repr)
+    ring2, monoms2, coeffs2 = io_convert_ir_to_internal(ring, monoms, coeffs, params, repr)
+    trace, gb_monoms2, gb_coeffs2 = groebner_learn2(ring2, monoms2, coeffs2, params)
+    gb_monoms, gb_coeffs = io_convert_internal_to_ir(ring2, gb_monoms2, gb_coeffs2, params)
 
-    params = AlgorithmParameters(ring, representation, kws)
-    ring, term_sorting_permutations =
-        io_set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
-    term_homogenizing_permutation = Vector{Vector{Int}}()
+    trace.representation = repr
 
+    WrappedTraceF4(trace), gb_monoms, gb_coeffs
+end
+
+function groebner_learn2(ring, monoms, coeffs, params)
     if params.homogenize
-        term_homogenizing_permutation, ring, monoms, coeffs =
-            homogenize_generators!(ring, monoms, coeffs, params)
+        _, ring, monoms, coeffs = homogenize_generators!(ring, monoms, coeffs, params)
     end
 
     trace, gb_monoms, gb_coeffs = _groebner_learn2(ring, monoms, coeffs, params)
 
     if params.homogenize
-        trace.term_homogenizing_permutations = term_homogenizing_permutation
         ring, gb_monoms, gb_coeffs =
-            dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
+            dehomogenize_generators!(ring, gbmonoms, gbcoeffs, params)
     end
-    trace.representation = representation
-    trace.term_sorting_permutations = term_sorting_permutations
-    @log :all """Sorting permutations:
-    Terms: $(term_sorting_permutations)
-    Polynomials: $(trace.input_permutation)"""
 
-    WrappedTraceF4(trace),
-    io_convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
+    trace, gb_monoms, gb_coeffs
 end
 
 function _groebner_learn2(
@@ -75,12 +68,11 @@ function _groebner_learn2(
     params
 ) where {C <: CoeffZp}
     @log :misc "Groebner learn phase over Z_p"
-    ctx = ctx_initialize()
     # Initialize F4 structs
     trace, basis, pairset, hashtable =
-        f4_initialize_structs_with_trace(ctx, ring, monoms, coeffs, params)
+        f4_initialize_structs_with_trace(ring, monoms, coeffs, params)
     @log :all "Before F4:" basis
-    f4_learn!(ctx, trace, ring, trace.gb_basis, pairset, hashtable, params)
+    f4_learn!(trace, ring, trace.gb_basis, pairset, hashtable, params)
     @log :all "After F4:" basis
     gb_monoms, gb_coeffs = basis_export_data(trace.gb_basis, trace.hashtable)
     trace, gb_monoms, gb_coeffs
@@ -90,7 +82,7 @@ end
 # Apply stage
 
 # Specialization for a single input
-function _groebner_apply0!(
+function groebner_apply0!(
     wrapped_trace::WrappedTraceF4,
     polynomials::AbstractVector,
     kws::KeywordArguments
@@ -98,7 +90,7 @@ function _groebner_apply0!(
     trace = get_trace!(wrapped_trace, polynomials, kws)
     @log :debug "Selected trace" trace.representation.coefftype
 
-    flag, ring = extract_coeffs_raw!(trace, trace.representation, polynomials, kws)
+    flag, ring = io_extract_coeffs_raw!(trace, trace.representation, polynomials, kws)
     !flag && return (flag, polynomials)
 
     # TODO: this is a bit hacky
@@ -110,7 +102,7 @@ function _groebner_apply0!(
     )
     ring = PolyRing(trace.ring.nvars, trace.ring.ord, ring.ch)
 
-    flag, gb_monoms, gb_coeffs = _groebner_apply1!(ring, trace, params)
+    flag, gb_monoms, gb_coeffs = groebner_apply1!(ring, trace, params)
 
     !flag && return (flag, polynomials)
 
@@ -121,8 +113,9 @@ function _groebner_apply0!(
 
     flag, io_convert_to_output(ring, polynomials, gb_monoms, gb_coeffs, params)
 end
+
 # Specialization for a batch of several inputs
-function _groebner_apply0!(
+function groebner_apply0!(
     wrapped_trace::WrappedTraceF4,
     batch::NTuple{N, T},
     kws::KeywordArguments
@@ -130,7 +123,7 @@ function _groebner_apply0!(
     trace = get_trace!(wrapped_trace, batch, kws)
     @log :debug "Selected trace" trace.representation.coefftype
 
-    flag, ring = io_extract_coeffs_raw_batched!(trace, trace.representation, batch, kws)
+    flag, ring = io_io_extract_coeffs_raw_batched!(trace, trace.representation, batch, kws)
     !flag && return flag, batch
 
     # TODO: this is a bit hacky
@@ -142,7 +135,7 @@ function _groebner_apply0!(
     )
     ring = PolyRing(trace.ring.nvars, trace.ring.ord, ring.ch)
 
-    flag, gb_monoms, gb_coeffs = _groebner_apply1!(ring, trace, params)
+    flag, gb_monoms, gb_coeffs = groebner_apply1!(ring, trace, params)
 
     !flag && return flag, batch
 
@@ -154,12 +147,11 @@ function _groebner_apply0!(
     flag, io_convert_to_output_batched(ring, batch, gb_monoms, gb_coeffs, params)
 end
 
-function _groebner_apply1!(ring, trace, params)
+function groebner_apply1!(ring, trace, params)
     @log :misc "Groebner Apply phase"
     @log :misc "Applying modulo $(ring.ch)"
 
-    ctx = ctx_initialize()
-    flag = f4_apply!(ctx, trace, ring, trace.buf_basis, params)
+    flag = f4_apply!(trace, ring, trace.buf_basis, params)
 
     gb_monoms, gb_coeffs = basis_export_data(trace.gb_basis, trace.hashtable)
 
@@ -197,7 +189,7 @@ function groebner_applyX!(
     trace = get_trace!(wrapped_trace, modulo, kws)
     @log :debug "Selected trace" trace.representation.coefftype
 
-    flag, ring = extract_coeffs_raw_X!(trace, trace.representation, coeffs_zp, modulo, kws)
+    flag, ring = io_extract_coeffs_raw_X!(trace, trace.representation, coeffs_zp, modulo, kws)
     !flag && return (flag, coeffs_zp)
 
     # TODO: this is a bit hacky

@@ -122,8 +122,7 @@ function common_denominator(coeffs::Vector{T}) where {T <: CoeffQQ}
 end
 
 function _clear_denominators!(
-    ctx::Context,
-    buffer::CoefficientBuffer,
+        buffer::CoefficientBuffer,
     coeffs_qq::Vector{Vector{T}}
 ) where {T <: CoeffQQ}
     coeffs_zz = [[BigInt(0) for _ in 1:length(c)] for c in coeffs_qq]
@@ -141,14 +140,13 @@ function _clear_denominators!(
 end
 
 function clear_denominators!(
-    ctx::Context,
-    buffer::CoefficientBuffer,
+        buffer::CoefficientBuffer,
     basis::Basis{T};
     deepcopy=false
 ) where {T <: CoeffQQ}
-    coeffs_zz = _clear_denominators!(ctx, buffer, basis.coeffs)
+    coeffs_zz = _clear_denominators!(buffer, basis.coeffs)
     if deepcopy
-        basis_deep_copy_with_new_coeffs(ctx, basis, coeffs_zz)
+        basis_deep_copy_with_new_coeffs(basis, coeffs_zz)
     else
         basis_shallow_copy_with_new_coeffs(basis, coeffs_zz)
     end
@@ -190,8 +188,7 @@ function reduce_modulo_p!(
 end
 
 function reduce_modulo_p!(
-    ctx::Context,
-    coeffbuff::CoefficientBuffer,
+        coeffbuff::CoefficientBuffer,
     ring::PolyRing,
     coeffs_zz::Vector{Vector{T1}},
     prime::T2
@@ -202,16 +199,15 @@ function reduce_modulo_p!(
 end
 
 function reduce_modulo_p!(
-    ctx::Context,
-    buffer::CoefficientBuffer,
+        buffer::CoefficientBuffer,
     ring::PolyRing,
     basis::Basis{T1},
     prime::T2;
     deepcopy=true
 ) where {T1 <: CoeffZZ, T2 <: CoeffZp}
-    ring_ff, coeffs_ff = reduce_modulo_p!(ctx, buffer, ring, basis.coeffs, prime)
+    ring_ff, coeffs_ff = reduce_modulo_p!(buffer, ring, basis.coeffs, prime)
     new_basis = if deepcopy
-        basis_deep_copy_with_new_coeffs(ctx, basis, coeffs_ff)
+        basis_deep_copy_with_new_coeffs(basis, coeffs_ff)
     else
         basis_shallow_copy_with_new_coeffs(basis, coeffs_ff)
     end
@@ -219,8 +215,7 @@ function reduce_modulo_p!(
 end
 
 function reduce_modulo_p_in_batch!(
-    ctx::Context,
-    coeffbuff::CoefficientBuffer,
+        coeffbuff::CoefficientBuffer,
     ring::PolyRing,
     basis::Basis{C},
     prime_xn::NTuple{N, T}
@@ -248,7 +243,7 @@ function reduce_modulo_p_in_batch!(
         end
     end
     ring_ff_4x = PolyRing(ring.nvars, ring.ord, CompositeNumber{N, T}(prime_xn))
-    basis_ff_4x = basis_deep_copy_with_new_coeffs(ctx, basis, coeffs_ff_xn)
+    basis_ff_4x = basis_deep_copy_with_new_coeffs(basis, coeffs_ff_xn)
 
     ring_ff_4x, basis_ff_4x
 end

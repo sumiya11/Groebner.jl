@@ -15,7 +15,7 @@ function _normalform0(polynomials, to_be_reduced, kws::KeywordArguments)
     ring_to_be_reduced, var_to_index2, monoms_to_be_reduced, coeffs_to_be_reduced =
         io_convert_to_internal(polynomial_repr, to_be_reduced, kws, dropzeros=false)
     var_to_index = merge(var_to_index1, var_to_index2)
-    nonzero_indices = findall(!iszero_coeffs, coeffs_to_be_reduced)
+    nonzero_indices = findall(!io_iszero_coeffs, coeffs_to_be_reduced)
     if isempty(nonzero_indices)
         @log :misc "Polynomials to be reduced are all zero."
         return to_be_reduced
@@ -77,11 +77,9 @@ end
     params
 ) where {M <: Monom, C <: Coeff}
     @log :debug "Initializing structs for F4"
-    ctx = ctx_initialize()
-    basis, _, hashtable = f4_initialize_structs(ctx, ring, monoms, coeffs, params)
+    basis, _, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
     tobereduced = basis_initialize_using_existing_hashtable(
-        ctx,
-        ring,
+                ring,
         monoms_to_be_reduced,
         coeffs_to_be_reduced,
         hashtable
@@ -91,6 +89,6 @@ end
       Basis: $basis
       To be reduced: $tobereduced
       """
-    f4_normalform!(ctx, ring, basis, tobereduced, hashtable, params.arithmetic)
+    f4_normalform!(ring, basis, tobereduced, hashtable, params.arithmetic)
     basis_export_data(tobereduced, hashtable)
 end

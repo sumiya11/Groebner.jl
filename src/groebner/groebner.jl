@@ -3,25 +3,29 @@
 ### 
 # Backend for `groebner`
 
+function groebner0(polynomials, options)
+    ring, monoms, coeffs =
+        io_convert_polynomials_to_ir(polynomials, options)
+    gb_monoms, gb_coeffs = groebner1(ring, monoms, coeffs, options)
+    result = io_convert_ir_to_polynomials(
+        ring, polynomials, gb_monoms, gb_coeffs, options)
+    result
+end
+
 # Proxy function for handling exceptions.
-function _groebner0(polynomials, kws::KeywordArguments)
-    ctx = ctx_initialize()
-    # We try to select an efficient internal polynomial representation, i.e., a
-    # suitable representation of monomials and coefficients.
-    polynomial_repr = io_select_polynomial_representation(polynomials, kws)
+function groebner1(ring::PolyRing, monoms, coeffs, options)
     try
-        # The backend is wrapped in a try/catch to catch exceptions that one can
-        # hope to recover from (and, perhaps, restart the computation with safer
-        # parameters).
-        return _groebner1(ctx, polynomials, kws, polynomial_repr)
+        repr = io_select_polynomial_representation(ring, options)
+        params = AlgorithmParameters(ring, repr, options)
+        return _groebner1(ring, monoms, coeffs, params, repr)
     catch err
         if isa(err, MonomialDegreeOverflow)
             @log :info """
             Possible overflow of exponent vector detected. 
-            Restarting with at least $(32) bits per exponent."""
-            polynomial_repr =
-                io_select_polynomial_representation(polynomials, kws, hint=:large_exponents)
-            return _groebner1(ctx, polynomials, kws, polynomial_repr)
+            Restarting with at least 32 bits per exponent."""
+            repr = io_select_polynomial_representation(ring, options; large_exponents=true)
+            params = AlgorithmParameters(ring, repr, options)
+            return _groebner1(ring, monoms, coeffs, params, repr)
         else
             # Something bad happened.
             rethrow(err)
@@ -29,62 +33,40 @@ function _groebner0(polynomials, kws::KeywordArguments)
     end
 end
 
-function _groebner1(ctx::Context, polynomials, kws::KeywordArguments, representation)
-    # Extract ring information, exponents, and coefficients from input
-    # polynomials. Convert these to an internal polynomial representation. 
-    # NOTE: This must copy the input, so that input `polynomials` is never
-    # modified.
-    # NOTE: The body of this function is type-unstable (by design)
-    ring, var_to_index, monoms, coeffs =
-        io_convert_to_internal(representation, polynomials, kws)
+function _groebner1(ring, monoms, coeffs, params, repr)
+    ring2, monoms2, coeffs2 = io_convert_ir_to_internal(ring, monoms, coeffs, params, repr)
+    gb_monoms2, gb_coeffs2 = groebner2(ring2, monoms2, coeffs2, params)
+    gb_monoms, gb_coeffs = io_convert_internal_to_ir(ring2, gb_monoms2, gb_coeffs2, params)
+    gb_monoms, gb_coeffs
+end
 
-    # Check and set parameters and monomial ordering
-    params = AlgorithmParameters(ring, representation, kws)
-    ring, _ = io_set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
-
-    # Fast path for the input of zeros
-    if isempty(monoms)
-        @log :misc "Input consisting of zero polynomials. Returning zero."
-        return io_convert_to_output(ring, polynomials, monoms, coeffs, params)
-    end
-
+function groebner2(ring, monoms, coeffs, params)
     if params.homogenize
-        # this also performs saturation w.r.t. the homogenizing variable
         _, ring, monoms, coeffs = homogenize_generators!(ring, monoms, coeffs, params)
     end
 
-    # Compute a groebner basis!
-    gbmonoms, gbcoeffs = _groebner2(ctx, ring, monoms, coeffs, params)
+    gb_monoms, gb_coeffs = _groebner2(ring, monoms, coeffs, params)
 
     if params.homogenize
-        ring, gbmonoms, gbcoeffs =
+        ring, gb_monoms, gb_coeffs =
             dehomogenize_generators!(ring, gbmonoms, gbcoeffs, params)
     end
 
-    # Convert result back to the representation of input
-    basis = io_convert_to_output(ring, polynomials, gbmonoms, gbcoeffs, params)
-
-    basis
+    gb_monoms, gb_coeffs
 end
 
 ###
-# Groebner basis over Z_p.
-# Just calls f4 directly.
+# Groebner basis over Z_p. Calls F4 directly.
 
 @timeit function _groebner2(
-    ctx::Context,
-    ring::PolyRing,
+        ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffZp}
-    # NOTE: we can mutate ring, monoms, and coeffs here.
     @log :misc "Backend: F4 over Z_$(ring.ch)"
-    # NOTE: the sorting of input polynomials is not deterministic across
-    # different Julia versions when sorting only w.r.t. the leading term
-    basis, pairset, hashtable = f4_initialize_structs(ctx, ring, monoms, coeffs, params)
-    f4!(ctx, ring, basis, pairset, hashtable, params)
-    # Extract monomials and coefficients from basis and hashtable
+    basis, pairset, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
+    f4!(ring, basis, pairset, hashtable, params)
     gbmonoms, gbcoeffs = basis_export_data(basis, hashtable)
     gbmonoms, gbcoeffs
 end
@@ -94,21 +76,20 @@ end
 
 # GB over the rationals uses modular computation.
 @timeit function _groebner2(
-    ctx::Context,
-    ring::PolyRing,
+        ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
     if params.modular_strategy === :learn_and_apply
         if params.threaded_multimodular === :yes && nthreads() > 1
-            _groebner_learn_and_apply_threaded(ctx, ring, monoms, coeffs, params)
+            _groebner_learn_and_apply_threaded(ring, monoms, coeffs, params)
         else
-            _groebner_learn_and_apply(ctx, ring, monoms, coeffs, params)
+            _groebner_learn_and_apply(ring, monoms, coeffs, params)
         end
     else
         @assert params.modular_strategy === :classic_modular
-        _groebner_classic_modular(ctx, ring, monoms, coeffs, params)
+        _groebner_classic_modular(ring, monoms, coeffs, params)
     end
 end
 
@@ -134,25 +115,23 @@ function get_next_batchsize(
 end
 
 function _groebner_learn_and_apply(
-    ctx::Context,
-    ring::PolyRing,
+        ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
-    # NOTE: we can mutate ring, monoms, and coeffs here.
     @log :misc "Backend: learn & apply multi-modular F4"
 
     # Initialize supporting structs
     state = GroebnerState{BigInt, C, Int32}(params)
     basis, pairset, hashtable, permutation =
-        f4_initialize_structs(ctx, ring, monoms, coeffs, params, make_monic=false)
+        f4_initialize_structs(ring, monoms, coeffs, params, make_monic=false)
 
     # Scale the input coefficients to integers to maybe speed up the subsequent
     # search for lucky primes
     @log :all "Input polynomials" basis
     @log :debug "Clearing the denominators of the input polynomials"
-    basis_zz = clear_denominators!(ctx, state.buffer, basis, deepcopy=false)
+    basis_zz = clear_denominators!(state.buffer, basis, deepcopy=false)
     @log :all "Integer coefficients are" basis_zz.coeffs
 
     # Handler for lucky primes
@@ -163,15 +142,14 @@ function _groebner_learn_and_apply(
 
     # Perform reduction modulo prime and store result in basis_ff
     ring_ff, basis_ff =
-        reduce_modulo_p!(ctx, state.buffer, ring, basis_zz, prime, deepcopy=true)
+        reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
     @log :all "Reduced coefficients are" basis_ff.coeffs
 
     @log :all "Before F4" basis_ff
     params_zp = params_mod_p(params, prime)
     trace = trace_initialize(
-        ctx,
-        ring_ff,
-        basis_deepcopy(ctx, basis_ff),
+                ring_ff,
+        basis_deepcopy(basis_ff),
         basis_ff,
         hashtable,
         permutation,
@@ -179,7 +157,7 @@ function _groebner_learn_and_apply(
     )
 
     @log :misc "Learning..."
-    f4_learn!(ctx, trace, ring_ff, trace.gb_basis, pairset, hashtable, params_zp)
+    f4_learn!(trace, ring_ff, trace.gb_basis, pairset, hashtable, params_zp)
     @log :all "After F4:" trace.gb_basis
 
     # TODO: no need to deepcopy!
@@ -198,7 +176,7 @@ function _groebner_learn_and_apply(
     if success_reconstruct
         @log :misc "Verifying the correctness of reconstruction"
         correct_basis = correctness_check!(
-            ctx,
+
             state,
             luckyprimes,
             ring_ff,
@@ -250,7 +228,7 @@ function _groebner_learn_and_apply(
 
                 # Perform reduction modulo primes and store result in basis_ff_4x
                 ring_ff_4x, basis_ff_4x =
-                    reduce_modulo_p_in_batch!(ctx, state.buffer, ring, basis_zz, prime_4x)
+                    reduce_modulo_p_in_batch!(state.buffer, ring, basis_zz, prime_4x)
                 params_zp_4x = params_mod_p(
                     params,
                     CompositeNumber{4, Int32}(prime_4x),
@@ -259,7 +237,7 @@ function _groebner_learn_and_apply(
                 trace_4x.buf_basis = basis_ff_4x
                 trace_4x.ring = ring_ff_4x
 
-                f4_apply!(ctx, trace_4x, ring_ff_4x, trace_4x.buf_basis, params_zp_4x)
+                f4_apply!(trace_4x, ring_ff_4x, trace_4x.buf_basis, params_zp_4x)
                 gb_coeffs_1, gb_coeffs_2, gb_coeffs_3, gb_coeffs_4 =
                     io_unpack_composite_coefficients(trace_4x.gb_basis.coeffs)
 
@@ -277,7 +255,7 @@ function _groebner_learn_and_apply(
 
                 # Perform reduction modulo prime and store result in basis_ff
                 ring_ff, basis_ff = reduce_modulo_p!(
-                    ctx,
+        
                     state.buffer,
                     ring,
                     basis_zz,
@@ -289,7 +267,7 @@ function _groebner_learn_and_apply(
                 trace.buf_basis = basis_ff
                 trace.ring = ring_ff
 
-                f4_apply!(ctx, trace, ring_ff, trace.buf_basis, params_zp)
+                f4_apply!(trace, ring_ff, trace.buf_basis, params_zp)
 
                 push!(state.gb_coeffs_ff_all, deepcopy(trace.gb_basis.coeffs))
 
@@ -350,7 +328,7 @@ function _groebner_learn_and_apply(
         end
 
         correct_basis = correctness_check!(
-            ctx,
+
             state,
             luckyprimes,
             ring_ff,
@@ -381,13 +359,11 @@ end
 # Threaded Learn & Apply startegy
 
 function _groebner_learn_and_apply_threaded(
-    ctx::Context,
-    ring::PolyRing,
+        ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
-    # NOTE: we can mutate ring, monoms, and coeffs here.
     @log :misc "Backend: threaded learn & apply multi-modular F4"
     if nthreads() == 1
         @log :info "Using threaded backend with nthreads() == 1, how did we end up here?"
@@ -396,13 +372,13 @@ function _groebner_learn_and_apply_threaded(
     # Initialize supporting structs
     state = GroebnerState{BigInt, C, Int32}(params)
     basis, pairset, hashtable, permutation =
-        f4_initialize_structs(ctx, ring, monoms, coeffs, params, make_monic=false)
+        f4_initialize_structs(ring, monoms, coeffs, params, make_monic=false)
 
     # Scale the input coefficients to integers to speed up the subsequent search
     # for lucky primes
     @log :all "Input polynomials" basis
     @log :misc "Clearing the denominators of the input polynomials"
-    basis_zz = clear_denominators!(ctx, state.buffer, basis, deepcopy=false)
+    basis_zz = clear_denominators!(state.buffer, basis, deepcopy=false)
     @log :all "Integer coefficients are" basis_zz.coeffs
 
     # Handler for lucky primes
@@ -413,15 +389,14 @@ function _groebner_learn_and_apply_threaded(
 
     # Perform reduction modulo prime and store result in basis_ff
     ring_ff, basis_ff =
-        reduce_modulo_p!(ctx, state.buffer, ring, basis_zz, prime, deepcopy=true)
+        reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
     @log :all "Reduced coefficients are" basis_ff.coeffs
 
     @log :all "Before F4" basis_ff
     params_zp = params_mod_p(params, prime)
     trace = trace_initialize(
-        ctx,
-        ring_ff,
-        basis_deepcopy(ctx, basis_ff),
+                ring_ff,
+        basis_deepcopy(basis_ff),
         basis_ff,
         hashtable,
         permutation,
@@ -429,7 +404,7 @@ function _groebner_learn_and_apply_threaded(
     )
 
     @log :misc "Learning..."
-    f4_learn!(ctx, trace, ring_ff, trace.gb_basis, pairset, hashtable, params_zp)
+    f4_learn!(trace, ring_ff, trace.gb_basis, pairset, hashtable, params_zp)
     @log :all "After F4:" trace.gb_basis
 
     # TODO: no need to deepcopy!
@@ -448,7 +423,7 @@ function _groebner_learn_and_apply_threaded(
     if success_reconstruct
         @log :misc "Verifying the correctness of reconstruction"
         correct_basis = correctness_check!(
-            ctx,
+
             state,
             luckyprimes,
             ring_ff,
@@ -520,7 +495,6 @@ function _groebner_learn_and_apply_threaded(
             threadlocal_ctx = threadbuf_ctx[t_id]
 
             ring_ff_4x, basis_ff_4x = reduce_modulo_p_in_batch!(
-                threadlocal_ctx,
                 threadlocal_bigint_buffer,  # is modified
                 ring,                       # is not modified
                 basis_zz,                   # is not modified
@@ -535,7 +509,6 @@ function _groebner_learn_and_apply_threaded(
             threadlocal_trace_4x.ring = ring_ff_4x
 
             f4_apply!(
-                threadlocal_ctx,
                 threadlocal_trace_4x,
                 ring_ff_4x,
                 threadlocal_trace_4x.buf_basis,
@@ -609,7 +582,7 @@ function _groebner_learn_and_apply_threaded(
         end
 
         correct_basis = correctness_check!(
-            ctx,
+
             state,
             luckyprimes,
             ring_ff,
@@ -640,8 +613,7 @@ end
 # Classic multi-modular strategy
 
 function _groebner_classic_modular(
-    ctx::Context,
-    ring::PolyRing,
+        ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters
@@ -653,13 +625,13 @@ function _groebner_classic_modular(
     state = GroebnerState{BigInt, C, CoeffModular}(params)
     # Initialize F4 structs
     basis, pairset, hashtable =
-        f4_initialize_structs(ctx, ring, monoms, coeffs, params, make_monic=false)
+        f4_initialize_structs(ring, monoms, coeffs, params, make_monic=false)
 
     # Scale the input coefficients to integers to speed up the subsequent search
     # for lucky primes
     @log :all "Input polynomials" basis
     @log :misc "Clearing the denominators of the input polynomials"
-    basis_zz = clear_denominators!(ctx, state.buffer, basis, deepcopy=false)
+    basis_zz = clear_denominators!(state.buffer, basis, deepcopy=false)
     @log :all "Integer coefficients are" basis_zz.coeffs
 
     # Handler for lucky primes
@@ -670,12 +642,12 @@ function _groebner_classic_modular(
 
     # Perform reduction modulo prime and store result in basis_ff
     ring_ff, basis_ff =
-        reduce_modulo_p!(ctx, state.buffer, ring, basis_zz, prime, deepcopy=true)
+        reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
     @log :all "Reduced coefficients are" basis_ff.coeffs
 
     @log :all "Before F4" basis_ff
     params_zp = params_mod_p(params, prime)
-    f4!(ctx, ring_ff, basis_ff, pairset, hashtable, params_zp)
+    f4!(ring_ff, basis_ff, pairset, hashtable, params_zp)
     @log :all "After F4:" basis_ff
     # NOTE: basis_ff may not own its coefficients, one should not mutate it
     # directly further in the code
@@ -695,7 +667,7 @@ function _groebner_classic_modular(
     if success_reconstruct
         @log :misc "Verifying the correctness of reconstruction"
         correct_basis = correctness_check!(
-            ctx,
+
             state,
             luckyprimes,
             ring_ff,
@@ -743,10 +715,10 @@ function _groebner_classic_modular(
 
             # Perform reduction modulo prime and store result in basis_ff
             ring_ff, basis_ff =
-                reduce_modulo_p!(ctx, state.buffer, ring, basis_zz, prime, deepcopy=true)
+                reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
             params_zp = params_mod_p(params, prime)
 
-            f4!(ctx, ring_ff, basis_ff, pairset, hashtable, params_zp)
+            f4!(ring_ff, basis_ff, pairset, hashtable, params_zp)
 
             push!(state.gb_coeffs_ff_all, basis_ff.coeffs)
 
@@ -805,7 +777,7 @@ function _groebner_classic_modular(
         end
 
         correct_basis = correctness_check!(
-            ctx,
+
             state,
             luckyprimes,
             ring_ff,

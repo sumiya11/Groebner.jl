@@ -9,8 +9,7 @@
 # High level
 
 function linalg_randomized_sparse_threaded!(
-    ctx::Context,
-    matrix::MacaulayMatrix,
+        matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
     arithmetic::AbstractArithmetic,
@@ -25,7 +24,7 @@ function linalg_randomized_sparse_threaded!(
     # Reduce CD with AB
     if true
         linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
-            ctx,
+
             matrix,
             basis,
             arithmetic,
@@ -33,7 +32,7 @@ function linalg_randomized_sparse_threaded!(
         )
     else
         linalg_randomized_reduce_matrix_lower_part_threaded_cas_fair!(
-            ctx,
+
             matrix,
             basis,
             arithmetic,
@@ -41,7 +40,7 @@ function linalg_randomized_sparse_threaded!(
         )
     end
     # Interreduce CD
-    linalg_interreduce_matrix_pivots!(ctx, matrix, basis, arithmetic)
+    linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic)
     true
 end
 
@@ -50,8 +49,7 @@ end
 
 # This function is incorrect.
 function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
-    ctx::Context,
-    matrix::MacaulayMatrix{CoeffType},
+        matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType},
     rng::AbstractRNG

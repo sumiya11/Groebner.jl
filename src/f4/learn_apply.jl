@@ -12,8 +12,7 @@
 
 # Same as f4_initialize_structs, but also initializes a trace
 function f4_initialize_structs_with_trace(
-    ctx::Context,
-    ring::PolyRing,
+        ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters;
@@ -21,8 +20,7 @@ function f4_initialize_structs_with_trace(
     sort_input=true
 ) where {M <: Monom, C <: Coeff}
     basis, pairset, hashtable, permutation = f4_initialize_structs(
-        ctx,
-        ring,
+                ring,
         monoms,
         coeffs,
         params,
@@ -31,9 +29,8 @@ function f4_initialize_structs_with_trace(
     )
 
     trace = trace_initialize(
-        ctx,
-        ring,
-        basis_deepcopy(ctx, basis),
+                ring,
+        basis_deepcopy(basis),
         basis,
         hashtable,
         permutation,
@@ -84,8 +81,7 @@ function matrix_compute_pivot_signature(pivots::Vector{Vector{MonomId}}, from::I
 end
 
 function reduction_learn!(
-    ctx::Context,
-    trace::TraceF4,
+        trace::TraceF4,
     basis::Basis,
     matrix::MacaulayMatrix,
     hashtable::MonomialHashtable,
@@ -93,10 +89,9 @@ function reduction_learn!(
     params::AlgorithmParameters
 )
     matrix_fill_column_to_monom_map!(matrix, symbol_ht)
-    linalg_main!(ctx, matrix, basis, params, trace, linalg=LinearAlgebra(:learn, :sparse))
+    linalg_main!(matrix, basis, params, trace, linalg=LinearAlgebra(:learn, :sparse))
     matrix_convert_rows_to_basis_elements!(
-        ctx,
-        matrix,
+                matrix,
         basis,
         hashtable,
         symbol_ht,
@@ -112,8 +107,7 @@ function reduction_learn!(
 end
 
 function f4_reducegb_learn!(
-    ctx::Context,
-    trace::TraceF4,
+        trace::TraceF4,
     ring::PolyRing,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -132,7 +126,7 @@ function f4_reducegb_learn!(
     @inbounds for i in 1:(basis.nnonredundant) #
         row_idx = matrix.nrows_filled_upper += 1
         uprows[row_idx] = matrix_polynomial_multiple_to_row!(
-            ctx,
+
             matrix,
             symbol_ht,
             ht,
@@ -155,7 +149,7 @@ function f4_reducegb_learn!(
 
     # @info "" matrix.nrows_filled_upper
 
-    f4_symbolic_preprocessing!(ctx, basis, matrix, ht, symbol_ht)
+    f4_symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
     # set all pivots to unknown
     @inbounds for i in (symbol_ht.offset):(symbol_ht.load)
         hv = symbol_ht.hashdata[i]
@@ -167,15 +161,14 @@ function f4_reducegb_learn!(
     # @info "" matrix.nrows_filled_upper
 
     linalg_autoreduce!(
-        ctx,
-        matrix,
+                matrix,
         basis,
         params,
         trace,
         linalg=LinearAlgebra(:learn, :sparse)
     )
 
-    matrix_convert_rows_to_basis_elements!(ctx, matrix, basis, ht, symbol_ht, params)
+    matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht, params)
 
     # println(basis.nnonredundant)
     # println(basis.nprocessed)
@@ -215,8 +208,7 @@ function f4_reducegb_learn!(
 end
 
 @timeit function f4_learn!(
-    ctx::Context,
-    trace::TraceF4,
+        trace::TraceF4,
     ring::PolyRing,
     basis::Basis{C},
     pairset::Pairset,
@@ -241,7 +233,7 @@ end
 
     # add the first batch of critical pairs to the pairset
     @log :debug "Processing initial polynomials, generating first critical pairs"
-    pairset_size = f4_update!(ctx, pairset, basis, hashtable, update_ht)
+    pairset_size = f4_update!(pairset, basis, hashtable, update_ht)
     @log :debug "Out of $(basis.nfilled) polynomials, $(basis.nprocessed) are non-redundant"
     @log :debug "Generated $(pairset.load) critical pairs"
 
@@ -253,7 +245,7 @@ end
         @log :debug "F4: available $(pairset.load) pairs"
 
         degree_i, npairs_i = f4_select_critical_pairs!(
-            ctx,
+
             pairset,
             basis,
             matrix,
@@ -263,15 +255,15 @@ end
         )
         push!(trace.critical_pair_sequence, (degree_i, npairs_i))
 
-        f4_symbolic_preprocessing!(ctx, basis, matrix, hashtable, symbol_ht)
+        f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
 
         # reduces polys and obtains new potential basis elements
-        reduction_learn!(ctx, trace, basis, matrix, hashtable, symbol_ht, params)
+        reduction_learn!(trace, basis, matrix, hashtable, symbol_ht, params)
 
         # update the current basis with polynomials produced from reduction,
         # does not copy,
         # checks for redundancy
-        pairset_size = f4_update!(ctx, pairset, basis, hashtable, update_ht)
+        pairset_size = f4_update!(pairset, basis, hashtable, update_ht)
 
         # clear symbolic hashtable
         # clear matrix
@@ -298,7 +290,7 @@ end
 
     if params.reduced
         @log :debug "Autoreducing the final basis.."
-        f4_reducegb_learn!(ctx, trace, ring, basis, matrix, hashtable, symbol_ht, params)
+        f4_reducegb_learn!(trace, ring, basis, matrix, hashtable, symbol_ht, params)
     end
 
     @log :debug "Finalizing computation trace"
@@ -368,8 +360,7 @@ function matrix_fill_column_to_monom_map!(
 end
 
 function f4_reduction_apply!(
-    ctx::Context,
-    trace::TraceF4,
+        trace::TraceF4,
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
@@ -394,8 +385,7 @@ function f4_reduction_apply!(
     end
 
     flag = linalg_main!(
-        ctx,
-        matrix,
+                matrix,
         basis,
         params,
         trace,
@@ -406,7 +396,7 @@ function f4_reduction_apply!(
         return (false, false)
     end
 
-    matrix_convert_rows_to_basis_elements!(ctx, matrix, basis, ht, symbol_ht, params)
+    matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht, params)
 
     # Check that the leading terms were not reduced to zero accidentally
     pivot_indices = trace.matrix_pivot_indices[f4_iteration]
@@ -438,8 +428,7 @@ function f4_reduction_apply!(
 end
 
 function f4_symbolic_preprocessing!(
-    ctx::Context,
-    trace::TraceF4,
+        trace::TraceF4,
     f4_iteration::Int,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -472,7 +461,7 @@ function f4_symbolic_preprocessing!(
         rpoly = basis.monoms[poly_idx]
 
         matrix.lower_rows[i] = matrix_polynomial_multiple_to_row!(
-            ctx,
+
             matrix,
             symbol_ht,
             hashtable,
@@ -500,7 +489,7 @@ function f4_symbolic_preprocessing!(
         rpoly = basis.monoms[poly_idx]
 
         matrix.upper_rows[i] = matrix_polynomial_multiple_to_row!(
-            ctx,
+
             matrix,
             symbol_ht,
             hashtable,
@@ -533,8 +522,7 @@ function f4_symbolic_preprocessing!(
 end
 
 function f4_autoreduce_apply!(
-    ctx::Context,
-    trace::TraceF4,
+        trace::TraceF4,
     basis::Basis,
     matrix::MacaulayMatrix,
     hashtable::MonomialHashtable{M},
@@ -582,7 +570,7 @@ function f4_autoreduce_apply!(
 
         # vidx = hashtable_insert!(symbol_ht, etmp)
         matrix.upper_rows[i] = matrix_polynomial_multiple_to_row!(
-            ctx,
+
             matrix,
             symbol_ht,
             hashtable,
@@ -617,8 +605,7 @@ function f4_autoreduce_apply!(
     end
 
     flag = linalg_autoreduce!(
-        ctx,
-        matrix,
+                matrix,
         basis,
         params,
         linalg=LinearAlgebra(:apply, :sparse)
@@ -627,7 +614,7 @@ function f4_autoreduce_apply!(
         @log :warn "In apply, the final autoreduction of the basis failed"
         return false
     end
-    matrix_convert_rows_to_basis_elements!(ctx, matrix, basis, hashtable, symbol_ht, params)
+    matrix_convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht, params)
 
     basis.nfilled = matrix.npivots + basis.nprocessed
     basis.nprocessed = matrix.npivots
@@ -659,8 +646,7 @@ function f4_standardize_basis_in_apply!(ring::PolyRing, trace::TraceF4, arithmet
 end
 
 @timeit function f4_apply!(
-    ctx::Context,
-    trace::TraceF4,
+        trace::TraceF4,
     ring::PolyRing,
     basis::Basis{C},
     params::AlgorithmParameters
@@ -690,10 +676,10 @@ end
         iters += 1
         @log :debug "F4 Apply iteration $iters"
 
-        f4_symbolic_preprocessing!(ctx, trace, iters, basis, matrix, hashtable, symbol_ht)
+        f4_symbolic_preprocessing!(trace, iters, basis, matrix, hashtable, symbol_ht)
 
         flag, new_cache_column_order = f4_reduction_apply!(
-            ctx,
+
             trace,
             basis,
             matrix,
@@ -722,7 +708,7 @@ end
         @log :debug "Autoreducing the final basis.."
         symbol_ht = hashtable_initialize_secondary(hashtable)
         flag = f4_autoreduce_apply!(
-            ctx,
+
             trace,
             basis,
             matrix,

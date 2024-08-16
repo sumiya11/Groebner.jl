@@ -1,97 +1,157 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
 ###
-# Input-output conversions of polynomials.
+# Input-output conversion of polynomials.
 
 # Our conventions on some edge cases:
 # - Trying to compute a Groebner basis of an empty set is an error.
 # - The Groebner basis of [0] is [0].
 # - The Groebner basis of [f1,...,fn, 0] is the Groebner basis of [f1...fn]
 
-# NOTE: Polynomials from frontend packages, such as AbstractAlgebra.jl and
+# Polynomials from frontend packages, such as AbstractAlgebra.jl and
 # DynamicPolynomials.jl, may not support some of the orderings supported by
 # Groebner.jl. We compute the basis in the requested ordering in Groebner.jl,
 # and then order the terms in the output according to the ordering of the input
-# polynomials
+# polynomials.
 
-# NOTE: internally, 0 polynomial is represented with an empty vector of
-# monomials and an empty vector of coefficients
-
-@noinline function __throw_inexact_coeff_conversion(c, T)
-    throw(
-        DomainError(
-            c,
-            """
-            Coefficient $c in the output basis cannot be converted exactly to $T. 
-            Using big arithmetic in the input could fix this."""
-        )
-    )
-end
+# Zero polynomial is represented with an empty vector of monomials and an empty
+# vector of coefficients.
 
 @noinline function __throw_input_not_supported(msg, val)
-    throw(DomainError(val, "This type of input is not supported, sorry.\n$msg"))
+    throw(DomainError(val, "This input is not supported, sorry.\n$msg"))
 end
+
+###
+# Converting frontend polynomials to intermediate representation (ir)
+
+# Polynomials in the intermediate representation are represented 
+# by coefficients (UInt64) and exponent vectors (Vector{UInt64}).
 
 """
     PolyRing
 
-Polynomial ring of computation.
+Polynomial ring.
+
+## Example
+
+4 variables, modulo 2^30 + 3, degrevlex order.
+
+```julia
+ring = Groebner.PolyRing(4, Groebner.DegRevLex(), 2^30+3)
+```
+
+4 variables, the rationals, a block order.
+
+```julia
+ord = Groebner.DegRevLex([1,2]) * Groebner.DegRevLex([3,4])
+ring = Groebner.PolyRing(4, ord, 0)
+```
 """
 mutable struct PolyRing{
     Ord <: Union{AbstractMonomialOrdering, AbstractInternalOrdering},
     C <: Union{CoeffZp, CompositeCoeffZp}
 }
-    # Number of variables
     nvars::Int
-    # Monomial ordering
     ord::Ord
-    # Characteristic of the coefficient ring
     ch::C
+end
+
+io_iszero_coeffs(v) = isempty(v)
+io_iszero_monoms(v) = isempty(v)
+
+io_zero_coeffs(::Type{T}, ring::PolyRing) where {T} = Vector{T}()
+io_zero_monoms(::Type{T}, ring::PolyRing) where {T} = Vector{T}()
+
+function io_convert_polynomials_to_ir(polynomials, options::KeywordArguments)
+    ring = io_extract_ring(polynomials)
+    var_to_index, monoms, coeffs = _io_convert_polynomials_to_ir(ring, polynomials)
+    ring, monoms, coeffs
+end
+
+function _io_convert_polynomials_to_ir(
+    ring::PolyRing,
+    polynomials
+)
+    coeffs = io_extract_coeffs_ir(ring, polynomials)
+    reversed_order, var_to_index, monoms = io_extract_monoms_ir(ring, polynomials)
+    @invariant length(coeffs) == length(monoms)
+    var_to_index, monoms, coeffs
+end
+
+function io_convert_ir_to_polynomials(
+    ring::PolyRing,
+    polynomials,
+    monoms::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    options
+) where {M <: Monom, C <: Coeff}
+    @assert !isempty(polynomials)
+    _io_convert_ir_to_polynomials(ring, polynomials, monoms, coeffs, options)
+end
+
+###
+# Converting to internal representation
+
+function io_convert_ir_to_internal(ring, monoms, coeffs, params, repr)
+    monoms2 = Vector{Vector{repr.monomtype}}(undef, length(monoms))
+    coeffs2 = Vector{Vector{repr.coefftype}}(undef, length(monoms))
+    @inbounds for i in 1:length(monoms)
+        monoms2[i] = Vector{repr.monomtype}(undef, length(monoms[i]))
+        coeffs2[i] = Vector{repr.coefftype}(undef, length(monoms[i]))
+        for j in 1:length(monoms[i])
+            monoms2[i][j] = monom_construct_from_vector(
+                repr.monomtype,
+                monoms[i][j]
+            )
+            coeffs2[i][j] = repr.coefftype(coeffs[i][j])
+        end
+    end
+    ring2, _ = io_set_monomial_ordering!(ring, Dict{Any,Int}(), monoms2, coeffs2, params)
+    ring2, monoms2, coeffs2
+end
+
+function io_convert_internal_to_ir(ring, monoms, coeffs, params)
+    monoms2 = Vector{Vector{Vector{UInt64}}}(undef, length(monoms))
+    coeffs2 = coeffs
+    @inbounds for i in 1:length(monoms)
+        monoms2[i] = Vector{Vector{UInt64}}(undef, length(monoms[i]))
+        for j in 1:length(monoms[i])
+            monoms2[i][j] = Vector{UInt64}(undef, ring.nvars)
+            monom_to_vector!(monoms2[i][j], monoms[i][j])
+        end
+    end
+    monoms2, coeffs2
 end
 
 ###
 # Selecting polynomial representation
 
-"""
-    PolynomialRepresentation
-
-Internal representation of polynomials.
-"""
 struct PolynomialRepresentation
     monomtype::Type
     coefftype::Type
-    # NOTE: If this field is false, then any implementation of the arithmetic in
-    # Z/Zp must cast the coefficients into a wider integer type before
-    # performing any arithmetic operations to avoid the risk of overflow.
+    # If this field is false, then any implementation of the arithmetic in Z/Zp
+    # must cast the coefficients into a wider integer type before performing any
+    # arithmetic operations to avoid the risk of overflow.
     using_wide_type_for_coeffs::Bool
 end
 
-peek_at_polynomials(polynomials::AbstractVector) =
+io_peek_at_polynomials(polynomials::AbstractVector) =
     __throw_input_not_supported("", polynomials)
 
-"""
-    io_select_polynomial_representation(polynomials, keywords; hint=:none)
-
-Given an array of input polynomials tries to select a suitable representation
-for coefficients and exponent vectors.
-
-Additionally, `hint` can be specified to one of the following:
-
-- `:large_exponents`: use at least 32 bits per exponent.
-"""
 function io_select_polynomial_representation(
-    polynomials::AbstractVector,
+    ring::PolyRing,
     kws::KeywordArguments;
     hint::Symbol=:none
 )
-    isempty(polynomials) && __throw_input_not_supported("Empty input.", polynomials)
+    # isempty(polynomials) && __throw_input_not_supported("Empty input.", polynomials)
     if !(hint in (:none, :large_exponents))
         @log :warn "The given hint=$hint was discarded"
     end
-    frontend, npolys, char, nvars, ordering = peek_at_polynomials(polynomials)
-    monomtype = io_select_monomtype(char, npolys, nvars, ordering, kws, hint)
+    # frontend, npolys, char, nvars, ordering = io_peek_at_polynomials(polynomials)
+    frontend, npolys, char, nvars, ordering = :abstractalgebra, 1, ring.ch, ring.nvars, ring.ord
+    monomtype = io_select_monomtype(char, nvars, ordering, kws, hint)
     coefftype, using_wide_type_for_coeffs =
-        io_select_coefftype(char, npolys, nvars, ordering, kws, hint)
+        io_select_coefftype(char, nvars, ordering, kws, hint)
     basering = iszero(char) ? :qq : :zp
     @log :misc "Frontend: $frontend"
     @log :misc """
@@ -105,7 +165,7 @@ function io_select_polynomial_representation(
     PolynomialRepresentation(monomtype, coefftype, using_wide_type_for_coeffs)
 end
 
-function io_select_monomtype(char, npolys, nvars, ordering, kws, hint)
+function io_select_monomtype(char, nvars, ordering, kws, hint)
     @log :misc """
     Selecting monomial representation.
     Given hint hint=$hint. Keyword argument monoms=$(kws.monoms)"""
@@ -141,6 +201,7 @@ function io_select_monomtype(char, npolys, nvars, ordering, kws, hint)
         @assert monom_is_supported_ordering(ExponentVector{ExponentSize}, kws.ordering)
         return ExponentVector{ExponentSize}
     end
+    
     # if sparse representation is requested
     if kws.monoms === :sparse
         if monom_is_supported_ordering(
@@ -154,6 +215,7 @@ function io_select_monomtype(char, npolys, nvars, ordering, kws, hint)
         $(kws.monoms) monomial representation. Falling back to other monomial
         representations."""
     end
+
     # if packed representation is requested
     if kws.monoms === :packed
         if monom_is_supported_ordering(PackedTuple1{UInt64, ExponentSize}, kws.ordering)
@@ -177,6 +239,7 @@ function io_select_monomtype(char, npolys, nvars, ordering, kws, hint)
             representation."""
         end
     end
+
     # in the automatic choice, we always prefer packed representations
     if kws.monoms === :auto
         # TODO: also check that ring.ord is supported
@@ -197,42 +260,21 @@ function io_select_monomtype(char, npolys, nvars, ordering, kws, hint)
 end
 
 function io_get_tight_signed_int_type(x::T) where {T <: Integer}
-    if x <= typemax(Int8)
-        return Int8
-    elseif typemax(Int8) < x <= typemax(Int16)
-        return Int16
-    elseif typemax(Int16) < x <= typemax(Int32)
-        return Int32
-    elseif typemax(Int32) < x <= typemax(Int64)
-        return Int64
-    elseif x <= typemax(Int128)
-        return Int128
-    else
-        @unreachable
-        return Int64
-    end
+    types = (Int8, Int16, Int32, Int64, Int128)
+    idx = findfirst(T -> x <= typemax(T), types)
+    @assert !isnothing(idx)
+    types[idx]
 end
 
 function io_get_tight_unsigned_int_type(x::T) where {T <: Integer}
-    if x <= typemax(UInt8)
-        return UInt8
-    elseif typemax(UInt8) < x <= typemax(UInt16)
-        return UInt16
-    elseif typemax(UInt16) < x <= typemax(UInt32)
-        return UInt32
-    elseif typemax(UInt32) < x <= typemax(UInt64)
-        return UInt64
-    elseif x <= typemax(UInt128)
-        return UInt128
-    else
-        @unreachable
-        return Int64
-    end
+    types = (UInt8, UInt16, UInt32, UInt64, UInt128)
+    idx = findfirst(T -> x <= typemax(T), types)
+    @assert !isnothing(idx)
+    types[idx]
 end
 
 function io_select_coefftype(
     char,
-    npolys,
     nvars,
     ordering,
     kws,
@@ -286,12 +328,6 @@ end
 ###
 # Converting to selected polynomial representation
 
-"""
-    io_convert_to_internal(representation, polynomials, kws)
-
-Converts elements of the given array `polynomials` into an internal polynomial
-representation specified by the given `representation`.
-"""
 @timeit function io_convert_to_internal(
     representation::PolynomialRepresentation,
     polynomials,
@@ -301,8 +337,8 @@ representation specified by the given `representation`.
     io_check_input(polynomials, kws)
     # NOTE: Input polynomials must not be modified.
     @log :misc "Converting input polynomials to internal representation.."
-    ring = extract_ring(polynomials)
-    var_to_index, monoms, coeffs = io_extract_polys(representation, ring, polynomials)
+    ring = io_extract_ring(polynomials)
+    var_to_index, monoms, coeffs = io_extract_polynomial_data(representation, ring, polynomials)
     @log :misc "Done converting input polynomials to internal representation."
     @log :all """
     Polynomials in internal representation:
@@ -324,13 +360,13 @@ function io_check_input(polynomials, kws)
     _io_check_input(polynomials, kws)
 end
 
-function io_extract_polys(
+function io_extract_polynomial_data(
     representation::PolynomialRepresentation,
     ring::PolyRing,
     polynomials::Vector{T}
 ) where {T}
-    coeffs = extract_coeffs(representation, ring, polynomials)
-    reversed_order, var_to_index, monoms = extract_monoms(representation, ring, polynomials)
+    coeffs = io_extract_coeffs(representation, ring, polynomials)
+    reversed_order, var_to_index, monoms = io_extract_monoms(representation, ring, polynomials)
     @invariant length(coeffs) == length(monoms)
     if reversed_order
         for i in 1:length(coeffs)
@@ -348,8 +384,8 @@ function io_remove_zeros_from_input!(
     coeffs::Vector{Vector{T}}
 ) where {M, T}
     @invariant length(monoms) == length(coeffs)
-    filter!(!iszero_coeffs, coeffs)
-    filter!(!iszero_monoms, monoms)
+    filter!(!io_iszero_coeffs, coeffs)
+    filter!(!io_iszero_monoms, monoms)
     @invariant length(monoms) == length(coeffs)
     iszerobasis = isempty(monoms)
     @log :all "After removing zero polynomials from input:" monoms coeffs
@@ -382,19 +418,6 @@ end
 ###
 # Converting polynomials from internal representation back to original types
 
-iszero_coeffs(v) = isempty(v)
-iszero_monoms(v) = isempty(v)
-
-zero_coeffs(::Type{T}, ring::PolyRing) where {T} = Vector{T}()
-zero_monoms(::Type{T}, ring::PolyRing) where {T} = Vector{T}()
-
-"""
-    io_convert_to_output(ring, polynomials, monoms, coeffs, params)
-
-Converts polynomials in internal representation given by arrays `monoms` and
-`coeffs` into polynomials in the output format (using `polynomials` as a
-reference).
-"""
 @timeit function io_convert_to_output(
     ring::PolyRing,
     polynomials,
@@ -407,8 +430,8 @@ reference).
     # NOTE: Internal polynomials must not be modified.
     if isempty(monoms)
         @log :debug "Output is empty, appending an empty placeholder polynomial"
-        push!(monoms, zero_monoms(M, ring))
-        push!(coeffs, zero_coeffs(C, ring))
+        push!(monoms, io_zero_monoms(M, ring))
+        push!(coeffs, io_zero_coeffs(C, ring))
     end
     _io_convert_to_output(ring, polynomials, monoms, coeffs, params)
 end
@@ -441,6 +464,9 @@ function io_convert_changematrix_to_output(
     changematrix
 end
 
+###
+# Utilities for composite coefficients
+
 @timeit function io_convert_to_output_batched(
     ring::PolyRing,
     batch::NTuple{N, V},
@@ -452,37 +478,16 @@ end
     @log :misc "Converting polynomials from internal representation to output format (batched)"
 
     coeffs_unpacked = io_unpack_composite_coefficients(coeffs_packed)
-    # NOTE: Internal polynomials must not be modified.
+    # Internal polynomials must not be modified.
     if isempty(monoms)
         @log :debug "Output is empty, appending an empty placeholder polynomial"
-        push!(monoms, zero_monoms(M, ring))
+        push!(monoms, io_zero_monoms(M, ring))
         for coeffs in coeffs_unpacked
-            push!(coeffs, zero_coeffs(C, ring))
+            push!(coeffs, io_zero_coeffs(C, ring))
         end
     end
 
     ntuple(i -> io_convert_to_output(ring, batch[i], monoms, coeffs_unpacked[i], params), N)
-end
-
-###
-# Utilities for composite coefficients
-
-function io_unpack_composite_coefficients(
-    composite_coeffs::Vector{Vector{CompositeNumber{2, T}}}
-) where {T <: CoeffZp}
-    coeffs_part_1 = Vector{Vector{T}}(undef, length(composite_coeffs))
-    coeffs_part_2 = Vector{Vector{T}}(undef, length(composite_coeffs))
-    # TODO: Transpose this loop
-    @inbounds for i in 1:length(composite_coeffs)
-        coeffs_part_1[i] = Vector{T}(undef, length(composite_coeffs[i]))
-        coeffs_part_2[i] = Vector{T}(undef, length(composite_coeffs[i]))
-        for j in 1:length(composite_coeffs[i])
-            a1, a2 = composite_coeffs[i][j].data
-            coeffs_part_1[i][j] = a1
-            coeffs_part_2[i][j] = a2
-        end
-    end
-    coeffs_part_1, coeffs_part_2
 end
 
 function io_unpack_composite_coefficients(

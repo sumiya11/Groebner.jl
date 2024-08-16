@@ -47,13 +47,10 @@ mutable struct TraceF4{C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
     sweep_output::Bool
     representation::PolynomialRepresentation
     homogenize::Bool
-
-    ctx::Context
 end
 
 function trace_initialize(
-    ctx::Context,
-    ring::PolyRing,
+        ring::PolyRing,
     input_basis::Basis,
     gb_basis::Basis,
     hashtable::MonomialHashtable,
@@ -73,7 +70,7 @@ function trace_initialize(
         params.original_ord,
         input_signature,
         input_basis,
-        basis_deepcopy(ctx, gb_basis),
+        basis_deepcopy(gb_basis),
         gb_basis,
         hashtable,
         permutation,
@@ -94,7 +91,6 @@ function trace_initialize(
         params.sweep,
         PolynomialRepresentation(ExponentVector{UInt64}, UInt64, false),
         params.homogenize,
-        ctx
     )
 end
 
@@ -107,9 +103,9 @@ function trace_deepcopy(
         PolyRing(trace.ring.nvars, trace.ring.ord, trace.ring.ch),
         deepcopy(trace.original_ord),
         copy(trace.input_signature),
-        basis_deepcopy(trace.ctx, trace.input_basis),
-        basis_deepcopy(trace.ctx, trace.buf_basis),
-        basis_deepcopy(trace.ctx, trace.gb_basis),
+        basis_deepcopy(trace.input_basis),
+        basis_deepcopy(trace.buf_basis),
+        basis_deepcopy(trace.gb_basis),
         # we are assuming that the hashtable is frozen at this point!
         # maybe set a flag in the hashtable?
         deepcopy(trace.hashtable),
@@ -136,7 +132,6 @@ function trace_deepcopy(
             trace.representation.using_wide_type_for_coeffs
         ),
         trace.homogenize,
-        trace.ctx
     )
 end
 
@@ -147,7 +142,7 @@ function trace_copy(
 ) where {C1 <: Coeff, C3 <: Coeff, M <: Monom, Ord1, Ord2, C2 <: Coeff}
     new_sparse_row_coeffs = Vector{Vector{C2}}()
     new_input_basis = if deepcopy
-        basis_deep_copy_with_new_coeffs(trace.ctx, trace.input_basis, new_sparse_row_coeffs)
+        basis_deep_copy_with_new_coeffs(trace.input_basis, new_sparse_row_coeffs)
     else
         basis_shallow_copy_with_new_coeffs(trace.input_basis, new_sparse_row_coeffs)
     end
@@ -159,7 +154,7 @@ function trace_copy(
         new_buf_basis_coeffs[i] = Vector{C2}(undef, length(trace.buf_basis.coeffs[i]))
     end
     new_buf_basis = if deepcopy
-        basis_deep_copy_with_new_coeffs(trace.ctx, trace.buf_basis, new_buf_basis_coeffs)
+        basis_deep_copy_with_new_coeffs(trace.buf_basis, new_buf_basis_coeffs)
     else
         basis_shallow_copy_with_new_coeffs(trace.buf_basis, new_buf_basis_coeffs)
     end
@@ -171,7 +166,7 @@ function trace_copy(
         new_gb_basis_coeffs[i] = Vector{C2}(undef, length(trace.gb_basis.coeffs[i]))
     end
     new_gb_basis = if deepcopy
-        basis_deep_copy_with_new_coeffs(trace.ctx, trace.gb_basis, new_gb_basis_coeffs)
+        basis_deep_copy_with_new_coeffs(trace.gb_basis, new_gb_basis_coeffs)
     else
         basis_shallow_copy_with_new_coeffs(trace.gb_basis, new_gb_basis_coeffs)
     end
@@ -206,12 +201,11 @@ function trace_copy(
         trace.sweep_output,
         new_representation,
         trace.homogenize,
-        trace.ctx
     )
 end
 
 function trace_finalize!(trace::TraceF4)
-    trace.buf_basis = basis_deepcopy(trace.ctx, trace.gb_basis)
+    trace.buf_basis = basis_deepcopy(trace.gb_basis)
     trace.buf_basis.nnonredundant = trace.input_basis.nnonredundant
     trace.buf_basis.nprocessed = trace.input_basis.nprocessed
     trace.buf_basis.nfilled = trace.input_basis.nfilled
@@ -273,7 +267,7 @@ function get_default_trace(wrapped_trace::WrappedTraceF4)
 end
 
 function get_trace!(wrapped_trace::WrappedTraceF4, polynomials::AbstractVector, kwargs)
-    ring = extract_ring(polynomials)
+    ring = io_extract_ring(polynomials)
     get_trace!(wrapped_trace, ring.ch, kwargs)
 end
 
@@ -314,7 +308,7 @@ function get_trace!(
     monomtype = default_trace.representation.monomtype
     coefftype = default_trace.representation.coefftype
 
-    rings = map(extract_ring, batch)
+    rings = map(io_extract_ring, batch)
     chars = map(ring -> ring.ch, rings)
     @log :misc """
     Determining a suitable coefficient type for the apply stage with characteristics $chars.

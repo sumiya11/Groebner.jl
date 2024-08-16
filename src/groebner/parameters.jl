@@ -308,7 +308,7 @@ function AlgorithmParameters(
         sweep,
         statistics,
         use_flint,
-        changematrix
+        changematrix,
     )
 end
 
@@ -348,6 +348,6 @@ function params_mod_p(
         params.sweep,
         params.statistics,
         params.use_flint,
-        params.changematrix
+        params.changematrix,
     )
 end

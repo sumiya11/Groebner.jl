@@ -32,9 +32,8 @@ end
     basiscoeffs::Vector{Vector{C}},
     params
 ) where {M, C <: Coeff}
-    ctx = ctx_initialize()
-    basis, _, ht = f4_initialize_structs(ctx, ring, basisexps, basiscoeffs, params)
-    basis, linbasis, ht = fglm_main!(ctx, ring, basis, ht, ring.ord, params)
+    basis, _, ht = f4_initialize_structs(ring, basisexps, basiscoeffs, params)
+    basis, linbasis, ht = fglm_main!(ring, basis, ht, ring.ord, params)
     res = basis_export_data(linbasis, ht)
     res
 end

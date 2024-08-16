@@ -125,7 +125,6 @@ include("utils/timeit.jl")
 include("utils/simd.jl")
 include("utils/pretty_print.jl")
 include("utils/plots.jl")
-include("utils/context.jl")
 
 # Test systems, such as katsura, cyclic, etc
 include("utils/examples.jl")

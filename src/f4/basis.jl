@@ -176,14 +176,13 @@ end
 
 # Same as basis_initialize, but uses an existing hashtable.
 function basis_initialize_using_existing_hashtable(
-    ctx::Context,
-    ring::PolyRing,
+        ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     present_ht::MonomialHashtable;
 ) where {M <: Monom, C <: Coeff}
     basis = basis_initialize(ring, length(monoms), C)
-    basis_fill_data!(ctx, basis, present_ht, monoms, coeffs)
+    basis_fill_data!(basis, present_ht, monoms, coeffs)
     basis
 end
 
@@ -360,8 +359,7 @@ function basis_shallow_copy_with_new_coeffs(
 end
 
 function basis_deep_copy_with_new_coeffs(
-    ctx::Context,
-    basis::Basis{C},
+        basis::Basis{C},
     new_sparse_row_coeffs::Vector{Vector{T}}
 ) where {C <: Coeff, T <: Coeff}
     monoms = Vector{Vector{MonomId}}(undef, length(basis.monoms))
@@ -390,7 +388,7 @@ function basis_deep_copy_with_new_coeffs(
     )
 end
 
-function basis_deepcopy(ctx::Context, basis::Basis{C}) where {C <: Coeff}
+function basis_deepcopy(basis::Basis{C}) where {C <: Coeff}
     coeffs = Vector{Vector{C}}(undef, length(basis.coeffs))
 
     if isbitstype(C)  # For Z/pZ
@@ -412,7 +410,7 @@ function basis_deepcopy(ctx::Context, basis::Basis{C}) where {C <: Coeff}
         end
     end
 
-    basis_deep_copy_with_new_coeffs(ctx, basis, coeffs)
+    basis_deep_copy_with_new_coeffs(basis, coeffs)
 end
 
 function basis_resize_if_needed!(basis::Basis{T}, to_add::Int) where {T}
@@ -656,8 +654,7 @@ function basis_is_new_polynomial_redundant!(
 end
 
 function basis_fill_data!(
-    ctx::Context,
-    basis::Basis,
+        basis::Basis,
     ht::MonomialHashtable{M},
     exponents::Vector{Vector{M}},
     coeffs::Vector{Vector{T}}
