@@ -11,7 +11,8 @@
 const aa_supported_orderings = (:lex, :deglex, :degrevlex)
 const aa_exponent_type = UInt64
 
-aa_is_multivariate_ring(ring) = AbstractAlgebra.nvars(ring) > 1
+aa_is_multivariate_ring(ring) =
+    AbstractAlgebra.elem_type(ring) <: AbstractAlgebra.MPolyRingElem
 
 # TODO TODO TODO: type piracy!
 (F::AbstractAlgebra.FinField)(x::AbstractFloat) = F(Int(x))
@@ -22,6 +23,13 @@ aa_is_multivariate_ring(ring) = AbstractAlgebra.nvars(ring) > 1
 # Converting from AbstractAlgebra to intermediate representation (ir)
 
 function io_extract_ring(polynomials)
+    if !all(
+        f -> f isa AbstractAlgebra.MPolyRingElem || f isa AbstractAlgebra.PolyRingElem,
+        polynomials
+    )
+        throw(DomainError("Unknown type."))
+    end
+    _io_check_input(polynomials)
     R = parent(first(polynomials))
     nv = AbstractAlgebra.nvars(R)
     # lex is the default ordering on univariate polynomials
@@ -44,17 +52,28 @@ function io_extract_coeffs_ir(ring::PolyRing, polys)
     end
 end
 
-function io_extract_coeffs_ir_ff(
-    ring::PolyRing{T},
-    polys
-) where {T}
+function io_lift_coeff_ff(c::Union{Nemo.FqFieldElem, Nemo.fpFieldElem})
+    UInt64(AbstractAlgebra.lift(Nemo.ZZ, c))
+end
+
+function io_lift_coeff_ff(c::AbstractAlgebra.GFElem)
+    AbstractAlgebra.data(c)
+end
+
+function io_lift_coeff_ff(c)
+    UInt64(AbstractAlgebra.lift(c))
+end
+
+function io_extract_coeffs_ir_ff(ring::PolyRing{T}, polys) where {T}
     res = Vector{Vector{UInt64}}(undef, length(polys))
     for i in 1:length(polys)
         poly = polys[i]
-        if AbstractAlgebra.iszero(poly)
-            res[i] = io_zero_coeffs(UInt64, ring)
+        if !aa_is_multivariate_ring(parent(polys[1]))
+            res[i] = map(io_lift_coeff_ff, AbstractAlgebra.coefficients(poly))
+            reverse!(res[i])
+            filter!(!iszero, res[i])
         else
-            res[i] = map(UInt64 ∘ AbstractAlgebra.lift, AbstractAlgebra.coefficients(poly))
+            res[i] = map(io_lift_coeff_ff, AbstractAlgebra.coefficients(poly))
         end
     end
     res
@@ -64,29 +83,35 @@ function io_extract_coeffs_ir_qq(ring::PolyRing, polys)
     res = Vector{Vector{Rational{BigInt}}}(undef, length(polys))
     for i in 1:length(polys)
         poly = polys[i]
-        if AbstractAlgebra.iszero(poly)
-            res[i] = io_zero_coeffs(Rational{BigInt}, ring)
+        if !aa_is_multivariate_ring(parent(polys[1]))
+            res[i] = map(Rational{BigInt}, collect(AbstractAlgebra.coefficients(poly)))
+            reverse!(res[i])
+            filter!(!iszero, res[i])
         else
-            res[i] = Vector{Rational{BigInt}}(undef, length(poly))
-            @inbounds for j in 1:length(poly)
-                res[i][j] = Rational{BigInt}(AbstractAlgebra.coeff(poly, j))
-            end
+            res[i] = map(Rational{BigInt}, collect(AbstractAlgebra.coefficients(poly)))
         end
     end
     res
 end
 
-function io_extract_monoms_ir(
-    ring::PolyRing,
-    polys,
-)
+function io_extract_monoms_ir(ring::PolyRing, polys)
     var_to_index = get_var_to_index(AbstractAlgebra.parent(polys[1]))
-    exps = Vector{Vector{Vector{UInt64}}}(undef, length(polys))
+    res = Vector{Vector{Vector{UInt64}}}(undef, length(polys))
     @inbounds for i in 1:length(polys)
         poly = polys[i]
-        exps[i] = collect(AbstractAlgebra.exponent_vectors(polys[i]))
+        if !aa_is_multivariate_ring(parent(polys[1]))
+            perm = filter(
+                j -> !iszero(AbstractAlgebra.coeff(polys[i], j - 1)),
+                collect(1:length(polys[i]))
+            )
+            res[i] = collect(AbstractAlgebra.exponent_vectors(polys[i]))
+            res[i] = res[i][perm]
+            reverse!(res[i])
+        else
+            res[i] = collect(AbstractAlgebra.exponent_vectors(polys[i]))
+        end
     end
-    false, var_to_index, exps
+    false, var_to_index, res
 end
 
 # The most generic specialization
@@ -108,7 +133,19 @@ function _io_convert_ir_to_polynomials(
         for jt in 1:length(gbcoeffs[i])
             exps[jt] = gbexps[i][jt]
         end
-        exported[i] = origring(cfs, exps)
+        if !aa_is_multivariate_ring(parent(polynomials[1]))
+            if isempty(exps)
+                exported[i] = origring()
+            else
+                _cfs = [zero(ground) for _ in 1:(exps[1][1] + 1)]
+                for j in 1:length(exps)
+                    _cfs[exps[j][1] + 1] = cfs[j]
+                end
+                exported[i] = origring(_cfs)
+            end
+        else
+            exported[i] = origring(cfs, exps)
+        end
     end
     exported
 end
@@ -116,7 +153,9 @@ end
 ###
 # Converting from AbstractAlgebra to internal representation.
 
-function io_peek_at_polynomials(polynomials::Vector{T}) where {T <: AbstractAlgebra.RingElem}
+function io_peek_at_polynomials(
+    polynomials::Vector{T}
+) where {T <: AbstractAlgebra.RingElem}
     R = AbstractAlgebra.parent(first(polynomials))
     nvars = AbstractAlgebra.nvars(R)
     ord = if aa_is_multivariate_ring(R)
@@ -136,11 +175,17 @@ function io_peek_at_polynomials(polynomials::Vector{T}) where {T <: AbstractAlge
     :abstractalgebra, length(polynomials), UInt(char), nvars, ord
 end
 
-function _io_check_input(polynomials::Vector{T}, kws) where {T}
+function _io_check_input(polynomials::Vector{T}) where {T}
     R = AbstractAlgebra.parent(first(polynomials))
     K = AbstractAlgebra.base_ring(R)
     if !(K isa AbstractAlgebra.Field)
         __throw_input_not_supported("Coefficient ring must be a field", K)
+    end
+    if (AbstractAlgebra.characteristic(K) > typemax(UInt64))
+        __throw_input_not_supported(
+            "Field characteristic must be less than 2^64",
+            AbstractAlgebra.characteristic(K)
+        )
     end
     if !iszero(AbstractAlgebra.characteristic(K))
         if !isone(AbstractAlgebra.degree(K))
@@ -274,48 +319,36 @@ function io_extract_coeffs_raw!(
     flag, ring
 end
 
-function io_extract_coeffs_raw_X!(
-    trace,
-    representation::PolynomialRepresentation,
-    coeffs_zp,
-    modulo,
-    kws::KeywordArguments
-)
-    ring = PolyRing(trace.ring.nvars, trace.ring.ord, UInt64(modulo))
-
+function io_extract_coeffs_raw_X!(ring, trace, coeffs)
     basis = trace.buf_basis
     input_polys_perm = trace.input_permutation
     term_perms = trace.term_sorting_permutations
     homog_term_perm = trace.term_homogenizing_permutations
-    CoeffType = representation.coefftype
+    CoeffType = trace.representation.coefftype
 
     flag = _io_extract_coeffs_raw_X!(
         basis,
         input_polys_perm,
         term_perms,
         homog_term_perm,
-        coeffs_zp,
+        coeffs,
         CoeffType
     )
-    !flag && return flag, ring
+    !flag && return flag
 
     # a hack for homogenized inputs
     if trace.homogenize
-        @assert false
-        @assert length(basis.monoms[length(polys) + 1]) ==
-                length(basis.coeffs[length(polys) + 1]) ==
-                2
         # TODO: !! incorrect if there are zeros in the input
         @invariant !iszero(ring.ch)
-        C = eltype(basis.coeffs[length(polys) + 1][1])
-        basis.coeffs[length(polys) + 1][1] = one(C)
-        basis.coeffs[length(polys) + 1][2] =
+        C = eltype(basis.coeffs[length(coeffs) + 1][1])
+        basis.coeffs[length(coeffs) + 1][1] = one(C)
+        basis.coeffs[length(coeffs) + 1][2] =
             iszero(ring.ch) ? -one(C) : (ring.ch - one(ring.ch))
     end
 
     @log :all "Extracted coefficients from $(length(polys)) polynomials." basis
     @log :all "Extracted coefficients" basis.coeffs
-    flag, ring
+    flag
 end
 
 function _io_extract_coeffs_raw_X!(
@@ -459,7 +492,7 @@ function _io_extract_coeffs_raw!(
             if permute_homogenizing_terms
                 coeff_index = homog_term_perms[poly_index][coeff_index]
             end
-            coeff = AbstractAlgebra.data(AbstractAlgebra.coeff(poly, coeff_index))
+            coeff = io_lift_coeff_ff(AbstractAlgebra.coeff(poly, coeff_index))
             basis_cfs[j] = convert(CoeffsType, coeff)
         end
     end
@@ -515,7 +548,7 @@ function _io_io_extract_coeffs_raw_batched!(
             end
             basis_cfs[j] = CoeffsType(
                 ntuple(
-                    batch_index -> AbstractAlgebra.data(
+                    batch_index -> io_lift_coeff_ff(
                         AbstractAlgebra.coeff(batch[batch_index][poly_index], coeff_index)
                     ),
                     length(batch)

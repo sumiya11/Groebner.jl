@@ -22,7 +22,6 @@ function test_n_variables(n)
 end
 
 @testset "handling many variables" begin
-
     # up to 63
     test_n_variables(8)
     test_n_variables(16)

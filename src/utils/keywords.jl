@@ -113,9 +113,9 @@ Can be manually created with
 kwargs = Groebner.KeywordArguments(:groebner, seed = 99, reduced = false)
 ```
 """
-struct KeywordArguments{Ord}
+mutable struct KeywordArguments
     reduced::Bool
-    ordering::Ord
+    ordering::Any
     certify::Bool
     linalg::Symbol
     threaded::Symbol
@@ -234,7 +234,7 @@ struct KeywordArguments{Ord}
 
         changematrix = get(kws, :changematrix, get(default_kw_args, :changematrix, false))
 
-        new{typeof(ordering)}(
+        new(
             reduced,
             ordering,
             certify,
@@ -265,8 +265,5 @@ end
 
 function statistics_setup(keywords::KeywordArguments)
     log_simdinfo()
-    if keywords.loglevel <= 0
-        performance_counters_refresh()
-    end
     nothing
 end

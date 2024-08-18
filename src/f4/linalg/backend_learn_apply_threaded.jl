@@ -9,7 +9,7 @@
 # High level
 
 function linalg_learn_sparse_threaded!(
-        trace::TraceF4,
+    trace::TraceF4,
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
@@ -32,7 +32,7 @@ end
 # Low level
 
 function linalg_learn_reduce_matrix_lower_part_threaded!(
-        trace::TraceF4,
+    trace::TraceF4,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}

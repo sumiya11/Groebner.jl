@@ -295,7 +295,7 @@ end
 # Stuff
 
 function matrix_convert_rows_to_basis_elements!(
-        matrix::MacaulayMatrix,
+    matrix::MacaulayMatrix,
     basis::Basis{C},
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable,
@@ -382,7 +382,7 @@ function matrix_convert_rows_to_basis_elements!(
 end
 
 function matrix_convert_rows_to_basis_elements_nf!(
-        matrix::MacaulayMatrix,
+    matrix::MacaulayMatrix,
     basis::Basis{C},
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable
@@ -413,8 +413,8 @@ function matrix_convert_rows_to_basis_elements_nf!(
     nothing
 end
 
-@timeit function matrix_polynomial_multiple_to_row!(
-        matrix::MacaulayMatrix,
+function matrix_polynomial_multiple_to_row!(
+    matrix::MacaulayMatrix,
     symbol_ht::MonomialHashtable{M},
     basis_ht::MonomialHashtable{M},
     monom_hash::MonomHash,
@@ -436,7 +436,7 @@ end
     )
 end
 
-@timeit function matrix_fill_column_to_monom_map!(
+function matrix_fill_column_to_monom_map!(
     matrix::MacaulayMatrix,
     symbol_ht::MonomialHashtable
 )

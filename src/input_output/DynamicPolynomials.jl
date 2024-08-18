@@ -4,14 +4,12 @@
 # Conversion from DynamicPolynomials.jl to internal representation and back.
 
 @noinline function __throw_inexact_coeff_conversion(c, T)
-    throw(
-        DomainError(
-            c,
-            """
-            Coefficient $c cannot be converted exactly to $T. 
-            Using big arithmetic in the input should fix this."""
-        )
-    )
+    throw(DomainError(
+        c,
+        """
+        Coefficient $c cannot be converted exactly to $T. 
+        Using big arithmetic in the input should fix this."""
+    ))
 end
 
 const _DP_supported_orderings_symbols = (:lex, :deglex, :degrevlex)

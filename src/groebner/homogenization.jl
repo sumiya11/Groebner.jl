@@ -138,7 +138,7 @@ function dehomogenize_generators!(
     De-homogenized monomials: 
     $new_monoms
     """
-    new_monoms, coeffs = _autoreduce1(new_ring, new_monoms, coeffs, params)
+    new_monoms, coeffs = autoreduce2(new_ring, new_monoms, coeffs, params)
     new_ring, new_monoms, coeffs
 end
 

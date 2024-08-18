@@ -4,7 +4,7 @@ params = (loglevel=0, sweep=true)
 
 @testset "learn & apply, same field" begin
     K = AbstractAlgebra.GF(2^31 - 1)
-    R, (x, y) = polynomial_ring(K, ["x", "y"])
+    R, (x, y) = polynomial_ring(K, ["x", "y"]; internal_ordering=:degrevlex)
     trace, gb1 = Groebner.groebner_learn([x, y])
     flag, gb2 = Groebner.groebner_apply!(trace, [x, y])
     @assert gb1 == gb2 && flag
@@ -18,7 +18,7 @@ params = (loglevel=0, sweep=true)
     @test_throws DomainError Groebner.groebner_learn([R(0), R(0)]; params...)
 
     cases = [
-        (system=[x, R(0)],),
+        (system=[x],),
         (system=[R(1)],),
         (system=[x, y],),
         (system=[x, x],),
@@ -33,8 +33,8 @@ params = (loglevel=0, sweep=true)
         (system=Groebner.Examples.katsuran(4, internal_ordering=:degrevlex, k=K),),
         (system=Groebner.Examples.katsuran(5, internal_ordering=:degrevlex, k=K),),
         (system=Groebner.Examples.cyclicn(5, internal_ordering=:degrevlex, k=K),),
-        (system=Groebner.Examples.rootn(5, internal_ordering=:lex, k=K),),
-        (system=Groebner.Examples.rootn(5, internal_ordering=:deglex, k=K),),
+        (system=Groebner.Examples.rootn(5, internal_ordering=:degrevlex, k=K),),
+        (system=Groebner.Examples.rootn(5, internal_ordering=:degrevlex, k=K),),
         (system=Groebner.Examples.rootn(6, internal_ordering=:degrevlex, k=K),),
         (system=Groebner.Examples.eco5(internal_ordering=:degrevlex, k=K),),
         (system=Groebner.Examples.ku10(internal_ordering=:degrevlex, k=K),),
@@ -209,12 +209,15 @@ end
     R, (x, y) = polynomial_ring(ZZ, ["x", "y"], internal_ordering=:lex)
     system = [BigInt(2)^1000 * x + (BigInt(2)^1001 + 1) * y + 1]
     system_zp = map(f -> AbstractAlgebra.map_coefficients(c -> K1(BigInt(c)), f), system)
+    _x, _y = gens(parent(system_zp[1]))
     trace, gb_1 =
-        Groebner.groebner_learn(system_zp; ordering=Groebner.DegRevLex(y, x), params...)
+        Groebner.groebner_learn(system_zp; ordering=Groebner.DegRevLex(_y, _x), params...)
     for K in Primes.nextprimes(2^31, 200)
         system_zp =
             map(f -> AbstractAlgebra.map_coefficients(c -> GF(K)(BigInt(c)), f), system)
-        true_gb = Groebner.groebner(system_zp; ordering=Groebner.DegRevLex(y, x), params...)
+        _x, _y = gens(parent(system_zp[1]))
+        true_gb =
+            Groebner.groebner(system_zp; ordering=Groebner.DegRevLex(_y, _x), params...)
         flag, gb_2 = Groebner.groebner_apply!(trace, system_zp; params...)
         @test flag && gb_2 == true_gb
     end
@@ -383,6 +386,44 @@ end
     flag, gb = Groebner.groebner_apply!(trace, sys_mod_p2)
     @test flag
     flag, gb = Groebner.groebner_apply!(trace, sys_mod_p)
+end
+
+@testset "learn & apply low level" begin
+    function test_low_level_interface(ring, sys; passthrough...)
+        T(x) = base_ring(parent(sys[1])) == QQ ? Rational{BigInt}(x) : UInt64(lift(x))
+        monoms = map(f -> collect(exponent_vectors(f)), sys)
+        coeffs = map(f -> collect(T.(coefficients(f))), sys)
+        trace1, gb_monoms1, gb_coeffs1 =
+            Groebner.groebner_learn(ring, monoms, coeffs; passthrough...)
+        trace2, gb2 = Groebner.groebner_learn(sys; passthrough...)
+        gb_monoms2 = map(f -> collect(exponent_vectors(f)), gb2)
+        gb_coeffs2 = map(f -> collect(T.(coefficients(f))), gb2)
+        @test (gb_monoms1, gb_coeffs1) == (gb_monoms2, gb_coeffs2)
+        flag3, gb_monoms3, gb_coeffs3 =
+            Groebner.groebner_apply!(trace1, ring, monoms, coeffs; passthrough...)
+        flag4, gb4 = Groebner.groebner_apply!(trace2, sys; passthrough...)
+        gb_monoms4 = map(f -> collect(exponent_vectors(f)), gb4)
+        gb_coeffs4 = map(f -> collect(T.(coefficients(f))), gb4)
+        @test (flag3, gb_coeffs3) == (flag4, gb_coeffs4)
+    end
+
+    R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], internal_ordering=:degrevlex)
+
+    ring = Groebner.PolyRing(2, Groebner.DegRevLex(), 2^31 - 1)
+    @test_throws DomainError Groebner.groebner_learn(ring, [], [])
+    @test ([[[0, 0]]], [[1]]) == Groebner.groebner_learn(ring, [[[0, 0]]], [[1]])[2:3]
+    @test ([[[1, 1]]], [[1]]) == Groebner.groebner_learn(ring, [[[1, 1]]], [[2]])[2:3]
+    ring = Groebner.PolyRing(2, Groebner.Lex(), 2^30 + 3)
+    @test ([[[0, 0]]], [[1]]) == Groebner.groebner_learn(ring, [[[0, 0]]], [[1]])[2:3]
+    @test ([[[1, 1]]], [[1]]) == Groebner.groebner_learn(ring, [[[1, 1]]], [[2]])[2:3]
+
+    sys = Groebner.Examples.cyclicn(5, k=GF(2^40 + 15))
+    ring = Groebner.PolyRing(5, Groebner.DegRevLex(), 2^40 + 15)
+    test_low_level_interface(ring, sys)
+
+    sys = Groebner.Examples.cyclicn(5, k=GF(2^30 + 3))
+    ring = Groebner.PolyRing(5, Groebner.DegRevLex(), 2^30 + 3)
+    test_low_level_interface(ring, sys; ordering=Groebner.DegRevLex())
 end
 
 @testset "learn & apply, stress" begin

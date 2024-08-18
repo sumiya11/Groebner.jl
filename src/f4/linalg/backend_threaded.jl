@@ -9,7 +9,7 @@
 # High level
 
 function linalg_deterministic_sparse_threaded!(
-        matrix::MacaulayMatrix,
+    matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
     arithmetic::AbstractArithmetic
@@ -39,7 +39,7 @@ end
 #   0 D'
 # The new pivots in the D' block are known, but possibly not fully interreduced.
 function linalg_reduce_matrix_lower_part_threaded_cas!(
-        matrix::MacaulayMatrix{CoeffType},
+    matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}

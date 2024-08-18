@@ -39,16 +39,12 @@ const _groebner_log_lock = Ref{ReentrantLock}(ReentrantLock())
 
 function meta_formatter_groebner end
 
-@static if VERSION >= v"1.7.0"
-    default_logger(io, level) = Logging.ConsoleLogger(
-        io,
-        level,
-        show_limited=false,
-        meta_formatter=meta_formatter_groebner
-    )
-else
-    default_logger(io, level) = Logging.ConsoleLogger(io, level)
-end
+default_logger(io, level) = Logging.ConsoleLogger(
+    io,
+    level,
+    show_limited=false,
+    meta_formatter=meta_formatter_groebner
+)
 
 function gettime()
     tm = Libc.TmStruct(Libc.TimeVal().sec)
@@ -187,55 +183,4 @@ macro log(args...)
             end
         )
     )
-end
-
-###
-# Logging memory usage
-
-"""
-    memory_logging_enabled() -> Bool
-
-Specifies if the allocated memory information is logged in F4. If `false`, then
-all memory logging is disabled, and entails no runtime overhead.
-
-See also `@log_memory_locals`.
-"""
-memory_logging_enabled() = false
-
-# Adapted from
-# https://discourse.julialang.org/t/is-there-a-package-to-list-memory-consumption-of-selected-data-objects/85019/12
-"""
-    @log_memory_locals
-    @log_memory_locals names...
-    @log_memory_locals level=N names...
-
-Logs the total allocated sizes of local variables. This does nothing when
-logging is disabled in Groebner.
-
-This may have a *significant runtime overhead*.
-
-## Options
-
-- If `names` argument is provided, only shows the variables present in `names`.
-- If `level=N` argument is provided, then logging level `N` is used.
-"""
-macro log_memory_locals(names...)
-    quote
-        if $(@__MODULE__).logging_enabled() && $(@__MODULE__).memory_logging_enabled()
-            locals = Base.@locals
-            message = """
-            Individual sizes (does not account for overlap):
-            """
-            for (name, refval) in locals
-                if isempty($names) || (name in $names)
-                    message *= "\t$name: $(Base.format_bytes(Base.summarysize(refval)))\n"
-                end
-            end
-            message *=
-                "Joint size: " * "$(Base.format_bytes(Base.summarysize(values(locals))))"
-            @log :misc message
-        else
-            nothing
-        end
-    end
 end

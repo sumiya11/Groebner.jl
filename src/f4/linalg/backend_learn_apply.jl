@@ -9,7 +9,7 @@
 # High level
 
 function linalg_learn_sparse!(
-        trace::TraceF4,
+    trace::TraceF4,
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
@@ -29,7 +29,7 @@ function linalg_learn_sparse!(
 end
 
 function linalg_apply_sparse!(
-        trace::TraceF4,
+    trace::TraceF4,
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
@@ -53,7 +53,7 @@ function linalg_apply_sparse!(
 end
 
 function linalg_learn_deterministic_sparse_interreduction!(
-        trace::TraceF4,
+    trace::TraceF4,
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
@@ -65,7 +65,7 @@ function linalg_learn_deterministic_sparse_interreduction!(
     linalg_prepare_matrix_pivots_in_interreduction!(matrix, basis)
     # Interreduce AB
     linalg_learn_interreduce_matrix_pivots!(
-                trace,
+        trace,
         matrix,
         basis,
         arithmetic,
@@ -76,7 +76,7 @@ function linalg_learn_deterministic_sparse_interreduction!(
 end
 
 function linalg_apply_deterministic_sparse_interreduction!(
-        trace::TraceF4,
+    trace::TraceF4,
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
@@ -88,7 +88,7 @@ function linalg_apply_deterministic_sparse_interreduction!(
     linalg_prepare_matrix_pivots_in_interreduction!(matrix, basis)
     # Interreduce AB
     flag = linalg_apply_interreduce_matrix_pivots!(
-                trace,
+        trace,
         matrix,
         basis,
         arithmetic,
@@ -110,7 +110,7 @@ end
 # Returns `false` if any row reduced to zero (since we expect that on the apply
 # stage the rows are linearly independent)
 function linalg_apply_reduce_matrix_lower_part!(
-        trace::TraceF4,
+    trace::TraceF4,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
@@ -177,7 +177,7 @@ function linalg_apply_reduce_matrix_lower_part!(
 end
 
 function linalg_learn_interreduce_matrix_pivots!(
-        trace::TraceF4,
+    trace::TraceF4,
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
     arithmetic::A;
@@ -185,7 +185,7 @@ function linalg_learn_interreduce_matrix_pivots!(
 ) where {C <: Coeff, A <: AbstractArithmetic}
     # Perform interreduction
     flag, _, not_reduced_to_zero = linalg_interreduce_matrix_pivots!(
-                matrix,
+        matrix,
         basis,
         arithmetic,
         reversed_rows=reversed_rows
@@ -211,14 +211,14 @@ function linalg_learn_interreduce_matrix_pivots!(
 end
 
 function linalg_apply_interreduce_matrix_pivots!(
-        trace::TraceF4,
+    trace::TraceF4,
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
     arithmetic::A;
     reversed_rows::Bool=false
 ) where {C <: Coeff, A <: AbstractArithmetic}
     flag, any_zeroed, _ = linalg_interreduce_matrix_pivots!(
-                matrix,
+        matrix,
         basis,
         arithmetic,
         reversed_rows=reversed_rows
@@ -227,7 +227,7 @@ function linalg_apply_interreduce_matrix_pivots!(
 end
 
 function linalg_learn_reduce_matrix_lower_part!(
-        trace::TraceF4,
+    trace::TraceF4,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}

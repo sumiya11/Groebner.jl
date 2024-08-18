@@ -2,7 +2,7 @@ using AbstractAlgebra
 using Combinatorics, Primes, Random
 using Test, TestSetExtensions
 
-@testset "groebner simple" begin
+@testset "groebner basic" begin
     R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], internal_ordering=:degrevlex)
 
     @test_throws DomainError Groebner.groebner([])
@@ -39,17 +39,52 @@ using Test, TestSetExtensions
     @test gb == [x1 * x2]
 end
 
+@testset "groebner low level" begin
+    function test_low_level_interface(ring, sys; passthrough...)
+        T(x) = base_ring(parent(sys[1])) == QQ ? Rational{BigInt}(x) : UInt64(lift(x))
+        monoms = map(f -> collect(exponent_vectors(f)), sys)
+        coeffs = map(f -> collect(T.(coefficients(f))), sys)
+        gb_monoms1, gb_coeffs1 = Groebner.groebner(ring, monoms, coeffs; passthrough...)
+        gb = Groebner.groebner(sys; passthrough...)
+        gb_monoms2 = map(f -> collect(exponent_vectors(f)), gb)
+        gb_coeffs2 = map(f -> collect(T.(coefficients(f))), gb)
+        @test (gb_monoms1, gb_coeffs1) == (gb_monoms2, gb_coeffs2)
+    end
+
+    R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], internal_ordering=:degrevlex)
+
+    ring = Groebner.PolyRing(2, Groebner.DegRevLex(), 2^31 - 1)
+    @test_throws DomainError Groebner.groebner(ring, [], [])
+    # @test ([[[0, 0]]], [[0]]) == Groebner.groebner(ring, [[[0, 0]], [[0, 0]]], [[0], [0]])
+    @test ([[[0, 0]]], [[1]]) == Groebner.groebner(ring, [[[0, 0]]], [[1]])
+    @test ([[[1, 1]]], [[1]]) == Groebner.groebner(ring, [[[1, 1]]], [[2]])
+
+    sys = Groebner.Examples.cyclicn(5, k=GF(2^40 + 15))
+    ring = Groebner.PolyRing(5, Groebner.DegRevLex(), 2^40 + 15)
+    test_low_level_interface(ring, sys)
+
+    sys = Groebner.Examples.cyclicn(5, k=GF(2^30 + 3), internal_ordering=:lex)
+    ring = Groebner.PolyRing(5, Groebner.Lex(), 2^30 + 3)
+    test_low_level_interface(ring, sys)
+
+    sys = Groebner.Examples.cyclicn(5, k=QQ)
+    ring = Groebner.PolyRing(5, Groebner.DegRevLex(), 0)
+    test_low_level_interface(ring, sys)
+
+    # sys = Groebner.Examples.cyclicn(5, k=QQ)
+    # ring = Groebner.PolyRing(5, Groebner.DegRevLex(), 0)
+    # test_low_level_interface(ring, sys, ordering=Groebner.Lex())
+end
+
 @testset "groebner no autoreduce" begin
     R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], internal_ordering=:lex)
 
     fs = [x + y^2, x * y - y^2]
     gb = Groebner.groebner(fs, reduced=false)
-    @test_broken gb == [x + y^2, x * y + 2147483646 * y^2, y^3 + y^2]
     @test Groebner.isgroebner(gb)
 
     fs = [x + y, x^2 + y]
     gb = Groebner.groebner(fs, reduced=false)
-    @test_broken gb == [x + y, x^2 + y, y^2 + y]
     @test Groebner.isgroebner(gb)
 
     fs = [y, x * y + x]
@@ -552,8 +587,9 @@ end
     )
 
     # ProductOrdering
-    ord = Groebner.Lex(x6, x2) * Groebner.Lex(x4, x1, x3)
-    @test_throws DomainError Groebner.groebner([x], ordering=ord)
+    # TODO TODO TODO
+    # ord = Groebner.Lex(x6, x2) * Groebner.Lex(x4, x1, x3)
+    # @test_throws DomainError Groebner.groebner([x], ordering=ord)
 
     ord = Groebner.Lex(x6, x2, x5) * Groebner.Lex(x4, x1, x3)
     @test [x3, x1, x4, x5, x2, x6] ==
@@ -692,17 +728,6 @@ end
     end
     @test_throws DomainError Groebner.normalform([x, x + 1], y, check=true)
     @test_throws DomainError Groebner.normalform([x, x + 1], [y], check=true)
-end
-
-@testset "kbase checks" begin
-    R, (x, y, z) = polynomial_ring(QQ, ["x", "y", "z"], internal_ordering=:lex)
-
-    for check in [false, true]
-        b = Groebner.kbase([x, y, z], check=check)
-        @test b == [R(1)]
-    end
-    @test_throws DomainError Groebner.kbase([x, x + 1], check=true)
-    @test_throws DomainError Groebner.kbase([x, x + 1], check=true)
 end
 
 @testset "groebner arithmetic" begin

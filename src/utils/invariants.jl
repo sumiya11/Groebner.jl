@@ -9,14 +9,7 @@ Check that `expr` evaluates to `true` at runtime. If not, throw an
 `AssertionError`.
 
 It should be fine to use the `@invariant` macro in performance-critical code, as
-long as the code is compiled with `invariants_enabled() = false`.
-
-## Examples
-
-```jldoctest
-@invariant 2 > 1
-@invariant 1 > 2  # throws!
-```
+long as the code is compiled with `Groebner.invariants_enabled() = false`.
 """
 macro invariant(arg)
     expr = quote
@@ -27,10 +20,6 @@ macro invariant(arg)
         end
     end
     esc(expr)
-end
-
-macro unreachable()
-    :(@invariant false)
 end
 
 ###

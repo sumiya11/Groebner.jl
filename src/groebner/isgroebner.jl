@@ -3,23 +3,47 @@
 ### 
 # Backend for `isgroebner`
 
-function _isgroebner0(polynomials, kws::KeywordArguments)
-    polynomial_repr =
-        io_select_polynomial_representation(polynomials, kws, hint=:large_exponents)
-    ring, var_to_index, monoms, coeffs =
-        io_convert_to_internal(polynomial_repr, polynomials, kws)
-    if isempty(monoms)
-        @log :misc "Input consisting of zero polynomials, which is a Groebner basis by our convention"
-        return true
-    end
-    params = AlgorithmParameters(ring, polynomial_repr, kws)
-    ring, _ = io_set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
-    res = _isgroebner1(ring, monoms, coeffs, params)
-    res
+function isgroebner0(polynomials, options)
+    ring, monoms, coeffs = io_convert_polynomials_to_ir(polynomials, options)
+    isgroebner1(ring, monoms, coeffs, options)
 end
 
-# isgroebner for Finite fields
-@timeit function _isgroebner1(
+function isgroebner1(ring::PolyRing, monoms, coeffs, options)
+    try
+        repr = io_select_polynomial_representation(ring, options)
+        params = AlgorithmParameters(ring, repr, options)
+        return _isgroebner1(ring, monoms, coeffs, params, repr)
+    catch err
+        if isa(err, MonomialDegreeOverflow)
+            @log :info """
+            Possible overflow of exponent vector detected. 
+            Restarting with at least 32 bits per exponent."""
+            repr = io_select_polynomial_representation(ring, options; hint=:large_exponents)
+            params = AlgorithmParameters(ring, repr, options)
+            return _isgroebner1(ring, monoms, coeffs, params, repr)
+        else
+            # Something bad happened.
+            rethrow(err)
+        end
+    end
+end
+
+function _isgroebner1(ring, monoms, coeffs, params, repr)
+    _, ring2, monoms2, coeffs2 =
+        io_convert_ir_to_internal(ring, monoms, coeffs, params, repr)
+    isgroebner2(ring2, monoms2, coeffs2, params)
+end
+
+function isgroebner2(ring, monoms, coeffs, params)
+    _monoms = filter(!isempty, monoms)
+    _coeffs = filter(!isempty, coeffs)
+    isempty(_monoms) && return true
+    monoms, coeffs = _monoms, _coeffs
+    _isgroebner2(ring, monoms, coeffs, params)
+end
+
+# Finite fields
+function _isgroebner2(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -30,8 +54,8 @@ end
     res
 end
 
-# isgroebner for Rational numbers
-@timeit function _isgroebner1(
+# Rational numbers
+function _isgroebner2(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},

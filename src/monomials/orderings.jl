@@ -184,14 +184,6 @@ struct WeightedOrdering{U, T} <: AbstractMonomialOrdering
     weights::Vector{U}
     variables::Union{Nothing, T}
 
-    # function WeightedOrdering(variables, weights::AbstractVector)
-    #     @assert !isempty(weights)
-    #     @assert all(>=(0), weights) "Only nonnegative weights are supported."
-    #     # @assert length(weights) == length(variables)
-    #     variables === nothing && (variables = [])
-    #     new{eltype(variables)}(weights, variables)
-    # end
-
     function WeightedOrdering(weights::Vector{T}) where {T <: Integer}
         @assert all(>=(0), weights)
         weights_unsigned = map(UInt64, weights)

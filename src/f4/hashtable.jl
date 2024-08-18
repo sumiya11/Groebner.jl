@@ -131,7 +131,7 @@ function hashtable_initialize(
     )
 end
 
-@timeit function hashtable_initialize_secondary(ht::MonomialHashtable{M}) where {M <: Monom}
+function hashtable_initialize_secondary(ht::MonomialHashtable{M}) where {M <: Monom}
     # 2^6 seems to be the best out of 2^5, 2^6, 2^7
     initial_size = 2^6
     @invariant initial_size > 1

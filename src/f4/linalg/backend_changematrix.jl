@@ -4,7 +4,7 @@
 # High level
 
 function linalg_deterministic_sparse_changematrix!(
-        matrix::MacaulayMatrix,
+    matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
     arithmetic::AbstractArithmetic
@@ -25,7 +25,7 @@ function linalg_deterministic_sparse_changematrix!(
 end
 
 function linalg_deterministic_sparse_interreduction_changematrix!(
-        matrix::MacaulayMatrix,
+    matrix::MacaulayMatrix,
     basis::Basis{C},
     arithmetic::AbstractArithmetic
 ) where {C}
@@ -44,7 +44,7 @@ function linalg_deterministic_sparse_interreduction_changematrix!(
     linalg_prepare_matrix_pivots_in_interreduction!(matrix, basis)
     # Interreduce AB
     linalg_interreduce_matrix_pivots_changematrix!(
-                matrix,
+        matrix,
         basis,
         arithmetic,
         reversed_rows=true
@@ -56,7 +56,7 @@ end
 # Low level
 
 function linalg_reduce_matrix_lower_part_changematrix!(
-        matrix::MacaulayMatrix{CoeffType},
+    matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
@@ -145,7 +145,7 @@ function linalg_reduce_matrix_lower_part_changematrix!(
 end
 
 function linalg_interreduce_matrix_pivots_changematrix!(
-        matrix::MacaulayMatrix{CoeffType},
+    matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType};
     reversed_rows::Bool=false

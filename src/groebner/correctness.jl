@@ -13,8 +13,8 @@
 #
 # Usually, by default, only the first two are active, which gives the correct
 # basis with a high probability
-@timeit function correctness_check!(
-        state,
+function correctness_check!(
+    state,
     lucky,
     ring,
     basis_qq,
@@ -35,7 +35,6 @@
     # Then check that a basis is also a basis modulo a prime
     if params.randomized_check
         if !randomized_correctness_check!(
-
             state,
             ring,
             basis_zz,
@@ -51,7 +50,6 @@
     end
     if params.certify_check
         return certify_correctness_check!(
-
             state,
             ring,
             basis_qq,
@@ -106,7 +104,7 @@ function heuristic_correctness_check(
 end
 
 function randomized_correctness_check!(
-        state,
+    state,
     ring,
     input_zz,
     gb_ff,
@@ -117,8 +115,7 @@ function randomized_correctness_check!(
     # NOTE: this function may modify the given hashtable!
     prime = next_check_prime!(lucky)
     @log :misc "Checking the correctness of reconstrcted basis modulo $prime"
-    ring_ff, input_ff =
-        reduce_modulo_p!(state.buffer, ring, input_zz, prime, deepcopy=true)
+    ring_ff, input_ff = reduce_modulo_p!(state.buffer, ring, input_zz, prime, deepcopy=true)
     # TODO: do we really need to re-scale things to be fraction-free?
     gb_coeffs_zz = _clear_denominators!(state.buffer, state.gb_coeffs_qq)
     gb_zz = basis_deep_copy_with_new_coeffs(gb_ff, gb_coeffs_zz)

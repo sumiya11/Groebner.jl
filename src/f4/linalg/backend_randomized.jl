@@ -9,7 +9,7 @@
 # High level
 
 function linalg_randomized_sparse!(
-        matrix::MacaulayMatrix,
+    matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
     arithmetic::AbstractArithmetic,
@@ -44,7 +44,7 @@ end
 #   A B
 #   0 D'
 function linalg_randomized_reduce_matrix_lower_part!(
-        matrix::MacaulayMatrix{CoeffType},
+    matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType},
     rng::AbstractRNG

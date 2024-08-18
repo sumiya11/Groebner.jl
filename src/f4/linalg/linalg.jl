@@ -27,8 +27,8 @@ In other words, computes the reduced row echelon form of
 
 Returns `true` if successful and `false` otherwise.
 """
-@timeit function linalg_main!(
-        matrix::MacaulayMatrix,
+function linalg_main!(
+    matrix::MacaulayMatrix,
     basis::Basis,
     params::AlgorithmParameters,
     trace=nothing;
@@ -64,7 +64,6 @@ Returns `true` if successful and `false` otherwise.
 
     flag = if !isnothing(trace)
         _linalg_main_with_trace!(
-
             trace,
             matrix,
             basis,
@@ -89,7 +88,7 @@ Interreduces the rows of the given `MacaulayMatrix`.
 Returns `true` if successful and `false` otherwise.
 """
 function linalg_autoreduce!(
-        matrix::MacaulayMatrix,
+    matrix::MacaulayMatrix,
     basis::Basis,
     params::AlgorithmParameters,
     trace=nothing;
@@ -104,15 +103,7 @@ function linalg_autoreduce!(
     changematrix = params.changematrix
 
     flag = if !isnothing(trace)
-        _linalg_autoreduce_with_trace!(
-
-            trace,
-            matrix,
-            basis,
-            linalg,
-            changematrix,
-            arithmetic
-        )
+        _linalg_autoreduce_with_trace!(trace, matrix, basis, linalg, changematrix, arithmetic)
     else
         _linalg_autoreduce!(matrix, basis, linalg, changematrix, arithmetic)
     end
@@ -136,7 +127,7 @@ interreduction (or, autoreduction) of the matrix rows.
 Returns `true` if successful and `false` otherwise.
 """
 function linalg_normalform!(
-        matrix::MacaulayMatrix,
+    matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
 )
@@ -159,7 +150,7 @@ returns `true` if
 is zero and `false`, otherwise.
 """
 function linalg_isgroebner!(
-        matrix::MacaulayMatrix,
+    matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
 )
@@ -188,7 +179,7 @@ function linalg_should_use_threading(matrix, linalg, threaded)
 end
 
 function _linalg_main!(
-        matrix::MacaulayMatrix,
+    matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
     threaded::Symbol,
@@ -230,7 +221,7 @@ function _linalg_main!(
 end
 
 function _linalg_main_with_trace!(
-        trace::TraceF4,
+    trace::TraceF4,
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
@@ -255,26 +246,21 @@ function _linalg_main_with_trace!(
 end
 
 function _linalg_autoreduce!(
-        matrix::MacaulayMatrix,
+    matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
     changematrix::Bool,
     arithmetic::AbstractArithmetic
 )
     if changematrix
-        linalg_deterministic_sparse_interreduction_changematrix!(
-
-            matrix,
-            basis,
-            arithmetic
-        )
+        linalg_deterministic_sparse_interreduction_changematrix!(matrix, basis, arithmetic)
     else
         linalg_deterministic_sparse_interreduction!(matrix, basis, arithmetic)
     end
 end
 
 function _linalg_autoreduce_with_trace!(
-        trace::TraceF4,
+    trace::TraceF4,
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
@@ -285,29 +271,17 @@ function _linalg_autoreduce_with_trace!(
     sort_matrix_upper_rows!(matrix)
 
     if linalg.algorithm === :learn
-        linalg_learn_deterministic_sparse_interreduction!(
-
-            trace,
-            matrix,
-            basis,
-            arithmetic
-        )
+        linalg_learn_deterministic_sparse_interreduction!(trace, matrix, basis, arithmetic)
     else
         @assert linalg.algorithm === :apply
-        linalg_apply_deterministic_sparse_interreduction!(
-
-            trace,
-            matrix,
-            basis,
-            arithmetic
-        )
+        linalg_apply_deterministic_sparse_interreduction!(trace, matrix, basis, arithmetic)
     end
 
     true
 end
 
 function _linalg_normalform!(
-        matrix::MacaulayMatrix,
+    matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
 )
@@ -319,7 +293,7 @@ function _linalg_normalform!(
 end
 
 function _linalg_isgroebner!(
-        matrix::MacaulayMatrix,
+    matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
 )

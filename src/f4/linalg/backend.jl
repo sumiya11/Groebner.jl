@@ -9,7 +9,7 @@
 # High level
 
 function linalg_deterministic_sparse!(
-        matrix::MacaulayMatrix,
+    matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
     arithmetic::AbstractArithmetic
@@ -28,7 +28,7 @@ function linalg_deterministic_sparse!(
 end
 
 function linalg_deterministic_sparse_interreduction!(
-        matrix::MacaulayMatrix,
+    matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
 )
@@ -54,8 +54,8 @@ end
 #   A B
 #   0 D'
 # The new pivots in the D' block are known, but possibly not fully interreduced.
-@timeit function linalg_reduce_matrix_lower_part!(
-        matrix::MacaulayMatrix{CoeffType},
+function linalg_reduce_matrix_lower_part!(
+    matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
@@ -126,8 +126,8 @@ end
 # Assumes that the pivots in the matrix are correctly filled.
 # 
 # Returns the indices of the rows that did not reduce to zero.
-@timeit function linalg_interreduce_matrix_pivots!(
-        matrix::MacaulayMatrix{CoeffType},
+function linalg_interreduce_matrix_pivots!(
+    matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType};
     reversed_rows::Bool=false
@@ -215,8 +215,8 @@ end
 end
 
 # Puts the AB part of the matrix in the RREF, inplace.
-@timeit function linalg_interreduce_matrix_upper_part!(
-        matrix::MacaulayMatrix{CoeffType},
+function linalg_interreduce_matrix_upper_part!(
+    matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
@@ -284,7 +284,7 @@ end
 end
 
 function linalg_reduce_matrix_lower_part_invariant_pivots!(
-        matrix::MacaulayMatrix{CoeffType},
+    matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
@@ -339,7 +339,7 @@ function linalg_reduce_matrix_lower_part_invariant_pivots!(
 end
 
 function linalg_reduce_matrix_lower_part_any_nonzero!(
-        matrix::MacaulayMatrix{CoeffType},
+    matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
@@ -408,7 +408,7 @@ function linalg_prepare_matrix_pivots!(matrix::MacaulayMatrix)
 end
 
 function linalg_prepare_matrix_pivots_in_interreduction!(
-        matrix::MacaulayMatrix,
+    matrix::MacaulayMatrix,
     basis::Basis{C}
 ) where {C}
     _, ncols = size(matrix)

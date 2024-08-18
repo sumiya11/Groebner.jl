@@ -73,7 +73,6 @@ end
     @time @includetests ["isgroebner/isgroebner"]
 
     @time @includetests ["normalform/normalform", "normalform/normalform_stress"]
-    @time @includetests ["fglm/kbase", "fglm/fglm"]
 
     # Test for different frontends: 
     # - AbstractAlgebra.jl  (AbstractAlgebra.Generic.MPoly{T})

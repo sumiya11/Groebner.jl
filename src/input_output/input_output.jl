@@ -63,15 +63,34 @@ io_zero_coeffs(::Type{T}, ring::PolyRing) where {T} = Vector{T}()
 io_zero_monoms(::Type{T}, ring::PolyRing) where {T} = Vector{T}()
 
 function io_convert_polynomials_to_ir(polynomials, options::KeywordArguments)
+    isempty(polynomials) && throw(DomainError("Empty input."))
     ring = io_extract_ring(polynomials)
     var_to_index, monoms, coeffs = _io_convert_polynomials_to_ir(ring, polynomials)
+    ring = PolyRing(ring.nvars, io_convert_ordering_to_ir(var_to_index, ring.ord), ring.ch)
+    options.ordering = io_convert_ordering_to_ir(var_to_index, options.ordering)
     ring, monoms, coeffs
 end
 
-function _io_convert_polynomials_to_ir(
-    ring::PolyRing,
-    polynomials
-)
+function io_convert_ordering_to_ir(var_to_index, ordering)
+    Ords = (Lex, DegLex, DegRevLex)
+    idx = findfirst(Ord -> ordering isa Ord, Ords)
+    if !isnothing(idx)
+        if isnothing(ordering.variables)
+            Ords[idx]()
+        else
+            Ords[idx](map(k -> var_to_index[k], ordering.variables))
+        end
+    elseif ordering isa ProductOrdering
+        ProductOrdering(
+            io_convert_ordering_to_ir(var_to_index, ordering.ord1),
+            io_convert_ordering_to_ir(var_to_index, ordering.ord2)
+        )
+    else
+        ordering
+    end
+end
+
+function _io_convert_polynomials_to_ir(ring::PolyRing, polynomials)
     coeffs = io_extract_coeffs_ir(ring, polynomials)
     reversed_order, var_to_index, monoms = io_extract_monoms_ir(ring, polynomials)
     @invariant length(coeffs) == length(monoms)
@@ -99,15 +118,18 @@ function io_convert_ir_to_internal(ring, monoms, coeffs, params, repr)
         monoms2[i] = Vector{repr.monomtype}(undef, length(monoms[i]))
         coeffs2[i] = Vector{repr.coefftype}(undef, length(monoms[i]))
         for j in 1:length(monoms[i])
-            monoms2[i][j] = monom_construct_from_vector(
-                repr.monomtype,
-                monoms[i][j]
-            )
+            monoms2[i][j] = monom_construct_from_vector(repr.monomtype, monoms[i][j])
             coeffs2[i][j] = repr.coefftype(coeffs[i][j])
         end
     end
-    ring2, _ = io_set_monomial_ordering!(ring, Dict{Any,Int}(), monoms2, coeffs2, params)
-    ring2, monoms2, coeffs2
+    ring2, term_sorting_permutations = io_set_monomial_ordering!(
+        ring,
+        Dict{Int, Int}(collect(1:(ring.nvars)) .=> collect(1:(ring.nvars))),
+        monoms2,
+        coeffs2,
+        params
+    )
+    term_sorting_permutations, ring2, monoms2, coeffs2
 end
 
 function io_convert_internal_to_ir(ring, monoms, coeffs, params)
@@ -148,7 +170,8 @@ function io_select_polynomial_representation(
         @log :warn "The given hint=$hint was discarded"
     end
     # frontend, npolys, char, nvars, ordering = io_peek_at_polynomials(polynomials)
-    frontend, npolys, char, nvars, ordering = :abstractalgebra, 1, ring.ch, ring.nvars, ring.ord
+    frontend, npolys, char, nvars, ordering =
+        :abstractalgebra, 1, ring.ch, ring.nvars, ring.ord
     monomtype = io_select_monomtype(char, nvars, ordering, kws, hint)
     coefftype, using_wide_type_for_coeffs =
         io_select_coefftype(char, nvars, ordering, kws, hint)
@@ -183,7 +206,10 @@ function io_select_monomtype(char, nvars, ordering, kws, hint)
         kws.homogenize === :auto && (
             kws.ordering isa Lex ||
             kws.ordering isa ProductOrdering ||
-            (ordering == :lex && kws.ordering isa InputOrdering)
+            (
+                (ordering isa Lex || ordering isa ProductOrdering) &&
+                kws.ordering isa InputOrdering
+            )
         )
     )
         @log :misc """
@@ -201,7 +227,7 @@ function io_select_monomtype(char, nvars, ordering, kws, hint)
         @assert monom_is_supported_ordering(ExponentVector{ExponentSize}, kws.ordering)
         return ExponentVector{ExponentSize}
     end
-    
+
     # if sparse representation is requested
     if kws.monoms === :sparse
         if monom_is_supported_ordering(
@@ -328,7 +354,7 @@ end
 ###
 # Converting to selected polynomial representation
 
-@timeit function io_convert_to_internal(
+function io_convert_to_internal(
     representation::PolynomialRepresentation,
     polynomials,
     kws::KeywordArguments;
@@ -338,7 +364,8 @@ end
     # NOTE: Input polynomials must not be modified.
     @log :misc "Converting input polynomials to internal representation.."
     ring = io_extract_ring(polynomials)
-    var_to_index, monoms, coeffs = io_extract_polynomial_data(representation, ring, polynomials)
+    var_to_index, monoms, coeffs =
+        io_extract_polynomial_data(representation, ring, polynomials)
     @log :misc "Done converting input polynomials to internal representation."
     @log :all """
     Polynomials in internal representation:
@@ -366,7 +393,8 @@ function io_extract_polynomial_data(
     polynomials::Vector{T}
 ) where {T}
     coeffs = io_extract_coeffs(representation, ring, polynomials)
-    reversed_order, var_to_index, monoms = io_extract_monoms(representation, ring, polynomials)
+    reversed_order, var_to_index, monoms =
+        io_extract_monoms(representation, ring, polynomials)
     @invariant length(coeffs) == length(monoms)
     if reversed_order
         for i in 1:length(coeffs)
@@ -418,7 +446,7 @@ end
 ###
 # Converting polynomials from internal representation back to original types
 
-@timeit function io_convert_to_output(
+function io_convert_to_output(
     ring::PolyRing,
     polynomials,
     monoms::Vector{Vector{M}},
@@ -467,7 +495,7 @@ end
 ###
 # Utilities for composite coefficients
 
-@timeit function io_convert_to_output_batched(
+function io_convert_to_output_batched(
     ring::PolyRing,
     batch::NTuple{N, V},
     monoms::Vector{Vector{M}},

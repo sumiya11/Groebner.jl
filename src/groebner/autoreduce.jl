@@ -3,7 +3,7 @@
 ###
 #  Autoreducing polynomials
 
-function _autoreduce1(
+function autoreduce2(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},

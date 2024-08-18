@@ -24,30 +24,16 @@ Specifies if custom asserts and invariants are checked. If `false`, then all
 checks are disabled, and entail no runtime overhead.
 
 It is useful to enable this when debugging the Groebner package.
-
-See also `@invariant` in `src/utils/invariants.jl`.
 """
-invariants_enabled() = false
+invariants_enabled() = true
 
 """
     logging_enabled() -> Bool
 
 Specifies if logging is enabled. If `false`, then all logging in Groebner is
 disabled, and entails **(almost)** no runtime overhead.
-
-See also `@log` in `src/utils/logging.jl`.
 """
 logging_enabled() = true
-
-"""
-    performance_counters_enabled() -> Bool
-
-If performance-tracking macro `@timeit` should be enabled in Groebner. 
-
-When this is `false`, all performance counters in Groebner are disabled and
-entail **(almost)** no runtime overhead.
-"""
-performance_counters_enabled() = false
 
 ###
 # Imports
@@ -110,9 +96,6 @@ function __init__()
     _groebner_log_lock[] = ReentrantLock()
     logger_update(loglevel=Logging.Info)
 
-    # Setup performance counters
-    _groebner_timer_lock[] = ReentrantLock()
-
     nothing
 end
 
@@ -121,7 +104,6 @@ end
 
 include("utils/logging.jl")
 include("utils/invariants.jl")
-include("utils/timeit.jl")
 include("utils/simd.jl")
 include("utils/pretty_print.jl")
 include("utils/plots.jl")
@@ -174,7 +156,6 @@ include("f4/linalg/backend_randomized.jl")
 include("f4/linalg/backend_randomized_threaded.jl")
 include("f4/linalg/backend_learn_apply.jl")
 include("f4/linalg/backend_learn_apply_threaded.jl")
-include("f4/linalg/backend_experimental.jl")
 
 include("f4/sort.jl")
 include("f4/f4.jl")
@@ -193,13 +174,6 @@ include("groebner/isgroebner.jl")
 include("groebner/normalform.jl")
 include("groebner/autoreduce.jl")
 include("groebner/homogenization.jl")
-
-#= generic fglm implementation =#
-# NOTE: this is currently not exported, and is only for internal use
-include("fglm/linear.jl")
-include("fglm/fglm.jl")
-include("fglm/fglm_internal.jl")
-include("fglm/kbase.jl")
 
 # API
 include("interface.jl")

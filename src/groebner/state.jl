@@ -122,7 +122,7 @@ function common_denominator(coeffs::Vector{T}) where {T <: CoeffQQ}
 end
 
 function _clear_denominators!(
-        buffer::CoefficientBuffer,
+    buffer::CoefficientBuffer,
     coeffs_qq::Vector{Vector{T}}
 ) where {T <: CoeffQQ}
     coeffs_zz = [[BigInt(0) for _ in 1:length(c)] for c in coeffs_qq]
@@ -140,7 +140,7 @@ function _clear_denominators!(
 end
 
 function clear_denominators!(
-        buffer::CoefficientBuffer,
+    buffer::CoefficientBuffer,
     basis::Basis{T};
     deepcopy=false
 ) where {T <: CoeffQQ}
@@ -188,7 +188,7 @@ function reduce_modulo_p!(
 end
 
 function reduce_modulo_p!(
-        coeffbuff::CoefficientBuffer,
+    coeffbuff::CoefficientBuffer,
     ring::PolyRing,
     coeffs_zz::Vector{Vector{T1}},
     prime::T2
@@ -199,7 +199,7 @@ function reduce_modulo_p!(
 end
 
 function reduce_modulo_p!(
-        buffer::CoefficientBuffer,
+    buffer::CoefficientBuffer,
     ring::PolyRing,
     basis::Basis{T1},
     prime::T2;
@@ -215,7 +215,7 @@ function reduce_modulo_p!(
 end
 
 function reduce_modulo_p_in_batch!(
-        coeffbuff::CoefficientBuffer,
+    coeffbuff::CoefficientBuffer,
     ring::PolyRing,
     basis::Basis{C},
     prime_xn::NTuple{N, T}
@@ -440,7 +440,7 @@ function full_simultaneous_crt_reconstruct_changematrix!(
     nothing
 end
 
-@timeit function partial_incremental_crt_reconstruct!(
+function partial_incremental_crt_reconstruct!(
     state::GroebnerState,
     lucky::LuckyPrimes,
     indices_selection::Vector{Tuple{Int, Int}}
@@ -593,7 +593,7 @@ end
 # numbers to state.gb_coeffs_qq inplace
 #
 # Returns true is the reconstrction is successfull, false otherwise.
-@timeit function full_rational_reconstruct!(
+function full_rational_reconstruct!(
     state::GroebnerState,
     lucky::LuckyPrimes,
     use_flint::Bool
@@ -722,7 +722,7 @@ function full_rational_reconstruct_changematrix!(
     true
 end
 
-@timeit function partial_rational_reconstruct!(
+function partial_rational_reconstruct!(
     state::GroebnerState,
     lucky::LuckyPrimes,
     indices_selection::Vector{Tuple{Int, Int}},

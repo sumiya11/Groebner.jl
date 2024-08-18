@@ -10,39 +10,21 @@
 
 _default_sorting_alg() = Base.Sort.DEFAULT_UNSTABLE
 
-# Use scratch spaces for >1.9.0
-@static if VERSION > v"1.9.0"
-    # Sorts arr at the range of indices from..to. 
-    # NOTE: this function is perhaps type unstable
-    function sort_part!(
-        arr,
-        from::Integer,
-        to::Integer;
-        lt=isless,
-        alg=_default_sorting_alg(),
-        by=identity,
-        scratch=nothing
-    )
-        from > to && return nothing
-        ordr = Base.Sort.ord(lt, by, nothing)
-        sort!(arr, from, to, alg, ordr, scratch)
-        nothing
-    end
-else
-    function sort_part!(
-        arr,
-        from::Integer,
-        to::Integer;
-        lt=isless,
-        alg=_default_sorting_alg(),
-        by=identity,
-        scratch=nothing
-    )
-        from > to && return nothing
-        ordr = Base.Sort.ord(lt, by, nothing)
-        sort!(arr, from, to, alg, ordr)
-        nothing
-    end
+# Sorts arr at the range of indices from..to. 
+# This function is perhaps type unstable
+function sort_part!(
+    arr,
+    from::Integer,
+    to::Integer;
+    lt=isless,
+    alg=_default_sorting_alg(),
+    by=identity,
+    scratch=nothing
+)
+    from > to && return nothing
+    ordr = Base.Sort.ord(lt, by, nothing)
+    sort!(arr, from, to, alg, ordr, scratch)
+    nothing
 end
 
 # Sorts polynomials from the basis by their leading monomial in the

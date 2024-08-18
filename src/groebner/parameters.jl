@@ -3,14 +3,6 @@
 ### 
 # Select parameters in Groebner basis computation
 
-# There is no Xoshiro rng in Julia v < 1.8.
-# Use Random.Xoshiro, if available, as it is a bit faster.
-const _default_rng_type = @static if VERSION >= v"1.8.0"
-    Random.Xoshiro
-else
-    Random.MersenneTwister
-end
-
 # Specifies linear algebra backend algorithm
 struct LinearAlgebra
     algorithm::Symbol
@@ -89,7 +81,7 @@ mutable struct AlgorithmParameters{
 
     # Random number generator
     seed::UInt64
-    rng::_default_rng_type
+    rng::Random.Xoshiro
 
     # Internal option for `groebner`.
     # At the end of F4, polynomials are interreduced. 
@@ -234,7 +226,7 @@ function AlgorithmParameters(
     majority_threshold = 1
 
     seed = kwargs.seed
-    rng = _default_rng_type(seed)
+    rng = Random.Xoshiro(seed)
     useed = UInt64(seed)
 
     sweep = kwargs.sweep
@@ -308,7 +300,7 @@ function AlgorithmParameters(
         sweep,
         statistics,
         use_flint,
-        changematrix,
+        changematrix
     )
 end
 
@@ -348,6 +340,6 @@ function params_mod_p(
         params.sweep,
         params.statistics,
         params.use_flint,
-        params.changematrix,
+        params.changematrix
     )
 end

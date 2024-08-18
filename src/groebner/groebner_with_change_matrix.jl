@@ -3,24 +3,34 @@
 ### 
 # Backend for `groebner_with_change_matrix`
 
+function groebner_with_change_matrix0(polynomials, options)
+    isempty(polynomials) && throw(DomainError("Empty input."))
+    ring, monoms, coeffs = io_convert_polynomials_to_ir(polynomials, options)
+    gb_monoms, gb_coeffs, matrix_monoms, matrix_coeffs =
+        groebner_with_change_matrix1(ring, monoms, coeffs, options)
+    result = io_convert_ir_to_polynomials(ring, polynomials, gb_monoms, gb_coeffs, options)
+    rows = [
+        io_convert_ir_to_polynomials(ring, polynomials, m, c, options) for
+        (m, c) in zip(matrix_monoms, matrix_coeffs)
+    ]
+    matrix = collect(transpose(reduce(hcat, rows)))
+    result, matrix
+end
+
 # Proxy function for handling exceptions.
-function _groebner_with_change_matrix0(polynomials, kws::KeywordArguments)
-    # We try to select an efficient internal polynomial representation, i.e., a
-    # suitable representation of monomials and coefficients.
-    polynomial_repr = io_select_polynomial_representation(polynomials, kws)
+function groebner_with_change_matrix1(ring::PolyRing, monoms, coeffs, options)
     try
-        # The backend is wrapped in a try/catch to catch exceptions that one can
-        # hope to recover from (and, perhaps, restart the computation with safer
-        # parameters).
-        return _groebner_with_change_matrix1(polynomials, kws, polynomial_repr)
+        repr = io_select_polynomial_representation(ring, options)
+        params = AlgorithmParameters(ring, repr, options)
+        return _groebner_with_change_matrix1(ring, monoms, coeffs, params, repr)
     catch err
         if isa(err, MonomialDegreeOverflow)
             @log :info """
             Possible overflow of exponent vector detected. 
-            Restarting with at least $(32) bits per exponent."""
-            polynomial_repr =
-                io_select_polynomial_representation(polynomials, kws, hint=:large_exponents)
-            return _groebner_with_change_matrix1(polynomials, kws, polynomial_repr)
+            Restarting with at least 32 bits per exponent."""
+            repr = io_select_polynomial_representation(ring, options; hint=:large_exponents)
+            params = AlgorithmParameters(ring, repr, options)
+            return _groebner_with_change_matrix1(ring, monoms, coeffs, params, repr)
         else
             # Something bad happened.
             rethrow(err)
@@ -28,66 +38,73 @@ function _groebner_with_change_matrix0(polynomials, kws::KeywordArguments)
     end
 end
 
-function _groebner_with_change_matrix1(polynomials, kws::KeywordArguments, representation)
-    # Extract ring information, exponents, and coefficients from input
-    # polynomials. Convert these to an internal polynomial representation. 
-    # NOTE: This must copy the input, so that input `polynomials` is never
-    # modified.
-    # NOTE: The body of this function is type-unstable (by design)
-    ring, var_to_index, monoms, coeffs =
-        io_convert_to_internal(representation, polynomials, kws)
+function _groebner_with_change_matrix1(ring, monoms, coeffs, params, repr)
+    _, ring2, monoms2, coeffs2 =
+        io_convert_ir_to_internal(ring, monoms, coeffs, params, repr)
+    gb_monoms2, gb_coeffs2, matrix_monoms2, matrix_coeffs2 =
+        groebner_with_change_matrix2(ring2, monoms2, coeffs2, params)
+    gb_monoms, gb_coeffs = io_convert_internal_to_ir(ring2, gb_monoms2, gb_coeffs2, params)
+    matrix_monoms_and_coeffs = [
+        io_convert_internal_to_ir(ring2, _matrix_monoms2, _matrix_coeffs2, params) for
+        (_matrix_monoms2, _matrix_coeffs2) in zip(matrix_monoms2, matrix_coeffs2)
+    ]
+    matrix_monoms, matrix_coeffs =
+        map(first, matrix_monoms_and_coeffs), map(last, matrix_monoms_and_coeffs)
+    gb_monoms, gb_coeffs, matrix_monoms, matrix_coeffs
+end
 
-    # Check and set parameters and monomial ordering
-    params = AlgorithmParameters(ring, representation, kws)
-    ring, _ = io_set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
+function groebner_with_change_matrix2(ring, monoms, coeffs, params)
+    nonzero_indices = findall(!io_iszero_coeffs, coeffs)
+    zero_indices = setdiff(collect(1:length(monoms)), nonzero_indices)
 
-    # Fast path for the input of zeros
-    if isempty(monoms)
-        @log :misc "Input consisting of zero polynomials. Returning zero."
-        changematrix = io_convert_changematrix_to_output(
-            ring,
-            polynomials,
-            0,
-            [empty(monoms)],
-            [empty(coeffs)],
-            params
-        )
-        return io_convert_to_output(ring, polynomials, monoms, coeffs, params), changematrix
+    __monoms = monoms
+    __coeffs = coeffs
+    _monoms = filter(!isempty, monoms)
+    _coeffs = filter(!isempty, coeffs)
+    if isempty(_monoms)
+        return [monoms[1]],
+        [coeffs[1]],
+        [[monoms[1] for _ in 1:length(monoms)]],
+        [[coeffs[1] for _ in 1:length(coeffs)]]
     end
+    monoms, coeffs = _monoms, _coeffs
 
     if params.homogenize
-        # this also performs saturation w.r.t. the homogenizing variable
         _, ring, monoms, coeffs = homogenize_generators!(ring, monoms, coeffs, params)
     end
 
-    # Compute a groebner basis!
-    gbmonoms, gbcoeffs, matrix_monoms, matrix_coeffs =
+    gb_monoms, gb_coeffs, matrix_monoms, matrix_coeffs =
         _groebner_with_change_matrix2(ring, monoms, coeffs, params)
 
     if params.homogenize
-        ring, gbmonoms, gbcoeffs =
-            dehomogenize_generators!(ring, gbmonoms, gbcoeffs, params)
+        ring, gb_monoms, gb_coeffs =
+            dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
     end
 
-    # Convert result back to the representation of input
-    basis = io_convert_to_output(ring, polynomials, gbmonoms, gbcoeffs, params)
-    changematrix = io_convert_changematrix_to_output(
-        ring,
-        polynomials,
-        length(monoms),
-        matrix_monoms,
-        matrix_coeffs,
-        params
-    )
+    if !isempty(zero_indices)
+        for i in 1:length(matrix_monoms)
+            _matrix_monoms_i = resize!(similar(matrix_monoms[i]), length(__monoms))
+            _matrix_coeffs_i = resize!(similar(matrix_coeffs[i]), length(__monoms))
+            zero_indices = setdiff(collect(1:length(__monoms)), nonzero_indices)
+            _matrix_monoms_i .= [__monoms[zero_indices[1]]]
+            _matrix_coeffs_i .= [__coeffs[zero_indices[1]]]
+            for j in 1:length(nonzero_indices)
+                _matrix_monoms_i[nonzero_indices[j]] = matrix_monoms[i][j]
+                _matrix_coeffs_i[nonzero_indices[j]] = matrix_coeffs[i][j]
+            end
+            matrix_monoms[i] = _matrix_monoms_i
+            matrix_coeffs[i] = _matrix_coeffs_i
+        end
+    end
 
-    basis, changematrix
+    gb_monoms, gb_coeffs, matrix_monoms, matrix_coeffs
 end
 
 ###
 # Groebner basis over Z_p.
 # Just calls f4 directly.
 
-@timeit function _groebner_with_change_matrix2(
+function _groebner_with_change_matrix2(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -110,7 +127,7 @@ end
 # Groebner basis over Q.
 
 # GB over the rationals uses modular computation.
-@timeit function _groebner_with_change_matrix2(
+function _groebner_with_change_matrix2(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -150,8 +167,7 @@ function _groebner_with_change_classic_modular(
     @log :misc "Reducing input generators modulo $prime"
 
     # Perform reduction modulo prime and store result in basis_ff
-    ring_ff, basis_ff =
-        reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
+    ring_ff, basis_ff = reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
     @log :all "Reduced coefficients are" basis_ff.coeffs
 
     @log :all "Before F4" basis_ff
@@ -185,7 +201,6 @@ function _groebner_with_change_classic_modular(
     if success_reconstruct && changematrix_success_reconstruct
         @log :misc "Verifying the correctness of reconstruction"
         correct_basis = correctness_check!(
-
             state,
             luckyprimes,
             ring_ff,
@@ -309,7 +324,6 @@ function _groebner_with_change_classic_modular(
         end
 
         correct_basis = correctness_check!(
-
             state,
             luckyprimes,
             ring_ff,

@@ -47,10 +47,12 @@ mutable struct TraceF4{C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
     sweep_output::Bool
     representation::PolynomialRepresentation
     homogenize::Bool
+
+    napply::Int
 end
 
 function trace_initialize(
-        ring::PolyRing,
+    ring::PolyRing,
     input_basis::Basis,
     gb_basis::Basis,
     hashtable::MonomialHashtable,
@@ -91,6 +93,7 @@ function trace_initialize(
         params.sweep,
         PolynomialRepresentation(ExponentVector{UInt64}, UInt64, false),
         params.homogenize,
+        0
     )
 end
 
@@ -132,6 +135,7 @@ function trace_deepcopy(
             trace.representation.using_wide_type_for_coeffs
         ),
         trace.homogenize,
+        trace.napply
     )
 end
 
@@ -201,6 +205,7 @@ function trace_copy(
         trace.sweep_output,
         new_representation,
         trace.homogenize,
+        trace.napply
     )
 end
 
@@ -216,11 +221,6 @@ end
 ###
 # A wrapper around the tracer exposed to the user
 
-"""
-    WrappedTraceF4
-
-
-"""
 mutable struct WrappedTraceF4
     recorded_traces::Dict{Any, Any}
 
@@ -236,14 +236,7 @@ mutable struct WrappedTraceF4
     end
 end
 
-"""
-    trace_deepcopy(trace)
-
-Returns a deep copy of `trace`. 
-The original object and the copy are independent of each other.
-
-Does not provide the same guarantees as `Base.deepcopy`.
-"""
+# Does not provide the same guarantees as `Base.deepcopy`.
 function trace_deepcopy(wrapped_trace::WrappedTraceF4)
     WrappedTraceF4(
         Dict(deepcopy(k) => trace_deepcopy(v) for (k, v) in wrapped_trace.recorded_traces)
@@ -262,16 +255,12 @@ function get_default_trace(wrapped_trace::WrappedTraceF4)
         end
     end
 
-    @unreachable
     first(values(wrapped_trace.recorded_traces))
 end
 
-function get_trace!(wrapped_trace::WrappedTraceF4, polynomials::AbstractVector, kwargs)
-    ring = io_extract_ring(polynomials)
-    get_trace!(wrapped_trace, ring.ch, kwargs)
-end
+function get_trace!(wrapped_trace::WrappedTraceF4, ring, kwargs)
+    char = ring.ch
 
-function get_trace!(wrapped_trace::WrappedTraceF4, char, kwargs)
     trace = get_default_trace(wrapped_trace)
 
     # Fast path for the case when there exists a suitable trace
@@ -367,7 +356,8 @@ end
 function Base.show(io::IO, ::MIME"text/plain", wrapped_trace::WrappedTraceF4)
     println(
         io,
-        "Recorded traces count: $(length(wrapped_trace.recorded_traces)). Printing the main one.\n"
+        """Recorded $(length(wrapped_trace.recorded_traces)) traces: $(collect(keys(wrapped_trace.recorded_traces)))
+        Showing the default one.\n"""
     )
     show(io, MIME("text/plain"), get_default_trace(wrapped_trace))
 end
@@ -380,7 +370,7 @@ function Base.show(io::IO, ::MIME"text/plain", trace::TraceF4)
     sz = round((Base.summarysize(trace) / 2^20), digits=2)
     printstyled(
         io,
-        "Trace of F4 ($sz MiB) recorded in $(round(trace.stopwatch_start / 10^9, digits=3)) s.\n\n",
+        "Trace of F4 ($sz MiB) recorded in $(round(trace.stopwatch_start / 10^9, digits=3)) s.\n",
         bold=true
     )
     println(
@@ -391,6 +381,7 @@ function Base.show(io::IO, ::MIME"text/plain", trace::TraceF4)
         Number of polynomials: $(trace.input_basis.nfilled) in input, $(trace.gb_basis.nfilled) in output
         """
     )
+    println(io, "Applications: $(trace.napply)\n")
 
     permute_input =
         !isempty(trace.term_homogenizing_permutations) ||
@@ -399,7 +390,6 @@ function Base.show(io::IO, ::MIME"text/plain", trace::TraceF4)
     println(
         io,
         """
-
         Original monomial ordering: $(trace.original_ord)
         Monom. representation: $(trace.representation.monomtype)
         Coeff. representation: $(trace.representation.coefftype)
@@ -421,7 +411,6 @@ function Base.show(io::IO, ::MIME"text/plain", trace::TraceF4)
     println(
         io,
         """
-
         Iterations of F4: $(total_iterations)
         Monomial hashtable: $(trace.hashtable.load) / $(trace.hashtable.size) monomials filled
         Matrix total upper rows: $(total_matrix_up_rows) ($(round(total_matrix_up_rows_useful / total_matrix_up_rows * 100, digits=2)) % are useful)

@@ -176,7 +176,7 @@ end
 
 # Same as basis_initialize, but uses an existing hashtable.
 function basis_initialize_using_existing_hashtable(
-        ring::PolyRing,
+    ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     present_ht::MonomialHashtable;
@@ -192,6 +192,7 @@ function basis_well_formed(ring::PolyRing, basis::Basis, hashtable::MonomialHash
     !is_sorted_by_lead_increasing(basis, hashtable) &&
         error("Basis elements must be sorted")
     for i in basis.nfilled
+        isempty(basis.monoms[i]) && error("Zero polynomials are not allowed.")
         !(length(basis.monoms[i]) == length(basis.coeffs[i])) && error("Beda!")
         for j in 1:length(basis.coeffs[i])
             iszero(basis.coeffs[i][j]) && error("Coefficient is zero")
@@ -359,7 +360,7 @@ function basis_shallow_copy_with_new_coeffs(
 end
 
 function basis_deep_copy_with_new_coeffs(
-        basis::Basis{C},
+    basis::Basis{C},
     new_sparse_row_coeffs::Vector{Vector{T}}
 ) where {C <: Coeff, T <: Coeff}
     monoms = Vector{Vector{MonomId}}(undef, length(basis.monoms))
@@ -495,7 +496,7 @@ end
 # Generate new S-pairs from pairs of polynomials
 #   (basis[idx], basis[i])
 # for every i < idx
-@timeit function pairset_update!(
+function pairset_update!(
     pairset::Pairset{D},
     basis::Basis{C},
     ht::MonomialHashtable{M},
@@ -597,7 +598,7 @@ end
     nothing
 end
 
-@timeit function basis_update!(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
+function basis_update!(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
     k = 1
     lead = basis.divmasks
     nonred = basis.nonredundant
@@ -654,7 +655,7 @@ function basis_is_new_polynomial_redundant!(
 end
 
 function basis_fill_data!(
-        basis::Basis,
+    basis::Basis,
     ht::MonomialHashtable{M},
     exponents::Vector{Vector{M}},
     coeffs::Vector{Vector{T}}
@@ -709,7 +710,7 @@ function basis_mark_redundant_elements!(basis::Basis)
     basis
 end
 
-@timeit function basis_standardize!(
+function basis_standardize!(
     ring,
     basis::Basis,
     ht::MonomialHashtable,
@@ -754,7 +755,7 @@ function basis_get_monoms_by_identifiers(
     monoms
 end
 
-@timeit function basis_export_data(
+function basis_export_data(
     basis::Basis{C},
     ht::MonomialHashtable{M}
 ) where {M <: Monom, C <: Coeff}
