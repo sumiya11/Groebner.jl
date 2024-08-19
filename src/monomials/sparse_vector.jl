@@ -143,11 +143,7 @@ function monom_is_supported_ordering(
 end
 
 # DegRevLex exponent vector comparison
-function monom_isless(
-    ea::SparseExponentVector,
-    eb::SparseExponentVector,
-    ::_DegRevLex{true}
-)
+function monom_isless(ea::SparseExponentVector, eb::SparseExponentVector, ::DegRevLex{true})
     tda, tdb = monom_totaldeg(ea), monom_totaldeg(eb)
     if tda < tdb
         return true
@@ -177,18 +173,18 @@ function monom_isless(
 end
 
 # DegLex exponent vector comparison
-function monom_isless(ea::SparseExponentVector, eb::SparseExponentVector, ::_DegLex{true})
+function monom_isless(ea::SparseExponentVector, eb::SparseExponentVector, ::DegLex{true})
     tda, tdb = monom_totaldeg(ea), monom_totaldeg(eb)
     if tda < tdb
         return true
     elseif tda != tdb
         return false
     end
-    monom_isless(ea, eb, _Lex{true}(Int[]))
+    monom_isless(ea, eb, Lex())
 end
 
 # Lex exponent vector comparison
-function monom_isless(ea::SparseExponentVector, eb::SparseExponentVector, ::_Lex{true})
+function monom_isless(ea::SparseExponentVector, eb::SparseExponentVector, ::Lex{true})
     ainds, binds = ea.inds, eb.inds
     avals, bvals = ea.vals, eb.vals
     i = 1

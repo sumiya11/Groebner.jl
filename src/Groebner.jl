@@ -111,9 +111,8 @@ include("utils/plots.jl")
 # Test systems, such as katsura, cyclic, etc
 include("utils/examples.jl")
 
-# Monomial orderings.
+# Monomial orderings
 include("monomials/orderings.jl")
-include("monomials/internal_orderings.jl")
 
 include("utils/keywords.jl")
 

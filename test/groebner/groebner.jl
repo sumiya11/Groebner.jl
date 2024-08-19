@@ -49,15 +49,39 @@ end
         gb_monoms2 = map(f -> collect(exponent_vectors(f)), gb)
         gb_coeffs2 = map(f -> collect(T.(coefficients(f))), gb)
         @test (gb_monoms1, gb_coeffs1) == (gb_monoms2, gb_coeffs2)
+        @test Groebner.isgroebner(ring, gb_monoms1, gb_coeffs1)
+        @test all(iszero, Groebner.normalform(ring, gb_monoms1, gb_coeffs1, ring, monoms, coeffs))
     end
 
     R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], internal_ordering=:degrevlex)
+    ring_ff = Groebner.PolyRing(2, Groebner.DegRevLex(), 2^31 - 1)
+    ring_ff2 = Groebner.PolyRing(2, Groebner.DegRevLex(), 2^32 - 5)
+    ring_qq = Groebner.PolyRing(2, Groebner.DegRevLex(), 0)
 
-    ring = Groebner.PolyRing(2, Groebner.DegRevLex(), 2^31 - 1)
-    @test_throws DomainError Groebner.groebner(ring, [], [])
-    # @test ([[[0, 0]]], [[0]]) == Groebner.groebner(ring, [[[0, 0]], [[0, 0]]], [[0], [0]])
-    @test ([[[0, 0]]], [[1]]) == Groebner.groebner(ring, [[[0, 0]]], [[1]])
-    @test ([[[1, 1]]], [[1]]) == Groebner.groebner(ring, [[[1, 1]]], [[2]])
+    @test_throws DomainError Groebner.groebner(Groebner.PolyRing(0, Groebner.DegRevLex(), 0), [[[0, 0]]], [[1]])
+    @test_throws DomainError Groebner.groebner(Groebner.PolyRing(2, Groebner.DegRevLex(), -2), [[[0, 0]]], [[1]])
+    @test_throws DomainError Groebner.groebner(Groebner.PolyRing(2, Groebner.InputOrdering(), 2^31-1), [[[0, 0]]], [[1]])
+
+    @test_throws DomainError Groebner.groebner(ring_ff, [], [])
+    @test_throws DomainError Groebner.groebner(ring_ff, [[]], [[]])
+    @test_throws DomainError Groebner.groebner(ring_ff, [[[1,2], []]], [[1]])
+    @test_throws DomainError Groebner.groebner(ring_ff, [[[1,2,3]]], [[1]])
+    @test_throws DomainError Groebner.groebner(ring_ff, [[[1,2]]], [[1, 2]])
+    @test_throws DomainError Groebner.groebner(ring_ff, [[[1,2]]], [[1, 2]])
+
+    @test ([Vector{Vector{Int}}()], [Int[]]) == Groebner.groebner(ring_ff, [Vector{Vector{Int}}(), Vector{Vector{Int}}()], [Int[], Int[]])
+    @test ([[[0, 0]]], [[1]]) == Groebner.groebner(ring_ff, [[[0, 0]]], [[1]])
+    @test ([[[1, 1]]], [[1]]) == Groebner.groebner(ring_ff, [[[1, 1]]], [[2]])
+    @test ([[[1, 1]]], [[1]]) == Groebner.groebner(ring_ff, [[[1, 1]]], [[2]]; ordering=Groebner.DegRevLex())
+    @test ([[[1, 1]]], [[1]]) == Groebner.groebner(ring_ff, [[[1, 1]]], [[2]]; ordering=Groebner.Lex())
+    @test ([[[0, 1], [0, 0]]], [[1, 5]]) == Groebner.groebner(ring_ff, [[[0, 1], [0, 0], [0, 0]]], [[1, 2, 3]])
+    @test ([[[0, 1], [0, 0]]], [[1, 5]]) == Groebner.groebner(ring_qq, [[[0, 1], [0, 0], [0, 0]]], [[1, 2, 3]])
+    @test ([[[0, 1], [0, 0]]], [[1, 2^31-2]]) == Groebner.groebner(ring_ff, [[[0, 1], [0, 0], [0, 0]]], [[1, 2, -3]])
+    @test ([[[0, 1]]], [[1]]) == Groebner.groebner(ring_ff, [[[0, 1], [0, 0], [0, 0]]], [[1, 3, -3]])
+    @test ([Vector{Vector{Int}}()], [Int[]]) == Groebner.groebner(ring_ff, [[[0, 1]]], [[0]])
+    @test ([Vector{Vector{Int}}()], [Int[]]) == Groebner.groebner(ring_qq, [[[0, 1]]], [[0]])
+    @test ([[[1,1]]], [[1]]) == Groebner.groebner(ring_ff, [[[1,1]]], [[2^31]])
+    @test ([[[1, 1], [1, 0]]], [[1, 5]]) == Groebner.groebner(ring_ff2, [[[1, 1], [1, 0], [1, 0], [0, 0], [0, 0], [0, 0]]], [[1, 2^31, 2^31, 2^31, 2^31, -5]])
 
     sys = Groebner.Examples.cyclicn(5, k=GF(2^40 + 15))
     ring = Groebner.PolyRing(5, Groebner.DegRevLex(), 2^40 + 15)
@@ -70,10 +94,6 @@ end
     sys = Groebner.Examples.cyclicn(5, k=QQ)
     ring = Groebner.PolyRing(5, Groebner.DegRevLex(), 0)
     test_low_level_interface(ring, sys)
-
-    # sys = Groebner.Examples.cyclicn(5, k=QQ)
-    # ring = Groebner.PolyRing(5, Groebner.DegRevLex(), 0)
-    # test_low_level_interface(ring, sys, ordering=Groebner.Lex())
 end
 
 @testset "groebner no autoreduce" begin
@@ -484,10 +504,10 @@ end
             Groebner.Lex(y, w, z, x),
             Groebner.DegRevLex(y, w, z, x),
             Groebner.DegRevLex(y, w, z, x),
-            Groebner.WeightedOrdering([1, 1, 1, 1]),
+            Groebner.WeightedOrdering(Dict([x,y,z,w] .=> [1, 1, 1, 1])),
             Groebner.Lex(x, y) * Groebner.DegLex(z, w),
             Groebner.Lex(x) * Groebner.DegLex(y) * Groebner.DegRevLex(z, w),
-            Groebner.MatrixOrdering([1 2 3 4; 5 6 7 8])
+            Groebner.MatrixOrdering([x,y,z,w], [1 2 3 4; 5 6 7 8])
         ]
             gb0 = Groebner.groebner([R(0), R(0)], ordering=gb_ord)
             gb1 = Groebner.groebner([R(5)], ordering=gb_ord)
@@ -571,9 +591,10 @@ end
     end
 
     # WeightedOrdering
+    R, (x, y, z, w) = polynomial_ring(QQ, ["x", "y", "z", "w"], internal_ordering=:deglex)
     @test_throws DomainError Groebner.groebner(
         [x, y],
-        ordering=Groebner.WeightedOrdering([1, 0])
+        ordering=Groebner.WeightedOrdering([1, 0, 2])
     )
     @test_throws DomainError Groebner.groebner(
         [x, y],

@@ -4,23 +4,26 @@
 # Backend for `isgroebner`
 
 function isgroebner0(polynomials, options)
-    ring, monoms, coeffs = io_convert_polynomials_to_ir(polynomials, options)
+    ring, monoms, coeffs, options = io_convert_polynomials_to_ir(polynomials, options)
     isgroebner1(ring, monoms, coeffs, options)
 end
 
-function isgroebner1(ring::PolyRing, monoms, coeffs, options)
+function isgroebner1(ring, monoms, coeffs, options)
+    ring, monoms, coeffs = ir_ensure_assumptions(ring, monoms, coeffs)
+    _isgroebner1(ring, monoms, coeffs, options)
+end
+
+function _isgroebner1(ring::PolyRing, monoms, coeffs, options)
     try
-        repr = io_select_polynomial_representation(ring, options)
-        params = AlgorithmParameters(ring, repr, options)
-        return _isgroebner1(ring, monoms, coeffs, params, repr)
+        params = AlgorithmParameters(ring, options)
+        return __isgroebner1(ring, monoms, coeffs, params)
     catch err
         if isa(err, MonomialDegreeOverflow)
             @log :info """
             Possible overflow of exponent vector detected. 
             Restarting with at least 32 bits per exponent."""
-            repr = io_select_polynomial_representation(ring, options; hint=:large_exponents)
-            params = AlgorithmParameters(ring, repr, options)
-            return _isgroebner1(ring, monoms, coeffs, params, repr)
+            params = AlgorithmParameters(ring, options; hint=:large_exponents)
+            return __isgroebner1(ring, monoms, coeffs, params)
         else
             # Something bad happened.
             rethrow(err)
@@ -28,9 +31,10 @@ function isgroebner1(ring::PolyRing, monoms, coeffs, options)
     end
 end
 
-function _isgroebner1(ring, monoms, coeffs, params, repr)
+function __isgroebner1(ring, monoms, coeffs, params)
+    @invariant ir_is_valid(ring, monoms, coeffs)
     _, ring2, monoms2, coeffs2 =
-        io_convert_ir_to_internal(ring, monoms, coeffs, params, repr)
+        io_convert_ir_to_internal(ring, monoms, coeffs, params, params.representation)
     isgroebner2(ring2, monoms2, coeffs2, params)
 end
 
@@ -74,11 +78,9 @@ function _isgroebner2(
     # Otherwise, check modulo a prime
     @log :misc "Checking if a Grobner basis modulo a prime"
     buffer = CoefficientBuffer()
-    @log :misc "Clearning denominators in the input generators"
     basis_zz = clear_denominators!(buffer, basis, deepcopy=false)
     luckyprimes = LuckyPrimes(basis_zz.coeffs)
     prime = next_check_prime!(luckyprimes)
-    @log :misc "Reducing input generators modulo $prime"
     ring_ff, basis_ff = reduce_modulo_p!(buffer, ring, basis_zz, prime, deepcopy=true)
     arithmetic = select_arithmetic(CoeffModular, prime, :auto, false)
     flag = f4_isgroebner!(ring_ff, basis_ff, pairset, hashtable, arithmetic)

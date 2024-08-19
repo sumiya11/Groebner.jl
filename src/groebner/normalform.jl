@@ -4,10 +4,11 @@
 # Backend for `normalform`
 
 function normalform0(polynomials, to_be_reduced, options)
-    ring, monoms, coeffs = io_convert_polynomials_to_ir(polynomials, options)
-    ring_to_be_reduced, monoms_to_be_reduced, coeffs_to_be_reduced =
-        io_convert_polynomials_to_ir(to_be_reduced, options)
-    monoms_reduced, coeffs_reduced = normalform1(
+    ring, monoms, coeffs, options = io_convert_polynomials_to_ir(polynomials, options)
+    # TODO: this deepcopy is sad
+    ring_to_be_reduced, monoms_to_be_reduced, coeffs_to_be_reduced, _ =
+        io_convert_polynomials_to_ir(to_be_reduced, deepcopy(options))
+    monoms_reduced, coeffs_reduced = _normalform1(
         ring,
         monoms,
         coeffs,
@@ -26,6 +27,7 @@ function normalform0(polynomials, to_be_reduced, options)
     result
 end
 
+# (exponent vectors, coefficients) => (exponent vectors, coefficients)
 function normalform1(
     ring,
     monoms,
@@ -35,41 +37,21 @@ function normalform1(
     coeffs_to_be_reduced,
     options
 )
-    try
-        repr = io_select_polynomial_representation(ring, options)
-        params = AlgorithmParameters(ring, repr, options)
-        return _normalform1(
-            ring,
-            monoms,
-            coeffs,
-            ring_to_be_reduced,
-            monoms_to_be_reduced,
-            coeffs_to_be_reduced,
-            params,
-            repr
-        )
-    catch err
-        if isa(err, MonomialDegreeOverflow)
-            @log :info """
-            Possible overflow of exponent vector detected. 
-            Restarting with at least 32 bits per exponent."""
-            repr = io_select_polynomial_representation(ring, options; hint=:large_exponents)
-            params = AlgorithmParameters(ring, repr, options)
-            return _normalform1(
-                ring,
-                monoms,
-                coeffs,
-                ring_to_be_reduced,
-                monoms_to_be_reduced,
-                coeffs_to_be_reduced,
-                params,
-                repr
-            )
-        else
-            # Something bad happened.
-            rethrow(err)
-        end
-    end
+    ring, monoms, coeffs = ir_ensure_assumptions(ring, monoms, coeffs)
+    ring_to_be_reduced, monoms_to_be_reduced, coeffs_to_be_reduced = ir_ensure_assumptions(
+        ring_to_be_reduced,
+        monoms_to_be_reduced,
+        coeffs_to_be_reduced
+    )
+    _normalform1(
+        ring,
+        monoms,
+        coeffs,
+        ring_to_be_reduced,
+        monoms_to_be_reduced,
+        coeffs_to_be_reduced,
+        options
+    )
 end
 
 function _normalform1(
@@ -79,20 +61,62 @@ function _normalform1(
     ring_to_be_reduced,
     monoms_to_be_reduced,
     coeffs_to_be_reduced,
-    params,
-    repr
+    options
 )
-    isempty(monoms) && throw(DomainError("Empty input."))
-    isempty(monoms_to_be_reduced) && throw(DomainError("Empty input."))
+    try
+        params = AlgorithmParameters(ring, options)
+        return __normalform1(
+            ring,
+            monoms,
+            coeffs,
+            ring_to_be_reduced,
+            monoms_to_be_reduced,
+            coeffs_to_be_reduced,
+            params
+        )
+    catch err
+        if isa(err, MonomialDegreeOverflow)
+            @log :info """
+            Possible overflow of exponent vector detected. 
+            Restarting with at least 32 bits per exponent."""
+            params = AlgorithmParameters(ring, options; hint=:large_exponents)
+            return __normalform1(
+                ring,
+                monoms,
+                coeffs,
+                ring_to_be_reduced,
+                monoms_to_be_reduced,
+                coeffs_to_be_reduced,
+                params
+            )
+        else
+            # Something bad happened.
+            rethrow(err)
+        end
+    end
+end
+
+function __normalform1(
+    ring,
+    monoms,
+    coeffs,
+    ring_to_be_reduced,
+    monoms_to_be_reduced,
+    coeffs_to_be_reduced,
+    params
+)
+    @invariant ir_is_valid(ring, monoms, coeffs)
+    @invariant ir_is_valid(ring_to_be_reduced, monoms_to_be_reduced, coeffs_to_be_reduced)
+
     _, ring2, monoms2, coeffs2 =
-        io_convert_ir_to_internal(ring, monoms, coeffs, params, repr)
+        io_convert_ir_to_internal(ring, monoms, coeffs, params, params.representation)
     _, ring_to_be_reduced2, monoms_to_be_reduced2, coeffs_to_be_reduced2 =
         io_convert_ir_to_internal(
             ring_to_be_reduced,
             monoms_to_be_reduced,
             coeffs_to_be_reduced,
             params,
-            repr
+            params.representation
         )
     monoms_reduced2, coeffs_reduced2 = normalform2(
         ring2,
@@ -127,7 +151,7 @@ function normalform2(
 
     if params.check
         if !isgroebner2(ring, monoms, coeffs, params)
-            __not_a_basis_error("", "Input polynomials do not look like a Groebner basis.")
+            throw(DomainError("Input polynomials do not look like a Groebner basis."))
         end
     end
 
@@ -171,7 +195,6 @@ function _normalform2(
     coeffs_to_be_reduced::Vector{Vector{C}},
     params
 ) where {M <: Monom, C <: Coeff}
-    @log :debug "Initializing structs for F4"
     basis, _, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
     tobereduced = basis_initialize_using_existing_hashtable(
         ring,
@@ -179,11 +202,6 @@ function _normalform2(
         coeffs_to_be_reduced,
         hashtable
     )
-    @log :all """
-      Polynomials in internal representation before reduction:
-      Basis: $basis
-      To be reduced: $tobereduced
-      """
     f4_normalform!(ring, basis, tobereduced, hashtable, params.arithmetic)
     basis_export_data(tobereduced, hashtable)
 end

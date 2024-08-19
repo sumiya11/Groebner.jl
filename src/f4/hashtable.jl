@@ -38,7 +38,7 @@ struct Hashvalue
 end
 
 # Hashtable implements open addressing with linear scan.
-mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractInternalOrdering}
+mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractMonomialOrdering}
     #= Data =#
     monoms::Vector{M}
     hashtable::Vector{MonomId}
@@ -78,7 +78,7 @@ function hashtable_initialize(
     rng::AbstractRNG,
     MonomT::T,
     initial_size::Int
-) where {Ord <: AbstractInternalOrdering, T}
+) where {Ord <: AbstractMonomialOrdering, T}
     exponents = Vector{MonomT}(undef, initial_size)
     hashdata = Vector{Hashvalue}(undef, initial_size)
     hashtable = zeros(MonomId, initial_size)

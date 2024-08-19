@@ -48,7 +48,7 @@ ring = Groebner.PolyRing(4, ord, 0)
 ```
 """
 mutable struct PolyRing{
-    Ord <: Union{AbstractMonomialOrdering, AbstractInternalOrdering},
+    Ord <: AbstractMonomialOrdering,
     C <: Union{CoeffZp, CompositeCoeffZp}
 }
     nvars::Int
@@ -62,32 +62,126 @@ io_iszero_monoms(v) = isempty(v)
 io_zero_coeffs(::Type{T}, ring::PolyRing) where {T} = Vector{T}()
 io_zero_monoms(::Type{T}, ring::PolyRing) where {T} = Vector{T}()
 
+function ir_basic_is_valid(
+    ring::PolyRing,
+    monoms::Vector{Vector{Vector{T}}},
+    coeffs::Vector{Vector{C}}
+) where {T <: Integer, C <: Number}
+    !(length(monoms) == length(coeffs)) && throw(DomainError("Invalid IR."))
+    isempty(monoms) && throw(DomainError("Invalid IR."))
+    !(ring.nvars > 0) && throw(DomainError("The number of variables must be positive."))
+    !(ring.ch >= 0) && throw(DomainError("Field characteristic must be nonnegative."))
+    if ring.ch > 0
+        !(C <: Integer) && throw(DomainError("Coefficients must be integers."))
+        !(ring.ch <= typemax(C)) && throw(DomainError("Invalid IR."))
+    else
+        !(C <: Rational || C <: Integer) &&
+            throw(DomainError("Coefficients must be integer or rationals."))
+    end
+    (ring.ord == InputOrdering()) && throw(DomainError("Invalid IR."))
+end
+
+function ir_is_valid(
+    ring::PolyRing,
+    monoms::Vector{Vector{Vector{T}}},
+    coeffs::Vector{Vector{C}}
+) where {T <: Integer, C <: Number}
+    ir_basic_is_valid(ring, monoms, coeffs)
+    for i in 1:length(monoms)
+        !(length(monoms[i]) == length(coeffs[i])) && throw(DomainError("Invalid IR."))
+        for j in 1:length(monoms[i])
+            !(length(monoms[i][j]) == ring.nvars) && throw(DomainError("Invalid IR."))
+            !(all(>=(0), monoms[i][j])) && throw(DomainError("Invalid IR."))
+            iszero(coeffs[i][j]) && throw(DomainError("Invalid IR")) # can be relaxed
+            if (ring.ch > 0)
+                !(0 < coeffs[i][j] < ring.ch) && throw(DomainError("Invalid IR."))
+            end
+        end
+    end
+    true
+end
+
+ir_ensure_assumptions(ring, monoms, coeffs) =
+    throw(DomainError("Invalid IR, unknown types."))
+
+function ir_ensure_assumptions(
+    ring::PolyRing,
+    monoms::Vector{Vector{Vector{M}}},
+    coeffs::Vector{Vector{C}}
+) where {M <: Integer, C <: Coeff}
+    ir_basic_is_valid(ring, monoms, coeffs)
+    # Copy input
+    new_monoms, new_coeffs = empty(monoms), empty(coeffs)
+    for i in 1:length(monoms)
+        !(length(monoms[i]) == length(coeffs[i])) && throw(DomainError("Invalid IR."))
+        push!(new_monoms, empty(monoms[i]))
+        push!(new_coeffs, empty(coeffs[i]))
+        for j in 1:length(monoms[i])
+            !(length(monoms[i][j]) == ring.nvars) && throw(DomainError("Invalid IR."))
+            !(all(>=(0), monoms[i][j])) && throw(DomainError("Invalid IR."))
+            push!(new_monoms[i], monoms[i][j])
+            push!(new_coeffs[i], coeffs[i][j])
+        end
+    end
+    # Normalize
+    for i in 1:length(new_monoms)
+        for j in 1:length(new_monoms[i])
+            if ring.ch > 0
+                new_coeffs[i][j] = mod(new_coeffs[i][j], ring.ch)
+            end
+        end
+    end
+    # Sort
+    # if !issorted(new_monoms, by=(i, j) -> monom_isless(i, j, ring.ord))
+    #     perm = collect(1:length(new_monoms))
+    #     sort!(perm, by=(i, j) -> monom_isless(new_monoms[j], new_monoms[i], ring.ord))
+    #     new_monoms = new_monoms[perm]
+    #     new_coeffs = new_coeffs[perm]
+    # end
+    # Normalize
+    _new_monoms = empty(new_monoms)
+    _new_coeffs = empty(new_coeffs)
+    for i in 1:length(new_monoms)
+        push!(_new_monoms, empty(new_monoms[i]))
+        push!(_new_coeffs, empty(new_coeffs[i]))
+        if !isempty(new_coeffs[i])
+            push!(_new_monoms[i], new_monoms[i][1])
+            push!(_new_coeffs[i], new_coeffs[i][1])
+        end
+        slow_idx = 1
+        for fast_idx in 2:length(new_monoms[i])
+            if _new_monoms[i][slow_idx] != new_monoms[i][fast_idx]
+                push!(_new_monoms[i], new_monoms[i][fast_idx])
+                push!(_new_coeffs[i], new_coeffs[i][fast_idx])
+                slow_idx += 1
+                continue
+            end
+            _new_coeffs[i][slow_idx] =
+                Base.Checked.checked_add(_new_coeffs[i][slow_idx], new_coeffs[i][fast_idx])
+            if ring.ch > 0 && _new_coeffs[i][slow_idx] >= ring.ch
+                _new_coeffs[i][slow_idx] -= ring.ch
+                @invariant _new_coeffs[i][slow_idx] < ring.ch
+            end
+        end
+    end
+    new_monoms, new_coeffs = _new_monoms, _new_coeffs
+    # Remove zeros
+    for i in 1:length(new_monoms)
+        perm = collect(1:length(new_monoms[i]))
+        filter!(j -> !iszero(new_coeffs[i][j]), perm)
+        new_monoms[i] = new_monoms[i][perm]
+        new_coeffs[i] = new_coeffs[i][perm]
+    end
+    ring, new_monoms, new_coeffs
+end
+
 function io_convert_polynomials_to_ir(polynomials, options::KeywordArguments)
     isempty(polynomials) && throw(DomainError("Empty input."))
     ring = io_extract_ring(polynomials)
     var_to_index, monoms, coeffs = _io_convert_polynomials_to_ir(ring, polynomials)
-    ring = PolyRing(ring.nvars, io_convert_ordering_to_ir(var_to_index, ring.ord), ring.ch)
-    options.ordering = io_convert_ordering_to_ir(var_to_index, options.ordering)
-    ring, monoms, coeffs
-end
-
-function io_convert_ordering_to_ir(var_to_index, ordering)
-    Ords = (Lex, DegLex, DegRevLex)
-    idx = findfirst(Ord -> ordering isa Ord, Ords)
-    if !isnothing(idx)
-        if isnothing(ordering.variables)
-            Ords[idx]()
-        else
-            Ords[idx](map(k -> var_to_index[k], ordering.variables))
-        end
-    elseif ordering isa ProductOrdering
-        ProductOrdering(
-            io_convert_ordering_to_ir(var_to_index, ordering.ord1),
-            io_convert_ordering_to_ir(var_to_index, ordering.ord2)
-        )
-    else
-        ordering
-    end
+    ring = PolyRing(ring.nvars, ordering_transform(ring.ord, var_to_index), ring.ch)
+    options.ordering = ordering_transform(options.ordering, var_to_index)
+    ring, monoms, coeffs, options
 end
 
 function _io_convert_polynomials_to_ir(ring::PolyRing, polynomials)
@@ -122,13 +216,8 @@ function io_convert_ir_to_internal(ring, monoms, coeffs, params, repr)
             coeffs2[i][j] = repr.coefftype(coeffs[i][j])
         end
     end
-    ring2, term_sorting_permutations = io_set_monomial_ordering!(
-        ring,
-        Dict{Int, Int}(collect(1:(ring.nvars)) .=> collect(1:(ring.nvars))),
-        monoms2,
-        coeffs2,
-        params
-    )
+    ring2, term_sorting_permutations =
+        io_set_monomial_ordering!(ring, monoms2, coeffs2, params)
     term_sorting_permutations, ring2, monoms2, coeffs2
 end
 
@@ -143,212 +232,6 @@ function io_convert_internal_to_ir(ring, monoms, coeffs, params)
         end
     end
     monoms2, coeffs2
-end
-
-###
-# Selecting polynomial representation
-
-struct PolynomialRepresentation
-    monomtype::Type
-    coefftype::Type
-    # If this field is false, then any implementation of the arithmetic in Z/Zp
-    # must cast the coefficients into a wider integer type before performing any
-    # arithmetic operations to avoid the risk of overflow.
-    using_wide_type_for_coeffs::Bool
-end
-
-io_peek_at_polynomials(polynomials::AbstractVector) =
-    __throw_input_not_supported("", polynomials)
-
-function io_select_polynomial_representation(
-    ring::PolyRing,
-    kws::KeywordArguments;
-    hint::Symbol=:none
-)
-    # isempty(polynomials) && __throw_input_not_supported("Empty input.", polynomials)
-    if !(hint in (:none, :large_exponents))
-        @log :warn "The given hint=$hint was discarded"
-    end
-    # frontend, npolys, char, nvars, ordering = io_peek_at_polynomials(polynomials)
-    frontend, npolys, char, nvars, ordering =
-        :abstractalgebra, 1, ring.ch, ring.nvars, ring.ord
-    monomtype = io_select_monomtype(char, nvars, ordering, kws, hint)
-    coefftype, using_wide_type_for_coeffs =
-        io_select_coefftype(char, nvars, ordering, kws, hint)
-    basering = iszero(char) ? :qq : :zp
-    @log :misc "Frontend: $frontend"
-    @log :misc """
-    Input: $npolys polynomials over $basering in $nvars variables
-    Ordering: $ordering"""
-    @log :misc """
-    Internal representation: 
-    monomials are $monomtype
-    coefficients are $coefftype
-    wide type for coefficients: $using_wide_type_for_coeffs"""
-    PolynomialRepresentation(monomtype, coefftype, using_wide_type_for_coeffs)
-end
-
-function io_select_monomtype(char, nvars, ordering, kws, hint)
-    @log :misc """
-    Selecting monomial representation.
-    Given hint hint=$hint. Keyword argument monoms=$(kws.monoms)"""
-    if hint === :large_exponents
-        @log :misc "As hint=$hint was provided, using 64 bits per single exponent"
-        # use 64 bits if large exponents detected
-        desired_monom_type = ExponentVector{UInt64}
-        @assert monom_is_supported_ordering(desired_monom_type, kws.ordering)
-        return desired_monom_type
-    end
-
-    # If homogenization is requested, or if a part of the ordering is
-    # lexicographical, the ideal will potentially be homogenized later.
-    if kws.homogenize === :yes || (
-        kws.homogenize === :auto && (
-            kws.ordering isa Lex ||
-            kws.ordering isa ProductOrdering ||
-            (
-                (ordering isa Lex || ordering isa ProductOrdering) &&
-                kws.ordering isa InputOrdering
-            )
-        )
-    )
-        @log :misc """
-        As homogenize=:yes/:auto was provided, 
-        representing monomials as dense exponent vectors"""
-        desired_monom_type = ExponentVector{UInt32}
-        @assert monom_is_supported_ordering(desired_monom_type, kws.ordering)
-        return desired_monom_type
-    end
-
-    ExponentSize = UInt8
-    variables_per_word = div(sizeof(UInt), sizeof(ExponentSize))
-    # if dense representation is requested
-    if kws.monoms === :dense
-        @assert monom_is_supported_ordering(ExponentVector{ExponentSize}, kws.ordering)
-        return ExponentVector{ExponentSize}
-    end
-
-    # if sparse representation is requested
-    if kws.monoms === :sparse
-        if monom_is_supported_ordering(
-            SparseExponentVector{ExponentSize, Int32, nvars},
-            kws.ordering
-        )
-            return SparseExponentVector{ExponentSize, Int32, nvars}
-        end
-        @log :info """
-        The given monomial ordering $(kws.ordering) is not implemented for
-        $(kws.monoms) monomial representation. Falling back to other monomial
-        representations."""
-    end
-
-    # if packed representation is requested
-    if kws.monoms === :packed
-        if monom_is_supported_ordering(PackedTuple1{UInt64, ExponentSize}, kws.ordering)
-            if nvars < variables_per_word
-                return PackedTuple1{UInt64, ExponentSize}
-            elseif nvars < 2 * variables_per_word
-                return PackedTuple2{UInt64, ExponentSize}
-            elseif nvars < 3 * variables_per_word
-                return PackedTuple3{UInt64, ExponentSize}
-            elseif nvars < 4 * variables_per_word
-                return PackedTuple4{UInt64, ExponentSize}
-            end
-            @log :info """
-            Unable to use $(kws.monoms) monomial representation, too many
-            variables ($nvars). Falling back to dense monomial
-            representation."""
-        else
-            @log :info """
-            The given monomial ordering $(kws.ordering) is not implemented for
-            $(kws.monoms) monomial representation. Falling back to dense
-            representation."""
-        end
-    end
-
-    # in the automatic choice, we always prefer packed representations
-    if kws.monoms === :auto
-        # TODO: also check that ring.ord is supported
-        if monom_is_supported_ordering(PackedTuple1{UInt64, ExponentSize}, kws.ordering)
-            if nvars < variables_per_word
-                return PackedTuple1{UInt64, ExponentSize}
-            elseif nvars < 2 * variables_per_word
-                return PackedTuple2{UInt64, ExponentSize}
-            elseif nvars < 3 * variables_per_word
-                return PackedTuple3{UInt64, ExponentSize}
-            elseif nvars < 4 * variables_per_word
-                return PackedTuple4{UInt64, ExponentSize}
-            end
-        end
-    end
-
-    ExponentVector{ExponentSize}
-end
-
-function io_get_tight_signed_int_type(x::T) where {T <: Integer}
-    types = (Int8, Int16, Int32, Int64, Int128)
-    idx = findfirst(T -> x <= typemax(T), types)
-    @assert !isnothing(idx)
-    types[idx]
-end
-
-function io_get_tight_unsigned_int_type(x::T) where {T <: Integer}
-    types = (UInt8, UInt16, UInt32, UInt64, UInt128)
-    idx = findfirst(T -> x <= typemax(T), types)
-    @assert !isnothing(idx)
-    types[idx]
-end
-
-function io_select_coefftype(
-    char,
-    nvars,
-    ordering,
-    kws,
-    hint;
-    using_wide_type_for_coeffs=false
-)
-    @log :misc """
-    Selecting coefficient representation.
-    Given hint hint=$hint. Keyword argument arithmetic=$(kws.arithmetic)"""
-
-    if iszero(char)
-        return Rational{BigInt}, true
-    end
-    @assert char > 0
-
-    if char > typemax(UInt64)
-        __throw_input_not_supported(
-            char,
-            "The coefficient field characteristic is too large."
-        )
-    end
-
-    tight_signed_type = io_get_tight_signed_int_type(char)
-
-    if kws.arithmetic === :floating
-        return Float64, true
-    end
-
-    if kws.arithmetic === :signed
-        if typemax(Int32) < char < typemax(UInt32) ||
-           typemax(Int64) < char < typemax(UInt64)
-            @log :warn "Cannot use $(kws.arithmetic) arithmetic with characteristic $char"
-            @assert false
-        elseif !using_wide_type_for_coeffs
-            return tight_signed_type, using_wide_type_for_coeffs
-        else
-            return widen(tight_signed_type), using_wide_type_for_coeffs
-        end
-    end
-
-    tight_unsigned_type = io_get_tight_unsigned_int_type(char)
-    tight_unsigned_type = if !using_wide_type_for_coeffs
-        tight_unsigned_type
-    else
-        widen(tight_unsigned_type)
-    end
-
-    tight_unsigned_type, using_wide_type_for_coeffs
 end
 
 ###
@@ -426,20 +309,14 @@ end
 # sorts the polynomials terms w.r.t. the target ordering.
 #
 # Also returns the sorting permutations for polynomial terms
-function io_set_monomial_ordering!(ring, var_to_index, monoms, coeffs, params)
-    current_ord = ring.ord
-    target_ord = params.target_ord
-    internal_ord = io_convert_to_internal_monomial_ordering(var_to_index, target_ord)
-    @log :misc "Internal ordering:\n$internal_ord"
-    ring = PolyRing(ring.nvars, internal_ord, ring.ch)
-    if current_ord == target_ord
+function io_set_monomial_ordering!(ring, monoms, coeffs, params)
+    if ring.ord == params.target_ord
         # No reordering of terms needed, the terms are already ordered according
         # to the requested monomial ordering
         return ring, Vector{Vector{Int}}()
     end
-    @log :misc "Reordering input polynomial terms from $(current_ord) to $(target_ord)"
-    permutations = sort_input_terms_to_change_ordering!(monoms, coeffs, internal_ord)
-    @log :all "Reordered terms:" monoms coeffs
+    ring = PolyRing(ring.nvars, params.target_ord, ring.ch)
+    permutations = sort_input_terms_to_change_ordering!(monoms, coeffs, params.target_ord)
     ring, permutations
 end
 

@@ -3,8 +3,6 @@
 ### 
 # Checking correctness in modular computation
 
-@noinline __not_a_basis_error(basis, msg) = throw(DomainError(basis, msg))
-
 # Checks if the basis is reconstructed correctly.
 # There are 3 levels of checks:
 #   - heuristic check (dedicated to discard obviously bad cases),

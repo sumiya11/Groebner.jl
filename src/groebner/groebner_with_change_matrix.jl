@@ -5,9 +5,9 @@
 
 function groebner_with_change_matrix0(polynomials, options)
     isempty(polynomials) && throw(DomainError("Empty input."))
-    ring, monoms, coeffs = io_convert_polynomials_to_ir(polynomials, options)
+    ring, monoms, coeffs, options = io_convert_polynomials_to_ir(polynomials, options)
     gb_monoms, gb_coeffs, matrix_monoms, matrix_coeffs =
-        groebner_with_change_matrix1(ring, monoms, coeffs, options)
+        _groebner_with_change_matrix1(ring, monoms, coeffs, options)
     result = io_convert_ir_to_polynomials(ring, polynomials, gb_monoms, gb_coeffs, options)
     rows = [
         io_convert_ir_to_polynomials(ring, polynomials, m, c, options) for
@@ -17,20 +17,22 @@ function groebner_with_change_matrix0(polynomials, options)
     result, matrix
 end
 
-# Proxy function for handling exceptions.
-function groebner_with_change_matrix1(ring::PolyRing, monoms, coeffs, options)
+function groebner_with_change_matrix1(ring, monoms, coeffs, options)
+    ring, monoms, coeffs = ir_ensure_assumptions(ring, monoms, coeffs)
+    _groebner_with_change_matrix1(ring, monoms, coeffs, options)
+end
+
+function _groebner_with_change_matrix1(ring::PolyRing, monoms, coeffs, options)
     try
-        repr = io_select_polynomial_representation(ring, options)
-        params = AlgorithmParameters(ring, repr, options)
-        return _groebner_with_change_matrix1(ring, monoms, coeffs, params, repr)
+        params = AlgorithmParameters(ring, options)
+        return __groebner_with_change_matrix1(ring, monoms, coeffs, params)
     catch err
         if isa(err, MonomialDegreeOverflow)
             @log :info """
             Possible overflow of exponent vector detected. 
             Restarting with at least 32 bits per exponent."""
-            repr = io_select_polynomial_representation(ring, options; hint=:large_exponents)
-            params = AlgorithmParameters(ring, repr, options)
-            return _groebner_with_change_matrix1(ring, monoms, coeffs, params, repr)
+            params = AlgorithmParameters(ring, options; hint=:large_exponents)
+            return __groebner_with_change_matrix1(ring, monoms, coeffs, params)
         else
             # Something bad happened.
             rethrow(err)
@@ -38,9 +40,10 @@ function groebner_with_change_matrix1(ring::PolyRing, monoms, coeffs, options)
     end
 end
 
-function _groebner_with_change_matrix1(ring, monoms, coeffs, params, repr)
+function __groebner_with_change_matrix1(ring, monoms, coeffs, params)
+    @invariant ir_is_valid(ring, monoms, coeffs)
     _, ring2, monoms2, coeffs2 =
-        io_convert_ir_to_internal(ring, monoms, coeffs, params, repr)
+        io_convert_ir_to_internal(ring, monoms, coeffs, params, params.representation)
     gb_monoms2, gb_coeffs2, matrix_monoms2, matrix_coeffs2 =
         groebner_with_change_matrix2(ring2, monoms2, coeffs2, params)
     gb_monoms, gb_coeffs = io_convert_internal_to_ir(ring2, gb_monoms2, gb_coeffs2, params)
@@ -110,13 +113,8 @@ function _groebner_with_change_matrix2(
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffZp}
-    # NOTE: we can mutate ring, monoms, and coeffs here.
-    @log :misc "Backend: F4 over Z_$(ring.ch) (with change matrix)"
-    # NOTE: the sorting of input polynomials is not deterministic across
-    # different Julia versions when sorting only w.r.t. the leading term
     basis, pairset, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
     f4!(ring, basis, pairset, hashtable, params)
-    # Extract monomials and coefficients from basis and hashtable
     gbmonoms, gbcoeffs = basis_export_data(basis, hashtable)
     matrix_monoms, matrix_coeffs =
         basis_changematrix_export(basis, hashtable, length(monoms))

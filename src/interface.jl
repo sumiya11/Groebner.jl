@@ -544,6 +544,25 @@ function isgroebner(polynomials::AbstractVector; options...)
     result
 end
 
+function isgroebner(
+    ring::PolyRing,
+    monoms::AbstractVector,
+    coeffs::AbstractVector;
+    options...
+)
+    Base.require_one_based_indexing(monoms)
+    Base.require_one_based_indexing(coeffs)
+
+    keywords = KeywordArguments(:isgroebner, options)
+
+    logging_setup(keywords)
+    statistics_setup(keywords)
+
+    result = isgroebner1(ring, monoms, coeffs, keywords)
+
+    result
+end
+
 """
     normalform(basis, to_be_reduced; options...)
 
@@ -616,3 +635,33 @@ end
 
 normalform(basis::AbstractVector, to_be_reduced; options...) =
     first(normalform(basis, [to_be_reduced]; options...))
+
+function normalform(
+    ring::PolyRing,
+    monoms::AbstractVector,
+    coeffs::AbstractVector,
+    ring_to_be_reduced::PolyRing,
+    monoms_to_be_reduced::AbstractVector,
+    coeffs_to_be_reduced::AbstractVector;
+    options...
+)
+    Base.require_one_based_indexing(monoms)
+    Base.require_one_based_indexing(coeffs)
+
+    keywords = KeywordArguments(:normalform, options)
+
+    logging_setup(keywords)
+    statistics_setup(keywords)
+
+    result = normalform1(
+        ring,
+        monoms,
+        coeffs,
+        ring_to_be_reduced,
+        monoms_to_be_reduced,
+        coeffs_to_be_reduced,
+        keywords
+    )
+
+    result
+end

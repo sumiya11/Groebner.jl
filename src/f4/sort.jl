@@ -27,20 +27,14 @@ function sort_part!(
     nothing
 end
 
-# Sorts polynomials from the basis by their leading monomial in the
-# non-decreasing way by the given monomial ordering. Also sorts any arrays
-# passed in the `abc` optional argument in the same order.
-#
-# Returns the sorting permutation.
+# Also sorts any arrays passed in the `abc` optional argument in the same order.
 function sort_polys_by_lead_increasing!(
     basis::Basis,
     hashtable::MonomialHashtable,
     changematrix::Bool,
     abc...;
     ord::Ord=hashtable.ord
-) where {Ord <: AbstractInternalOrdering}
-    @log :debug "Sorting polynomials by their leading terms in non-decreasing order"
-
+) where {Ord <: AbstractMonomialOrdering}
     b_monoms = basis.monoms
     h_monoms = hashtable.monoms
     permutation = collect(1:(basis.nfilled))
@@ -51,7 +45,7 @@ function sort_polys_by_lead_increasing!(
             ord
         )
 
-    # NOTE: stable sort to preserve the order of polynomials with the same lead
+    # stable sort to preserve the order of polynomials with the same lead
     sort!(permutation, lt=cmps, alg=Base.Sort.DEFAULT_STABLE)
 
     # use array assignment insted of elemewise assignment
@@ -75,7 +69,7 @@ function is_sorted_by_lead_increasing(
     basis::Basis,
     hashtable::MonomialHashtable,
     ord::Ord=hashtable.ord
-) where {Ord <: AbstractInternalOrdering}
+) where {Ord <: AbstractMonomialOrdering}
     b_monoms = basis.monoms
     h_monoms = hashtable.monoms
     permutation = collect(1:(basis.nfilled))
@@ -88,8 +82,6 @@ function is_sorted_by_lead_increasing(
     issorted(permutation, lt=cmps)
 end
 
-# Sorts critical pairs from the pairset in the range from..from+sz by the total
-# degree of their lcms in a non-decreasing order
 function sort_pairset_by_degree!(pairset::Pairset, from::Int, sz::Int)
     pairs = pairset.pairs
     degs = pairset.degrees
@@ -112,8 +104,6 @@ function sort_pairset_by_degree!(pairset::Pairset, from::Int, sz::Int)
     nothing
 end
 
-# Sorts the first `npairs` pairs from `pairset` in a non-decreasing order of
-# their lcms by the given monomial ordering
 function sort_pairset_by_lcm!(pairset::Pairset, npairs::Int, hashtable::MonomialHashtable)
     monoms = hashtable.monoms
     pairs = pairset.pairs
@@ -265,7 +255,7 @@ end
 function sort_input_terms_to_change_ordering!(
     exps::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
-    ord::AbstractInternalOrdering
+    ord::AbstractMonomialOrdering
 ) where {M <: Monom, C <: Coeff}
     permutations = Vector{Vector{Int}}(undef, length(exps))
     @inbounds for polyidx in 1:length(exps)
@@ -288,7 +278,7 @@ function sort_monom_indices_decreasing!(
     monoms::Vector{MonomId},
     cnt::Integer,
     hashtable::MonomialHashtable,
-    ord::AbstractInternalOrdering
+    ord::AbstractMonomialOrdering
 )
     exps = hashtable.monoms
 
@@ -301,7 +291,7 @@ function sort_term_indices_decreasing!(
     monoms::Vector{MonomId},
     coeffs::Vector{C},
     hashtable::MonomialHashtable,
-    ord::AbstractInternalOrdering
+    ord::AbstractMonomialOrdering
 ) where {C <: Coeff}
     exps = hashtable.monoms
 

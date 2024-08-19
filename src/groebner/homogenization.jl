@@ -13,13 +13,13 @@ function maximum_totaldeg(ring::PolyRing, monoms::Vector{Vector{T}}) where {T}
 end
 
 function extend_ordering_in_homogenization(
+    nvars::Int,
     ord::Ord,
     homogenizing_vairable=:last
-) where {Ord <: Union{_DegRevLex, _DegLex, _Lex, _ProductOrdering}}
+) where {Ord <: Union{DegRevLex, DegLex, Lex, ProductOrdering}}
     @assert homogenizing_vairable === :last
-    current_vars = variable_indices(ord)
-    lex_part = _Lex{false}([length(current_vars) + 1])
-    new_ord = _ProductOrdering(nontrivialization(ord), lex_part)
+    lex_part = Lex(nvars + 1)
+    new_ord = ProductOrdering(ordering_make_not_simple(ord, nvars), lex_part)
     new_ord
 end
 
@@ -28,13 +28,13 @@ function restrict_ordering_in_dehomogenization(ord, homogenizing_vairable=:last)
 end
 
 function extend_ordering_in_saturation(
+    nvars::Int,
     ord::Ord,
     saturating_vairable=:last
-) where {Ord <: Union{_DegRevLex, _DegLex, _Lex, _ProductOrdering}}
+) where {Ord <: Union{DegRevLex, DegLex, Lex, ProductOrdering}}
     @assert saturating_vairable === :last
-    current_vars = variable_indices(ord)
-    lex_part = _Lex{false}([length(current_vars) + 1])
-    new_ord = _ProductOrdering(lex_part, nontrivialization(ord))
+    lex_part = Lex(nvars + 1)
+    new_ord = ProductOrdering(lex_part, ordering_make_not_simple(ord, nvars))
     new_ord
 end
 
@@ -69,7 +69,7 @@ function homogenize_generators!(
         end
     end
     # TODO: clarify the order of variables
-    new_ord = extend_ordering_in_homogenization(ring.ord)
+    new_ord = extend_ordering_in_homogenization(ring.nvars, ring.ord)
     new_ring = PolyRing(new_nvars, new_ord, ring.ch)
     term_permutation = sort_input_terms_to_change_ordering!(new_monoms, coeffs, new_ord)
     @log :misc """
@@ -235,7 +235,7 @@ function saturate_generators_by_variable!(
     new_poly_coeffs[2] = iszero(ring.ch) ? -one(C) : (ring.ch - one(ring.ch))
     push!(new_monoms, new_poly_monoms)
     push!(coeffs, new_poly_coeffs)
-    new_ord = extend_ordering_in_saturation(ring.ord)
+    new_ord = extend_ordering_in_saturation(ring.nvars, ring.ord)
     new_ring = PolyRing(new_nvars, new_ord, ring.ch)
     @log :misc """
     Original polynomial ring: 

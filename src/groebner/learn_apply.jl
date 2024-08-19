@@ -7,7 +7,7 @@
 # Learn stage
 
 function groebner_learn0(polynomials, options)
-    ring, monoms, coeffs = io_convert_polynomials_to_ir(polynomials, options)
+    ring, monoms, coeffs, options = io_convert_polynomials_to_ir(polynomials, options)
     trace, gb_monoms, gb_coeffs = groebner_learn1(ring, monoms, coeffs, options)
     result = io_convert_ir_to_polynomials(ring, polynomials, gb_monoms, gb_coeffs, options)
     trace, result
@@ -16,17 +16,15 @@ end
 # Proxy function for handling exceptions.
 function groebner_learn1(ring::PolyRing, monoms, coeffs, options)
     try
-        repr = io_select_polynomial_representation(ring, options)
-        params = AlgorithmParameters(ring, repr, options)
-        return _groebner_learn1(ring, monoms, coeffs, params, repr)
+        params = AlgorithmParameters(ring, options)
+        return _groebner_learn1(ring, monoms, coeffs, params)
     catch err
         if isa(err, MonomialDegreeOverflow)
             @log :info """
             Possible overflow of exponent vector detected. 
             Restarting with at least 32 bits per exponent."""
-            repr = io_select_polynomial_representation(ring, options; hint=:large_exponents)
-            params = AlgorithmParameters(ring, repr, options)
-            return _groebner_learn1(ring, monoms, coeffs, params, repr)
+            params = AlgorithmParameters(ring, options; hint=:large_exponents)
+            return _groebner_learn1(ring, monoms, coeffs, params)
         else
             # Something bad happened.
             rethrow(err)
@@ -34,25 +32,22 @@ function groebner_learn1(ring::PolyRing, monoms, coeffs, options)
     end
 end
 
-function _groebner_learn1(ring, monoms, coeffs, params, repr)
+function _groebner_learn1(ring, monoms, coeffs, params)
+    @invariant ir_is_valid(ring, monoms, coeffs)
     term_sorting_permutations, ring2, monoms2, coeffs2 =
-        io_convert_ir_to_internal(ring, monoms, coeffs, params, repr)
+        io_convert_ir_to_internal(ring, monoms, coeffs, params, params.representation)
     trace, gb_monoms2, gb_coeffs2 = groebner_learn2(ring2, monoms2, coeffs2, params)
     gb_monoms, gb_coeffs = io_convert_internal_to_ir(ring2, gb_monoms2, gb_coeffs2, params)
 
-    trace.representation = repr
+    trace.representation = params.representation
     trace.term_sorting_permutations = term_sorting_permutations
 
     WrappedTraceF4(trace), gb_monoms, gb_coeffs
 end
 
 function groebner_learn2(ring, monoms, coeffs, params)
-    _monoms = filter(!isempty, monoms)
-    _coeffs = filter(!isempty, coeffs)
-    if isempty(_monoms)
-        throw(DomainError("In learn, input consisting of zero polynomials."))
-    end
-    monoms, coeffs = _monoms, _coeffs
+    monoms = filter(!isempty, monoms)
+    coeffs = filter(!isempty, coeffs)
 
     term_homogenizing_permutation = Vector{Vector{Int}}()
     if params.homogenize
@@ -99,7 +94,7 @@ function groebner_apply0!(
     # flag, ring, coeffs = io_extract_coeffs_raw!(trace, trace.representation, polynomials, options)
     # ring, coeffs = io_extract_coeffs_ir!(trace, trace.representation, polynomials, options)
     # TODO: too slow
-    ring, monoms, coeffs = io_convert_polynomials_to_ir(polynomials, options)
+    ring, monoms, coeffs, options = io_convert_polynomials_to_ir(polynomials, options)
     flag, gb_monoms, gb_coeffs = groebner_apply1!(wrapped_trace, ring, coeffs, options)
     !flag && return (flag, polynomials)
     result = io_convert_ir_to_polynomials(ring, polynomials, gb_monoms, gb_coeffs, options)
@@ -111,10 +106,10 @@ function groebner_apply1!(wrapped_trace, ring, coeffs, options)
     # TODO: this is a bit hacky
     params = AlgorithmParameters(
         ring,
-        trace.representation,
         options,
         orderings=(trace.params.original_ord, trace.params.target_ord)
     )
+    params.representation = trace.representation
     ring = PolyRing(trace.ring.nvars, trace.ring.ord, ring.ch)
 
     flag = io_extract_coeffs_raw_X!(ring, trace, coeffs)

@@ -9,13 +9,13 @@
 # Main file that defines the f4! function.
 
 function f4_initialize_structs(
-    ring,
-    monoms,
-    coeffs,
-    params;
+    ring::PolyRing,
+    monoms::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    params::AlgorithmParameters;
     make_monic=true,
     sort_input=true
-)
+) where {M <: Monom, C <: Coeff}
     tablesize = hashtable_select_initial_size(ring, monoms)
     basis = basis_initialize(ring, length(monoms), C)
     pairset = pairset_initialize(monom_entrytype(M))
@@ -29,8 +29,8 @@ function f4_initialize_structs(
     end
 
     if sort_input
-        # Note that the sorting of input polynomials is not deterministic across
-        # different Julia versions when sorting only w.r.t. the leading term.
+        # The sorting of input polynomials is not deterministic across different
+        # Julia versions when sorting only w.r.t. the leading term.
         permutation = sort_polys_by_lead_increasing!(basis, hashtable, params.changematrix)
     else
         permutation = collect(1:(basis.nfilled))
@@ -44,7 +44,14 @@ function f4_initialize_structs(
     basis, pairset, hashtable, permutation
 end
 
-function f4_reduction!(ring, basis, matrix, ht, symbol_ht, params)
+function f4_reduction!(
+    ring::PolyRing,
+    basis::Basis,
+    matrix::MacaulayMatrix,
+    ht::MonomialHashtable,
+    symbol_ht::MonomialHashtable,
+    params::AlgorithmParameters
+)
     matrix_fill_column_to_monom_map!(matrix, symbol_ht)
     linalg_main!(matrix, basis, params)
     matrix_convert_rows_to_basis_elements!(
@@ -57,7 +64,12 @@ function f4_reduction!(ring, basis, matrix, ht, symbol_ht, params)
     )
 end
 
-function f4_update!(pairset, basis, ht, update_ht)
+function f4_update!(
+    pairset::Pairset,
+    basis::Basis,
+    ht::MonomialHashtable,
+    update_ht::MonomialHashtable
+)
     @invariant basis.nfilled >= basis.nprocessed
     @inbounds for i in (basis.nprocessed + 1):(basis.nfilled)
         basis_is_new_polynomial_redundant!(pairset, basis, ht, update_ht, i) && continue
@@ -68,7 +80,12 @@ function f4_update!(pairset, basis, ht, update_ht)
     basis_update!(basis, ht)
 end
 
-function f4_symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
+function f4_symbolic_preprocessing!(
+    basis::Basis,
+    matrix::MacaulayMatrix,
+    ht::MonomialHashtable,
+    symbol_ht::MonomialHashtable
+)
     # Monomials that represent the columns of the matrix are stored in the
     # symbol_ht hashtable.
     symbol_load = symbol_ht.load
@@ -76,8 +93,8 @@ function f4_symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
     matrix_resize_upper_part_if_needed!(matrix, ncols + symbol_load)
 
     # Traverse all monomials in symbol_ht and search for a polynomial reducer
-    # for each monomial. Grows as polynomials with new monomials are added to
-    # the matrix, and the loop accounts for that.
+    # for each monomial. The hashtable grows as polynomials with new monomials
+    # are added to the matrix, and the loop accounts for that.
     i = symbol_ht.offset
     @inbounds while i <= symbol_ht.load
         if symbol_ht.hashdata[i].idx != NON_PIVOT_COLUMN
@@ -97,7 +114,14 @@ function f4_symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
     nothing
 end
 
-function f4_autoreduce!(ring, basis, matrix, ht, symbol_ht, params)
+function f4_autoreduce!(
+    ring::PolyRing,
+    basis::Basis,
+    matrix::MacaulayMatrix,
+    ht::MonomialHashtable{M},
+    symbol_ht::MonomialHashtable{M},
+    params
+) where {M <: Monom}
     etmp = monom_construct_const(M, ht.nvars)
 
     matrix_reinitialize!(matrix, basis.nnonredundant)
@@ -161,7 +185,13 @@ function f4_autoreduce!(ring, basis, matrix, ht, symbol_ht, params)
     basis.nnonredundant = k
 end
 
-function f4_select_tobereduced!(basis, tobereduced, matrix, symbol_ht, ht)
+function f4_select_tobereduced!(
+    basis::Basis,
+    tobereduced::Basis{C},
+    matrix::MacaulayMatrix,
+    symbol_ht::MonomialHashtable{M},
+    ht::MonomialHashtable{M}
+) where {C, M}
     matrix_reinitialize!(matrix, max(basis.nfilled, tobereduced.nfilled))
     resize!(matrix.lower_rows, tobereduced.nfilled)
     resize!(matrix.some_coeffs, tobereduced.nfilled)
@@ -217,9 +247,16 @@ end
 # Finds a polynomial from the basis with the leading term that divides the given
 # monomial. If such a polynomial is found, writes a multiple of it to the
 # symbolic hashtable.
-function f4_find_multiplied_reducer!(basis, matrix, ht, symbol_ht, monomid; sugar=false)
+function f4_find_multiplied_reducer!(
+    basis::Basis,
+    matrix::MacaulayMatrix,
+    ht::MonomialHashtable,
+    symbol_ht::MonomialHashtable,
+    monomid::MonomId;
+    sugar::Bool=false
+)
     @inbounds monom = symbol_ht.monoms[monomid]
-    @inbounds tmp = ht.monoms[1]
+    @inbounds quotient = ht.monoms[1]
     @inbounds divmask = symbol_ht.hashdata[monomid].divmask
 
     # Start of the search loop.
@@ -240,13 +277,14 @@ function f4_find_multiplied_reducer!(basis, matrix, ht, symbol_ht, monomid; suga
     @inbounds poly = basis.monoms[basis.nonredundant[i]]
     @inbounds lead = ht.monoms[poly[1]]
 
-    success, tmp = monom_is_divisible!(tmp, monom, lead)
+    success, quotient = monom_is_divisible!(quotient, monom, lead)
     if !success # division mask failed for some reason
         i += 1
         @goto Letsgo
     end
     # Using the fact that the hash is linear.
     @inbounds quotient_hash = symbol_ht.hashdata[monomid].hash - ht.hashdata[poly[1]].hash
+    @invariant quotient_hash == monom_hash(quotient, ht.hasher)
 
     hashtable_resize_if_needed!(ht, length(poly))
     row = matrix_polynomial_multiple_to_row!(
@@ -254,7 +292,7 @@ function f4_find_multiplied_reducer!(basis, matrix, ht, symbol_ht, monomid; suga
         symbol_ht,
         ht,
         quotient_hash,
-        tmp,
+        quotient,
         poly,
         true
     )
@@ -266,7 +304,7 @@ function f4_find_multiplied_reducer!(basis, matrix, ht, symbol_ht, monomid; suga
     # TODO: This line is here with one sole purpose -- to support tracing.
     #       Probably want to factor it out.
     @inbounds matrix.upper_to_mult[matrix.nrows_filled_upper + 1] =
-        hashtable_insert!(ht, tmp)
+        hashtable_insert!(ht, quotient)
 
     # Mark the current monomial as a pivot since a reducer has been found.
     @inbounds monom_hashval = symbol_ht.hashdata[monomid]
@@ -278,14 +316,14 @@ function f4_find_multiplied_reducer!(basis, matrix, ht, symbol_ht, monomid; suga
 end
 
 function f4_select_critical_pairs!(
-    pairset,
-    basis,
-    matrix,
-    ht,
-    symbol_ht;
-    maxpairs=INT_INF,
-    select_all=false
-)
+    pairset::Pairset{ExponentType},
+    basis::Basis,
+    matrix::MacaulayMatrix,
+    ht::MonomialHashtable,
+    symbol_ht::MonomialHashtable;
+    maxpairs::Int=INT_INF,
+    select_all::Bool=false
+) where {ExponentType}
     # TODO: Why is this code type unstable !???
     npairs::Int = pairset.load
     if !select_all
@@ -300,8 +338,8 @@ function f4_select_critical_pairs!(
 
     sort_pairset_by_lcm!(pairset, npairs, ht)
 
-    # When `maxpairs` limits the number of selected pairs, we still add some
-    # additional pairs which have the same lcm as the selected ones. 
+    # When there is a limit on the number of selected pairs, we still add pairs
+    # which have the same lcm as the selected ones.
     if npairs > maxpairs
         navailable = npairs
         npairs = maxpairs
@@ -323,7 +361,14 @@ function f4_select_critical_pairs!(
     deg, npairs
 end
 
-function f4_add_critical_pairs_to_matrix!(pairset, npairs, basis, matrix, ht, symbol_ht)
+function f4_add_critical_pairs_to_matrix!(
+    pairset::Pairset,
+    npairs::Int,
+    basis::Basis,
+    matrix::MacaulayMatrix,
+    ht::MonomialHashtable,
+    symbol_ht::MonomialHashtable
+)
     @invariant issorted(
         pairset.pairs[1:npairs],
         lt=(a, b) -> monom_isless(ht.monoms[a.lcm], ht.monoms[b.lcm], ht.ord)
@@ -365,7 +410,6 @@ function f4_add_critical_pairs_to_matrix!(pairset, npairs, basis, matrix, ht, sy
 
         htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
 
-        # The first polynomial from the pair is a reducer.
         row_idx = matrix.nrows_filled_upper += 1
         uprows[row_idx] = matrix_polynomial_multiple_to_row!(
             matrix,
@@ -378,7 +422,6 @@ function f4_add_critical_pairs_to_matrix!(pairset, npairs, basis, matrix, ht, sy
         matrix.upper_to_coeffs[row_idx] = prev
         matrix.upper_to_mult[row_idx] = hashtable_insert!(ht, etmp)
 
-        # Mark the matrix column that corresponds to the lcm as a pivot.
         hv = symbol_ht.hashdata[uprows[row_idx][1]]
         symbol_ht.hashdata[uprows[row_idx][1]] =
             Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask)
@@ -419,7 +462,13 @@ function f4_add_critical_pairs_to_matrix!(pairset, npairs, basis, matrix, ht, sy
     resize!(matrix.lower_rows, matrix.nrows_filled_lower)
 end
 
-function f4!(ring, basis, pairset, hashtable, params)
+function f4!(
+    ring::PolyRing,
+    basis::Basis{C},
+    pairset::Pairset,
+    hashtable::MonomialHashtable{M},
+    params::AlgorithmParameters
+) where {M <: Monom, C <: Coeff}
     @invariant basis_well_formed(ring, basis, hashtable)
 
     basis_make_monic!(basis, params.arithmetic, params.changematrix)
@@ -474,7 +523,13 @@ function f4!(ring, basis, pairset, hashtable, params)
     nothing
 end
 
-function f4_isgroebner!(ring, basis, pairset, hashtable, arithmetic)
+function f4_isgroebner!(
+    ring::PolyRing,
+    basis::Basis{C},
+    pairset::Pairset,
+    hashtable::MonomialHashtable,
+    arithmetic::AbstractArithmetic
+) where {C <: Coeff}
     @invariant basis_well_formed(ring, basis, hashtable)
     matrix = matrix_initialize(ring, C)
     symbol_ht = hashtable_initialize_secondary(hashtable)
@@ -487,7 +542,13 @@ function f4_isgroebner!(ring, basis, pairset, hashtable, arithmetic)
     linalg_isgroebner!(matrix, basis, arithmetic)
 end
 
-function f4_normalform!(ring, basis, tobereduced, ht, arithmetic)
+function f4_normalform!(
+    ring::PolyRing,
+    basis::Basis{C},
+    tobereduced::Basis{C},
+    ht::MonomialHashtable,
+    arithmetic::AbstractArithmetic
+) where {C <: Coeff}
     @invariant basis_well_formed(ring, basis, ht)
     matrix = matrix_initialize(ring, C)
     symbol_ht = hashtable_initialize_secondary(ht)

@@ -7,7 +7,7 @@ function autoreduce2(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
-    params
+    params::AlgorithmParameters
 ) where {M <: Monom, C <: Coeff}
     basis, _, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
     basis_update!(basis, hashtable)

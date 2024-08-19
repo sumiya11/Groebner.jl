@@ -313,7 +313,6 @@ function basis_changematrix_export(
     ht::MonomialHashtable{M},
     npolys
 ) where {C <: Coeff, M <: Monom}
-    @log :all basis.changematrix
     matrix_monoms = Vector{Vector{Vector{M}}}(undef, basis.nnonredundant)
     matrix_coeffs = Vector{Vector{Vector{C}}}(undef, basis.nnonredundant)
     @inbounds for i in 1:(basis.nnonredundant)
@@ -433,7 +432,6 @@ function basis_make_monic!(
     arithmetic::AbstractArithmeticZp{A, C},
     changematrix::Bool
 ) where {A <: Union{CoeffZp, CompositeCoeffZp}, C <: Union{CoeffZp, CompositeCoeffZp}}
-    @log :debug "Normalizing polynomials in the basis"
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.nfilled)
         !isassigned(cfs, i) && continue
@@ -458,7 +456,6 @@ function basis_make_monic!(
     },
     changematrix::Bool
 ) where {A <: Union{CoeffZp, CompositeCoeffZp}, C <: Union{CoeffZp, CompositeCoeffZp}}
-    @log :debug "Normalizing polynomials in the basis"
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.nfilled)
         !isassigned(cfs, i) && continue
@@ -480,7 +477,6 @@ function basis_make_monic!(
     arithmetic::AbstractArithmeticQQ,
     changematrix::Bool
 ) where {C <: CoeffQQ}
-    @log :debug "Normalizing polynomials in the basis"
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.nfilled)
         !isassigned(cfs, i) && continue
