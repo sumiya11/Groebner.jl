@@ -16,7 +16,7 @@
 # Backend for `groebner`
 
 # polynomials => polynomials
-function groebner0(polynomials, options)
+function groebner0(polynomials::AbstractVector, options::KeywordArguments)
     isempty(polynomials) && throw(DomainError("Empty input."))
     ring, monoms, coeffs, options = io_convert_polynomials_to_ir(polynomials, options)
     gb_monoms, gb_coeffs = _groebner1(ring, monoms, coeffs, options)
@@ -25,14 +25,22 @@ function groebner0(polynomials, options)
 end
 
 # (exponent vectors, coefficients) => (exponent vectors, coefficients)
-function groebner1(ring, monoms, coeffs, options)
+function groebner1(
+    ring::PolyRing,
+    monoms::Vector{Vector{Vector{I}}},
+    coeffs::Vector{Vector{C}},
+    options::KeywordArguments
+) where {I <: Integer, C <: Coeff}
     ring, monoms, coeffs = ir_ensure_assumptions(ring, monoms, coeffs)
     _groebner1(ring, monoms, coeffs, options)
 end
 
-# Proxy function for handling exceptions.
-# (exponent vectors, coefficients) => (exponent vectors, coefficients)
-function _groebner1(ring, monoms, coeffs, options)
+function _groebner1(
+    ring::PolyRing,
+    monoms::Vector{Vector{Vector{I}}},
+    coeffs::Vector{Vector{C}},
+    options::KeywordArguments
+) where {I <: Integer, C <: Coeff}
     try
         params = AlgorithmParameters(ring, options)
         return __groebner1(ring, monoms, coeffs, params)
@@ -40,7 +48,7 @@ function _groebner1(ring, monoms, coeffs, options)
         if isa(err, MonomialDegreeOverflow)
             @log :info """
             Possible overflow of exponent vector detected. 
-            Restarting with at least 32 bits per exponent."""
+            Restarting with at least 32 bits per exponent.""" maxlog = 1
             params = AlgorithmParameters(ring, options; hint=:large_exponents)
             return __groebner1(ring, monoms, coeffs, params)
         else
@@ -50,8 +58,12 @@ function _groebner1(ring, monoms, coeffs, options)
     end
 end
 
-# (exponent vectors, coefficients) => (exponent vectors, coefficients)
-function __groebner1(ring, monoms, coeffs, params)
+function __groebner1(
+    ring::PolyRing,
+    monoms::Vector{Vector{Vector{I}}},
+    coeffs::Vector{Vector{C}},
+    params::AlgorithmParameters
+) where {I <: Integer, C <: Coeff}
     @invariant ir_is_valid(ring, monoms, coeffs)
     _, ring2, monoms2, coeffs2 =
         io_convert_ir_to_internal(ring, monoms, coeffs, params, params.representation)
@@ -60,8 +72,13 @@ function __groebner1(ring, monoms, coeffs, params)
     gb_monoms, gb_coeffs
 end
 
-# (monomials, coefficients) => (monomials, coefficients)
-function groebner2(ring, monoms, coeffs, params)
+# internal structs => internal structs
+function groebner2(
+    ring::PolyRing,
+    monoms::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    params::AlgorithmParameters
+) where {M <: Monom, C <: Coeff}
     _monoms = filter(!isempty, monoms)
     _coeffs = filter(!isempty, coeffs)
     if isempty(_monoms)
@@ -110,7 +127,9 @@ function _groebner2(
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
     if params.modular_strategy === :learn_and_apply
-        if params.threaded_multimodular === :yes && nthreads() > 1
+        if (
+            params.threaded_multimodular === :yes || params.threaded_multimodular === :auto
+        ) && nthreads() > 1
             _groebner_learn_and_apply_threaded(ring, monoms, coeffs, params)
         else
             _groebner_learn_and_apply(ring, monoms, coeffs, params)
@@ -339,7 +358,6 @@ function _groebner_learn_and_apply_threaded(
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
-
     if nthreads() == 1
         @log :info "Using threaded backend with nthreads() == 1, how did we end up here?"
     end

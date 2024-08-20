@@ -2,11 +2,18 @@
 @testset "normalform" begin
     R, x = polynomial_ring(GF(2^31 - 1), "x")
 
-    R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"])
-
-    # Regression test, Structural Identifiability
     @test Groebner.normalform([x], R(0)) == R(0)
     @test Groebner.normalform([x], R(1)) == R(1)
+    @test Groebner.normalform([x], [R(0)]) == [R(0)]
+    @test Groebner.normalform([x], [R(1)]) == [R(1)]
+    @test Groebner.normalform([x], [x, R(5), x + 1]) == [R(0), R(5), R(1)]
+
+    R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"])
+
+    @test Groebner.normalform([x], R(0)) == R(0)
+    @test Groebner.normalform([x], R(1)) == R(1)
+    @test Groebner.normalform([x], [R(0)]) == [R(0)]
+    @test Groebner.normalform([x], [R(1)]) == [R(1)]
 
     Gs = [[x], [x, y], [x, y, z]]
 

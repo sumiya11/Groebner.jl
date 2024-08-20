@@ -21,7 +21,7 @@ function _isgroebner1(ring::PolyRing, monoms, coeffs, options)
         if isa(err, MonomialDegreeOverflow)
             @log :info """
             Possible overflow of exponent vector detected. 
-            Restarting with at least 32 bits per exponent."""
+            Restarting with at least 32 bits per exponent.""" maxlog = 1
             params = AlgorithmParameters(ring, options; hint=:large_exponents)
             return __isgroebner1(ring, monoms, coeffs, params)
         else
@@ -51,7 +51,7 @@ function _isgroebner2(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
-    params
+    params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffZp}
     basis, pairset, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
     res = f4_isgroebner!(ring, basis, pairset, hashtable, params.arithmetic)
@@ -63,20 +63,15 @@ function _isgroebner2(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
-    params
+    params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
-    buffer = CoefficientBuffer()
     basis, pairset, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
-    # If an honest computation over the rationals is needed
+    # If an honest computation over the rationals is requested
     if params.certify_check
-        @log :misc """
-        Keyword argument `certify=true` was provided. 
-        Checking that the given input is a Groebner basis directly over the rationals"""
         flag = f4_isgroebner!(ring, basis, pairset, hashtable, params.arithmetic)
         return flag
     end
     # Otherwise, check modulo a prime
-    @log :misc "Checking if a Grobner basis modulo a prime"
     buffer = CoefficientBuffer()
     basis_zz = clear_denominators!(buffer, basis, deepcopy=false)
     luckyprimes = LuckyPrimes(basis_zz.coeffs)

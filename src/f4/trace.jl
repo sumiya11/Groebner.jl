@@ -1,21 +1,16 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
 # Tracing in F4
-#
-# This file implements two kinds of traces:
-# - "an internal" trace -- a data structure meant for use only in F4, that is
-#   also used in modular computation
-# - 
 
 ###
 # The main struct
 
 mutable struct TraceF4{C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
-    stopwatch_start::UInt64
+    stopwatch::UInt64
+    empty::Bool
 
     ring::PolyRing{Ord1, C2}
     original_ord::Ord2
-    input_signature::Vector{Int}
 
     # Buffers for storing basis elements
     input_basis::Basis{C1}
@@ -51,6 +46,19 @@ mutable struct TraceF4{C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
     napply::Int
 end
 
+function trace_initialize_empty(
+    ring::PolyRing,
+    monoms::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    params::AlgorithmParameters
+) where {M <: Monom, C <: Coeff}
+    basis = basis_initialize(ring, 0, C)
+    hashtable = hashtable_initialize(ring, params.rng, M, 2)
+    trace = trace_initialize(ring, basis, basis, hashtable, Int[], params)
+    trace.empty = true
+    trace
+end
+
 function trace_initialize(
     ring::PolyRing,
     input_basis::Basis,
@@ -59,18 +67,11 @@ function trace_initialize(
     permutation::Vector{Int},
     params::AlgorithmParameters
 )
-    @log :debug "Initializing the F4 trace"
-
-    input_signature = Vector{Int}(undef, input_basis.nfilled)
-    @inbounds for i in 1:length(input_signature)
-        input_signature[i] = length(input_basis.monoms[i])
-    end
-
     TraceF4(
         time_ns(),
+        false,
         ring,
         params.original_ord,
-        input_signature,
         input_basis,
         basis_deepcopy(gb_basis),
         gb_basis,
@@ -102,10 +103,10 @@ function trace_deepcopy(
 ) where {C1 <: Coeff, C3 <: Coeff, M <: Monom, Ord1, Ord2}
     # NOTE: does not provide the same guarantees as Base.deepcopy
     TraceF4(
-        trace.stopwatch_start,
+        trace.stopwatch,
+        trace.empty,
         PolyRing(trace.ring.nvars, trace.ring.ord, trace.ring.ch),
         deepcopy(trace.original_ord),
-        copy(trace.input_signature),
         basis_deepcopy(trace.input_basis),
         basis_deepcopy(trace.buf_basis),
         basis_deepcopy(trace.gb_basis),
@@ -179,10 +180,10 @@ function trace_copy(
     new_ring = PolyRing(trace.ring.nvars, trace.ring.ord, zero(C2))
 
     TraceF4(
-        trace.stopwatch_start,
+        trace.stopwatch,
+        trace.empty,
         new_ring,
         trace.original_ord,
-        trace.input_signature,
         new_input_basis,
         new_buf_basis,
         new_gb_basis,
@@ -214,7 +215,7 @@ function trace_finalize!(trace::TraceF4)
     trace.buf_basis.nnonredundant = trace.input_basis.nnonredundant
     trace.buf_basis.nprocessed = trace.input_basis.nprocessed
     trace.buf_basis.nfilled = trace.input_basis.nfilled
-    trace.stopwatch_start = time_ns() - trace.stopwatch_start
+    trace.stopwatch = time_ns() - trace.stopwatch
     nothing
 end
 
@@ -370,7 +371,7 @@ function Base.show(io::IO, ::MIME"text/plain", trace::TraceF4)
     sz = round((Base.summarysize(trace) / 2^20), digits=2)
     printstyled(
         io,
-        "Trace of F4 ($sz MiB) recorded in $(round(trace.stopwatch_start / 10^9, digits=3)) s.\n",
+        "Trace of F4 ($sz MiB) recorded in $(round(trace.stopwatch / 10^9, digits=3)) s.\n",
         bold=true
     )
     println(
@@ -401,10 +402,10 @@ function Base.show(io::IO, ::MIME"text/plain", trace::TraceF4)
     )
 
     total_iterations = length(trace.matrix_infos)
-    total_matrix_low_rows = sum(x -> x.nlow, trace.matrix_infos)
-    total_matrix_up_rows = sum(x -> x.nup, trace.matrix_infos)
-    total_matrix_up_rows_useful = sum(length ∘ first, trace.matrix_upper_rows)
-    total_matrix_low_rows_useful = sum(length ∘ first, trace.matrix_lower_rows)
+    total_matrix_low_rows = sum(x -> x.nlow, trace.matrix_infos; init=0)
+    total_matrix_up_rows = sum(x -> x.nup, trace.matrix_infos; init=0)
+    total_matrix_up_rows_useful = sum(length ∘ first, trace.matrix_upper_rows; init=0)
+    total_matrix_low_rows_useful = sum(length ∘ first, trace.matrix_lower_rows; init=0)
     critical_pair_degree_sequence = map(first, trace.critical_pair_sequence)
     critical_pair_count_sequence = map(last, trace.critical_pair_sequence)
     printstyled(io, "# F4 statistics\n", bold=true)

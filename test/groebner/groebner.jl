@@ -9,34 +9,24 @@ using Test, TestSetExtensions
     @test_throws DomainError Groebner.groebner([1])
     @test_throws DomainError Groebner.groebner(Vector{elem_type(R)}())
 
-    fs = [x, x, x]
-    @test Groebner.groebner(fs) == [x]
-
-    fs = [x, x, y, y, y, x, x, y]
-    @test Groebner.groebner(fs) == [y, x]
-
-    fs = [R(1)]
-    @test Groebner.groebner(fs) == [R(1)]
-
-    fs = [x^2 + y, y * x - 1, R(1), y^4]
-    @test Groebner.groebner(fs) == [R(1)]
-
-    fs = [2x, 3y, 4x + 5y]
-    @test Groebner.groebner(fs) == [y, x]
+    @test Groebner.groebner([R(0)]) == [R(0)]
+    @test Groebner.groebner([x, x, x]) == [x]
+    @test Groebner.groebner([x, x, y, y, y, x, x, y]) == [y, x]
+    @test Groebner.groebner([R(1)]) == [R(1)]
+    @test Groebner.groebner([x^2 + y, y * x - 1, R(1), y^4]) == [R(1)]
+    @test Groebner.groebner([2x, 3y, 4x + 5y]) == [y, x]
 
     R, (x1, x2) = polynomial_ring(GF(2^31 - 1), ["x1", "x2"], internal_ordering=:degrevlex)
 
     fs = [
-        1 * x1^2 * x2^2 + 2 * x1^2 * x2,
-        1 * x1^2 * x2^2 + 3 * x1^2 * x2 + 5 * x1 * x2^2,
-        1 * x1^2 * x2^2
+        x1^2 * x2^2 + 2 * x1^2 * x2,
+        x1^2 * x2^2 + 3 * x1^2 * x2 + 5 * x1 * x2^2,
+        x1^2 * x2^2
     ]
-    gb = Groebner.groebner(fs)
-    @test gb == [x1 * x2^2, x1^2 * x2]
+    @test Groebner.groebner(fs) == [x1 * x2^2, x1^2 * x2]
 
     fs = [x1 * x2^2 + x1 * x2, x1^2 * x2^2 + 2 * x1 * x2, 2 * x1^2 * x2^2 + x1 * x2]
-    gb = Groebner.groebner(fs)
-    @test gb == [x1 * x2]
+    @test Groebner.groebner(fs) == [x1 * x2]
 end
 
 @testset "groebner low level" begin
@@ -96,7 +86,7 @@ end
     test_low_level_interface(ring, sys)
 end
 
-@testset "groebner no autoreduce" begin
+@testset "groebner reduced=false" begin
     R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], internal_ordering=:lex)
 
     fs = [x + y^2, x * y - y^2]
@@ -124,7 +114,7 @@ end
     @test gb == [x * y^2 + 1073741825 * x * y, x^2 * y]
 end
 
-@testset "groebner different chars." begin
+@testset "groebner ground fields" begin
     # Large fields
     fields = [
         GF(2^20 + 7),
@@ -369,7 +359,7 @@ end
     end
 end
 
-@testset "groebner autoreduce" begin
+@testset "groebner reduced=true" begin
     root = Groebner.Examples.rootn(3, k=GF(2^31 - 1), internal_ordering=:degrevlex)
     x1, x2, x3 = gens(parent(first(root)))
     gb = Groebner.groebner(root, reduced=true)
@@ -502,7 +492,7 @@ end
             Groebner.DegLex(),
             Groebner.DegRevLex(),
             Groebner.Lex(y, w, z, x),
-            Groebner.DegRevLex(y, w, z, x),
+            Groebner.DegLex(y, w, z, x),
             Groebner.DegRevLex(y, w, z, x),
             Groebner.WeightedOrdering(Dict([x,y,z,w] .=> [1, 1, 1, 1])),
             Groebner.Lex(x, y) * Groebner.DegLex(z, w),
@@ -513,6 +503,7 @@ end
             gb1 = Groebner.groebner([R(5)], ordering=gb_ord)
             gb2 = Groebner.groebner([x + y + z], ordering=gb_ord)
             @test R == parent(gb0[1]) == parent(gb1[1]) == parent(gb2[1])
+            @test gb0 == [R(0)] && gb1 == [R(1)] && gb2 == [x + y + z]
         end
     end
 
@@ -594,23 +585,23 @@ end
     R, (x, y, z, w) = polynomial_ring(QQ, ["x", "y", "z", "w"], internal_ordering=:deglex)
     @test_throws DomainError Groebner.groebner(
         [x, y],
-        ordering=Groebner.WeightedOrdering([1, 0, 2])
+        ordering=Groebner.WeightedOrdering(Dict([x,y,z] .=> [1, 0, 2]))
     )
     @test_throws DomainError Groebner.groebner(
         [x, y],
-        ordering=Groebner.WeightedOrdering([1, 0, 1, 9, 10])
+        ordering=Groebner.WeightedOrdering(Dict([x,y,z,x,x] .=> [1, 0, 1, 9, 10]))
     )
 
     R, (x1, x2, x3, x4, x5, x6) = QQ["x1", "x2", "x3", "x4", "x5", "x6"]
-    @test_throws AssertionError Groebner.groebner(
+    @test_throws DomainError Groebner.groebner(
         [x1],
-        ordering=Groebner.WeightedOrdering([-1, 0, 0, 0, 0, 0])
+        ordering=Groebner.WeightedOrdering(Dict([x,x,x,x,x,x] .=> [-1, 0, 0, 0, 0, 0]))
     )
 
     # ProductOrdering
-    # TODO TODO TODO
-    # ord = Groebner.Lex(x6, x2) * Groebner.Lex(x4, x1, x3)
-    # @test_throws DomainError Groebner.groebner([x], ordering=ord)
+    ord = Groebner.Lex(x6, x2) * Groebner.Lex(x4, x1, x3)
+    @test_throws DomainError Groebner.groebner([x], ordering=ord)
+    @test_throws DomainError Groebner.Lex() * Groebner.Lex(x4, x1, x3)
 
     ord = Groebner.Lex(x6, x2, x5) * Groebner.Lex(x4, x1, x3)
     @test [x3, x1, x4, x5, x2, x6] ==
@@ -621,20 +612,14 @@ end
           Groebner.groebner([x1, x2, x3, x4, x5, x6], ordering=ord)
 
     # MatrixOrdering
-    ord = Groebner.MatrixOrdering([
+    R, (x1, x2, x3, x4, x5, x6) = QQ["x1", "x2", "x3", "x4", "x5", "x6"]
+    ord = Groebner.MatrixOrdering([x1, x2, x3, x4, x5, x6], [
         1 0 0 0 1 2
-        0 1 0 0 -2 -1
+        0 1 0 0 2 1
         0 0 1 0 0 0
         0 0 0 1 0 0
     ])
     Groebner.groebner([x1, x2], ordering=ord)
-
-    ord = Groebner.MatrixOrdering([
-        1 0 0 0
-        0 1 0 0
-        0 0 1 0
-    ])
-    @test_throws DomainError Groebner.groebner([x1, x2], ordering=ord)
 end
 
 @testset "groebner parent rings" begin
@@ -821,5 +806,182 @@ end
                   x1 + 389079675 * x10 + 1758403970,
                   x10^2 + 1222705397 * x10 + 924778249
               ]
+    end
+end
+
+
+@testset "groebner modular-hard problems" begin
+    function get_test_system1(R, N)
+        (x1, x2, x3, x4) = AbstractAlgebra.gens(R)
+        system = [
+            x1 + x2 + x3 + x4,
+            x1 * x2 + x1 * x3 + x1 * x4 + x2 * x3 + x2 * x4 + x3 * x4,
+            x1 * x2 * x3 + x1 * x2 * x4 + x1 * x3 * x4 + x2 * x3 * x4,
+            x1 * x2 * x3 * x4 + N
+        ]
+        result = [
+            x1 + x2 + x3 + x4,
+            x2^2 + x2 * x3 + x3^2 + x2 * x4 + x3 * x4 + x4^2,
+            x3^3 + x3^2 * x4 + x3 * x4^2 + x4^3,
+            x4^4 - N
+        ]
+        system, result
+    end
+
+    R, (x1, x2, x3, x4) =
+        polynomial_ring(QQ, ["x1", "x2", "x3", "x4"], internal_ordering=:degrevlex)
+
+    N = prod(map(BigInt, nextprimes(2^30 + 3, 5)))
+    system, result = get_test_system1(R, N)
+    # this should take about 10 primes
+    gb = Groebner.groebner(system)
+    @test gb == result
+
+    N = prod(map(BigInt, nextprimes(2^31 - 1, 5)))
+    system, result = get_test_system1(R, N)
+    # this should take about 10 primes
+    gb = Groebner.groebner(system)
+    @test gb == result
+
+    N = prod(map(BigInt, nextprimes(2^31 - 1, 100)))
+    system, result = get_test_system1(R, N)
+    # around 200 primes are required
+    gb = Groebner.groebner(system)
+    @test gb == result
+
+    N = prod(map(BigInt, nextprimes(2^31 - 1, 5_000)))
+    # around 10k primes are required
+    system, result = get_test_system1(R, N)
+    gb = Groebner.groebner(system)
+    @test gb == result
+
+    # TODO: Sasha is too greedy to support this case.
+    # system = [x1 - (2^31 - 1) * x2 - (2^30 + 3) * x3]
+    # @test Groebner.groebner(system) == system
+
+    for start_of_range in [2^10, 2^20, 2^30, 2^40]
+        for size_of_range in [10, 100, 1000]
+            N = prod(Primes.nextprimes(BigInt(start_of_range), size_of_range))
+            system = [x1 + N // (N + 1), x3 - (N + 1) // (N - 1), x2 + 42]
+            gb = Groebner.groebner(system)
+            @test gb == [x3 - (N + 1) // (N - 1), x2 + 42, x1 + N // (N + 1)]
+        end
+    end
+end
+
+@testset "groebner strange example" begin
+    get_rand_poly(x, d, n) = sum([rand(1:5) * prod(x .^ rand(0:d, length(x))) for _ in 1:n])
+
+    n = 10
+    R, x = polynomial_ring(GF(17), ["x$i" for i in 1:n], internal_ordering=:degrevlex)
+    f1 = get_rand_poly(x, 10, 2^15)
+    @test Groebner.groebner([f1]) == [divexact(f1, leading_coefficient(f1))]
+
+    n = 6
+    R, x = polynomial_ring(GF(17), ["x$i" for i in 1:n], internal_ordering=:degrevlex)
+    f1 = get_rand_poly(x, 3, 2^10)
+    f2 = get_rand_poly(x, 2, 2^10)
+    gb = Groebner.groebner([f1, f2])
+    @info "GB contains polynomials of lengths: $(sort(map(length, gb)))"
+end
+
+@testset "groebner many variables" begin
+    function n_variable_set(n)
+        R, x = polynomial_ring(QQ, ["x$i" for i in 1:n])
+        f = [sum(prod(x[i:(n - k)], init=1) for i in 1:(k + 1)) for k in 0:(n - 1)]
+        f
+    end
+    
+    function test_n_variables(n)
+        f = n_variable_set(n)
+        x = gens(parent(f[1]))
+        gb = Groebner.groebner(f)
+    
+        evencf(i) = isone(i) ? 0 // 1 : (2(i - 1)) // (2i - 1)
+        oddcf(i) = isone(i) ? 0 // 1 : (2(i - 1) - 1) // (2(i - 1))
+        cf(i, n) = (iseven(n) ? oddcf(i) : evencf(i)) * (-1n)^(i == div(n, 2) + 1)
+    
+        ans = [x[div(n, 2) - i + 2] - cf(i, n) for i in 1:(div(n, 2) + 1)]
+    
+        @test Groebner.isgroebner(gb)
+        @test all(iszero, Groebner.normalform(gb, f))
+        @test gb == ans
+    end
+    
+    # up to 63
+    test_n_variables(8)
+    test_n_variables(16)
+    test_n_variables(32)
+    for n in 2:5:63
+        test_n_variables(n)
+    end
+
+    # up to 127
+    for n in [64, 100, 101, 127]
+        @info "Variables:" n
+        test_n_variables(n)
+    end
+
+    # up to 511
+    for n in [128, 256, 257, 511]
+        @info "Variables:" n
+        R, x = polynomial_ring(QQ, ["x$i" for i in 1:n])
+        f = x
+        Groebner.groebner(f)
+    end
+end
+
+# For Lex, DegLex, and DegRevLex, we can have total degrees up to 2^31
+@testset "groebner large exponents" begin
+    R, (x, y) = polynomial_ring(QQ, ["x", "y"], internal_ordering=:degrevlex)
+
+    # up to 2^8-1
+    for (i, d) in enumerate(4:2:255)
+        f = [x^d - 1, x * y + 2]
+        m, n, k = div(d, 2), div(d, 2) + 1, div(d, 2) - 1
+        gb = Groebner.groebner(f)
+        @test gb == [
+            x * y + 2,
+            x^m + (-1)^(i) // BigInt(2)^m * y^m,
+            y^n + (-1)^(i + 1) * BigInt(2)^n * x^k
+        ]
+    end
+
+    # up to 5^6 < 2^14
+    for i in 1:6
+        u, v = 3^i, 5^i
+        f = [x^u * y^v - 1, x^v + y^u]
+        gb = Groebner.groebner(f)
+        @test gb == [x^v + y^u, y^(v + u) + x^(v - u), x^u * y^v - 1]
+    end
+
+    # above 2^16-1
+    f = [x^(2^16) + y]
+    @test f == Groebner.groebner(f)
+
+    # up to 5^13 < 2^32
+    for i in 7:13
+        u, v = 3^i, 5^i
+        f = [x^u * y^v - 1, x^v + y^u]
+        gb = Groebner.groebner(f)
+        @test gb == [x^v + y^u, y^(v + u) + x^(v - u), x^u * y^v - 1]
+    end
+
+    # total degree 2^30
+    f = [x^1073741824 + y]
+    @test f == Groebner.groebner(f)
+
+    # total degree 2^31
+    f = [x^1073741824 * y^1073741824 + y]
+    @test f == Groebner.groebner(f)
+
+    # this should fail.
+    # f = [x^4294967295 * y^4294967295 + y]
+    # @test f == Groebner.groebner(f)
+
+    for i in [8, 16, 32, 64]
+        u, v = i >> 1, i
+        f = [x^u * y^v + y^8, x^8 - y^8]
+        gb = Groebner.groebner(f)
     end
 end

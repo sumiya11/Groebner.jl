@@ -91,6 +91,7 @@ function homogenize_generators!(
         params,
         sat_var_index
     )
+    params.target_ord = new_ring_sat.ord
     term_permutation, new_ring_sat, new_monoms, coeffs
 end
 
@@ -127,6 +128,7 @@ function dehomogenize_generators!(
     new_ord = restrict_ordering_in_dehomogenization(ring_desat.ord)
     new_ring = PolyRing(new_nvars, new_ord, ring_desat.ch)
     sort_input_terms_to_change_ordering!(new_monoms, coeffs, new_ord)
+    params.target_ord = new_ring.ord
     @log :misc """
     Original polynomial ring: 
     $ring_desat
@@ -183,6 +185,7 @@ function desaturate_generators!(
     resize!(new_monoms, new_size)
     new_ord = restrict_ordering_in_desaturation(ring.ord)
     new_ring = PolyRing(new_nvars, new_ord, ring.ch)
+    params.target_ord = new_ring.ord
     @log :misc """
     Original polynomial ring: 
     $ring
@@ -237,6 +240,7 @@ function saturate_generators_by_variable!(
     push!(coeffs, new_poly_coeffs)
     new_ord = extend_ordering_in_saturation(ring.nvars, ring.ord)
     new_ring = PolyRing(new_nvars, new_ord, ring.ch)
+    params.target_ord = new_ring.ord
     @log :misc """
     Original polynomial ring: 
     $ring

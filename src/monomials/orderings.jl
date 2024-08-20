@@ -60,6 +60,13 @@ groebner([x*y + x, x + y^2], ordering=Lex(x, y))
 ```
 """
 struct Lex{IsSimple, T} <: AbstractMonomialOrdering
+    # A note on the `IsSimple` parameter:
+    #
+    # We say that a monomial ordering is simple if it is one of Lex, DegLex, or
+    # DegRevLex, and it has "the default" order of variables: x1 > ... > xn. In
+    # this case, the `IsSimple` parameter is true. We make this distinction
+    # because a simple ordering can have a specialized comparator function,
+    # which may be faster than a general one.
     variables::Vector{T}
 
     Lex(variables...) = Lex(collect(variables))
@@ -228,8 +235,11 @@ struct ProductOrdering{Ord1, Ord2} <: AbstractMonomialOrdering
         if !isempty(intersect(ordering_variables(ord1), ordering_variables(ord2)))
             @log :info """
             Two blocks of the product ordering intersect by their variables.
-            Block 1: $(ord.ord1)
-            Block 2: $(ord.ord2)"""
+            Block 1: $(ord1)
+            Block 2: $(ord2)"""
+        end
+        if ordering_is_simple(ord1) || ordering_is_simple(ord2)
+            throw(DomainError("Invalid monomial ordering"))
         end
         new{Ord1, Ord2}(ord1, ord2)
     end
@@ -290,12 +300,17 @@ struct MatrixOrdering{T} <: AbstractMonomialOrdering
     end
 end
 
+###
+# Ordering utilities
+
+# Returns the (ordered) array of variables that define the ordering
 ordering_variables(::InputOrdering) = []
 ordering_variables(ord::Union{Lex, DegLex, DegRevLex, WeightedOrdering}) = ord.variables
 ordering_variables(ord::ProductOrdering) =
     union(ordering_variables(ord.ord1), ordering_variables(ord.ord2))
 ordering_variables(ord::MatrixOrdering) = ord.variables
 
+# Equality of orderings
 Base.:(==)(ord1::Lex, ord2::Lex) = ordering_variables(ord1) == ordering_variables(ord2)
 Base.:(==)(ord1::DegLex, ord2::DegLex) =
     ordering_variables(ord1) == ordering_variables(ord2)
@@ -308,10 +323,27 @@ Base.:(==)(ord1::ProductOrdering, ord2::ProductOrdering) =
 Base.:(==)(ord1::MatrixOrdering, ord2::MatrixOrdering) =
     ordering_variables(ord1) == ordering_variables(ord2) && ord1.rows == ord2.rows
 
-ordering_make_not_simple(ord::Lex, n::Int) = Lex(collect(1:n))
-ordering_make_not_simple(ord::DegLex, n::Int) = DegLex(collect(1:n))
-ordering_make_not_simple(ord::DegRevLex, n::Int) = DegLex(collect(1:n))
-ordering_make_not_simple(ord::ProductOrdering, n::Int) = ord
+ordering_is_simple(::Union{Lex{T}, DegLex{T}, DegRevLex{T}}) where {T} = T
+ordering_is_simple(::AbstractMonomialOrdering) = false
+
+ordering_make_not_simple(ord::AbstractMonomialOrdering, n::Int) = ord
+ordering_make_not_simple(ord::Lex{true}, n::Int) = Lex(collect(1:n))
+ordering_make_not_simple(ord::DegLex{true}, n::Int) = DegLex(collect(1:n))
+ordering_make_not_simple(ord::DegRevLex{true}, n::Int) = DegLex(collect(1:n))
+
+# Checking consistency against a polynomial ring
+function ordering_check_consistency(nvars::Int, ord::AbstractMonomialOrdering)
+    isempty(ordering_variables(ord)) && return nothing
+    if nvars != length(ordering_variables(ord))
+        throw(DomainError("The monomial ordering is invalid."))
+    end
+    if !issubset(ordering_variables(ord), collect(1:nvars))
+        throw(DomainError("The monomial ordering is invalid."))
+    end
+    nothing
+end
+
+# Transform orderings
 
 ordering_transform(::InputOrdering, varmap::AbstractDict) = InputOrdering()
 

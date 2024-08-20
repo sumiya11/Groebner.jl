@@ -126,7 +126,6 @@ function groebner(polynomials::AbstractVector; options...)
     logging_setup(keywords)
     statistics_setup(keywords)
 
-    # NOTE: Type assertion is needed for type stability.
     result = groebner0(polynomials, keywords)::typeof(polynomials)
 
     result
@@ -183,6 +182,7 @@ function groebner(
     logging_setup(keywords)
     statistics_setup(keywords)
 
+    ir_basic_is_valid(ring, monoms, coeffs)
     result = groebner1(ring, monoms, coeffs, keywords)
 
     result
@@ -384,6 +384,7 @@ function groebner_learn(
     logging_setup(keywords)
     statistics_setup(keywords)
 
+    ir_basic_is_valid(ring, monoms, coeffs)
     result = groebner_learn1(ring, monoms, coeffs, keywords)
 
     result
@@ -421,7 +422,7 @@ This function is **not** thread-safe, since it mutates the `trace`.
 function groebner_apply! end
 
 # Specialization for a single input
-function groebner_apply!(trace, polynomials::AbstractVector; options...)
+function groebner_apply!(trace::WrappedTraceF4, polynomials::AbstractVector; options...)
     Base.require_one_based_indexing(polynomials)
 
     keywords = KeywordArguments(:groebner_apply!, options)
@@ -435,13 +436,15 @@ function groebner_apply!(trace, polynomials::AbstractVector; options...)
     result
 end
 
+const _supported_batch_size = (1, 2, 4, 8, 16, 32, 64, 128)
+
 # Specialization for a batch of inputs
 function groebner_apply!(
-    trace,
-    batch::NTuple{N, T}; # deliberately not using ::Tuple{T, Vararg{T, Nminus1}}
+    trace::WrappedTraceF4,
+    batch::NTuple{N, T}; # deliberately not ::Tuple{T, Vararg{T, Nminus1}}
     options...
 ) where {N, T <: AbstractVector}
-    @assert N in (1, 2, 4, 8, 16, 32, 64, 128) "The batch size must be one of the following: 1, 2, 4, 8, 16, 32, 64, 128"
+    !(N in _supported_batch_size) && throw(DomainError("The batch size must be one of the following: $_supported_batch_size"))
     all(Base.require_one_based_indexing, batch)
 
     keywords = KeywordArguments(:groebner_apply!, options)
@@ -449,13 +452,14 @@ function groebner_apply!(
     logging_setup(keywords)
     statistics_setup(keywords)
 
-    result = groebner_apply0!(trace, batch, keywords)::Tuple{Bool, typeof(batch)}
+    result = groebner_apply0!(trace, batch, keywords)
 
     result
 end
 
+# Low level specialization for a single input
 function groebner_apply!(
-    trace,
+    trace::WrappedTraceF4,
     ring::PolyRing,
     monoms::AbstractVector,
     coeffs::AbstractVector;
@@ -466,7 +470,26 @@ function groebner_apply!(
     logging_setup(keywords)
     statistics_setup(keywords)
 
-    result = groebner_apply1!(trace, ring, coeffs, keywords)
+    ir_basic_is_valid(ring, monoms, coeffs)
+    result = groebner_apply1!(trace, ring, monoms, coeffs, keywords)
+
+    result
+end
+
+# Low level specialization for a batch of inputs
+function groebner_apply!(
+    trace::WrappedTraceF4,
+    batch::NTuple{N, T};
+    options...
+) where {N, T}
+    !(N in _supported_batch_size) && throw(DomainError("The batch size must be one of the following: $_supported_batch_size"))
+    keywords = KeywordArguments(:groebner_apply!, options)
+
+    logging_setup(keywords)
+    statistics_setup(keywords)
+
+    ir_basic_is_valid(batch)
+    result = groebner_apply1!(trace, batch, keywords)
 
     result
 end
@@ -558,6 +581,7 @@ function isgroebner(
     logging_setup(keywords)
     statistics_setup(keywords)
 
+    ir_basic_is_valid(ring, monoms, coeffs)
     result = isgroebner1(ring, monoms, coeffs, keywords)
 
     result
@@ -653,6 +677,8 @@ function normalform(
     logging_setup(keywords)
     statistics_setup(keywords)
 
+    ir_basic_is_valid(ring, monoms, coeffs)
+    ir_basic_is_valid(ring_to_be_reduced, monoms_to_be_reduced, coeffs_to_be_reduced)
     result = normalform1(
         ring,
         monoms,

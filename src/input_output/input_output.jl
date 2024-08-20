@@ -62,6 +62,15 @@ io_iszero_monoms(v) = isempty(v)
 io_zero_coeffs(::Type{T}, ring::PolyRing) where {T} = Vector{T}()
 io_zero_monoms(::Type{T}, ring::PolyRing) where {T} = Vector{T}()
 
+ir_basic_is_valid(batch) = throw(DomainError("Invalid IR, unknown types."))
+ir_basic_is_valid(ring, monoms, coeffs) = throw(DomainError("Invalid IR, unknown types."))
+
+function ir_basic_is_valid(batch::NTuple{N, T}) where {N, T}
+    for el in batch
+        ir_basic_is_valid(el...)
+    end
+end
+
 function ir_basic_is_valid(
     ring::PolyRing,
     monoms::Vector{Vector{Vector{T}}},
@@ -73,6 +82,7 @@ function ir_basic_is_valid(
     !(ring.ch >= 0) && throw(DomainError("Field characteristic must be nonnegative."))
     if ring.ch > 0
         !(C <: Integer) && throw(DomainError("Coefficients must be integers."))
+        (C <: BigInt) && throw(DomainError("Coefficients must fit in a machine register."))
         !(ring.ch <= typemax(C)) && throw(DomainError("Invalid IR."))
     else
         !(C <: Rational || C <: Integer) &&
@@ -100,9 +110,6 @@ function ir_is_valid(
     end
     true
 end
-
-ir_ensure_assumptions(ring, monoms, coeffs) =
-    throw(DomainError("Invalid IR, unknown types."))
 
 function ir_ensure_assumptions(
     ring::PolyRing,
@@ -138,7 +145,7 @@ function ir_ensure_assumptions(
     #     new_monoms = new_monoms[perm]
     #     new_coeffs = new_coeffs[perm]
     # end
-    # Normalize
+    # Merge terms
     _new_monoms = empty(new_monoms)
     _new_coeffs = empty(new_coeffs)
     for i in 1:length(new_monoms)
@@ -165,7 +172,7 @@ function ir_ensure_assumptions(
         end
     end
     new_monoms, new_coeffs = _new_monoms, _new_coeffs
-    # Remove zeros
+    # Remove zero coefficients (zero polynomials stay)
     for i in 1:length(new_monoms)
         perm = collect(1:length(new_monoms[i]))
         filter!(j -> !iszero(new_coeffs[i][j]), perm)
@@ -303,16 +310,12 @@ function io_remove_zeros_from_input!(
     iszerobasis
 end
 
-# Checks that the monomial orderings specified by the given `ring` and
-# `params.target_ord` are consistent with the given input monomials `monoms`. In
-# case the target ordering differs from the `ring` ordering,  
-# sorts the polynomials terms w.r.t. the target ordering.
-#
-# Also returns the sorting permutations for polynomial terms
+# Checks that the monomial ordering is consistent.
+# Sorts the polynomials terms w.r.t. the target ordering.
 function io_set_monomial_ordering!(ring, monoms, coeffs, params)
+    ordering_check_consistency(ring.nvars, params.target_ord)
     if ring.ord == params.target_ord
-        # No reordering of terms needed, the terms are already ordered according
-        # to the requested monomial ordering
+        # No reordering of terms needed
         return ring, Vector{Vector{Int}}()
     end
     ring = PolyRing(ring.nvars, params.target_ord, ring.ch)

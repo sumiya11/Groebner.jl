@@ -84,7 +84,6 @@ function Logging.handle_message(
 )
     # TODO: consider using ActiveFilteredLogger from LoggingExtras.jl
     Logging.handle_message(logger.logger, lvl, msg, _mod, group, id, file, line; kwargs...)
-    nothing
 end
 
 function meta_formatter_groebner(level::LogLevel, _module, group, id, file, line)
@@ -92,7 +91,7 @@ function meta_formatter_groebner(level::LogLevel, _module, group, id, file, line
     color = Logging.default_logcolor(level)
     time = gettime()
     h, m, s = lpad(time.hour, 2, "0"), lpad(time.min, 2, "0"), lpad(time.sec, 2, "0")
-    timestr = string("[", h, ":", m, ":", s, "]")
+    timestr = string("[ ", h, ":", m, ":", s, " ]")
     prefix = if level >= Logging.Warn
         "Warning"
     elseif level < Logging.Warn && level >= Logging.Info
@@ -174,9 +173,9 @@ macro log(args...)
     esc(
         :(
             if $(@__MODULE__).logging_enabled()
-                with_logger($(@__MODULE__)._groebner_logger[]) do
-                    $(Logging).@logmsg LogLevel($level) $(msgs...) _file = $file _line =
-                        $line
+                Groebner.Logging.with_logger($(@__MODULE__)._groebner_logger[]) do
+                    $(Logging).@logmsg Groebner.Logging.LogLevel($level) $(msgs...) _file =
+                        $file _line = $line
                 end
             else
                 nothing

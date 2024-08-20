@@ -2,8 +2,6 @@
 
 # Precompile some calls for better ttfx
 
-@assert VERSION >= v"1.6.0-DEV.154"
-
 @setup_workload begin
     # Putting some things in `setup` can reduce the size of the
     # precompile file and potentially make loading faster.

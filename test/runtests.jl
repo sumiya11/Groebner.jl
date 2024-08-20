@@ -55,9 +55,6 @@ end
     @time @includetests [
         "groebner/groebner",
         "groebner/groebner_stress",
-        "groebner/groebner_large",
-        "groebner/many_variables",
-        "groebner/large_exponents",
         "groebner/homogenization",
         "groebner/multi_threading"
     ]

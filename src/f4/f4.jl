@@ -509,14 +509,7 @@ function f4!(
         f4_autoreduce!(ring, basis, matrix, hashtable, symbol_ht, params)
     end
 
-    basis_standardize!(
-        ring,
-        basis,
-        hashtable,
-        hashtable.ord,
-        params.arithmetic,
-        params.changematrix
-    )
+    basis_standardize!(ring, basis, hashtable, params.arithmetic, params.changematrix)
 
     @invariant basis_well_formed(ring, basis, hashtable)
 
@@ -531,6 +524,7 @@ function f4_isgroebner!(
     arithmetic::AbstractArithmetic
 ) where {C <: Coeff}
     @invariant basis_well_formed(ring, basis, hashtable)
+    basis_make_monic!(basis, arithmetic, false)
     matrix = matrix_initialize(ring, C)
     symbol_ht = hashtable_initialize_secondary(hashtable)
     update_ht = hashtable_initialize_secondary(hashtable)
@@ -550,6 +544,7 @@ function f4_normalform!(
     arithmetic::AbstractArithmetic
 ) where {C <: Coeff}
     @invariant basis_well_formed(ring, basis, ht)
+    basis_make_monic!(basis, arithmetic, false)
     matrix = matrix_initialize(ring, C)
     symbol_ht = hashtable_initialize_secondary(ht)
     f4_select_tobereduced!(basis, tobereduced, matrix, symbol_ht, ht)

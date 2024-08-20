@@ -435,6 +435,7 @@ function basis_make_monic!(
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.nfilled)
         !isassigned(cfs, i) && continue
+        isone(cfs[i][1]) && continue
         mul = inv_mod_p(A(cfs[i][1]), arithmetic)
         cfs[i][1] = one(C)
         for j in 2:length(cfs[i])
@@ -459,6 +460,7 @@ function basis_make_monic!(
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.nfilled)
         !isassigned(cfs, i) && continue
+        isone(cfs[i][1]) && continue
         mul = inv_mod_p(A(cfs[i][1]), arithmetic)
         cfs[i][1] = one(C)
         for j in 2:length(cfs[i])
@@ -480,6 +482,7 @@ function basis_make_monic!(
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.nfilled)
         !isassigned(cfs, i) && continue
+        isone(cfs[i][1]) && continue
         mul = inv(cfs[i][1])
         for j in 2:length(cfs[i])
             cfs[i][j] *= mul
@@ -707,11 +710,10 @@ function basis_mark_redundant_elements!(basis::Basis)
 end
 
 function basis_standardize!(
-    ring,
+    ring::PolyRing,
     basis::Basis,
     ht::MonomialHashtable,
-    ord,
-    arithmetic,
+    arithmetic::AbstractArithmetic,
     changematrix::Bool
 )
     @inbounds for i in 1:(basis.nnonredundant)
@@ -731,8 +733,9 @@ function basis_standardize!(
     resize!(basis.nonredundant, basis.nprocessed)
     resize!(basis.isredundant, basis.nprocessed)
     resize!(basis.changematrix, basis.nprocessed)
-    sort_polys_by_lead_increasing!(basis, ht, changematrix, ord=ord)
+    perm = sort_polys_by_lead_increasing!(basis, ht, changematrix, ord=ht.ord)
     basis_make_monic!(basis, arithmetic, changematrix)
+    perm
 end
 
 function basis_get_monoms_by_identifiers(

@@ -30,7 +30,7 @@ function _groebner_with_change_matrix1(ring::PolyRing, monoms, coeffs, options)
         if isa(err, MonomialDegreeOverflow)
             @log :info """
             Possible overflow of exponent vector detected. 
-            Restarting with at least 32 bits per exponent."""
+            Restarting with at least 32 bits per exponent.""" maxlog = 1
             params = AlgorithmParameters(ring, options; hint=:large_exponents)
             return __groebner_with_change_matrix1(ring, monoms, coeffs, params)
         else
@@ -104,8 +104,7 @@ function groebner_with_change_matrix2(ring, monoms, coeffs, params)
 end
 
 ###
-# Groebner basis over Z_p.
-# Just calls f4 directly.
+# Groebner basis over Z_p. Calls F4 directly.
 
 function _groebner_with_change_matrix2(
     ring::PolyRing,
@@ -143,35 +142,23 @@ function _groebner_with_change_classic_modular(
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
-    # NOTE: we can mutate ring, monoms, and coeffs here.
-    @log :misc "Backend: classic multi-modular F4 (with change matrix)"
 
     # Initialize supporting structs
     state = GroebnerState{BigInt, C, CoeffModular}(params)
     basis, pairset, hashtable =
         f4_initialize_structs(ring, monoms, coeffs, params, make_monic=false)
 
-    # Scale the input coefficients to integers to speed up the subsequent search
-    # for lucky primes
-    @log :all "Input polynomials" basis
-    @log :misc "Clearing the denominators of the input polynomials"
     basis_zz = clear_denominators!(state.buffer, basis, deepcopy=false)
-    @log :all "Integer coefficients are" basis_zz.coeffs
 
     # Handler for lucky primes
     luckyprimes = LuckyPrimes(basis_zz.coeffs)
     prime = next_lucky_prime!(luckyprimes)
-    @log :misc "The first lucky prime is $prime"
-    @log :misc "Reducing input generators modulo $prime"
 
     # Perform reduction modulo prime and store result in basis_ff
     ring_ff, basis_ff = reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
-    @log :all "Reduced coefficients are" basis_ff.coeffs
 
-    @log :all "Before F4" basis_ff
     params_zp = params_mod_p(params, prime)
     f4!(ring_ff, basis_ff, pairset, hashtable, params_zp)
-    @log :all "After F4:" basis_ff
     # NOTE: basis_ff may not own its coefficients, one should not mutate it
     # directly further in the code
 
@@ -183,21 +170,16 @@ function _groebner_with_change_classic_modular(
 
     # Reconstruct coefficients and write results to the accumulator.
     # CRT reconstrction is trivial here.
-    @log :misc "Reconstructing coefficients from Z_$prime to QQ"
     full_simultaneous_crt_reconstruct!(state, luckyprimes)
     full_simultaneous_crt_reconstruct_changematrix!(state, luckyprimes)
 
     success_reconstruct = full_rational_reconstruct!(state, luckyprimes, params.use_flint)
-    @log :all "Reconstructed coefficients" state.gb_coeffs_qq
-    @log :misc "Successfull reconstruction: $success_reconstruct"
 
     changematrix_success_reconstruct =
         full_rational_reconstruct_changematrix!(state, luckyprimes, params.use_flint)
-    @log :misc "Successfull change matrix reconstruction: $success_reconstruct"
 
     correct_basis = false
     if success_reconstruct && changematrix_success_reconstruct
-        @log :misc "Verifying the correctness of reconstruction"
         correct_basis = correctness_check!(
             state,
             luckyprimes,
@@ -208,12 +190,9 @@ function _groebner_with_change_classic_modular(
             hashtable,
             params
         )
-        @log :misc "Passed correctness check: $correct_basis"
         # At this point, if the constructed basis is correct, we return it.
         if correct_basis
-            # take monomials from the basis modulo a prime
             gb_monoms, _ = basis_export_data(basis_ff, hashtable)
-            # take coefficients from the reconstrcted basis
             gb_coeffs_qq = state.gb_coeffs_qq
             changematrix_coeffs_qq = state.changematrix_coeffs_qq
             return gb_monoms, gb_coeffs_qq, changematrix_monoms, changematrix_coeffs_qq
@@ -225,26 +204,16 @@ function _groebner_with_change_classic_modular(
     primes_used = 1
     batchsize = 1
     batchsize_scaling = 0.10
-    @log :misc """
-    Preparing to compute bases in batches.. 
-    The initial size of the batch is $batchsize. 
-    The batch scale factor is $batchsize_scaling."""
 
     tot, indices_selection = gb_modular_select_indices0(state.gb_coeffs_zz, params)
-    @log :misc "Partial reconstruction: $(length(indices_selection)) indices out of $tot"
 
     partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
 
     iters = 0
     while !correct_basis
-        @log :misc "Iteration # $iters of modular Groebner"
-
         for j in 1:batchsize
             prime = next_lucky_prime!(luckyprimes)
-            @log :debug "The lucky prime is $prime"
-            @log :debug "Reducing input generators modulo $prime"
 
-            # Perform reduction modulo prime and store result in basis_ff
             ring_ff, basis_ff =
                 reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
             params_zp = params_mod_p(params, prime)
@@ -257,7 +226,6 @@ function _groebner_with_change_classic_modular(
             push!(state.changematrix_coeffs_ff_all, changematrix_coeffs)
 
             if !majority_vote!(state, basis_ff, params)
-                @log :debug "Majority vote is not conclusive, aborting reconstruction!"
                 continue
             end
 
@@ -265,22 +233,14 @@ function _groebner_with_change_classic_modular(
         end
         partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
 
-        @log :misc "Partially reconstructing coefficients to QQ"
-        @log :debug "Partially reconstructing coefficients from Z_$(luckyprimes.modulo * prime) to QQ"
         success_reconstruct = partial_rational_reconstruct!(
             state,
             luckyprimes,
             indices_selection,
             params.use_flint
         )
-        @log :misc "Partial reconstruction successfull: $success_reconstruct"
-        @log :misc """
-          Used $(length(luckyprimes.primes)) primes in total over $(iters + 1) iterations.
-          The current batch size is $batchsize.
-          """
 
         if !success_reconstruct
-            @log :misc "Partial rational reconstruction failed"
             iters += 1
             batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
             continue
@@ -290,7 +250,6 @@ function _groebner_with_change_classic_modular(
             success_check =
                 heuristic_correctness_check(state.selected_coeffs_qq, luckyprimes.modulo)
             if !success_check
-                @log :misc "Heuristic check failed for partial reconstruction"
                 iters += 1
                 batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
                 continue
@@ -298,14 +257,12 @@ function _groebner_with_change_classic_modular(
         end
 
         # Perform full reconstruction
-        @log :misc "Performing full CRT and rational reconstruction.."
         full_simultaneous_crt_reconstruct!(state, luckyprimes)
 
         success_reconstruct =
             full_rational_reconstruct!(state, luckyprimes, params.use_flint)
 
         if !success_reconstruct
-            @log :misc "Full reconstruction failed"
             iters += 1
             batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
             continue
@@ -315,7 +272,6 @@ function _groebner_with_change_classic_modular(
         success_reconstruct_changematrix =
             full_rational_reconstruct_changematrix!(state, luckyprimes, params.use_flint)
         if !success_reconstruct_changematrix
-            @log :misc "Failed to reconstruct the change matrix"
             iters += 1
             batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
             continue
@@ -336,15 +292,10 @@ function _groebner_with_change_classic_modular(
         batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
     end
 
-    @log :misc "Correctness check passed!"
-    @log :misc "Used $(length(luckyprimes.primes)) primes in total over $(iters) iterations"
-
     # Construct the output basis.
-    # Take monomials from the basis modulo a prime
     gb_monoms, _ = basis_export_data(basis_ff, hashtable)
-    # Take coefficients from the reconstructed basis
     gb_coeffs_qq = state.gb_coeffs_qq
     changematrix_coeffs_qq = state.changematrix_coeffs_qq
 
-    return gb_monoms, gb_coeffs_qq, changematrix_monoms, changematrix_coeffs_qq
+    gb_monoms, gb_coeffs_qq, changematrix_monoms, changematrix_coeffs_qq
 end

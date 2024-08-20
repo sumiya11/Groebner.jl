@@ -70,10 +70,10 @@ function gb_select_monomtype(char, nvars, ordering, homogenize, hint, monoms)
         )
             return SparseExponentVector{ExponentSize, Int32, nvars}
         end
-        @log :info """
+        @log :misc """
         The given monomial ordering $(ordering) is not implemented for
         $(monoms) monomial representation. Falling back to other monomial
-        representations."""
+        representations.""" maxlog = 1
     end
 
     # if packed representation is requested
@@ -88,15 +88,15 @@ function gb_select_monomtype(char, nvars, ordering, homogenize, hint, monoms)
             elseif nvars < 4 * variables_per_word
                 return PackedTuple4{UInt64, ExponentSize}
             end
-            @log :info """
+            @log :misc """
             Unable to use $(monoms) monomial representation, too many
             variables ($nvars). Falling back to dense monomial
-            representation."""
+            representation.""" maxlog = 1
         else
-            @log :info """
+            @log :misc """
             The given monomial ordering $(ordering) is not implemented for
             $(monoms) monomial representation. Falling back to dense
-            representation."""
+            representation.""" maxlog = 1
         end
     end
 
@@ -177,13 +177,11 @@ function gb_select_coefftype(
 end
 
 # Stores parameters for a single GB computation.
-mutable struct AlgorithmParameters{MonomOrd1, MonomOrd2, Arithmetic <: AbstractArithmetic}
-    # NOTE: in principle, MonomOrd1, ..., MonomOrd3 can be subtypes of any type
-
+mutable struct AlgorithmParameters{Arithmetic <: AbstractArithmetic}
     # Desired monomial ordering of output polynomials
-    target_ord::MonomOrd1
+    target_ord::Any
     # Original monomial ordering of input polynomials
-    original_ord::MonomOrd2
+    original_ord::Any
 
     # Specifies correctness checks levels
     heuristic_check::Bool
@@ -193,17 +191,17 @@ mutable struct AlgorithmParameters{MonomOrd1, MonomOrd2, Arithmetic <: AbstractA
     # If do homogenize input generators
     homogenize::Bool
 
-    # This option only makes sense for functions `normalform` and `kbase`. It
-    # specifies if the program should check if the input is indeed a Groebner
-    # basis.
+    # This option only makes sense for some functions (e.g., `normalform`). It
+    # specifies if we should check if the input is indeed a Groebner basis.
     check::Bool
 
-    # Linear algebra backend to be used
+    # Linear algebra backend
     linalg::LinearAlgebra
 
-    # This can hold buffers or precomputed multiplicative inverses to speed up
-    # the arithmetic in the ground field
+    # Arithmetic in the ground field
     arithmetic::Arithmetic
+
+    # Representation of polynomials in F4
     representation::PolynomialRepresentation
 
     # If reduced Groebner basis is needed
@@ -212,33 +210,26 @@ mutable struct AlgorithmParameters{MonomOrd1, MonomOrd2, Arithmetic <: AbstractA
     # Limit the number of critical pairs in the F4 matrix by this number
     maxpairs::Int
 
-    # Selection strategy. One of the following:
-    # - :normal
-    # well, it is tricky to implement sugar selection with F4..
     selection_strategy::Symbol
-
-    # Ground field of computation. This can be one of the following:
-    # - :qq for the rationals
-    # - :zp for integers modulo a prime
-    ground::Symbol
 
     # Strategy for modular computation in groebner. This can be one of the
     # following:
     # - :classic_modular
     # - :learn_and_apply
     modular_strategy::Symbol
+
+    # If learn & apply strategy can use apply in batches
     batched::Bool
 
     # In modular computation of the basis, compute (at least!) this many bases
-    # modulo different primes until a consensus in majority vote is reached
+    # modulo different primes until a consensus in is reached
     majority_threshold::Int
 
-    # Use multi-threading.
+    # Multi-threading
     threaded_f4::Symbol
     threaded_multimodular::Symbol
 
     # Random number generator
-    seed::UInt64
     rng::Random.Xoshiro
 
     # Internal option for `groebner`.
@@ -372,9 +363,8 @@ function AlgorithmParameters(ring, kwargs::KeywordArguments; hint=:none, orderin
         modular_strategy = :learn_and_apply
     end
     if !reduced
-        @log :misc """
-        The option reduced=$reduced was passed in the input, 
-        falling back to classic multi-modular algorithm."""
+        # The option reduced=false was passed in the input, 
+        # falling back to classic multi-modular algorithm.
         modular_strategy = :classic_modular
     end
     batched = kwargs.batched
@@ -383,7 +373,6 @@ function AlgorithmParameters(ring, kwargs::KeywordArguments; hint=:none, orderin
 
     seed = kwargs.seed
     rng = Random.Xoshiro(seed)
-    useed = UInt64(seed)
 
     sweep = kwargs.sweep
 
@@ -394,10 +383,7 @@ function AlgorithmParameters(ring, kwargs::KeywordArguments; hint=:none, orderin
     changematrix = kwargs.changematrix
     if changematrix
         if !(target_ord isa DegRevLex)
-            __throw_input_not_supported(
-                "Only DegRevLex is supported with changematrix = true.",
-                target_ord
-            )
+            throw(DomainError("Only DegRevLex is supported with changematrix = true."))
         end
     end
 
@@ -418,11 +404,9 @@ function AlgorithmParameters(ring, kwargs::KeywordArguments; hint=:none, orderin
     homogenize = $homogenize
     maxpairs = $maxpairs
     selection_strategy = $selection_strategy
-    ground = $ground
     modular_strategy = $modular_strategy
     batched = $batched
     majority_threshold = $majority_threshold
-    seed = $seed
     rng = $rng
     sweep = $sweep
     statistics = $statistics
@@ -443,13 +427,11 @@ function AlgorithmParameters(ring, kwargs::KeywordArguments; hint=:none, orderin
         reduced,
         maxpairs,
         selection_strategy,
-        ground,
         modular_strategy,
         batched,
         majority_threshold,
         threaded_f4,
         threaded_multimodular,
-        useed,
         rng,
         sweep,
         statistics,
@@ -487,13 +469,11 @@ function params_mod_p(
         params.reduced,
         params.maxpairs,
         params.selection_strategy,
-        params.ground,
         params.modular_strategy,
         params.batched,
         params.majority_threshold,
         params.threaded_f4,
         params.threaded_multimodular,
-        params.seed,
         params.rng,
         params.sweep,
         params.statistics,

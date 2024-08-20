@@ -6,25 +6,42 @@
 ###
 # Learn stage
 
-function groebner_learn0(polynomials, options)
+# polynomials => polynomials
+function groebner_learn0(polynomials::AbstractVector, options::KeywordArguments)
+    isempty(polynomials) && throw(DomainError("Empty input."))
     ring, monoms, coeffs, options = io_convert_polynomials_to_ir(polynomials, options)
-    trace, gb_monoms, gb_coeffs = groebner_learn1(ring, monoms, coeffs, options)
+    trace, gb_monoms, gb_coeffs = _groebner_learn1(ring, monoms, coeffs, options)
     result = io_convert_ir_to_polynomials(ring, polynomials, gb_monoms, gb_coeffs, options)
     trace, result
 end
 
-# Proxy function for handling exceptions.
-function groebner_learn1(ring::PolyRing, monoms, coeffs, options)
+# (exponent vectors, coefficients) => (exponent vectors, coefficients)
+function groebner_learn1(
+    ring::PolyRing,
+    monoms::Vector{Vector{Vector{I}}},
+    coeffs::Vector{Vector{C}},
+    options::KeywordArguments
+) where {I <: Integer, C <: Coeff}
+    ring, monoms, coeffs = ir_ensure_assumptions(ring, monoms, coeffs)
+    _groebner_learn1(ring, monoms, coeffs, options)
+end
+
+function _groebner_learn1(
+    ring::PolyRing,
+    monoms::Vector{Vector{Vector{I}}},
+    coeffs::Vector{Vector{C}},
+    options::KeywordArguments
+) where {I <: Integer, C <: Coeff}
     try
         params = AlgorithmParameters(ring, options)
-        return _groebner_learn1(ring, monoms, coeffs, params)
+        return __groebner_learn1(ring, monoms, coeffs, params)
     catch err
         if isa(err, MonomialDegreeOverflow)
             @log :info """
             Possible overflow of exponent vector detected. 
-            Restarting with at least 32 bits per exponent."""
+            Restarting with at least 32 bits per exponent.""" maxlog = 1
             params = AlgorithmParameters(ring, options; hint=:large_exponents)
-            return _groebner_learn1(ring, monoms, coeffs, params)
+            return __groebner_learn1(ring, monoms, coeffs, params)
         else
             # Something bad happened.
             rethrow(err)
@@ -32,7 +49,12 @@ function groebner_learn1(ring::PolyRing, monoms, coeffs, options)
     end
 end
 
-function _groebner_learn1(ring, monoms, coeffs, params)
+function __groebner_learn1(
+    ring::PolyRing,
+    monoms::Vector{Vector{Vector{I}}},
+    coeffs::Vector{Vector{C}},
+    params::AlgorithmParameters
+) where {I <: Integer, C <: Coeff}
     @invariant ir_is_valid(ring, monoms, coeffs)
     term_sorting_permutations, ring2, monoms2, coeffs2 =
         io_convert_ir_to_internal(ring, monoms, coeffs, params, params.representation)
@@ -45,9 +67,21 @@ function _groebner_learn1(ring, monoms, coeffs, params)
     WrappedTraceF4(trace), gb_monoms, gb_coeffs
 end
 
-function groebner_learn2(ring, monoms, coeffs, params)
-    monoms = filter(!isempty, monoms)
-    coeffs = filter(!isempty, coeffs)
+# internal structs => internal structs
+function groebner_learn2(
+    ring::PolyRing,
+    monoms::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    params::AlgorithmParameters
+) where {M <: Monom, C <: Coeff}
+    _monoms = filter(!isempty, monoms)
+    _coeffs = filter(!isempty, coeffs)
+    if isempty(_monoms)
+        return trace_initialize_empty(ring, monoms, coeffs, params),
+        [monoms[1]],
+        [coeffs[1]]
+    end
+    monoms, coeffs = _monoms, _coeffs
 
     term_homogenizing_permutation = Vector{Vector{Int}}()
     if params.homogenize
@@ -67,18 +101,14 @@ function groebner_learn2(ring, monoms, coeffs, params)
 end
 
 function _groebner_learn2(
-    ring,
-    monoms,
+    ring::PolyRing,
+    monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
-    params
-) where {C <: CoeffZp}
-    @log :misc "Groebner learn phase over Z_p"
-    # Initialize F4 structs
+    params::AlgorithmParameters
+) where {M <: Monom, C <: CoeffZp}
     trace, basis, pairset, hashtable =
         f4_initialize_structs_with_trace(ring, monoms, coeffs, params)
-    @log :all "Before F4:" basis
     f4_learn!(trace, ring, trace.gb_basis, pairset, hashtable, params)
-    @log :all "After F4:" basis
     gb_monoms, gb_coeffs = basis_export_data(trace.gb_basis, trace.hashtable)
     trace, gb_monoms, gb_coeffs
 end
@@ -86,23 +116,52 @@ end
 ###
 # Apply stage
 
+# polynomials => polynomials
 function groebner_apply0!(
     wrapped_trace::WrappedTraceF4,
     polynomials::AbstractVector,
     options::KeywordArguments
 )
-    # flag, ring, coeffs = io_extract_coeffs_raw!(trace, trace.representation, polynomials, options)
-    # ring, coeffs = io_extract_coeffs_ir!(trace, trace.representation, polynomials, options)
-    # TODO: too slow
     ring, monoms, coeffs, options = io_convert_polynomials_to_ir(polynomials, options)
-    flag, gb_monoms, gb_coeffs = groebner_apply1!(wrapped_trace, ring, coeffs, options)
+    flag, gb_monoms, gb_coeffs =
+        _groebner_apply1!(wrapped_trace, ring, monoms, coeffs, options)
     !flag && return (flag, polynomials)
     result = io_convert_ir_to_polynomials(ring, polynomials, gb_monoms, gb_coeffs, options)
     flag, result
 end
 
-function groebner_apply1!(wrapped_trace, ring, coeffs, options)
+# (exponent vectors, coefficients) => (exponent vectors, coefficients)
+function groebner_apply1!(
+    wrapped_trace::WrappedTraceF4,
+    ring::PolyRing,
+    monoms::Vector{Vector{Vector{I}}},
+    coeffs::Vector{Vector{C}},
+    options::KeywordArguments
+) where {I <: Integer, C <: Coeff}
+    ring, monoms, coeffs = ir_ensure_assumptions(ring, monoms, coeffs)
+    _groebner_apply1!(wrapped_trace, ring, monoms, coeffs, options)
+end
+
+function _groebner_apply1!(
+    wrapped_trace::WrappedTraceF4,
+    ring::PolyRing,
+    monoms::Vector{Vector{Vector{I}}},
+    coeffs::Vector{Vector{C}},
+    options::KeywordArguments
+) where {I <: Integer, C <: Coeff}
     trace = get_trace!(wrapped_trace, ring, options)
+
+    _monoms = filter(!isempty, monoms)
+    _coeffs = filter(!isempty, coeffs)
+    if trace.empty
+        if isempty(_monoms)
+            return true, [monoms[1]], [coeffs[1]]
+        else
+            return false, monoms, coeffs
+        end
+    end
+    monoms, coeffs = _monoms, _coeffs
+
     # TODO: this is a bit hacky
     params = AlgorithmParameters(
         ring,
@@ -133,9 +192,6 @@ function groebner_apply2!(ring, trace, params)
 end
 
 function _groebner_apply2!(ring, trace, params)
-    @log :misc "Groebner Apply phase"
-    @log :misc "Applying modulo $(ring.ch)"
-
     flag = f4_apply!(trace, ring, trace.buf_basis, params)
 
     gb_monoms, gb_coeffs = basis_export_data(trace.gb_basis, trace.hashtable)
