@@ -148,6 +148,7 @@ function _groebner_learn_and_apply(
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
+
     # Initialize supporting structs
     state = GroebnerState{BigInt, C, Int32}(params)
     basis, pairset, hashtable, permutation =
@@ -338,6 +339,7 @@ function _groebner_learn_and_apply_threaded(
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
+
     if nthreads() == 1
         @log :info "Using threaded backend with nthreads() == 1, how did we end up here?"
     end
@@ -541,6 +543,7 @@ function _groebner_classic_modular(
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
+
     # Initialize supporting structs
     state = GroebnerState{BigInt, C, CoeffModular}(params)
     basis, pairset, hashtable =
