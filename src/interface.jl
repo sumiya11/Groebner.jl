@@ -422,7 +422,7 @@ This function is **not** thread-safe, since it mutates the `trace`.
 function groebner_apply! end
 
 # Specialization for a single input
-function groebner_apply!(trace::WrappedTraceF4, polynomials::AbstractVector; options...)
+function groebner_apply!(trace::WrappedTrace, polynomials::AbstractVector; options...)
     Base.require_one_based_indexing(polynomials)
 
     keywords = KeywordArguments(:groebner_apply!, options)
@@ -440,11 +440,13 @@ const _supported_batch_size = (1, 2, 4, 8, 16, 32, 64, 128)
 
 # Specialization for a batch of inputs
 function groebner_apply!(
-    trace::WrappedTraceF4,
+    trace::WrappedTrace,
     batch::NTuple{N, T}; # deliberately not ::Tuple{T, Vararg{T, Nminus1}}
     options...
 ) where {N, T <: AbstractVector}
-    !(N in _supported_batch_size) && throw(DomainError("The batch size must be one of the following: $_supported_batch_size"))
+    !(N in _supported_batch_size) && throw(
+        DomainError("The batch size must be one of the following: $_supported_batch_size")
+    )
     all(Base.require_one_based_indexing, batch)
 
     keywords = KeywordArguments(:groebner_apply!, options)
@@ -452,14 +454,14 @@ function groebner_apply!(
     logging_setup(keywords)
     statistics_setup(keywords)
 
-    result = groebner_apply0!(trace, batch, keywords)
+    result = groebner_apply_batch0!(trace, batch, keywords)
 
     result
 end
 
 # Low level specialization for a single input
 function groebner_apply!(
-    trace::WrappedTraceF4,
+    trace::WrappedTrace,
     ring::PolyRing,
     monoms::AbstractVector,
     coeffs::AbstractVector;
@@ -477,19 +479,17 @@ function groebner_apply!(
 end
 
 # Low level specialization for a batch of inputs
-function groebner_apply!(
-    trace::WrappedTraceF4,
-    batch::NTuple{N, T};
-    options...
-) where {N, T}
-    !(N in _supported_batch_size) && throw(DomainError("The batch size must be one of the following: $_supported_batch_size"))
+function groebner_apply!(trace::WrappedTrace, batch::NTuple{N, T}; options...) where {N, T}
+    !(N in _supported_batch_size) && throw(
+        DomainError("The batch size must be one of the following: $_supported_batch_size")
+    )
     keywords = KeywordArguments(:groebner_apply!, options)
 
     logging_setup(keywords)
     statistics_setup(keywords)
 
     ir_basic_is_valid(batch)
-    result = groebner_apply1!(trace, batch, keywords)
+    result = groebner_apply_batch1!(trace, batch, keywords)
 
     result
 end

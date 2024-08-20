@@ -222,29 +222,29 @@ end
 ###
 # A wrapper around the tracer exposed to the user
 
-mutable struct WrappedTraceF4
+mutable struct WrappedTrace
     recorded_traces::Dict{Any, Any}
 
-    function WrappedTraceF4(
+    function WrappedTrace(
         trace::TraceF4{C1, C2, M, Ord1, Ord2}
     ) where {C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
         recorded_traces = Dict{Any, Any}((C1, 42) => trace)
-        WrappedTraceF4(recorded_traces)
+        WrappedTrace(recorded_traces)
     end
 
-    function WrappedTraceF4(d::Dict{A, B}) where {A, B}
+    function WrappedTrace(d::Dict{A, B}) where {A, B}
         new(d)
     end
 end
 
 # Does not provide the same guarantees as `Base.deepcopy`.
-function trace_deepcopy(wrapped_trace::WrappedTraceF4)
-    WrappedTraceF4(
+function trace_deepcopy(wrapped_trace::WrappedTrace)
+    WrappedTrace(
         Dict(deepcopy(k) => trace_deepcopy(v) for (k, v) in wrapped_trace.recorded_traces)
     )
 end
 
-function get_default_trace(wrapped_trace::WrappedTraceF4)
+function get_default_trace(wrapped_trace::WrappedTrace)
     if length(wrapped_trace.recorded_traces) == 1
         # if there is only one trace stored
         first(values(wrapped_trace.recorded_traces))
@@ -259,7 +259,7 @@ function get_default_trace(wrapped_trace::WrappedTraceF4)
     first(values(wrapped_trace.recorded_traces))
 end
 
-function get_trace!(wrapped_trace::WrappedTraceF4, ring, kwargs)
+function get_trace!(wrapped_trace::WrappedTrace, ring, kwargs)
     char = ring.ch
 
     trace = get_default_trace(wrapped_trace)
@@ -288,7 +288,7 @@ function get_trace!(wrapped_trace::WrappedTraceF4, ring, kwargs)
 end
 
 function get_trace!(
-    wrapped_trace::WrappedTraceF4,
+    wrapped_trace::WrappedTrace,
     batch::NTuple{N, T},
     kwargs
 ) where {N, T <: AbstractVector}
@@ -354,7 +354,7 @@ end
 ###
 # Printing the trace
 
-function Base.show(io::IO, ::MIME"text/plain", wrapped_trace::WrappedTraceF4)
+function Base.show(io::IO, ::MIME"text/plain", wrapped_trace::WrappedTrace)
     println(
         io,
         """Recorded $(length(wrapped_trace.recorded_traces)) traces: $(collect(keys(wrapped_trace.recorded_traces)))
@@ -363,7 +363,7 @@ function Base.show(io::IO, ::MIME"text/plain", wrapped_trace::WrappedTraceF4)
     show(io, MIME("text/plain"), get_default_trace(wrapped_trace))
 end
 
-function Base.show(io::IO, wrapped_trace::WrappedTraceF4)
+function Base.show(io::IO, wrapped_trace::WrappedTrace)
     Base.show(io, MIME("text/plain"), wrapped_trace)
 end
 
@@ -371,7 +371,7 @@ function Base.show(io::IO, ::MIME"text/plain", trace::TraceF4)
     sz = round((Base.summarysize(trace) / 2^20), digits=2)
     printstyled(
         io,
-        "Trace of F4 ($sz MiB) recorded in $(round(trace.stopwatch / 10^9, digits=3)) s.\n",
+        "WrappedTrace of F4 ($sz MiB) recorded in $(round(trace.stopwatch / 10^9, digits=3)) s.\n",
         bold=true
     )
     println(

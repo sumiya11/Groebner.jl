@@ -64,7 +64,7 @@ function __groebner_learn1(
     trace.representation = params.representation
     trace.term_sorting_permutations = term_sorting_permutations
 
-    WrappedTraceF4(trace), gb_monoms, gb_coeffs
+    WrappedTrace(trace), gb_monoms, gb_coeffs
 end
 
 # internal structs => internal structs
@@ -118,7 +118,7 @@ end
 
 # polynomials => polynomials
 function groebner_apply0!(
-    wrapped_trace::WrappedTraceF4,
+    wrapped_trace::WrappedTrace,
     polynomials::AbstractVector,
     options::KeywordArguments
 )
@@ -130,9 +130,25 @@ function groebner_apply0!(
     flag, result
 end
 
+# batch of polynomials => batch of polynomials
+function groebner_apply_batch0!(
+    wrapped_trace::WrappedTrace,
+    batch::NTuple{N, T},
+    options::KeywordArguments
+) where {N, T}
+    batch_ir = map(f -> io_convert_polynomials_to_ir(f, deepcopy(options)), batch)
+    options = batch_ir[1][end]
+    batch_ir = map(f -> f[1:3], batch_ir)
+    flag, batch_gb =
+        _groebner_apply_batch1!(wrapped_trace, batch_ir, options)
+    !flag && return (flag, batch)
+    result_ir = map(f -> io_convert_ir_to_polynomials(batch_ir[1][1], batch[1], f..., options), batch_gb)
+    flag, result_ir
+end
+
 # (exponent vectors, coefficients) => (exponent vectors, coefficients)
 function groebner_apply1!(
-    wrapped_trace::WrappedTraceF4,
+    wrapped_trace::WrappedTrace,
     ring::PolyRing,
     monoms::Vector{Vector{Vector{I}}},
     coeffs::Vector{Vector{C}},
@@ -142,8 +158,39 @@ function groebner_apply1!(
     _groebner_apply1!(wrapped_trace, ring, monoms, coeffs, options)
 end
 
+# batch of (exponent vectors, coefficients) 
+# => 
+# batch of (exponent vectors, coefficients)
+function groebner_apply_batch1!(
+    wrapped_trace::WrappedTrace,
+    batch::NTuple{N, T},
+    options::KeywordArguments
+) where {N, T}
+    batch = map(ir_ensure_assumptions, batch)
+    _groebner_apply1!(wrapped_trace, batch, options)
+end
+
 function _groebner_apply1!(
-    wrapped_trace::WrappedTraceF4,
+    wrapped_trace::WrappedTrace,
+    ring::PolyRing,
+    monoms::Vector{Vector{Vector{I}}},
+    coeffs::Vector{Vector{C}},
+    options::KeywordArguments
+) where {I <: Integer, C <: Coeff}
+    __groebner_apply1!(wrapped_trace, ring, monoms, coeffs, options)
+end
+
+function _groebner_apply_batch1!(
+    wrapped_trace::WrappedTrace,
+    batch::NTuple{N, T},
+    options::KeywordArguments
+) where {I <: Integer, C <: Coeff}
+
+    __groebner_apply1!(wrapped_trace, ring, monoms, coeffs, options)
+end
+
+function __groebner_apply1!(
+    wrapped_trace::WrappedTrace,
     ring::PolyRing,
     monoms::Vector{Vector{Vector{I}}},
     coeffs::Vector{Vector{C}},
@@ -162,6 +209,8 @@ function _groebner_apply1!(
     end
     monoms, coeffs = _monoms, _coeffs
 
+    # TODO: check validity
+    
     # TODO: this is a bit hacky
     params = AlgorithmParameters(
         ring,
