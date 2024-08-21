@@ -200,7 +200,7 @@ function ir_pack_coeffs(batch::NTuple{N, T}) where {N, T}
     new_ring = PolyRing(ring.nvars, ring.ord, ch)
     monoms = batch[1][2]
     coeffs = Vector{Vector{CompositeNumber{N, UInt64}}}(undef, length(monoms))
-    @assert allequal(el -> el[2], batch)
+    @assert allequal(map(el -> el[2], batch))
     for i in 1:length(batch[1][2])
         coeffs[i] = Vector{CompositeNumber{N, UInt64}}(undef, length(batch[1][2][i]))
         for j in 1:length(batch[1][2][i])

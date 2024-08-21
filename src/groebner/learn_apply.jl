@@ -131,8 +131,8 @@ function groebner_apply_batch0!(
     flag, gb_batch = _groebner_apply_batch1!(wrapped_trace, ir_batch, options)
     !flag && return (flag, batch)
     result_ir = map(
-        f -> io_convert_ir_to_polynomials(ir_batch[1][1], batch[1], f..., options),
-        gb_batch
+        i -> io_convert_ir_to_polynomials(ir_batch[i][1], batch[i], gb_batch[i]..., options),
+        1:length(gb_batch)
     )
     flag, result_ir
 end
@@ -204,10 +204,6 @@ function __groebner_apply1!(
     !flag && return flag, monoms, coeffs
 
     flag, gb_monoms2, gb_coeffs2 = groebner_apply2!(trace, params)
-    if !flag
-        trace.nfail += 1
-        empty!(trace.matrix_sorted_columns)
-    end
 
     gb_monoms, gb_coeffs = io_convert_internal_to_ir(ring, gb_monoms2, gb_coeffs2, params)
     flag, gb_monoms, gb_coeffs
@@ -215,7 +211,14 @@ end
 
 function groebner_apply2!(trace, params)
     flag, gb_monoms, gb_coeffs = _groebner_apply2!(trace, params)
-    !flag && return (flag, gb_monoms, gb_coeffs)
+    if !flag
+        # Recover trace
+        @log :info "Trace might be corrupted. Recovering..."
+        trace.nfail += 1
+        empty!(trace.matrix_sorted_columns)
+        trace.buf_basis = basis_deepcopy(trace.input_basis)
+        return flag, gb_monoms, gb_coeffs
+    end
     flag, gb_monoms, gb_coeffs
 end
 

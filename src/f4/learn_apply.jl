@@ -292,7 +292,7 @@ function f4_reduction_apply!(
 
     flag = linalg_main!(matrix, basis, params, trace, linalg=LinearAlgebra(:apply, :sparse))
     if !flag
-        @log :warn "In apply, in linear algebra, some of the matrix rows reduced to zero."
+        @log :info "In apply, in linear algebra, some of the matrix rows reduced to zero."
         return false, false
     end
 

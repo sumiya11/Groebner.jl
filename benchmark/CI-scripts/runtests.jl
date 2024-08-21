@@ -133,9 +133,9 @@ function compare()
                 0, "insignificant"
             elseif (1 + MAX_DEVIATION) * m1 < m2
                 fail = true
-                2, "**slower**❌"
+                2, "slower❌"
             elseif m1 > (1 + MAX_DEVIATION) * m2
-                1, "**faster**✅"
+                1, "faster✅"
             else
                 0, "insignificant"
             end
@@ -144,9 +144,9 @@ function compare()
             label_nightly = mean(nightly)
             indicator = if label_master < label_nightly
                 fail = true
-                2, "**worse**❌"
+                2, "worse❌"
             elseif label_master > label_nightly
-                1, "**better**✅"
+                1, "better✅"
             else
                 0, "same"
             end
