@@ -216,7 +216,7 @@ end
             map(f -> AbstractAlgebra.map_coefficients(c -> GF(K)(BigInt(c)), f), system)
         _x, _y = gens(parent(system_zp[1]))
         true_gb = Groebner.groebner(system_zp; ordering=Groebner.DegRevLex(_y, _x))
-        flag, gb_2 = Groebner.groebner_apply!(trace, system_zp)
+        flag, gb_2 = Groebner.groebner_apply!(trace, system_zp; ordering=Groebner.DegRevLex(_y, _x))
         @test flag && gb_2 == true_gb
     end
 end
