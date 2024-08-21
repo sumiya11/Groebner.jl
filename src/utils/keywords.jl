@@ -45,19 +45,6 @@ const _supported_kw_args = (
         loglevel    = _loglevel_default,
         statistics  = :no
     ),
-    kbase = (
-        check       = false,
-        ordering    = InputOrdering(),
-        monoms      = :dense,
-        loglevel    = _loglevel_default,
-        statistics  = :no
-    ),
-    fglm = (
-        check       = false,
-        monoms      = :dense,
-        statistics  = :no,
-        loglevel    = _loglevel_default,
-    ),
     groebner_learn = (
         seed        = 42,
         ordering    = InputOrdering(),

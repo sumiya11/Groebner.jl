@@ -180,8 +180,6 @@ export groebner_with_change_matrix
 export isgroebner
 export normalform
 
-export kbase
-
 export Lex,
     DegLex, DegRevLex, InputOrdering, WeightedOrdering, ProductOrdering, MatrixOrdering
 
