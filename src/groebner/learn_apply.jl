@@ -63,6 +63,7 @@ function __groebner_learn1(
 
     trace.representation = params.representation
     trace.term_sorting_permutations = term_sorting_permutations
+    trace.support = monoms
 
     WrappedTrace(trace), gb_monoms, gb_coeffs
 end
@@ -127,10 +128,12 @@ function groebner_apply_batch0!(
     ir_batch = map(f -> io_convert_polynomials_to_ir(f, deepcopy(options)), batch)
     options = ir_batch[1][end]
     ir_batch = map(f -> f[1:3], ir_batch)
-    flag, gb_batch =
-        _groebner_apply_batch1!(wrapped_trace, ir_batch, options)
+    flag, gb_batch = _groebner_apply_batch1!(wrapped_trace, ir_batch, options)
     !flag && return (flag, batch)
-    result_ir = map(f -> io_convert_ir_to_polynomials(ir_batch[1][1], batch[1], f..., options), gb_batch)
+    result_ir = map(
+        f -> io_convert_ir_to_polynomials(ir_batch[1][1], batch[1], f..., options),
+        gb_batch
+    )
     flag, result_ir
 end
 
@@ -165,7 +168,8 @@ function _groebner_apply_batch1!(
 ) where {N, T}
     flag, ring, monoms, coeffs = ir_pack_coeffs(batch)
     !flag && return flag, map(el -> el[2:end], batch)
-    flag, gb_monoms, gb_coeffs = __groebner_apply1!(wrapped_trace, ring, monoms, coeffs, options)
+    flag, gb_monoms, gb_coeffs =
+        __groebner_apply1!(wrapped_trace, ring, monoms, coeffs, options)
     !flag && return flag, map(el -> el[2:end], batch)
     gb_batch = ir_unpack_coeffs(gb_monoms, gb_coeffs)
     true, gb_batch
@@ -195,11 +199,15 @@ function __groebner_apply1!(
         end
     end
     monoms, coeffs = _monoms, _coeffs
-    
+
     flag = io_extract_coeffs_raw_X!(trace, coeffs)
     !flag && return flag, monoms, coeffs
 
     flag, gb_monoms2, gb_coeffs2 = groebner_apply2!(trace, params)
+    if !flag
+        trace.nfail += 1
+        empty!(trace.matrix_sorted_columns)
+    end
 
     gb_monoms, gb_coeffs = io_convert_internal_to_ir(ring, gb_monoms2, gb_coeffs2, params)
     flag, gb_monoms, gb_coeffs

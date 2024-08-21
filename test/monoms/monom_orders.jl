@@ -92,8 +92,8 @@ implementations_to_test = [
             b = monom_construct_from_vector(EV{T}, [1, 1])
             @test !drl(a, b)
             if !(EV{T} <: Groebner.AbstractPackedTuple{T})
-            @test !lex(a, b)
-            @test !dl(a, b)
+                @test !lex(a, b)
+                @test !dl(a, b)
             end
 
             2 > Groebner.monom_max_vars(EV{T}) && continue
@@ -101,21 +101,20 @@ implementations_to_test = [
             b = monom_construct_from_vector(EV{T}, [2, 2])
             @test !drl(b, a)
             @test drl(a, b)
-            if !(EV{T} <: Groebner.AbstractPackedTuple{T})      
+            if !(EV{T} <: Groebner.AbstractPackedTuple{T})
                 @test lex(a, b)
                 @test dl(a, b)
                 @test !lex(b, a)
                 @test !dl(b, a)
             end
-            
 
             3 > Groebner.monom_max_vars(EV{T}) && continue
             a = monom_construct_from_vector(EV{T}, [1, 0, 2])
             b = monom_construct_from_vector(EV{T}, [2, 0, 1])
             @test drl(a, b)
-            if !(EV{T} <: Groebner.AbstractPackedTuple{T})      
-            @test lex(a, b)
-            @test dl(a, b)
+            if !(EV{T} <: Groebner.AbstractPackedTuple{T})
+                @test lex(a, b)
+                @test dl(a, b)
             end
 
             3 > Groebner.monom_max_vars(EV{T}) && continue
@@ -127,18 +126,18 @@ implementations_to_test = [
             a = monom_construct_from_vector(EV{T}, ones(UInt, 25))
             b = monom_construct_from_vector(EV{T}, ones(UInt, 25))
             @test !drl(a, b)
-            if !(EV{T} <: Groebner.AbstractPackedTuple{T})      
-            @test !lex(a, b)
-            @test !dl(a, b)
+            if !(EV{T} <: Groebner.AbstractPackedTuple{T})
+                @test !lex(a, b)
+                @test !dl(a, b)
             end
 
             30 > Groebner.monom_max_vars(EV{T}) && continue
             a = monom_construct_from_vector(EV{T}, ones(UInt, 30))
             b = monom_construct_from_vector(EV{T}, ones(UInt, 30))
             @test !drl(a, b)
-            if !(EV{T} <: Groebner.AbstractPackedTuple{T})      
-            @test !lex(a, b)
-            @test !dl(a, b)
+            if !(EV{T} <: Groebner.AbstractPackedTuple{T})
+                @test !lex(a, b)
+                @test !dl(a, b)
             end
         end
 
@@ -146,8 +145,12 @@ implementations_to_test = [
         for n in 1:10
             k = rand(1:60)
 
-            implementations_to_test_local =
-                filter(EV -> !(EV{T} <: Groebner.AbstractPackedTuple{T}) && Groebner.monom_max_vars(EV{T}) >= k, implementations_to_test)
+            implementations_to_test_local = filter(
+                EV ->
+                    !(EV{T} <: Groebner.AbstractPackedTuple{T}) &&
+                        Groebner.monom_max_vars(EV{T}) >= k,
+                implementations_to_test
+            )
 
             t = div(typemax(UInt8), k) - 1
             x, y = rand(1:t, k), rand(1:t, k)
@@ -191,10 +194,7 @@ function test_circular_shift(a, b, n, Ord, answers)
     R, x = AbstractAlgebra.QQ[["x$i" for i in 1:n]...]
     vars_to_index = Dict(x .=> 1:n)
     orders = map(
-        i -> Groebner.ordering_transform(
-            Ord(circshift(x, -i)),
-            vars_to_index
-        ),
+        i -> Groebner.ordering_transform(Ord(circshift(x, -i)), vars_to_index),
         0:(n - 1)
     )
     cmps = map(ord -> ((x, y) -> Groebner.monom_isless(x, y, ord)), orders)
@@ -376,31 +376,46 @@ end
     v1 = Groebner.monom_construct_from_vector(pv{UInt64}, [1, 2, 3])
     v2 = Groebner.monom_construct_from_vector(pv{UInt64}, [3, 2, 1])
 
-    ord1 = Groebner.MatrixOrdering(x, [
-        1 0 0
-        0 1 0
-        0 0 1
-    ])
-    ord2 = Groebner.MatrixOrdering(x, [
-        1 0 2;
-    ])
-    ord3 = Groebner.MatrixOrdering(x, [
-        0 0 0
-        0 1 0
-        1 1 1
-    ])
-    @test_throws DomainError Groebner.MatrixOrdering(x, [
-        1 0;
-    ])
-    @test_throws DomainError Groebner.MatrixOrdering(x, [
-        1 -8 1
-        2 0 3
-    ])
+    ord1 = Groebner.MatrixOrdering(
+        x,
+        [
+            1 0 0
+            0 1 0
+            0 0 1
+        ]
+    )
+    ord2 = Groebner.MatrixOrdering(
+        x,
+        [
+            1 0 2;
+        ]
+    )
+    ord3 = Groebner.MatrixOrdering(
+        x,
+        [
+            0 0 0
+            0 1 0
+            1 1 1
+        ]
+    )
+    @test_throws DomainError Groebner.MatrixOrdering(
+        x,
+        [
+            1 0;
+        ]
+    )
+    @test_throws DomainError Groebner.MatrixOrdering(
+        x,
+        [
+            1 -8 1
+            2 0 3
+        ]
+    )
 
     mo_to_test = [
         (ord=ord1, ans=[true, false]),
         (ord=ord2, ans=[false, true]),
-        (ord=ord3, ans=[false, false]),
+        (ord=ord3, ans=[false, false])
     ]
     test_orderings(3, v1, v2, mo_to_test)
 end

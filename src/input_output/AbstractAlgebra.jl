@@ -319,10 +319,7 @@ function io_extract_coeffs_raw!(
     flag, ring
 end
 
-function io_extract_coeffs_raw_X!(
-    trace,
-    coeffs,
-)
+function io_extract_coeffs_raw_X!(trace, coeffs)
     basis = trace.buf_basis
     input_polys_perm = trace.input_permutation
     term_perms = trace.term_sorting_permutations

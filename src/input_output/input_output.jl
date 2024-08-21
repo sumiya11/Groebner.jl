@@ -141,9 +141,18 @@ function ir_ensure_assumptions(
     # Sort terms if needed
     tdeg(e) = vcat(sum(e), e)
     for i in 1:length(new_monoms)
-        if !issorted(new_monoms[i], lt=(a, b) -> monom_isless(tdeg(a), tdeg(b), ring.ord), rev=true)
+        if !issorted(
+            new_monoms[i],
+            lt=(a, b) -> monom_isless(tdeg(a), tdeg(b), ring.ord),
+            rev=true
+        )
             perm = collect(1:length(new_monoms[i]))
-            sort!(perm, lt=(a, b) -> monom_isless(tdeg(new_monoms[i][a]), tdeg(new_monoms[i][b]), ring.ord), rev=true)
+            sort!(
+                perm,
+                lt=(a, b) ->
+                    monom_isless(tdeg(new_monoms[i][a]), tdeg(new_monoms[i][b]), ring.ord),
+                rev=true
+            )
             new_monoms[i] = new_monoms[i][perm]
             new_coeffs[i] = new_coeffs[i][perm]
         end

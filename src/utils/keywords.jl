@@ -146,11 +146,9 @@ mutable struct KeywordArguments
                 io = IOBuffer()
                 columnlist(io, sort(map(string, collect(keys(default_kw_args)))))
                 _columns = String(take!(io))
-                throw(
-                    AssertionError("""
-              Keyword \"$key\" is not supported by Groebner.$(function_id).
-              Supported keyword arguments for Groebner.$(function_id) are:\n$_columns""")
-                )
+                throw(AssertionError("""
+                Keyword \"$key\" is not supported by Groebner.$(function_id).
+                Supported keyword arguments for Groebner.$(function_id) are:\n$_columns"""))
             end
         end
 

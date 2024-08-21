@@ -8,6 +8,7 @@ mutable struct Trace{C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
 
     ring::PolyRing{Ord1, C2}
     original_ord::Ord2
+    support::Vector{Vector{Vector{Int}}}
 
     # Buffers for storing basis elements
     input_basis::Basis{C1}
@@ -28,6 +29,7 @@ mutable struct Trace{C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
     matrix_sorted_columns::Vector{Vector{Int}}
     matrix_pivot_signatures::Vector{UInt64}
     matrix_pivot_indices::Vector{Vector{Int}}
+    matrix_is_columns_cached::Bool
 
     critical_pair_sequence::Vector{Tuple{Int, Int}}
 
@@ -41,6 +43,7 @@ mutable struct Trace{C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
     homogenize::Bool
 
     napply::Int
+    nfail::Int
 end
 
 function trace_initialize_empty(
@@ -69,6 +72,7 @@ function trace_initialize(
         false,
         ring,
         params.original_ord,
+        Vector{Vector{Vector{Int}}}(),
         input_basis,
         basis_deepcopy(gb_basis),
         gb_basis,
@@ -83,6 +87,7 @@ function trace_initialize(
         Vector{Vector{Int}}(),
         Vector{UInt64}(),
         Vector{Vector{Int}}(),
+        false,
         Vector{Tuple{Int, Int}}(),
         Vector{Int}(),
         Vector{Int}(),
@@ -91,6 +96,7 @@ function trace_initialize(
         params.sweep,
         PolynomialRepresentation(ExponentVector{UInt64}, UInt64, false),
         params.homogenize,
+        0,
         0
     )
 end
@@ -104,6 +110,7 @@ function trace_deepcopy(
         trace.empty,
         PolyRing(trace.ring.nvars, trace.ring.ord, trace.ring.ch),
         deepcopy(trace.original_ord),
+        deepcopy(trace.support),
         basis_deepcopy(trace.input_basis),
         basis_deepcopy(trace.buf_basis),
         basis_deepcopy(trace.gb_basis),
@@ -121,6 +128,7 @@ function trace_deepcopy(
         map(copy, trace.matrix_sorted_columns),
         copy(trace.matrix_pivot_signatures),
         map(copy, trace.matrix_pivot_indices),
+        trace.matrix_is_columns_cached,
         copy(trace.critical_pair_sequence),
         copy(trace.output_nonredundant_indices),
         copy(trace.nonredundant_indices_before_reduce),
@@ -133,13 +141,15 @@ function trace_deepcopy(
             trace.representation.using_wide_type_for_coeffs
         ),
         trace.homogenize,
-        trace.napply
+        trace.napply,
+        trace.nfail
     )
 end
 
 function trace_copy(
     trace::Trace{C1, C3, M, Ord1, Ord2},
-    ::Type{C2}, using_wide_type_for_coeffs::Bool;
+    ::Type{C2},
+    using_wide_type_for_coeffs::Bool;
     deepcopy=false
 ) where {C1 <: Coeff, C3 <: Coeff, M <: Monom, Ord1, Ord2, C2 <: Coeff}
     new_sparse_row_coeffs = Vector{Vector{C2}}()
@@ -173,7 +183,11 @@ function trace_copy(
         basis_shallow_copy_with_new_coeffs(trace.gb_basis, new_gb_basis_coeffs)
     end
 
-    new_representation = PolynomialRepresentation(trace.representation.monomtype, C2, using_wide_type_for_coeffs)
+    new_representation = PolynomialRepresentation(
+        trace.representation.monomtype,
+        C2,
+        using_wide_type_for_coeffs
+    )
     new_ring = PolyRing(trace.ring.nvars, trace.ring.ord, zero(C2))
 
     Trace(
@@ -181,6 +195,7 @@ function trace_copy(
         trace.empty,
         new_ring,
         trace.original_ord,
+        trace.support,
         new_input_basis,
         new_buf_basis,
         new_gb_basis,
@@ -195,6 +210,7 @@ function trace_copy(
         copy(trace.matrix_sorted_columns),
         trace.matrix_pivot_signatures,
         trace.matrix_pivot_indices,
+        trace.matrix_is_columns_cached,
         trace.critical_pair_sequence,
         trace.output_nonredundant_indices,
         trace.nonredundant_indices_before_reduce,
@@ -203,7 +219,8 @@ function trace_copy(
         trace.sweep_output,
         new_representation,
         trace.homogenize,
-        trace.napply
+        trace.napply,
+        trace.nfail
     )
 end
 
@@ -216,7 +233,20 @@ function trace_finalize!(trace::Trace)
     nothing
 end
 
-function trace_check_input(trace::Trace, monoms, coeffs)
+function trace_check_input(
+    trace::Trace,
+    monoms::Vector{Vector{Vector{I}}},
+    coeffs::Vector{Vector{C}}
+) where {I <: Integer, C <: Coeff}
+    !(length(trace.support) == length(monoms)) && return false
+    for i in 1:length(monoms)
+        !(length(trace.support[i]) == length(monoms[i])) && return false
+        for j in 1:length(monoms[i])
+            if trace.support[i][j] != monoms[i][j]
+                return false
+            end
+        end
+    end
     true
 end
 
@@ -270,14 +300,22 @@ function get_trace!(
     for id in keys(wrapped_trace.recorded_traces)
         if id[1] == params.representation.coefftype
             @log :misc "Re-using an existing trace with id = $id"
-            return wrapped_trace.recorded_traces[id]
+            trace = wrapped_trace.recorded_traces[id]
+            trace.ring.ch = ring.ch
+            return trace
         end
     end
 
     # Otherwise, create a new trace based on one of the existing ones
     default_trace = get_default_trace(wrapped_trace)
-    new_trace = trace_copy(default_trace, params.representation.coefftype, params.representation.using_wide_type_for_coeffs, deepcopy=false)
-    new_trace.ring = PolyRing(ring.nvars, ring.ord, convert(params.representation.coefftype, ring.ch))
+    new_trace = trace_copy(
+        default_trace,
+        params.representation.coefftype,
+        params.representation.using_wide_type_for_coeffs,
+        deepcopy=false
+    )
+    new_trace.ring =
+        PolyRing(ring.nvars, ring.ord, convert(params.representation.coefftype, ring.ch))
     wrapped_trace.recorded_traces[(params.representation.coefftype, 1)] = new_trace
 
     # the resulting trace may be in a invalid state, and needs to be filled with
@@ -303,18 +341,14 @@ end
 function Base.show(io::IO, ::MIME"text/plain", trace::Trace)
     tm = round(trace.stopwatch / 10^9, digits=3)
     sz = round((Base.summarysize(trace) / 2^20), digits=2)
-    printstyled(
-        io,
-        "# Trace of F4 recorded in $(tm) s ($sz MiB).\n",
-        bold=true
-    )
+    printstyled(io, "# Trace of F4 recorded in $(tm) s ($sz MiB).\n", bold=true)
     println(
         io,
         """
         ring  : Z[x1,...,x$(trace.ring.nvars)] mod $(trace.ring.ch)
         input : $(trace.input_basis.nfilled) polynomials
         output: $(trace.gb_basis.nfilled) polynomials
-        apply : $(trace.napply) / $(0) (success/fail)
+        apply : $(trace.napply) / $(trace.nfail) (success/fail)
         """
     )
 

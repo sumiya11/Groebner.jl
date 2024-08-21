@@ -391,7 +391,11 @@ Base.show(io::IO, ord::AbstractMonomialOrdering) = Base.show(io, MIME("text/plai
 
 Base.show(io::IO, ::MIME"text/plain", ord::InputOrdering) = print(io, "InputOrdering()")
 
-function Base.show(io::IO, ::MIME"text/plain", ord::Ord) where {Ord<:Union{Lex, DegLex, DegRevLex}}
+function Base.show(
+    io::IO,
+    ::MIME"text/plain",
+    ord::Ord
+) where {Ord <: Union{Lex, DegLex, DegRevLex}}
     if ordering_is_simple(ord)
         print(io, "$(nameof(Ord))()")
     else
