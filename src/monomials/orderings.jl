@@ -328,7 +328,7 @@ ordering_is_simple(::AbstractMonomialOrdering) = false
 ordering_make_not_simple(ord::AbstractMonomialOrdering, n::Int) = ord
 ordering_make_not_simple(ord::Lex{true}, n::Int) = Lex(collect(1:n))
 ordering_make_not_simple(ord::DegLex{true}, n::Int) = DegLex(collect(1:n))
-ordering_make_not_simple(ord::DegRevLex{true}, n::Int) = DegLex(collect(1:n))
+ordering_make_not_simple(ord::DegRevLex{true}, n::Int) = DegRevLex(collect(1:n))
 
 # Checking consistency against a polynomial ring
 function ordering_check_consistency(nvars::Int, ord::AbstractMonomialOrdering)
