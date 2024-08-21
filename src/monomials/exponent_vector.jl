@@ -77,9 +77,8 @@ end
 ###
 # Monomial comparators.
 
-function monom_is_supported_ordering(::Type{ExponentVector{T}}, ::O) where {T, O}
-    # ExponentVector supports efficient implementation of all monomial
-    # orderings.
+function monom_is_supported_ordering(::Type{ExponentVector{T}}, ::Any) where {T}
+    # ExponentVector implements all monomial orderings.
     true
 end
 

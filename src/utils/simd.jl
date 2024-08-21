@@ -3,7 +3,7 @@
 ###
 # This file provides some fast operations on vectors of integers.
 
-# NOTE. The use of these functions must be limited.
+# The use of these functions must be limited.
 #
 # Debugging LLVM IR is a headache. The LLVM IR textual format is not guaranteed
 # to be stable. 
@@ -39,7 +39,6 @@ align_up(x::Integer, n::Integer) = (x + (n - 1)) & (~(n - 1))
 align_down(x::Integer, n::Integer) = x ⊻ (n - 1)
 
 function pick_vector_width_clamp_8(::Type{T}) where {T}
-    return 1
     N = pick_vector_width(T)
     if N in (8, 16, 32)
         return Int(N)
