@@ -739,7 +739,7 @@ end
         ]
     )
     @test Groebner.groebner(c, ordering=ord) ==
-          Groebner.groebner(c, ordering=Groebner.DegLex())
+          Groebner.groebner(c, ordering=Groebner.DegRevLex())
 end
 
 @testset "groebner parent rings" begin

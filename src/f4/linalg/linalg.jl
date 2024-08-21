@@ -46,7 +46,7 @@ function linalg_main!(
     # Decide if multi-threading should be used. Further in dispatch, the backend
     # may opt to NOT use multi-threading regardless of this setting.
     threaded = if params.threaded_f4 === :yes && nthreads() > 1
-        # NOTE: use multi-threading if explicitly requested
+        # use multi-threading if explicitly requested
         :yes
     elseif params.threaded_multimodular === :yes &&
            linalg.algorithm === :learn &&

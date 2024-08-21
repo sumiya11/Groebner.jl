@@ -123,31 +123,32 @@ function _io_convert_ir_to_polynomials(
     gbcoeffs::Vector{Vector{C}},
     options
 ) where {M <: Monom, C <: Coeff}
-    origring = AbstractAlgebra.parent(polynomials[1])
-    nv       = AbstractAlgebra.nvars(origring)
-    ground   = AbstractAlgebra.base_ring(origring)
-    exported = Vector{elem_type(origring)}(undef, length(gbexps))
-    @inbounds for i in 1:length(gbexps)
-        cfs = map(ground, gbcoeffs[i])
-        exps = Vector{Vector{Int}}(undef, length(gbcoeffs[i]))
-        for jt in 1:length(gbcoeffs[i])
-            exps[jt] = gbexps[i][jt]
-        end
-        if !aa_is_multivariate_ring(parent(polynomials[1]))
-            if isempty(exps)
-                exported[i] = origring()
-            else
-                _cfs = [zero(ground) for _ in 1:(exps[1][1] + 1)]
-                for j in 1:length(exps)
-                    _cfs[exps[j][1] + 1] = cfs[j]
-                end
-                exported[i] = origring(_cfs)
-            end
-        else
-            exported[i] = origring(cfs, exps)
-        end
-    end
-    exported
+    _io_convert_to_output(ring, polynomials, gbexps, gbcoeffs, options)
+    # origring = AbstractAlgebra.parent(polynomials[1])
+    # nv       = AbstractAlgebra.nvars(origring)
+    # ground   = AbstractAlgebra.base_ring(origring)
+    # exported = Vector{elem_type(origring)}(undef, length(gbexps))
+    # @inbounds for i in 1:length(gbexps)
+    #     cfs = map(ground, gbcoeffs[i])
+    #     exps = Vector{Vector{Int}}(undef, length(gbcoeffs[i]))
+    #     for jt in 1:length(gbcoeffs[i])
+    #         exps[jt] = gbexps[i][jt]
+    #     end
+    #     if !aa_is_multivariate_ring(parent(polynomials[1]))
+    #         if isempty(exps)
+    #             exported[i] = origring()
+    #         else
+    #             _cfs = [zero(ground) for _ in 1:(exps[1][1] + 1)]
+    #             for j in 1:length(exps)
+    #                 _cfs[exps[j][1] + 1] = cfs[j]
+    #             end
+    #             exported[i] = origring(_cfs)
+    #         end
+    #     else
+    #         exported[i] = origring(cfs, exps)
+    #     end
+    # end
+    # exported
 end
 
 ###
@@ -672,7 +673,7 @@ function _io_convert_to_output(
     polynomials,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
-    params::AlgorithmParameters
+    params
 ) where {M <: Monom, C <: Coeff}
     origring = AbstractAlgebra.parent(first(polynomials))
     _io_convert_to_output(origring, monoms, coeffs, params)
@@ -683,7 +684,7 @@ function _io_convert_to_output(
     origring::R,
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{C}},
-    params::AlgorithmParameters
+    params
 ) where {
     R <: Union{AbstractAlgebra.Generic.PolyRing, AbstractAlgebra.PolyRing},
     M <: Monom,
@@ -696,9 +697,9 @@ function _io_convert_to_output(
             exported[i] = origring()
             continue
         end
-        cfs = zeros(ground, Int(monom_totaldeg(gbexps[i][1]) + 1))
+        cfs = zeros(ground, Int(sum(gbexps[i][1]) + 1))
         for (idx, j) in enumerate(gbexps[i])
-            cfs[monom_totaldeg(j) + 1] = ground(gbcoeffs[i][idx])
+            cfs[sum(j) + 1] = ground(gbcoeffs[i][idx])
         end
         exported[i] = origring(cfs)
     end
@@ -711,7 +712,7 @@ function _io_convert_to_output(
     origring::R,
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{C}},
-    params::AlgorithmParameters
+    params
 ) where {R, M <: Monom, C <: Coeff}
     nv       = AbstractAlgebra.nvars(origring)
     ground   = AbstractAlgebra.base_ring(origring)
@@ -720,8 +721,7 @@ function _io_convert_to_output(
         cfs = map(ground, gbcoeffs[i])
         exps = Vector{Vector{Int}}(undef, length(gbcoeffs[i]))
         for jt in 1:length(gbcoeffs[i])
-            exps[jt] = Vector{Int}(undef, nv)
-            monom_to_vector!(exps[jt], gbexps[i][jt])
+            exps[jt] = gbexps[i][jt]
         end
         exported[i] = origring(cfs, exps)
     end
@@ -759,22 +759,23 @@ function _io_convert_to_output(
     origring::AbstractAlgebra.Generic.MPolyRing{T},
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{C}},
-    params::AlgorithmParameters
+    params
 ) where {T, M <: Monom, C <: Coeff}
     ord_aa = AbstractAlgebra.internal_ordering(origring)
     _ord_aa = ordering_sym2typed(ord_aa)
     input_ordering_matches_output = true
-    if params.target_ord != _ord_aa
+    target_ord = params.ordering isa InputOrdering ? _ord_aa : params.ordering
+    if (target_ord != _ord_aa)
         input_ordering_matches_output = false
         @log :misc """
-          Basis is computed in $(params.target_ord).
+          Basis is computed in $(target_ord).
           Terms in the output are in $(ord_aa)"""
     end
     _io_convert_to_output(
         origring,
         gbexps,
         gbcoeffs,
-        params.target_ord,
+        target_ord,
         Val{input_ordering_matches_output}()
     )
 end
@@ -795,11 +796,10 @@ function _io_convert_to_output(
         cfs  = map(ground, gbcoeffs[i])
         exps = Matrix{aa_exponent_type}(undef, nv + 1, length(gbcoeffs[i]))
         for jt in 1:length(gbcoeffs[i])
-            monom_to_vector!(tmp, gbexps[i][jt])
             for k in 1:length(tmp)
-                exps[k, jt] = tmp[k]
+                exps[k, jt] = gbexps[i][jt][k]
             end
-            exps[end, jt] = monom_totaldeg(gbexps[i][jt])
+            exps[end, jt] = sum(gbexps[i][jt])
         end
         exported[i] = create_aa_polynomial(origring, cfs, exps)
     end
@@ -822,8 +822,7 @@ function _io_convert_to_output(
         cfs  = map(ground, gbcoeffs[i])
         exps = Matrix{aa_exponent_type}(undef, nv, length(gbcoeffs[i]))
         for jt in 1:length(gbcoeffs[i])
-            monom_to_vector!(tmp, gbexps[i][jt])
-            exps[end:-1:1, jt] .= tmp
+            exps[end:-1:1, jt] .= gbexps[i][jt]
         end
         exported[i] = create_aa_polynomial(origring, cfs, exps)
     end
@@ -846,9 +845,9 @@ function _io_convert_to_output(
         cfs  = map(ground, gbcoeffs[i])
         exps = Matrix{aa_exponent_type}(undef, nv + 1, length(gbcoeffs[i]))
         for jt in 1:length(gbcoeffs[i])
-            monom_to_vector!(tmp, gbexps[i][jt])
-            exps[(end - 1):-1:1, jt] .= tmp
-            exps[end, jt] = monom_totaldeg(gbexps[i][jt])
+            # monom_to_vector!(tmp, gbexps[i][jt])
+            exps[(end - 1):-1:1, jt] .= gbexps[i][jt]
+            exps[end, jt] = sum(gbexps[i][jt])
         end
         exported[i] = create_aa_polynomial(origring, cfs, exps)
     end
@@ -871,8 +870,7 @@ function _io_convert_to_output(
         cfs  = map(ground, gbcoeffs[i])
         exps = Vector{Vector{Int}}(undef, length(gbcoeffs[i]))
         for jt in 1:length(gbcoeffs[i])
-            monom_to_vector!(tmp, gbexps[i][jt])
-            exps[jt] = tmp
+            exps[jt] = gbexps[i][jt]
         end
         exported[i] = create_aa_polynomial(origring, cfs, exps)
     end
