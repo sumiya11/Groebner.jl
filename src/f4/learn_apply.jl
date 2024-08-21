@@ -48,7 +48,7 @@ function matrix_compute_pivot_signature(pivots::Vector{Vector{MonomId}}, from::I
 end
 
 function reduction_learn!(
-    trace::TraceF4,
+    trace::Trace,
     basis::Basis,
     matrix::MacaulayMatrix,
     hashtable::MonomialHashtable,
@@ -74,7 +74,7 @@ function reduction_learn!(
 end
 
 function f4_reducegb_learn!(
-    trace::TraceF4,
+    trace::Trace,
     ring::PolyRing,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -156,7 +156,7 @@ function f4_reducegb_learn!(
 end
 
 function f4_learn!(
-    trace::TraceF4,
+    trace::Trace,
     ring::PolyRing,
     basis::Basis{C},
     pairset::Pairset,
@@ -221,7 +221,7 @@ end
 # F4 apply stage
 
 function matrix_fill_column_to_monom_map!(
-    trace::TraceF4,
+    trace::Trace,
     matrix::MacaulayMatrix,
     symbol_ht::MonomialHashtable
 )
@@ -266,7 +266,7 @@ function matrix_fill_column_to_monom_map!(
 end
 
 function f4_reduction_apply!(
-    trace::TraceF4,
+    trace::Trace,
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
@@ -328,7 +328,7 @@ function f4_reduction_apply!(
 end
 
 function f4_symbolic_preprocessing!(
-    trace::TraceF4,
+    trace::Trace,
     f4_iteration::Int,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -404,7 +404,7 @@ function f4_symbolic_preprocessing!(
 end
 
 function f4_autoreduce_apply!(
-    trace::TraceF4,
+    trace::Trace,
     basis::Basis,
     matrix::MacaulayMatrix,
     hashtable::MonomialHashtable{M},
@@ -493,7 +493,7 @@ function f4_autoreduce_apply!(
     true
 end
 
-function f4_standardize_basis_in_apply!(ring::PolyRing, trace::TraceF4, arithmetic)
+function f4_standardize_basis_in_apply!(ring::PolyRing, trace::Trace, arithmetic)
     basis = trace.gb_basis
     buf = trace.buf_basis
     basis.size = basis.nprocessed = basis.nfilled = basis.nnonredundant
@@ -508,11 +508,12 @@ function f4_standardize_basis_in_apply!(ring::PolyRing, trace::TraceF4, arithmet
 end
 
 function f4_apply!(
-    trace::TraceF4,
+    trace::Trace,
     ring::PolyRing,
     basis::Basis{C},
     params::AlgorithmParameters
 ) where {C <: Coeff}
+    ring = trace.ring
     @invariant basis_well_formed(ring, basis, trace.hashtable)
     @invariant params.reduced
 

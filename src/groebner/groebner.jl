@@ -235,7 +235,7 @@ function _groebner_learn_and_apply(
     partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
 
     # Initialize a tracer that computes the bases in batches of 4
-    trace_4x = trace_copy(trace, CompositeNumber{4, Int32})
+    trace_4x = trace_copy(trace, CompositeNumber{4, Int32}, false)
 
     iters = 0
     while !correct_basis
@@ -428,7 +428,7 @@ function _groebner_learn_and_apply_threaded(
     partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
 
     # Initialize a tracer that computes the bases in batches of 4
-    trace_4x = trace_copy(trace, CompositeNumber{4, Int32})
+    trace_4x = trace_copy(trace, CompositeNumber{4, Int32}, false)
 
     # Thread buffers
     threadbuf_trace_4x = map(_ -> trace_deepcopy(trace_4x), 1:nthreads())

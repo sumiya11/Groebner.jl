@@ -54,21 +54,14 @@ import Base.MultiplicativeInverses: UnsignedMultiplicativeInverse
 
 import Combinatorics
 
-using ExprTools
-
 import HostCPUFeatures:
     cpu_name, register_count, register_size, has_feature, pick_vector_width, fma_fast
 
 using Logging
 
-import MultivariatePolynomials
-import MultivariatePolynomials: AbstractPolynomial, AbstractPolynomialLike
-
 # At the moment, used only for rational reconstruction
 import Nemo
 
-# For printing the tables with statistics nicely
-import PrettyTables
 using Printf
 
 import Primes
@@ -76,8 +69,6 @@ import Primes: nextprime
 
 import Random
 import Random: AbstractRNG
-
-import TimerOutputs
 
 ###
 # Initialization
@@ -123,9 +114,10 @@ include("monomials/packed_utils.jl")
 include("monomials/packed_vector.jl")
 include("monomials/sparse_vector.jl")
 
-# Defines some type aliases
 include("arithmetic/CompositeNumber.jl")
-include("utils/types.jl")
+
+# Defines some type aliases
+include("types.jl")
 
 # Fast arithmetic modulo a prime
 include("arithmetic/Zp.jl")
@@ -138,7 +130,7 @@ include("groebner/parameters.jl")
 # Input-output conversions for polynomials
 include("input_output/input_output.jl")
 include("input_output/AbstractAlgebra.jl")
-include("input_output/DynamicPolynomials.jl")
+# include("input_output/DynamicPolynomials.jl")
 
 #= generic f4 =#
 include("f4/hashtable.jl")

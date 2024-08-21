@@ -221,7 +221,7 @@ function _linalg_main!(
 end
 
 function _linalg_main_with_trace!(
-    trace::TraceF4,
+    trace::Trace,
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
@@ -260,7 +260,7 @@ function _linalg_autoreduce!(
 end
 
 function _linalg_autoreduce_with_trace!(
-    trace::TraceF4,
+    trace::Trace,
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,

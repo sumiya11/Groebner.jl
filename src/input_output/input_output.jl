@@ -30,7 +30,7 @@ end
 """
     PolyRing
 
-Polynomial ring.
+A polynomial ring.
 
 ## Example
 
@@ -138,13 +138,16 @@ function ir_ensure_assumptions(
             end
         end
     end
-    # Sort
-    # if !issorted(new_monoms, by=(i, j) -> monom_isless(i, j, ring.ord))
-    #     perm = collect(1:length(new_monoms))
-    #     sort!(perm, by=(i, j) -> monom_isless(new_monoms[j], new_monoms[i], ring.ord))
-    #     new_monoms = new_monoms[perm]
-    #     new_coeffs = new_coeffs[perm]
-    # end
+    # Sort terms if needed
+    tdeg(e) = vcat(sum(e), e)
+    for i in 1:length(new_monoms)
+        if !issorted(new_monoms[i], lt=(a, b) -> monom_isless(tdeg(a), tdeg(b), ring.ord), rev=true)
+            perm = collect(1:length(new_monoms[i]))
+            sort!(perm, lt=(a, b) -> monom_isless(tdeg(new_monoms[i][a]), tdeg(new_monoms[i][b]), ring.ord), rev=true)
+            new_monoms[i] = new_monoms[i][perm]
+            new_coeffs[i] = new_coeffs[i][perm]
+        end
+    end
     # Merge terms
     _new_monoms = empty(new_monoms)
     _new_coeffs = empty(new_coeffs)
@@ -180,6 +183,27 @@ function ir_ensure_assumptions(
         new_coeffs[i] = new_coeffs[i][perm]
     end
     ring, new_monoms, new_coeffs
+end
+
+function ir_pack_coeffs(batch::NTuple{N, T}) where {N, T}
+    ring = batch[1][1]
+    ch = CompositeNumber(map(el -> el[1].ch, batch))
+    new_ring = PolyRing(ring.nvars, ring.ord, ch)
+    monoms = batch[1][2]
+    coeffs = Vector{Vector{CompositeNumber{N, UInt64}}}(undef, length(monoms))
+    @assert allequal(el -> el[2], batch)
+    for i in 1:length(batch[1][2])
+        coeffs[i] = Vector{CompositeNumber{N, UInt64}}(undef, length(batch[1][2][i]))
+        for j in 1:length(batch[1][2][i])
+            coeffs[i][j] = CompositeNumber(ntuple(k -> batch[k][3][i][j], N))
+        end
+    end
+    true, new_ring, monoms, coeffs
+end
+
+function ir_unpack_coeffs(monoms, coeffs)
+    coeffs_unpacked = io_unpack_composite_coefficients(coeffs)
+    map(el -> (monoms, el), coeffs_unpacked)
 end
 
 function io_convert_polynomials_to_ir(polynomials, options::KeywordArguments)

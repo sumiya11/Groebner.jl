@@ -83,19 +83,7 @@ function groebner_learn2(
     end
     monoms, coeffs = _monoms, _coeffs
 
-    term_homogenizing_permutation = Vector{Vector{Int}}()
-    if params.homogenize
-        term_homogenizing_permutation, ring, monoms, coeffs =
-            homogenize_generators!(ring, monoms, coeffs, params)
-    end
-
     trace, gb_monoms, gb_coeffs = _groebner_learn2(ring, monoms, coeffs, params)
-
-    if params.homogenize
-        trace.term_homogenizing_permutations = term_homogenizing_permutation
-        ring, gb_monoms, gb_coeffs =
-            dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
-    end
 
     trace, gb_monoms, gb_coeffs
 end
@@ -124,7 +112,7 @@ function groebner_apply0!(
 )
     ring, monoms, coeffs, options = io_convert_polynomials_to_ir(polynomials, options)
     flag, gb_monoms, gb_coeffs =
-        _groebner_apply1!(wrapped_trace, ring, monoms, coeffs, options)
+        __groebner_apply1!(wrapped_trace, ring, monoms, coeffs, options)
     !flag && return (flag, polynomials)
     result = io_convert_ir_to_polynomials(ring, polynomials, gb_monoms, gb_coeffs, options)
     flag, result
@@ -136,13 +124,13 @@ function groebner_apply_batch0!(
     batch::NTuple{N, T},
     options::KeywordArguments
 ) where {N, T}
-    batch_ir = map(f -> io_convert_polynomials_to_ir(f, deepcopy(options)), batch)
-    options = batch_ir[1][end]
-    batch_ir = map(f -> f[1:3], batch_ir)
-    flag, batch_gb =
-        _groebner_apply_batch1!(wrapped_trace, batch_ir, options)
+    ir_batch = map(f -> io_convert_polynomials_to_ir(f, deepcopy(options)), batch)
+    options = ir_batch[1][end]
+    ir_batch = map(f -> f[1:3], ir_batch)
+    flag, gb_batch =
+        _groebner_apply_batch1!(wrapped_trace, ir_batch, options)
     !flag && return (flag, batch)
-    result_ir = map(f -> io_convert_ir_to_polynomials(batch_ir[1][1], batch[1], f..., options), batch_gb)
+    result_ir = map(f -> io_convert_ir_to_polynomials(ir_batch[1][1], batch[1], f..., options), gb_batch)
     flag, result_ir
 end
 
@@ -155,7 +143,7 @@ function groebner_apply1!(
     options::KeywordArguments
 ) where {I <: Integer, C <: Coeff}
     ring, monoms, coeffs = ir_ensure_assumptions(ring, monoms, coeffs)
-    _groebner_apply1!(wrapped_trace, ring, monoms, coeffs, options)
+    __groebner_apply1!(wrapped_trace, ring, monoms, coeffs, options)
 end
 
 # batch of (exponent vectors, coefficients) 
@@ -166,27 +154,21 @@ function groebner_apply_batch1!(
     batch::NTuple{N, T},
     options::KeywordArguments
 ) where {N, T}
-    batch = map(ir_ensure_assumptions, batch)
-    _groebner_apply1!(wrapped_trace, batch, options)
-end
-
-function _groebner_apply1!(
-    wrapped_trace::WrappedTrace,
-    ring::PolyRing,
-    monoms::Vector{Vector{Vector{I}}},
-    coeffs::Vector{Vector{C}},
-    options::KeywordArguments
-) where {I <: Integer, C <: Coeff}
-    __groebner_apply1!(wrapped_trace, ring, monoms, coeffs, options)
+    batch = map(x -> ir_ensure_assumptions(x...), batch)
+    _groebner_apply_batch1!(wrapped_trace, batch, options)
 end
 
 function _groebner_apply_batch1!(
     wrapped_trace::WrappedTrace,
     batch::NTuple{N, T},
     options::KeywordArguments
-) where {I <: Integer, C <: Coeff}
-
-    __groebner_apply1!(wrapped_trace, ring, monoms, coeffs, options)
+) where {N, T}
+    flag, ring, monoms, coeffs = ir_pack_coeffs(batch)
+    !flag && return flag, map(el -> el[2:end], batch)
+    flag, gb_monoms, gb_coeffs = __groebner_apply1!(wrapped_trace, ring, monoms, coeffs, options)
+    !flag && return flag, map(el -> el[2:end], batch)
+    gb_batch = ir_unpack_coeffs(gb_monoms, gb_coeffs)
+    true, gb_batch
 end
 
 function __groebner_apply1!(
@@ -196,7 +178,12 @@ function __groebner_apply1!(
     coeffs::Vector{Vector{C}},
     options::KeywordArguments
 ) where {I <: Integer, C <: Coeff}
-    trace = get_trace!(wrapped_trace, ring, options)
+    params = AlgorithmParameters(ring, options)
+
+    trace = get_trace!(wrapped_trace, ring, params)
+
+    flag = trace_check_input(trace, monoms, coeffs)
+    !flag && return flag, monoms, coeffs
 
     _monoms = filter(!isempty, monoms)
     _coeffs = filter(!isempty, coeffs)
@@ -208,40 +195,24 @@ function __groebner_apply1!(
         end
     end
     monoms, coeffs = _monoms, _coeffs
-
-    # TODO: check validity
     
-    # TODO: this is a bit hacky
-    params = AlgorithmParameters(
-        ring,
-        options,
-        orderings=(trace.params.original_ord, trace.params.target_ord)
-    )
-    params.representation = trace.representation
-    ring = PolyRing(trace.ring.nvars, trace.ring.ord, ring.ch)
+    flag = io_extract_coeffs_raw_X!(trace, coeffs)
+    !flag && return flag, monoms, coeffs
 
-    flag = io_extract_coeffs_raw_X!(ring, trace, coeffs)
-    !flag && return flag, [io_zero_monoms(Vector{UInt}, ring)], coeffs
-
-    flag, gb_monoms2, gb_coeffs2 = groebner_apply2!(ring, trace, params)
+    flag, gb_monoms2, gb_coeffs2 = groebner_apply2!(trace, params)
 
     gb_monoms, gb_coeffs = io_convert_internal_to_ir(ring, gb_monoms2, gb_coeffs2, params)
     flag, gb_monoms, gb_coeffs
 end
 
-function groebner_apply2!(ring, trace, params)
-    flag, gb_monoms, gb_coeffs = _groebner_apply2!(ring, trace, params)
+function groebner_apply2!(trace, params)
+    flag, gb_monoms, gb_coeffs = _groebner_apply2!(trace, params)
     !flag && return (flag, gb_monoms, gb_coeffs)
-    if trace.params.homogenize
-        @assert false
-        ring, gb_monoms, gb_coeffs =
-            dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
-    end
     flag, gb_monoms, gb_coeffs
 end
 
-function _groebner_apply2!(ring, trace, params)
-    flag = f4_apply!(trace, ring, trace.buf_basis, params)
+function _groebner_apply2!(trace, params)
+    flag = f4_apply!(trace, trace.ring, trace.buf_basis, params)
 
     gb_monoms, gb_coeffs = basis_export_data(trace.gb_basis, trace.hashtable)
 

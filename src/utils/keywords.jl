@@ -114,6 +114,7 @@ kwargs = Groebner.KeywordArguments(:groebner, seed = 99, reduced = false)
 ```
 """
 mutable struct KeywordArguments
+    function_id::Symbol
     reduced::Bool
     ordering::Any
     certify::Bool
@@ -134,12 +135,12 @@ mutable struct KeywordArguments
     use_flint::Bool
     changematrix::Bool
 
-    KeywordArguments(function_key::Symbol; passthrough...) =
-        KeywordArguments(function_key, passthrough)
+    KeywordArguments(function_id::Symbol; passthrough...) =
+        KeywordArguments(function_id, passthrough)
 
-    function KeywordArguments(function_key::Symbol, kws)
-        @assert haskey(_supported_kw_args, function_key)
-        default_kw_args = _supported_kw_args[function_key]
+    function KeywordArguments(function_id::Symbol, kws)
+        @assert haskey(_supported_kw_args, function_id)
+        default_kw_args = _supported_kw_args[function_id]
         for (key, _) in kws
             if !haskey(default_kw_args, key)
                 io = IOBuffer()
@@ -147,8 +148,8 @@ mutable struct KeywordArguments
                 _columns = String(take!(io))
                 throw(
                     AssertionError("""
-              Keyword \"$key\" is not supported by Groebner.$(function_key).
-              Supported keyword arguments for Groebner.$(function_key) are:\n$_columns""")
+              Keyword \"$key\" is not supported by Groebner.$(function_id).
+              Supported keyword arguments for Groebner.$(function_id) are:\n$_columns""")
                 )
             end
         end
@@ -235,6 +236,7 @@ mutable struct KeywordArguments
         changematrix = get(kws, :changematrix, get(default_kw_args, :changematrix, false))
 
         new(
+            function_id,
             reduced,
             ordering,
             certify,

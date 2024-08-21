@@ -277,7 +277,7 @@ groebner([x*y + w, y*z - w], ordering=ord)
 """
 struct MatrixOrdering{T} <: AbstractMonomialOrdering
     variables::Vector{T}
-    rows::Vector{Vector{UInt64}}
+    rows::Vector{Vector{Int64}}
 
     function MatrixOrdering(variables::Vector{V}, mat::Matrix{T}) where {V, T <: Integer}
         m, n = size(mat)
@@ -291,7 +291,6 @@ struct MatrixOrdering{T} <: AbstractMonomialOrdering
     ) where {V, T <: Integer}
         isempty(rows) && throw(DomainError("Invalid ordering."))
         !(length(unique(map(length, rows))) == 1) && throw(DomainError("Invalid ordering."))
-        !all(row -> all(>=(0), row), rows) && throw(DomainError("Invalid ordering."))
         !all(row -> length(row) == length(variables), rows) &&
             throw(DomainError("Invalid ordering."))
         !(length(unique(variables)) == length(variables)) &&
@@ -384,4 +383,40 @@ function ordering_transform(ord::MatrixOrdering, varmap::AbstractDict)
     !isempty(setdiff(ordering_variables(ord), collect(keys(varmap)))) &&
         throw(DomainError("Invalid ordering transformation."))
     MatrixOrdering(map(v -> varmap[v], ordering_variables(ord)), ord.rows)
+end
+
+# Print orderings
+
+Base.show(io::IO, ord::AbstractMonomialOrdering) = Base.show(io, MIME("text/plain"), ord)
+
+Base.show(io::IO, ::MIME"text/plain", ord::InputOrdering) = print(io, "InputOrdering()")
+
+function Base.show(io::IO, ::MIME"text/plain", ord::Ord) where {Ord<:Union{Lex, DegLex, DegRevLex}}
+    if ordering_is_simple(ord)
+        print(io, "$(nameof(Ord))()")
+    else
+        print(io, "$(nameof(Ord))($(join(string.(ordering_variables(ord)), ",")))")
+    end
+end
+
+function Base.show(io::IO, ::MIME"text/plain", ord::WeightedOrdering)
+    tmp = ""
+    for i in 1:length(ord.variables)
+        tmp *= string(ord.variables[i]) * "=>" * string(ord.weights[i])
+    end
+    print(io, "WeightedOrdering($(tmp)")
+end
+
+function Base.show(io::IO, ::MIME"text/plain", ord::ProductOrdering)
+    print(io, ord.ord1)
+    print(io, " × ")
+    print(io, ord.ord2)
+end
+
+function Base.show(io::IO, ::MIME"text/plain", ord::MatrixOrdering)
+    print(io, "MatrixOrdering($(join(string.(ordering_variables(ord)), ",")))\n")
+    for row in ord.rows
+        print(io, "  ")
+        print(io, "[ " * join(string.(row), " ") * " ]\n")
+    end
 end

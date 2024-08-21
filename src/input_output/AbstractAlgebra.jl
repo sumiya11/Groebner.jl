@@ -319,46 +319,16 @@ function io_extract_coeffs_raw!(
     flag, ring
 end
 
-function io_extract_coeffs_raw_X!(ring, trace, coeffs)
+function io_extract_coeffs_raw_X!(
+    trace,
+    coeffs,
+)
     basis = trace.buf_basis
     input_polys_perm = trace.input_permutation
     term_perms = trace.term_sorting_permutations
-    homog_term_perm = trace.term_homogenizing_permutations
-    CoeffType = trace.representation.coefftype
+    homog_term_perms = trace.term_homogenizing_permutations
+    CoeffsType = trace.representation.coefftype
 
-    flag = _io_extract_coeffs_raw_X!(
-        basis,
-        input_polys_perm,
-        term_perms,
-        homog_term_perm,
-        coeffs,
-        CoeffType
-    )
-    !flag && return flag
-
-    # a hack for homogenized inputs
-    if trace.homogenize
-        # TODO: !! incorrect if there are zeros in the input
-        @invariant !iszero(ring.ch)
-        C = eltype(basis.coeffs[length(coeffs) + 1][1])
-        basis.coeffs[length(coeffs) + 1][1] = one(C)
-        basis.coeffs[length(coeffs) + 1][2] =
-            iszero(ring.ch) ? -one(C) : (ring.ch - one(ring.ch))
-    end
-
-    @log :all "Extracted coefficients from $(length(polys)) polynomials." basis
-    @log :all "Extracted coefficients" basis.coeffs
-    flag
-end
-
-function _io_extract_coeffs_raw_X!(
-    basis,
-    input_polys_perm::Vector{Int},
-    term_perms::Vector{Vector{Int}},
-    homog_term_perms::Vector{Vector{Int}},
-    coeffs_zp,
-    ::Type{CoeffsType}
-) where {CoeffsType}
     # write new coefficients directly to trace.buf_basis
     permute_input_terms = !isempty(term_perms)
     permute_homogenizing_terms = !isempty(homog_term_perms)
@@ -370,10 +340,10 @@ function _io_extract_coeffs_raw_X!(
       Of polynomials: $input_polys_perm
       Of terms (change of ordering): $term_perms
       Of terms (homogenization): $homog_term_perms"""
-    @inbounds for i in 1:length(coeffs_zp)
+    @inbounds for i in 1:length(coeffs)
         basis_cfs = basis.coeffs[i]
         poly_index = input_polys_perm[i]
-        poly = coeffs_zp[poly_index]
+        poly = coeffs[poly_index]
         if isempty(poly)
             @log :warn "In apply, input contains too many zero polynomials."
             return false

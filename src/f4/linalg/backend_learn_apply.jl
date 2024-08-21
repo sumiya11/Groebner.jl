@@ -9,7 +9,7 @@
 # High level
 
 function linalg_learn_sparse!(
-    trace::TraceF4,
+    trace::Trace,
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
@@ -29,7 +29,7 @@ function linalg_learn_sparse!(
 end
 
 function linalg_apply_sparse!(
-    trace::TraceF4,
+    trace::Trace,
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
@@ -53,7 +53,7 @@ function linalg_apply_sparse!(
 end
 
 function linalg_learn_deterministic_sparse_interreduction!(
-    trace::TraceF4,
+    trace::Trace,
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
@@ -76,7 +76,7 @@ function linalg_learn_deterministic_sparse_interreduction!(
 end
 
 function linalg_apply_deterministic_sparse_interreduction!(
-    trace::TraceF4,
+    trace::Trace,
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
@@ -110,7 +110,7 @@ end
 # Returns `false` if any row reduced to zero (since we expect that on the apply
 # stage the rows are linearly independent)
 function linalg_apply_reduce_matrix_lower_part!(
-    trace::TraceF4,
+    trace::Trace,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
@@ -177,7 +177,7 @@ function linalg_apply_reduce_matrix_lower_part!(
 end
 
 function linalg_learn_interreduce_matrix_pivots!(
-    trace::TraceF4,
+    trace::Trace,
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
     arithmetic::A;
@@ -211,7 +211,7 @@ function linalg_learn_interreduce_matrix_pivots!(
 end
 
 function linalg_apply_interreduce_matrix_pivots!(
-    trace::TraceF4,
+    trace::Trace,
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
     arithmetic::A;
@@ -227,7 +227,7 @@ function linalg_apply_interreduce_matrix_pivots!(
 end
 
 function linalg_learn_reduce_matrix_lower_part!(
-    trace::TraceF4,
+    trace::Trace,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}

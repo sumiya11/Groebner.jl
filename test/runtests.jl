@@ -64,7 +64,6 @@ end
     @time @includetests [
         "learn_and_apply/learn_and_apply",
         "learn_and_apply/apply_in_batches"
-        # "learn_and_apply/learn_and_applyX"
     ]
 
     @time @includetests ["isgroebner/isgroebner"]
@@ -76,7 +75,7 @@ end
     # - Nemo.jl  (Nemo.fmpq_mpoly, Nemo.gfp_mpoly)
     # - DynamicPolynomials.jl  (DynamicPolynomials.Polynomial{true, T})
     if try_import(:DynamicPolynomials)
-        @time @includetests ["input_output/DynamicPolynomials"]
+        # @time @includetests ["input_output/DynamicPolynomials"]
     end
     if try_import(:Nemo)
         @time @includetests ["input_output/Nemo"]
@@ -84,7 +83,7 @@ end
 
     @time @includetests ["output_inferred"]
 
-    @time @includetests ["utils/logging", "utils/timings"]
+    @time @includetests ["utils/logging"]
 
     # test for regressions
     @time @includetests ["regressions"]

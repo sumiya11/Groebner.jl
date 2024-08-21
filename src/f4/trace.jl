@@ -1,11 +1,8 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-# Tracing in F4
+# Tracer for F4
 
-###
-# The main struct
-
-mutable struct TraceF4{C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
+mutable struct Trace{C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
     stopwatch::UInt64
     empty::Bool
 
@@ -67,7 +64,7 @@ function trace_initialize(
     permutation::Vector{Int},
     params::AlgorithmParameters
 )
-    TraceF4(
+    Trace(
         time_ns(),
         false,
         ring,
@@ -99,10 +96,10 @@ function trace_initialize(
 end
 
 function trace_deepcopy(
-    trace::TraceF4{C1, C3, M, Ord1, Ord2}
+    trace::Trace{C1, C3, M, Ord1, Ord2}
 ) where {C1 <: Coeff, C3 <: Coeff, M <: Monom, Ord1, Ord2}
     # NOTE: does not provide the same guarantees as Base.deepcopy
-    TraceF4(
+    Trace(
         trace.stopwatch,
         trace.empty,
         PolyRing(trace.ring.nvars, trace.ring.ord, trace.ring.ch),
@@ -141,8 +138,8 @@ function trace_deepcopy(
 end
 
 function trace_copy(
-    trace::TraceF4{C1, C3, M, Ord1, Ord2},
-    ::Type{C2};
+    trace::Trace{C1, C3, M, Ord1, Ord2},
+    ::Type{C2}, using_wide_type_for_coeffs::Bool;
     deepcopy=false
 ) where {C1 <: Coeff, C3 <: Coeff, M <: Monom, Ord1, Ord2, C2 <: Coeff}
     new_sparse_row_coeffs = Vector{Vector{C2}}()
@@ -176,10 +173,10 @@ function trace_copy(
         basis_shallow_copy_with_new_coeffs(trace.gb_basis, new_gb_basis_coeffs)
     end
 
-    new_representation = PolynomialRepresentation(trace.representation.monomtype, C2, false)
+    new_representation = PolynomialRepresentation(trace.representation.monomtype, C2, using_wide_type_for_coeffs)
     new_ring = PolyRing(trace.ring.nvars, trace.ring.ord, zero(C2))
 
-    TraceF4(
+    Trace(
         trace.stopwatch,
         trace.empty,
         new_ring,
@@ -210,7 +207,7 @@ function trace_copy(
     )
 end
 
-function trace_finalize!(trace::TraceF4)
+function trace_finalize!(trace::Trace)
     trace.buf_basis = basis_deepcopy(trace.gb_basis)
     trace.buf_basis.nnonredundant = trace.input_basis.nnonredundant
     trace.buf_basis.nprocessed = trace.input_basis.nprocessed
@@ -219,14 +216,19 @@ function trace_finalize!(trace::TraceF4)
     nothing
 end
 
+function trace_check_input(trace::Trace, monoms, coeffs)
+    true
+end
+
 ###
 # A wrapper around the tracer exposed to the user
 
 mutable struct WrappedTrace
+    # For each type of coefficients, we maintain a separate tracer object
     recorded_traces::Dict{Any, Any}
 
     function WrappedTrace(
-        trace::TraceF4{C1, C2, M, Ord1, Ord2}
+        trace::Trace{C1, C2, M, Ord1, Ord2}
     ) where {C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
         recorded_traces = Dict{Any, Any}((C1, 42) => trace)
         WrappedTrace(recorded_traces)
@@ -237,7 +239,7 @@ mutable struct WrappedTrace
     end
 end
 
-# Does not provide the same guarantees as `Base.deepcopy`.
+# Does not provide the same guarantees as Base.deepcopy.
 function trace_deepcopy(wrapped_trace::WrappedTrace)
     WrappedTrace(
         Dict(deepcopy(k) => trace_deepcopy(v) for (k, v) in wrapped_trace.recorded_traces)
@@ -259,81 +261,14 @@ function get_default_trace(wrapped_trace::WrappedTrace)
     first(values(wrapped_trace.recorded_traces))
 end
 
-function get_trace!(wrapped_trace::WrappedTrace, ring, kwargs)
-    char = ring.ch
-
-    trace = get_default_trace(wrapped_trace)
-
-    # Fast path for the case when there exists a suitable trace
-    coefftype = trace.representation.coefftype
-    if (
-        trace.representation.using_wide_type_for_coeffs && less_than_half(char, coefftype)
-    ) || (!trace.representation.using_wide_type_for_coeffs && char <= typemax(coefftype))
-        return trace
-    end
-
-    for id in keys(wrapped_trace.recorded_traces)
-        if id[1] <: Integer && char <= typemax(id[1])
-            return wrapped_trace.recorded_traces[id]
-        end
-    end
-
-    # Handle the case when a wider coefficient type is required
-    new_coefftype = io_get_tight_unsigned_int_type(char)
-    @log :misc "Creating a new trace with coefficient type $new_coefftype"
-    new_trace = trace_copy(trace, new_coefftype, deepcopy=false)
-    wrapped_trace.recorded_traces[(new_coefftype, 0)] = new_trace
-
-    new_trace
-end
-
 function get_trace!(
     wrapped_trace::WrappedTrace,
-    batch::NTuple{N, T},
-    kwargs
-) where {N, T <: AbstractVector}
-    # First, determine a suitable coefficient type for the given polynomials and
-    # the learned trace
-    default_trace = get_default_trace(wrapped_trace)
-    monomtype = default_trace.representation.monomtype
-    coefftype = default_trace.representation.coefftype
-
-    rings = map(io_extract_ring, batch)
-    chars = map(ring -> ring.ch, rings)
-    @log :misc """
-    Determining a suitable coefficient type for the apply stage with characteristics $chars.
-    On the learn stage, the coefficients were of type $coefftype, 
-    and the $(typeof(default_trace.params.arithmetic)) arithmetic was used."""
-
-    tight_signed_type = mapreduce(io_get_tight_signed_int_type, promote_type, chars)
-    tight_unsigned_type = mapreduce(io_get_tight_unsigned_int_type, promote_type, chars)
-    wide_coeff_type = false
-
-    # The type of coefficients that will be used
-    new_coefftype = if kwargs.arithmetic === :floating && all(chars .< 2^25)
-        wide_coeff_type = true
-        Float64
-    elseif tight_signed_type == signed(tight_unsigned_type)
-        tight_signed_type
-    else
-        @log :info """
-        In the given batch of polynomials, the coefficient fields have
-        characteristics $(chars) that do not fit into $(signed(tight_unsigned_type)),
-        which may affect performance negatively.
-
-        For best performance, use characteristics representable by $(Int32).
-        Alternatively, please consider submitting a Github issue.
-        """
-        tight_unsigned_type
-    end
-    composite_coefftype = CompositeNumber{N, new_coefftype}
-
-    @log :misc """
-    Will be storing polynomial coefficients as $composite_coefftype on the apply stage."""
-
+    ring::PolyRing,
+    params::AlgorithmParameters
+)
     # Try to find a suitable trace among the existing ones
     for id in keys(wrapped_trace.recorded_traces)
-        if id[1] <: composite_coefftype
+        if id[1] == params.representation.coefftype
             @log :misc "Re-using an existing trace with id = $id"
             return wrapped_trace.recorded_traces[id]
         end
@@ -341,63 +276,63 @@ function get_trace!(
 
     # Otherwise, create a new trace based on one of the existing ones
     default_trace = get_default_trace(wrapped_trace)
-    new_trace = trace_copy(default_trace, composite_coefftype, deepcopy=false)
-    new_trace.representation =
-        PolynomialRepresentation(monomtype, composite_coefftype, wide_coeff_type)
-    wrapped_trace.recorded_traces[(composite_coefftype, 1)] = new_trace
+    new_trace = trace_copy(default_trace, params.representation.coefftype, params.representation.using_wide_type_for_coeffs, deepcopy=false)
+    new_trace.ring = PolyRing(ring.nvars, ring.ord, convert(params.representation.coefftype, ring.ch))
+    wrapped_trace.recorded_traces[(params.representation.coefftype, 1)] = new_trace
 
-    # NOTE: the returned trace may be in a invalid state, and needs to be filled
-    # with the coefficients of the input polynomials
+    # the resulting trace may be in a invalid state, and needs to be filled with
+    # the coefficients of the input polynomials
     new_trace
 end
 
 ###
 # Printing the trace
 
+Base.show(io::IO, trace::WrappedTrace) = Base.show(io, MIME("text/plain"), trace)
+Base.show(io::IO, trace::Trace) = Base.show(io, MIME("text/plain"), trace)
+
 function Base.show(io::IO, ::MIME"text/plain", wrapped_trace::WrappedTrace)
     println(
         io,
-        """Recorded $(length(wrapped_trace.recorded_traces)) traces: $(collect(keys(wrapped_trace.recorded_traces)))
-        Showing the default one.\n"""
+        """Recorded $(length(wrapped_trace.recorded_traces)) traces with IDs: $(collect(keys(wrapped_trace.recorded_traces)))
+        Showing only one.\n"""
     )
     show(io, MIME("text/plain"), get_default_trace(wrapped_trace))
 end
 
-function Base.show(io::IO, wrapped_trace::WrappedTrace)
-    Base.show(io, MIME("text/plain"), wrapped_trace)
-end
-
-function Base.show(io::IO, ::MIME"text/plain", trace::TraceF4)
+function Base.show(io::IO, ::MIME"text/plain", trace::Trace)
+    tm = round(trace.stopwatch / 10^9, digits=3)
     sz = round((Base.summarysize(trace) / 2^20), digits=2)
     printstyled(
         io,
-        "WrappedTrace of F4 ($sz MiB) recorded in $(round(trace.stopwatch / 10^9, digits=3)) s.\n",
+        "# Trace of F4 recorded in $(tm) s ($sz MiB).\n",
         bold=true
     )
     println(
         io,
         """
-        Number of variables: $(trace.ring.nvars)
-        Ground field characteristic: $(trace.ring.ch)
-        Number of polynomials: $(trace.input_basis.nfilled) in input, $(trace.gb_basis.nfilled) in output
+        ring  : Z[x1,...,x$(trace.ring.nvars)] mod $(trace.ring.ch)
+        input : $(trace.input_basis.nfilled) polynomials
+        output: $(trace.gb_basis.nfilled) polynomials
+        apply : $(trace.napply) / $(0) (success/fail)
         """
     )
-    println(io, "Applications: $(trace.napply)\n")
 
     permute_input =
         !isempty(trace.term_homogenizing_permutations) ||
         !isempty(trace.term_homogenizing_permutations)
-    printstyled(io, "# Learn parameters\n", bold=true)
+    printstyled(io, "# Parameters\n", bold=true)
     println(
         io,
         """
-        Original monomial ordering: $(trace.original_ord)
-        Monom. representation: $(trace.representation.monomtype)
-        Coeff. representation: $(trace.representation.coefftype)
-        Sweep output: $(trace.sweep_output)
-        Use homogenization: $(trace.homogenize)
-        Permute input: $(permute_input)
-        Arithmetic type: $(typeof(trace.params.arithmetic))
+        input order  : $(trace.original_ord)
+        output order : $(trace.ring.ord)
+        sweep        : $(trace.sweep_output)
+        homogenize   : $(trace.homogenize)
+        permute      : $(permute_input)
+        monom. type  : $(trace.representation.monomtype)
+        coeff. type  : $(trace.representation.coefftype)
+        arithmetic   : $(typeof(trace.params.arithmetic))
         """
     )
 
@@ -409,18 +344,34 @@ function Base.show(io::IO, ::MIME"text/plain", trace::TraceF4)
     critical_pair_degree_sequence = map(first, trace.critical_pair_sequence)
     critical_pair_count_sequence = map(last, trace.critical_pair_sequence)
     printstyled(io, "# F4 statistics\n", bold=true)
+    print(
+        io,
+        """
+        iterations     : $(total_iterations)
+        hashtable      : $(trace.hashtable.load) / $(trace.hashtable.size) filled
+        matrix largest : $((0, 0))
+        matrix up-rows : $(total_matrix_up_rows) ($(round(total_matrix_up_rows_useful / total_matrix_up_rows * 100, digits=2)) % useful)
+        matrix low-rows: $(total_matrix_low_rows) ($(round(total_matrix_low_rows_useful / total_matrix_low_rows * 100, digits=2)) % useful)
+        pair degrees   : """
+    )
+    if length(critical_pair_degree_sequence) > 0
+        print(io, string(critical_pair_degree_sequence[1]))
+        print(io, ",")
+    end
+    for i in 2:length(critical_pair_degree_sequence)
+        if critical_pair_degree_sequence[i] < critical_pair_degree_sequence[i - 1]
+            printstyled(io, string(critical_pair_degree_sequence[i]), color=:red, bold=true)
+        else
+            print(io, string(critical_pair_degree_sequence[i]))
+        end
+        if i != length(critical_pair_degree_sequence)
+            print(io, ",")
+        end
+    end
+    println(io)
     println(
         io,
         """
-        Iterations of F4: $(total_iterations)
-        Monomial hashtable: $(trace.hashtable.load) / $(trace.hashtable.size) monomials filled
-        Matrix total upper rows: $(total_matrix_up_rows) ($(round(total_matrix_up_rows_useful / total_matrix_up_rows * 100, digits=2)) % are useful)
-        Matrix total lower rows: $(total_matrix_low_rows) ($(round(total_matrix_low_rows_useful / total_matrix_low_rows * 100, digits=2)) % are useful)
-        Critical pair degree sequence: $(join(string.(critical_pair_degree_sequence), ","))
-        Critical pair count sequence: $(join(string.(critical_pair_count_sequence), ","))"""
+        pair count     : $(join(string.(critical_pair_count_sequence), ","))"""
     )
-end
-
-function Base.show(io::IO, trace::TraceF4)
-    Base.show(io, MIME("text/plain"), trace)
 end

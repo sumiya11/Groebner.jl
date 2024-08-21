@@ -12,8 +12,8 @@ struct LinearAlgebra
 end
 
 struct PolynomialRepresentation
-    monomtype::Type
-    coefftype::Type
+    monomtype::Any
+    coefftype::Any
     # If this field is false, then any implementation of the arithmetic in Z/Zp
     # must cast the coefficients into a wider integer type before performing any
     # arithmetic operations to avoid the risk of overflow.
@@ -117,6 +117,9 @@ function gb_select_monomtype(char, nvars, ordering, homogenize, hint, monoms)
 
     ExponentVector{ExponentSize}
 end
+
+gb_get_tight_signed_int_type(x::CompositeNumber{N,T}) where {N, T} = CompositeNumber{N, mapreduce(gb_get_tight_signed_int_type, promote_type, x.data)}
+gb_get_tight_unsigned_int_type(x::CompositeNumber{N,T}) where {N, T} = CompositeNumber{N, mapreduce(gb_get_tight_signed_int_type, promote_type, x.data)}
 
 function gb_get_tight_signed_int_type(x::T) where {T <: Integer}
     types = (Int8, Int16, Int32, Int64, Int128)
@@ -279,6 +282,8 @@ function AlgorithmParameters(ring, kwargs::KeywordArguments; hint=:none, orderin
             false
         end
     end
+
+    homogenize && kwargs.function_id == :groebner_learn && (@assert false) 
 
     linalg = kwargs.linalg
     if !iszero(ring.ch) && (linalg === :randomized || linalg === :auto)

@@ -132,13 +132,9 @@ end
 
 ###
 # Sorting matrix rows and columns.
-# See f4/matrix.jl for details.
 
-# Compare sparse matrix rows a and b.
-# A row is an array of integers, which are the indices of nonzero elements
 function matrix_row_decreasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: ColumnLabel}
-    #= a, b - rows as arrays of nonzero indices =#
-    # va and vb are the leading columns
+    # Compare the indices of the leading columns
     @inbounds va = a[1]
     @inbounds vb = b[1]
     if va > vb
@@ -147,11 +143,8 @@ function matrix_row_decreasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: Colum
     va < vb
 end
 
-# Compare sparse matrix rows a and b.
-# A row is an array of integers, which are the indices of nonzero elements
 function matrix_row_increasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: ColumnLabel}
-    #= a, b - rows as arrays of nonzero indices =#
-    # va and vb are the leading columns
+    # Compare the indices of the leading columns
     @inbounds va = a[1]
     @inbounds vb = b[1]
     if va > vb
@@ -160,7 +153,7 @@ function matrix_row_increasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: Colum
     if va < vb
         return false
     end
-    # If the same leading column => compare the density of rows
+    # Compare the density of rows
     va = length(a)
     vb = length(b)
     if va > vb
@@ -172,14 +165,9 @@ function matrix_row_increasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: Colum
     return false
 end
 
-# Sort matrix upper rows (polynomial reducers) by the leading column index and
-# density.
-#
-# After the sort, the first (smallest) row will have the left-most leading
-# column index and, then, the smallest density.
 function sort_matrix_upper_rows!(matrix::MacaulayMatrix)
-    #= smaller means pivot being more left  =#
-    #= and density being smaller            =#
+    #= smaller means pivot being more to the left  =#
+    #= and density being smaller                   =#
     permutation = collect(1:(matrix.nrows_filled_upper))
     # TODO: use "let" here!
     cmp =
@@ -199,14 +187,9 @@ function sort_matrix_upper_rows!(matrix::MacaulayMatrix)
     matrix
 end
 
-# Sort matrix lower rows (polynomials to be reduced) by the leading column index
-# and density.
-#
-# After the sort, the first (smallest) row will have the right-most leading
-# column index and, then, the largest density.
 function sort_matrix_lower_rows!(matrix::MacaulayMatrix)
-    #= smaller means pivot being more right =#
-    #= and density being larger             =#
+    #= smaller means pivot being more to the right =#
+    #= and density being larger                    =#
     permutation = collect(1:(matrix.nrows_filled_lower))
     cmp =
         (x, y) -> matrix_row_increasing_cmp(
@@ -225,7 +208,7 @@ function sort_matrix_lower_rows!(matrix::MacaulayMatrix)
     matrix
 end
 
-function partition_columns_by_labels!(
+function sort_partition_columns_by_labels!(
     column_to_monom::Vector{T},
     symbol_ht::MonomialHashtable
 ) where {T}
@@ -248,10 +231,6 @@ function partition_columns_by_labels!(
     nothing
 end
 
-# Given a vector of vectors of exponent vectors and coefficients, sort each
-# vector wrt. the given monomial ordering `ord`.
-#
-# Returns the array of sorting permutations
 function sort_input_terms_to_change_ordering!(
     exps::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},

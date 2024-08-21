@@ -30,8 +30,6 @@
 # which is equivalent to reducing the CD block (lower part of the matrix) with
 # the AB block (upper part of the matrix) via Gaussian elimination.
 #
-# See f4/linalg.jl for implemented algorithms.
-#
 # Usually, by construction,
 # - Block A is already in row-echelon-form.
 # - Block A is the largest block, and is very-very sparse.
@@ -458,7 +456,7 @@ function matrix_fill_column_to_monom_map!(
         end
     end
 
-    partition_columns_by_labels!(column_to_monom, symbol_ht)
+    sort_partition_columns_by_labels!(column_to_monom, symbol_ht)
 
     cmp = let monoms = symbol_ht.monoms, ord = symbol_ht.ord
         function _cmp(x, y, ord)

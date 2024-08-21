@@ -218,7 +218,7 @@ end
 function monom_isless(ea::ExponentVector, eb::ExponentVector, m::MatrixOrdering)
     rows = m.rows
     variables = ordering_variables(m)
-    @inbounds common_type = promote_type(eltype(rows[1]), eltype(ea))
+    @inbounds common_type = signed(promote_type(eltype(rows[1]), eltype(ea)))
     @inbounds for i in 1:length(rows)
         sa, sb = zero(common_type), zero(common_type)
         for j in 1:length(variables)
