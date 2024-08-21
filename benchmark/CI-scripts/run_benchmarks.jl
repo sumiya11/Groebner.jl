@@ -109,10 +109,10 @@ push!(
 push!(
     suite,
     (
-        problem_name="groebner,AA,117,yang1",
+        problem_name="groebner,AA,109,yang1",
         type=:time,
         result=compute_gb(
-            Groebner.Examples.yang1(internal_ordering=:degrevlex, k=GF(117)),
+            Groebner.Examples.yang1(internal_ordering=:degrevlex, k=GF(109)),
             2
         )
     )
