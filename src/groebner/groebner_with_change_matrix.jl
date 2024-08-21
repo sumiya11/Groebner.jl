@@ -152,7 +152,7 @@ function _groebner_with_change_classic_modular(
 
     # Handler for lucky primes
     luckyprimes = LuckyPrimes(basis_zz.coeffs)
-    prime = next_lucky_prime!(luckyprimes)
+    prime = primes_next_lucky_prime!(luckyprimes)
 
     # Perform reduction modulo prime and store result in basis_ff
     ring_ff, basis_ff = reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
@@ -212,7 +212,7 @@ function _groebner_with_change_classic_modular(
     iters = 0
     while !correct_basis
         for j in 1:batchsize
-            prime = next_lucky_prime!(luckyprimes)
+            prime = primes_next_lucky_prime!(luckyprimes)
 
             ring_ff, basis_ff =
                 reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)

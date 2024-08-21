@@ -131,7 +131,12 @@ function groebner_apply_batch0!(
     flag, gb_batch = _groebner_apply_batch1!(wrapped_trace, ir_batch, options)
     !flag && return (flag, batch)
     result_ir = map(
-        i -> io_convert_ir_to_polynomials(ir_batch[i][1], batch[i], gb_batch[i]..., options),
+        i -> io_convert_ir_to_polynomials(
+            ir_batch[i][1],
+            batch[i],
+            gb_batch[i]...,
+            options
+        ),
         1:length(gb_batch)
     )
     flag, result_ir

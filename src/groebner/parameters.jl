@@ -7,8 +7,6 @@
 struct LinearAlgebra
     algorithm::Symbol
     sparsity::Symbol
-
-    LinearAlgebra(algorithm, sparsity) = new(algorithm, sparsity)
 end
 
 struct PolynomialRepresentation
@@ -20,25 +18,25 @@ struct PolynomialRepresentation
     using_wide_type_for_coeffs::Bool
 end
 
-function gb_select_polynomial_representation(
-    char,
-    nvars,
-    ordering,
-    homogenize,
-    monoms,
-    arithmetic;
+function param_select_polynomial_representation(
+    char::Coeff,
+    nvars::Int,
+    ordering::AbstractMonomialOrdering,
+    homogenize::Bool,
+    monoms::Symbol,
+    arithmetic::Symbol;
     hint::Symbol=:none
 )
     if !(hint in (:none, :large_exponents))
         @log :warn "The given hint=$hint was discarded"
     end
-    monomtype = gb_select_monomtype(char, nvars, ordering, homogenize, hint, monoms)
+    monomtype = param_select_monomtype(char, nvars, ordering, homogenize, hint, monoms)
     coefftype, using_wide_type_for_coeffs =
-        gb_select_coefftype(char, nvars, ordering, homogenize, hint, monoms, arithmetic)
+        param_select_coefftype(char, nvars, ordering, homogenize, hint, monoms, arithmetic)
     PolynomialRepresentation(monomtype, coefftype, using_wide_type_for_coeffs)
 end
 
-function gb_select_monomtype(char, nvars, ordering, homogenize, hint, monoms)
+function param_select_monomtype(char::Coeff, nvars::Int, ordering::AbstractMonomialOrdering, homogenize::Bool, hint::Symbol, monoms::Symbol)
     if hint === :large_exponents
         # use 64 bits if large exponents detected
         desired_monom_type = ExponentVector{UInt64}
@@ -118,34 +116,34 @@ function gb_select_monomtype(char, nvars, ordering, homogenize, hint, monoms)
     ExponentVector{ExponentSize}
 end
 
-gb_get_tight_signed_int_type(x::CompositeNumber{N, T}) where {N, T} =
-    CompositeNumber{N, mapreduce(gb_get_tight_signed_int_type, promote_type, x.data)}
-gb_get_tight_unsigned_int_type(x::CompositeNumber{N, T}) where {N, T} =
-    CompositeNumber{N, mapreduce(gb_get_tight_signed_int_type, promote_type, x.data)}
+tight_signed_int_type(x::CompositeNumber{N, T}) where {N, T} =
+    CompositeNumber{N, mapreduce(tight_signed_int_type, promote_type, x.data)}
+tight_unsigned_int_type(x::CompositeNumber{N, T}) where {N, T} =
+    CompositeNumber{N, mapreduce(tight_signed_int_type, promote_type, x.data)}
 
-function gb_get_tight_signed_int_type(x::T) where {T <: Integer}
+function tight_signed_int_type(x::T) where {T <: Integer}
     types = (Int8, Int16, Int32, Int64, Int128)
     idx = findfirst(T -> x <= typemax(T), types)
     @assert !isnothing(idx)
     types[idx]
 end
 
-function gb_get_tight_unsigned_int_type(x::T) where {T <: Integer}
+function tight_unsigned_int_type(x::T) where {T <: Integer}
     types = (UInt8, UInt16, UInt32, UInt64, UInt128)
     idx = findfirst(T -> x <= typemax(T), types)
     @assert !isnothing(idx)
     types[idx]
 end
 
-function gb_select_coefftype(
-    char,
-    nvars,
-    ordering,
-    homogenize,
-    hint,
-    monoms,
-    arithmetic;
-    using_wide_type_for_coeffs=false
+function param_select_coefftype(
+    char::Coeff,
+    nvars::Int,
+    ordering::AbstractMonomialOrdering,
+    homogenize::Bool,
+    hint::Symbol,
+    monoms::Symbol,
+    arithmetic::Symbol;
+    using_wide_type_for_coeffs::Bool=false
 )
     if iszero(char)
         return Rational{BigInt}, true
@@ -153,7 +151,7 @@ function gb_select_coefftype(
     @assert char > 0
     @assert char < typemax(UInt64)
 
-    tight_signed_type = gb_get_tight_signed_int_type(char)
+    tight_signed_type = tight_signed_int_type(char)
 
     if arithmetic === :floating
         return Float64, true
@@ -171,7 +169,7 @@ function gb_select_coefftype(
         end
     end
 
-    tight_unsigned_type = gb_get_tight_unsigned_int_type(char)
+    tight_unsigned_type = tight_unsigned_int_type(char)
     tight_unsigned_type = if !using_wide_type_for_coeffs
         tight_unsigned_type
     else
@@ -237,7 +235,7 @@ mutable struct AlgorithmParameters{Arithmetic <: AbstractArithmetic}
     # Random number generator
     rng::Random.Xoshiro
 
-    # Internal option for `groebner`.
+    # Internal option.
     # At the end of F4, polynomials are interreduced. 
     # We can mark and sweep polynomials that are redundant prior to
     # interreduction to speed things up a bit. This option specifies if such
@@ -251,19 +249,14 @@ mutable struct AlgorithmParameters{Arithmetic <: AbstractArithmetic}
     changematrix::Bool
 end
 
-function AlgorithmParameters(ring, kwargs::KeywordArguments; hint=:none, orderings=nothing)
-    if orderings !== nothing
-        target_ord = orderings[2]
-        original_ord = orderings[1]
+function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:none)
+    if kwargs.ordering === InputOrdering() || kwargs.ordering === nothing
+        ordering = ring.ord
     else
-        if kwargs.ordering === InputOrdering() || kwargs.ordering === nothing
-            ordering = ring.ord
-        else
-            ordering = kwargs.ordering
-        end
-        target_ord = ordering
-        original_ord = ring.ord
+        ordering = kwargs.ordering
     end
+    target_ord = ordering
+    original_ord = ring.ord
 
     heuristic_check = true
     randomized_check = true
@@ -308,7 +301,7 @@ function AlgorithmParameters(ring, kwargs::KeywordArguments; hint=:none, orderin
     linalg_sparsity = :sparse
     linalg_algorithm = LinearAlgebra(linalg, linalg_sparsity)
 
-    representation = gb_select_polynomial_representation(
+    representation = param_select_polynomial_representation(
         ring.ch,
         ring.nvars,
         target_ord,
@@ -348,7 +341,7 @@ function AlgorithmParameters(ring, kwargs::KeywordArguments; hint=:none, orderin
             @log :warn """
             You have explicitly provided keyword argument `threaded = :yes`,
             however, multi-threading is disabled globally in Groebner.jl due to
-            the environment variable GROEBNER_NO_THREADED=0.
+            the environment variable GROEBNER_NO_THREADED = 0.
 
             Consider enabling threading by setting GROEBNER_NO_THREADED to 1"""
         end
@@ -393,32 +386,6 @@ function AlgorithmParameters(ring, kwargs::KeywordArguments; hint=:none, orderin
             throw(DomainError("Only DegRevLex is supported with changematrix = true."))
         end
     end
-
-    @log :misc """
-    Selected parameters:
-    target_ord = $target_ord
-    original_ord = $original_ord
-    heuristic_check = $heuristic_check
-    randomized_check = $randomized_check
-    certify_check = $certify_check
-    check = $(kwargs.check)
-    linalg = $linalg_algorithm
-    threaded_f4 = $threaded_f4
-    threaded_multimodular = $threaded_multimodular
-    arithmetic = $arithmetic
-    using_wide_type_for_coeffs = $(representation.using_wide_type_for_coeffs)
-    reduced = $reduced
-    homogenize = $homogenize
-    maxpairs = $maxpairs
-    selection_strategy = $selection_strategy
-    modular_strategy = $modular_strategy
-    batched = $batched
-    majority_threshold = $majority_threshold
-    rng = $rng
-    sweep = $sweep
-    statistics = $statistics
-    use_flint = $use_flint
-    changematrix = $changematrix"""
 
     AlgorithmParameters(
         target_ord,

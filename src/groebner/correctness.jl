@@ -111,7 +111,7 @@ function randomized_correctness_check!(
     params
 )
     # NOTE: this function may modify the given hashtable!
-    prime = next_check_prime!(lucky)
+    prime = primes_next_aux_prime!(lucky)
     @log :misc "Checking the correctness of reconstrcted basis modulo $prime"
     ring_ff, input_ff = reduce_modulo_p!(state.buffer, ring, input_zz, prime, deepcopy=true)
     # TODO: do we really need to re-scale things to be fraction-free?

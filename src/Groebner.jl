@@ -25,7 +25,7 @@ checks are disabled, and entail no runtime overhead.
 
 It is useful to enable this when debugging the Groebner package.
 """
-invariants_enabled() = false
+invariants_enabled() = true
 
 """
     logging_enabled() -> Bool
@@ -124,6 +124,9 @@ include("arithmetic/Zp.jl")
 # Not so fast arithmetic in the rationals
 include("arithmetic/QQ.jl")
 
+# Intermediate representation
+include("input_output/intermediate.jl")
+
 # Selecting algorithm parameters
 include("groebner/parameters.jl")
 
@@ -155,7 +158,7 @@ include("reconstruction/crt.jl")
 include("reconstruction/ratrec.jl")
 
 #= more high level functions =#
-include("groebner/lucky.jl")
+include("groebner/primes.jl")
 include("groebner/state.jl")
 include("groebner/correctness.jl")
 include("groebner/groebner.jl")

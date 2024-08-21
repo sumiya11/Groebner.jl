@@ -75,7 +75,7 @@ function _isgroebner2(
     buffer = CoefficientBuffer()
     basis_zz = clear_denominators!(buffer, basis, deepcopy=false)
     luckyprimes = LuckyPrimes(basis_zz.coeffs)
-    prime = next_check_prime!(luckyprimes)
+    prime = primes_next_aux_prime!(luckyprimes)
     ring_ff, basis_ff = reduce_modulo_p!(buffer, ring, basis_zz, prime, deepcopy=true)
     arithmetic = select_arithmetic(CoeffModular, prime, :auto, false)
     flag = f4_isgroebner!(ring_ff, basis_ff, pairset, hashtable, arithmetic)
