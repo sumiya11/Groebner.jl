@@ -128,7 +128,7 @@ function _groebner2(
 ) where {M <: Monom, C <: CoeffQQ}
     if params.modular_strategy === :learn_and_apply
         if (
-            params.threaded_multimodular === :yes# || params.threaded_multimodular === :auto
+            params.threaded_multimodular === :yes || params.threaded_multimodular === :auto
         ) && nthreads() > 1
             _groebner_learn_and_apply_threaded(ring, monoms, coeffs, params)
         else
