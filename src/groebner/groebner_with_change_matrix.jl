@@ -144,15 +144,15 @@ function _groebner_with_change_classic_modular(
 ) where {M <: Monom, C <: CoeffQQ}
 
     # Initialize supporting structs
-    state = ModularState{BigInt, C, CoeffModular}(params)
+    state = ModularState{BigInt, C, CoeffModular}()
     basis, pairset, hashtable =
         f4_initialize_structs(ring, monoms, coeffs, params, make_monic=false)
 
     basis_zz = clear_denominators!(basis, deepcopy=false)
 
     # Handler for lucky primes
-    luckyprimes = LuckyPrimes(basis_zz.coeffs)
-    prime = primes_next_lucky_prime!(luckyprimes)
+    lucky = LuckyPrimes(basis_zz.coeffs)
+    prime = primes_next_lucky_prime!(lucky)
 
     # Perform reduction modulo prime and store result in basis_ff
     ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
@@ -169,20 +169,30 @@ function _groebner_with_change_classic_modular(
     push!(state.changematrix_coeffs_ff_all, changematrix_coeffs)
 
     # Reconstruct coefficients and write results to the accumulator.
-    # CRT reconstrction is trivial here.
-    modular_crt_full!(state, luckyprimes)
-    modular_crt_full_changematrix!(state, luckyprimes)
+    modular_prepare!(state)
+    crt_vec_full!(
+        state.gb_coeffs_zz,
+        lucky.modulo,
+        state.gb_coeffs_ff_all,
+        lucky.used_primes,
+        state.crt_mask
+    )
+    modular_crt_full_changematrix!(state, lucky)
 
-    success_reconstruct = modular_ratrec_vec_full!(state, luckyprimes)
+    success_reconstruct = ratrec_vec_full!(
+        state.gb_coeffs_qq,
+        state.gb_coeffs_zz,
+        lucky.modulo,
+        state.ratrec_mask
+    )
 
-    changematrix_success_reconstruct =
-        full_rational_reconstruct_changematrix!(state, luckyprimes)
+    changematrix_success_reconstruct = modular_ratrec_full_changematrix!(state, lucky)
 
     correct_basis = false
     if success_reconstruct && changematrix_success_reconstruct
-        correct_basis = correctness_check!(
+        correct_basis = modular_lift_check!(
             state,
-            luckyprimes,
+            lucky,
             ring_ff,
             basis,
             basis_zz,
@@ -207,12 +217,19 @@ function _groebner_with_change_classic_modular(
 
     witness_set = modular_witness_set(state.gb_coeffs_zz, params)
 
-    modular_crt_partial!(state, luckyprimes, witness_set)
+    crt_vec_partial!(
+        state.gb_coeffs_zz,
+        lucky.modulo,
+        state.gb_coeffs_ff_all,
+        lucky.used_primes,
+        witness_set,
+        state.crt_mask
+    )
 
     iters = 0
     while !correct_basis
         for j in 1:batchsize
-            prime = primes_next_lucky_prime!(luckyprimes)
+            prime = primes_next_lucky_prime!(lucky)
 
             ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
             params_zp = params_mod_p(params, prime)
@@ -224,15 +241,29 @@ function _groebner_with_change_classic_modular(
                 basis_changematrix_export(basis_ff, hashtable, length(monoms))
             push!(state.changematrix_coeffs_ff_all, changematrix_coeffs)
 
-            if !majority_vote!(state, basis_ff, params)
+            if !modular_majority_vote!(state, basis_ff, params)
                 continue
             end
 
             primes_used += 1
         end
-        modular_crt_partial!(state, luckyprimes, witness_set)
 
-        success_reconstruct = partial_rational_reconstruct!(state, luckyprimes, witness_set)
+        crt_vec_partial!(
+            state.gb_coeffs_zz,
+            lucky.modulo,
+            state.gb_coeffs_ff_all,
+            lucky.used_primes,
+            witness_set,
+            state.crt_mask
+        )
+
+        success_reconstruct = ratrec_vec_partial!(
+            state.gb_coeffs_qq,
+            state.gb_coeffs_zz,
+            lucky.modulo,
+            witness_set,
+            state.ratrec_mask
+        )
 
         if !success_reconstruct
             iters += 1
@@ -243,7 +274,7 @@ function _groebner_with_change_classic_modular(
         if params.heuristic_check
             success_check = modular_lift_heuristic_check_partial(
                 state.gb_coeffs_qq,
-                luckyprimes.modulo,
+                lucky.modulo,
                 witness_set
             )
             if !success_check
@@ -254,9 +285,20 @@ function _groebner_with_change_classic_modular(
         end
 
         # Perform full reconstruction
-        modular_crt_full!(state, luckyprimes)
+        crt_vec_full!(
+            state.gb_coeffs_zz,
+            lucky.modulo,
+            state.gb_coeffs_ff_all,
+            lucky.used_primes,
+            state.crt_mask
+        )
 
-        success_reconstruct = modular_ratrec_vec_full!(state, luckyprimes)
+        success_reconstruct = ratrec_vec_full!(
+            state.gb_coeffs_qq,
+            state.gb_coeffs_zz,
+            lucky.modulo,
+            state.ratrec_mask
+        )
 
         if !success_reconstruct
             iters += 1
@@ -264,18 +306,17 @@ function _groebner_with_change_classic_modular(
             continue
         end
 
-        modular_crt_full_changematrix!(state, luckyprimes)
-        success_reconstruct_changematrix =
-            full_rational_reconstruct_changematrix!(state, luckyprimes)
+        modular_crt_full_changematrix!(state, lucky)
+        success_reconstruct_changematrix = modular_ratrec_full_changematrix!(state, lucky)
         if !success_reconstruct_changematrix
             iters += 1
             batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
             continue
         end
 
-        correct_basis = correctness_check!(
+        correct_basis = modular_lift_check!(
             state,
-            luckyprimes,
+            lucky,
             ring_ff,
             basis,
             basis_zz,

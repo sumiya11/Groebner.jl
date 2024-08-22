@@ -12,9 +12,7 @@ mutable struct ModularState{T1 <: CoeffZZ, T2 <: CoeffQQ, T3}
     changematrix_coeffs_zz::Vector{Vector{Vector{T1}}}
     changematrix_coeffs_qq::Vector{Vector{Vector{T2}}}
 
-    function ModularState{T1, T2, T3}(
-        params::AlgorithmParameters
-    ) where {T1 <: CoeffZZ, T2 <: CoeffQQ, T3 <: CoeffZp}
+    function ModularState{T1, T2, T3}() where {T1 <: CoeffZZ, T2 <: CoeffQQ, T3 <: CoeffZp}
         new(
             Vector{Vector{T1}}(),
             Vector{Vector{T2}}(),
@@ -28,7 +26,10 @@ mutable struct ModularState{T1 <: CoeffZZ, T2 <: CoeffQQ, T3}
     end
 end
 
-function modular_witness_set(gb_coeffs, params::AlgorithmParameters)
+function modular_witness_set(
+    gb_coeffs::Vector{Vector{C}},
+    params::AlgorithmParameters
+) where {C <: Coeff}
     witness_set = Vector{Tuple{Int, Int}}(undef, length(gb_coeffs))
     rng = params.rng
     k = 1
@@ -101,9 +102,9 @@ function modular_reduce_mod_p!(
     prime::T2
 ) where {T1 <: CoeffZZ, T2 <: CoeffZp}
     coeffs_ff = [Vector{CoeffModular}(undef, length(c)) for c in coeffs_zz]
-    p   = BigInt()
+    p = BigInt()
     buf = BigInt()
-    c   = BigInt()
+    c = BigInt()
     Base.GMP.MPZ.set_ui!(p, prime)
     @inbounds for i in 1:length(coeffs_zz)
         cfs_zz_i = coeffs_zz[i]
@@ -165,10 +166,8 @@ function modular_reduce_mod_p_in_batch!(
     ring_ff_4x, basis_ff_4x
 end
 
-function resize_state_if_needed!(
-    state::ModularState,
-    gb_coeffs::Vector{Vector{T}}
-) where {T}
+function modular_prepare!(state::ModularState)
+    gb_coeffs = state.gb_coeffs_ff_all[1]
     resize!(state.gb_coeffs_zz, length(gb_coeffs))
     resize!(state.gb_coeffs_qq, length(gb_coeffs))
     resize!(state.crt_mask, length(gb_coeffs))
@@ -185,27 +184,25 @@ function resize_state_if_needed!(
 end
 
 ###
-# CRT
+# Lifting change matrix
 
-function modular_crt_full!(state::ModularState, lucky::LuckyPrimes)
-    if isempty(state.gb_coeffs_zz)
-        resize_state_if_needed!(state, state.gb_coeffs_ff_all[1])
+function modular_ratrec_full_changematrix!(state::ModularState, lucky::LuckyPrimes)
+    @inbounds for i in 1:length(state.changematrix_coeffs_zz)
+        flag = ratrec_vec_full!(
+            state.changematrix_coeffs_qq[i],
+            state.changematrix_coeffs_zz[i],
+            lucky.modulo,
+            [
+                falses(length(state.changematrix_coeffs_qq[i][j])) for
+                j in 1:length(state.changematrix_coeffs_qq[i])
+            ]
+        )
+        !flag && return flag
     end
-    crt_vec_full!(
-        state.gb_coeffs_zz,
-        lucky.modulo,
-        state.gb_coeffs_ff_all,
-        map(eltype(eltype(state.gb_coeffs_ff_all[1])), lucky.used_primes),
-        state.crt_mask
-    )
-    @invariant lucky.modulo == prod(BigInt, lucky.used_primes)
-    nothing
+    true
 end
 
-function modular_crt_full_changematrix!(
-    state::ModularState,
-    lucky::LuckyPrimes
-)
+function modular_crt_full_changematrix!(state::ModularState, lucky::LuckyPrimes)
     if isempty(state.changematrix_coeffs_zz)
         coeffs_ff = state.changematrix_coeffs_ff_all[1]
         resize!(state.changematrix_coeffs_zz, length(coeffs_ff))
@@ -229,101 +226,44 @@ function modular_crt_full_changematrix!(
         crt_vec_full!(
             state.changematrix_coeffs_zz[i],
             modulo,
-            [state.changematrix_coeffs_ff_all[ell][i] for ell in 1:length(lucky.used_primes)],
-            map(eltype(eltype(eltype(state.changematrix_coeffs_ff_all[1]))), lucky.used_primes),
-            [falses(length(state.changematrix_coeffs_ff_all[1][i][j])) for j in 1:length(state.changematrix_coeffs_ff_all[1][i])]
+            [
+                state.changematrix_coeffs_ff_all[ell][i] for
+                ell in 1:length(lucky.used_primes)
+            ],
+            lucky.used_primes,
+            [
+                falses(length(state.changematrix_coeffs_ff_all[1][i][j])) for
+                j in 1:length(state.changematrix_coeffs_ff_all[1][i])
+            ]
         )
     end
 
     nothing
-end
-
-function modular_crt_partial!(
-    state::ModularState,
-    lucky::LuckyPrimes,
-    witness_set::Vector{Tuple{Int, Int}}
-)
-    crt_vec_partial!(
-        state.gb_coeffs_zz,
-        lucky.modulo,
-        state.gb_coeffs_ff_all,
-        map(eltype(eltype(state.gb_coeffs_ff_all[1])), lucky.used_primes),
-        witness_set,
-        state.crt_mask
-    )
-    nothing
-end
-
-function modular_ratrec_vec_full!(state::ModularState, lucky::LuckyPrimes)
-    @invariant lucky.modulo == prod(BigInt, lucky.used_primes)
-    ratrec_vec_full!(
-        state.gb_coeffs_qq,
-        state.gb_coeffs_zz,
-        lucky.modulo,
-        state.ratrec_mask
-    )
-end
-
-function full_rational_reconstruct_changematrix!(state::ModularState, lucky::LuckyPrimes)
-    @inbounds for i in 1:length(state.changematrix_coeffs_zz)
-        flag = ratrec_vec_full!(
-            state.changematrix_coeffs_qq[i],
-            state.changematrix_coeffs_zz[i],
-            lucky.modulo,
-            [falses(length(state.changematrix_coeffs_qq[i][j])) for j in 1:length(state.changematrix_coeffs_qq[i])]
-        )
-        !flag && return flag
-    end
-    true
-end
-
-function partial_rational_reconstruct!(
-    state::ModularState,
-    lucky::LuckyPrimes,
-    witness_set::Vector{Tuple{Int, Int}}
-)
-    ratrec_vec_partial!(
-        state.gb_coeffs_qq,
-        state.gb_coeffs_zz,
-        lucky.modulo,
-        witness_set,
-        state.ratrec_mask
-    )
 end
 
 ### 
-# Checking correctness in modular computation
+# Checking modular lifts in modular computation
 
-# Checks if the basis is reconstructed correctly.
-# There are 3 levels of checks:
-#   - heuristic check (dedicated to discard obviously bad cases),
-#   - randomized check (checks correctness modulo a prime),
-#   - certification (checks correctness directly over the rationals).
-#
-# Usually, by default, only the first two are active, which gives the correct
-# basis with a high probability
-function correctness_check!(
-    state,
-    lucky,
-    ring,
-    basis_qq,
-    basis_zz,
-    basis_ff,
-    hashtable,
-    params
+function modular_lift_check!(
+    state::ModularState,
+    lucky::LuckyPrimes,
+    ring::PolyRing,
+    basis_qq::Basis,
+    basis_zz::Basis,
+    basis_ff::Basis,
+    hashtable::MonomialHashtable,
+    params::AlgorithmParameters
 )
     # First we check the size of the coefficients with a heuristic
     if params.heuristic_check
         if !modular_lift_heuristic_check(state.gb_coeffs_qq, lucky.modulo)
-            @log :misc "Heuristic check failed."
             return false
         end
-        @log :misc "Heuristic check passed!"
     end
 
     # Then check that a basis is also a basis modulo a prime
     if params.randomized_check
-        if !randomized_correctness_check!(
+        if !modular_lift_randomized_check!(
             state,
             ring,
             basis_zz,
@@ -332,13 +272,13 @@ function correctness_check!(
             hashtable,
             params
         )
-            @log :misc "Randomized check failed."
             return false
         end
-        @log :misc "Randomized check passed!"
     end
+
+    # Finally we check over the rationals
     if params.certify_check
-        return certify_correctness_check!(
+        return modular_lift_certify_check!(
             state,
             ring,
             basis_qq,
@@ -347,6 +287,7 @@ function correctness_check!(
             params
         )
     end
+
     true
 end
 
@@ -387,14 +328,14 @@ function modular_lift_heuristic_check_partial(
     true
 end
 
-function randomized_correctness_check!(
-    state,
-    ring,
-    input_zz,
-    gb_ff,
-    lucky,
-    hashtable,
-    params
+function modular_lift_randomized_check!(
+    state::ModularState,
+    ring::PolyRing,
+    input_zz::Basis,
+    gb_ff::Basis,
+    lucky::LuckyPrimes,
+    hashtable::MonomialHashtable,
+    params::AlgorithmParameters
 )
     # !!! note that this function may modify the given hashtable!
     prime = primes_next_aux_prime!(lucky)
@@ -420,7 +361,14 @@ function randomized_correctness_check!(
     true
 end
 
-function certify_correctness_check!(state, ring, input_qq, gb_ff, hashtable, params)
+function modular_lift_certify_check!(
+    state::ModularState,
+    ring::PolyRing,
+    input_qq::Basis,
+    gb_ff::Basis,
+    hashtable::MonomialHashtable,
+    params::AlgorithmParameters
+)
     gb_qq = basis_deep_copy_with_new_coeffs(gb_ff, state.gb_coeffs_qq)
     ring_qq = PolyRing(ring.nvars, ring.ord, 0)
     input_qq = basis_deepcopy(input_qq)
@@ -440,6 +388,6 @@ function certify_correctness_check!(state, ring, input_qq, gb_ff, hashtable, par
 end
 
 # TODO :)
-function majority_vote!(state, basis_ff, params)
+function modular_majority_vote!(state, basis_ff, params)
     true
 end

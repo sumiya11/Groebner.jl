@@ -183,15 +183,15 @@ end
 # Element-wise CRT
 
 # A mod M, a_1 mod m_1, ..., a_n mod m_n  =>  B mod M m_1 ... m_n.
-# Reconstructs only the witness_set set.
+# Reconstructs only the witness set.
 function crt_vec_partial!(
     table_zz::Vector{Vector{BigInt}},
     modulo::BigInt,
     tables_ff::Vector{Vector{Vector{T}}},
-    moduli::Vector{T},
+    moduli::Vector{U},
     witness_set::Vector{Tuple{Int, Int}},
     mask::Vector{BitVector}
-) where {T <: Integer}
+) where {T <: Integer, U <: Integer}
     @invariant isbitstype(T)
     @invariant length(tables_ff) == length(moduli)
     @invariant all(<(typemax(UInt64)), moduli)
@@ -242,9 +242,9 @@ function crt_vec_full!(
     table_zz::Vector{Vector{BigInt}},
     modulo::BigInt,
     tables_ff::Vector{Vector{Vector{T}}},
-    moduli::Vector{T},
+    moduli::Vector{U},
     mask::Vector{BitVector}
-) where {T <: Integer}
+) where {T <: Integer, U <: Integer}
     @invariant isbitstype(T)
     @invariant length(tables_ff) == length(moduli)
     @invariant all(<(typemax(UInt64)), moduli)

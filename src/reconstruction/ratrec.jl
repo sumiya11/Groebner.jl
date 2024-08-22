@@ -8,12 +8,7 @@ function ratrec_reconstruction_bound(m::BigInt)
     isqrt((m >> UInt64(1)) - 1)
 end
 
-function ratrec_nemo(a::Nemo.ZZRingElem, m::Nemo.ZZRingElem)
-    success, pq = Nemo.unsafe_reconstruct(a, m)
-    success, Rational{BigInt}(pq)
-end
-
-function ratrec_nemo_2(
+function ratrec_nemo(
     a::Nemo.ZZRingElem,
     m::Nemo.ZZRingElem,
     N::Nemo.ZZRingElem,
@@ -45,7 +40,7 @@ function ratrec_vec_partial!(
 
         rem_nemo = Nemo.ZZRingElem(table_zz[i][j])
 
-        success, pq = ratrec_nemo_2(rem_nemo, nemo_modulo, nemo_bound, nemo_bound)
+        success, pq = ratrec_nemo(rem_nemo, nemo_modulo, nemo_bound, nemo_bound)
         !success && return false
 
         table_qq[i][j] = pq
@@ -79,7 +74,7 @@ function ratrec_vec_full!(
             rem_nemo = Nemo.ZZRingElem(table_zz[i][j])
             @invariant 0 <= rem_nemo < modulo
 
-            success, pq = ratrec_nemo_2(rem_nemo, nemo_modulo, nemo_bound, nemo_bound)
+            success, pq = ratrec_nemo(rem_nemo, nemo_modulo, nemo_bound, nemo_bound)
             !success && return false
 
             table_qq[i][j] = pq

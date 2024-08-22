@@ -292,7 +292,7 @@ function f4_reduction_apply!(
 
     flag = linalg_main!(matrix, basis, params, trace, linalg=LinearAlgebra(:apply, :sparse))
     if !flag
-        @log :info "In apply, in linear algebra, some of the matrix rows reduced to zero."
+        @log :info "In apply, some of the matrix rows unexpectedly reduced to zero."
         return false, false
     end
 
@@ -303,7 +303,7 @@ function f4_reduction_apply!(
     @inbounds for i in 1:(matrix.npivots)
         sgn = basis.monoms[basis.nprocessed + i][1]
         if sgn != pivot_indices[i]
-            @log :debug "In apply, some leading terms cancelled out!"
+            @log :info "In apply, some leading terms cancelled out!"
             return false, false
         end
     end
@@ -475,7 +475,7 @@ function f4_autoreduce_apply!(
 
     flag = linalg_autoreduce!(matrix, basis, params, linalg=LinearAlgebra(:apply, :sparse))
     if !flag
-        @log :warn "In apply, the final autoreduction of the basis failed"
+        @log :info "In apply, the final autoreduction of the basis failed"
         return false
     end
     matrix_convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht, params)
