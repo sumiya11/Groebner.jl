@@ -14,6 +14,9 @@ function CompositeNumber{N, FP}(a::CompositeNumber{N, U}) where {N, FP <: Abstra
     CompositeNumber{N, FP}(a.data)
 end
 
+Base.convert(::Type{CompositeNumber{N, T}}, a::CompositeNumber{N, U}) where {N, T, U} =
+    CompositeNumber{N, T}(map(x -> convert(T, x), a.data))
+
 Base.isinteger(ci::CompositeNumber{N, T}) where {N, T} = all(isinteger.(ci.data))
 
 Base.typemax(::Type{CompositeNumber{N, T}}) where {N, T} =

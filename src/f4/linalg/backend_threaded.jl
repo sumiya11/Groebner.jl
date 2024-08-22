@@ -9,7 +9,6 @@
 # High level
 
 function linalg_deterministic_sparse_threaded!(
-    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
@@ -22,9 +21,9 @@ function linalg_deterministic_sparse_threaded!(
     @log :matrix matrix_string_repr(matrix)
 
     # Reduce CD with AB
-    linalg_reduce_matrix_lower_part_threaded_cas!(ctx, matrix, basis, arithmetic)
+    linalg_reduce_matrix_lower_part_threaded_cas!(matrix, basis, arithmetic)
     # Interreduce CD
-    linalg_interreduce_matrix_pivots!(ctx, matrix, basis, arithmetic)
+    linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic)
     true
 end
 
@@ -40,7 +39,6 @@ end
 #   0 D'
 # The new pivots in the D' block are known, but possibly not fully interreduced.
 function linalg_reduce_matrix_lower_part_threaded_cas!(
-    ctx::Context,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}

@@ -3,7 +3,7 @@
 ###
 # This file provides some fast operations on vectors of integers.
 
-# NOTE. The use of these functions must be limited.
+# The use of these functions must be limited.
 #
 # Debugging LLVM IR is a headache. The LLVM IR textual format is not guaranteed
 # to be stable. 

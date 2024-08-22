@@ -25,12 +25,6 @@ using Logging
         @test flag1 == flag2
         @test_throws AssertionError Groebner.isgroebner(f, loglevel=:abcd)
 
-        f2 = [x^3, y^2, z]
-        basis1 = Groebner.kbase(f2)
-        basis2 = @test_logs Groebner.kbase(f2, loglevel=-3)
-        @test basis1 == basis2
-        @test_throws AssertionError Groebner.kbase(f2, loglevel=:pkrst)
-
         gb1 = @test_logs Groebner.groebner(f, loglevel=:debug)
         gb1 = @test_logs Groebner.groebner(f, loglevel=:info)
         gb1 = @test_logs Groebner.groebner(f, loglevel=:warn)
@@ -55,11 +49,5 @@ using Logging
         flag2 = Groebner.isgroebner(gb, loglevel=-3)
         @test flag1 == flag2
         @test_throws AssertionError Groebner.isgroebner(f, loglevel=:abcd)
-
-        f2 = [x^3, y^2, z]
-        basis1 = Groebner.kbase(f2)
-        basis2 = Groebner.kbase(f2, loglevel=-3)
-        @test basis1 == basis2
-        @test_throws AssertionError Groebner.kbase(f2, loglevel=:pkrst)
     end
 end

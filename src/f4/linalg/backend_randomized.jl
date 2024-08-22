@@ -9,7 +9,6 @@
 # High level
 
 function linalg_randomized_sparse!(
-    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
@@ -23,9 +22,9 @@ function linalg_randomized_sparse!(
     @log :matrix matrix_string_repr(matrix)
 
     # Reduce CD with AB
-    linalg_randomized_reduce_matrix_lower_part!(ctx, matrix, basis, arithmetic, rng)
+    linalg_randomized_reduce_matrix_lower_part!(matrix, basis, arithmetic, rng)
     # Interreduce CD
-    linalg_interreduce_matrix_pivots!(ctx, matrix, basis, arithmetic)
+    linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic)
     true
 end
 
@@ -45,7 +44,6 @@ end
 #   A B
 #   0 D'
 function linalg_randomized_reduce_matrix_lower_part!(
-    ctx::Context,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType},

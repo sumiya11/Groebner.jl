@@ -63,7 +63,7 @@ mutable struct GroebnerState{T1 <: CoeffZZ, T2 <: CoeffQQ, T3}
     changematrix_coeffs_qq::Vector{Vector{Vector{T2}}}
 
     function GroebnerState{T1, T2, T3}(
-        params
+        params::AlgorithmParameters
     ) where {T1 <: CoeffZZ, T2 <: CoeffQQ, T3 <: CoeffZp}
         new(
             Vector{Vector{T1}}(),
@@ -122,7 +122,6 @@ function common_denominator(coeffs::Vector{T}) where {T <: CoeffQQ}
 end
 
 function _clear_denominators!(
-    ctx::Context,
     buffer::CoefficientBuffer,
     coeffs_qq::Vector{Vector{T}}
 ) where {T <: CoeffQQ}
@@ -141,14 +140,13 @@ function _clear_denominators!(
 end
 
 function clear_denominators!(
-    ctx::Context,
     buffer::CoefficientBuffer,
     basis::Basis{T};
     deepcopy=false
 ) where {T <: CoeffQQ}
-    coeffs_zz = _clear_denominators!(ctx, buffer, basis.coeffs)
+    coeffs_zz = _clear_denominators!(buffer, basis.coeffs)
     if deepcopy
-        basis_deep_copy_with_new_coeffs(ctx, basis, coeffs_zz)
+        basis_deep_copy_with_new_coeffs(basis, coeffs_zz)
     else
         basis_shallow_copy_with_new_coeffs(basis, coeffs_zz)
     end
@@ -190,7 +188,6 @@ function reduce_modulo_p!(
 end
 
 function reduce_modulo_p!(
-    ctx::Context,
     coeffbuff::CoefficientBuffer,
     ring::PolyRing,
     coeffs_zz::Vector{Vector{T1}},
@@ -202,16 +199,15 @@ function reduce_modulo_p!(
 end
 
 function reduce_modulo_p!(
-    ctx::Context,
     buffer::CoefficientBuffer,
     ring::PolyRing,
     basis::Basis{T1},
     prime::T2;
     deepcopy=true
 ) where {T1 <: CoeffZZ, T2 <: CoeffZp}
-    ring_ff, coeffs_ff = reduce_modulo_p!(ctx, buffer, ring, basis.coeffs, prime)
+    ring_ff, coeffs_ff = reduce_modulo_p!(buffer, ring, basis.coeffs, prime)
     new_basis = if deepcopy
-        basis_deep_copy_with_new_coeffs(ctx, basis, coeffs_ff)
+        basis_deep_copy_with_new_coeffs(basis, coeffs_ff)
     else
         basis_shallow_copy_with_new_coeffs(basis, coeffs_ff)
     end
@@ -219,7 +215,6 @@ function reduce_modulo_p!(
 end
 
 function reduce_modulo_p_in_batch!(
-    ctx::Context,
     coeffbuff::CoefficientBuffer,
     ring::PolyRing,
     basis::Basis{C},
@@ -248,7 +243,7 @@ function reduce_modulo_p_in_batch!(
         end
     end
     ring_ff_4x = PolyRing(ring.nvars, ring.ord, CompositeNumber{N, T}(prime_xn))
-    basis_ff_4x = basis_deep_copy_with_new_coeffs(ctx, basis, coeffs_ff_xn)
+    basis_ff_4x = basis_deep_copy_with_new_coeffs(basis, coeffs_ff_xn)
 
     ring_ff_4x, basis_ff_4x
 end
@@ -288,7 +283,7 @@ function full_simultaneous_crt_reconstruct!(state::GroebnerState, lucky::LuckyPr
                 Base.GMP.MPZ.set_ui!(gb_coeffs_zz[i][j], coeffs_ff[i][j])
             end
         end
-        Base.GMP.MPZ.mul_ui!(lucky.modulo, lucky.primes[1])
+        Base.GMP.MPZ.mul_ui!(lucky.modulo, lucky.used_primes[1])
         return nothing
     end
     # @invariant length(coeffs_ff) == length(state.gb_coeffs_zz)
@@ -298,7 +293,7 @@ function full_simultaneous_crt_reconstruct!(state::GroebnerState, lucky::LuckyPr
     is_crt_reconstructed_mask = state.is_crt_reconstructed_mask
 
     # Takes the lock..
-    @invariant length(state.gb_coeffs_ff_all) == length(lucky.primes)
+    @invariant length(state.gb_coeffs_ff_all) == length(lucky.used_primes)
 
     # Set the buffers for CRT and precompute some values
     buffer = state.buffer
@@ -325,13 +320,13 @@ function full_simultaneous_crt_reconstruct!(state::GroebnerState, lucky::LuckyPr
         Base.GMP.MPZ.set_ui!(gb_coeffs_zz[i][1], CoeffModular(1))
     end
 
-    n = length(lucky.primes)
+    n = length(lucky.used_primes)
     rems = Vector{UInt64}(undef, n)
     mults = Vector{BigInt}(undef, n)
     for i in 1:length(mults)
         mults[i] = BigInt(0)
     end
-    moduli = lucky.primes
+    moduli = lucky.used_primes
     crt_precompute!(M, n1, n2, mults, moduli)
 
     @log :debug "Using simultaneous CRT with moduli $moduli"
@@ -342,7 +337,7 @@ function full_simultaneous_crt_reconstruct!(state::GroebnerState, lucky::LuckyPr
                 continue
             end
 
-            for ell in 1:length(lucky.primes)
+            for ell in 1:length(lucky.used_primes)
                 rems[ell] = state.gb_coeffs_ff_all[ell][i][j] % UInt64
             end
 
@@ -397,7 +392,7 @@ function full_simultaneous_crt_reconstruct_changematrix!(
                 end
             end
         end
-        # Base.GMP.MPZ.mul_ui!(lucky.modulo, lucky.primes[1])
+        # Base.GMP.MPZ.mul_ui!(lucky.modulo, lucky.used_primes[1])
         return nothing
     end
     # @invariant length(coeffs_ff) == length(state.changematrix_coeffs_zz)
@@ -406,7 +401,7 @@ function full_simultaneous_crt_reconstruct_changematrix!(
     changematrix_coeffs_zz = state.changematrix_coeffs_zz
 
     # Takes the lock..
-    @invariant length(state.changematrix_coeffs_ff_all) == length(lucky.primes)
+    @invariant length(state.changematrix_coeffs_ff_all) == length(lucky.used_primes)
 
     # Set the buffers for CRT and precompute some values
     buffer = state.buffer
@@ -417,13 +412,13 @@ function full_simultaneous_crt_reconstruct_changematrix!(
     M0 = buffer.reconstructbuf8
     MM0 = buffer.reconstructbuf9
 
-    n = length(lucky.primes)
+    n = length(lucky.used_primes)
     rems = Vector{UInt64}(undef, n)
     mults = Vector{BigInt}(undef, n)
     for i in 1:length(mults)
         mults[i] = BigInt(0)
     end
-    moduli = lucky.primes
+    moduli = lucky.used_primes
     crt_precompute!(M, n1, n2, mults, moduli)
 
     @log :debug "Using simultaneous CRT with moduli $moduli"
@@ -431,7 +426,7 @@ function full_simultaneous_crt_reconstruct_changematrix!(
     @inbounds for i in 1:length(changematrix_coeffs_zz)
         for j in 1:length(changematrix_coeffs_zz[i])
             for k in 1:length(changematrix_coeffs_zz[i][j])
-                for ell in 1:length(lucky.primes)
+                for ell in 1:length(lucky.used_primes)
                     rems[ell] = state.changematrix_coeffs_ff_all[ell][i][j][k] % UInt64
                 end
                 crt!(M, buf, n1, n2, rems, mults)
@@ -445,7 +440,7 @@ function full_simultaneous_crt_reconstruct_changematrix!(
     nothing
 end
 
-@timeit function partial_incremental_crt_reconstruct!(
+function partial_incremental_crt_reconstruct!(
     state::GroebnerState,
     lucky::LuckyPrimes,
     indices_selection::Vector{Tuple{Int, Int}}
@@ -488,7 +483,7 @@ end
     M = buffer.reconstructbuf4
     invm1, invm2 = buffer.reconstructbuf6, buffer.reconstructbuf7
 
-    crt_precompute!(M, n1, n2, invm1, lucky.modulo, invm2, last(lucky.primes))
+    crt_precompute!(M, n1, n2, invm1, lucky.modulo, invm2, last(lucky.used_primes))
 
     @inbounds for i in 1:length(indices_selection)
         i1, i2 = indices_selection[i]
@@ -504,7 +499,7 @@ end
         Base.GMP.MPZ.set!(gb_coeffs_zz[i1][i2], selected_coeffs_zz[i])
     end
 
-    Base.GMP.MPZ.mul_ui!(lucky.modulo, last(lucky.primes))
+    Base.GMP.MPZ.mul_ui!(lucky.modulo, last(lucky.used_primes))
     state.prev_index += 1
     @log :debug "After:" lucky.modulo state.prev_index
 
@@ -527,7 +522,7 @@ function partial_simultaneous_crt_reconstruct!(
     end
 
     prev_index = state.prev_index
-    n = length(lucky.primes) - prev_index
+    n = length(lucky.used_primes) - prev_index
     @invariant n > 0
     if n == 1
         @log :misc "Since there is only 1 new modulo, using incremental CRT"
@@ -535,7 +530,7 @@ function partial_simultaneous_crt_reconstruct!(
         return nothing
     end
 
-    @log :misc "Using partial simultaneous CRT on range $(prev_index + 1)..$(length(lucky.primes))"
+    @log :misc "Using partial simultaneous CRT on range $(prev_index + 1)..$(length(lucky.used_primes))"
 
     @invariant n > 1
     @inbounds for i in 1:length(indices_selection)
@@ -557,7 +552,7 @@ function partial_simultaneous_crt_reconstruct!(
     for i in 1:length(mults)
         mults[i] = BigInt(0)
     end
-    moduli = lucky.primes[(prev_index + 1):end]
+    moduli = lucky.used_primes[(prev_index + 1):end]
     crt_precompute!(M, n1, n2, mults, moduli)
 
     Base.GMP.MPZ.set!(M0, lucky.modulo)
@@ -568,7 +563,7 @@ function partial_simultaneous_crt_reconstruct!(
     @inbounds for i in 1:length(indices_selection)
         i1, i2 = indices_selection[i]
 
-        for j in (prev_index + 1):length(lucky.primes)
+        for j in (prev_index + 1):length(lucky.used_primes)
             rems[j - prev_index] = state.gb_coeffs_ff_all[j][i1][i2] % UInt64
         end
 
@@ -598,13 +593,13 @@ end
 # numbers to state.gb_coeffs_qq inplace
 #
 # Returns true is the reconstrction is successfull, false otherwise.
-@timeit function full_rational_reconstruct!(
+function full_rational_reconstruct!(
     state::GroebnerState,
     lucky::LuckyPrimes,
     use_flint::Bool
 )
     modulo = lucky.modulo
-    @invariant modulo == prod(BigInt, lucky.primes)
+    @invariant modulo == prod(BigInt, lucky.used_primes)
 
     buffer = state.buffer
     bnd = ratrec_reconstruction_bound(modulo)
@@ -690,7 +685,7 @@ function full_rational_reconstruct_changematrix!(
     use_flint::Bool
 )
     modulo = lucky.modulo
-    @invariant modulo == prod(BigInt, lucky.primes)
+    @invariant modulo == prod(BigInt, lucky.used_primes)
 
     buffer = state.buffer
     bnd = ratrec_reconstruction_bound(modulo)
@@ -727,14 +722,14 @@ function full_rational_reconstruct_changematrix!(
     true
 end
 
-@timeit function partial_rational_reconstruct!(
+function partial_rational_reconstruct!(
     state::GroebnerState,
     lucky::LuckyPrimes,
     indices_selection::Vector{Tuple{Int, Int}},
     use_flint::Bool
 )
     modulo = lucky.modulo
-    @invariant modulo == prod(BigInt, lucky.primes)
+    @invariant modulo == prod(BigInt, lucky.used_primes)
 
     buffer = state.buffer
     bnd = ratrec_reconstruction_bound(modulo)

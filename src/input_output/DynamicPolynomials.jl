@@ -3,6 +3,15 @@
 ###
 # Conversion from DynamicPolynomials.jl to internal representation and back.
 
+@noinline function __throw_inexact_coeff_conversion(c, T)
+    throw(DomainError(
+        c,
+        """
+        Coefficient $c cannot be converted exactly to $T. 
+        Using big arithmetic in the input should fix this."""
+    ))
+end
+
 const _DP_supported_orderings_symbols = (:lex, :deglex, :degrevlex)
 
 function dp_ordering_sym2typed(ord::Symbol)
@@ -36,14 +45,14 @@ function dp_ord_to_symbol(ord)
     end
 end
 
-function peek_at_polynomials(polynomials::Vector{<:AbstractPolynomialLike{T}}) where {T}
+function io_peek_at_polynomials(polynomials::Vector{<:AbstractPolynomialLike{T}}) where {T}
     nv = MultivariatePolynomials.nvariables(polynomials)
     ord = dp_ord_to_symbol(MultivariatePolynomials.ordering(polynomials[1]))
     @assert length(unique(MultivariatePolynomials.ordering, polynomials)) == 1
     :dynamicpolynomials, length(polynomials), UInt(0), nv, ord
 end
 
-function extract_ring(orig_polys::Vector{<:AbstractPolynomialLike{T}}) where {T}
+function io_extract_ring(orig_polys::Vector{<:AbstractPolynomialLike{T}}) where {T}
     nv = MultivariatePolynomials.nvariables(orig_polys)
     ord = dp_ord_to_symbol(MultivariatePolynomials.ordering(orig_polys[1]))
     ord_typed = dp_ordering_sym2typed(ord)
@@ -54,16 +63,16 @@ function _io_check_input(polynomials::Vector{<:AbstractPolynomialLike{T}}, kws) 
     true
 end
 
-function extract_coeffs_qq(
+function io_extract_coeffs_qq(
     representation,
     ring::PolyRing,
     poly::T
 ) where {T <: AbstractPolynomialLike{U}} where {U}
-    iszero(poly) && (return zero_coeffs(representation.coefftype, ring))
+    iszero(poly) && (return io_zero_coeffs(representation.coefftype, ring))
     map(Rational, MultivariatePolynomials.coefficients(poly))
 end
 
-function extract_coeffs_qq(
+function io_extract_coeffs_qq(
     ring::PolyRing,
     orig_polys::Vector{T}
 ) where {T <: AbstractPolynomialLike{U}} where {U}
@@ -71,13 +80,13 @@ function extract_coeffs_qq(
     coeffs = Vector{Vector{Rational{BigInt}}}(undef, npolys)
     @inbounds for i in 1:npolys
         poly = orig_polys[i]
-        coeffs[i] = extract_coeffs_qq(ring, poly)
+        coeffs[i] = io_extract_coeffs_qq(ring, poly)
     end
     coeffs
 end
 
-function extract_coeffs(representation, ring, orig_polys)
-    extract_coeffs_qq(ring, orig_polys)
+function io_extract_coeffs(representation, ring, orig_polys)
+    io_extract_coeffs_qq(ring, orig_polys)
 end
 
 function exponents_wrt_vars(t, var2idx)
@@ -92,7 +101,7 @@ multivariate_length(p::MultivariatePolynomials.AbstractMonomialLike) = 1
 multivariate_length(p::MultivariatePolynomials.AbstractTermLike) = 1
 multivariate_length(p::AbstractPolynomialLike) = MultivariatePolynomials.nterms(p)
 
-function extract_monoms(
+function io_extract_monoms(
     representation::PolynomialRepresentation,
     ring::PolyRing,
     orig_polys::Vector{T}
@@ -122,7 +131,6 @@ function extract_monoms(
     reversed_order, var2idx, exps
 end
 
-# checks that the coefficient `c` can be represented exactly in type `T`.
 checkexact(c, T::Type{BigInt}) = true
 checkexact(c, T::Type{Rational{U}}) where {U} =
     checkexact(numerator(c), U) && checkexact(denominator(c), U)
@@ -178,7 +186,7 @@ function _io_convert_to_output(
     exported = Vector{T}(undef, length(gbexps))
     tmp = Vector{Int}(undef, length(origvars))
     for i in 1:length(gbexps)
-        if iszero_monoms(gbexps[i])
+        if io_iszero_monoms(gbexps[i])
             exported[i] = zero(origpolys[1])
             continue
         end

@@ -21,10 +21,6 @@ using Groebner # hide
 
 {{doc normalform normalform fn}}
 
-<!-- {{doc fglm fglm fn}} -->
-
-{{doc kbase kbase fn}}
-
 ## Monomial orderings
 
 A list of all monomial orderings supported by Groebner.jl.

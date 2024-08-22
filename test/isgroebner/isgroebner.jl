@@ -80,10 +80,9 @@ end
         @test !Groebner.isgroebner(fs, certify=certify)
         @test Groebner.isgroebner(Groebner.groebner(fs), certify=certify)
 
-        # TODO: figure out why this is broken!
-        # fs = Groebner.Examples.noonn(2, internal_ordering=:degrevlex)
-        # @test !Groebner.isgroebner(fs, certify=certify)
-        # @test Groebner.isgroebner(Groebner.groebner(fs), certify=certify)
+        fs = Groebner.Examples.noonn(2, internal_ordering=:degrevlex)
+        @test !Groebner.isgroebner(fs, certify=certify)
+        @test Groebner.isgroebner(Groebner.groebner(fs), certify=certify)
 
         fs = Groebner.Examples.noonn(6, k=GF(2^31 - 1), internal_ordering=:degrevlex)
         @test !Groebner.isgroebner(fs, certify=certify)

@@ -77,14 +77,13 @@ end
 ###
 # Monomial comparators.
 
-function monom_is_supported_ordering(::Type{ExponentVector{T}}, ::O) where {T, O}
-    # ExponentVector{T} supports efficient implementation of all monomial
-    # orderings.
+function monom_is_supported_ordering(::Type{ExponentVector{T}}, ::Any) where {T}
+    # ExponentVector implements all monomial orderings.
     true
 end
 
 # DegRevLex monomial comparison. 
-function monom_isless(ea::ExponentVector, eb::ExponentVector, ::_DegRevLex{true})
+function monom_isless(ea::ExponentVector, eb::ExponentVector, ::DegRevLex{true})
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
     if monom_totaldeg(ea) < monom_totaldeg(eb)
@@ -99,14 +98,14 @@ end
 function monom_isless(
     ea::ExponentVector{T},
     eb::ExponentVector{T},
-    ord::_DegRevLex{false}
+    ord::DegRevLex{false}
 ) where {T}
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
-    indices = variable_indices(ord)
+    variables = ordering_variables(ord)
     eatotaldeg = zero(T)
     ebtotaldeg = zero(T)
-    @inbounds for i in indices
+    @inbounds for i in variables
         eatotaldeg += ea[i + 1]
         ebtotaldeg += eb[i + 1]
     end
@@ -115,15 +114,15 @@ function monom_isless(
     elseif eatotaldeg != ebtotaldeg
         return false
     end
-    i = length(indices)
-    @inbounds while i > 1 && ea[indices[i] + 1] == eb[indices[i] + 1]
+    i = length(variables)
+    @inbounds while i > 1 && ea[variables[i] + 1] == eb[variables[i] + 1]
         i -= 1
     end
-    @inbounds ea[indices[i] + 1] > eb[indices[i] + 1]
+    @inbounds ea[variables[i] + 1] > eb[variables[i] + 1]
 end
 
 # DegLex monomial comparison.
-function monom_isless(ea::ExponentVector, eb::ExponentVector, ::_DegLex{true})
+function monom_isless(ea::ExponentVector, eb::ExponentVector, ::DegLex{true})
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
     if monom_totaldeg(ea) < monom_totaldeg(eb)
@@ -138,14 +137,14 @@ end
 function monom_isless(
     ea::ExponentVector{T},
     eb::ExponentVector{T},
-    ord::_DegLex{false}
+    ord::DegLex{false}
 ) where {T}
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
-    indices = variable_indices(ord)
+    variables = ordering_variables(ord)
     eatotaldeg = zero(T)
     ebtotaldeg = zero(T)
-    @inbounds for i in indices
+    @inbounds for i in variables
         eatotaldeg += ea[i + 1]
         ebtotaldeg += eb[i + 1]
     end
@@ -155,56 +154,56 @@ function monom_isless(
         return false
     end
     i = 1
-    @inbounds while i < length(indices) && ea[indices[i] + 1] == eb[indices[i] + 1]
+    @inbounds while i < length(variables) && ea[variables[i] + 1] == eb[variables[i] + 1]
         i += 1
     end
-    @inbounds ea[indices[i] + 1] < eb[indices[i] + 1]
+    @inbounds ea[variables[i] + 1] < eb[variables[i] + 1]
 end
 
 # Lex monomial comparison.
-function monom_isless(ea::ExponentVector, eb::ExponentVector, ::_Lex{true})
+function monom_isless(ea::ExponentVector, eb::ExponentVector, ::Lex{true})
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
     _vec_cmp_lex(ea, eb)
 end
 
 # Lex monomial comparison (shuffled variables).
-function monom_isless(ea::ExponentVector, eb::ExponentVector, ord::_Lex{false})
-    indices = variable_indices(ord)
+function monom_isless(ea::ExponentVector, eb::ExponentVector, ord::Lex{false})
+    variables = ordering_variables(ord)
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
     i = 1
-    @inbounds while i < length(indices) && ea[indices[i] + 1] == eb[indices[i] + 1]
+    @inbounds while i < length(variables) && ea[variables[i] + 1] == eb[variables[i] + 1]
         i += 1
     end
-    @inbounds ea[indices[i] + 1] < eb[indices[i] + 1]
+    @inbounds ea[variables[i] + 1] < eb[variables[i] + 1]
 end
 
 # Weighted monomial comparison.
 function monom_isless(
     ea::ExponentVector{T},
     eb::ExponentVector{T},
-    ord::_WeightedOrdering{U}
+    ord::WeightedOrdering{U}
 ) where {U, T}
     weights = ord.weights
-    @invariant length(weights) == length(ea) - 1
+    variables = ordering_variables(ord)
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
     sa, sb = zero(U), zero(U)
-    @inbounds for i in 1:length(weights)
-        sa += ea[i + 1] * weights[i]
-        sb += eb[i + 1] * weights[i]
+    @inbounds for i in 1:length(variables)
+        sa += ea[variables[i] + 1] * weights[i]
+        sb += eb[variables[i] + 1] * weights[i]
     end
     if sa < sb
         return true
     elseif sa != sb
         return false
     end
-    monom_isless(ea, eb, _Lex{true}(collect(1:length(weights))))
+    monom_isless(ea, eb, Lex())
 end
 
 # Product ordering exponent vector comparison.
-function monom_isless(ea::ExponentVector, eb::ExponentVector, b::_ProductOrdering)
+function monom_isless(ea::ExponentVector, eb::ExponentVector, b::ProductOrdering)
     if monom_isless(ea, eb, b.ord1)
         return true
     end
@@ -215,14 +214,15 @@ function monom_isless(ea::ExponentVector, eb::ExponentVector, b::_ProductOrderin
 end
 
 # Matrix ordering exponent vector comparison.
-function monom_isless(ea::ExponentVector, eb::ExponentVector, m::_MatrixOrdering)
+function monom_isless(ea::ExponentVector, eb::ExponentVector, m::MatrixOrdering)
     rows = m.rows
-    @inbounds common_type = promote_type(eltype(rows[1]), eltype(ea))
+    variables = ordering_variables(m)
+    @inbounds common_type = signed(promote_type(eltype(rows[1]), eltype(ea)))
     @inbounds for i in 1:length(rows)
         sa, sb = zero(common_type), zero(common_type)
-        for j in 1:length(rows[i])
-            sa += rows[i][j] * common_type(ea[j + 1])
-            sb += rows[i][j] * common_type(eb[j + 1])
+        for j in 1:length(variables)
+            sa += rows[i][j] * common_type(ea[variables[j] + 1])
+            sb += rows[i][j] * common_type(eb[variables[j] + 1])
         end
         if sa < sb
             return true

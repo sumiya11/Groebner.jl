@@ -176,14 +176,13 @@ end
 
 # Same as basis_initialize, but uses an existing hashtable.
 function basis_initialize_using_existing_hashtable(
-    ctx::Context,
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     present_ht::MonomialHashtable;
 ) where {M <: Monom, C <: Coeff}
     basis = basis_initialize(ring, length(monoms), C)
-    basis_fill_data!(ctx, basis, present_ht, monoms, coeffs)
+    basis_fill_data!(basis, present_ht, monoms, coeffs)
     basis
 end
 
@@ -193,6 +192,7 @@ function basis_well_formed(ring::PolyRing, basis::Basis, hashtable::MonomialHash
     !is_sorted_by_lead_increasing(basis, hashtable) &&
         error("Basis elements must be sorted")
     for i in basis.nfilled
+        isempty(basis.monoms[i]) && error("Zero polynomials are not allowed.")
         !(length(basis.monoms[i]) == length(basis.coeffs[i])) && error("Beda!")
         for j in 1:length(basis.coeffs[i])
             iszero(basis.coeffs[i][j]) && error("Coefficient is zero")
@@ -313,7 +313,6 @@ function basis_changematrix_export(
     ht::MonomialHashtable{M},
     npolys
 ) where {C <: Coeff, M <: Monom}
-    @log :all basis.changematrix
     matrix_monoms = Vector{Vector{Vector{M}}}(undef, basis.nnonredundant)
     matrix_coeffs = Vector{Vector{Vector{C}}}(undef, basis.nnonredundant)
     @inbounds for i in 1:(basis.nnonredundant)
@@ -360,7 +359,6 @@ function basis_shallow_copy_with_new_coeffs(
 end
 
 function basis_deep_copy_with_new_coeffs(
-    ctx::Context,
     basis::Basis{C},
     new_sparse_row_coeffs::Vector{Vector{T}}
 ) where {C <: Coeff, T <: Coeff}
@@ -390,7 +388,7 @@ function basis_deep_copy_with_new_coeffs(
     )
 end
 
-function basis_deepcopy(ctx::Context, basis::Basis{C}) where {C <: Coeff}
+function basis_deepcopy(basis::Basis{C}) where {C <: Coeff}
     coeffs = Vector{Vector{C}}(undef, length(basis.coeffs))
 
     if isbitstype(C)  # For Z/pZ
@@ -412,7 +410,7 @@ function basis_deepcopy(ctx::Context, basis::Basis{C}) where {C <: Coeff}
         end
     end
 
-    basis_deep_copy_with_new_coeffs(ctx, basis, coeffs)
+    basis_deep_copy_with_new_coeffs(basis, coeffs)
 end
 
 function basis_resize_if_needed!(basis::Basis{T}, to_add::Int) where {T}
@@ -434,10 +432,10 @@ function basis_make_monic!(
     arithmetic::AbstractArithmeticZp{A, C},
     changematrix::Bool
 ) where {A <: Union{CoeffZp, CompositeCoeffZp}, C <: Union{CoeffZp, CompositeCoeffZp}}
-    @log :debug "Normalizing polynomials in the basis"
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.nfilled)
         !isassigned(cfs, i) && continue
+        isone(cfs[i][1]) && continue
         mul = inv_mod_p(A(cfs[i][1]), arithmetic)
         cfs[i][1] = one(C)
         for j in 2:length(cfs[i])
@@ -459,10 +457,10 @@ function basis_make_monic!(
     },
     changematrix::Bool
 ) where {A <: Union{CoeffZp, CompositeCoeffZp}, C <: Union{CoeffZp, CompositeCoeffZp}}
-    @log :debug "Normalizing polynomials in the basis"
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.nfilled)
         !isassigned(cfs, i) && continue
+        isone(cfs[i][1]) && continue
         mul = inv_mod_p(A(cfs[i][1]), arithmetic)
         cfs[i][1] = one(C)
         for j in 2:length(cfs[i])
@@ -481,10 +479,10 @@ function basis_make_monic!(
     arithmetic::AbstractArithmeticQQ,
     changematrix::Bool
 ) where {C <: CoeffQQ}
-    @log :debug "Normalizing polynomials in the basis"
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.nfilled)
         !isassigned(cfs, i) && continue
+        isone(cfs[i][1]) && continue
         mul = inv(cfs[i][1])
         for j in 2:length(cfs[i])
             cfs[i][j] *= mul
@@ -497,7 +495,7 @@ end
 # Generate new S-pairs from pairs of polynomials
 #   (basis[idx], basis[i])
 # for every i < idx
-@timeit function pairset_update!(
+function pairset_update!(
     pairset::Pairset{D},
     basis::Basis{C},
     ht::MonomialHashtable{M},
@@ -599,7 +597,7 @@ end
     nothing
 end
 
-@timeit function basis_update!(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
+function basis_update!(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
     k = 1
     lead = basis.divmasks
     nonred = basis.nonredundant
@@ -656,7 +654,6 @@ function basis_is_new_polynomial_redundant!(
 end
 
 function basis_fill_data!(
-    ctx::Context,
     basis::Basis,
     ht::MonomialHashtable{M},
     exponents::Vector{Vector{M}},
@@ -712,12 +709,11 @@ function basis_mark_redundant_elements!(basis::Basis)
     basis
 end
 
-@timeit function basis_standardize!(
-    ring,
+function basis_standardize!(
+    ring::PolyRing,
     basis::Basis,
     ht::MonomialHashtable,
-    ord,
-    arithmetic,
+    arithmetic::AbstractArithmetic,
     changematrix::Bool
 )
     @inbounds for i in 1:(basis.nnonredundant)
@@ -737,8 +733,9 @@ end
     resize!(basis.nonredundant, basis.nprocessed)
     resize!(basis.isredundant, basis.nprocessed)
     resize!(basis.changematrix, basis.nprocessed)
-    sort_polys_by_lead_increasing!(basis, ht, changematrix, ord=ord)
+    perm = sort_polys_by_lead_increasing!(basis, ht, changematrix, ord=ht.ord)
     basis_make_monic!(basis, arithmetic, changematrix)
+    perm
 end
 
 function basis_get_monoms_by_identifiers(
@@ -757,7 +754,7 @@ function basis_get_monoms_by_identifiers(
     monoms
 end
 
-@timeit function basis_export_data(
+function basis_export_data(
     basis::Basis{C},
     ht::MonomialHashtable{M}
 ) where {M <: Monom, C <: Coeff}

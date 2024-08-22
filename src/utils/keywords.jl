@@ -45,19 +45,6 @@ const _supported_kw_args = (
         loglevel    = _loglevel_default,
         statistics  = :no
     ),
-    kbase = (
-        check       = false,
-        ordering    = InputOrdering(),
-        monoms      = :dense,
-        loglevel    = _loglevel_default,
-        statistics  = :no
-    ),
-    fglm = (
-        check       = false,
-        monoms      = :dense,
-        statistics  = :no,
-        loglevel    = _loglevel_default,
-    ),
     groebner_learn = (
         seed        = 42,
         ordering    = InputOrdering(),
@@ -113,9 +100,10 @@ Can be manually created with
 kwargs = Groebner.KeywordArguments(:groebner, seed = 99, reduced = false)
 ```
 """
-struct KeywordArguments{Ord}
+mutable struct KeywordArguments
+    function_id::Symbol
     reduced::Bool
-    ordering::Ord
+    ordering::Any
     certify::Bool
     linalg::Symbol
     threaded::Symbol
@@ -134,22 +122,20 @@ struct KeywordArguments{Ord}
     use_flint::Bool
     changematrix::Bool
 
-    KeywordArguments(function_key::Symbol; passthrough...) =
-        KeywordArguments(function_key, passthrough)
+    KeywordArguments(function_id::Symbol; passthrough...) =
+        KeywordArguments(function_id, passthrough)
 
-    function KeywordArguments(function_key::Symbol, kws)
-        @assert haskey(_supported_kw_args, function_key)
-        default_kw_args = _supported_kw_args[function_key]
+    function KeywordArguments(function_id::Symbol, kws)
+        @assert haskey(_supported_kw_args, function_id)
+        default_kw_args = _supported_kw_args[function_id]
         for (key, _) in kws
             if !haskey(default_kw_args, key)
                 io = IOBuffer()
                 columnlist(io, sort(map(string, collect(keys(default_kw_args)))))
                 _columns = String(take!(io))
-                throw(
-                    AssertionError("""
-              Keyword \"$key\" is not supported by Groebner.$(function_key).
-              Supported keyword arguments for Groebner.$(function_key) are:\n$_columns""")
-                )
+                throw(AssertionError("""
+                Keyword \"$key\" is not supported by Groebner.$(function_id).
+                Supported keyword arguments for Groebner.$(function_id) are:\n$_columns"""))
             end
         end
 
@@ -234,7 +220,8 @@ struct KeywordArguments{Ord}
 
         changematrix = get(kws, :changematrix, get(default_kw_args, :changematrix, false))
 
-        new{typeof(ordering)}(
+        new(
+            function_id,
             reduced,
             ordering,
             certify,
@@ -265,8 +252,5 @@ end
 
 function statistics_setup(keywords::KeywordArguments)
     log_simdinfo()
-    if keywords.loglevel <= 0
-        performance_counters_refresh()
-    end
     nothing
 end

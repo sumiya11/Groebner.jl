@@ -296,14 +296,14 @@ function monom_is_supported_ordering(
     ::Type{APP},
     ::Ord
 ) where {APP <: AbstractPackedTuple, Ord}
-    Ord <: Union{DegRevLex, InputOrdering}
+    Ord <: Union{DegRevLex{true}, InputOrdering}
 end
 
 # TODO: specialize for T == UInt64
 function monom_isless(
     ea::PackedTuple1{T, B},
     eb::PackedTuple1{T, B},
-    ::_DegRevLex{true}
+    ::DegRevLex{true}
 ) where {T, B}
     da, db = monom_totaldeg(ea), monom_totaldeg(eb)
     if da < db
@@ -323,7 +323,7 @@ end
 function monom_isless(
     ea::PackedTuple2{T, B},
     eb::PackedTuple2{T, B},
-    ::_DegRevLex{true}
+    ::DegRevLex{true}
 ) where {T, B}
     da, db = monom_totaldeg(ea), monom_totaldeg(eb)
     if da < db
@@ -343,7 +343,7 @@ end
 function monom_isless(
     ea::PackedTuple3{T, B},
     eb::PackedTuple3{T, B},
-    ::_DegRevLex{true}
+    ::DegRevLex{true}
 ) where {T, B}
     da, db = monom_totaldeg(ea), monom_totaldeg(eb)
     if da < db
@@ -367,7 +367,7 @@ end
 function monom_isless(
     ea::PackedTuple4{T, B},
     eb::PackedTuple4{T, B},
-    ::_DegRevLex{true}
+    ::DegRevLex{true}
 ) where {T, B}
     da, db = monom_totaldeg(ea), monom_totaldeg(eb)
     if da < db
@@ -390,52 +390,6 @@ function monom_isless(
     else
         return !(ea.a1 <= eb.a1)
     end
-end
-
-function monom_isless(
-    ea::PackedTuple1{T, B},
-    eb::PackedTuple1{T, B},
-    ord::Ord
-) where {T, B, Ord <: AbstractInternalOrdering}
-    # TODO: Perhaps this should error
-    s = div(sizeof(T), sizeof(B)) - 1
-    tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
-    a = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp1, ea))
-    b = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp2, eb))
-    monom_isless(a, b, ord)
-end
-function monom_isless(
-    ea::PackedTuple2{T, B},
-    eb::PackedTuple2{T, B},
-    ord::Ord
-) where {T, B, Ord <: AbstractInternalOrdering}
-    s = 2 * div(sizeof(T), sizeof(B)) - 1
-    tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
-    a = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp1, ea))
-    b = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp2, eb))
-    monom_isless(a, b, ord)
-end
-function monom_isless(
-    ea::PackedTuple3{T, B},
-    eb::PackedTuple3{T, B},
-    ord::Ord
-) where {T, B, Ord <: AbstractInternalOrdering}
-    s = 3 * div(sizeof(T), sizeof(B)) - 1
-    tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
-    a = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp1, ea))
-    b = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp2, eb))
-    monom_isless(a, b, ord)
-end
-function monom_isless(
-    ea::PackedTuple4{T, B},
-    eb::PackedTuple4{T, B},
-    ord::Ord
-) where {T, B, Ord <: AbstractInternalOrdering}
-    s = 4 * div(sizeof(T), sizeof(B)) - 1
-    tmp1, tmp2 = Vector{T}(undef, s), Vector{T}(undef, s)
-    a = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp1, ea))
-    b = monom_construct_from_vector(ExponentVector{T}, monom_to_vector!(tmp2, eb))
-    monom_isless(a, b, ord)
 end
 
 ###

@@ -24,8 +24,6 @@ Specifies if custom asserts and invariants are checked. If `false`, then all
 checks are disabled, and entail no runtime overhead.
 
 It is useful to enable this when debugging the Groebner package.
-
-See also `@invariant` in `src/utils/invariants.jl`.
 """
 invariants_enabled() = false
 
@@ -34,20 +32,8 @@ invariants_enabled() = false
 
 Specifies if logging is enabled. If `false`, then all logging in Groebner is
 disabled, and entails **(almost)** no runtime overhead.
-
-See also `@log` in `src/utils/logging.jl`.
 """
 logging_enabled() = true
-
-"""
-    performance_counters_enabled() -> Bool
-
-If performance-tracking macro `@timeit` should be enabled in Groebner. 
-
-When this is `false`, all performance counters in Groebner are disabled and
-entail **(almost)** no runtime overhead.
-"""
-performance_counters_enabled() = false
 
 ###
 # Imports
@@ -68,21 +54,14 @@ import Base.MultiplicativeInverses: UnsignedMultiplicativeInverse
 
 import Combinatorics
 
-using ExprTools
-
 import HostCPUFeatures:
     cpu_name, register_count, register_size, has_feature, pick_vector_width, fma_fast
 
 using Logging
 
-import MultivariatePolynomials
-import MultivariatePolynomials: AbstractPolynomial, AbstractPolynomialLike
-
 # At the moment, used only for rational reconstruction
 import Nemo
 
-# For printing the tables with statistics nicely
-import PrettyTables
 using Printf
 
 import Primes
@@ -90,8 +69,6 @@ import Primes: nextprime
 
 import Random
 import Random: AbstractRNG
-
-import TimerOutputs
 
 ###
 # Initialization
@@ -110,9 +87,6 @@ function __init__()
     _groebner_log_lock[] = ReentrantLock()
     logger_update(loglevel=Logging.Info)
 
-    # Setup performance counters
-    _groebner_timer_lock[] = ReentrantLock()
-
     nothing
 end
 
@@ -121,18 +95,15 @@ end
 
 include("utils/logging.jl")
 include("utils/invariants.jl")
-include("utils/timeit.jl")
 include("utils/simd.jl")
 include("utils/pretty_print.jl")
 include("utils/plots.jl")
-include("utils/context.jl")
 
 # Test systems, such as katsura, cyclic, etc
 include("utils/examples.jl")
 
-# Monomial orderings.
+# Monomial orderings
 include("monomials/orderings.jl")
-include("monomials/internal_orderings.jl")
 
 include("utils/keywords.jl")
 
@@ -143,14 +114,18 @@ include("monomials/packed_utils.jl")
 include("monomials/packed_vector.jl")
 include("monomials/sparse_vector.jl")
 
-# Defines some type aliases
 include("arithmetic/CompositeNumber.jl")
-include("utils/types.jl")
+
+# Defines some type aliases
+include("types.jl")
 
 # Fast arithmetic modulo a prime
 include("arithmetic/Zp.jl")
 # Not so fast arithmetic in the rationals
 include("arithmetic/QQ.jl")
+
+# Intermediate representation
+include("input_output/intermediate.jl")
 
 # Selecting algorithm parameters
 include("groebner/parameters.jl")
@@ -158,7 +133,7 @@ include("groebner/parameters.jl")
 # Input-output conversions for polynomials
 include("input_output/input_output.jl")
 include("input_output/AbstractAlgebra.jl")
-include("input_output/DynamicPolynomials.jl")
+# include("input_output/DynamicPolynomials.jl")
 
 #= generic f4 =#
 include("f4/hashtable.jl")
@@ -175,7 +150,6 @@ include("f4/linalg/backend_randomized.jl")
 include("f4/linalg/backend_randomized_threaded.jl")
 include("f4/linalg/backend_learn_apply.jl")
 include("f4/linalg/backend_learn_apply_threaded.jl")
-include("f4/linalg/backend_experimental.jl")
 
 include("f4/sort.jl")
 include("f4/f4.jl")
@@ -184,7 +158,7 @@ include("reconstruction/crt.jl")
 include("reconstruction/ratrec.jl")
 
 #= more high level functions =#
-include("groebner/lucky.jl")
+include("groebner/primes.jl")
 include("groebner/state.jl")
 include("groebner/correctness.jl")
 include("groebner/groebner.jl")
@@ -194,13 +168,6 @@ include("groebner/isgroebner.jl")
 include("groebner/normalform.jl")
 include("groebner/autoreduce.jl")
 include("groebner/homogenization.jl")
-
-#= generic fglm implementation =#
-# NOTE: this is currently not exported, and is only for internal use
-include("fglm/linear.jl")
-include("fglm/fglm.jl")
-include("fglm/fglm_internal.jl")
-include("fglm/kbase.jl")
 
 # API
 include("interface.jl")
@@ -215,8 +182,6 @@ export groebner, groebner_learn, groebner_apply!
 export groebner_with_change_matrix
 export isgroebner
 export normalform
-
-export kbase
 
 export Lex,
     DegLex, DegRevLex, InputOrdering, WeightedOrdering, ProductOrdering, MatrixOrdering

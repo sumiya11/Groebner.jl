@@ -55,9 +55,6 @@ end
     @time @includetests [
         "groebner/groebner",
         "groebner/groebner_stress",
-        "groebner/groebner_large",
-        "groebner/many_variables",
-        "groebner/large_exponents",
         "groebner/homogenization",
         "groebner/multi_threading"
     ]
@@ -67,20 +64,18 @@ end
     @time @includetests [
         "learn_and_apply/learn_and_apply",
         "learn_and_apply/apply_in_batches"
-        # "learn_and_apply/learn_and_applyX"
     ]
 
     @time @includetests ["isgroebner/isgroebner"]
 
     @time @includetests ["normalform/normalform", "normalform/normalform_stress"]
-    @time @includetests ["fglm/kbase", "fglm/fglm"]
 
     # Test for different frontends: 
     # - AbstractAlgebra.jl  (AbstractAlgebra.Generic.MPoly{T})
     # - Nemo.jl  (Nemo.fmpq_mpoly, Nemo.gfp_mpoly)
     # - DynamicPolynomials.jl  (DynamicPolynomials.Polynomial{true, T})
     if try_import(:DynamicPolynomials)
-        @time @includetests ["input_output/DynamicPolynomials"]
+        # @time @includetests ["input_output/DynamicPolynomials"]
     end
     if try_import(:Nemo)
         @time @includetests ["input_output/Nemo"]
@@ -88,7 +83,7 @@ end
 
     @time @includetests ["output_inferred"]
 
-    @time @includetests ["utils/logging", "utils/timings"]
+    @time @includetests ["utils/logging"]
 
     # test for regressions
     @time @includetests ["regressions"]

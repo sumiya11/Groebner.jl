@@ -4,8 +4,6 @@ import Primes
     # Simple sanity checks
     ks = map(GF, Primes.nextprimes(2^30, 40))
 
-    @test_broken false # broken for internal_ordering=:lex
-
     R, (x, y) =
         polynomial_ring(AbstractAlgebra.ZZ, ["x", "y"], internal_ordering=:degrevlex)
     sys_qq = [44x^2 + x + 2^50, y^10 - 10 * y^5 - 99]
@@ -76,4 +74,31 @@ import Primes
     test_learn_apply(kat, ps1)
     test_learn_apply(kat, ps2)
     test_learn_apply(cyc, ps2)
+end
+
+@testset "learn & apply low level, in batches" begin
+    ring0 = Groebner.PolyRing(2, Groebner.DegLex(), 5)
+    ring1 = Groebner.PolyRing(2, Groebner.DegLex(), 7)
+    ring2 = Groebner.PolyRing(2, Groebner.DegLex(), 11)
+    ring3 = Groebner.PolyRing(2, Groebner.DegLex(), 13)
+    ring4 = Groebner.PolyRing(2, Groebner.DegLex(), 17)
+    trace, (gb0...) = Groebner.groebner_learn(ring0, [[[0, 0], [1, 1]]], [[1, -1]])
+    @test gb0 == ([[[1, 1], [0, 0]]], [[1, 4]])
+    flag1, (gb1...) = Groebner.groebner_apply!(trace, ring1, [[[0, 0], [1, 1]]], [[1, -1]])
+    flag2, (gb2...) = Groebner.groebner_apply!(trace, ring2, [[[1, 1], [0, 0]]], [[-1, 1]])
+    flag3, (gb3...) =
+        Groebner.groebner_apply!(trace, ring3, [[[0, 0], [0, 1], [1, 1]]], [[1, 0, -1]])
+    flag4, (gb4...) = Groebner.groebner_apply!(trace, ring4, [[[0, 0], [1, 1]]], [[1, -1]])
+    @test flag1 && flag2 && flag3 && flag4
+    @test gb1 == ([[[1, 1], [0, 0]]], [[1, 6]])
+    @test gb2 == ([[[1, 1], [0, 0]]], [[1, 10]])
+    @test gb3 == ([[[1, 1], [0, 0]]], [[1, 12]])
+    @test gb4 == ([[[1, 1], [0, 0]]], [[1, 16]])
+
+    flag1, (gb1...) = Groebner.groebner_apply!(trace, ring1, [[[0, 0]]], [[1]])
+    flag2, (gb2...) = Groebner.groebner_apply!(trace, ring2, [[[1, 1], [0, 0]]], [[-1, 0]])
+    flag3, (gb3...) =
+        Groebner.groebner_apply!(trace, ring3, [[[0, 0], [0, 1], [1, 1]]], [[1, 0, -1]])
+    flag4, (gb4...) = Groebner.groebner_apply!(trace, ring4, [[[0, 0], [1, 1]]], [[1, -1]])
+    @test !flag1 && !flag2 && flag3 && flag4
 end

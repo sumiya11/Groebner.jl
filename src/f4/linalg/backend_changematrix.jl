@@ -4,7 +4,6 @@
 # High level
 
 function linalg_deterministic_sparse_changematrix!(
-    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
@@ -19,14 +18,13 @@ function linalg_deterministic_sparse_changematrix!(
     matrix_changematrix_initialize!(matrix, matrix.nrows_filled_lower)
 
     # Reduce CD with AB
-    linalg_reduce_matrix_lower_part_changematrix!(ctx, matrix, basis, arithmetic)
+    linalg_reduce_matrix_lower_part_changematrix!(matrix, basis, arithmetic)
     # Interreduce CD
-    linalg_interreduce_matrix_pivots_changematrix!(ctx, matrix, basis, arithmetic)
+    linalg_interreduce_matrix_pivots_changematrix!(matrix, basis, arithmetic)
     true
 end
 
 function linalg_deterministic_sparse_interreduction_changematrix!(
-    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis{C},
     arithmetic::AbstractArithmetic
@@ -43,10 +41,9 @@ function linalg_deterministic_sparse_interreduction_changematrix!(
     end
 
     # Prepare the matrix
-    linalg_prepare_matrix_pivots_in_interreduction!(ctx, matrix, basis)
+    linalg_prepare_matrix_pivots_in_interreduction!(matrix, basis)
     # Interreduce AB
     linalg_interreduce_matrix_pivots_changematrix!(
-        ctx,
         matrix,
         basis,
         arithmetic,
@@ -59,7 +56,6 @@ end
 # Low level
 
 function linalg_reduce_matrix_lower_part_changematrix!(
-    ctx::Context,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
@@ -149,7 +145,6 @@ function linalg_reduce_matrix_lower_part_changematrix!(
 end
 
 function linalg_interreduce_matrix_pivots_changematrix!(
-    ctx::Context,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType};

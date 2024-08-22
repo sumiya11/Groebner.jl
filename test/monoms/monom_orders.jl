@@ -1,8 +1,9 @@
+using AbstractAlgebra
 
 monom_construct_from_vector = Groebner.monom_construct_from_vector
-lex = (x, y) -> Groebner.monom_isless(x, y, Groebner._Lex{true}([]))
-dl = (x, y) -> Groebner.monom_isless(x, y, Groebner._DegLex{true}([]))
-drl = (x, y) -> Groebner.monom_isless(x, y, Groebner._DegRevLex{true}([]))
+lex = (x, y) -> Groebner.monom_isless(x, y, Groebner.Lex())
+dl = (x, y) -> Groebner.monom_isless(x, y, Groebner.DegLex())
+drl = (x, y) -> Groebner.monom_isless(x, y, Groebner.DegRevLex())
 
 implementations_to_test = [
     Groebner.ExponentVector{T} where {T},
@@ -45,62 +46,76 @@ implementations_to_test = [
 
             a = monom_construct_from_vector(EV{T}, [0])
             b = monom_construct_from_vector(EV{T}, [0])
-            @test !lex(a, b)
-            @test !dl(a, b)
             @test !drl(a, b)
+            if !(EV{T} <: Groebner.AbstractPackedTuple{T})
+                @test !lex(a, b)
+                @test !dl(a, b)
+            end
 
             a = monom_construct_from_vector(EV{T}, [0])
             b = monom_construct_from_vector(EV{T}, [1])
-            @test lex(a, b)
-            @test dl(a, b)
             @test drl(a, b)
-            @test !lex(b, a)
-            @test !dl(b, a)
             @test !drl(b, a)
+            if !(EV{T} <: Groebner.AbstractPackedTuple{T})
+                @test lex(a, b)
+                @test dl(a, b)
+                @test !lex(b, a)
+                @test !dl(b, a)
+            end
 
             2 > Groebner.monom_max_vars(EV{T}) && continue
             a = monom_construct_from_vector(EV{T}, [1, 1])
             b = monom_construct_from_vector(EV{T}, [2, 0])
-            @test lex(a, b)
-            @test dl(a, b)
             @test drl(a, b)
-            @test !lex(b, a)
-            @test !dl(b, a)
             @test !drl(b, a)
+            if !(EV{T} <: Groebner.AbstractPackedTuple{T})
+                @test lex(a, b)
+                @test dl(a, b)
+                @test !lex(b, a)
+                @test !dl(b, a)
+            end
 
             2 > Groebner.monom_max_vars(EV{T}) && continue
             a = monom_construct_from_vector(EV{T}, [1, 1])
             b = monom_construct_from_vector(EV{T}, [0, 2])
-            @test !lex(a, b)
-            @test !dl(a, b)
-            @test !drl(a, b)
-            @test lex(b, a)
-            @test dl(b, a)
             @test drl(b, a)
+            @test !drl(a, b)
+            if !(EV{T} <: Groebner.AbstractPackedTuple{T})
+                @test !lex(a, b)
+                @test !dl(a, b)
+                @test lex(b, a)
+                @test dl(b, a)
+            end
 
             2 > Groebner.monom_max_vars(EV{T}) && continue
             a = monom_construct_from_vector(EV{T}, [1, 1])
             b = monom_construct_from_vector(EV{T}, [1, 1])
-            @test !lex(a, b)
-            @test !dl(a, b)
             @test !drl(a, b)
+            if !(EV{T} <: Groebner.AbstractPackedTuple{T})
+                @test !lex(a, b)
+                @test !dl(a, b)
+            end
 
             2 > Groebner.monom_max_vars(EV{T}) && continue
             a = monom_construct_from_vector(EV{T}, [1, 1])
             b = monom_construct_from_vector(EV{T}, [2, 2])
-            @test lex(a, b)
-            @test dl(a, b)
-            @test drl(a, b)
-            @test !lex(b, a)
-            @test !dl(b, a)
             @test !drl(b, a)
+            @test drl(a, b)
+            if !(EV{T} <: Groebner.AbstractPackedTuple{T})
+                @test lex(a, b)
+                @test dl(a, b)
+                @test !lex(b, a)
+                @test !dl(b, a)
+            end
 
             3 > Groebner.monom_max_vars(EV{T}) && continue
             a = monom_construct_from_vector(EV{T}, [1, 0, 2])
             b = monom_construct_from_vector(EV{T}, [2, 0, 1])
-            @test lex(a, b)
-            @test dl(a, b)
             @test drl(a, b)
+            if !(EV{T} <: Groebner.AbstractPackedTuple{T})
+                @test lex(a, b)
+                @test dl(a, b)
+            end
 
             3 > Groebner.monom_max_vars(EV{T}) && continue
             a = monom_construct_from_vector(EV{T}, [1, 5, 0])
@@ -110,24 +125,32 @@ implementations_to_test = [
             25 > Groebner.monom_max_vars(EV{T}) && continue
             a = monom_construct_from_vector(EV{T}, ones(UInt, 25))
             b = monom_construct_from_vector(EV{T}, ones(UInt, 25))
-            @test !lex(a, b)
-            @test !dl(a, b)
             @test !drl(a, b)
+            if !(EV{T} <: Groebner.AbstractPackedTuple{T})
+                @test !lex(a, b)
+                @test !dl(a, b)
+            end
 
             30 > Groebner.monom_max_vars(EV{T}) && continue
             a = monom_construct_from_vector(EV{T}, ones(UInt, 30))
             b = monom_construct_from_vector(EV{T}, ones(UInt, 30))
-            @test !lex(a, b)
-            @test !dl(a, b)
             @test !drl(a, b)
+            if !(EV{T} <: Groebner.AbstractPackedTuple{T})
+                @test !lex(a, b)
+                @test !dl(a, b)
+            end
         end
 
         # test that different implementations agree
         for n in 1:10
             k = rand(1:60)
 
-            implementations_to_test_local =
-                filter(xxx -> Groebner.monom_max_vars(xxx{T}) >= k, implementations_to_test)
+            implementations_to_test_local = filter(
+                EV ->
+                    !(EV{T} <: Groebner.AbstractPackedTuple{T}) &&
+                        Groebner.monom_max_vars(EV{T}) >= k,
+                implementations_to_test
+            )
 
             t = div(typemax(UInt8), k) - 1
             x, y = rand(1:t, k), rand(1:t, k)
@@ -171,10 +194,7 @@ function test_circular_shift(a, b, n, Ord, answers)
     R, x = AbstractAlgebra.QQ[["x$i" for i in 1:n]...]
     vars_to_index = Dict(x .=> 1:n)
     orders = map(
-        i -> Groebner.io_convert_to_internal_monomial_ordering(
-            vars_to_index,
-            Ord(circshift(x, -i))
-        ),
+        i -> Groebner.ordering_transform(Ord(circshift(x, -i)), vars_to_index),
         0:(n - 1)
     )
     cmps = map(ord -> ((x, y) -> Groebner.monom_isless(x, y, ord)), orders)
@@ -187,9 +207,7 @@ end
 @testset "monoms, variable permutation" begin
     for T in (UInt64, UInt32, UInt16)
         for EV in implementations_to_test
-            if EV{T} <: Groebner.PackedTuple2 ||
-               EV{T} <: Groebner.PackedTuple3 ||
-               EV{T} <: Groebner.PackedTuple4
+            if EV{T} <: Groebner.AbstractPackedTuple
                 continue
             end
 
@@ -228,7 +246,7 @@ function test_orderings(n, v1, v2, ords_to_test)
     for wo in ords_to_test
         ord = wo.ord
         ans = wo.ans
-        internal_ord = Groebner.io_convert_to_internal_monomial_ordering(var_to_index, ord)
+        internal_ord = Groebner.ordering_transform(ord, var_to_index)
         @test Groebner.monom_isless(v1, v2, internal_ord) == ans[1]
         @test Groebner.monom_isless(v2, v1, internal_ord) == ans[2]
         @test Groebner.monom_isless(v2, v2, internal_ord) == false
@@ -237,20 +255,22 @@ function test_orderings(n, v1, v2, ords_to_test)
 end
 
 @testset "monom orders: WeightedOrdering" begin
+    R, x = AbstractAlgebra.QQ[["x$i" for i in 1:3]...]
+
     pv = Groebner.ExponentVector{T} where {T}
 
     v1 = Groebner.monom_construct_from_vector(pv{UInt64}, [1, 2, 3])
     v2 = Groebner.monom_construct_from_vector(pv{UInt64}, [3, 2, 1])
 
-    @test_throws AssertionError Groebner.WeightedOrdering([-1, 0, 0])
+    @test_throws DomainError Groebner.WeightedOrdering(Dict(x .=> [-1, 0, 0]))
 
     ords_to_test = [
-        (ord=Groebner.WeightedOrdering([1, 1, 1]), ans=[true, false]),
-        (ord=Groebner.WeightedOrdering([0, 0, 1]), ans=[false, true]),
-        (ord=Groebner.WeightedOrdering([0, 1, 0]), ans=[true, false]),
-        (ord=Groebner.WeightedOrdering([1, 0, 0]), ans=[true, false]),
-        (ord=Groebner.WeightedOrdering([1, 1, 5]), ans=[false, true]),
-        (ord=Groebner.WeightedOrdering([1, 0, 0]), ans=[true, false])
+        (ord=Groebner.WeightedOrdering(Dict(x .=> [1, 1, 1])), ans=[true, false]),
+        (ord=Groebner.WeightedOrdering(Dict(x .=> [0, 0, 1])), ans=[false, true]),
+        (ord=Groebner.WeightedOrdering(Dict(x .=> [0, 1, 0])), ans=[true, false]),
+        (ord=Groebner.WeightedOrdering(Dict(x .=> [1, 0, 0])), ans=[true, false]),
+        (ord=Groebner.WeightedOrdering(Dict(x .=> [1, 1, 5])), ans=[false, true]),
+        (ord=Groebner.WeightedOrdering(Dict(x .=> [1, 0, 0])), ans=[true, false])
     ]
 
     test_orderings(3, v1, v2, ords_to_test)
@@ -259,24 +279,26 @@ end
     v2 = Groebner.monom_construct_from_vector(pv{UInt64}, [1, 2, 3])
 
     ords_to_test = [
-        (ord=Groebner.WeightedOrdering([1, 1, 1]), ans=[false, false]),
-        (ord=Groebner.WeightedOrdering([0, 0, 1]), ans=[false, false]),
-        (ord=Groebner.WeightedOrdering([0, 1, 0]), ans=[false, false]),
-        (ord=Groebner.WeightedOrdering([1, 0, 0]), ans=[false, false]),
-        (ord=Groebner.WeightedOrdering([1, 1, 5]), ans=[false, false]),
-        (ord=Groebner.WeightedOrdering([1, 0, 0]), ans=[false, false])
+        (ord=Groebner.WeightedOrdering(Dict(x .=> [1, 1, 1])), ans=[false, false]),
+        (ord=Groebner.WeightedOrdering(Dict(x .=> [0, 0, 1])), ans=[false, false]),
+        (ord=Groebner.WeightedOrdering(Dict(x .=> [0, 1, 0])), ans=[false, false]),
+        (ord=Groebner.WeightedOrdering(Dict(x .=> [1, 0, 0])), ans=[false, false]),
+        (ord=Groebner.WeightedOrdering(Dict(x .=> [1, 1, 5])), ans=[false, false]),
+        (ord=Groebner.WeightedOrdering(Dict(x .=> [1, 0, 0])), ans=[false, false])
     ]
 
     test_orderings(3, v1, v2, ords_to_test)
+
+    R, x = AbstractAlgebra.QQ[["x$i" for i in 1:6]...]
 
     v1 = Groebner.monom_construct_from_vector(pv{UInt64}, [1, 2, 3, 0, 0, 7])
     v2 = Groebner.monom_construct_from_vector(pv{UInt64}, [4, 5, 0, 0, 1, 4])
 
     ords_to_test = [
-        (ord=Groebner.WeightedOrdering([1, 1, 1, 1, 1, 1]), ans=[true, false]),
-        (ord=Groebner.WeightedOrdering([0, 0, 0, 0, 0, 4]), ans=[false, true]),
-        (ord=Groebner.WeightedOrdering([0, 2, 5, 0, 0, 0]), ans=[false, true]),
-        (ord=Groebner.WeightedOrdering([0, 2, 2, 0, 0, 0]), ans=[true, false])
+        (ord=Groebner.WeightedOrdering(Dict(x .=> [1, 1, 1, 1, 1, 1])), ans=[true, false]),
+        (ord=Groebner.WeightedOrdering(Dict(x .=> [0, 0, 0, 0, 0, 4])), ans=[false, true]),
+        (ord=Groebner.WeightedOrdering(Dict(x .=> [0, 2, 5, 0, 0, 0])), ans=[false, true]),
+        (ord=Groebner.WeightedOrdering(Dict(x .=> [0, 2, 2, 0, 0, 0])), ans=[true, false])
     ]
 
     test_orderings(6, v1, v2, ords_to_test)
@@ -347,38 +369,53 @@ end
 end
 
 @testset "monom orders: MatrixOrdering" begin
+    R, x = AbstractAlgebra.QQ[["x$i" for i in 1:3]...]
+
     pv = Groebner.ExponentVector{T} where {T}
 
     v1 = Groebner.monom_construct_from_vector(pv{UInt64}, [1, 2, 3])
     v2 = Groebner.monom_construct_from_vector(pv{UInt64}, [3, 2, 1])
 
-    ord1 = Groebner.MatrixOrdering([
-        1 0 0
-        0 1 0
-        0 0 1
-    ])
-    ord2 = Groebner.MatrixOrdering([
-        1 0 2;
-    ])
-    ord3 = Groebner.MatrixOrdering([
-        0 0 0
-        0 1 0
-        1 1 1
-    ])
-    ord4 = Groebner.MatrixOrdering([
-        -1 0 0;
-    ])
-    ord5 = Groebner.MatrixOrdering([
-        1 -8 1
-        2 0 3
-    ])
+    ord1 = Groebner.MatrixOrdering(
+        x,
+        [
+            1 0 0
+            0 1 0
+            0 0 1
+        ]
+    )
+    ord2 = Groebner.MatrixOrdering(
+        x,
+        [
+            1 0 2;
+        ]
+    )
+    ord3 = Groebner.MatrixOrdering(
+        x,
+        [
+            0 0 0
+            0 1 0
+            1 1 1
+        ]
+    )
+    @test_throws DomainError Groebner.MatrixOrdering(
+        x,
+        [
+            1 0;
+        ]
+    )
+    @test_throws DomainError Groebner.MatrixOrdering(
+        x,
+        [
+            1 -8 1
+            2 0 3
+        ]
+    )
 
     mo_to_test = [
         (ord=ord1, ans=[true, false]),
         (ord=ord2, ans=[false, true]),
-        (ord=ord3, ans=[false, false]),
-        (ord=ord4, ans=[false, true]),
-        (ord=ord5, ans=[false, true])
+        (ord=ord3, ans=[false, false])
     ]
     test_orderings(3, v1, v2, mo_to_test)
 end

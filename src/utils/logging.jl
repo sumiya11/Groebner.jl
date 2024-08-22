@@ -39,16 +39,12 @@ const _groebner_log_lock = Ref{ReentrantLock}(ReentrantLock())
 
 function meta_formatter_groebner end
 
-@static if VERSION >= v"1.7.0"
-    default_logger(io, level) = Logging.ConsoleLogger(
-        io,
-        level,
-        show_limited=false,
-        meta_formatter=meta_formatter_groebner
-    )
-else
-    default_logger(io, level) = Logging.ConsoleLogger(io, level)
-end
+default_logger(io, level) = Logging.ConsoleLogger(
+    io,
+    level,
+    show_limited=false,
+    meta_formatter=meta_formatter_groebner
+)
 
 function gettime()
     tm = Libc.TmStruct(Libc.TimeVal().sec)
@@ -88,7 +84,6 @@ function Logging.handle_message(
 )
     # TODO: consider using ActiveFilteredLogger from LoggingExtras.jl
     Logging.handle_message(logger.logger, lvl, msg, _mod, group, id, file, line; kwargs...)
-    nothing
 end
 
 function meta_formatter_groebner(level::LogLevel, _module, group, id, file, line)
@@ -96,7 +91,7 @@ function meta_formatter_groebner(level::LogLevel, _module, group, id, file, line
     color = Logging.default_logcolor(level)
     time = gettime()
     h, m, s = lpad(time.hour, 2, "0"), lpad(time.min, 2, "0"), lpad(time.sec, 2, "0")
-    timestr = string("[", h, ":", m, ":", s, "]")
+    timestr = string("[ ", h, ":", m, ":", s, " ]")
     prefix = if level >= Logging.Warn
         "Warning"
     elseif level < Logging.Warn && level >= Logging.Info
@@ -178,64 +173,13 @@ macro log(args...)
     esc(
         :(
             if $(@__MODULE__).logging_enabled()
-                with_logger($(@__MODULE__)._groebner_logger[]) do
-                    $(Logging).@logmsg LogLevel($level) $(msgs...) _file = $file _line =
-                        $line
+                Groebner.Logging.with_logger($(@__MODULE__)._groebner_logger[]) do
+                    $(Logging).@logmsg Groebner.Logging.LogLevel($level) $(msgs...) _file =
+                        $file _line = $line
                 end
             else
                 nothing
             end
         )
     )
-end
-
-###
-# Logging memory usage
-
-"""
-    memory_logging_enabled() -> Bool
-
-Specifies if the allocated memory information is logged in F4. If `false`, then
-all memory logging is disabled, and entails no runtime overhead.
-
-See also `@log_memory_locals`.
-"""
-memory_logging_enabled() = false
-
-# Adapted from
-# https://discourse.julialang.org/t/is-there-a-package-to-list-memory-consumption-of-selected-data-objects/85019/12
-"""
-    @log_memory_locals
-    @log_memory_locals names...
-    @log_memory_locals level=N names...
-
-Logs the total allocated sizes of local variables. This does nothing when
-logging is disabled in Groebner.
-
-This may have a *significant runtime overhead*.
-
-## Options
-
-- If `names` argument is provided, only shows the variables present in `names`.
-- If `level=N` argument is provided, then logging level `N` is used.
-"""
-macro log_memory_locals(names...)
-    quote
-        if $(@__MODULE__).logging_enabled() && $(@__MODULE__).memory_logging_enabled()
-            locals = Base.@locals
-            message = """
-            Individual sizes (does not account for overlap):
-            """
-            for (name, refval) in locals
-                if isempty($names) || (name in $names)
-                    message *= "\t$name: $(Base.format_bytes(Base.summarysize(refval)))\n"
-                end
-            end
-            message *=
-                "Joint size: " * "$(Base.format_bytes(Base.summarysize(values(locals))))"
-            @log :misc message
-        else
-            nothing
-        end
-    end
 end

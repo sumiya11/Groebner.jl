@@ -10,55 +10,31 @@
 
 _default_sorting_alg() = Base.Sort.DEFAULT_UNSTABLE
 
-# Use scratch spaces for >1.9.0
-@static if VERSION > v"1.9.0"
-    # Sorts arr at the range of indices from..to. 
-    # NOTE: this function is perhaps type unstable
-    function sort_part!(
-        arr,
-        from::Integer,
-        to::Integer;
-        lt=isless,
-        alg=_default_sorting_alg(),
-        by=identity,
-        scratch=nothing
-    )
-        from > to && return nothing
-        ordr = Base.Sort.ord(lt, by, nothing)
-        sort!(arr, from, to, alg, ordr, scratch)
-        nothing
-    end
-else
-    function sort_part!(
-        arr,
-        from::Integer,
-        to::Integer;
-        lt=isless,
-        alg=_default_sorting_alg(),
-        by=identity,
-        scratch=nothing
-    )
-        from > to && return nothing
-        ordr = Base.Sort.ord(lt, by, nothing)
-        sort!(arr, from, to, alg, ordr)
-        nothing
-    end
+# Sorts arr at the range of indices from..to. 
+# This function is perhaps type unstable
+function sort_part!(
+    arr,
+    from::Integer,
+    to::Integer;
+    lt=isless,
+    alg=_default_sorting_alg(),
+    by=identity,
+    scratch=nothing
+)
+    from > to && return nothing
+    ordr = Base.Sort.ord(lt, by, nothing)
+    sort!(arr, from, to, alg, ordr, scratch)
+    nothing
 end
 
-# Sorts polynomials from the basis by their leading monomial in the
-# non-decreasing way by the given monomial ordering. Also sorts any arrays
-# passed in the `abc` optional argument in the same order.
-#
-# Returns the sorting permutation.
+# Also sorts any arrays passed in the `abc` optional argument in the same order.
 function sort_polys_by_lead_increasing!(
     basis::Basis,
     hashtable::MonomialHashtable,
     changematrix::Bool,
     abc...;
     ord::Ord=hashtable.ord
-) where {Ord <: AbstractInternalOrdering}
-    @log :debug "Sorting polynomials by their leading terms in non-decreasing order"
-
+) where {Ord <: AbstractMonomialOrdering}
     b_monoms = basis.monoms
     h_monoms = hashtable.monoms
     permutation = collect(1:(basis.nfilled))
@@ -69,7 +45,7 @@ function sort_polys_by_lead_increasing!(
             ord
         )
 
-    # NOTE: stable sort to preserve the order of polynomials with the same lead
+    # stable sort to preserve the order of polynomials with the same lead
     sort!(permutation, lt=cmps, alg=Base.Sort.DEFAULT_STABLE)
 
     # use array assignment insted of elemewise assignment
@@ -93,7 +69,7 @@ function is_sorted_by_lead_increasing(
     basis::Basis,
     hashtable::MonomialHashtable,
     ord::Ord=hashtable.ord
-) where {Ord <: AbstractInternalOrdering}
+) where {Ord <: AbstractMonomialOrdering}
     b_monoms = basis.monoms
     h_monoms = hashtable.monoms
     permutation = collect(1:(basis.nfilled))
@@ -106,8 +82,6 @@ function is_sorted_by_lead_increasing(
     issorted(permutation, lt=cmps)
 end
 
-# Sorts critical pairs from the pairset in the range from..from+sz by the total
-# degree of their lcms in a non-decreasing order
 function sort_pairset_by_degree!(pairset::Pairset, from::Int, sz::Int)
     pairs = pairset.pairs
     degs = pairset.degrees
@@ -130,8 +104,6 @@ function sort_pairset_by_degree!(pairset::Pairset, from::Int, sz::Int)
     nothing
 end
 
-# Sorts the first `npairs` pairs from `pairset` in a non-decreasing order of
-# their lcms by the given monomial ordering
 function sort_pairset_by_lcm!(pairset::Pairset, npairs::Int, hashtable::MonomialHashtable)
     monoms = hashtable.monoms
     pairs = pairset.pairs
@@ -160,13 +132,9 @@ end
 
 ###
 # Sorting matrix rows and columns.
-# See f4/matrix.jl for details.
 
-# Compare sparse matrix rows a and b.
-# A row is an array of integers, which are the indices of nonzero elements
 function matrix_row_decreasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: ColumnLabel}
-    #= a, b - rows as arrays of nonzero indices =#
-    # va and vb are the leading columns
+    # Compare the indices of the leading columns
     @inbounds va = a[1]
     @inbounds vb = b[1]
     if va > vb
@@ -175,11 +143,8 @@ function matrix_row_decreasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: Colum
     va < vb
 end
 
-# Compare sparse matrix rows a and b.
-# A row is an array of integers, which are the indices of nonzero elements
 function matrix_row_increasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: ColumnLabel}
-    #= a, b - rows as arrays of nonzero indices =#
-    # va and vb are the leading columns
+    # Compare the indices of the leading columns
     @inbounds va = a[1]
     @inbounds vb = b[1]
     if va > vb
@@ -188,7 +153,7 @@ function matrix_row_increasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: Colum
     if va < vb
         return false
     end
-    # If the same leading column => compare the density of rows
+    # Compare the density of rows
     va = length(a)
     vb = length(b)
     if va > vb
@@ -200,14 +165,9 @@ function matrix_row_increasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: Colum
     return false
 end
 
-# Sort matrix upper rows (polynomial reducers) by the leading column index and
-# density.
-#
-# After the sort, the first (smallest) row will have the left-most leading
-# column index and, then, the smallest density.
 function sort_matrix_upper_rows!(matrix::MacaulayMatrix)
-    #= smaller means pivot being more left  =#
-    #= and density being smaller            =#
+    #= smaller means pivot being more to the left  =#
+    #= and density being smaller                   =#
     permutation = collect(1:(matrix.nrows_filled_upper))
     # TODO: use "let" here!
     cmp =
@@ -227,14 +187,9 @@ function sort_matrix_upper_rows!(matrix::MacaulayMatrix)
     matrix
 end
 
-# Sort matrix lower rows (polynomials to be reduced) by the leading column index
-# and density.
-#
-# After the sort, the first (smallest) row will have the right-most leading
-# column index and, then, the largest density.
 function sort_matrix_lower_rows!(matrix::MacaulayMatrix)
-    #= smaller means pivot being more right =#
-    #= and density being larger             =#
+    #= smaller means pivot being more to the right =#
+    #= and density being larger                    =#
     permutation = collect(1:(matrix.nrows_filled_lower))
     cmp =
         (x, y) -> matrix_row_increasing_cmp(
@@ -253,7 +208,7 @@ function sort_matrix_lower_rows!(matrix::MacaulayMatrix)
     matrix
 end
 
-function partition_columns_by_labels!(
+function sort_partition_columns_by_labels!(
     column_to_monom::Vector{T},
     symbol_ht::MonomialHashtable
 ) where {T}
@@ -276,14 +231,10 @@ function partition_columns_by_labels!(
     nothing
 end
 
-# Given a vector of vectors of exponent vectors and coefficients, sort each
-# vector wrt. the given monomial ordering `ord`.
-#
-# Returns the array of sorting permutations
 function sort_input_terms_to_change_ordering!(
     exps::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
-    ord::AbstractInternalOrdering
+    ord::AbstractMonomialOrdering
 ) where {M <: Monom, C <: Coeff}
     permutations = Vector{Vector{Int}}(undef, length(exps))
     @inbounds for polyidx in 1:length(exps)
@@ -306,7 +257,7 @@ function sort_monom_indices_decreasing!(
     monoms::Vector{MonomId},
     cnt::Integer,
     hashtable::MonomialHashtable,
-    ord::AbstractInternalOrdering
+    ord::AbstractMonomialOrdering
 )
     exps = hashtable.monoms
 
@@ -319,7 +270,7 @@ function sort_term_indices_decreasing!(
     monoms::Vector{MonomId},
     coeffs::Vector{C},
     hashtable::MonomialHashtable,
-    ord::AbstractInternalOrdering
+    ord::AbstractMonomialOrdering
 ) where {C <: Coeff}
     exps = hashtable.monoms
 

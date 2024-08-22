@@ -30,8 +30,6 @@
 # which is equivalent to reducing the CD block (lower part of the matrix) with
 # the AB block (upper part of the matrix) via Gaussian elimination.
 #
-# See f4/linalg.jl for implemented algorithms.
-#
 # Usually, by construction,
 # - Block A is already in row-echelon-form.
 # - Block A is the largest block, and is very-very sparse.
@@ -295,7 +293,6 @@ end
 # Stuff
 
 function matrix_convert_rows_to_basis_elements!(
-    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis{C},
     ht::MonomialHashtable,
@@ -383,7 +380,6 @@ function matrix_convert_rows_to_basis_elements!(
 end
 
 function matrix_convert_rows_to_basis_elements_nf!(
-    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis{C},
     ht::MonomialHashtable,
@@ -415,8 +411,7 @@ function matrix_convert_rows_to_basis_elements_nf!(
     nothing
 end
 
-@timeit function matrix_polynomial_multiple_to_row!(
-    ctx::Context,
+function matrix_polynomial_multiple_to_row!(
     matrix::MacaulayMatrix,
     symbol_ht::MonomialHashtable{M},
     basis_ht::MonomialHashtable{M},
@@ -439,7 +434,7 @@ end
     )
 end
 
-@timeit function matrix_fill_column_to_monom_map!(
+function matrix_fill_column_to_monom_map!(
     matrix::MacaulayMatrix,
     symbol_ht::MonomialHashtable
 )
@@ -461,7 +456,7 @@ end
         end
     end
 
-    partition_columns_by_labels!(column_to_monom, symbol_ht)
+    sort_partition_columns_by_labels!(column_to_monom, symbol_ht)
 
     cmp = let monoms = symbol_ht.monoms, ord = symbol_ht.ord
         function _cmp(x, y, ord)

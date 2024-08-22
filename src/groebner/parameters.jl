@@ -3,37 +3,188 @@
 ### 
 # Select parameters in Groebner basis computation
 
-# There is no Xoshiro rng in Julia v < 1.8.
-# Use Random.Xoshiro, if available, as it is a bit faster.
-const _default_rng_type = @static if VERSION >= v"1.8.0"
-    Random.Xoshiro
-else
-    Random.MersenneTwister
-end
-
 # Specifies linear algebra backend algorithm
 struct LinearAlgebra
     algorithm::Symbol
     sparsity::Symbol
+end
 
-    LinearAlgebra(algorithm, sparsity) = new(algorithm, sparsity)
+struct PolynomialRepresentation
+    monomtype::Any
+    coefftype::Any
+    # If this field is false, then any implementation of the arithmetic in Z/Zp
+    # must cast the coefficients into a wider integer type before performing any
+    # arithmetic operations to avoid the risk of overflow.
+    using_wide_type_for_coeffs::Bool
+end
+
+function param_select_polynomial_representation(
+    char::Coeff,
+    nvars::Int,
+    ordering::AbstractMonomialOrdering,
+    homogenize::Bool,
+    monoms::Symbol,
+    arithmetic::Symbol;
+    hint::Symbol=:none
+)
+    if !(hint in (:none, :large_exponents))
+        @log :warn "The given hint=$hint was discarded"
+    end
+    monomtype = param_select_monomtype(char, nvars, ordering, homogenize, hint, monoms)
+    coefftype, using_wide_type_for_coeffs =
+        param_select_coefftype(char, nvars, ordering, homogenize, hint, monoms, arithmetic)
+    PolynomialRepresentation(monomtype, coefftype, using_wide_type_for_coeffs)
+end
+
+function param_select_monomtype(char::Coeff, nvars::Int, ordering::AbstractMonomialOrdering, homogenize::Bool, hint::Symbol, monoms::Symbol)
+    if hint === :large_exponents
+        # use 64 bits if large exponents detected
+        desired_monom_type = ExponentVector{UInt64}
+        @assert monom_is_supported_ordering(desired_monom_type, ordering)
+        return desired_monom_type
+    end
+
+    # If homogenization is requested, or if a part of the ordering is
+    # lexicographical, the generators will potentially be homogenized later.
+    if homogenize
+        desired_monom_type = ExponentVector{UInt32}
+        @assert monom_is_supported_ordering(desired_monom_type, ordering)
+        return desired_monom_type
+    end
+
+    ExponentSize = UInt8
+    variables_per_word = div(sizeof(UInt), sizeof(ExponentSize))
+    # if dense representation is requested
+    if monoms === :dense
+        @assert monom_is_supported_ordering(ExponentVector{ExponentSize}, ordering)
+        return ExponentVector{ExponentSize}
+    end
+
+    # if sparse representation is requested
+    if monoms === :sparse
+        if monom_is_supported_ordering(
+            SparseExponentVector{ExponentSize, Int32, nvars},
+            ordering
+        )
+            return SparseExponentVector{ExponentSize, Int32, nvars}
+        end
+        @log :misc """
+        The given monomial ordering $(ordering) is not implemented for
+        $(monoms) monomial representation. Falling back to other monomial
+        representations.""" maxlog = 1
+    end
+
+    # if packed representation is requested
+    if monoms === :packed
+        if monom_is_supported_ordering(PackedTuple1{UInt64, ExponentSize}, ordering)
+            if nvars < variables_per_word
+                return PackedTuple1{UInt64, ExponentSize}
+            elseif nvars < 2 * variables_per_word
+                return PackedTuple2{UInt64, ExponentSize}
+            elseif nvars < 3 * variables_per_word
+                return PackedTuple3{UInt64, ExponentSize}
+            elseif nvars < 4 * variables_per_word
+                return PackedTuple4{UInt64, ExponentSize}
+            end
+            @log :misc """
+            Unable to use $(monoms) monomial representation, too many
+            variables ($nvars). Falling back to dense monomial
+            representation.""" maxlog = 1
+        else
+            @log :misc """
+            The given monomial ordering $(ordering) is not implemented for
+            $(monoms) monomial representation. Falling back to dense
+            representation.""" maxlog = 1
+        end
+    end
+
+    # in the automatic choice, we always prefer packed representations
+    if monoms === :auto
+        if monom_is_supported_ordering(PackedTuple1{UInt64, ExponentSize}, ordering)
+            if nvars < variables_per_word
+                return PackedTuple1{UInt64, ExponentSize}
+            elseif nvars < 2 * variables_per_word
+                return PackedTuple2{UInt64, ExponentSize}
+            elseif nvars < 3 * variables_per_word
+                return PackedTuple3{UInt64, ExponentSize}
+            elseif nvars < 4 * variables_per_word
+                return PackedTuple4{UInt64, ExponentSize}
+            end
+        end
+    end
+
+    ExponentVector{ExponentSize}
+end
+
+tight_signed_int_type(x::CompositeNumber{N, T}) where {N, T} =
+    CompositeNumber{N, mapreduce(tight_signed_int_type, promote_type, x.data)}
+tight_unsigned_int_type(x::CompositeNumber{N, T}) where {N, T} =
+    CompositeNumber{N, mapreduce(tight_signed_int_type, promote_type, x.data)}
+
+function tight_signed_int_type(x::T) where {T <: Integer}
+    types = (Int8, Int16, Int32, Int64, Int128)
+    idx = findfirst(T -> x <= typemax(T), types)
+    @assert !isnothing(idx)
+    types[idx]
+end
+
+function tight_unsigned_int_type(x::T) where {T <: Integer}
+    types = (UInt8, UInt16, UInt32, UInt64, UInt128)
+    idx = findfirst(T -> x <= typemax(T), types)
+    @assert !isnothing(idx)
+    types[idx]
+end
+
+function param_select_coefftype(
+    char::Coeff,
+    nvars::Int,
+    ordering::AbstractMonomialOrdering,
+    homogenize::Bool,
+    hint::Symbol,
+    monoms::Symbol,
+    arithmetic::Symbol;
+    using_wide_type_for_coeffs::Bool=false
+)
+    if iszero(char)
+        return Rational{BigInt}, true
+    end
+    @assert char > 0
+    @assert char < typemax(UInt64)
+
+    tight_signed_type = tight_signed_int_type(char)
+
+    if arithmetic === :floating
+        return Float64, true
+    end
+
+    if arithmetic === :signed
+        if typemax(Int32) < char < typemax(UInt32) ||
+           typemax(Int64) < char < typemax(UInt64)
+            @log :warn "Cannot use $(arithmetic) arithmetic with characteristic $char"
+            @assert false
+        elseif !using_wide_type_for_coeffs
+            return tight_signed_type, using_wide_type_for_coeffs
+        else
+            return widen(tight_signed_type), using_wide_type_for_coeffs
+        end
+    end
+
+    tight_unsigned_type = tight_unsigned_int_type(char)
+    tight_unsigned_type = if !using_wide_type_for_coeffs
+        tight_unsigned_type
+    else
+        widen(tight_unsigned_type)
+    end
+
+    tight_unsigned_type, using_wide_type_for_coeffs
 end
 
 # Stores parameters for a single GB computation.
-mutable struct AlgorithmParameters{
-    MonomOrd1,
-    MonomOrd2,
-    MonomOrd3,
-    Arithmetic <: AbstractArithmetic
-}
-    # NOTE: in principle, MonomOrd1, ..., MonomOrd3 can be subtypes of any type
-
+mutable struct AlgorithmParameters{Arithmetic <: AbstractArithmetic}
     # Desired monomial ordering of output polynomials
-    target_ord::MonomOrd1
-    # Monomial ordering for the actual computation
-    computation_ord::MonomOrd2
+    target_ord::Any
     # Original monomial ordering of input polynomials
-    original_ord::MonomOrd3
+    original_ord::Any
 
     # Specifies correctness checks levels
     heuristic_check::Bool
@@ -43,18 +194,18 @@ mutable struct AlgorithmParameters{
     # If do homogenize input generators
     homogenize::Bool
 
-    # This option only makes sense for functions `normalform` and `kbase`. It
-    # specifies if the program should check if the input is indeed a Groebner
-    # basis.
+    # This option only makes sense for some functions (e.g., `normalform`). It
+    # specifies if we should check if the input is indeed a Groebner basis.
     check::Bool
 
-    # Linear algebra backend to be used
+    # Linear algebra backend
     linalg::LinearAlgebra
 
-    # This can hold buffers or precomputed multiplicative inverses to speed up
-    # the arithmetic in the ground field
+    # Arithmetic in the ground field
     arithmetic::Arithmetic
-    using_wide_type_for_coeffs::Bool
+
+    # Representation of polynomials in F4
+    representation::PolynomialRepresentation
 
     # If reduced Groebner basis is needed
     reduced::Bool
@@ -62,36 +213,29 @@ mutable struct AlgorithmParameters{
     # Limit the number of critical pairs in the F4 matrix by this number
     maxpairs::Int
 
-    # Selection strategy. One of the following:
-    # - :normal
-    # well, it is tricky to implement sugar selection with F4..
     selection_strategy::Symbol
-
-    # Ground field of computation. This can be one of the following:
-    # - :qq for the rationals
-    # - :zp for integers modulo a prime
-    ground::Symbol
 
     # Strategy for modular computation in groebner. This can be one of the
     # following:
     # - :classic_modular
     # - :learn_and_apply
     modular_strategy::Symbol
+
+    # If learn & apply strategy can use apply in batches
     batched::Bool
 
     # In modular computation of the basis, compute (at least!) this many bases
-    # modulo different primes until a consensus in majority vote is reached
+    # modulo different primes until a consensus in is reached
     majority_threshold::Int
 
-    # Use multi-threading.
+    # Multi-threading
     threaded_f4::Symbol
     threaded_multimodular::Symbol
 
     # Random number generator
-    seed::UInt64
-    rng::_default_rng_type
+    rng::Random.Xoshiro
 
-    # Internal option for `groebner`.
+    # Internal option.
     # At the end of F4, polynomials are interreduced. 
     # We can mark and sweep polynomials that are redundant prior to
     # interreduction to speed things up a bit. This option specifies if such
@@ -105,30 +249,15 @@ mutable struct AlgorithmParameters{
     changematrix::Bool
 end
 
-function AlgorithmParameters(
-    ring,
-    representation,
-    kwargs::KeywordArguments;
-    orderings=nothing
-)
-    # TODO: we should probably document this better
-    if orderings !== nothing
-        target_ord = orderings[2]
-        computation_ord = orderings[2]
-        original_ord = orderings[1]
+function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:none)
+    if kwargs.ordering === InputOrdering() || kwargs.ordering === nothing
+        ordering = ring.ord
     else
-        if kwargs.ordering === InputOrdering() || kwargs.ordering === nothing
-            ordering = ring.ord
-        else
-            ordering = kwargs.ordering
-        end
-        target_ord = ordering
-        computation_ord = ordering
-        original_ord = ring.ord
+        ordering = kwargs.ordering
     end
+    target_ord = ordering
+    original_ord = ring.ord
 
-    # The levels of correctness checks. By default, we always check correctness
-    # modulo a "random" prime
     heuristic_check = true
     randomized_check = true
     certify_check = kwargs.certify
@@ -139,7 +268,7 @@ function AlgorithmParameters(
         if kwargs.homogenize === :auto
             if ring.nvars <= 1
                 false
-            elseif computation_ord isa Lex || computation_ord isa ProductOrdering
+            elseif target_ord isa Lex || target_ord isa ProductOrdering
                 true
             else
                 false
@@ -148,6 +277,8 @@ function AlgorithmParameters(
             false
         end
     end
+
+    homogenize && kwargs.function_id == :groebner_learn && (@assert false)
 
     linalg = kwargs.linalg
     if !iszero(ring.ch) && (linalg === :randomized || linalg === :auto)
@@ -165,12 +296,20 @@ function AlgorithmParameters(
         end
     end
     if linalg === :auto
-        # Default linear algebra algorithm is randomized
         linalg = :randomized
     end
-    # Default linear algebra algorithm is sparse
     linalg_sparsity = :sparse
     linalg_algorithm = LinearAlgebra(linalg, linalg_sparsity)
+
+    representation = param_select_polynomial_representation(
+        ring.ch,
+        ring.nvars,
+        target_ord,
+        homogenize,
+        kwargs.monoms,
+        kwargs.arithmetic,
+        hint=hint
+    )
 
     arithmetic = select_arithmetic(
         representation.coefftype,
@@ -202,7 +341,7 @@ function AlgorithmParameters(
             @log :warn """
             You have explicitly provided keyword argument `threaded = :yes`,
             however, multi-threading is disabled globally in Groebner.jl due to
-            the environment variable GROEBNER_NO_THREADED=0.
+            the environment variable GROEBNER_NO_THREADED = 0.
 
             Consider enabling threading by setting GROEBNER_NO_THREADED to 1"""
         end
@@ -224,9 +363,8 @@ function AlgorithmParameters(
         modular_strategy = :learn_and_apply
     end
     if !reduced
-        @log :misc """
-        The option reduced=$reduced was passed in the input, 
-        falling back to classic multi-modular algorithm."""
+        # The option reduced=false was passed in the input, 
+        # falling back to classic multi-modular algorithm.
         modular_strategy = :classic_modular
     end
     batched = kwargs.batched
@@ -234,8 +372,7 @@ function AlgorithmParameters(
     majority_threshold = 1
 
     seed = kwargs.seed
-    rng = _default_rng_type(seed)
-    useed = UInt64(seed)
+    rng = Random.Xoshiro(seed)
 
     sweep = kwargs.sweep
 
@@ -246,45 +383,12 @@ function AlgorithmParameters(
     changematrix = kwargs.changematrix
     if changematrix
         if !(target_ord isa DegRevLex)
-            __throw_input_not_supported(
-                "Only DegRevLex is supported with changematrix = true.",
-                target_ord
-            )
+            throw(DomainError("Only DegRevLex is supported with changematrix = true."))
         end
     end
 
-    @log :misc """
-    Selected parameters:
-    target_ord = $target_ord
-    computation_ord = $computation_ord
-    original_ord = $original_ord
-    heuristic_check = $heuristic_check
-    randomized_check = $randomized_check
-    certify_check = $certify_check
-    check = $(kwargs.check)
-    linalg = $linalg_algorithm
-    threaded_f4 = $threaded_f4
-    threaded_multimodular = $threaded_multimodular
-    arithmetic = $arithmetic
-    using_wide_type_for_coeffs = $(representation.using_wide_type_for_coeffs)
-    reduced = $reduced
-    homogenize = $homogenize
-    maxpairs = $maxpairs
-    selection_strategy = $selection_strategy
-    ground = $ground
-    modular_strategy = $modular_strategy
-    batched = $batched
-    majority_threshold = $majority_threshold
-    seed = $seed
-    rng = $rng
-    sweep = $sweep
-    statistics = $statistics
-    use_flint = $use_flint
-    changematrix = $changematrix"""
-
     AlgorithmParameters(
         target_ord,
-        computation_ord,
         original_ord,
         heuristic_check,
         randomized_check,
@@ -293,17 +397,15 @@ function AlgorithmParameters(
         kwargs.check,
         linalg_algorithm,
         arithmetic,
-        representation.using_wide_type_for_coeffs,
+        representation,
         reduced,
         maxpairs,
         selection_strategy,
-        ground,
         modular_strategy,
         batched,
         majority_threshold,
         threaded_f4,
         threaded_multimodular,
-        useed,
         rng,
         sweep,
         statistics,
@@ -320,11 +422,15 @@ function params_mod_p(
     is_wide_type_coeffs = if !isnothing(using_wide_type_for_coeffs)
         using_wide_type_for_coeffs
     else
-        params.using_wide_type_for_coeffs
+        params.representation.using_wide_type_for_coeffs
     end
+    representation = PolynomialRepresentation(
+        params.representation.monomtype,
+        params.representation.coefftype,
+        is_wide_type_coeffs
+    )
     AlgorithmParameters(
         params.target_ord,
-        params.computation_ord,
         params.original_ord,
         params.heuristic_check,
         params.randomized_check,
@@ -333,17 +439,15 @@ function params_mod_p(
         params.check,
         params.linalg,
         select_arithmetic(C, prime, :auto, is_wide_type_coeffs),
-        is_wide_type_coeffs,
+        representation,
         params.reduced,
         params.maxpairs,
         params.selection_strategy,
-        params.ground,
         params.modular_strategy,
         params.batched,
         params.majority_threshold,
         params.threaded_f4,
         params.threaded_multimodular,
-        params.seed,
         params.rng,
         params.sweep,
         params.statistics,

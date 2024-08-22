@@ -9,8 +9,7 @@
 # High level
 
 function linalg_learn_sparse_threaded!(
-    ctx::Context,
-    trace::TraceF4,
+    trace::Trace,
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
@@ -22,9 +21,9 @@ function linalg_learn_sparse_threaded!(
     @log :matrix matrix_string_repr(matrix)
 
     # Reduce CD with AB
-    linalg_learn_reduce_matrix_lower_part_threaded!(ctx, trace, matrix, basis, arithmetic)
+    linalg_learn_reduce_matrix_lower_part_threaded!(trace, matrix, basis, arithmetic)
     # Interreduce CD
-    linalg_interreduce_matrix_pivots!(ctx, matrix, basis, arithmetic)
+    linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic)
 
     true
 end
@@ -33,8 +32,7 @@ end
 # Low level
 
 function linalg_learn_reduce_matrix_lower_part_threaded!(
-    ctx::Context,
-    trace::TraceF4,
+    trace::Trace,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}

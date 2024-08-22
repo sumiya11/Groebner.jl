@@ -9,7 +9,6 @@
 # High level
 
 function linalg_deterministic_sparse!(
-    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
@@ -22,14 +21,13 @@ function linalg_deterministic_sparse!(
     @log :matrix matrix_string_repr(matrix)
 
     # Reduce CD with AB
-    linalg_reduce_matrix_lower_part!(ctx, matrix, basis, arithmetic)
+    linalg_reduce_matrix_lower_part!(matrix, basis, arithmetic)
     # Interreduce CD
-    linalg_interreduce_matrix_pivots!(ctx, matrix, basis, arithmetic)
+    linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic)
     true
 end
 
 function linalg_deterministic_sparse_interreduction!(
-    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis,
     arithmetic::AbstractArithmetic
@@ -39,9 +37,9 @@ function linalg_deterministic_sparse_interreduction!(
     @log :matrix matrix_string_repr(matrix)
 
     # Prepare the matrix
-    linalg_prepare_matrix_pivots_in_interreduction!(ctx, matrix, basis)
+    linalg_prepare_matrix_pivots_in_interreduction!(matrix, basis)
     # Interreduce AB
-    linalg_interreduce_matrix_pivots!(ctx, matrix, basis, arithmetic, reversed_rows=true)
+    linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic, reversed_rows=true)
     true
 end
 
@@ -56,8 +54,7 @@ end
 #   A B
 #   0 D'
 # The new pivots in the D' block are known, but possibly not fully interreduced.
-@timeit function linalg_reduce_matrix_lower_part!(
-    ctx::Context,
+function linalg_reduce_matrix_lower_part!(
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
@@ -129,8 +126,7 @@ end
 # Assumes that the pivots in the matrix are correctly filled.
 # 
 # Returns the indices of the rows that did not reduce to zero.
-@timeit function linalg_interreduce_matrix_pivots!(
-    ctx::Context,
+function linalg_interreduce_matrix_pivots!(
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType};
@@ -219,8 +215,7 @@ end
 end
 
 # Puts the AB part of the matrix in the RREF, inplace.
-@timeit function linalg_interreduce_matrix_upper_part!(
-    ctx::Context,
+function linalg_interreduce_matrix_upper_part!(
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
@@ -289,7 +284,6 @@ end
 end
 
 function linalg_reduce_matrix_lower_part_invariant_pivots!(
-    ctx::Context,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
@@ -345,7 +339,6 @@ function linalg_reduce_matrix_lower_part_invariant_pivots!(
 end
 
 function linalg_reduce_matrix_lower_part_any_nonzero!(
-    ctx::Context,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
@@ -415,7 +408,6 @@ function linalg_prepare_matrix_pivots!(matrix::MacaulayMatrix)
 end
 
 function linalg_prepare_matrix_pivots_in_interreduction!(
-    ctx::Context,
     matrix::MacaulayMatrix,
     basis::Basis{C}
 ) where {C}

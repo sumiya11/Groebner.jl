@@ -67,6 +67,20 @@ end
         end
     end
 
+    c = Groebner.Examples.cyclicn(6, k=Nemo.GF(2^30 + 3))
+    gb1 = Groebner.groebner(c)
+    trace, gb2 = Groebner.groebner_learn(c)
+    flag, gb3 = Groebner.groebner_apply!(trace, c)
+    flag, _gb4 = Groebner.groebner_apply!(trace, (c, c, c, c))
+    @test gb1 == gb2 == gb3 == _gb4[1]
+
+    c = Groebner.Examples.cyclicn(6, k=Nemo.Native.GF(2^30 + 3))
+    gb1 = Groebner.groebner(c)
+    trace, gb2 = Groebner.groebner_learn(c)
+    flag, gb3 = Groebner.groebner_apply!(trace, c)
+    flag, _gb4 = Groebner.groebner_apply!(trace, (c, c, c, c))
+    @test gb1 == gb2 == gb3 == _gb4[1]
+
     # Test for different Groebner.jl orderings
     for nemo_ord in [:lex, :deglex, :degrevlex]
         for ground in nemo_grounds_to_test
