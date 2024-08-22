@@ -25,7 +25,7 @@ checks are disabled, and entail no runtime overhead.
 
 It is useful to enable this when debugging the Groebner package.
 """
-invariants_enabled() = true
+invariants_enabled() = false
 
 """
     logging_enabled() -> Bool
