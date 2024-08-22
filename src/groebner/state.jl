@@ -76,9 +76,7 @@ function common_denominator(coeffs::Vector{T}) where {T <: CoeffQQ}
     common_denominator!(BigInt(), coeffs)
 end
 
-function _clear_denominators!(
-    coeffs_qq::Vector{Vector{T}}
-) where {T <: CoeffQQ}
+function _clear_denominators!(coeffs_qq::Vector{Vector{T}}) where {T <: CoeffQQ}
     coeffs_zz = [[BigInt(0) for _ in 1:length(c)] for c in coeffs_qq]
     den, buf = BigInt(), BigInt()
     @inbounds for i in 1:length(coeffs_qq)
@@ -93,10 +91,7 @@ function _clear_denominators!(
     coeffs_zz
 end
 
-function clear_denominators!(
-    basis::Basis{T};
-    deepcopy=false
-) where {T <: CoeffQQ}
+function clear_denominators!(basis::Basis{T}; deepcopy=false) where {T <: CoeffQQ}
     coeffs_zz = _clear_denominators!(basis.coeffs)
     if deepcopy
         basis_deep_copy_with_new_coeffs(basis, coeffs_zz)
@@ -260,6 +255,7 @@ function full_simultaneous_crt_reconstruct!(state::GroebnerState, lucky::LuckyPr
         Base.GMP.MPZ.set_ui!(gb_coeffs_zz[i][1], CoeffModular(1))
     end
 
+    M, n1, n2, buf = BigInt(), BigInt(), BigInt(), BigInt()
     n = length(lucky.used_primes)
     rems = Vector{UInt64}(undef, n)
     mults = Vector{BigInt}(undef, n)
@@ -283,11 +279,6 @@ function full_simultaneous_crt_reconstruct!(state::GroebnerState, lucky::LuckyPr
 
             crt!(M, buf, n1, n2, rems, mults)
 
-            # cf_zz = selected_prev_coeffs_zz[i]
-            # crt!(MM0, buf, n1, n2, cf_zz, invm1, buf, invm2)
-
-            # Base.GMP.MPZ.set!(selected_coeffs_zz[i], buf)
-
             Base.GMP.MPZ.set!(gb_coeffs_zz[i][j], buf)
         end
     end
@@ -302,7 +293,6 @@ function full_simultaneous_crt_reconstruct_changematrix!(
     lucky::LuckyPrimes
 )
     if isempty(state.changematrix_coeffs_zz)
-        @log :misc "Using full trivial CRT reconstruction"
         coeffs_ff = state.changematrix_coeffs_ff_all[1]
 
         resize!(state.changematrix_coeffs_zz, length(coeffs_ff))
@@ -332,12 +322,9 @@ function full_simultaneous_crt_reconstruct_changematrix!(
                 end
             end
         end
-        # Base.GMP.MPZ.mul_ui!(lucky.modulo, lucky.used_primes[1])
         return nothing
     end
-    # @invariant length(coeffs_ff) == length(state.changematrix_coeffs_zz)
 
-    @log :misc "Using full CRT reconstruction"
     changematrix_coeffs_zz = state.changematrix_coeffs_zz
 
     # Takes the lock..
@@ -352,8 +339,6 @@ function full_simultaneous_crt_reconstruct_changematrix!(
     moduli = lucky.used_primes
     crt_precompute!(M, n1, n2, mults, moduli)
 
-    @log :debug "Using simultaneous CRT with moduli $moduli"
-
     @inbounds for i in 1:length(changematrix_coeffs_zz)
         for j in 1:length(changematrix_coeffs_zz[i])
             for k in 1:length(changematrix_coeffs_zz[i][j])
@@ -365,8 +350,6 @@ function full_simultaneous_crt_reconstruct_changematrix!(
             end
         end
     end
-
-    # Base.GMP.MPZ.set!(lucky.modulo, M)
 
     nothing
 end
@@ -384,7 +367,6 @@ function partial_incremental_crt_reconstruct!(
     is_crt_reconstructed_mask = state.is_crt_reconstructed_mask
 
     if length(selected_prev_coeffs_zz) < length(indices_selection)
-        @log :misc "Using partial incremental trivial CRT"
         resize!(selected_prev_coeffs_zz, length(indices_selection))
         resize!(selected_coeffs_zz, length(indices_selection))
         resize!(selected_coeffs_qq, length(indices_selection))
@@ -401,7 +383,8 @@ function partial_incremental_crt_reconstruct!(
         return nothing
     end
 
-    @log :debug "Using partial incremental CRT"
+    buf, M, n1, n2, invm1, invm2 =
+        BigInt(), BigInt(), BigInt(), BigInt(), BigInt(), BigInt()
 
     @inbounds for i in 1:length(indices_selection)
         Base.GMP.MPZ.set!(selected_prev_coeffs_zz[i], selected_coeffs_zz[i])
@@ -425,7 +408,6 @@ function partial_incremental_crt_reconstruct!(
 
     Base.GMP.MPZ.mul_ui!(lucky.modulo, last(lucky.used_primes))
     state.prev_index += 1
-    @log :debug "After:" lucky.modulo state.prev_index
 
     nothing
 end
@@ -449,12 +431,13 @@ function partial_simultaneous_crt_reconstruct!(
     n = length(lucky.used_primes) - prev_index
     @invariant n > 0
     if n == 1
-        @log :misc "Since there is only 1 new modulo, using incremental CRT"
         partial_incremental_crt_reconstruct!(state, lucky, indices_selection)
         return nothing
     end
 
-    @log :misc "Using partial simultaneous CRT on range $(prev_index + 1)..$(length(lucky.used_primes))"
+    # Reconstruct elements on indices prev_index + 1 ... length(lucky.used_primes)
+    M, n1, n2, M0, MM0, buf, invm1, invm2 =
+        BigInt(), BigInt(), BigInt(), BigInt(), BigInt(), BigInt(), BigInt(), BigInt()
 
     @invariant n > 1
     @inbounds for i in 1:length(indices_selection)
@@ -471,8 +454,6 @@ function partial_simultaneous_crt_reconstruct!(
 
     Base.GMP.MPZ.set!(M0, lucky.modulo)
     crt_precompute!(MM0, n1, n2, invm1, M0, invm2, M)
-
-    @log :debug "Using simultaneous CRT with moduli $moduli" lucky.modulo M0 M MM0
 
     @inbounds for i in 1:length(indices_selection)
         i1, i2 = indices_selection[i]
@@ -507,10 +488,7 @@ end
 # numbers to state.gb_coeffs_qq inplace
 #
 # Returns true is the reconstrction is successfull, false otherwise.
-function full_rational_reconstruct!(
-    state::GroebnerState,
-    lucky::LuckyPrimes,
-)
+function full_rational_reconstruct!(state::GroebnerState, lucky::LuckyPrimes)
     modulo = lucky.modulo
     @invariant modulo == prod(BigInt, lucky.used_primes)
 
@@ -548,10 +526,7 @@ function full_rational_reconstruct!(
     true
 end
 
-function full_rational_reconstruct_changematrix!(
-    state::GroebnerState,
-    lucky::LuckyPrimes,
-)
+function full_rational_reconstruct_changematrix!(state::GroebnerState, lucky::LuckyPrimes)
     modulo = lucky.modulo
     @invariant modulo == prod(BigInt, lucky.used_primes)
 
@@ -567,7 +542,6 @@ function full_rational_reconstruct_changematrix!(
 
     @inbounds for i in 1:length(changematrix_coeffs_zz)
         @invariant length(changematrix_coeffs_zz[i]) == length(changematrix_coeffs_qq[i])
-        # !!!
         for j in 1:length(changematrix_coeffs_zz[i])
             for k in 1:length(changematrix_coeffs_zz[i][j])
                 cz = changematrix_coeffs_zz[i][j][k]
@@ -586,7 +560,7 @@ end
 function partial_rational_reconstruct!(
     state::GroebnerState,
     lucky::LuckyPrimes,
-    indices_selection::Vector{Tuple{Int, Int}},
+    indices_selection::Vector{Tuple{Int, Int}}
 )
     modulo = lucky.modulo
     @invariant modulo == prod(BigInt, lucky.used_primes)

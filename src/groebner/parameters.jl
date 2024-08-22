@@ -36,7 +36,14 @@ function param_select_polynomial_representation(
     PolynomialRepresentation(monomtype, coefftype, using_wide_type_for_coeffs)
 end
 
-function param_select_monomtype(char::Coeff, nvars::Int, ordering::AbstractMonomialOrdering, homogenize::Bool, hint::Symbol, monoms::Symbol)
+function param_select_monomtype(
+    char::Coeff,
+    nvars::Int,
+    ordering::AbstractMonomialOrdering,
+    homogenize::Bool,
+    hint::Symbol,
+    monoms::Symbol
+)
     if hint === :large_exponents
         # use 64 bits if large exponents detected
         desired_monom_type = ExponentVector{UInt64}

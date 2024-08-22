@@ -214,8 +214,7 @@ function _groebner_with_change_classic_modular(
         for j in 1:batchsize
             prime = primes_next_lucky_prime!(luckyprimes)
 
-            ring_ff, basis_ff =
-                reduce_modulo_p!(ring, basis_zz, prime, deepcopy=true)
+            ring_ff, basis_ff = reduce_modulo_p!(ring, basis_zz, prime, deepcopy=true)
             params_zp = params_mod_p(params, prime)
 
             f4!(ring_ff, basis_ff, pairset, hashtable, params_zp)
@@ -233,11 +232,8 @@ function _groebner_with_change_classic_modular(
         end
         partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
 
-        success_reconstruct = partial_rational_reconstruct!(
-            state,
-            luckyprimes,
-            indices_selection,
-        )
+        success_reconstruct =
+            partial_rational_reconstruct!(state, luckyprimes, indices_selection)
 
         if !success_reconstruct
             iters += 1
@@ -258,8 +254,7 @@ function _groebner_with_change_classic_modular(
         # Perform full reconstruction
         full_simultaneous_crt_reconstruct!(state, luckyprimes)
 
-        success_reconstruct =
-            full_rational_reconstruct!(state, luckyprimes)
+        success_reconstruct = full_rational_reconstruct!(state, luckyprimes)
 
         if !success_reconstruct
             iters += 1

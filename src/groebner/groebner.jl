@@ -268,9 +268,7 @@ function _groebner_learn_and_apply(
             for j in 1:batchsize
                 prime = primes_next_lucky_prime!(luckyprimes)
 
-        
-                ring_ff, basis_ff =
-                    reduce_modulo_p!(ring, basis_zz, prime, deepcopy=true)
+                ring_ff, basis_ff = reduce_modulo_p!(ring, basis_zz, prime, deepcopy=true)
                 params_zp = params_mod_p(params, prime)
 
                 trace.buf_basis = basis_ff
@@ -289,11 +287,8 @@ function _groebner_learn_and_apply(
 
         partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
 
-        success_reconstruct = partial_rational_reconstruct!(
-            state,
-            luckyprimes,
-            indices_selection,
-        )
+        success_reconstruct =
+            partial_rational_reconstruct!(state, luckyprimes, indices_selection)
 
         if !success_reconstruct
             iters += 1
@@ -314,8 +309,7 @@ function _groebner_learn_and_apply(
         # Perform full reconstruction
         full_simultaneous_crt_reconstruct!(state, luckyprimes)
 
-        success_reconstruct =
-            full_rational_reconstruct!(state, luckyprimes)
+        success_reconstruct = full_rational_reconstruct!(state, luckyprimes)
 
         if !success_reconstruct
             iters += 1
@@ -450,11 +444,8 @@ function _groebner_learn_and_apply_threaded(
             threadlocal_prime_4x = ntuple(k -> threadbuf_primes[j + k - 1], 4)
             threadlocal_params = threadbuf_params[t_id]
 
-            ring_ff_4x, basis_ff_4x = reduce_modulo_p_in_batch!(
-                ring,
-                basis_zz,
-                threadlocal_prime_4x
-            )
+            ring_ff_4x, basis_ff_4x =
+                reduce_modulo_p_in_batch!(ring, basis_zz, threadlocal_prime_4x)
             threadlocal_params_zp_4x = params_mod_p(
                 threadlocal_params,               # can be mutated later
                 CompositeNumber{4, Int32}(threadlocal_prime_4x),
@@ -490,11 +481,8 @@ function _groebner_learn_and_apply_threaded(
 
         partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
 
-        success_reconstruct = partial_rational_reconstruct!(
-            state,
-            luckyprimes,
-            indices_selection,
-        )
+        success_reconstruct =
+            partial_rational_reconstruct!(state, luckyprimes, indices_selection)
 
         if !success_reconstruct
             iters += 1
@@ -514,8 +502,7 @@ function _groebner_learn_and_apply_threaded(
 
         # Perform full reconstruction
         full_simultaneous_crt_reconstruct!(state, luckyprimes)
-        success_reconstruct =
-            full_rational_reconstruct!(state, luckyprimes)
+        success_reconstruct = full_rational_reconstruct!(state, luckyprimes)
 
         # This should happen rarely
         if !success_reconstruct
@@ -615,9 +602,7 @@ function _groebner_classic_modular(
         for j in 1:batchsize
             prime = primes_next_lucky_prime!(luckyprimes)
 
-    
-            ring_ff, basis_ff =
-                reduce_modulo_p!(ring, basis_zz, prime, deepcopy=true)
+            ring_ff, basis_ff = reduce_modulo_p!(ring, basis_zz, prime, deepcopy=true)
             params_zp = params_mod_p(params, prime)
 
             f4!(ring_ff, basis_ff, pairset, hashtable, params_zp)
@@ -632,11 +617,8 @@ function _groebner_classic_modular(
 
         partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
 
-        success_reconstruct = partial_rational_reconstruct!(
-            state,
-            luckyprimes,
-            indices_selection,
-        )
+        success_reconstruct =
+            partial_rational_reconstruct!(state, luckyprimes, indices_selection)
 
         if !success_reconstruct
             iters += 1
@@ -656,8 +638,7 @@ function _groebner_classic_modular(
 
         # Perform full reconstruction
         full_simultaneous_crt_reconstruct!(state, luckyprimes)
-        success_reconstruct =
-            full_rational_reconstruct!(state, luckyprimes)
+        success_reconstruct = full_rational_reconstruct!(state, luckyprimes)
 
         if !success_reconstruct
             iters += 1
