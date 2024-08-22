@@ -173,14 +173,13 @@ function _groebner_learn_and_apply(
     basis, pairset, hashtable, permutation =
         f4_initialize_structs(ring, monoms, coeffs, params, make_monic=false)
 
-    basis_zz = clear_denominators!(state.buffer, basis, deepcopy=false)
+    basis_zz = clear_denominators!(basis, deepcopy=false)
 
     # Handler for lucky primes
     luckyprimes = LuckyPrimes(basis_zz.coeffs)
     prime = primes_next_lucky_prime!(luckyprimes)
 
-    # Perform reduction modulo prime and store result in basis_ff
-    ring_ff, basis_ff = reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
+    ring_ff, basis_ff = reduce_modulo_p!(ring, basis_zz, prime, deepcopy=true)
 
     params_zp = params_mod_p(params, prime)
     trace = trace_initialize(
@@ -200,7 +199,7 @@ function _groebner_learn_and_apply(
     # Reconstruct coefficients and write results to the accumulator.
     full_simultaneous_crt_reconstruct!(state, luckyprimes)
 
-    success_reconstruct = full_rational_reconstruct!(state, luckyprimes, params.use_flint)
+    success_reconstruct = full_rational_reconstruct!(state, luckyprimes)
 
     correct_basis = false
     if success_reconstruct
@@ -214,7 +213,7 @@ function _groebner_learn_and_apply(
             hashtable,
             params
         )
-        # At this point, if the constructed basis is correct, we return it.
+        # At this point, the constructed basis is deemed correct, we return it.
         if correct_basis
             gb_monoms, _ = basis_export_data(trace.gb_basis, hashtable)
             gb_coeffs_qq = state.gb_coeffs_qq
@@ -245,7 +244,7 @@ function _groebner_learn_and_apply(
 
                 # Perform reduction modulo primes and store result in basis_ff_4x
                 ring_ff_4x, basis_ff_4x =
-                    reduce_modulo_p_in_batch!(state.buffer, ring, basis_zz, prime_4x)
+                    reduce_modulo_p_in_batch!(ring, basis_zz, prime_4x)
                 params_zp_4x = params_mod_p(
                     params,
                     CompositeNumber{4, Int32}(prime_4x),
@@ -269,9 +268,9 @@ function _groebner_learn_and_apply(
             for j in 1:batchsize
                 prime = primes_next_lucky_prime!(luckyprimes)
 
-                # Perform reduction modulo prime and store result in basis_ff
+        
                 ring_ff, basis_ff =
-                    reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
+                    reduce_modulo_p!(ring, basis_zz, prime, deepcopy=true)
                 params_zp = params_mod_p(params, prime)
 
                 trace.buf_basis = basis_ff
@@ -294,7 +293,6 @@ function _groebner_learn_and_apply(
             state,
             luckyprimes,
             indices_selection,
-            params.use_flint
         )
 
         if !success_reconstruct
@@ -317,7 +315,7 @@ function _groebner_learn_and_apply(
         full_simultaneous_crt_reconstruct!(state, luckyprimes)
 
         success_reconstruct =
-            full_rational_reconstruct!(state, luckyprimes, params.use_flint)
+            full_rational_reconstruct!(state, luckyprimes)
 
         if !success_reconstruct
             iters += 1
@@ -341,9 +339,7 @@ function _groebner_learn_and_apply(
     end
 
     # Construct the output basis.
-    # Take monomials from the basis modulo a prime
     gb_monoms, _ = basis_export_data(trace.gb_basis, hashtable)
-    # Take coefficients from the reconstructed basis
     gb_coeffs_qq = state.gb_coeffs_qq
 
     return gb_monoms, gb_coeffs_qq
@@ -367,14 +363,13 @@ function _groebner_learn_and_apply_threaded(
     basis, pairset, hashtable, permutation =
         f4_initialize_structs(ring, monoms, coeffs, params, make_monic=false)
 
-    basis_zz = clear_denominators!(state.buffer, basis, deepcopy=false)
+    basis_zz = clear_denominators!(basis, deepcopy=false)
 
     # Handler for lucky primes
     luckyprimes = LuckyPrimes(basis_zz.coeffs)
     prime = primes_next_lucky_prime!(luckyprimes)
 
-    # Perform reduction modulo prime and store result in basis_ff
-    ring_ff, basis_ff = reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
+    ring_ff, basis_ff = reduce_modulo_p!(ring, basis_zz, prime, deepcopy=true)
 
     params_zp = params_mod_p(params, prime)
     trace = trace_initialize(
@@ -394,7 +389,7 @@ function _groebner_learn_and_apply_threaded(
     # Reconstruct coefficients and write results to the accumulator.
     full_simultaneous_crt_reconstruct!(state, luckyprimes)
 
-    success_reconstruct = full_rational_reconstruct!(state, luckyprimes, params.use_flint)
+    success_reconstruct = full_rational_reconstruct!(state, luckyprimes)
 
     correct_basis = false
     if success_reconstruct
@@ -437,7 +432,6 @@ function _groebner_learn_and_apply_threaded(
     for i in 1:nthreads()
         threadbuf_gb_coeffs[i] = Vector{Tuple{Int, Vector{Vector{Int32}}}}()
     end
-    threadbuf_bigint_buffer = map(_ -> CoefficientBuffer(), 1:nthreads())
     threadbuf_params = map(_ -> deepcopy(params), 1:nthreads())
 
     iters = 0
@@ -454,17 +448,15 @@ function _groebner_learn_and_apply_threaded(
             t_id = threadid()
             threadlocal_trace_4x = threadbuf_trace_4x[t_id]
             threadlocal_prime_4x = ntuple(k -> threadbuf_primes[j + k - 1], 4)
-            threadlocal_bigint_buffer = threadbuf_bigint_buffer[t_id]
             threadlocal_params = threadbuf_params[t_id]
 
             ring_ff_4x, basis_ff_4x = reduce_modulo_p_in_batch!(
-                threadlocal_bigint_buffer,  # is modified
-                ring,                       # is not modified
-                basis_zz,                   # is not modified
-                threadlocal_prime_4x        # is not modified
+                ring,
+                basis_zz,
+                threadlocal_prime_4x
             )
             threadlocal_params_zp_4x = params_mod_p(
-                threadlocal_params,               # can be modified later
+                threadlocal_params,               # can be mutated later
                 CompositeNumber{4, Int32}(threadlocal_prime_4x),
                 using_wide_type_for_coeffs=false
             )
@@ -486,6 +478,7 @@ function _groebner_learn_and_apply_threaded(
             push!(threadbuf_gb_coeffs[t_id], (threadlocal_prime_4x[3], gb_coeffs_3))
             push!(threadbuf_gb_coeffs[t_id], (threadlocal_prime_4x[4], gb_coeffs_4))
         end
+
         primes_used += batchsize
 
         threadbuf_gb_coeffs_union = reduce(vcat, threadbuf_gb_coeffs)
@@ -501,7 +494,6 @@ function _groebner_learn_and_apply_threaded(
             state,
             luckyprimes,
             indices_selection,
-            params.use_flint
         )
 
         if !success_reconstruct
@@ -523,7 +515,7 @@ function _groebner_learn_and_apply_threaded(
         # Perform full reconstruction
         full_simultaneous_crt_reconstruct!(state, luckyprimes)
         success_reconstruct =
-            full_rational_reconstruct!(state, luckyprimes, params.use_flint)
+            full_rational_reconstruct!(state, luckyprimes)
 
         # This should happen rarely
         if !success_reconstruct
@@ -568,14 +560,13 @@ function _groebner_classic_modular(
     basis, pairset, hashtable =
         f4_initialize_structs(ring, monoms, coeffs, params, make_monic=false)
 
-    basis_zz = clear_denominators!(state.buffer, basis, deepcopy=false)
+    basis_zz = clear_denominators!(basis, deepcopy=false)
 
     # Handler for lucky primes
     luckyprimes = LuckyPrimes(basis_zz.coeffs)
     prime = primes_next_lucky_prime!(luckyprimes)
 
-    # Perform reduction modulo prime and store result in basis_ff
-    ring_ff, basis_ff = reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
+    ring_ff, basis_ff = reduce_modulo_p!(ring, basis_zz, prime, deepcopy=true)
 
     params_zp = params_mod_p(params, prime)
     f4!(ring_ff, basis_ff, pairset, hashtable, params_zp)
@@ -587,7 +578,7 @@ function _groebner_classic_modular(
     # Reconstruct coefficients and write results to the accumulator.
     full_simultaneous_crt_reconstruct!(state, luckyprimes)
 
-    success_reconstruct = full_rational_reconstruct!(state, luckyprimes, params.use_flint)
+    success_reconstruct = full_rational_reconstruct!(state, luckyprimes)
 
     correct_basis = false
     if success_reconstruct
@@ -624,9 +615,9 @@ function _groebner_classic_modular(
         for j in 1:batchsize
             prime = primes_next_lucky_prime!(luckyprimes)
 
-            # Perform reduction modulo prime and store result in basis_ff
+    
             ring_ff, basis_ff =
-                reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
+                reduce_modulo_p!(ring, basis_zz, prime, deepcopy=true)
             params_zp = params_mod_p(params, prime)
 
             f4!(ring_ff, basis_ff, pairset, hashtable, params_zp)
@@ -645,7 +636,6 @@ function _groebner_classic_modular(
             state,
             luckyprimes,
             indices_selection,
-            params.use_flint
         )
 
         if !success_reconstruct
@@ -667,7 +657,7 @@ function _groebner_classic_modular(
         # Perform full reconstruction
         full_simultaneous_crt_reconstruct!(state, luckyprimes)
         success_reconstruct =
-            full_rational_reconstruct!(state, luckyprimes, params.use_flint)
+            full_rational_reconstruct!(state, luckyprimes)
 
         if !success_reconstruct
             iters += 1

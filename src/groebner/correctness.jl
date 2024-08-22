@@ -113,11 +113,11 @@ function randomized_correctness_check!(
     # NOTE: this function may modify the given hashtable!
     prime = primes_next_aux_prime!(lucky)
     @log :misc "Checking the correctness of reconstrcted basis modulo $prime"
-    ring_ff, input_ff = reduce_modulo_p!(state.buffer, ring, input_zz, prime, deepcopy=true)
+    ring_ff, input_ff = reduce_modulo_p!(ring, input_zz, prime, deepcopy=true)
     # TODO: do we really need to re-scale things to be fraction-free?
-    gb_coeffs_zz = _clear_denominators!(state.buffer, state.gb_coeffs_qq)
+    gb_coeffs_zz = _clear_denominators!(state.gb_coeffs_qq)
     gb_zz = basis_deep_copy_with_new_coeffs(gb_ff, gb_coeffs_zz)
-    ring_ff, gb_ff = reduce_modulo_p!(state.buffer, ring, gb_zz, prime, deepcopy=false)
+    ring_ff, gb_ff = reduce_modulo_p!(ring, gb_zz, prime, deepcopy=false)
     # Check that initial ideal contains in the computed groebner basis modulo a
     # random prime
     arithmetic = select_arithmetic(CoeffModular, prime, :auto, false)

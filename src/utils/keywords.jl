@@ -27,7 +27,6 @@ const _supported_kw_args = (
         homogenize   = :auto,
         statistics   = :no,
         batched      = true,
-        use_flint    = true,
         changematrix = false
     ),
     normalform = (
@@ -83,7 +82,6 @@ const _supported_kw_args = (
         homogenize   = :auto,
         statistics   = :no,
         batched      = true,
-        use_flint    = true,
         changematrix = true
     ),
 )
@@ -119,7 +117,6 @@ mutable struct KeywordArguments
     sweep::Bool
     homogenize::Symbol
     statistics::Symbol
-    use_flint::Bool
     changematrix::Bool
 
     KeywordArguments(function_id::Symbol; passthrough...) =
@@ -199,7 +196,6 @@ mutable struct KeywordArguments
         `:auto`, `:classic_modular`, `:learn_and_apply`"""
 
         batched = get(kws, :batched, get(default_kw_args, :batched, true))
-        use_flint = get(kws, :use_flint, get(default_kw_args, :use_flint, true))
 
         selection = get(kws, :selection, get(default_kw_args, :selection, :auto))
         @assert selection in (:auto, :normal, :sugar, :be_divided_and_perish)
@@ -239,7 +235,6 @@ mutable struct KeywordArguments
             sweep,
             homogenize,
             statistics,
-            use_flint,
             changematrix
         )
     end

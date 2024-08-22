@@ -244,8 +244,6 @@ mutable struct AlgorithmParameters{Arithmetic <: AbstractArithmetic}
 
     statistics::Symbol
 
-    use_flint::Bool
-
     changematrix::Bool
 end
 
@@ -378,8 +376,6 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
 
     statistics = kwargs.statistics
 
-    use_flint = kwargs.use_flint
-
     changematrix = kwargs.changematrix
     if changematrix
         if !(target_ord isa DegRevLex)
@@ -409,7 +405,6 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         rng,
         sweep,
         statistics,
-        use_flint,
         changematrix
     )
 end
@@ -451,7 +446,6 @@ function params_mod_p(
         params.rng,
         params.sweep,
         params.statistics,
-        params.use_flint,
         params.changematrix
     )
 end

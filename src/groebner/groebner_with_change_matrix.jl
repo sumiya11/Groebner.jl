@@ -148,14 +148,14 @@ function _groebner_with_change_classic_modular(
     basis, pairset, hashtable =
         f4_initialize_structs(ring, monoms, coeffs, params, make_monic=false)
 
-    basis_zz = clear_denominators!(state.buffer, basis, deepcopy=false)
+    basis_zz = clear_denominators!(basis, deepcopy=false)
 
     # Handler for lucky primes
     luckyprimes = LuckyPrimes(basis_zz.coeffs)
     prime = primes_next_lucky_prime!(luckyprimes)
 
     # Perform reduction modulo prime and store result in basis_ff
-    ring_ff, basis_ff = reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
+    ring_ff, basis_ff = reduce_modulo_p!(ring, basis_zz, prime, deepcopy=true)
 
     params_zp = params_mod_p(params, prime)
     f4!(ring_ff, basis_ff, pairset, hashtable, params_zp)
@@ -173,10 +173,10 @@ function _groebner_with_change_classic_modular(
     full_simultaneous_crt_reconstruct!(state, luckyprimes)
     full_simultaneous_crt_reconstruct_changematrix!(state, luckyprimes)
 
-    success_reconstruct = full_rational_reconstruct!(state, luckyprimes, params.use_flint)
+    success_reconstruct = full_rational_reconstruct!(state, luckyprimes)
 
     changematrix_success_reconstruct =
-        full_rational_reconstruct_changematrix!(state, luckyprimes, params.use_flint)
+        full_rational_reconstruct_changematrix!(state, luckyprimes)
 
     correct_basis = false
     if success_reconstruct && changematrix_success_reconstruct
@@ -215,7 +215,7 @@ function _groebner_with_change_classic_modular(
             prime = primes_next_lucky_prime!(luckyprimes)
 
             ring_ff, basis_ff =
-                reduce_modulo_p!(state.buffer, ring, basis_zz, prime, deepcopy=true)
+                reduce_modulo_p!(ring, basis_zz, prime, deepcopy=true)
             params_zp = params_mod_p(params, prime)
 
             f4!(ring_ff, basis_ff, pairset, hashtable, params_zp)
@@ -237,7 +237,6 @@ function _groebner_with_change_classic_modular(
             state,
             luckyprimes,
             indices_selection,
-            params.use_flint
         )
 
         if !success_reconstruct
@@ -260,7 +259,7 @@ function _groebner_with_change_classic_modular(
         full_simultaneous_crt_reconstruct!(state, luckyprimes)
 
         success_reconstruct =
-            full_rational_reconstruct!(state, luckyprimes, params.use_flint)
+            full_rational_reconstruct!(state, luckyprimes)
 
         if !success_reconstruct
             iters += 1
@@ -270,7 +269,7 @@ function _groebner_with_change_classic_modular(
 
         full_simultaneous_crt_reconstruct_changematrix!(state, luckyprimes)
         success_reconstruct_changematrix =
-            full_rational_reconstruct_changematrix!(state, luckyprimes, params.use_flint)
+            full_rational_reconstruct_changematrix!(state, luckyprimes)
         if !success_reconstruct_changematrix
             iters += 1
             batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)

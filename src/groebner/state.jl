@@ -1,47 +1,5 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-# Acts as a buffer when doing arithmetic with big rationals
-mutable struct CoefficientBuffer
-    # Buffers for scaling coefficients
-    scalebuf1::BigInt
-    scalebuf2::BigInt
-    # Buffers for reductions modulo a prime
-    reducebuf1::BigInt
-    reducebuf2::BigInt
-    reducebuf3::BigInt
-    # Buffers for coefficient reconstruction
-    reconstructbuf1::BigInt
-    reconstructbuf2::BigInt
-    reconstructbuf3::BigInt
-    reconstructbuf4::BigInt
-    reconstructbuf5::BigInt
-    reconstructbuf6::BigInt
-    reconstructbuf7::BigInt
-    reconstructbuf8::BigInt
-    reconstructbuf9::BigInt
-    reconstructbuf10::BigInt
-
-    function CoefficientBuffer()
-        new(
-            BigInt(),
-            BigInt(),
-            BigInt(),
-            BigInt(),
-            BigInt(),
-            BigInt(),
-            BigInt(),
-            BigInt(),
-            BigInt(),
-            BigInt(),
-            BigInt(),
-            BigInt(),
-            BigInt(),
-            BigInt(),
-            BigInt()
-        )
-    end
-end
-
 # The state of the modular GB 
 mutable struct GroebnerState{T1 <: CoeffZZ, T2 <: CoeffQQ, T3}
     gb_coeffs_zz::Vector{Vector{T1}}
@@ -55,8 +13,6 @@ mutable struct GroebnerState{T1 <: CoeffZZ, T2 <: CoeffQQ, T3}
     selected_coeffs_qq::Vector{T2}
     is_crt_reconstructed_mask::Vector{BitVector}
     is_rational_reconstructed_mask::Vector{BitVector}
-
-    buffer::CoefficientBuffer
 
     changematrix_coeffs_ff_all::Vector{Vector{Vector{Vector{T3}}}}
     changematrix_coeffs_zz::Vector{Vector{Vector{T1}}}
@@ -75,7 +31,6 @@ mutable struct GroebnerState{T1 <: CoeffZZ, T2 <: CoeffQQ, T3}
             Vector{T2}(),
             Vector{BitVector}(),
             Vector{BitVector}(),
-            CoefficientBuffer(),
             Vector{Vector{Vector{Vector{T3}}}}(),
             Vector{Vector{Vector{T1}}}(),
             Vector{Vector{Vector{T2}}}()
@@ -122,11 +77,10 @@ function common_denominator(coeffs::Vector{T}) where {T <: CoeffQQ}
 end
 
 function _clear_denominators!(
-    buffer::CoefficientBuffer,
     coeffs_qq::Vector{Vector{T}}
 ) where {T <: CoeffQQ}
     coeffs_zz = [[BigInt(0) for _ in 1:length(c)] for c in coeffs_qq]
-    den, buf = buffer.scalebuf1, buffer.scalebuf2
+    den, buf = BigInt(), BigInt()
     @inbounds for i in 1:length(coeffs_qq)
         @invariant length(coeffs_zz[i]) == length(coeffs_qq[i])
         den = common_denominator!(den, coeffs_qq[i])
@@ -140,11 +94,10 @@ function _clear_denominators!(
 end
 
 function clear_denominators!(
-    buffer::CoefficientBuffer,
     basis::Basis{T};
     deepcopy=false
 ) where {T <: CoeffQQ}
-    coeffs_zz = _clear_denominators!(buffer, basis.coeffs)
+    coeffs_zz = _clear_denominators!(basis.coeffs)
     if deepcopy
         basis_deep_copy_with_new_coeffs(basis, coeffs_zz)
     else
@@ -165,14 +118,13 @@ end
 
 function reduce_modulo_p!(
     ring,
-    coeffbuff::CoefficientBuffer,
     coeffs_zz::Vector{Vector{T1}},
     coeffs_ff::Vector{Vector{T2}},
     prime::T2
 ) where {T1 <: CoeffZZ, T2 <: CoeffZp}
-    p   = coeffbuff.reducebuf1
-    buf = coeffbuff.reducebuf2
-    c   = coeffbuff.reducebuf3
+    p   = BigInt()
+    buf = BigInt()
+    c   = BigInt()
     Base.GMP.MPZ.set_ui!(p, prime)
 
     @inbounds for i in 1:length(coeffs_zz)
@@ -188,24 +140,22 @@ function reduce_modulo_p!(
 end
 
 function reduce_modulo_p!(
-    coeffbuff::CoefficientBuffer,
     ring::PolyRing,
     coeffs_zz::Vector{Vector{T1}},
     prime::T2
 ) where {T1 <: CoeffZZ, T2 <: CoeffZp}
     coeffs_ff = [Vector{CoeffModular}(undef, length(c)) for c in coeffs_zz]
-    ring_ff, coeffs_ff = reduce_modulo_p!(ring, coeffbuff, coeffs_zz, coeffs_ff, prime)
+    ring_ff, coeffs_ff = reduce_modulo_p!(ring, coeffs_zz, coeffs_ff, prime)
     ring_ff, coeffs_ff
 end
 
 function reduce_modulo_p!(
-    buffer::CoefficientBuffer,
     ring::PolyRing,
     basis::Basis{T1},
     prime::T2;
     deepcopy=true
 ) where {T1 <: CoeffZZ, T2 <: CoeffZp}
-    ring_ff, coeffs_ff = reduce_modulo_p!(buffer, ring, basis.coeffs, prime)
+    ring_ff, coeffs_ff = reduce_modulo_p!(ring, basis.coeffs, prime)
     new_basis = if deepcopy
         basis_deep_copy_with_new_coeffs(basis, coeffs_ff)
     else
@@ -215,7 +165,6 @@ function reduce_modulo_p!(
 end
 
 function reduce_modulo_p_in_batch!(
-    coeffbuff::CoefficientBuffer,
     ring::PolyRing,
     basis::Basis{C},
     prime_xn::NTuple{N, T}
@@ -223,10 +172,10 @@ function reduce_modulo_p_in_batch!(
     coeffs_zz = basis.coeffs
     coeffs_ff_xn = [Vector{CompositeNumber{N, T}}(undef, length(c)) for c in coeffs_zz]
 
-    p = coeffbuff.reducebuf1
-    buf = coeffbuff.reducebuf2
+    p = BigInt()
+    buf = BigInt()
     xn = map(_ -> BigInt(0), 1:N)
-    c = coeffbuff.reducebuf3
+    c = BigInt()
     prime_big_xn = map(BigInt, prime_xn)
 
     @inbounds for i in 1:length(coeffs_zz)
@@ -294,15 +243,6 @@ function full_simultaneous_crt_reconstruct!(state::GroebnerState, lucky::LuckyPr
 
     # Takes the lock..
     @invariant length(state.gb_coeffs_ff_all) == length(lucky.used_primes)
-
-    # Set the buffers for CRT and precompute some values
-    buffer = state.buffer
-    buf = buffer.reconstructbuf1
-    n1, n2 = buffer.reconstructbuf2, buffer.reconstructbuf3
-    M = buffer.reconstructbuf4
-    invm1, invm2 = buffer.reconstructbuf6, buffer.reconstructbuf7
-    M0 = buffer.reconstructbuf8
-    MM0 = buffer.reconstructbuf9
 
     @inbounds for i in 1:length(gb_coeffs_zz)
         for j in 1:length(gb_coeffs_zz[i])
@@ -403,15 +343,6 @@ function full_simultaneous_crt_reconstruct_changematrix!(
     # Takes the lock..
     @invariant length(state.changematrix_coeffs_ff_all) == length(lucky.used_primes)
 
-    # Set the buffers for CRT and precompute some values
-    buffer = state.buffer
-    buf = buffer.reconstructbuf1
-    n1, n2 = buffer.reconstructbuf2, buffer.reconstructbuf3
-    M = buffer.reconstructbuf4
-    invm1, invm2 = buffer.reconstructbuf6, buffer.reconstructbuf7
-    M0 = buffer.reconstructbuf8
-    MM0 = buffer.reconstructbuf9
-
     n = length(lucky.used_primes)
     rems = Vector{UInt64}(undef, n)
     mults = Vector{BigInt}(undef, n)
@@ -476,13 +407,6 @@ function partial_incremental_crt_reconstruct!(
         Base.GMP.MPZ.set!(selected_prev_coeffs_zz[i], selected_coeffs_zz[i])
     end
 
-    # Set the buffers for CRT and precompute some values
-    buffer = state.buffer
-    buf = buffer.reconstructbuf1
-    n1, n2 = buffer.reconstructbuf2, buffer.reconstructbuf3
-    M = buffer.reconstructbuf4
-    invm1, invm2 = buffer.reconstructbuf6, buffer.reconstructbuf7
-
     crt_precompute!(M, n1, n2, invm1, lucky.modulo, invm2, last(lucky.used_primes))
 
     @inbounds for i in 1:length(indices_selection)
@@ -537,16 +461,6 @@ function partial_simultaneous_crt_reconstruct!(
         Base.GMP.MPZ.set!(selected_prev_coeffs_zz[i], selected_coeffs_zz[i])
     end
 
-    # Set the buffers for CRT and precompute some values
-    buffer = state.buffer
-    buf = buffer.reconstructbuf1
-    n1, n2 = buffer.reconstructbuf2, buffer.reconstructbuf3
-    M = buffer.reconstructbuf4
-
-    invm1, invm2 = buffer.reconstructbuf6, buffer.reconstructbuf7
-    M0 = buffer.reconstructbuf8
-    MM0 = buffer.reconstructbuf9
-
     rems = Vector{UInt}(undef, n)
     mults = Vector{BigInt}(undef, n)
     for i in 1:length(mults)
@@ -596,84 +510,39 @@ end
 function full_rational_reconstruct!(
     state::GroebnerState,
     lucky::LuckyPrimes,
-    use_flint::Bool
 )
     modulo = lucky.modulo
     @invariant modulo == prod(BigInt, lucky.used_primes)
 
-    buffer = state.buffer
     bnd = ratrec_reconstruction_bound(modulo)
 
-    buf, buf1 = buffer.reconstructbuf1, buffer.reconstructbuf2
-    buf2, buf3 = buffer.reconstructbuf3, buffer.reconstructbuf4
-    u1, u2 = buffer.reconstructbuf5, buffer.reconstructbuf6
-    u3, v1 = buffer.reconstructbuf7, buffer.reconstructbuf8
-    v2, v3 = buffer.reconstructbuf9, buffer.reconstructbuf10
     gb_coeffs_zz = state.gb_coeffs_zz
     gb_coeffs_qq = state.gb_coeffs_qq
     is_rational_reconstructed_mask = state.is_rational_reconstructed_mask
 
     @invariant length(gb_coeffs_zz) == length(gb_coeffs_qq)
 
-    if use_flint
-        nemo_bnd = Nemo.ZZRingElem(bnd)
-        nemo_modulo = Nemo.ZZRingElem(modulo)
+    nemo_bnd = Nemo.ZZRingElem(bnd)
+    nemo_modulo = Nemo.ZZRingElem(modulo)
 
-        @inbounds for i in 1:length(gb_coeffs_zz)
-            @invariant length(gb_coeffs_zz[i]) == length(gb_coeffs_qq[i])
-            # Skip reconstrction of the first coefficient, it is equal to one in the
-            # reduced basis
-            for j in 2:length(gb_coeffs_zz[i])
-                if is_rational_reconstructed_mask[i][j]
-                    continue
-                end
-
-                cz = gb_coeffs_zz[i][j]
-                nemo_rem = Nemo.ZZRingElem(cz)
-                success, pq = ratrec_nemo_2(nemo_rem, nemo_modulo, nemo_bnd, nemo_bnd)
-                !success && return false
-
-                gb_coeffs_qq[i][j] = pq
+    @inbounds for i in 1:length(gb_coeffs_zz)
+        @invariant length(gb_coeffs_zz[i]) == length(gb_coeffs_qq[i])
+        # Skip reconstrction of the first coefficient, it is equal to one in the
+        # reduced basis
+        for j in 2:length(gb_coeffs_zz[i])
+            if is_rational_reconstructed_mask[i][j]
+                continue
             end
 
-            @invariant isone(gb_coeffs_qq[i][1])
+            cz = gb_coeffs_zz[i][j]
+            nemo_rem = Nemo.ZZRingElem(cz)
+            success, pq = ratrec_nemo_2(nemo_rem, nemo_modulo, nemo_bnd, nemo_bnd)
+            !success && return false
+
+            gb_coeffs_qq[i][j] = pq
         end
-    else
-        @inbounds for i in 1:length(gb_coeffs_zz)
-            @invariant length(gb_coeffs_zz[i]) == length(gb_coeffs_qq[i])
-            # Skip reconstrction of the first coefficient, it is equal to one in the
-            # reduced basis
-            for j in 2:length(gb_coeffs_zz[i])
-                if is_rational_reconstructed_mask[i][j]
-                    continue
-                end
 
-                cz = gb_coeffs_zz[i][j]
-                cq = gb_coeffs_qq[i][j]
-                num, den = numerator(cq), denominator(cq)
-                success = ratrec!(
-                    num,
-                    den,
-                    bnd,
-                    buf,
-                    buf1,
-                    buf2,
-                    buf3,
-                    u1,
-                    u2,
-                    u3,
-                    v1,
-                    v2,
-                    v3,
-                    cz,
-                    modulo
-                )
-
-                !success && return false
-            end
-
-            @invariant isone(gb_coeffs_qq[i][1])
-        end
+        @invariant isone(gb_coeffs_qq[i][1])
     end
 
     true
@@ -682,25 +551,17 @@ end
 function full_rational_reconstruct_changematrix!(
     state::GroebnerState,
     lucky::LuckyPrimes,
-    use_flint::Bool
 )
     modulo = lucky.modulo
     @invariant modulo == prod(BigInt, lucky.used_primes)
 
-    buffer = state.buffer
     bnd = ratrec_reconstruction_bound(modulo)
 
-    buf, buf1 = buffer.reconstructbuf1, buffer.reconstructbuf2
-    buf2, buf3 = buffer.reconstructbuf3, buffer.reconstructbuf4
-    u1, u2 = buffer.reconstructbuf5, buffer.reconstructbuf6
-    u3, v1 = buffer.reconstructbuf7, buffer.reconstructbuf8
-    v2, v3 = buffer.reconstructbuf9, buffer.reconstructbuf10
     changematrix_coeffs_zz = state.changematrix_coeffs_zz
     changematrix_coeffs_qq = state.changematrix_coeffs_qq
     # is_rational_reconstructed_mask = state.is_rational_reconstructed_mask
 
     @invariant length(changematrix_coeffs_zz) == length(changematrix_coeffs_qq)
-    @assert use_flint
     nemo_modulo = Nemo.ZZRingElem(modulo)
     nemo_bnd = Nemo.ZZRingElem(bnd)
 
@@ -726,78 +587,35 @@ function partial_rational_reconstruct!(
     state::GroebnerState,
     lucky::LuckyPrimes,
     indices_selection::Vector{Tuple{Int, Int}},
-    use_flint::Bool
 )
     modulo = lucky.modulo
     @invariant modulo == prod(BigInt, lucky.used_primes)
 
-    buffer = state.buffer
     bnd = ratrec_reconstruction_bound(modulo)
-
-    buf, buf1 = buffer.reconstructbuf1, buffer.reconstructbuf2
-    buf2, buf3 = buffer.reconstructbuf3, buffer.reconstructbuf4
-    u1, u2 = buffer.reconstructbuf5, buffer.reconstructbuf6
-    u3, v1 = buffer.reconstructbuf7, buffer.reconstructbuf8
-    v2, v3 = buffer.reconstructbuf9, buffer.reconstructbuf10
 
     selected_coeffs_zz = state.selected_coeffs_zz
     selected_coeffs_qq = state.selected_coeffs_qq
     gb_coeffs_qq = state.gb_coeffs_qq
     is_rational_reconstructed_mask = state.is_rational_reconstructed_mask
 
-    if use_flint
-        nemo_modulo = Nemo.ZZRingElem(modulo)
-        nemo_bnd = Nemo.ZZRingElem(bnd)
+    nemo_modulo = Nemo.ZZRingElem(modulo)
+    nemo_bnd = Nemo.ZZRingElem(bnd)
 
-        @inbounds for i in 1:length(indices_selection)
-            i1, i2 = indices_selection[i]
-            cz = selected_coeffs_zz[i]
-            nemo_rem = Nemo.ZZRingElem(cz)
+    @inbounds for i in 1:length(indices_selection)
+        i1, i2 = indices_selection[i]
+        cz = selected_coeffs_zz[i]
+        nemo_rem = Nemo.ZZRingElem(cz)
 
-            success, pq = ratrec_nemo_2(nemo_rem, nemo_modulo, nemo_bnd, nemo_bnd)
-            !success && return false
+        success, pq = ratrec_nemo_2(nemo_rem, nemo_modulo, nemo_bnd, nemo_bnd)
+        !success && return false
 
-            selected_coeffs_qq[i] = pq
+        selected_coeffs_qq[i] = pq
 
-            # Mark that the coefficient is already reconstructed
-            is_rational_reconstructed_mask[i1][i2] = true
-            tnum, tden = numerator(gb_coeffs_qq[i1][i2]), denominator(gb_coeffs_qq[i1][i2])
-            Base.GMP.MPZ.set!(tnum, numerator(pq))
-            Base.GMP.MPZ.set!(tden, denominator(pq))
-        end
-    else
-        @inbounds for i in 1:length(indices_selection)
-            i1, i2 = indices_selection[i]
-
-            cz = selected_coeffs_zz[i]
-            cq = selected_coeffs_qq[i]
-            num, den = numerator(cq), denominator(cq)
-            success = ratrec!(
-                num,
-                den,
-                bnd,
-                buf,
-                buf1,
-                buf2,
-                buf3,
-                u1,
-                u2,
-                u3,
-                v1,
-                v2,
-                v3,
-                cz,
-                modulo
-            )
-
-            !success && return false
-
-            # Mark that the coefficient is already reconstructed
-            is_rational_reconstructed_mask[i1][i2] = true
-            tnum, tden = numerator(gb_coeffs_qq[i1][i2]), denominator(gb_coeffs_qq[i1][i2])
-            Base.GMP.MPZ.set!(tnum, num)
-            Base.GMP.MPZ.set!(tden, den)
-        end
+        # Mark that the coefficient is already reconstructed
+        is_rational_reconstructed_mask[i1][i2] = true
+        tnum, tden = numerator(gb_coeffs_qq[i1][i2]), denominator(gb_coeffs_qq[i1][i2])
+        Base.GMP.MPZ.set!(tnum, numerator(pq))
+        Base.GMP.MPZ.set!(tden, denominator(pq))
     end
 
     true
