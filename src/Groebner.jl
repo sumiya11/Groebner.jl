@@ -96,7 +96,6 @@ end
 include("utils/logging.jl")
 include("utils/invariants.jl")
 include("utils/simd.jl")
-include("utils/pretty_print.jl")
 include("utils/plots.jl")
 
 # Test systems, such as katsura, cyclic, etc

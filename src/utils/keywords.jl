@@ -127,12 +127,12 @@ mutable struct KeywordArguments
         default_kw_args = _supported_kw_args[function_id]
         for (key, _) in kws
             if !haskey(default_kw_args, key)
-                io = IOBuffer()
-                columnlist(io, sort(map(string, collect(keys(default_kw_args)))))
-                _columns = String(take!(io))
-                throw(AssertionError("""
-                Keyword \"$key\" is not supported by Groebner.$(function_id).
-                Supported keyword arguments for Groebner.$(function_id) are:\n$_columns"""))
+                error_msg = join(sort(map(string, collect(keys(default_kw_args)))), ", ")
+                throw(
+                    AssertionError("""
+              Keyword \"$key\" is not supported by Groebner.$(function_id).
+              Supported keyword arguments for Groebner.$(function_id) are:\n$error_msg""")
+                )
             end
         end
 

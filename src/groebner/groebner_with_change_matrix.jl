@@ -144,7 +144,7 @@ function _groebner_with_change_classic_modular(
 ) where {M <: Monom, C <: CoeffQQ}
 
     # Initialize supporting structs
-    state = GroebnerState{BigInt, C, CoeffModular}(params)
+    state = ModularState{BigInt, C, CoeffModular}(params)
     basis, pairset, hashtable =
         f4_initialize_structs(ring, monoms, coeffs, params, make_monic=false)
 
@@ -170,10 +170,10 @@ function _groebner_with_change_classic_modular(
 
     # Reconstruct coefficients and write results to the accumulator.
     # CRT reconstrction is trivial here.
-    full_simultaneous_crt_reconstruct!(state, luckyprimes)
+    modular_crt_full!(state, luckyprimes)
     full_simultaneous_crt_reconstruct_changematrix!(state, luckyprimes)
 
-    success_reconstruct = full_rational_reconstruct!(state, luckyprimes)
+    success_reconstruct = modular_ratrec_vec_full!(state, luckyprimes)
 
     changematrix_success_reconstruct =
         full_rational_reconstruct_changematrix!(state, luckyprimes)
@@ -205,9 +205,9 @@ function _groebner_with_change_classic_modular(
     batchsize = 1
     batchsize_scaling = 0.10
 
-    tot, indices_selection = gb_modular_select_indices0(state.gb_coeffs_zz, params)
+    tot, witness_set = modular_witness_set(state.gb_coeffs_zz, params)
 
-    partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
+    modular_crt_partial!(state, luckyprimes, witness_set)
 
     iters = 0
     while !correct_basis
@@ -230,10 +230,10 @@ function _groebner_with_change_classic_modular(
 
             primes_used += 1
         end
-        partial_simultaneous_crt_reconstruct!(state, luckyprimes, indices_selection)
+        modular_crt_partial!(state, luckyprimes, witness_set)
 
         success_reconstruct =
-            partial_rational_reconstruct!(state, luckyprimes, indices_selection)
+            partial_rational_reconstruct!(state, luckyprimes, witness_set)
 
         if !success_reconstruct
             iters += 1
@@ -252,9 +252,9 @@ function _groebner_with_change_classic_modular(
         end
 
         # Perform full reconstruction
-        full_simultaneous_crt_reconstruct!(state, luckyprimes)
+        modular_crt_full!(state, luckyprimes)
 
-        success_reconstruct = full_rational_reconstruct!(state, luckyprimes)
+        success_reconstruct = modular_ratrec_vec_full!(state, luckyprimes)
 
         if !success_reconstruct
             iters += 1
