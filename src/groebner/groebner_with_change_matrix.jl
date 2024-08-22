@@ -155,7 +155,7 @@ function _groebner_with_change_classic_modular(
     prime = primes_next_lucky_prime!(luckyprimes)
 
     # Perform reduction modulo prime and store result in basis_ff
-    ring_ff, basis_ff = reduce_modulo_p!(ring, basis_zz, prime, deepcopy=true)
+    ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
 
     params_zp = params_mod_p(params, prime)
     f4!(ring_ff, basis_ff, pairset, hashtable, params_zp)
@@ -171,7 +171,7 @@ function _groebner_with_change_classic_modular(
     # Reconstruct coefficients and write results to the accumulator.
     # CRT reconstrction is trivial here.
     modular_crt_full!(state, luckyprimes)
-    full_simultaneous_crt_reconstruct_changematrix!(state, luckyprimes)
+    modular_crt_full_changematrix!(state, luckyprimes)
 
     success_reconstruct = modular_ratrec_vec_full!(state, luckyprimes)
 
@@ -205,7 +205,7 @@ function _groebner_with_change_classic_modular(
     batchsize = 1
     batchsize_scaling = 0.10
 
-    tot, witness_set = modular_witness_set(state.gb_coeffs_zz, params)
+    witness_set = modular_witness_set(state.gb_coeffs_zz, params)
 
     modular_crt_partial!(state, luckyprimes, witness_set)
 
@@ -214,7 +214,7 @@ function _groebner_with_change_classic_modular(
         for j in 1:batchsize
             prime = primes_next_lucky_prime!(luckyprimes)
 
-            ring_ff, basis_ff = reduce_modulo_p!(ring, basis_zz, prime, deepcopy=true)
+            ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
             params_zp = params_mod_p(params, prime)
 
             f4!(ring_ff, basis_ff, pairset, hashtable, params_zp)
@@ -232,8 +232,7 @@ function _groebner_with_change_classic_modular(
         end
         modular_crt_partial!(state, luckyprimes, witness_set)
 
-        success_reconstruct =
-            partial_rational_reconstruct!(state, luckyprimes, witness_set)
+        success_reconstruct = partial_rational_reconstruct!(state, luckyprimes, witness_set)
 
         if !success_reconstruct
             iters += 1
@@ -242,8 +241,11 @@ function _groebner_with_change_classic_modular(
         end
 
         if params.heuristic_check
-            success_check =
-                heuristic_correctness_check(state.selected_coeffs_qq, luckyprimes.modulo)
+            success_check = modular_lift_heuristic_check_partial(
+                state.gb_coeffs_qq,
+                luckyprimes.modulo,
+                witness_set
+            )
             if !success_check
                 iters += 1
                 batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
@@ -262,7 +264,7 @@ function _groebner_with_change_classic_modular(
             continue
         end
 
-        full_simultaneous_crt_reconstruct_changematrix!(state, luckyprimes)
+        modular_crt_full_changematrix!(state, luckyprimes)
         success_reconstruct_changematrix =
             full_rational_reconstruct_changematrix!(state, luckyprimes)
         if !success_reconstruct_changematrix

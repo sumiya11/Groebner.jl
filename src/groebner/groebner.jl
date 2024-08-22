@@ -179,7 +179,7 @@ function _groebner_learn_and_apply(
     luckyprimes = LuckyPrimes(basis_zz.coeffs)
     prime = primes_next_lucky_prime!(luckyprimes)
 
-    ring_ff, basis_ff = reduce_modulo_p!(ring, basis_zz, prime, deepcopy=true)
+    ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
 
     params_zp = params_mod_p(params, prime)
     trace = trace_initialize(
@@ -228,8 +228,8 @@ function _groebner_learn_and_apply(
     batchsize_scaling = 0.10
 
     # CRT and rational reconstrction settings
-    tot, witness_set = modular_witness_set(state.gb_coeffs_zz, params)
-    
+    witness_set = modular_witness_set(state.gb_coeffs_zz, params)
+
     modular_crt_partial!(state, luckyprimes, witness_set)
 
     # Initialize a tracer that computes the bases in batches of 4
@@ -243,7 +243,7 @@ function _groebner_learn_and_apply(
 
                 # Perform reduction modulo primes and store result in basis_ff_4x
                 ring_ff_4x, basis_ff_4x =
-                    reduce_modulo_p_in_batch!(ring, basis_zz, prime_4x)
+                    modular_reduce_mod_p_in_batch!(ring, basis_zz, prime_4x)
                 params_zp_4x = params_mod_p(
                     params,
                     CompositeNumber{4, Int32}(prime_4x),
@@ -267,7 +267,7 @@ function _groebner_learn_and_apply(
             for j in 1:batchsize
                 prime = primes_next_lucky_prime!(luckyprimes)
 
-                ring_ff, basis_ff = reduce_modulo_p!(ring, basis_zz, prime, deepcopy=true)
+                ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
                 params_zp = params_mod_p(params, prime)
 
                 trace.buf_basis = basis_ff
@@ -286,8 +286,7 @@ function _groebner_learn_and_apply(
 
         modular_crt_partial!(state, luckyprimes, witness_set)
 
-        success_reconstruct =
-            partial_rational_reconstruct!(state, luckyprimes, witness_set)
+        success_reconstruct = partial_rational_reconstruct!(state, luckyprimes, witness_set)
 
         if !success_reconstruct
             iters += 1
@@ -296,8 +295,11 @@ function _groebner_learn_and_apply(
         end
 
         if params.heuristic_check
-            success_check =
-                heuristic_correctness_check(state.selected_coeffs_qq, luckyprimes.modulo)
+            success_check = modular_lift_heuristic_check_partial(
+                state.gb_coeffs_qq,
+                luckyprimes.modulo,
+                witness_set
+            )
             if !success_check
                 iters += 1
                 batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
@@ -362,7 +364,7 @@ function _groebner_learn_and_apply_threaded(
     luckyprimes = LuckyPrimes(basis_zz.coeffs)
     prime = primes_next_lucky_prime!(luckyprimes)
 
-    ring_ff, basis_ff = reduce_modulo_p!(ring, basis_zz, prime, deepcopy=true)
+    ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
 
     params_zp = params_mod_p(params, prime)
     trace = trace_initialize(
@@ -410,7 +412,7 @@ function _groebner_learn_and_apply_threaded(
     batchsize_scaling = 0.10
 
     # CRT and rational reconstrction settings
-    tot, witness_set = modular_witness_set(state.gb_coeffs_zz, params)
+    witness_set = modular_witness_set(state.gb_coeffs_zz, params)
 
     # Initialize partial CRT reconstruction
     modular_crt_partial!(state, luckyprimes, witness_set)
@@ -444,7 +446,7 @@ function _groebner_learn_and_apply_threaded(
             threadlocal_params = threadbuf_params[t_id]
 
             ring_ff_4x, basis_ff_4x =
-                reduce_modulo_p_in_batch!(ring, basis_zz, threadlocal_prime_4x)
+                modular_reduce_mod_p_in_batch!(ring, basis_zz, threadlocal_prime_4x)
             threadlocal_params_zp_4x = params_mod_p(
                 threadlocal_params,               # can be mutated later
                 CompositeNumber{4, Int32}(threadlocal_prime_4x),
@@ -480,8 +482,7 @@ function _groebner_learn_and_apply_threaded(
 
         modular_crt_partial!(state, luckyprimes, witness_set)
 
-        success_reconstruct =
-            partial_rational_reconstruct!(state, luckyprimes, witness_set)
+        success_reconstruct = partial_rational_reconstruct!(state, luckyprimes, witness_set)
 
         if !success_reconstruct
             iters += 1
@@ -490,8 +491,11 @@ function _groebner_learn_and_apply_threaded(
         end
 
         if params.heuristic_check
-            success_check =
-                heuristic_correctness_check(state.selected_coeffs_qq, luckyprimes.modulo)
+            success_check = modular_lift_heuristic_check_partial(
+                state.gb_coeffs_qq,
+                luckyprimes.modulo,
+                witness_set
+            )
             if !success_check
                 iters += 1
                 batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
@@ -552,7 +556,7 @@ function _groebner_classic_modular(
     luckyprimes = LuckyPrimes(basis_zz.coeffs)
     prime = primes_next_lucky_prime!(luckyprimes)
 
-    ring_ff, basis_ff = reduce_modulo_p!(ring, basis_zz, prime, deepcopy=true)
+    ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
 
     params_zp = params_mod_p(params, prime)
     f4!(ring_ff, basis_ff, pairset, hashtable, params_zp)
@@ -592,7 +596,7 @@ function _groebner_classic_modular(
     batchsize_scaling = 0.10
 
     # CRT and rational reconstrction settings
-    tot, witness_set = modular_witness_set(state.gb_coeffs_zz, params)
+    witness_set = modular_witness_set(state.gb_coeffs_zz, params)
 
     modular_crt_partial!(state, luckyprimes, witness_set)
 
@@ -601,7 +605,7 @@ function _groebner_classic_modular(
         for j in 1:batchsize
             prime = primes_next_lucky_prime!(luckyprimes)
 
-            ring_ff, basis_ff = reduce_modulo_p!(ring, basis_zz, prime, deepcopy=true)
+            ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
             params_zp = params_mod_p(params, prime)
 
             f4!(ring_ff, basis_ff, pairset, hashtable, params_zp)
@@ -616,8 +620,7 @@ function _groebner_classic_modular(
 
         modular_crt_partial!(state, luckyprimes, witness_set)
 
-        success_reconstruct =
-            partial_rational_reconstruct!(state, luckyprimes, witness_set)
+        success_reconstruct = partial_rational_reconstruct!(state, luckyprimes, witness_set)
 
         if !success_reconstruct
             iters += 1
@@ -626,8 +629,11 @@ function _groebner_classic_modular(
         end
 
         if params.heuristic_check
-            success_check =
-                heuristic_correctness_check(state.selected_coeffs_qq, luckyprimes.modulo)
+            success_check = modular_lift_heuristic_check_partial(
+                state.gb_coeffs_qq,
+                luckyprimes.modulo,
+                witness_set
+            )
             if !success_check
                 iters += 1
                 batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
