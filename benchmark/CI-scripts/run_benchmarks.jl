@@ -186,6 +186,19 @@ push!(
 push!(
     suite,
     (
+        problem_name="groebner,AA,QQ,chandra 10",
+        type=:time,
+        result=compute_gb(
+            Groebner.Examples.chandran(10, internal_ordering=:degrevlex, k=QQ),
+            3,
+            threaded=:yes
+        )
+    )
+)
+
+push!(
+    suite,
+    (
         problem_name="groebner,threaded,AA,2^31-1,cyclic 8",
         type=:time,
         result=compute_gb(
@@ -202,7 +215,7 @@ push!(
         type=:time,
         result=compute_gb(
             Groebner.Examples.chandran(10, internal_ordering=:degrevlex, k=QQ),
-            5,
+            3,
             threaded=:yes
         )
     )
