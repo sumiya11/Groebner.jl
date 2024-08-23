@@ -91,7 +91,7 @@ function meta_formatter_groebner(level::LogLevel, _module, group, id, file, line
     color = Logging.default_logcolor(level)
     time = gettime()
     h, m, s = lpad(time.hour, 2, "0"), lpad(time.min, 2, "0"), lpad(time.sec, 2, "0")
-    timestr = string("[ ", h, ":", m, ":", s, " ]")
+    timestr = string("[", h, ":", m, ":", s, "]")
     prefix = if level >= Logging.Warn
         "Warning"
     elseif level < Logging.Warn && level >= Logging.Info

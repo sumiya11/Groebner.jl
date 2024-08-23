@@ -105,7 +105,7 @@ function clean_data(results)
             )
             append!(results_master[j], times_master)
             append!(results_nightly[j], times_nightly)
-            results_problems[j] = problem_name_master
+            results_problems[j] = join(split(problem_name_master, ","), ", ")
             results_types[j] = type
         end
     end

@@ -299,7 +299,6 @@ function get_trace!(
     # Try to find a suitable trace among the existing ones
     for id in keys(wrapped_trace.recorded_traces)
         if id[1] == params.representation.coefftype
-            @log :misc "Re-using an existing trace with id = $id"
             trace = wrapped_trace.recorded_traces[id]
             trace.ring.ch = ring.ch
             return trace

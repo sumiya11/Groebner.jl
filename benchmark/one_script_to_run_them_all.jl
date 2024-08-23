@@ -376,18 +376,22 @@ function run_benchmarks(args)
     global_start_time = time_ns()
 
     generate_showvalues(processes) =
-        () -> [(
-            :Active,
-            join(
-                map(
-                    proc -> string(proc.problem_name),
-                    filter(proc -> process_running(proc.julia_process), processes)
-                ),
-                ", "
+        () -> [
+            (
+                :Active,
+                join(
+                    map(
+                        proc -> string(proc.problem_name),
+                        filter(proc -> process_running(proc.julia_process), processes)
+                    ),
+                    ", "
+                )
+            ),
+            (
+                :Time,
+                "$(round(seconds_passed(global_start_time); digits=0)) / $(round(seconds_passed(global_start_time) + timeout - seconds_passed(maximum(proc -> proc.start_time, filter(proc -> process_running(proc.julia_process), processes); init=0)); digits=0)) s"
             )
-        ),
-        (:Time, "$(round(seconds_passed(global_start_time); digits=0)) / $(round(seconds_passed(global_start_time) + timeout - seconds_passed(maximum(proc -> proc.start_time, filter(proc -> process_running(proc.julia_process), processes); init=0)); digits=0)) s")
-    ]
+        ]
 
     prog = Progress(
         length(queue),
@@ -917,8 +921,16 @@ end
 
 function check_args(args)
     backend = args["backend"]
-    @assert backend in
-            ("groebner", "singular", "maplefgb", "mgb", "openf4", "msolve", "learn_apply", "ALL")
+    @assert backend in (
+        "groebner",
+        "singular",
+        "maplefgb",
+        "mgb",
+        "openf4",
+        "msolve",
+        "learn_apply",
+        "ALL"
+    )
     if backend == "openf4" && args["suite"] in [3, 7]
         throw("Running benchmarks over the rationals is not possible for openf4")
     end

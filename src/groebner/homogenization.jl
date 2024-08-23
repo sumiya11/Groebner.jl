@@ -48,7 +48,6 @@ function homogenize_generators!(
     coeffs::Vector{Vector{C}},
     params
 ) where {Ord, T, C <: Coeff}
-    @log :misc "Homogenizing generators"
     @assert length(monoms) == length(coeffs)
     nvars = ring.nvars
     new_nvars = nvars + 1
@@ -72,17 +71,6 @@ function homogenize_generators!(
     new_ord = extend_ordering_in_homogenization(ring.nvars, ring.ord)
     new_ring = PolyRing(new_nvars, new_ord, ring.ch)
     term_permutation = sort_input_terms_to_change_ordering!(new_monoms, coeffs, new_ord)
-    @log :misc """
-    Original polynomial ring: 
-    $ring
-    Homogenized polynomial ring: 
-    $new_ring"""
-    @log :all """
-    Original monomials: 
-    $monoms
-    Homogenized monomials: 
-    $new_monoms
-    """
     sat_var_index = new_nvars
     new_ring_sat, new_monoms, coeffs = saturate_generators_by_variable!(
         new_ring,
@@ -103,8 +91,6 @@ function dehomogenize_generators!(
 ) where {T, C <: Coeff}
     ring_desat, monoms, coeffs = desaturate_generators!(ring, monoms, coeffs, params)
     @assert length(monoms) == length(coeffs)
-    @log :misc "De-homogenizing generators.."
-    @log :misc "Polynomial ring:\n$ring_desat"
     nvars = ring_desat.nvars
     @assert nvars > 1
     new_nvars = nvars - 1
@@ -129,17 +115,6 @@ function dehomogenize_generators!(
     new_ring = PolyRing(new_nvars, new_ord, ring_desat.ch)
     sort_input_terms_to_change_ordering!(new_monoms, coeffs, new_ord)
     params.target_ord = new_ring.ord
-    @log :misc """
-    Original polynomial ring: 
-    $ring_desat
-    De-homogenized polynomial ring: 
-    $new_ring"""
-    @log :all """
-    Original monomials: 
-    $monoms
-    De-homogenized monomials: 
-    $new_monoms
-    """
     new_monoms, coeffs = autoreduce2(new_ring, new_monoms, coeffs, params)
     new_ring, new_monoms, coeffs
 end
@@ -151,7 +126,6 @@ function desaturate_generators!(
     params
 ) where {T, C <: Coeff}
     @assert length(monoms) == length(coeffs)
-    @log :misc "De-saturating generators.."
     nvars = ring.nvars
     @assert nvars > 1
     new_nvars = nvars - 1
@@ -186,17 +160,6 @@ function desaturate_generators!(
     new_ord = restrict_ordering_in_desaturation(ring.ord)
     new_ring = PolyRing(new_nvars, new_ord, ring.ch)
     params.target_ord = new_ring.ord
-    @log :misc """
-    Original polynomial ring: 
-    $ring
-    De-saturated polynomial ring: 
-    $new_ring"""
-    @log :all """
-    Original monomials: 
-    $monoms
-    De-saturated monomials: 
-    $new_monoms
-    """
     new_ring, new_monoms, new_sparse_row_coeffs
 end
 
@@ -208,7 +171,6 @@ function saturate_generators_by_variable!(
     sat_var_index
 ) where {T, C <: Coeff}
     @assert length(monoms) == length(coeffs)
-    @log :misc "Saturating by variable at index $sat_var_index.."
     nvars = ring.nvars
     new_nvars = nvars + 1
     new_monoms = Vector{Vector{Vector{T}}}(undef, length(monoms))
@@ -241,18 +203,5 @@ function saturate_generators_by_variable!(
     new_ord = extend_ordering_in_saturation(ring.nvars, ring.ord)
     new_ring = PolyRing(new_nvars, new_ord, ring.ch)
     params.target_ord = new_ring.ord
-    @log :misc """
-    Original polynomial ring: 
-    $ring
-    Saturated polynomial ring: 
-    $new_ring"""
-    @log :all """
-    Original monomials: 
-    $monoms
-    Saturated monomials: 
-    $new_monoms
-    Saturated coefficients:
-    $coeffs
-    """
     new_ring, new_monoms, coeffs
 end

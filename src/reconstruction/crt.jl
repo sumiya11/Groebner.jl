@@ -1,7 +1,7 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
 ###
-# Single element CRT
+# Single-element CRT
 
 """
     crt!
@@ -182,140 +182,75 @@ end
 ###
 # Element-wise CRT
 
-"""
-    crt_vec_partial!(table_zz, modulo, tables_ff, moduli, indices)
-
-Given `tables_ff` that stores remainders w.r.t. `moduli`, reconstructs a single
-table of big integers using CRT.
-
-Writes the resulting table to `table_zz` and the resulting big modulo to
-`modulo`.
-
-Each of `moduli` must fit in `UInt64`.
-Elements of `tables_ff` must be non-negative.
-!!! Elements of `table_zz` must be initialized and disjoint in memory (for
-example, each element can be initilized by `BigInt(0)`).
-
-## Arguments
-
-- `table_zz`: a table (vector of vectors) of big integers. The result will be
-  written here.
-- `modulo`: a big integer. This function will modify `modulo` so that `modulo =
-  prod(moduli)`.
-- `tables_ff`: a vector of tables of machine integers. `tables_ff[i]` must be a
-  table that stores remainders modulo `moduli[i]`.
-- `moduli`: a vector of machine integers.
-- `indices`: a vector of tuples (int, int). Each tuple is an index to the table
-  of remainders. If `(i, j)` is present in `indices`, then `table_zz[i][j]` will
-  be reconstructed. Otherwise, the value of `table_zz[i][j]` is untouched.
-
-## Example
-
-Consider the following example
-
-```julia
-# Buffers
-table_zz = [[BigInt(0)], [BigInt(0), BigInt(0)]]
-modulo = BigInt(0)
-
-# Remainders
-tables_ff = [
-    [UInt64[2], UInt64[1, 3]],
-    [UInt64[3], UInt64[4, 7]],
-]
-moduli = UInt64[7, 11]
-
-# Indices in the table to be reconstructed
-indices = [(1, 1), (2, 1)]
-
-Groebner.crt_vec_partial!(table_zz, modulo, tables_ff, moduli, indices)
-```
-
-As a result, we obtain
-
-```
-@show table_zz modulo;
-# table_zz = Vector{BigInt}[[58], [15, 0]]
-# modulo = 77
-```
-
-Indeed, `77 = 7 * 11`, and 
-    
-    58 mod 7 == 2,
-    58 mod 11 == 3.
-
-Moreover, the element at index (2, 2) has not been reconstructed.
-"""
+# A mod M, a_1 mod m_1, ..., a_n mod m_n  =>  B mod M m_1 ... m_n.
+# Reconstructs only the witness set.
 function crt_vec_partial!(
     table_zz::Vector{Vector{BigInt}},
     modulo::BigInt,
     tables_ff::Vector{Vector{Vector{T}}},
-    moduli::Vector{T},
-    indices::Vector{Tuple{Int, Int}}
-) where {T <: Integer}
+    moduli::Vector{U},
+    witness_set::Vector{Tuple{Int, Int}},
+    mask::Vector{BitVector}
+) where {T <: Integer, U <: Integer}
     @invariant isbitstype(T)
-    n = length(moduli)
-    @invariant n > 0
+    @invariant length(tables_ff) == length(moduli)
+    @invariant all(<(typemax(UInt64)), moduli)
 
     # Base case
-    if n == 1
+    if length(moduli) == 1
         table_ff = tables_ff[1]
         Base.GMP.MPZ.set_ui!(modulo, UInt64(moduli[1]))
         @invariant length(table_zz) == length(table_ff)
-        @inbounds for k in 1:length(indices)
-            i, j = indices[k]
+        @inbounds for k in 1:length(witness_set)
+            i, j = witness_set[k]
+            @invariant 1 <= i <= length(table_ff) && 1 <= j <= length(table_ff[i])
             rem_ij = UInt64(table_ff[i][j])
             Base.GMP.MPZ.set_ui!(table_zz[i][j], rem_ij)
         end
         return nothing
     end
 
-    # n > 1
     # Precompute CRT multipliers
-    buf = BigInt()
-    n1, n2 = BigInt(), BigInt()
-    mults = Vector{BigInt}(undef, n)
+    buf, n1, n2 = BigInt(), BigInt(), BigInt()
+    mults = Vector{BigInt}(undef, length(moduli))
     for i in 1:length(mults)
         mults[i] = BigInt(0)
     end
     crt_precompute!(modulo, n1, n2, mults, map(UInt64, moduli))
 
-    # Reconstruct an integer for each index (i, j) 
-    rems = Vector{UInt64}(undef, n)
-    @inbounds for k in 1:length(indices)
-        i, j = indices[k]
+    rems = Vector{UInt64}(undef, length(moduli))
+    @inbounds for k in 1:length(witness_set)
+        i, j = witness_set[k]
+        @invariant 1 <= i <= length(tables_ff[1]) && 1 <= j <= length(tables_ff[1][i])
 
-        for t in 1:n
+        for t in 1:length(moduli)
             rems[t] = UInt64(tables_ff[t][i][j])
         end
 
         crt!(modulo, buf, n1, n2, rems, mults)
 
         Base.GMP.MPZ.set!(table_zz[i][j], buf)
+
+        mask[i][j] = true
     end
 
     nothing
 end
 
-"""
-    crt_vec_full!
-
-Same as `crt_vec_partial!`, but reconstructs for all indices.
-"""
+# A mod M, a_1 mod m_1, ..., a_n mod m_n  =>  B mod M m_1 ... m_n.
 function crt_vec_full!(
     table_zz::Vector{Vector{BigInt}},
     modulo::BigInt,
     tables_ff::Vector{Vector{Vector{T}}},
-    moduli::Vector{T}
-) where {T <: Integer}
-    # indices = [(j, i) for j in 1:length(table_zz) for i in 1:length(table_zz[j])]
-    # crt_vec_partial!(table_zz, modulo, tables_ff, moduli, indices)
+    moduli::Vector{U},
+    mask::Vector{BitVector}
+) where {T <: Integer, U <: Integer}
     @invariant isbitstype(T)
-    @invariant length(moduli) > 0
+    @invariant length(tables_ff) == length(moduli)
+    @invariant all(<(typemax(UInt64)), moduli)
 
-    n = length(moduli)
     # Base case
-    if n == 1
+    if length(moduli) == 1
         table_ff = tables_ff[1]
         Base.GMP.MPZ.set_ui!(modulo, UInt64(moduli[1]))
         @inbounds for i in 1:length(table_zz)
@@ -329,23 +264,24 @@ function crt_vec_full!(
         return nothing
     end
 
-    # n > 1
-    # Precompute CRT multipliers
-    buf = BigInt()
-    n1, n2 = BigInt(), BigInt()
-    mults = Vector{BigInt}(undef, n)
+    buf, n1, n2 = BigInt(), BigInt(), BigInt()
+    mults = Vector{BigInt}(undef, length(moduli))
     for i in 1:length(mults)
         mults[i] = BigInt(0)
     end
     crt_precompute!(modulo, n1, n2, mults, map(UInt64, moduli))
 
-    rems = Vector{UInt64}(undef, n)
+    rems = Vector{UInt64}(undef, length(moduli))
     @inbounds for i in 1:length(table_zz)
         for j in 1:length(table_zz[i])
-            for t in 1:n
-                @invariant length(table_zz[i]) == length(tables_ff[t][i])
-                @invariant 0 <= tables_ff[t][i][j] < moduli[t]
-                rems[t] = UInt64(tables_ff[t][i][j])
+            if mask[i][j]
+                continue
+            end
+
+            for k in 1:length(moduli)
+                @invariant length(table_zz[i]) == length(tables_ff[k][i])
+                @invariant 0 <= tables_ff[k][i][j] < moduli[k]
+                rems[k] = UInt64(tables_ff[k][i][j])
             end
 
             crt!(modulo, buf, n1, n2, rems, mults)

@@ -96,7 +96,6 @@ end
 include("utils/logging.jl")
 include("utils/invariants.jl")
 include("utils/simd.jl")
-include("utils/pretty_print.jl")
 include("utils/plots.jl")
 
 # Test systems, such as katsura, cyclic, etc
@@ -159,8 +158,7 @@ include("reconstruction/ratrec.jl")
 
 #= more high level functions =#
 include("groebner/primes.jl")
-include("groebner/state.jl")
-include("groebner/correctness.jl")
+include("groebner/modular.jl")
 include("groebner/groebner.jl")
 include("groebner/groebner_with_change_matrix.jl")
 include("groebner/learn_apply.jl")

@@ -36,7 +36,14 @@ function param_select_polynomial_representation(
     PolynomialRepresentation(monomtype, coefftype, using_wide_type_for_coeffs)
 end
 
-function param_select_monomtype(char::Coeff, nvars::Int, ordering::AbstractMonomialOrdering, homogenize::Bool, hint::Symbol, monoms::Symbol)
+function param_select_monomtype(
+    char::Coeff,
+    nvars::Int,
+    ordering::AbstractMonomialOrdering,
+    homogenize::Bool,
+    hint::Symbol,
+    monoms::Symbol
+)
     if hint === :large_exponents
         # use 64 bits if large exponents detected
         desired_monom_type = ExponentVector{UInt64}
@@ -244,8 +251,6 @@ mutable struct AlgorithmParameters{Arithmetic <: AbstractArithmetic}
 
     statistics::Symbol
 
-    use_flint::Bool
-
     changematrix::Bool
 end
 
@@ -378,8 +383,6 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
 
     statistics = kwargs.statistics
 
-    use_flint = kwargs.use_flint
-
     changematrix = kwargs.changematrix
     if changematrix
         if !(target_ord isa DegRevLex)
@@ -409,7 +412,6 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         rng,
         sweep,
         statistics,
-        use_flint,
         changematrix
     )
 end
@@ -451,7 +453,6 @@ function params_mod_p(
         params.rng,
         params.sweep,
         params.statistics,
-        params.use_flint,
         params.changematrix
     )
 end

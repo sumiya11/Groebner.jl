@@ -129,10 +129,7 @@ function generate_benchmark_source_for_mgb(
     println(buf, "\tJ := [\n$system_repr\n\t]:")
     println(buf, "\tprint(\"Running $name\");")
     println(buf, "\tst := time[real]():")
-    println(
-        buf,
-        "\tG := libmgb:-gbasis($(characteristic(field)),0,[$vars_repr],J):"
-    )
+    println(buf, "\tG := libmgb:-gbasis($(characteristic(field)),0,[$vars_repr],J):")
     println(buf, "\tprint(\"$name: \", time[real]() - st):")
     println(buf, "\truntime := min(runtime, time[real]() - st):")
     println(buf, "end do:")

@@ -112,7 +112,7 @@ push!(
         problem_name="groebner,AA,2^30+3,yang1",
         type=:time,
         result=compute_gb(
-            Groebner.Examples.yang1(internal_ordering=:degrevlex, k=GF(2^30+3)),
+            Groebner.Examples.yang1(internal_ordering=:degrevlex, k=GF(2^30 + 3)),
             2
         )
     )
@@ -183,6 +183,31 @@ push!(
     )
 )
 
+push!(
+    suite,
+    (
+        problem_name="groebner,no-thread,AA,QQ,chandra 10",
+        type=:time,
+        result=compute_gb(
+            Groebner.Examples.chandran(10, internal_ordering=:degrevlex, k=QQ),
+            5,
+            threaded=:no
+        )
+    )
+)
+
+push!(
+    suite,
+    (
+        problem_name="groebner,threaded,AA,QQ,chandra 10",
+        type=:time,
+        result=compute_gb(
+            Groebner.Examples.chandran(10, internal_ordering=:degrevlex, k=QQ),
+            5,
+            threaded=:yes
+        )
+    )
+)
 push!(
     suite,
     (
@@ -340,22 +365,6 @@ function multimodular_gb_problem(nbits; np=AbstractAlgebra)
     system
 end
 
-push!(
-    suite,
-    (
-        problem_name="groebner,AA,QQ,1000-bit output",
-        type=:time,
-        result=compute_gb(multimodular_gb_problem(1000, np=AbstractAlgebra))
-    )
-)
-push!(
-    suite,
-    (
-        problem_name="groebner,Nemo,QQ,1000-bit output",
-        type=:time,
-        result=compute_gb(multimodular_gb_problem(1000, np=Nemo))
-    )
-)
 push!(
     suite,
     (

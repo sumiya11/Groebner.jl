@@ -301,7 +301,6 @@ function matrix_convert_rows_to_basis_elements!(
     batched_ht_insert::Bool=false
 ) where {C}
     # We mutate the basis directly by adding new elements
-    @log :debug "# new pivots: $(matrix.npivots)"
 
     basis_resize_if_needed!(basis, matrix.npivots)
     rows = matrix.lower_rows
@@ -309,15 +308,8 @@ function matrix_convert_rows_to_basis_elements!(
 
     _, _, nl, nr = matrix_block_sizes(matrix)
     support_size = sum(length, rows; init=0)
-    @log :debug """
-    After F4 reduction, in the right part of the matrix,
-    # columns: $nr
-    # pivots:  $(matrix.npivots)
-    # support: $support_size
-    """
 
     if batched_ht_insert && matrix.npivots > 1 && support_size > 4 * nr
-        @log :debug "Using batched insert."
         column_to_basis_monom = zeros(MonomId, nr)
         @inbounds for i in 1:(matrix.npivots)
             for j in 1:length(rows[i])
