@@ -52,6 +52,11 @@ function f4_reduction!(
     symbol_ht::MonomialHashtable,
     params::AlgorithmParameters
 )
+    if SEMIGROUP_ON[]
+        for i in 2:symbol_ht.load
+            @invariant semigroup_check_normalized_monom(symbol_ht.monoms[i])
+        end
+    end
     matrix_fill_column_to_monom_map!(matrix, symbol_ht)
     linalg_main!(matrix, basis, params)
     matrix_convert_rows_to_basis_elements!(
@@ -84,13 +89,20 @@ function f4_symbolic_preprocessing!(
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
-    symbol_ht::MonomialHashtable
+    symbol_ht::MonomialHashtable,
+    arithmetic
 )
     # Monomials that represent the columns of the matrix are stored in the
     # symbol_ht hashtable.
     symbol_load = symbol_ht.load
     ncols = matrix.ncols_left
     matrix_resize_upper_part_if_needed!(matrix, ncols + symbol_load)
+
+    if SEMIGROUP_ON[]
+        for i in 2:symbol_ht.load
+            @invariant semigroup_check_normalized_monom(symbol_ht.monoms[i])
+        end
+    end
 
     # Traverse all monomials in symbol_ht and search for a polynomial reducer
     # for each monomial. The hashtable grows as polynomials with new monomials
@@ -107,7 +119,7 @@ function f4_symbolic_preprocessing!(
         symbol_ht.hashdata[i] =
             Hashvalue(UNKNOWN_PIVOT_COLUMN, hashval.hash, hashval.divmask)
         matrix.ncols_left += 1
-        f4_find_multiplied_reducer!(basis, matrix, ht, symbol_ht, MonomId(i))
+        f4_find_multiplied_reducer!(basis, matrix, ht, symbol_ht, MonomId(i), arithmetic)
         i += 1
     end
 
@@ -129,7 +141,13 @@ function f4_autoreduce!(
     lowrows = matrix.lower_rows
 
     @inbounds for i in 1:(basis.nnonredundant)
-        row_idx = matrix.nrows_filled_upper += 1
+        if SEMIGROUP_ON[]
+            if semigroup_is_a_relation_lead(ht.monoms[basis.monoms[basis.nonredundant[i]][1]])
+                continue
+            end
+        end
+        matrix.nrows_filled_upper += 1
+        row_idx = matrix.nrows_filled_upper
         uprows[row_idx] = matrix_polynomial_multiple_to_row!(
             matrix,
             symbol_ht,
@@ -145,9 +163,7 @@ function f4_autoreduce!(
             Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask)
     end
 
-    matrix.ncols_left = matrix.ncols_left
-
-    f4_symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
+    f4_symbolic_preprocessing!(basis, matrix, ht, symbol_ht, params.arithmetic)
 
     @inbounds for i in (symbol_ht.offset):(symbol_ht.load)
         hv = symbol_ht.hashdata[i]
@@ -155,6 +171,12 @@ function f4_autoreduce!(
     end
 
     matrix_fill_column_to_monom_map!(matrix, symbol_ht)
+
+    if SEMIGROUP_ON[]
+        for i in 2:symbol_ht.load
+            @invariant semigroup_check_normalized_monom(symbol_ht.monoms[i])
+        end
+    end
 
     linalg_autoreduce!(matrix, basis, params)
 
@@ -252,9 +274,9 @@ function f4_find_multiplied_reducer!(
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable,
-    monomid::MonomId;
-    sugar::Bool=false
-)
+    monomid::MonomId,
+    arithmetic)
+
     @inbounds monom = symbol_ht.monoms[monomid]
     @inbounds quotient = ht.monoms[1]
     @inbounds divmask = symbol_ht.hashdata[monomid].divmask
@@ -282,6 +304,14 @@ function f4_find_multiplied_reducer!(
         i += 1
         @goto Letsgo
     end
+
+    if SEMIGROUP_ON[]
+        if semigroup_is_a_relation_lead(lead)
+            i += 1
+            @goto Letsgo
+        end
+    end
+
     # Using the fact that the hash is linear.
     @inbounds quotient_hash = symbol_ht.hashdata[monomid].hash - ht.hashdata[poly[1]].hash
     @invariant quotient_hash == monom_hash(quotient, ht.hasher)
@@ -293,24 +323,40 @@ function f4_find_multiplied_reducer!(
         ht,
         quotient_hash,
         quotient,
-        poly,
-        true
-    )
-    @inbounds row[1] = monomid
-    @inbounds matrix.upper_rows[matrix.nrows_filled_upper + 1] = row
-    @inbounds matrix.upper_to_coeffs[matrix.nrows_filled_upper + 1] = basis.nonredundant[i]
+        poly    )
+    matrix.nrows_filled_upper += 1
+    row_id = matrix.nrows_filled_upper
+    @inbounds matrix.upper_rows[row_id] = row
+    @inbounds matrix.upper_to_coeffs[row_id] = basis.nonredundant[i]
+
+    if SEMIGROUP_ON[]
+        sup = matrix.upper_rows[row_id]
+        cfs = basis.coeffs[basis.nonredundant[i]]
+        if !issorted(matrix.upper_rows[row_id], lt=(i,j) -> monom_isless(symbol_ht.monoms[i], symbol_ht.monoms[j], symbol_ht.ord), rev=true)
+            perm = collect(1:length(matrix.upper_rows[row_id]))
+            sort!(perm, lt=(i,j) -> monom_isless(symbol_ht.monoms[matrix.upper_rows[row_id][i]], symbol_ht.monoms[matrix.upper_rows[row_id][j]], symbol_ht.ord), rev=true)
+            sup = matrix.upper_rows[row_id][perm]
+            cfs = basis.coeffs[basis.nonredundant[i]][perm]
+            linalg_row_make_monic!(cfs, arithmetic)
+        end
+        @assert sup[1] == monomid
+        @assert cfs[1] == 1
+        @assert allunique(sup)
+        matrix.upper_rows[row_id] = sup
+        matrix.semigroup_upper_coeffs[row_id] = cfs
+        matrix.upper_to_coeffs[row_id] = row_id
+    end
 
     # Insert the quotient into the main hashtable.
     # TODO: This line is here with one sole purpose -- to support tracing.
     #       Probably want to factor it out.
-    @inbounds matrix.upper_to_mult[matrix.nrows_filled_upper + 1] =
+    @inbounds matrix.upper_to_mult[row_id] =
         hashtable_insert!(ht, quotient)
 
     # Mark the current monomial as a pivot since a reducer has been found.
     @inbounds monom_hashval = symbol_ht.hashdata[monomid]
     @inbounds symbol_ht.hashdata[monomid] =
         Hashvalue(PIVOT_COLUMN, monom_hashval.hash, monom_hashval.divmask)
-    matrix.nrows_filled_upper += 1
 
     nothing
 end
@@ -320,7 +366,8 @@ function f4_select_critical_pairs!(
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
-    symbol_ht::MonomialHashtable;
+    symbol_ht::MonomialHashtable,
+    arithmetic;
     maxpairs::Int=INT_INF,
     select_all::Bool=false
 ) where {ExponentType}
@@ -349,7 +396,7 @@ function f4_select_critical_pairs!(
         end
     end
 
-    f4_add_critical_pairs_to_matrix!(pairset, npairs, basis, matrix, ht, symbol_ht)
+    f4_add_critical_pairs_to_matrix!(pairset, npairs, basis, matrix, ht, symbol_ht, arithmetic)
 
     # Remove selected parirs from the pairset.
     @inbounds for i in 1:(pairset.load - npairs)
@@ -367,28 +414,142 @@ function f4_add_critical_pairs_to_matrix!(
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
-    symbol_ht::MonomialHashtable
+    symbol_ht::MonomialHashtable,
+    arithmetic
 )
-    @invariant issorted(
-        pairset.pairs[1:npairs],
-        lt=(a, b) -> monom_isless(ht.monoms[a.lcm], ht.monoms[b.lcm], ht.ord)
-    )
-
     matrix_reinitialize!(matrix, npairs)
     pairs = pairset.pairs
     uprows = matrix.upper_rows
     lowrows = matrix.lower_rows
 
     polys = Vector{Int}(undef, 2 * npairs)
-
     @inbounds etmp = ht.monoms[1]
+
+    if SEMIGROUP_ON[]
+        for i in 1:npairs
+            lcm = pairs[i].lcm
+            # lcm = hashtable_insert!(ht, semigroup_normalize_monom(ht.monoms[lcm]))
+            p1, p2 = pairs[i].poly1, pairs[i].poly2
+            
+            if semigroup_is_a_relation_lead(ht.monoms[basis.monoms[p2][1]])
+                p1, p2 = p2, p1
+            end
+            if semigroup_is_a_relation_lead(ht.monoms[basis.monoms[p2][1]])
+                @info "skipping" p1 p2
+                continue 
+            end
+
+            if semigroup_is_a_relation_lead(ht.monoms[basis.monoms[p1][1]])
+                @info "skipping" p1
+
+                vidx = basis.monoms[p2][1]
+                etmp = monom_division!(etmp, ht.monoms[lcm], ht.monoms[vidx])
+                htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
+
+                matrix.nrows_filled_lower += 1
+                row_idx = matrix.nrows_filled_lower
+                lowrows[row_idx] = matrix_polynomial_multiple_to_row!(
+                    matrix,
+                    symbol_ht,
+                    ht,
+                    htmp,
+                    etmp,
+                    basis.monoms[p2]
+                )
+                matrix.lower_to_coeffs[row_idx] = p2
+                matrix.lower_to_mult[row_idx] = hashtable_insert!(ht, etmp)
+
+                sup = lowrows[row_idx]
+                cfs = basis.coeffs[p2]
+                if !issorted(lowrows[row_idx], lt=(i,j) -> monom_isless(symbol_ht.monoms[i], symbol_ht.monoms[j], symbol_ht.ord), rev=true)
+                    perm = collect(1:length(lowrows[row_idx]))
+                    sort!(perm, lt=(i,j) -> monom_isless(symbol_ht.monoms[lowrows[row_idx][i]], symbol_ht.monoms[lowrows[row_idx][j]], symbol_ht.ord), rev=true)
+                    sup = lowrows[row_idx][perm]
+                    cfs = basis.coeffs[p2][perm]
+                    linalg_row_make_monic!(cfs, arithmetic)
+                end
+                @assert cfs[1] == 1
+                @assert allunique(sup)
+                lowrows[row_idx] = sup
+                matrix.semigroup_lower_coeffs[row_idx] = cfs
+                matrix.lower_to_coeffs[row_idx] = row_idx
+
+                @assert symbol_ht.hashdata[lowrows[row_idx][1]].idx == NON_PIVOT_COLUMN
+            else
+                vidx = basis.monoms[p1][1]
+                etmp = monom_division!(etmp, ht.monoms[lcm], ht.monoms[vidx])
+                htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
+
+                matrix.nrows_filled_lower += 1
+                row_idx = matrix.nrows_filled_lower
+                lowrows[row_idx] = matrix_polynomial_multiple_to_row!(
+                    matrix,
+                    symbol_ht,
+                    ht,
+                    htmp,
+                    etmp,
+                    basis.monoms[p1]
+                )
+                matrix.lower_to_coeffs[row_idx] = p1
+                matrix.lower_to_mult[row_idx] = hashtable_insert!(ht, etmp)
+
+                sup = lowrows[row_idx]
+                cfs = basis.coeffs[p1]
+                if !issorted(lowrows[row_idx], lt=(i,j) -> monom_isless(symbol_ht.monoms[i], symbol_ht.monoms[j], symbol_ht.ord), rev=true)
+                    perm = collect(1:length(lowrows[row_idx]))
+                    sort!(perm, lt=(i,j) -> monom_isless(symbol_ht.monoms[lowrows[row_idx][i]], symbol_ht.monoms[lowrows[row_idx][j]], symbol_ht.ord), rev=true)
+                    sup = lowrows[row_idx][perm]
+                    cfs = basis.coeffs[p1][perm]
+                    linalg_row_make_monic!(cfs, arithmetic)
+                end
+                @assert cfs[1] == 1
+                @assert allunique(sup)
+                lowrows[row_idx] = sup
+                matrix.semigroup_lower_coeffs[row_idx] = cfs
+                matrix.lower_to_coeffs[row_idx] = row_idx
+
+                vidx = basis.monoms[p2][1]
+                etmp = monom_division!(etmp, ht.monoms[lcm], ht.monoms[vidx])
+                htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
+                matrix.nrows_filled_lower += 1
+                row_idx = matrix.nrows_filled_lower
+                lowrows[row_idx] = matrix_polynomial_multiple_to_row!(
+                    matrix,
+                    symbol_ht,
+                    ht,
+                    htmp,
+                    etmp,
+                    basis.monoms[p2]
+                )
+                matrix.lower_to_coeffs[row_idx] = p2
+                matrix.lower_to_mult[row_idx] = hashtable_insert!(ht, etmp)
+
+                sup = lowrows[row_idx]
+                cfs = basis.coeffs[p2]
+                if !issorted(lowrows[row_idx], lt=(i,j) -> monom_isless(symbol_ht.monoms[i], symbol_ht.monoms[j], symbol_ht.ord), rev=true)
+                    perm = collect(1:length(lowrows[row_idx]))
+                    sort!(perm, lt=(i,j) -> monom_isless(symbol_ht.monoms[lowrows[row_idx][i]], symbol_ht.monoms[lowrows[row_idx][j]], symbol_ht.ord), rev=true)
+                    sup = lowrows[row_idx][perm]
+                    cfs = basis.coeffs[p2][perm]
+                    linalg_row_make_monic!(cfs, arithmetic)
+                end
+                @assert cfs[1] == 1
+                @assert allunique(sup)
+                lowrows[row_idx] = sup
+                matrix.semigroup_lower_coeffs[row_idx] = cfs
+                matrix.lower_to_coeffs[row_idx] = row_idx
+
+                @assert symbol_ht.hashdata[lowrows[row_idx][1]].idx == NON_PIVOT_COLUMN
+            end
+        end
+        return
+    end
+
     i = 1
     @inbounds while i <= npairs
-        matrix.ncols_left += 1
         npolys = 1
         lcm = pairs[i].lcm
         j = i
-
         while j <= npairs && pairs[j].lcm == lcm
             polys[npolys] = pairs[j].poly1
             npolys += 1
@@ -401,23 +562,21 @@ function f4_add_critical_pairs_to_matrix!(
         sort_generators_by_position!(polys, npolys)
 
         prev = polys[1]
-        poly_monoms = basis.monoms[prev]
-        vidx = poly_monoms[1]
-
-        eidx = ht.monoms[vidx]
-        elcm = ht.monoms[lcm]
-        etmp = monom_division!(etmp, elcm, eidx)
-
+        vidx = basis.monoms[prev][1]
+        etmp = monom_division!(etmp, ht.monoms[lcm], ht.monoms[vidx])
         htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
 
-        row_idx = matrix.nrows_filled_upper += 1
+        matrix.ncols_left += 1
+
+        matrix.nrows_filled_upper += 1
+        row_idx = matrix.nrows_filled_upper
         uprows[row_idx] = matrix_polynomial_multiple_to_row!(
             matrix,
             symbol_ht,
             ht,
             htmp,
             etmp,
-            poly_monoms
+            basis.monoms[prev]
         )
         matrix.upper_to_coeffs[row_idx] = prev
         matrix.upper_to_mult[row_idx] = hashtable_insert!(ht, etmp)
@@ -433,20 +592,20 @@ function f4_add_critical_pairs_to_matrix!(
             elcm = ht.monoms[lcm]
 
             prev = polys[k]
-            poly_monoms = basis.monoms[prev]
-            vidx = poly_monoms[1]
+            vidx = basis.monoms[prev][1]
             eidx = ht.monoms[vidx]
             etmp = monom_division!(etmp, elcm, eidx)
             htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
 
-            row_idx = matrix.nrows_filled_lower += 1
+            matrix.nrows_filled_lower += 1
+            row_idx = matrix.nrows_filled_lower
             lowrows[row_idx] = matrix_polynomial_multiple_to_row!(
                 matrix,
                 symbol_ht,
                 ht,
                 htmp,
                 etmp,
-                poly_monoms
+                basis.monoms[prev]
             )
             matrix.lower_to_coeffs[row_idx] = prev
             matrix.lower_to_mult[row_idx] = hashtable_insert!(ht, etmp)
@@ -458,8 +617,6 @@ function f4_add_critical_pairs_to_matrix!(
 
         i = j
     end
-
-    resize!(matrix.lower_rows, matrix.nrows_filled_lower)
 end
 
 function f4!(
@@ -473,6 +630,8 @@ function f4!(
 
     basis_make_monic!(basis, params.arithmetic, params.changematrix)
 
+    SEMIGROUP_ON[] && (@invariant semigroup_normalized(basis, hashtable))
+
     matrix = matrix_initialize(ring, C)
     update_ht = hashtable_initialize_secondary(hashtable)
     symbol_ht = hashtable_initialize_secondary(hashtable)
@@ -480,16 +639,18 @@ function f4!(
     f4_update!(pairset, basis, hashtable, update_ht)
 
     while !isempty(pairset)
+        __monoms = [[hashtable.monoms[i] for i in basis.monoms[j]] for j in 1:basis.nfilled]
         f4_select_critical_pairs!(
             pairset,
             basis,
             matrix,
             hashtable,
             symbol_ht,
+            params.arithmetic,
             maxpairs=params.maxpairs
         )
 
-        f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
+        f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht, params.arithmetic)
 
         f4_reduction!(ring, basis, matrix, hashtable, symbol_ht, params)
 
@@ -497,6 +658,8 @@ function f4!(
 
         matrix_reinitialize!(matrix, 0)
         hashtable_reinitialize!(symbol_ht)
+
+        SEMIGROUP_ON[] && (@invariant semigroup_normalized(basis, hashtable))
     end
 
     if params.sweep
@@ -505,11 +668,15 @@ function f4!(
 
     basis_mark_redundant_elements!(basis)
 
+    SEMIGROUP_ON[] && (@invariant semigroup_normalized(basis, hashtable))
+
     if params.reduced
         f4_autoreduce!(ring, basis, matrix, hashtable, symbol_ht, params)
     end
 
     basis_standardize!(ring, basis, hashtable, params.arithmetic, params.changematrix)
+
+    SEMIGROUP_ON[] && (@invariant semigroup_normalized(basis, hashtable))
 
     @invariant basis_well_formed(ring, basis, hashtable)
 
@@ -530,8 +697,8 @@ function f4_isgroebner!(
     update_ht = hashtable_initialize_secondary(hashtable)
     f4_update!(pairset, basis, hashtable, update_ht)
     isempty(pairset) && return true
-    f4_select_critical_pairs!(pairset, basis, matrix, hashtable, symbol_ht, select_all=true)
-    f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
+    f4_select_critical_pairs!(pairset, basis, matrix, hashtable, symbol_ht, arithmetic, select_all=true)
+    f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht, arithmetic)
     matrix_fill_column_to_monom_map!(matrix, symbol_ht)
     linalg_isgroebner!(matrix, basis, arithmetic)
 end
@@ -548,7 +715,7 @@ function f4_normalform!(
     matrix = matrix_initialize(ring, C)
     symbol_ht = hashtable_initialize_secondary(ht)
     f4_select_tobereduced!(basis, tobereduced, matrix, symbol_ht, ht)
-    f4_symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
+    f4_symbolic_preprocessing!(basis, matrix, ht, symbol_ht, arithmetic)
     matrix_fill_column_to_monom_map!(matrix, symbol_ht)
     linalg_normalform!(matrix, basis, arithmetic)
     matrix_convert_rows_to_basis_elements_nf!(matrix, tobereduced, ht, symbol_ht)

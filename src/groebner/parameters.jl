@@ -67,20 +67,6 @@ function param_select_monomtype(
         return ExponentVector{ExponentSize}
     end
 
-    # if sparse representation is requested
-    if monoms === :sparse
-        if monom_is_supported_ordering(
-            SparseExponentVector{ExponentSize, Int32, nvars},
-            ordering
-        )
-            return SparseExponentVector{ExponentSize, Int32, nvars}
-        end
-        @log :misc """
-        The given monomial ordering $(ordering) is not implemented for
-        $(monoms) monomial representation. Falling back to other monomial
-        representations.""" maxlog = 1
-    end
-
     # if packed representation is requested
     if monoms === :packed
         if monom_is_supported_ordering(PackedTuple1{UInt64, ExponentSize}, ordering)

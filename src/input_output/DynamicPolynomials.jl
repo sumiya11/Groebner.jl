@@ -186,7 +186,7 @@ function _io_convert_to_output(
     exported = Vector{T}(undef, length(gbexps))
     tmp = Vector{Int}(undef, length(origvars))
     for i in 1:length(gbexps)
-        if io_iszero_monoms(gbexps[i])
+        if isempty(gbexps[i])
             exported[i] = zero(origpolys[1])
             continue
         end

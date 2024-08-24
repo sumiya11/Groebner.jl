@@ -349,7 +349,7 @@ function modular_lift_randomized_check!(
     # Check that some polynomial is not reduced to zero
     f4_normalform!(ring_ff, gb_ff, input_ff, hashtable, arithmetic)
     for i in 1:(input_ff.nprocessed)
-        if !io_iszero_coeffs(input_ff.coeffs[i])
+        if !isempty(input_ff.coeffs[i])
             return false
         end
     end
@@ -375,7 +375,7 @@ function modular_lift_certify_check!(
     # Check that some polynomial is not reduced to zero modulo a prime
     f4_normalform!(ring_qq, gb_qq, input_qq, hashtable, params.arithmetic)
     for i in 1:(input_qq.nprocessed)
-        if !io_iszero_coeffs(input_qq.coeffs[i])
+        if !isempty(input_qq.coeffs[i])
             return false
         end
     end

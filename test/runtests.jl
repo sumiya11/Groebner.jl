@@ -42,7 +42,6 @@ end
     @time @includetests [
         "monoms/exponentvector",
         "monoms/packedtuples",
-        "monoms/sparsevector"
     ]
     # High-level monomial arithmetic and term orders
     @time @includetests ["monoms/monom_arithmetic", "monoms/monom_orders"]
@@ -73,7 +72,7 @@ end
     # - Nemo.jl  (Nemo.fmpq_mpoly, Nemo.gfp_mpoly)
     # - DynamicPolynomials.jl  (DynamicPolynomials.Polynomial{true, T})
     if try_import(:DynamicPolynomials)
-        # @time @includetests ["input_output/DynamicPolynomials"]
+        @time @includetests ["input_output/GroebnerDynamicPolynomialsExt.jl"]
     end
     if try_import(:Nemo)
         @time @includetests ["input_output/Nemo"]

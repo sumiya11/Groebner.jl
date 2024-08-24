@@ -39,6 +39,5 @@ const CoeffModular = UInt64
 
 const Monom = Union{
     ExponentVector{T} where {T},
-    AbstractPackedTuple,
-    SparseExponentVector{T, I, N} where {T, I, N}
+    AbstractPackedTuple
 }

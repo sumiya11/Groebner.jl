@@ -25,7 +25,7 @@ checks are disabled, and entail no runtime overhead.
 
 It is useful to enable this when debugging the Groebner package.
 """
-invariants_enabled() = false
+invariants_enabled() = true
 
 """
     logging_enabled() -> Bool
@@ -111,7 +111,6 @@ include("monomials/common.jl")
 include("monomials/exponent_vector.jl")
 include("monomials/packed_utils.jl")
 include("monomials/packed_vector.jl")
-include("monomials/sparse_vector.jl")
 
 include("arithmetic/CompositeNumber.jl")
 
@@ -130,9 +129,7 @@ include("input_output/intermediate.jl")
 include("groebner/parameters.jl")
 
 # Input-output conversions for polynomials
-include("input_output/input_output.jl")
 include("input_output/AbstractAlgebra.jl")
-# include("input_output/DynamicPolynomials.jl")
 
 #= generic f4 =#
 include("f4/hashtable.jl")
@@ -167,11 +164,13 @@ include("groebner/normalform.jl")
 include("groebner/autoreduce.jl")
 include("groebner/homogenization.jl")
 
+include("groebner/groebner_semigroup.jl")
+
 # API
 include("interface.jl")
 
 using PrecompileTools
-include("precompile.jl")
+# include("precompile.jl")
 
 ###
 # Exports

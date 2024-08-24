@@ -89,8 +89,8 @@ function __normalform1(
     @invariant ir_is_valid(ring_tbr, monoms_tbr, coeffs_tbr)
 
     _, ring2, monoms2, coeffs2 =
-        io_convert_ir_to_internal(ring, monoms, coeffs, params, params.representation)
-    _, ring_tbr2, monoms_tbr2, coeffs_tbr2 = io_convert_ir_to_internal(
+        ir_convert_ir_to_internal(ring, monoms, coeffs, params, params.representation)
+    _, ring_tbr2, monoms_tbr2, coeffs_tbr2 = ir_convert_ir_to_internal(
         ring_tbr,
         monoms_tbr,
         coeffs_tbr,
@@ -100,7 +100,7 @@ function __normalform1(
     monoms_reduced2, coeffs_reduced2 =
         normalform2(ring2, monoms2, coeffs2, ring_tbr2, monoms_tbr2, coeffs_tbr2, params)
     monoms_reduced, coeffs_reduced =
-        io_convert_internal_to_ir(ring_tbr2, monoms_reduced2, coeffs_reduced2, params)
+        ir_convert_internal_to_ir(ring_tbr2, monoms_reduced2, coeffs_reduced2, params)
     monoms_reduced, coeffs_reduced
 end
 
@@ -131,7 +131,7 @@ function normalform2(
     end
     monoms, coeffs = _monoms, _coeffs
 
-    nonzero_indices = findall(!io_iszero_coeffs, coeffs_tbr)
+    nonzero_indices = findall(!isempty, coeffs_tbr)
     if isempty(nonzero_indices)
         return monoms_tbr, coeffs_tbr
     end

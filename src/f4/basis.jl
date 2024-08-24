@@ -640,7 +640,7 @@ function basis_is_new_polynomial_redundant!(
         lead_i = basis.monoms[i][1]
         @invariant !monom_isless(ht.monoms[lead_i], ht.monoms[lead_new], ht.ord)
         !hashtable_monom_is_divisible(lead_i, lead_new, ht) && continue
-
+                
         # Add a new critical pair corresponding to Spoly(i, idx).
         pairset_resize_if_needed!(pairset, 1)
         ps[pairset.load + 1] = CriticalPair(Int32(i), Int32(idx), lead_i)

@@ -47,7 +47,7 @@ function matrix_compute_pivot_signature(pivots::Vector{Vector{MonomId}}, from::I
     sgn
 end
 
-function reduction_learn!(
+function f4_reduction_learn!(
     trace::Trace,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -113,7 +113,7 @@ function f4_reducegb_learn!(
     # needed for correct column count in symbol hashtable
     matrix.ncols_left = matrix.nrows_filled_upper
 
-    f4_symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
+    f4_symbolic_preprocessing!(basis, matrix, ht, symbol_ht, params.arithmetic)
     # set all pivots to unknown
     @inbounds for i in (symbol_ht.offset):(symbol_ht.load)
         hv = symbol_ht.hashdata[i]
@@ -183,13 +183,14 @@ function f4_learn!(
             matrix,
             hashtable,
             symbol_ht,
+            params.arithmetic,
             maxpairs=params.maxpairs
         )
         push!(trace.critical_pair_sequence, (degree_i, npairs_i))
 
-        f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
+        f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht, params.arithmetic)
 
-        reduction_learn!(trace, basis, matrix, hashtable, symbol_ht, params)
+        f4_reduction_learn!(trace, basis, matrix, hashtable, symbol_ht, params)
 
         pairset_size = f4_update!(pairset, basis, hashtable, update_ht)
 

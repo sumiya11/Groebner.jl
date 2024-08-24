@@ -1,11 +1,11 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
 ###
-# Conversion from AbstractAlgebra.jl/Nemo.jl to internal representation and back.
+# Conversion from AbstractAlgebra.jl/Nemo.jl to intermediate representation and back.
 
 # Conversions in this file must be thread-safe, since functions in the interface
-# can be used in parallel. In particular, we rely on the fact that a number of
-# functions provided by AbstractAlgebra.jl are thread-safe
+# can be used in parallel. In particular, we rely on the fact that some
+# functions in AbstractAlgebra.jl are thread-safe
 # https://github.com/Nemocas/AbstractAlgebra.jl/issues/1542
 
 const aa_supported_orderings = (:lex, :deglex, :degrevlex)
@@ -19,8 +19,27 @@ aa_is_multivariate_ring(ring) =
 (F::AbstractAlgebra.GFField{Int64})(x::AbstractFloat) = F(Int(x))
 (F::AbstractAlgebra.Rationals{BigInt})(x::AbstractFloat) = F(BigInt(x))
 
-###
-# Converting from AbstractAlgebra to intermediate representation (ir)
+function io_convert_polynomials_to_ir(polynomials, options::KeywordArguments)
+    isempty(polynomials) && throw(DomainError("Empty input."))
+    ring = io_extract_ring(polynomials)
+    coeffs = io_extract_coeffs_ir(ring, polynomials)
+    reversed_order, var_to_index, monoms = io_extract_monoms_ir(ring, polynomials)
+    @invariant length(coeffs) == length(monoms)
+    ring = PolyRing(ring.nvars, ordering_transform(ring.ord, var_to_index), ring.ch)
+    options.ordering = ordering_transform(options.ordering, var_to_index)
+    ring, monoms, coeffs, options
+end
+
+function io_convert_ir_to_polynomials(
+    ring::PolyRing,
+    polynomials,
+    monoms::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    options
+) where {M <: Monom, C <: Coeff}
+    origring = AbstractAlgebra.parent(first(polynomials))
+    _io_convert_ir_to_polynomials(origring, monoms, coeffs, options)::typeof(polynomials)
+end
 
 function io_extract_ring(polynomials)
     if !all(
@@ -114,67 +133,8 @@ function io_extract_monoms_ir(ring::PolyRing, polys)
     false, var_to_index, res
 end
 
-# The most generic specialization
-# (Nemo.jl opts for this specialization)
-function _io_convert_ir_to_polynomials(
-    ring,
-    polynomials,
-    gbexps::Vector{Vector{M}},
-    gbcoeffs::Vector{Vector{C}},
-    options
-) where {M <: Monom, C <: Coeff}
-    _io_convert_to_output(ring, polynomials, gbexps, gbcoeffs, options)
-    # origring = AbstractAlgebra.parent(polynomials[1])
-    # nv       = AbstractAlgebra.nvars(origring)
-    # ground   = AbstractAlgebra.base_ring(origring)
-    # exported = Vector{elem_type(origring)}(undef, length(gbexps))
-    # @inbounds for i in 1:length(gbexps)
-    #     cfs = map(ground, gbcoeffs[i])
-    #     exps = Vector{Vector{Int}}(undef, length(gbcoeffs[i]))
-    #     for jt in 1:length(gbcoeffs[i])
-    #         exps[jt] = gbexps[i][jt]
-    #     end
-    #     if !aa_is_multivariate_ring(parent(polynomials[1]))
-    #         if isempty(exps)
-    #             exported[i] = origring()
-    #         else
-    #             _cfs = [zero(ground) for _ in 1:(exps[1][1] + 1)]
-    #             for j in 1:length(exps)
-    #                 _cfs[exps[j][1] + 1] = cfs[j]
-    #             end
-    #             exported[i] = origring(_cfs)
-    #         end
-    #     else
-    #         exported[i] = origring(cfs, exps)
-    #     end
-    # end
-    # exported
-end
-
 ###
 # Converting from AbstractAlgebra to internal representation.
-
-function io_peek_at_polynomials(
-    polynomials::Vector{T}
-) where {T <: AbstractAlgebra.RingElem}
-    R = AbstractAlgebra.parent(first(polynomials))
-    nvars = AbstractAlgebra.nvars(R)
-    ord = if aa_is_multivariate_ring(R)
-        # if multivariate
-        AbstractAlgebra.internal_ordering(R)
-    else
-        # if univariate, defaults to lex
-        :lex
-    end
-    char = AbstractAlgebra.characteristic(R)
-    if char > typemax(UInt)
-        __throw_input_not_supported(
-            char,
-            "The characteristic of the field of input is too large and is not supported, sorry"
-        )
-    end
-    :abstractalgebra, length(polynomials), UInt(char), nvars, ord
-end
 
 function _io_check_input(polynomials::Vector{T}) where {T}
     R = AbstractAlgebra.parent(first(polynomials))
@@ -219,106 +179,6 @@ end
 
 ###
 # Process input polynomials on the apply stage
-
-function is_ring_compatible_in_apply(trace, ring, kws)
-    @log :debug "" trace.original_ord ring.ord
-    if trace.original_ord != ring.ord
-        @log :warn """
-        In apply, the monomial ordering is different from the one used in learn.
-        Apply ordering: $(ring.ord)
-        Learn ordering: $(trace.original_ord)"""
-        return false
-    end
-    if trace.ring.nvars != ring.nvars + 2 * trace.homogenize
-        @log :warn """
-        In apply, the polynomial ring has $(ring.nvars) variables, but in learn there were $(trace.ring.nvars) variables 
-        (used homogenization in learn: $(trace.homogenize)."""
-        return false
-    end
-    if trace.sweep_output != kws.sweep
-        @log :warn "Input sweep option ($(kws.sweep)) is different from the one used in learn ($(trace.sweep_output))."
-        return false
-    end
-    if !(kws.monoms === :auto)
-        @log :info 1 "In apply, the argument monoms=$(kws.monoms) was ignored"
-    end
-    if trace.ring.ch != ring.ch
-        @log :misc """
-        In apply, the ground field characteristic is $(ring.ch), 
-        the learn used a different characteristic: $(trace.ring.ch)"""
-        # not an error!
-    end
-    true
-end
-
-function is_input_compatible_in_apply(trace, ring, polynomials, kws)
-    trace_signature = trace.input_signature
-    homogenized = trace.homogenize
-    if kws.ordering != InputOrdering()
-        # @log :warn "In apply, the given option ordering=$(kws.ordering) has no effect and was discarded"
-    end
-    if !is_ring_compatible_in_apply(trace, ring, kws)
-        @log :warn "In apply, the ring of input does not seem to be compatible with the learned trace."
-        return false
-    end
-    if !(
-        length(trace_signature) + count(iszero, polynomials) ==
-        length(polynomials) + homogenized
-    )
-        @log :warn "In apply, the number of input polynomials ($(length(polynomials))) is different from the number seen in learn ($(length(trace_signature) + count(iszero, polynomials) - homogenized))."
-    end
-    true
-end
-
-function io_extract_coeffs_raw!(
-    trace,
-    representation::PolynomialRepresentation,
-    polys::Vector{T},
-    kws::KeywordArguments
-) where {T}
-    ring = io_extract_ring(polys)
-    !is_input_compatible_in_apply(trace, ring, polys, kws) && __throw_input_not_supported(
-        ring,
-        "Input does not seem to be compatible with the learned trace."
-    )
-
-    basis = trace.buf_basis
-    input_polys_perm = trace.input_permutation
-    term_perms = trace.term_sorting_permutations
-    homog_term_perm = trace.term_homogenizing_permutations
-    CoeffType = representation.coefftype
-
-    # write new coefficients directly to trace.buf_basis
-    flag = _io_extract_coeffs_raw!(
-        basis,
-        input_polys_perm,
-        term_perms,
-        homog_term_perm,
-        polys,
-        CoeffType
-    )
-    !flag && return (flag, ring)
-
-    # a hack for homogenized inputs
-    if trace.homogenize
-        if !(
-            length(basis.monoms[length(polys) + 1]) ==
-            length(basis.coeffs[length(polys) + 1]) ==
-            2
-        )
-            return false, ring
-        end
-        @invariant !iszero(ring.ch)
-        C = eltype(basis.coeffs[length(polys) + 1][1])
-        basis.coeffs[length(polys) + 1][1] = one(C)
-        basis.coeffs[length(polys) + 1][2] =
-            iszero(ring.ch) ? -one(C) : (ring.ch - one(ring.ch))
-    end
-
-    @log :all "Extracted coefficients from $(length(polys)) polynomials." basis
-    @log :all "Extracted coefficients" basis.coeffs
-    flag, ring
-end
 
 function io_extract_coeffs_raw_X!(trace, coeffs)
     basis = trace.buf_basis
@@ -366,172 +226,11 @@ function io_extract_coeffs_raw_X!(trace, coeffs)
     true
 end
 
-function io_io_extract_coeffs_raw_batched!(
-    trace,
-    representation::PolynomialRepresentation,
-    batch::NTuple{N, T},
-    kws::KeywordArguments
-) where {N, T <: AbstractVector}
-    rings = map(io_extract_ring, batch)
-    chars = (representation.coefftype)(map(ring -> ring.ch, rings))
-
-    for (ring_, polys) in zip(rings, batch)
-        !is_input_compatible_in_apply(trace, ring_, polys, kws) &&
-            __throw_input_not_supported(
-                ring_,
-                "Input does not seem to be compatible with the learned trace."
-            )
-    end
-
-    basis = trace.buf_basis
-    input_polys_perm = trace.input_permutation
-    term_perms = trace.term_sorting_permutations
-    homog_term_perm = trace.term_homogenizing_permutations
-    CoeffType = representation.coefftype
-
-    ring = PolyRing(rings[1].nvars, trace.ring.ord, chars)
-    trace.ring = ring
-
-    # write new coefficients directly to trace.buf_basis
-    flag = _io_io_extract_coeffs_raw_batched!(
-        basis,
-        input_polys_perm,
-        term_perms,
-        homog_term_perm,
-        batch,
-        CoeffType
-    )
-    !flag && return (flag, ring)
-
-    # a hack for homogenized inputs
-    if trace.homogenize
-        if !(
-            length(basis.monoms[length(batch[1]) + 1]) ==
-            length(basis.coeffs[length(batch[1]) + 1]) ==
-            2
-        )
-            return false
-        end
-        basis.coeffs[length(batch[1]) + 1][1] = one(CoeffType)
-        basis.coeffs[length(batch[1]) + 1][2] = chars - one(CoeffType)
-    end
-
-    @log :all "Extracted coefficients from $(map(length, batch)) polynomials." basis
-    @log :all "Extracted coefficients" basis.coeffs
-
-    flag, ring
-end
-
-function _io_extract_coeffs_raw!(
-    basis,
-    input_polys_perm::Vector{Int},
-    term_perms::Vector{Vector{Int}},
-    homog_term_perms::Vector{Vector{Int}},
-    polys,
-    ::Type{CoeffsType}
-) where {CoeffsType}
-    permute_input_terms = !isempty(term_perms)
-    permute_homogenizing_terms = !isempty(homog_term_perms)
-    if !(basis.nfilled == count(!iszero, polys) + permute_homogenizing_terms)
-        @log :warn "In apply, the number of polynomials in input is different from the learn stage."
-        return false
-    end
-    polys = filter(!iszero, polys)
-    @log :misc """
-    Permuting input terms: $permute_input_terms
-    Permuting for homogenization: $permute_homogenizing_terms"""
-    @log :all """Permutations:
-      Of polynomials: $input_polys_perm
-      Of terms (change of ordering): $term_perms
-      Of terms (homogenization): $homog_term_perms"""
-    @inbounds for i in 1:length(polys)
-        basis_cfs = basis.coeffs[i]
-        poly_index = input_polys_perm[i]
-        poly = polys[poly_index]
-        if !(length(poly) == length(basis_cfs))
-            @log :warn "In apply, some coefficients in the input cancelled out."
-            return false
-        end
-        for j in 1:length(poly)
-            coeff_index = j
-            if permute_input_terms
-                coeff_index = term_perms[poly_index][coeff_index]
-            end
-            if permute_homogenizing_terms
-                coeff_index = homog_term_perms[poly_index][coeff_index]
-            end
-            coeff = io_lift_coeff_ff(AbstractAlgebra.coeff(poly, coeff_index))
-            basis_cfs[j] = convert(CoeffsType, coeff)
-        end
-    end
-    true
-end
-
-function _io_io_extract_coeffs_raw_batched!(
-    basis,
-    input_polys_perm::Vector{Int},
-    term_perms::Vector{Vector{Int}},
-    homog_term_perms::Vector{Vector{Int}},
-    batch::NTuple{N, T},
-    ::Type{CoeffsType}
-) where {N, CoeffsType <: Coeff, T <: AbstractVector}
-    permute_input_terms = !isempty(term_perms)
-    permute_homogenizing_terms = !isempty(homog_term_perms)
-    for polys in batch
-        if !(basis.nfilled == count(!iszero, polys) + permute_homogenizing_terms)
-            @log :warn "In apply, the number of polynomials in input is different from the learn stage."
-            return false
-        end
-    end
-
-    batch = map(polys -> filter(!iszero, polys), batch)
-    @invariant length(unique(length, batch)) == 1
-
-    @log :misc """
-    Permuting input terms: $permute_input_terms
-    Permuting for homogenization: $permute_homogenizing_terms"""
-    @log :all """Permutations:
-      Of polynomials: $input_polys_perm
-      Of terms (change of ordering): $term_perms
-      Of terms (homogenization): $homog_term_perms"""
-
-    @inbounds for i in 1:length(batch[1])
-        basis_cfs = basis.coeffs[i]
-        poly_index = input_polys_perm[i]
-
-        for batch_idx in 1:length(batch)
-            if !(length(batch[batch_idx][poly_index]) == length(basis_cfs))
-                @log :warn "In apply, some coefficients in the input cancelled out."
-                return false
-            end
-        end
-
-        for j in 1:length(batch[1][poly_index])
-            coeff_index = j
-            if permute_input_terms
-                coeff_index = term_perms[poly_index][coeff_index]
-            end
-            if permute_homogenizing_terms
-                coeff_index = homog_term_perms[poly_index][coeff_index]
-            end
-            basis_cfs[j] = CoeffsType(
-                ntuple(
-                    batch_index -> io_lift_coeff_ff(
-                        AbstractAlgebra.coeff(batch[batch_index][poly_index], coeff_index)
-                    ),
-                    length(batch)
-                )
-            )
-        end
-    end
-    true
-end
-
 ###
 
 # specialization for multivariate polynomials
 function io_extract_coeffs_qq(representation, ring::PolyRing, poly)
-    iszero(poly) && (return io_zero_coeffs(representation.coefftype, ring))
+    iszero(poly) && (return Vector{representation.coefftype}())
     n = length(poly)
     arr = Vector{Rational{BigInt}}(undef, n)
     @inbounds for i in 1:n
@@ -668,7 +367,7 @@ end
 ###
 # Converting from internal representation to AbstractAlgebra.jl
 
-function _io_convert_to_output(
+function _io_convert_ir_to_polynomials(
     ring::PolyRing,
     polynomials,
     monoms::Vector{Vector{M}},
@@ -676,11 +375,11 @@ function _io_convert_to_output(
     params
 ) where {M <: Monom, C <: Coeff}
     origring = AbstractAlgebra.parent(first(polynomials))
-    _io_convert_to_output(origring, monoms, coeffs, params)
+    _io_convert_ir_to_polynomials(origring, monoms, coeffs, params)
 end
 
 # Specialization for univariate polynomials
-function _io_convert_to_output(
+function _io_convert_ir_to_polynomials(
     origring::R,
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{C}},
@@ -693,7 +392,7 @@ function _io_convert_to_output(
     ground   = AbstractAlgebra.base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     @inbounds for i in 1:length(gbexps)
-        if io_iszero_monoms(gbexps[i])
+        if isempty(gbexps[i])
             exported[i] = origring()
             continue
         end
@@ -708,7 +407,7 @@ end
 
 # The most generic specialization
 # (Nemo.jl opts for this specialization)
-function _io_convert_to_output(
+function _io_convert_ir_to_polynomials(
     origring::R,
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{C}},
@@ -755,7 +454,7 @@ function create_aa_polynomial(
 end
 
 # Dispatch between monomial orderings
-function _io_convert_to_output(
+function _io_convert_ir_to_polynomials(
     origring::AbstractAlgebra.Generic.MPolyRing{T},
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{C}},
@@ -771,7 +470,7 @@ function _io_convert_to_output(
           Basis is computed in $(target_ord).
           Terms in the output are in $(ord_aa)"""
     end
-    _io_convert_to_output(
+    _io_convert_ir_to_polynomials(
         origring,
         gbexps,
         gbcoeffs,
@@ -781,7 +480,7 @@ function _io_convert_to_output(
 end
 
 # Specialization for degrevlex for matching orderings
-function _io_convert_to_output(
+function _io_convert_ir_to_polynomials(
     origring::AbstractAlgebra.Generic.MPolyRing{T},
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{C}},
@@ -807,7 +506,7 @@ function _io_convert_to_output(
 end
 
 # Specialization for lex for matching orderings
-function _io_convert_to_output(
+function _io_convert_ir_to_polynomials(
     origring::AbstractAlgebra.Generic.MPolyRing{T},
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{C}},
@@ -830,7 +529,7 @@ function _io_convert_to_output(
 end
 
 # Specialization for deglex for matching orderings
-function _io_convert_to_output(
+function _io_convert_ir_to_polynomials(
     origring::AbstractAlgebra.Generic.MPolyRing{T},
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{C}},
@@ -855,7 +554,7 @@ function _io_convert_to_output(
 end
 
 # All other orderings
-function _io_convert_to_output(
+function _io_convert_ir_to_polynomials(
     origring::AbstractAlgebra.Generic.MPolyRing{T},
     gbexps::Vector{Vector{M}},
     gbcoeffs::Vector{Vector{C}},

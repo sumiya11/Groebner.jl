@@ -57,9 +57,9 @@ function __groebner_learn1(
 ) where {I <: Integer, C <: Coeff}
     @invariant ir_is_valid(ring, monoms, coeffs)
     term_sorting_permutations, ring2, monoms2, coeffs2 =
-        io_convert_ir_to_internal(ring, monoms, coeffs, params, params.representation)
+        ir_convert_ir_to_internal(ring, monoms, coeffs, params, params.representation)
     trace, gb_monoms2, gb_coeffs2 = groebner_learn2(ring2, monoms2, coeffs2, params)
-    gb_monoms, gb_coeffs = io_convert_internal_to_ir(ring2, gb_monoms2, gb_coeffs2, params)
+    gb_monoms, gb_coeffs = ir_convert_internal_to_ir(ring2, gb_monoms2, gb_coeffs2, params)
 
     trace.representation = params.representation
     trace.term_sorting_permutations = term_sorting_permutations
@@ -176,7 +176,8 @@ function _groebner_apply_batch1!(
     flag, gb_monoms, gb_coeffs =
         __groebner_apply1!(wrapped_trace, ring, monoms, coeffs, options)
     !flag && return flag, map(el -> el[2:end], batch)
-    gb_batch = ir_unpack_coeffs(gb_monoms, gb_coeffs)
+    unpacked = ir_unpack_composite_coefficients(gb_coeffs)
+    gb_batch = map(el -> (gb_monoms, el), unpacked)
     true, gb_batch
 end
 
@@ -210,7 +211,7 @@ function __groebner_apply1!(
 
     flag, gb_monoms2, gb_coeffs2 = groebner_apply2!(trace, params)
 
-    gb_monoms, gb_coeffs = io_convert_internal_to_ir(ring, gb_monoms2, gb_coeffs2, params)
+    gb_monoms, gb_coeffs = ir_convert_internal_to_ir(ring, gb_monoms2, gb_coeffs2, params)
     flag, gb_monoms, gb_coeffs
 end
 

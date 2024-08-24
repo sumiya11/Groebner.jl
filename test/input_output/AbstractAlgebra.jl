@@ -1,4 +1,4 @@
-using AbstractAlgebra
+using AbstractAlgebra, Test
 import Primes
 
 @testset "AbstractAlgebra.jl, univariate" begin

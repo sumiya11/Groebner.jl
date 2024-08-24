@@ -59,6 +59,9 @@ mutable struct MacaulayMatrix{T <: Coeff}
     # differ in runtime depending on the algorithm in use
     some_coeffs::Vector{Vector{T}}
 
+    semigroup_upper_coeffs::Vector{Vector{T}}
+    semigroup_lower_coeffs::Vector{Vector{T}}
+
     # Explicitly stored coefficients of block B.
     B_coeffs_dense::Vector{Vector{T}}
     # Explicitly stored coefficients of block D.
@@ -138,6 +141,8 @@ function matrix_initialize(ring::PolyRing, ::Type{T}) where {T <: Coeff}
     MacaulayMatrix(
         Vector{Vector{ColumnLabel}}(),
         Vector{Vector{ColumnLabel}}(),
+        Vector{Vector{T}}(),
+        Vector{Vector{T}}(),
         Vector{Vector{T}}(),
         Vector{Vector{T}}(),
         Vector{Vector{T}}(),
@@ -238,6 +243,7 @@ end
 function matrix_resize_upper_part!(matrix::MacaulayMatrix, size::Int)
     size <= length(matrix.upper_rows) && return nothing
     resize!(matrix.upper_rows, size)
+    resize!(matrix.semigroup_upper_coeffs, size)
     resize!(matrix.upper_to_coeffs, size)
     resize!(matrix.upper_to_mult, size)
     nothing
@@ -246,6 +252,7 @@ end
 function matrix_resize_lower_part!(matrix::MacaulayMatrix, size::Int)
     size <= length(matrix.lower_rows) && return nothing
     resize!(matrix.lower_rows, size)
+    resize!(matrix.semigroup_lower_coeffs, size)
     resize!(matrix.lower_to_coeffs, size)
     resize!(matrix.lower_to_mult, size)
     nothing
@@ -349,6 +356,21 @@ function matrix_convert_rows_to_basis_elements!(
         end
     end
 
+    if SEMIGROUP_ON[] && false
+        for i in 1:(matrix.npivots)
+            sat = ht.monoms[basis.monoms[crs + i][1]][end]
+            for j in 1:length(basis.monoms[crs + i])
+                monom = ht.monoms[basis.monoms[crs + i][j]]
+                new_monom = copy(monom)
+                new_monom[end] -= sat
+                new_monom[1] -= sat
+                basis.monoms[crs + i][j] = hashtable_insert!(ht, new_monom)
+            end
+            @assert issorted(basis.monoms[crs + i], lt=(a,b) -> monom_isless(ht.monoms[a], ht.monoms[b], ht.ord), rev=true)
+            @assert basis.coeffs[crs + i][1] == 1
+        end
+    end
+
     if params.changematrix
         resize!(basis.changematrix, basis.nfilled + matrix.npivots)
         for i in 1:(matrix.npivots)
@@ -409,9 +431,7 @@ function matrix_polynomial_multiple_to_row!(
     basis_ht::MonomialHashtable{M},
     monom_hash::MonomHash,
     mult::M,
-    poly::Vector{MonomId},
-    skipfirst::Bool=false
-) where {M <: Monom}
+    poly::Vector{MonomId}) where {M <: Monom}
     row = similar(poly)
     hashtable_resize_if_needed!(symbol_ht, length(poly))
 
@@ -421,8 +441,7 @@ function matrix_polynomial_multiple_to_row!(
         mult,
         poly,
         basis_ht,
-        symbol_ht,
-        skipfirst
+        symbol_ht
     )
 end
 

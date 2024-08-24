@@ -499,6 +499,50 @@ function hashtable_check_monomial_division_in_update(
     nothing
 end
 
+function semigroup_normalize_monom!(monom::ExponentVector{T}) where {T}
+    monom_preimage = zeros(T, length(monom))
+    new_monom = zeros(T, length(monom))
+    n = length(SEMIGROUP_VARMAP[])
+    for i in (length(monom) - n + 1):length(monom)
+        monom_preimage .+= SEMIGROUP_VARMAP[][length(monom) - i + 1][1] .* monom[i]
+    end
+    for i in 1:n
+        while all(monom_preimage .>= SEMIGROUP_VARMAP[][i][1])
+            monom_preimage .-= SEMIGROUP_VARMAP[][i][1]
+            new_monom .+= SEMIGROUP_VARMAP[][i][2]
+        end
+    end
+    @assert new_monom[1] == sum(view(new_monom, 2:length(new_monom)))
+    new_monom
+end
+
+function semigroup_is_a_relation_lead(monom::ExponentVector{T}) where {T}
+    monom in map(first, SEMIGROUP_RELATIONS[])
+end
+
+function semigroup_check_normalized_monom(monom::M) where {M <: Monom}
+    for relation in SEMIGROUP_RELATIONS[]
+        @assert length(relation) == 2
+        monom_is_divisible(monom, relation[1]) && return false
+    end
+    return true
+end
+
+function semigroup_normalized(
+    basis,
+    hashtable::MonomialHashtable)
+    for i in 1:(basis.nfilled)
+        if semigroup_is_a_relation_lead(hashtable.monoms[basis.monoms[i][1]])
+            continue
+        end
+        for j in 1:length(basis.monoms[i])
+            monom = hashtable.monoms[basis.monoms[i][j]]
+            !semigroup_check_normalized_monom(monom) && return false
+        end
+    end
+    true
+end
+
 # Inserts a multiple of the polynomial into symbolic hashtable.
 # Writes the resulting monomial identifiers to the given row.
 function hashtable_insert_polynomial_multiple!(
@@ -507,31 +551,40 @@ function hashtable_insert_polynomial_multiple!(
     mult::M,
     poly::Vector{MonomId},
     ht::MonomialHashtable{M},
-    symbol_ht::MonomialHashtable{M},
-    skipfirst::Bool
-) where {M <: Monom}
+    symbol_ht::MonomialHashtable{M}) where {M <: Monom}
+
     @invariant ispow2(ht.size) && ht.size > 1
     @invariant ispow2(symbol_ht.size) && symbol_ht.size > 1
     @invariant length(row) == length(poly)
 
-    len = length(poly)
-    iszero(len) && return row
-
+    iszero(length(poly)) && return row
+        
     ssize = symbol_ht.size % MonomHash
     mod = (symbol_ht.size - 1) % MonomHash
     @inbounds buf = symbol_ht.monoms[1]
+
+    if SEMIGROUP_ON[]
+        @assert !semigroup_is_a_relation_lead(ht.monoms[poly[1]])
+    end
+
     # Iterate over monomials of the given polynomial, multiply them by a
     # monomial multiple, and insert them into symbolic hashtable. 
     # We use the fact that the hash function is linear.
     #
     # It is often the case that the multiple of the leading monomial is already
     # in the symbolic hashtable. In this case, skip it.
-    @inbounds for j in (1 + skipfirst):len
+    @inbounds for j in 1:length(poly)
         oldmonom = ht.monoms[poly[j]]
         newmonom = monom_product!(buf, mult, oldmonom)
 
         oldhash = ht.hashdata[poly[j]].hash
         newhash = mult_hash + oldhash
+
+        if SEMIGROUP_ON[]
+            newmonom = semigroup_normalize_monom!(newmonom)
+            @assert semigroup_check_normalized_monom(newmonom)
+            newhash = monom_hash(newmonom, ht.hasher)
+        end
 
         hidx = hashtable_next_lookup_index(newhash, 0 % MonomHash, mod)
         vidx = symbol_ht.hashtable[hidx]
@@ -583,6 +636,10 @@ function hashtable_insert_polynomial_multiple!(
 
         row[j] = vidx
         symbol_ht.load += 1
+    end
+
+    if SEMIGROUP_ON[]
+        @assert allunique(row)
     end
 
     row

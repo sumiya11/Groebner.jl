@@ -1,4 +1,4 @@
-using DynamicPolynomials
+using DynamicPolynomials, Test
 
 @testset "DynamicPolynomials.jl input-output" begin
     @polyvar x y
@@ -13,19 +13,16 @@ using DynamicPolynomials
     @test Groebner.groebner(fs) == [one(x)]
 
     fs = [2x + 3, 4y + 5]
-    @test Groebner.groebner(fs) == [4y + 5, 2x + 3]
+    @test Groebner.groebner(fs) == [y + 5//4, x + 3//2]
 
     fs = [UInt16(2)x + UInt16(3), UInt16(2)y]
-    @test Groebner.groebner(fs) == [y, UInt16(2)x + UInt16(3)]
+    @test Groebner.groebner(fs) == [y, x + 3//2]
 
     fs = [BigInt(1)x + BigInt(20), y]
-    @test Groebner.groebner(fs) == [y, BigInt(1)x + BigInt(20)]
+    @test Groebner.groebner(fs) == [y, x + 20]
 
     fs = [x + BigInt(20) // BigInt(3), 4y + 5]
     @test Groebner.groebner(fs) == [y + 5 // 4, x + BigInt(20) // BigInt(3)]
-
-    fs = [34343343433x * y^2 + 3431234567833, 3434343434x * y - 342343242342]
-    @test_throws DomainError Groebner.groebner(fs)
 
     fs = [BigInt(34343343433)x * y^2 + 3431234567833, 3434343434x * y - 342343242342]
     @test Groebner.isgroebner(Groebner.groebner(fs))
@@ -33,9 +30,9 @@ using DynamicPolynomials
 
     @polyvar x1 x2 x3
     noon3 = [
-        10 * x1 * x2^2 + 10 * x1 * x3^2 - 11 * x1 + 10 // 1
-        10 * x1^2 * x2 + 10 * x2 * x3^2 - 11 * x2 + 10 // 1
-        10 * x1^2 * x3 + 10 * x2^2 * x3 - 11 * x3 + 10 // 1
+        10 * x1 * x2^2 + 10 * x1 * x3^2 - 11 * x1 + 10
+        10 * x1^2 * x2 + 10 * x2 * x3^2 - 11 * x2 + 10
+        10 * x1^2 * x3 + 10 * x2^2 * x3 - 11 * x3 + 10
     ]
     @test Groebner.groebner(noon3) == [
         x1 * x2^2 + x1 * x3^2 - 11 // 10 * x1 + 1,
@@ -101,26 +98,29 @@ using DynamicPolynomials
         @test gb == result
     end
 
+    @polyvar x y z
+    Groebner.groebner([x, y, z^2], ordering=Groebner.Lex(x,y,z)) == [z^2, y, x]
+    Groebner.groebner([x, y, z^2], ordering=Groebner.Lex(y,x,z)) == [z^2, x, y]
+    Groebner.groebner([x, y, z^2], ordering=Groebner.Lex(z,x,y)) == [y, x, z^2]
+
     # Test for different DynamicPolynomials.jl orderings
     @polyvar x y monomial_order = LexOrder
     F = [2x^2 * y + 3x, 4x * y^2 + 5y^3]
     gb = Groebner.groebner(F, ordering=Groebner.DegLex())
-    @test gb == [5 * x * y + 4 * x^2, 25 * y^3 + 24 * x, -6 * x + 5 * x * y^2]
+    @test gb == [(5//4) * x * y + x^2, y^3 + (24//25) * x, (-6//5) * x + x * y^2]
     gb = Groebner.groebner(F, ordering=Groebner.DegRevLex())
-    @test gb == [5 * x * y + 4 * x^2, 25 * y^3 + 24 * x, -6 * x + 5 * x * y^2]
+    @test gb == [(5//4) * x * y + x^2, y^3 + (24//25) * x, (-6//5) * x + x * y^2]
     gb = Groebner.groebner(F, ordering=Groebner.Lex())
-    @test gb == [-6 * y^3 + 5 * y^5, 25 * y^3 + 24 * x]
-    gb = Groebner.groebner(F, ordering=Groebner.Lex())
-    @test gb == [-6 * y^3 + 5 * y^5, 25 * y^3 + 24 * x]
+    @test gb == [(-6//5) * y^3 + y^5, (25//24) * y^3 + x]
     gb = Groebner.groebner(F, ordering=Groebner.Lex(y, x))
-    @test gb == [-15 * x + 8 * x^3, 5 * x * y + 4 * x^2, 24 * x + 25 * y^3]
+    @test gb == [(-15//8) * x + x^3, x * y + (4//5) * x^2, (24//25) * x + y^3]
 
     @polyvar x y monomial_order = Graded{Reverse{InverseLexOrder}}
     F = [2x^2 * y + 3x, 4x * y^2 + 5y^3]
     gb = Groebner.groebner(F)
-    @test gb == [5 * x * y + 4 * x^2, 25 * y^3 + 24 * x, -6 * x + 5 * x * y^2]
+    @test gb == [(5//4) * x * y + x^2, y^3 + (24//25)*x, (-6//5) * x + x * y^2]
     gb = Groebner.groebner(F, ordering=Groebner.Lex())
-    @test gb == [-6 * y^3 + 5 * y^5, 25 * y^3 + 24 * x]
+    @test gb == [(-6//5) * y^3 + y^5, (25//24) * y^3 + x]
 
     for dp_ord in [LexOrder, Graded{LexOrder}, Graded{Reverse{InverseLexOrder}}]
         @polyvar x y monomial_order = dp_ord

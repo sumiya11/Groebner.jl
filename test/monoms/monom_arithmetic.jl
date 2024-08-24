@@ -18,8 +18,7 @@ implementations_to_test = [
     Groebner.PackedTuple1{T, UInt8} where {T},
     Groebner.PackedTuple2{T, UInt8} where {T},
     Groebner.PackedTuple3{T, UInt8} where {T},
-    Groebner.PackedTuple4{T, UInt8} where {T},
-    Groebner.SparseExponentVector{T} where {T}
+    Groebner.PackedTuple4{T, UInt8} where {T}
 ]
 
 @testset "monom arithmetic" begin

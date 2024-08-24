@@ -66,9 +66,9 @@ function __groebner1(
 ) where {I <: Integer, C <: Coeff}
     @invariant ir_is_valid(ring, monoms, coeffs)
     _, ring2, monoms2, coeffs2 =
-        io_convert_ir_to_internal(ring, monoms, coeffs, params, params.representation)
+        ir_convert_ir_to_internal(ring, monoms, coeffs, params, params.representation)
     gb_monoms2, gb_coeffs2 = groebner2(ring2, monoms2, coeffs2, params)
-    gb_monoms, gb_coeffs = io_convert_internal_to_ir(ring2, gb_monoms2, gb_coeffs2, params)
+    gb_monoms, gb_coeffs = ir_convert_internal_to_ir(ring2, gb_monoms2, gb_coeffs2, params)
     gb_monoms, gb_coeffs
 end
 
@@ -238,7 +238,6 @@ function _groebner_learn_and_apply(
     batchsize = 1
     batchsize_scaling = 0.10
 
-    # CRT and rational reconstrction settings
     witness_set = modular_witness_set(state.gb_coeffs_zz, params)
 
     crt_vec_partial!(
@@ -271,7 +270,7 @@ function _groebner_learn_and_apply(
 
                 f4_apply!(trace_4x, ring_ff_4x, trace_4x.buf_basis, params_zp_4x)
                 gb_coeffs_1, gb_coeffs_2, gb_coeffs_3, gb_coeffs_4 =
-                    io_unpack_composite_coefficients(trace_4x.gb_basis.coeffs)
+                    ir_unpack_composite_coefficients(trace_4x.gb_basis.coeffs)
 
                 # TODO: (I) This causes unnecessary conversions of arrays.
                 push!(state.gb_coeffs_ff_all, gb_coeffs_1)
@@ -521,7 +520,7 @@ function _groebner_learn_and_apply_threaded(
             )
 
             gb_coeffs_1, gb_coeffs_2, gb_coeffs_3, gb_coeffs_4 =
-                io_unpack_composite_coefficients(threadlocal_trace_4x.gb_basis.coeffs)
+                ir_unpack_composite_coefficients(threadlocal_trace_4x.gb_basis.coeffs)
 
             push!(threadbuf_gb_coeffs[t_id], (threadlocal_prime_4x[1], gb_coeffs_1))
             push!(threadbuf_gb_coeffs[t_id], (threadlocal_prime_4x[2], gb_coeffs_2))

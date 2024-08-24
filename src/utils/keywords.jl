@@ -160,10 +160,10 @@ mutable struct KeywordArguments
         `:auto`, `:no`, `:yes`"""
 
         monoms = get(kws, :monoms, get(default_kw_args, :monoms, :dense))
-        @assert monoms in (:auto, :dense, :packed, :sparse) """
+        @assert monoms in (:auto, :dense, :packed) """
         Not recognized monomial representation: $monoms
         Possible choices for keyword "monoms" are:
-        `:auto`, `:dense`, `:packed`, `:sparse`"""
+        `:auto`, `:dense`, `:packed`"""
 
         arithmetic = get(kws, :arithmetic, get(default_kw_args, :arithmetic, :auto))
         @assert arithmetic in (:auto, :delayed, :signed, :basic, :floating) """
