@@ -61,8 +61,7 @@ mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractMonomialOrdering}
     load::Int
     offset::Int
 
-    # If is frozen. If the hashtable is frozen, any operation that tries to
-    # modify it will result in an error.
+    # If the hashtable is frozen, modification is not allowed
     frozen::Bool
 end
 
@@ -499,17 +498,24 @@ function hashtable_check_monomial_division_in_update(
     nothing
 end
 
-function semigroup_normalize_monom!(monom::ExponentVector{T}) where {T}
-    monom_preimage = zeros(T, length(monom))
-    new_monom = zeros(T, length(monom))
-    n = length(SEMIGROUP_VARMAP[])
+
+# this function is not reentrant !
+function semigroup_normalize_monom!(monom::ExponentVector{T}; cache=zeros(T, length(monom))) where {T}
+    varmap = SEMIGROUP_VARMAP[]
+    monom_preimage = cache
+    n = length(varmap)
     for i in (length(monom) - n + 1):length(monom)
-        monom_preimage .+= SEMIGROUP_VARMAP[][length(monom) - i + 1][1] .* monom[i]
+        monom_preimage .+= varmap[length(monom) - i + 1][1] .* monom[i]
     end
-    for i in 1:n
-        while all(monom_preimage .>= SEMIGROUP_VARMAP[][i][1])
-            monom_preimage .-= SEMIGROUP_VARMAP[][i][1]
-            new_monom .+= SEMIGROUP_VARMAP[][i][2]
+    new_monom = monom
+    new_monom .= T(0)
+    @inbounds for i in 1:n
+        lead = varmap[i][1]
+        flag = monom_is_divisible(monom_preimage, lead)
+        while flag
+            monom_preimage .-= varmap[i][1]
+            new_monom .+= varmap[i][2]
+            flag = monom_is_divisible(monom_preimage, lead)
         end
     end
     @assert new_monom[1] == sum(view(new_monom, 2:length(new_monom)))
@@ -528,9 +534,7 @@ function semigroup_check_normalized_monom(monom::M) where {M <: Monom}
     return true
 end
 
-function semigroup_normalized(
-    basis,
-    hashtable::MonomialHashtable)
+function semigroup_normalized(basis, hashtable::MonomialHashtable)
     for i in 1:(basis.nfilled)
         if semigroup_is_a_relation_lead(hashtable.monoms[basis.monoms[i][1]])
             continue
@@ -551,14 +555,14 @@ function hashtable_insert_polynomial_multiple!(
     mult::M,
     poly::Vector{MonomId},
     ht::MonomialHashtable{M},
-    symbol_ht::MonomialHashtable{M}) where {M <: Monom}
-
+    symbol_ht::MonomialHashtable{M}
+) where {M <: Monom}
     @invariant ispow2(ht.size) && ht.size > 1
     @invariant ispow2(symbol_ht.size) && symbol_ht.size > 1
     @invariant length(row) == length(poly)
 
     iszero(length(poly)) && return row
-        
+
     ssize = symbol_ht.size % MonomHash
     mod = (symbol_ht.size - 1) % MonomHash
     @inbounds buf = symbol_ht.monoms[1]

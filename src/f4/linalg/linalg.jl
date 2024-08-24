@@ -1,12 +1,5 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-# The main entry point for linear algebra. 
-# The functions in this file are "safe", in a sense that they try to ensure that
-# the arguments are in a valid state, and handle printing and statistics. Use
-# the functions from this file, and do not call the backends directly.
-
-@noinline __throw_linalg_error(msg) = throw(DomainError("Linear algebra error: $msg"))
-
 ###
 # Linear algebra, main entry points
 
@@ -201,20 +194,8 @@ function _linalg_main!(
         else
             linalg_randomized_sparse!(matrix, basis, linalg, arithmetic, rng)
         end
-    elseif linalg.algorithm === :experimental_1
-        if linalg.sparsity === :sparse
-            linalg_direct_rref_sparse!(matrix, basis, linalg, arithmetic, rng)
-        else
-            linalg_direct_rref_sparsedense!(matrix, basis, linalg, arithmetic)
-        end
-    elseif linalg.algorithm === :experimental_2
-        linalg_randomized_hashcolumns_sparse!(matrix, basis, linalg, arithmetic, rng)
     else
-        __throw_linalg_error("Cannot pick a suitable linear algebra backend for parameters
-                             linalg         = $linalg
-                             threaded       = $threaded
-                             arithmetic     = $arithmetic
-                             changematrix   = $changematrix")
+        throw(DomainError("Cannot pick a suitable linear algebra backend"))
     end
 
     flag

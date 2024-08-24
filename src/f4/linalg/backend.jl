@@ -16,7 +16,13 @@ function linalg_deterministic_sparse!(
 )
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
-    
+
+    @assert matrix.nrows_filled_upper > 0
+    @assert matrix.nrows_filled_upper == matrix.ncols_left
+    for i in 1:matrix.nrows_filled_upper
+        @assert matrix.upper_rows[i][1] == i
+    end
+
     @log :matrix "linalg_deterministic_sparse!"
     @log :matrix matrix_string_repr(matrix)
 
@@ -163,7 +169,8 @@ function linalg_interreduce_matrix_pivots!(
             # upper part of matrix
             if SEMIGROUP_ON[]
                 @assert false
-                sparse_row_coeffs = matrix.semigroup_upper_coeffs[matrix.upper_to_coeffs[abs_column_idx]]
+                sparse_row_coeffs =
+                    matrix.semigroup_upper_coeffs[matrix.upper_to_coeffs[abs_column_idx]]
             else
                 sparse_row_coeffs = basis.coeffs[matrix.upper_to_coeffs[abs_column_idx]]
             end
@@ -480,7 +487,9 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
     n_nonzeros = 0
     new_pivot_column = -1
 
-    @inbounds for i in start_column:end_column
+    # TODO TODO TODO
+    # @inbounds for i in start_column:end_column
+    @inbounds for i in 1:end_column
         # if the element is zero -- no reduction is needed
         if iszero(row[i])
             continue
@@ -540,7 +549,7 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
         new_sparse_row_support,
         new_sparse_row_coeffs,
         row,
-        convert(Int, start_column),
+        convert(Int, 1), # convert(Int, start_column), TODO TODO
         ncols
     )
 
@@ -777,7 +786,11 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
             if matrix.upper_part_is_rref || computing_rref
                 coeffs = matrix.upper_coeffs[i]
             else
-                coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
+                if SEMIGROUP_ON[]
+                    coeffs = matrix.semigroup_upper_coeffs[matrix.upper_to_coeffs[i]]
+                else
+                    coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
+                end
             end
             record_active_reducer(active_reducers, matrix, i)
         else

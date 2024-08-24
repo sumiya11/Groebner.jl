@@ -37,7 +37,4 @@ const CoeffModular = UInt64
 ###
 # All supported monomial implementations in F4
 
-const Monom = Union{
-    ExponentVector{T} where {T},
-    AbstractPackedTuple
-}
+const Monom = Union{ExponentVector{T} where {T}, AbstractPackedTuple}

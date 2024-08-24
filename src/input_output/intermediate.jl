@@ -46,7 +46,8 @@ mutable struct PolyRing{
     ch::C
 end
 
-Base.:(==)(r1::PolyRing, r2::PolyRing) = r1.nvars == r2.nvars && r1.ord == r2.ord && r1.ch == r2.ch
+Base.:(==)(r1::PolyRing, r2::PolyRing) =
+    r1.nvars == r2.nvars && r1.ord == r2.ord && r1.ch == r2.ch
 
 ir_basic_is_valid(batch) = throw(DomainError("Invalid IR, unknown types."))
 ir_basic_is_valid(ring, monoms, coeffs) = throw(DomainError("Invalid IR, unknown types."))
@@ -64,7 +65,8 @@ function ir_basic_is_valid(
 ) where {T <: Integer, C <: Number}
     !(length(monoms) == length(coeffs)) && throw(DomainError("Invalid IR."))
     isempty(monoms) && throw(DomainError("Invalid IR."))
-    !(ring.nvars >= 0) && throw(DomainError("The number of variables must be non-negative."))
+    !(ring.nvars >= 0) &&
+        throw(DomainError("The number of variables must be non-negative."))
     !(ring.ch >= 0) && throw(DomainError("Field characteristic must be nonnegative."))
     if ring.ch > 0
         !(C <: Integer) && throw(DomainError("Coefficients must be integers."))

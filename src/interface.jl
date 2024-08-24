@@ -241,14 +241,14 @@ using AbstractAlgebra
 function bi_hom_monomials(ring, groups, bidegree)
     part1 = sum(groups[1])^bidegree[1]
     part2 = sum(groups[2])^bidegree[2]
-    collect(monomials(part1*part2))
+    collect(monomials(part1 * part2))
 end
 
 function parent_ring_change(
     poly::MPolyRingElem,
     new_ring::MPolyRing;
-    matching = :byname,
-    shift = 0,
+    matching=:byname,
+    shift=0
 )
     old_ring = parent(poly)
     # Construct a mapping for the variable indices.
@@ -274,8 +274,8 @@ function parent_ring_change(
                 Base.ArgumentError(
                     """
                     The polynomial $poly contains a variable $(gens(old_ring)[i]) not present in the new ring.
-                    New ring variables are $(gens(new_ring)))""",
-                ),
+                    New ring variables are $(gens(new_ring)))"""
+                )
             )
         end
     end
@@ -297,18 +297,23 @@ end
 function pre_compute_relations(C, vars, tags, tag_map)
     gb = Groebner.groebner(C, ordering=Groebner.DegRevLex(vars) * Groebner.DegRevLex(tags))
     elim = filter(f -> all(v -> degree(f, v) == 0, vars), gb)
-    @assert all(r -> iszero(evaluate(r, [k for (k, v) in tag_map], [v for (k, v) in tag_map])), elim)
+    @assert all(
+        r -> iszero(evaluate(r, [k for (k, v) in tag_map], [v for (k, v) in tag_map])),
+        elim
+    )
     Groebner.groebner(elim)
 end
 
-function transform(sys, groups; bidegree=(1,1))
+function transform(sys, groups; bidegree=(1, 1))
     monoms = sort(bi_hom_monomials(parent(sys[1]), groups, bidegree), rev=true)
     ring = parent(sys[1])
     ext_ring, ext_all_vars = polynomial_ring(
-        base_ring(ring), 
-        vcat(map(string, gens(ring)), ["ㅁ$i" for i in 1:length(monoms)]), 
-        internal_ordering=:degrevlex)
-    ext_vars, ext_tags = ext_all_vars[1:length(gens(ring))], ext_all_vars[length(gens(ring))+1:end]
+        base_ring(ring),
+        vcat(map(string, gens(ring)), ["ㅁ$i" for i in 1:length(monoms)]),
+        internal_ordering=:degrevlex
+    )
+    ext_vars, ext_tags =
+        ext_all_vars[1:length(gens(ring))], ext_all_vars[(length(gens(ring)) + 1):end]
     tag_map = Dict(monoms .=> ext_tags)
     A = [parent_ring_change(k, ext_ring) for k in sys]
     C = [parent_ring_change(k, ext_ring) - v for (k, v) in tag_map]
@@ -316,9 +321,20 @@ function transform(sys, groups; bidegree=(1,1))
     B = map(f -> Groebner.normalform(gb, f), A)
     ext_tag_map = Dict(v => parent_ring_change(k, ext_ring) for (k, v) in tag_map)
     relations = pre_compute_relations(C, ext_vars, ext_tags, ext_tag_map)
-    @assert all(iszero, A .- map(f -> evaluate(f, collect(keys(ext_tag_map)), [ext_tag_map[k] for k in collect(keys(ext_tag_map))]), B))
-    x0, y0 = ext_vars[end-1:end]
-    @assert gens(ext_ring)[end] == collect(ext_tag_map)[findfirst(kv -> kv[2] == x0*y0, collect(ext_tag_map))][1]
+    @assert all(
+        iszero,
+        A .- map(
+            f -> evaluate(
+                f,
+                collect(keys(ext_tag_map)),
+                [ext_tag_map[k] for k in collect(keys(ext_tag_map))]
+            ),
+            B
+        )
+    )
+    x0, y0 = ext_vars[(end - 1):end]
+    @assert gens(ext_ring)[end] ==
+            collect(ext_tag_map)[findfirst(kv -> kv[2] == x0 * y0, collect(ext_tag_map))][1]
     @assert B == map(f -> Groebner.normalform(relations, f), B)
     groups = map(group -> map(f -> parent_ring_change(f, ext_ring), group), groups)
     A, B, C, relations, ext_vars, ext_tags, ext_tag_map, groups
@@ -326,24 +342,25 @@ end
 
 function random_poly_bi_hom(ring, groups, bidegree)
     m = bi_hom_monomials(ring, groups, bidegree)
-    sum(rand(base_ring(ring), length(m)) .* m)
+    sum(([rand(base_ring(ring)) for _ in 1:length(m)]) .* m)
 end
 
 function random_sys_bi_hom(k, groups, bidegrees)
     ring, xy = polynomial_ring(
-        k, 
-        vcat(["x$i" for i in 1:groups[1]], ["y$i" for i in 1:groups[2]], ["x0","y0"]),
-        internal_ordering=:degrevlex)
-    x, y = [xy[1:groups[1]]..., xy[end-1]], [xy[groups[1]+1:end-2]..., xy[end]]
+        k,
+        vcat(["x$i" for i in 1:groups[1]], ["y$i" for i in 1:groups[2]], ["x0", "y0"]),
+        internal_ordering=:degrevlex
+    )
+    x, y = [xy[1:groups[1]]..., xy[end - 1]], [xy[(groups[1] + 1):(end - 2)]..., xy[end]]
     x0, y0 = x[end], y[end]
-    groups = (x,y)
+    groups = (x, y)
     groups, map(bideg -> random_poly_bi_hom(ring, groups, bideg), bidegrees)
 end
 
 const SEMIGROUP_ON = Ref{Bool}(false)
-const SEMIGROUP_RELATIONS = Ref{Any}()
-const SEMIGROUP_GROUPS = Ref{Any}()
-const SEMIGROUP_VARMAP = Ref{Any}()
+const SEMIGROUP_RELATIONS = Ref{Vector{Vector{Vector{UInt32}}}}()
+const SEMIGROUP_GROUPS = Ref{Vector{Vector{Vector{Vector{UInt32}}}}}()
+const SEMIGROUP_VARMAP = Ref{Vector{Vector{Vector{UInt32}}}}()
 
 function groebner_semigroup(polynomials::AbstractVector, groups; options...)
     Base.require_one_based_indexing(polynomials)
@@ -355,11 +372,10 @@ function groebner_semigroup(polynomials::AbstractVector, groups; options...)
 
     SEMIGROUP_ON[] = false
 
-    _, new_system, varmap, relations, vars, tags, tag_map, groups = transform(polynomials, groups)
+    _, new_system, varmap, relations, vars, tags, tag_map, groups =
+        transform(polynomials, groups)
 
     sort!(varmap, by=leading_monomial)
-
-    @log :info "" varmap
 
     new_system = normalform(relations, new_system)
 
@@ -565,8 +581,7 @@ function groebner_apply!(trace::WrappedTrace, polynomials::AbstractVector; optio
     logging_setup(keywords)
     statistics_setup(keywords)
 
-    result =
-        groebner_apply0!(trace, polynomials, keywords)
+    result = groebner_apply0!(trace, polynomials, keywords)
 
     result
 end
