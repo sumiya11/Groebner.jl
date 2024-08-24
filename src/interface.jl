@@ -362,18 +362,13 @@ const SEMIGROUP_RELATIONS = Ref{Vector{Vector{Vector{UInt32}}}}()
 const SEMIGROUP_GROUPS = Ref{Vector{Vector{Vector{Vector{UInt32}}}}}()
 const SEMIGROUP_VARMAP = Ref{Vector{Vector{Vector{UInt32}}}}()
 
-function groebner_semigroup(polynomials::AbstractVector, groups; options...)
-    Base.require_one_based_indexing(polynomials)
+function groebner_semigroup(new_system, varmap, relations, groups; options...)
+    Base.require_one_based_indexing(new_system)
 
     keywords = KeywordArguments(:groebner, options)
 
     logging_setup(keywords)
     statistics_setup(keywords)
-
-    SEMIGROUP_ON[] = false
-
-    _, new_system, varmap, relations, vars, tags, tag_map, groups =
-        transform(polynomials, groups)
 
     sort!(varmap, by=leading_monomial)
 

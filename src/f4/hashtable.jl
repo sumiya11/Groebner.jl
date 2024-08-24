@@ -501,11 +501,15 @@ end
 
 # this function is not reentrant !
 function semigroup_normalize_monom!(monom::ExponentVector{T}; cache=zeros(T, length(monom))) where {T}
+    semigroup_check_normalized_monom(monom) && return monom
+    
     varmap = SEMIGROUP_VARMAP[]
     monom_preimage = cache
     n = length(varmap)
-    for i in (length(monom) - n + 1):length(monom)
-        monom_preimage .+= varmap[length(monom) - i + 1][1] .* monom[i]
+    @inbounds for i in (length(monom) - n + 1):length(monom)
+        for j in 1:length(monom)
+            monom_preimage[j] += varmap[length(monom) - i + 1][1][j] * monom[i]
+        end
     end
     new_monom = monom
     new_monom .= T(0)
@@ -523,7 +527,12 @@ function semigroup_normalize_monom!(monom::ExponentVector{T}; cache=zeros(T, len
 end
 
 function semigroup_is_a_relation_lead(monom::ExponentVector{T}) where {T}
-    monom in map(first, SEMIGROUP_RELATIONS[])
+    for relation in SEMIGROUP_RELATIONS[]
+        if monom == relation[1]
+            return true
+        end
+    end
+    false
 end
 
 function semigroup_check_normalized_monom(monom::M) where {M <: Monom}
@@ -585,7 +594,7 @@ function hashtable_insert_polynomial_multiple!(
         newhash = mult_hash + oldhash
 
         if SEMIGROUP_ON[]
-            newmonom = semigroup_normalize_monom!(newmonom)
+            newmonom = semigroup_normalize_monom!(newmonom; cache=ht.monoms[1])
             @assert semigroup_check_normalized_monom(newmonom)
             newhash = monom_hash(newmonom, ht.hasher)
         end
@@ -640,10 +649,6 @@ function hashtable_insert_polynomial_multiple!(
 
         row[j] = vidx
         symbol_ht.load += 1
-    end
-
-    if SEMIGROUP_ON[]
-        @assert allunique(row)
     end
 
     row

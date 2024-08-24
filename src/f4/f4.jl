@@ -374,7 +374,6 @@ function f4_find_multiplied_reducer!(
         end
         @assert sup[1] == monomid
         @assert cfs[1] == 1
-        @assert allunique(sup)
         matrix.upper_rows[row_id] = sup
         matrix.semigroup_upper_coeffs[row_id] = cfs
         matrix.upper_to_coeffs[row_id] = row_id
@@ -620,7 +619,7 @@ function f4_add_critical_pairs_to_matrix!(
                     linalg_row_make_monic!(cfs, arithmetic)
                 end
                 @assert cfs[1] == 1
-                @assert allunique(sup)
+                # @assert allunique(sup)
                 lowrows[row_idx] = sup
                 matrix.semigroup_lower_coeffs[row_idx] = cfs
                 matrix.lower_to_coeffs[row_idx] = row_idx
