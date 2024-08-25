@@ -60,22 +60,12 @@ function f4_reduction!(
 
     matrix_fill_column_to_monom_map!(matrix, symbol_ht)
 
-    #=
-    julia> f
-4-element Vector{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.GFElem{Int64}}}:
- ㅁ1 + 50*ㅁ2 + 64*ㅁ3 + 99*ㅁ4
- ㅁ2*ㅁ3 + 100*ㅁ1*ㅁ4
- ㅁ1^2 + 61*ㅁ1*ㅁ2 + 84*ㅁ2^2 + 86*ㅁ1*ㅁ3 + 100*ㅁ3^2 + 13*ㅁ1*ㅁ4 + 39*ㅁ2*ㅁ4 + 97*ㅁ3*ㅁ4 + 11*ㅁ4^2
- ㅁ2^2 + 83*ㅁ3^2 + 11*ㅁ2*ㅁ4 + 13*ㅁ3*ㅁ4 + 95*ㅁ4^2
-
-julia> s24
-ㅁ3^3 + 10*ㅁ3^2*ㅁ4 + 69*ㅁ2*ㅁ4^2 + 90*ㅁ3*ㅁ4^2 + 45*ㅁ4^3
-
-julia> divrem(a3 * f[4], f[2])[2] / 83
-ㅁ3^3 + 28*ㅁ1*ㅁ2*ㅁ4 + 61*ㅁ3^2*ㅁ4 + 5*ㅁ1*ㅁ4^2 + 34*ㅁ3*ㅁ4^2
-=#
+    push!(DATA[:matrix_size], size(matrix))
 
     linalg_main!(matrix, basis, params)
+
+    push!(DATA[:useful_rows], round(matrix.npivots / matrix.nrows_filled_lower, digits=3))
+
     matrix_convert_rows_to_basis_elements!(
         matrix,
         basis,
@@ -444,6 +434,8 @@ function f4_select_critical_pairs!(
     end
     pairset.load -= npairs
 
+    push!(DATA[:pairs], npairs)
+    
     deg, npairs
 end
 
@@ -629,6 +621,46 @@ function f4_add_critical_pairs_to_matrix!(
         end
 
         return
+    else
+        for i in 1:npairs
+            lcm = pairs[i].lcm
+            p1, p2 = pairs[i].poly1, pairs[i].poly2
+            
+            vidx = basis.monoms[p1][1]
+            etmp = monom_division!(etmp, ht.monoms[lcm], ht.monoms[vidx])
+            htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
+
+            matrix.nrows_filled_lower += 1
+            row_idx = matrix.nrows_filled_lower
+            lowrows[row_idx] = matrix_polynomial_multiple_to_row!(
+                matrix,
+                symbol_ht,
+                ht,
+                htmp,
+                etmp,
+                basis.monoms[p1]
+            )
+            matrix.lower_to_coeffs[row_idx] = p1
+            matrix.lower_to_mult[row_idx] = hashtable_insert!(ht, etmp)
+
+            vidx = basis.monoms[p2][1]
+            etmp = monom_division!(etmp, ht.monoms[lcm], ht.monoms[vidx])
+            htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
+            matrix.nrows_filled_lower += 1
+            row_idx = matrix.nrows_filled_lower
+            lowrows[row_idx] = matrix_polynomial_multiple_to_row!(
+                matrix,
+                symbol_ht,
+                ht,
+                htmp,
+                etmp,
+                basis.monoms[p2]
+            )
+            matrix.lower_to_coeffs[row_idx] = p2
+            matrix.lower_to_mult[row_idx] = hashtable_insert!(ht, etmp)
+        end
+
+        return
     end
 
     i = 1
@@ -714,6 +746,8 @@ function f4!(
 ) where {M <: Monom, C <: Coeff}
     @invariant basis_well_formed(ring, basis, hashtable)
 
+    [empty!(v) for (k, v) in DATA]
+
     basis_make_monic!(basis, params.arithmetic, params.changematrix)
 
     SEMIGROUP_ON[] && (@invariant semigroup_normalized(basis, hashtable))
@@ -724,7 +758,11 @@ function f4!(
 
     f4_update!(pairset, basis, hashtable, update_ht)
 
+    i = 1
     while !isempty(pairset)
+        push!(DATA[:i], i)
+        i += 1
+
         f4_select_critical_pairs!(
             pairset,
             basis,

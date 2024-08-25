@@ -113,8 +113,8 @@ end
 # blocks in the matrix
 function matrix_block_sizes(matrix::MacaulayMatrix)
     (
-        length(matrix.upper_rows),
-        length(matrix.lower_rows),
+        matrix.nrows_filled_upper,
+        matrix.nrows_filled_lower,
         matrix.ncols_left,
         matrix.ncols_right
     )

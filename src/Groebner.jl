@@ -14,6 +14,12 @@ module Groebner
 # implementation and routines for critical pair handling, symbolic
 # preprocessing, and linear algebra from msolve.
 
+const DATA = Dict(
+    :i => [], 
+    :pairs => [], 
+    :matrix_size => [], 
+    :useful_rows => [])
+
 ###
 # Global switches
 
