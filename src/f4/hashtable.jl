@@ -498,31 +498,37 @@ function hashtable_check_monomial_division_in_update(
     nothing
 end
 
-
 # this function is not reentrant !
-function semigroup_normalize_monom!(monom::ExponentVector{T}; cache=zeros(T, length(monom))) where {T}
+function semigroup_normalize_monom!(monom::ExponentVector{T}) where {T}
     semigroup_check_normalized_monom(monom) && return monom
     
     varmap = SEMIGROUP_VARMAP[]
-    monom_preimage = cache
-    n = length(varmap)
-    @inbounds for i in (length(monom) - n + 1):length(monom)
+
+    _monom = deepcopy(monom)
+
+    monom_preimage = zeros(T, length(monom))
+    @inbounds for i in (length(monom) - length(varmap) + 1):length(monom)
         for j in 1:length(monom)
             monom_preimage[j] += varmap[length(monom) - i + 1][1][j] * monom[i]
         end
     end
+
     new_monom = monom
     new_monom .= T(0)
-    @inbounds for i in 1:n
-        lead = varmap[i][1]
-        flag = monom_is_divisible(monom_preimage, lead)
+    
+    @inbounds for i in 1:length(varmap)
+        flag = monom_is_divisible(monom_preimage, varmap[i][1])
         while flag
             monom_preimage .-= varmap[i][1]
             new_monom .+= varmap[i][2]
-            flag = monom_is_divisible(monom_preimage, lead)
+            flag = monom_is_divisible(monom_preimage, varmap[i][1])
         end
     end
+
     @assert new_monom[1] == sum(view(new_monom, 2:length(new_monom)))
+    
+    # @error "" _monom new_monom
+
     new_monom
 end
 
@@ -590,11 +596,16 @@ function hashtable_insert_polynomial_multiple!(
         oldmonom = ht.monoms[poly[j]]
         newmonom = monom_product!(buf, mult, oldmonom)
 
+        # @error "insertin " 
+        # println(mult)
+        # println(newmonom)
+        # println(oldmonom)
+
         oldhash = ht.hashdata[poly[j]].hash
         newhash = mult_hash + oldhash
 
         if SEMIGROUP_ON[]
-            newmonom = semigroup_normalize_monom!(newmonom; cache=ht.monoms[1])
+            newmonom = semigroup_normalize_monom!(newmonom)
             @assert semigroup_check_normalized_monom(newmonom)
             newhash = monom_hash(newmonom, ht.hasher)
         end

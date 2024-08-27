@@ -17,6 +17,7 @@ module Groebner
 const DATA = Dict(
     :i => [], 
     :pairs => [], 
+    :degree => [],
     :matrix_size => [], 
     :useful_rows => [])
 

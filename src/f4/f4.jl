@@ -53,8 +53,10 @@ function f4_reduction!(
     params::AlgorithmParameters
 )
     if SEMIGROUP_ON[]
+        d = symbol_ht.monoms[1][1]
         for i in 2:(symbol_ht.load)
             @invariant semigroup_check_normalized_monom(symbol_ht.monoms[i])
+            @invariant symbol_ht.monoms[i][1] == d
         end
     end
 
@@ -64,7 +66,7 @@ function f4_reduction!(
 
     linalg_main!(matrix, basis, params)
 
-    push!(DATA[:useful_rows], round(matrix.npivots / matrix.nrows_filled_lower, digits=3))
+    push!(DATA[:useful_rows], round(matrix.npivots / matrix.nrows_filled_lower, digits=10))
 
     matrix_convert_rows_to_basis_elements!(
         matrix,
@@ -398,6 +400,15 @@ function f4_select_critical_pairs!(
         npairs = pairset_lowest_degree_pairs!(pairset)
     end
     npairs = min(npairs, maxpairs)
+
+    if SEMIGROUP_ON[]
+        if npairs > 250
+            @info "" npairs
+            npairs = max(1, ceil(Int, npairs * 0.2))
+            @info "" npairs
+        end
+    end
+
     @invariant npairs > 0
 
     ps = pairset.pairs
@@ -417,6 +428,8 @@ function f4_select_critical_pairs!(
         end
     end
 
+    push!(DATA[:degree], deg)
+
     f4_add_critical_pairs_to_matrix!(
         pairset,
         npairs,
@@ -426,6 +439,14 @@ function f4_select_critical_pairs!(
         symbol_ht,
         arithmetic
     )
+
+    if SEMIGROUP_ON[]
+        d = symbol_ht.monoms[1][1]
+        for i in 2:(symbol_ht.load)
+            @invariant semigroup_check_normalized_monom(symbol_ht.monoms[i])
+            @invariant symbol_ht.monoms[i][1] == d
+        end
+    end
 
     # Remove selected parirs from the pairset.
     @inbounds for i in 1:(pairset.load - npairs)
@@ -774,7 +795,7 @@ function f4!(
         )
 
         f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht, params.arithmetic)
-
+        
         f4_reduction!(ring, basis, matrix, hashtable, symbol_ht, params)
 
         f4_update!(pairset, basis, hashtable, update_ht)

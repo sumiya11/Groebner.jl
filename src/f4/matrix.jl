@@ -358,8 +358,15 @@ function matrix_convert_rows_to_basis_elements!(
 
     if SEMIGROUP_ON[]
         for i in 1:(matrix.npivots)
+            @assert issorted(
+                basis.monoms[crs + i],
+                lt=(a, b) -> monom_isless(ht.monoms[a], ht.monoms[b], ht.ord),
+                rev=true
+            )
+
             sat = ht.monoms[basis.monoms[crs + i][1]][end]
             if sat > 0
+                @warn "" sat
                 for j in 1:length(basis.monoms[crs + i])
                     monom = ht.monoms[basis.monoms[crs + i][j]]
                     new_monom = copy(monom)

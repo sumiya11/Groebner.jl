@@ -9,9 +9,7 @@
 # ExponentVector is commonly used with the UInt8 element type (that is 8 bits
 # per exponent). Some functions that implement monomial arithmetic and monomial
 # comparisons are not automatically vectorized with the use of AVX2 or AVX512
-# for 8 bits (in Julia 1.10), thus we write out the vectorized code manually.
-#
-# NOTE: if AVX512 is not available, our code does not handle scalar tails too well.
+# for 8 bits (in Julia 1.10). Vectorized code does not handle scalar tails well.
 
 const ExponentVector{T} = Vector{T} where {T <: Integer}
 
@@ -91,7 +89,11 @@ function monom_isless(ea::ExponentVector, eb::ExponentVector, ::DegRevLex{true})
     elseif monom_totaldeg(ea) != monom_totaldeg(eb)
         return false
     end
-    _vec_cmp_revlex(ea, eb)
+    i = length(ea)
+    @inbounds while i > 2 && ea[i] == eb[i]
+        i -= 1
+    end
+    @inbounds return ea[i] > eb[i]
 end
 
 # DegRevLex monomial comparison (shuffled variables).
@@ -130,7 +132,11 @@ function monom_isless(ea::ExponentVector, eb::ExponentVector, ::DegLex{true})
     elseif monom_totaldeg(ea) != monom_totaldeg(eb)
         return false
     end
-    _vec_cmp_lex(ea, eb)
+    i = 2
+    @inbounds while i < length(ea) && ea[i] == eb[i]
+        i += 1
+    end
+    @inbounds return ea[i] < eb[i]
 end
 
 # DegLex monomial comparison (shuffled variables).
@@ -164,7 +170,11 @@ end
 function monom_isless(ea::ExponentVector, eb::ExponentVector, ::Lex{true})
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
-    _vec_cmp_lex(ea, eb)
+    i = 2
+    @inbounds while i < length(ea) && ea[i] == eb[i]
+        i += 1
+    end
+    @inbounds return ea[i] < eb[i]
 end
 
 # Lex monomial comparison (shuffled variables).
@@ -256,7 +266,12 @@ end
 # Checks if the gcd of monomials is constant.
 function monom_is_gcd_const(ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
     @invariant length(ea) == length(eb)
-    _vec_check_orth(ea, eb)
+    @inbounds for j in 2:length(ea)
+        if !iszero(ea[j]) && !iszero(eb[j])
+            return false
+        end
+    end
+    return true
 end
 
 # Returns the product of two monomials. Writes the result to ec.
@@ -290,7 +305,12 @@ end
 # Checks monomial divisibility.
 function monom_is_divisible(ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
     @invariant length(ea) == length(eb)
-    _vec_not_any_lt(ea, eb)
+    @inbounds for j in 2:length(ea)
+        if ea[j] < eb[j]
+            return false
+        end
+    end
+    return true
 end
 
 # Checks monomial divisibility and performs division
@@ -313,7 +333,7 @@ end
 ###
 # Monomial division masks.
 
-# Returns the division mask of the given monomial.
+# Constructs the division mask for the given monomial.
 #
 # If compressed is true, the mask will be compressed so that more variables can
 # be handled. Compressed and non-compressed division masks are not compatible.

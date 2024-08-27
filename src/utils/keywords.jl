@@ -244,8 +244,3 @@ function logging_setup(keywords::KeywordArguments)
     logger_update(loglevel=keywords.loglevel)
     nothing
 end
-
-function statistics_setup(keywords::KeywordArguments)
-    log_simdinfo()
-    nothing
-end

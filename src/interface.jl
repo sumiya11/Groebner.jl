@@ -123,7 +123,6 @@ function groebner(polynomials::AbstractVector; options...)
     keywords = KeywordArguments(:groebner, options)
 
     logging_setup(keywords)
-    statistics_setup(keywords)
 
     result = groebner0(polynomials, keywords)
 
@@ -179,7 +178,6 @@ function groebner(
     keywords = KeywordArguments(:groebner, options)
 
     logging_setup(keywords)
-    statistics_setup(keywords)
 
     ir_basic_is_valid(ring, monoms, coeffs)
     result = groebner1(ring, monoms, coeffs, keywords)
@@ -229,7 +227,6 @@ function groebner_with_change_matrix(polynomials::AbstractVector; options...)
     keywords = KeywordArguments(:groebner_with_change_matrix, options)
 
     logging_setup(keywords)
-    statistics_setup(keywords)
 
     result = groebner_with_change_matrix0(polynomials, keywords)
 
@@ -368,7 +365,6 @@ function groebner_semigroup(new_system, varmap, relations, groups; options...)
     keywords = KeywordArguments(:groebner, options)
 
     logging_setup(keywords)
-    statistics_setup(keywords)
 
     sort!(varmap, by=leading_monomial)
 
@@ -504,7 +500,6 @@ function groebner_learn(polynomials::AbstractVector; options...)
     keywords = KeywordArguments(:groebner_learn, options)
 
     logging_setup(keywords)
-    statistics_setup(keywords)
 
     result = groebner_learn0(polynomials, keywords)
 
@@ -528,7 +523,6 @@ function groebner_learn(
     keywords = KeywordArguments(:groebner_learn, options)
 
     logging_setup(keywords)
-    statistics_setup(keywords)
 
     ir_basic_is_valid(ring, monoms, coeffs)
     result = groebner_learn1(ring, monoms, coeffs, keywords)
@@ -574,7 +568,6 @@ function groebner_apply!(trace::WrappedTrace, polynomials::AbstractVector; optio
     keywords = KeywordArguments(:groebner_apply!, options)
 
     logging_setup(keywords)
-    statistics_setup(keywords)
 
     result = groebner_apply0!(trace, polynomials, keywords)
 
@@ -597,7 +590,6 @@ function groebner_apply!(
     keywords = KeywordArguments(:groebner_apply!, options)
 
     logging_setup(keywords)
-    statistics_setup(keywords)
 
     result = groebner_apply_batch0!(trace, batch, keywords)
 
@@ -615,7 +607,6 @@ function groebner_apply!(
     keywords = KeywordArguments(:groebner_apply!, options)
 
     logging_setup(keywords)
-    statistics_setup(keywords)
 
     ir_basic_is_valid(ring, monoms, coeffs)
     result = groebner_apply1!(trace, ring, monoms, coeffs, keywords)
@@ -631,7 +622,6 @@ function groebner_apply!(trace::WrappedTrace, batch::NTuple{N, T}; options...) w
     keywords = KeywordArguments(:groebner_apply!, options)
 
     logging_setup(keywords)
-    statistics_setup(keywords)
 
     ir_basic_is_valid(batch)
     result = groebner_apply_batch1!(trace, batch, keywords)
@@ -705,7 +695,6 @@ function isgroebner(polynomials::AbstractVector; options...)
     keywords = KeywordArguments(:isgroebner, options)
 
     logging_setup(keywords)
-    statistics_setup(keywords)
 
     result = isgroebner0(polynomials, keywords)::Bool
 
@@ -724,7 +713,6 @@ function isgroebner(
     keywords = KeywordArguments(:isgroebner, options)
 
     logging_setup(keywords)
-    statistics_setup(keywords)
 
     ir_basic_is_valid(ring, monoms, coeffs)
     result = isgroebner1(ring, monoms, coeffs, keywords)
@@ -795,7 +783,6 @@ function normalform(basis::AbstractVector, to_be_reduced::AbstractVector; option
     keywords = KeywordArguments(:normalform, options)
 
     logging_setup(keywords)
-    statistics_setup(keywords)
 
     result = normalform0(basis, to_be_reduced, keywords)
 
@@ -820,7 +807,6 @@ function normalform(
     keywords = KeywordArguments(:normalform, options)
 
     logging_setup(keywords)
-    statistics_setup(keywords)
 
     ir_basic_is_valid(ring, monoms, coeffs)
     ir_basic_is_valid(ring_to_be_reduced, monoms_to_be_reduced, coeffs_to_be_reduced)

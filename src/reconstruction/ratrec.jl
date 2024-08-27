@@ -1,7 +1,7 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
 ###
-# Single-element rational reconstruction
+# Rational reconstruction
 
 # Returns the largest integer N (possibly off by 1) such that 2 N^2 < m.
 function ratrec_reconstruction_bound(m::BigInt)

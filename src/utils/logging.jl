@@ -122,10 +122,6 @@ function logger_update(; loglevel=nothing)
     !logging_enabled() && return nothing
     # Do nothing if nothing is being updated
     loglevel === nothing && return nothing
-    # Do nothing if run from a worker thread.
-    # NOTE: this does not always do what is intended. It is still correct, since
-    # we lock the logger anyway.
-    threadid() != 1 && return nothing
 
     new_logger = Groebner.GroebnerLogger(stderr, Logging.LogLevel(loglevel))
     lock(_groebner_log_lock[])
