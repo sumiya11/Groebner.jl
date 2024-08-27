@@ -19,7 +19,9 @@ const DATA = Dict(
     :pairs => [], 
     :degree => [],
     :matrix_size => [], 
-    :useful_rows => [])
+    :useful_rows => [],
+)
+const TIME = Dict(:total => 0.0, :f4_reduction! => 0.0)
 
 ###
 # Global switches
@@ -114,7 +116,6 @@ include("monomials/orderings.jl")
 include("utils/keywords.jl")
 
 # Monomial implementations
-include("monomials/common.jl")
 include("monomials/exponent_vector.jl")
 include("monomials/packed_utils.jl")
 include("monomials/packed_vector.jl")
@@ -126,7 +127,6 @@ include("types.jl")
 
 # Fast arithmetic modulo a prime
 include("arithmetic/Zp.jl")
-# Not so fast arithmetic in the rationals
 include("arithmetic/QQ.jl")
 
 # Intermediate representation
@@ -157,6 +157,7 @@ include("f4/linalg/backend_learn_apply_threaded.jl")
 include("f4/sort.jl")
 include("f4/f4.jl")
 include("f4/learn_apply.jl")
+
 include("reconstruction/crt.jl")
 include("reconstruction/ratrec.jl")
 

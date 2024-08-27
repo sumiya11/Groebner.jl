@@ -1,21 +1,40 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
 ###
-# ExponentVector{T} implements the monomial interface.
+# ExponentVector implements the monomial interface (whatever this interface is).
 #
-# ExponentVector{T} is a vector of integers of type T. ExponentVector is just an
-# alias for the Vector from the Julia standard library.
+# ExponentVector{T} is a vector of integers of type T. It is commonly used with
+# the UInt8 element type (that is 8 bits per exponent).
 #
-# ExponentVector is commonly used with the UInt8 element type (that is 8 bits
-# per exponent). Some functions that implement monomial arithmetic and monomial
+# Note: Some functions that implement monomial arithmetic and monomial
 # comparisons are not automatically vectorized with the use of AVX2 or AVX512
-# for 8 bits (in Julia 1.10). Vectorized code does not handle scalar tails well.
+# (in Julia 1.10). When vectorized, the code does not handle scalar tails well.
+# At the same time, in hand-vectorized code it is hard to do masked load.  
 
 const ExponentVector{T} = Vector{T} where {T <: Integer}
 
-function _monom_overflow_check(e::ExponentVector{T}) where {T}
-    # ExponentVector overflows if the total degree overflows
-    _monom_overflow_check(monom_totaldeg(e), T)
+# MonomialDegreeOverflow is thrown if there is a risk of monomial degree
+# overflow. If we catch a MonomialDegreeOverflow, there is some hope to recover
+# the program by restarting with a wider integer type for storing exponents.
+struct MonomialDegreeOverflow <: Exception
+    msg::String
+end
+
+Base.showerror(io::IO, e::MonomialDegreeOverflow) = print(io, e.msg)
+
+@noinline __throw_monom_overflow_error(c, B) =
+    throw(MonomialDegreeOverflow("Overflow may happen with the entry $c of type $B."))
+
+monom_overflow_check(a::T) where {T<:Integer} = monom_overflow_check(a, T)
+
+function monom_overflow_check(a::Integer, ::Type{T}) where {T}
+    a >= div(typemax(T), 2) && __throw_monom_overflow_error(a, T)
+    true
+end
+
+function monom_overflow_check(e::ExponentVector{T}) where {T}
+    # Exponent vector overflows if the total degree overflows
+    monom_overflow_check(monom_totaldeg(e))
 end
 
 monom_max_vars(::Type{ExponentVector{T}}) where {T} = 2^32
@@ -23,6 +42,7 @@ monom_max_vars(p::ExponentVector{T}) where {T} = monom_max_vars(typeof(p))
 
 monom_totaldeg(pv::ExponentVector) = @inbounds pv[1]
 monom_entrytype(pv::ExponentVector{T}) where {T} = T
+monom_entrytype(::Type{ExponentVector{T}}) where {T} = T
 
 monom_copy(pv::ExponentVector) = Base.copy(pv)
 
@@ -40,9 +60,9 @@ function monom_construct_from_vector(::Type{ExponentVector{T}}, ev::Vector{U}) w
     v = ExponentVector{T}(undef, length(ev) + 1)
     s = zero(T)
     @inbounds for i in 1:length(ev)
-        _monom_overflow_check(ev[i], T)
+        monom_overflow_check(ev[i], T)
         s += T(ev[i])
-        _monom_overflow_check(s, T)
+        monom_overflow_check(s, T)
         v[i + 1] = T(ev[i])
     end
     @inbounds v[1] = s
@@ -259,7 +279,7 @@ function monom_lcm!(
         s += ec[i]
     end
     ec[1] = s
-    _monom_overflow_check(ec)
+    monom_overflow_check(ec)
     ec
 end
 
@@ -284,7 +304,7 @@ function monom_product!(
     @inbounds for j in 1:length(ec)
         ec[j] = ea[j] + eb[j]
     end
-    _monom_overflow_check(ec)
+    monom_overflow_check(ec)
     ec
 end
 

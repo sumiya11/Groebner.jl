@@ -1,15 +1,9 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-# Common types used throughout the project.
+###
+# All supported monomial implementations in F4
 
-# MonomialDegreeOverflow is thrown if there is a risk of monomial degree
-# overflow. If we catch a MonomialDegreeOverflow, there is some hope to recover
-# the program by restarting with a wider integer type for storing exponents.
-struct MonomialDegreeOverflow <: Exception
-    msg::String
-end
-
-Base.showerror(io::IO, e::MonomialDegreeOverflow) = print(io, e.msg)
+const Monom = Union{ExponentVector{T} where {T}, AbstractPackedTuple}
 
 ###
 # All supported coefficient types
@@ -33,8 +27,3 @@ const Coeff = Union{CoeffZp, CompositeCoeffZp, CoeffQQ, CoeffZZ}
 # Coefficient type used in a single run of classic modular computation
 const CoeffModular = UInt64
 @assert CoeffModular <: CoeffZp
-
-###
-# All supported monomial implementations in F4
-
-const Monom = Union{ExponentVector{T} where {T}, AbstractPackedTuple}

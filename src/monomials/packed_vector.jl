@@ -32,9 +32,8 @@ end
 
 monom_max_vars(p::AbstractPackedTuple) = monom_max_vars(typeof(p))
 
-# Checks if there is a risk of exponent overflow. Throws if overflow if possible.
-function _monom_overflow_check(a::AbstractPackedTuple{T, B}) where {T, B}
-    _monom_overflow_check(monom_totaldeg(a), B)
+function monom_overflow_check(a::AbstractPackedTuple{T, B}) where {T, B}
+    monom_overflow_check(monom_totaldeg(a), B)
 end
 
 const _defined_packed_tuples =
@@ -48,6 +47,7 @@ for (op, n) in _defined_packed_tuples
         monom_copy(a::$op{T, B}) where {T, B} = a
         monom_copy!(b::$op{T, B}, a::$op{T, B}) where {T, B} = a
         monom_entrytype(a::$op{T, B}) where {T, B} = B
+        monom_entrytype(a::Type{$op{T, B}}) where {T, B} = B
     end
 
     @eval begin
@@ -73,11 +73,11 @@ function monom_construct_from_vector(
     a1 = zero(T)
     s = zero(T)
     @inbounds for i in n:-1:1
-        _monom_overflow_check(ev[i], B)
+        monom_overflow_check(ev[i], B)
         d = T(ev[i])
         a1 = a1 << (sizeof(B) * 8)
         a1 = a1 | d
-        _monom_overflow_check(s, B)
+        monom_overflow_check(s, B)
         s += d
     end
     a1 |= s << (indent * 8)
@@ -98,7 +98,7 @@ function monom_construct_from_vector(
     a1, a2 = zero(T), zero(T)
     s = zero(T)
     @inbounds for i in n:-1:1
-        _monom_overflow_check(ev[i], B)
+        monom_overflow_check(ev[i], B)
         d = T(ev[i])
         if div(i - 1, epc) == 1
             a1 = a1 << (sizeof(B) * 8)
@@ -107,7 +107,7 @@ function monom_construct_from_vector(
             a2 = a2 << (sizeof(B) * 8)
             a2 = a2 | d
         end
-        _monom_overflow_check(s, B)
+        monom_overflow_check(s, B)
         s += d
     end
     a1 |= s << (indent * 8)
@@ -128,7 +128,7 @@ function monom_construct_from_vector(
     a1, a2, a3 = zero(T), zero(T), zero(T)
     s = zero(T)
     @inbounds for i in n:-1:1
-        _monom_overflow_check(ev[i], B)
+        monom_overflow_check(ev[i], B)
         d = T(ev[i])
         if div(i - 1, epc) == 2
             a1 = a1 << (sizeof(B) * 8)
@@ -140,7 +140,7 @@ function monom_construct_from_vector(
             a3 = a3 << (sizeof(B) * 8)
             a3 = a3 | d
         end
-        _monom_overflow_check(s, B)
+        monom_overflow_check(s, B)
         s += d
     end
     a1 |= s << (indent * 8)
@@ -161,7 +161,7 @@ function monom_construct_from_vector(
     a1, a2, a3, a4 = zero(T), zero(T), zero(T), zero(T)
     s = zero(T)
     @inbounds for i in n:-1:1
-        _monom_overflow_check(ev[i], B)
+        monom_overflow_check(ev[i], B)
         d = T(ev[i])
         if div(i - 1, epc) == 3
             a1 = a1 << (sizeof(B) * 8)
@@ -176,7 +176,7 @@ function monom_construct_from_vector(
             a4 = a4 << (sizeof(B) * 8)
             a4 = a4 | d
         end
-        _monom_overflow_check(s, B)
+        monom_overflow_check(s, B)
         s += d
     end
     a1 |= s << (indent * 8)
@@ -403,7 +403,7 @@ function monom_lcm!(
     x, si = packed_max(ea.a1, eb.a1, B, Val(1))
     x += si << ((sizeof(T) - sizeof(B)) * 8)
     ans = PackedTuple1{T, B}(x)
-    _monom_overflow_check(ans)
+    monom_overflow_check(ans)
     ans
 end
 function monom_lcm!(
@@ -415,7 +415,7 @@ function monom_lcm!(
     x2, si2 = packed_max(ea.a2, eb.a2, B, Val(0))
     x1 = x1 + ((si1 + si2) << ((sizeof(T) - sizeof(B)) * 8))
     ans = PackedTuple2{T, B}(x1, x2)
-    _monom_overflow_check(ans)
+    monom_overflow_check(ans)
     ans
 end
 function monom_lcm!(
@@ -428,7 +428,7 @@ function monom_lcm!(
     x3, si3 = packed_max(ea.a3, eb.a3, B, Val(0))
     x1 = x1 + ((si1 + si2 + si3) << ((sizeof(T) - sizeof(B)) * 8))
     ans = PackedTuple3{T, B}(x1, x2, x3)
-    _monom_overflow_check(ans)
+    monom_overflow_check(ans)
     ans
 end
 function monom_lcm!(
@@ -442,7 +442,7 @@ function monom_lcm!(
     x4, si4 = packed_max(ea.a4, eb.a4, B, Val(0))
     x1 = x1 + ((si1 + si2 + si3 + si4) << ((sizeof(T) - sizeof(B)) * 8))
     ans = PackedTuple4{T, B}(x1, x2, x3, x4)
-    _monom_overflow_check(ans)
+    monom_overflow_check(ans)
     ans
 end
 
@@ -496,7 +496,7 @@ function monom_product!(
 ) where {T, B}
     x = ea.a1 + eb.a1
     ans = PackedTuple1{T, B}(x)
-    _monom_overflow_check(ans)
+    monom_overflow_check(ans)
     ans
 end
 function monom_product!(
@@ -507,7 +507,7 @@ function monom_product!(
     x1 = ea.a1 + eb.a1
     x2 = ea.a2 + eb.a2
     ans = PackedTuple2{T, B}(x1, x2)
-    _monom_overflow_check(ans)
+    monom_overflow_check(ans)
     ans
 end
 function monom_product!(
@@ -519,7 +519,7 @@ function monom_product!(
     x2 = ea.a2 + eb.a2
     x3 = ea.a3 + eb.a3
     ans = PackedTuple3{T, B}(x1, x2, x3)
-    _monom_overflow_check(ans)
+    monom_overflow_check(ans)
     ans
 end
 function monom_product!(
@@ -532,7 +532,7 @@ function monom_product!(
     x3 = ea.a3 + eb.a3
     x4 = ea.a4 + eb.a4
     ans = PackedTuple4{T, B}(x1, x2, x3, x4)
-    _monom_overflow_check(ans)
+    monom_overflow_check(ans)
     ans
 end
 

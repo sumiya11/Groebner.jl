@@ -17,26 +17,6 @@
 # - The Groebner basis of [0] is [0].
 # - The Groebner basis of [f1,...,fn, 0] is the Groebner basis of [f1...fn]
 
-"""
-    PolyRing
-
-A polynomial ring.
-
-## Example
-
-4 variables, integers modulo 2^30 + 3, degrevlex order.
-
-```julia
-ring = Groebner.PolyRing(4, Groebner.DegRevLex(), 2^30+3)
-```
-
-4 variables, the rationals, a block order.
-
-```julia
-ord = Groebner.DegRevLex([1,2]) * Groebner.DegRevLex([3,4])
-ring = Groebner.PolyRing(4, ord, 0)
-```
-"""
 mutable struct PolyRing{
     Ord <: AbstractMonomialOrdering,
     C <: Union{CoeffZp, CompositeCoeffZp}

@@ -366,7 +366,6 @@ function matrix_convert_rows_to_basis_elements!(
 
             sat = ht.monoms[basis.monoms[crs + i][1]][end]
             if sat > 0
-                @warn "" sat
                 for j in 1:length(basis.monoms[crs + i])
                     monom = ht.monoms[basis.monoms[crs + i][j]]
                     new_monom = copy(monom)

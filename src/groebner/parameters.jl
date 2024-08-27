@@ -3,12 +3,13 @@
 ### 
 # Select parameters in Groebner basis computation
 
-# Specifies linear algebra backend algorithm
+# Specifies linear algebra algorithm
 struct LinearAlgebra
     algorithm::Symbol
     sparsity::Symbol
 end
 
+# Specifies polynomial representation
 struct PolynomialRepresentation
     monomtype::Any
     coefftype::Any

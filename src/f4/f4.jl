@@ -351,15 +351,15 @@ function f4_find_multiplied_reducer!(
             rev=true
         )
             perm = collect(1:length(matrix.upper_rows[row_id]))
-            sort!(
-                perm,
-                lt=(i, j) -> monom_isless(
-                    symbol_ht.monoms[matrix.upper_rows[row_id][i]],
-                    symbol_ht.monoms[matrix.upper_rows[row_id][j]],
-                    symbol_ht.ord
-                ),
-                rev=true
-            )
+            # sort!(
+            #     perm,
+            #     lt=(i, j) -> monom_isless(
+            #         symbol_ht.monoms[matrix.upper_rows[row_id][i]],
+            #         symbol_ht.monoms[matrix.upper_rows[row_id][j]],
+            #         symbol_ht.ord
+            #     ),
+            #     rev=true
+            # )
             sup = matrix.upper_rows[row_id][perm]
             cfs = basis.coeffs[basis.nonredundant[i]][perm]
             linalg_row_make_monic!(cfs, arithmetic)
@@ -402,11 +402,11 @@ function f4_select_critical_pairs!(
     npairs = min(npairs, maxpairs)
 
     if SEMIGROUP_ON[]
-        if npairs > 250
-            @info "" npairs
-            npairs = max(1, ceil(Int, npairs * 0.2))
-            @info "" npairs
-        end
+        # if npairs > 250
+        #     @info "" npairs
+        #     npairs = max(1, ceil(Int, npairs * 0.2))
+        #     @info "" npairs
+        # end
     end
 
     @invariant npairs > 0
@@ -521,15 +521,15 @@ function f4_add_critical_pairs_to_matrix!(
                 )
                     perm = collect(1:length(lowrows[row_idx]))
                     row = lowrows[row_idx]
-                    sort!(
-                        perm,
-                        lt=(i, j) -> @inbounds(monom_isless(
-                            symbol_ht.monoms[row[i]],
-                            symbol_ht.monoms[row[j]],
-                            symbol_ht.ord
-                        )),
-                        rev=true
-                    )
+                    # sort!(
+                    #     perm,
+                    #     lt=(i, j) -> @inbounds(monom_isless(
+                    #         symbol_ht.monoms[row[i]],
+                    #         symbol_ht.monoms[row[j]],
+                    #         symbol_ht.ord
+                    #     )),
+                    #     rev=true
+                    # )
                     sup = lowrows[row_idx][perm]
                     cfs = basis.coeffs[p2][perm]
                     linalg_row_make_monic!(cfs, arithmetic)
@@ -571,15 +571,15 @@ function f4_add_critical_pairs_to_matrix!(
                 )
                     perm = collect(1:length(lowrows[row_idx]))
                     row = lowrows[row_idx]
-                    sort!(
-                        perm,
-                        lt=(i, j) -> @inbounds(monom_isless(
-                            symbol_ht.monoms[row[i]],
-                            symbol_ht.monoms[row[j]],
-                            symbol_ht.ord
-                        )),
-                        rev=true
-                    )
+                    # sort!(
+                    #     perm,
+                    #     lt=(i, j) -> @inbounds(monom_isless(
+                    #         symbol_ht.monoms[row[i]],
+                    #         symbol_ht.monoms[row[j]],
+                    #         symbol_ht.ord
+                    #     )),
+                    #     rev=true
+                    # )
                     sup = lowrows[row_idx][perm]
                     cfs = basis.coeffs[p1][perm]
                     linalg_row_make_monic!(cfs, arithmetic)
@@ -618,15 +618,15 @@ function f4_add_critical_pairs_to_matrix!(
                     rev=true
                 )
                     perm = collect(1:length(lowrows[row_idx]))
-                    sort!(
-                        perm,
-                        lt=(i, j) -> monom_isless(
-                            symbol_ht.monoms[lowrows[row_idx][i]],
-                            symbol_ht.monoms[lowrows[row_idx][j]],
-                            symbol_ht.ord
-                        ),
-                        rev=true
-                    )
+                    # sort!(
+                    #     perm,
+                    #     lt=(i, j) -> monom_isless(
+                    #         symbol_ht.monoms[lowrows[row_idx][i]],
+                    #         symbol_ht.monoms[lowrows[row_idx][j]],
+                    #         symbol_ht.ord
+                    #     ),
+                    #     rev=true
+                    # )
                     sup = lowrows[row_idx][perm]
                     cfs = basis.coeffs[p2][perm]
                     linalg_row_make_monic!(cfs, arithmetic)
@@ -768,6 +768,9 @@ function f4!(
     @invariant basis_well_formed(ring, basis, hashtable)
 
     [empty!(v) for (k, v) in DATA]
+    [TIME[k] = zero(v) for (k, v) in TIME]
+
+    TIME[:total] = time_ns()
 
     basis_make_monic!(basis, params.arithmetic, params.changematrix)
 
@@ -796,7 +799,7 @@ function f4!(
 
         f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht, params.arithmetic)
         
-        f4_reduction!(ring, basis, matrix, hashtable, symbol_ht, params)
+        TIME[:f4_reduction!] += @elapsed f4_reduction!(ring, basis, matrix, hashtable, symbol_ht, params)
 
         f4_update!(pairset, basis, hashtable, update_ht)
 
@@ -823,6 +826,8 @@ function f4!(
     SEMIGROUP_ON[] && (@invariant semigroup_normalized(basis, hashtable))
 
     @invariant basis_well_formed(ring, basis, hashtable)
+
+    TIME[:total] = ((time_ns() - TIME[:total])) / 1e9
 
     nothing
 end
