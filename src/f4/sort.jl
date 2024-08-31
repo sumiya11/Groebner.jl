@@ -212,17 +212,17 @@ function sort_partition_columns_by_labels!(
     column_to_monom::Vector{T},
     symbol_ht::MonomialHashtable
 ) where {T}
-    hd = symbol_ht.hashdata
+    labels = symbol_ht.labels
     m = length(column_to_monom)
     i, j = 0, m + 1
     @inbounds while true
         i += 1
         j -= 1
-        while i < m && hd[i + 1].idx == PIVOT_COLUMN
+        while i < m && labels[i + 1] == PIVOT_COLUMN
             i += 1
         end
         while j > 1 &&
-            (hd[j + 1].idx == NON_PIVOT_COLUMN || hd[j + 1].idx == UNKNOWN_PIVOT_COLUMN)
+            (labels[j + 1] == NON_PIVOT_COLUMN || labels[j + 1] == UNKNOWN_PIVOT_COLUMN)
             j -= 1
         end
         i >= j && break

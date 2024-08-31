@@ -69,7 +69,7 @@ end
     # - Nemo.jl  (Nemo.fmpq_mpoly, Nemo.gfp_mpoly)
     # - DynamicPolynomials.jl  (DynamicPolynomials.Polynomial{true, T})
     if try_import(:DynamicPolynomials)
-        @time @includetests ["input_output/GroebnerDynamicPolynomialsExt.jl"]
+        @time @includetests ["input_output/GroebnerDynamicPolynomialsExt"]
     end
     if try_import(:Nemo)
         @time @includetests ["input_output/Nemo"]
