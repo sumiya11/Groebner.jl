@@ -20,13 +20,7 @@
     attributes #0 = { alwaysinline }
     """
     quote
-        Base.llvmcall(
-            ($textir, "entry"),
-            Bool,
-            Tuple{UInt64, UInt64},
-            a,
-            b
-        )
+        Base.llvmcall(($textir, "entry"), Bool, Tuple{UInt64, UInt64}, a, b)
     end
 end
 
@@ -50,13 +44,7 @@ end
     attributes #0 = { alwaysinline }
     """
     quote
-        Base.llvmcall(
-            ($textir, "entry"),
-            Bool,
-            Tuple{UInt64, UInt64},
-            a,
-            b
-        )
+        Base.llvmcall(($textir, "entry"), Bool, Tuple{UInt64, UInt64}, a, b)
     end
 end
 
@@ -74,12 +62,7 @@ end
     attributes #0 = { alwaysinline }
     """
     quote
-        Base.llvmcall(
-            ($textir, "entry"),
-            UInt8,
-            Tuple{UInt64},
-            a
-        )
+        Base.llvmcall(($textir, "entry"), UInt8, Tuple{UInt64}, a)
     end
 end
 
@@ -99,13 +82,7 @@ end
     attributes #0 = { alwaysinline }
     """
     quote
-        Base.llvmcall(
-            ($textir, "entry"),
-            UInt64,
-            Tuple{UInt64, UInt64},
-            a,
-            b
-        )
+        Base.llvmcall(($textir, "entry"), UInt64, Tuple{UInt64, UInt64}, a, b)
     end
 end
 

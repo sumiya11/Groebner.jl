@@ -457,7 +457,12 @@ function monom_lcm!(
     x3 = _packed_vec_max(ea.a3, eb.a3)
     x4 = _packed_vec_max(ea.a4, eb.a4)
     x1 = x1 & xor(typemax(T), T(typemax(B)) << ((sizeof(T) - sizeof(B)) * 8))
-    tdeg = T(_packed_vec_reduce(x1) + _packed_vec_reduce(x2) + _packed_vec_reduce(x3) + _packed_vec_reduce(x4))
+    tdeg = T(
+        _packed_vec_reduce(x1) +
+        _packed_vec_reduce(x2) +
+        _packed_vec_reduce(x3) +
+        _packed_vec_reduce(x4)
+    )
     x1 = x1 + (tdeg << ((sizeof(T) - sizeof(B)) * 8))
     ans = PackedTuple4{T, B}(x1, x2, x3, x4)
     monom_overflow_check(ans)
