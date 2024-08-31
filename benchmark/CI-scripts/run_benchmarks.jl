@@ -167,7 +167,7 @@ push!(
         result=[
             sum(
                 compute_gb(
-                    Groebner.Examples.chandra(7, internal_ordering=:degrevlex, k=QQ),
+                    Groebner.Examples.chandran(7, internal_ordering=:degrevlex, k=QQ),
                     100
                 )
             )
