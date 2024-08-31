@@ -109,7 +109,6 @@ include("utils/keywords.jl")
 
 # Monomial implementations
 include("monomials/exponent_vector.jl")
-include("monomials/packed_utils.jl")
 include("monomials/packed_vector.jl")
 
 include("arithmetic/CompositeNumber.jl")
