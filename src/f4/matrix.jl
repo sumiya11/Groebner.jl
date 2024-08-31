@@ -392,7 +392,7 @@ function matrix_fill_column_to_monom_map!(
     column_to_monom = Vector{MonomId}(undef, symbol_ht.load - 1)
     j = 1
     k = 0
-    @inbounds for i in (symbol_ht.offset):symbol_ht.load
+    @inbounds for i in (symbol_ht.offset):(symbol_ht.load)
         column_to_monom[j] = i
         j += 1
         if symbol_ht.labels[i] == PIVOT_COLUMN
