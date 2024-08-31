@@ -41,7 +41,7 @@ end
 
 function dp_ordering_sym2typed(ord::Symbol)
     if !(ord in (:lex, :deglex, :degrevlex))
-        __throw_input_not_supported(ord, "Not a supported ordering.")
+        throw(DomainError("Not a supported ordering."))
     end
     if ord === :lex
         Lex()

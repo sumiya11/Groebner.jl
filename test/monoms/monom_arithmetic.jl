@@ -128,7 +128,7 @@ implementations_to_test = [
 
             t = div(typemax(UInt8), 2k) - 1
             x, y = rand(1:t, k), rand(1:t, k)
-            if sum(x) + sum(y) >= Groebner._monom_overflow_threshold(UInt8)
+            if sum(x) + sum(y) >= Groebner.monom_overflow_threshold(UInt8)
                 continue
             end
             as =

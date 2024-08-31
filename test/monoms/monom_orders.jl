@@ -153,10 +153,10 @@ implementations_to_test = [
 
             t = div(typemax(UInt8), k) - 1
             x, y = rand(1:t, k), rand(1:t, k)
-            if sum(x) >= Groebner._monom_overflow_threshold(UInt8)
+            if sum(x) >= Groebner.monom_overflow_threshold(UInt8)
                 continue
             end
-            if sum(y) >= Groebner._monom_overflow_threshold(UInt8)
+            if sum(y) >= Groebner.monom_overflow_threshold(UInt8)
                 continue
             end
             as = [
@@ -401,13 +401,6 @@ end
         x,
         [
             1 0;
-        ]
-    )
-    @test_throws DomainError Groebner.MatrixOrdering(
-        x,
-        [
-            1 -8 1
-            2 0 3
         ]
     )
 

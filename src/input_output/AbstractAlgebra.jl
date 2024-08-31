@@ -135,17 +135,14 @@ function _io_check_input(polynomials::Vector{T}) where {T}
     R = AbstractAlgebra.parent(first(polynomials))
     K = AbstractAlgebra.base_ring(R)
     if !(K isa AbstractAlgebra.Field)
-        __throw_input_not_supported("Coefficient ring must be a field", K)
+        throw(DomainError("Coefficient ring must be a field: $K"))
     end
     if (AbstractAlgebra.characteristic(K) > typemax(UInt64))
-        __throw_input_not_supported(
-            "Field characteristic must be less than 2^64",
-            AbstractAlgebra.characteristic(K)
-        )
+        throw(DomainError("Field characteristic must be less than 2^64"))
     end
     if !iszero(AbstractAlgebra.characteristic(K))
         if !isone(AbstractAlgebra.degree(K))
-            __throw_input_not_supported("Non-prime coefficient fields are not supported", K)
+            throw(DomainError("Non-prime coefficient fields are not supported"))
         end
     end
     true

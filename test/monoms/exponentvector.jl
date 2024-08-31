@@ -12,7 +12,7 @@
     @test Groebner.monom_to_vector!(tmp, ev) == x
     @test tmp == x
 
-    @test Groebner._monom_overflow_check(ev)
+    @test Groebner.monom_overflow_check(ev)
 
     ev = Groebner.monom_construct_from_vector(PV{UInt32}, x)
     @test ev == UInt32.([10, 1, 2, 3, 0, 4])

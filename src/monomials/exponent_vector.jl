@@ -25,10 +25,11 @@ Base.showerror(io::IO, e::MonomialDegreeOverflow) = print(io, e.msg)
 @noinline __throw_monom_overflow_error(c, B) =
     throw(MonomialDegreeOverflow("Overflow may happen with the entry $c of type $B."))
 
+monom_overflow_threshold(::Type{T}) where {T <: Integer} = div(typemax(T), 2)
 monom_overflow_check(a::T) where {T <: Integer} = monom_overflow_check(a, T)
 
 function monom_overflow_check(a::Integer, ::Type{T}) where {T}
-    a >= div(typemax(T), 2) && __throw_monom_overflow_error(a, T)
+    a >= monom_overflow_threshold(T) && __throw_monom_overflow_error(a, T)
     true
 end
 
