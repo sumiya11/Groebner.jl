@@ -31,16 +31,16 @@ end
 Base.:(==)(r1::PolyRing, r2::PolyRing) =
     r1.nvars == r2.nvars && r1.ord == r2.ord && r1.ch == r2.ch
 
-ir_basic_is_valid(batch) = throw(DomainError("Invalid IR, unknown types."))
-ir_basic_is_valid(ring, monoms, coeffs) = throw(DomainError("Invalid IR, unknown types."))
+ir_is_valid_basic(batch) = throw(DomainError("Invalid IR, unknown types."))
+ir_is_valid_basic(ring, monoms, coeffs) = throw(DomainError("Invalid IR, unknown types."))
 
-function ir_basic_is_valid(batch::NTuple{N, T}) where {N, T}
+function ir_is_valid_basic(batch::NTuple{N, T}) where {N, T}
     for el in batch
-        ir_basic_is_valid(el...)
+        ir_is_valid_basic(el...)
     end
 end
 
-function ir_basic_is_valid(
+function ir_is_valid_basic(
     ring::PolyRing,
     monoms::Vector{Vector{Vector{T}}},
     coeffs::Vector{Vector{C}}
@@ -66,7 +66,7 @@ function ir_is_valid(
     monoms::Vector{Vector{Vector{T}}},
     coeffs::Vector{Vector{C}}
 ) where {T <: Integer, C <: Number}
-    ir_basic_is_valid(ring, monoms, coeffs)
+    ir_is_valid_basic(ring, monoms, coeffs)
     for i in 1:length(monoms)
         !(length(monoms[i]) == length(coeffs[i])) && throw(DomainError("Invalid IR."))
         for j in 1:length(monoms[i])
@@ -86,7 +86,7 @@ function ir_ensure_assumptions(
     monoms::Vector{Vector{Vector{M}}},
     coeffs::Vector{Vector{C}}
 ) where {M <: Integer, C <: Coeff}
-    ir_basic_is_valid(ring, monoms, coeffs)
+    ir_is_valid_basic(ring, monoms, coeffs)
     # Copy input
     new_monoms, new_coeffs = empty(monoms), empty(coeffs)
     for i in 1:length(monoms)
@@ -203,7 +203,13 @@ end
 ###
 # Converting to internal representation
 
-function ir_convert_ir_to_internal(ring, monoms, coeffs, params, repr)
+function ir_convert_ir_to_internal(
+    ring::PolyRing,
+    monoms::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    params
+) where {M <: Monom, C <: Coeff}
+    repr = params.representation
     monoms2 = Vector{Vector{repr.monomtype}}(undef, length(monoms))
     coeffs2 = Vector{Vector{repr.coefftype}}(undef, length(monoms))
     @inbounds for i in 1:length(monoms)
@@ -219,7 +225,12 @@ function ir_convert_ir_to_internal(ring, monoms, coeffs, params, repr)
     term_sorting_permutations, ring2, monoms2, coeffs2
 end
 
-function ir_convert_internal_to_ir(ring, monoms, coeffs, params)
+function ir_convert_internal_to_ir(
+    ring::PolyRing,
+    monoms::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    params
+) where {M <: Monom, C <: Coeff}
     monoms2 = Vector{Vector{Vector{IRexponent}}}(undef, length(monoms))
     coeffs2 = coeffs
     if eltype(eltype(coeffs)) <: AbstractFloat
@@ -237,7 +248,12 @@ end
 
 # Checks that the monomial ordering is consistent.
 # Sorts the polynomials terms w.r.t. the target ordering.
-function ir_set_monomial_ordering!(ring, monoms, coeffs, params)
+function ir_set_monomial_ordering!(
+    ring::PolyRing,
+    monoms::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    params
+) where {M <: Monom, C <: Coeff}
     ordering_check_consistency(ring.nvars, params.target_ord)
     if ring.ord == params.target_ord
         # No reordering of terms needed

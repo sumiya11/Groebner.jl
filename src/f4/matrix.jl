@@ -185,8 +185,6 @@ function matrix_string_repr(matrix::MacaulayMatrix{T}) where {T}
     C: $(m_C) x $(n_C) with $(nnz_C) nnz ($(percent(nnz_C / (m_C * n_C)))%)
     D: $(m_D) x $(n_D) with $(nnz_D) nnz ($(percent(nnz_D / (m_D * n_D)))%)
 
-    RREF flag: $(matrix.upper_part_is_rref)
-
     Sparsity pattern:
 
     $(canvas)
