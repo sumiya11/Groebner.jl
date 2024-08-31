@@ -394,12 +394,7 @@ end
         R, (x, y, z) = polynomial_ring(K, ["x", "y", "z"], internal_ordering=:lex)
 
         @test Groebner.groebner([x, y]) == Groebner.groebner([y, x]) == [y, x]
-
-        # TODO: find out why this fails on 1.6
-        @static if VERSION >= v"1.7.0"
-            @test Groebner.groebner([x^2 + y, x * y]) == [y^2, x * y, x^2 + y]
-        end
-
+        @test Groebner.groebner([x^2 + y, x * y]) == [y^2, x * y, x^2 + y]
         @test Groebner.groebner([3x + 2, 5y]) == [y, x + K(2) // K(3)]
     end
 end

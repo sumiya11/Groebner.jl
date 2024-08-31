@@ -66,10 +66,10 @@ function f4_reduction_learn!(
         batched_ht_insert=true
     )
     pivot_indices =
-        map(i -> Int32(basis.monoms[basis.nprocessed + i][1]), 1:(matrix.npivots))
+        map(i -> Int32(basis.monoms[basis.n_processed + i][1]), 1:(matrix.npivots))
     push!(trace.matrix_pivot_indices, pivot_indices)
     matrix_pivot_signature =
-        matrix_compute_pivot_signature(basis.monoms, basis.nprocessed + 1, matrix.npivots)
+        matrix_compute_pivot_signature(basis.monoms, basis.n_processed + 1, matrix.npivots)
     push!(trace.matrix_pivot_signatures, matrix_pivot_signature)
 end
 
@@ -85,12 +85,12 @@ function f4_reducegb_learn!(
     etmp = monom_construct_const(M, ht.nvars)
     # etmp is now set to zero, and has zero hash
 
-    matrix_reinitialize!(matrix, basis.nnonredundant)
+    matrix_reinitialize!(matrix, basis.n_nonredundant)
     uprows = matrix.upper_rows
 
     # add all non redundant elements from basis
     # as matrix upper rows
-    @inbounds for i in 1:(basis.nnonredundant) #
+    @inbounds for i in 1:(basis.n_nonredundant) #
         row_idx = matrix.nrows_filled_upper += 1
         uprows[row_idx] = matrix_polynomial_multiple_to_row!(
             matrix,
@@ -98,22 +98,22 @@ function f4_reducegb_learn!(
             ht,
             MonomHash(0),
             etmp,
-            basis.monoms[basis.nonredundant[i]]
+            basis.monoms[basis.nonredundant_indices[i]]
         )
 
-        matrix.upper_to_coeffs[row_idx] = basis.nonredundant[i]
+        matrix.upper_to_coeffs[row_idx] = basis.nonredundant_indices[i]
         matrix.upper_to_mult[row_idx] = hashtable_insert!(ht, etmp)
         # set lead index as 1
         hv = symbol_ht.hashdata[uprows[row_idx][1]]
         symbol_ht.hashdata[uprows[row_idx][1]] =
             Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask)
     end
-    trace.nonredundant_indices_before_reduce = basis.nonredundant[1:(basis.nnonredundant)]
+    trace.nonredundant_indices_before_reduce = basis.nonredundant_indices[1:(basis.n_nonredundant)]
 
     # needed for correct column count in symbol hashtable
     matrix.ncols_left = matrix.nrows_filled_upper
 
-    f4_symbolic_preprocessing!(basis, matrix, ht, symbol_ht, params.arithmetic)
+    f4_symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
     # set all pivots to unknown
     @inbounds for i in (symbol_ht.offset):(symbol_ht.load)
         hv = symbol_ht.hashdata[i]
@@ -126,19 +126,19 @@ function f4_reducegb_learn!(
 
     matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht, params)
 
-    basis.nfilled = matrix.npivots + basis.nprocessed
-    basis.nprocessed = matrix.npivots
+    basis.n_filled = matrix.npivots + basis.n_processed
+    basis.n_processed = matrix.npivots
 
     # we may have added some multiples of reduced basis polynomials
     # from the matrix, so get rid of them
     k = 0
     i = 1
     @label Letsgo
-    @inbounds while i <= basis.nprocessed
+    @inbounds while i <= basis.n_processed
         @inbounds for j in 1:k
             if hashtable_monom_is_divisible(
-                basis.monoms[basis.nfilled - i + 1][1],
-                basis.monoms[basis.nonredundant[j]][1],
+                basis.monoms[basis.n_filled - i + 1][1],
+                basis.monoms[basis.nonredundant_indices[j]][1],
                 ht
             )
                 i += 1
@@ -146,13 +146,13 @@ function f4_reducegb_learn!(
             end
         end
         k += 1
-        basis.nonredundant[k] = basis.nfilled - i + 1
-        basis.divmasks[k] = ht.hashdata[basis.monoms[basis.nonredundant[k]][1]].divmask
+        basis.nonredundant_indices[k] = basis.n_filled - i + 1
+        basis.divmasks[k] = ht.hashdata[basis.monoms[basis.nonredundant_indices[k]][1]].divmask
         i += 1
     end
-    basis.nnonredundant = k
+    basis.n_nonredundant = k
 
-    trace.output_nonredundant_indices = copy(basis.nonredundant[1:k])
+    trace.output_nonredundant_indices = copy(basis.nonredundant_indices[1:k])
 end
 
 function f4_learn!(
@@ -183,12 +183,11 @@ function f4_learn!(
             matrix,
             hashtable,
             symbol_ht,
-            params.arithmetic,
             maxpairs=params.maxpairs
         )
         push!(trace.critical_pair_sequence, (degree_i, npairs_i))
 
-        f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht, params.arithmetic)
+        f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
 
         f4_reduction_learn!(trace, basis, matrix, hashtable, symbol_ht, params)
 
@@ -280,7 +279,6 @@ function f4_reduction_apply!(
     # time
     if cache_column_order
         if length(trace.matrix_sorted_columns) >= f4_iteration
-            # TODO: see "TODO: (I)" in src/groebner/groebner.jl
             matrix.column_to_monom = trace.matrix_sorted_columns[f4_iteration]
             matrix_fill_column_to_monom_map!(trace, matrix, symbol_ht)
         else
@@ -302,7 +300,7 @@ function f4_reduction_apply!(
     # Check that the leading terms were not reduced to zero accidentally
     pivot_indices = trace.matrix_pivot_indices[f4_iteration]
     @inbounds for i in 1:(matrix.npivots)
-        sgn = basis.monoms[basis.nprocessed + i][1]
+        sgn = basis.monoms[basis.n_processed + i][1]
         if sgn != pivot_indices[i]
             @log :info "In apply, some leading terms cancelled out!"
             return false, false
@@ -312,7 +310,7 @@ function f4_reduction_apply!(
     if cache_column_order
         matrix_pivot_signature = matrix_compute_pivot_signature(
             basis.monoms,
-            basis.nprocessed + 1,
+            basis.n_processed + 1,
             matrix.npivots
         )
         if matrix_pivot_signature != trace.matrix_pivot_signatures[f4_iteration]
@@ -463,7 +461,6 @@ function f4_autoreduce_apply!(
 
     if cache_column_order
         if length(trace.matrix_sorted_columns) >= f4_iteration
-            # TODO: see "TODO: (I)" in src/groebner/groebner.jl
             matrix.column_to_monom = trace.matrix_sorted_columns[f4_iteration]
             matrix_fill_column_to_monom_map!(trace, matrix, symbol_ht)
         else
@@ -481,30 +478,30 @@ function f4_autoreduce_apply!(
     end
     matrix_convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht, params)
 
-    basis.nfilled = matrix.npivots + basis.nprocessed
-    basis.nprocessed = matrix.npivots
+    basis.n_filled = matrix.npivots + basis.n_processed
+    basis.n_processed = matrix.npivots
 
     output_nonredundant = trace.output_nonredundant_indices
     for i in 1:length(output_nonredundant)
-        basis.nonredundant[i] = output_nonredundant[i]
+        basis.nonredundant_indices[i] = output_nonredundant[i]
         basis.divmasks[i] =
-            hashtable.hashdata[basis.monoms[basis.nonredundant[i]][1]].divmask
+            hashtable.hashdata[basis.monoms[basis.nonredundant_indices[i]][1]].divmask
     end
-    basis.nnonredundant = length(output_nonredundant)
+    basis.n_nonredundant = length(output_nonredundant)
     true
 end
 
 function f4_standardize_basis_in_apply!(ring::PolyRing, trace::Trace, arithmetic)
     basis = trace.gb_basis
     buf = trace.buf_basis
-    basis.size = basis.nprocessed = basis.nfilled = basis.nnonredundant
+    basis.n_processed = basis.n_filled = basis.n_nonredundant
     output_nonredundant = trace.output_nonredundant_indices
     output_sort = trace.output_sort_indices
-    @inbounds for i in 1:(basis.nprocessed)
+    @inbounds for i in 1:(basis.n_processed)
         basis.coeffs[i] = buf.coeffs[output_nonredundant[output_sort[i]]]
     end
-    buf.nprocessed = buf.nnonredundant = 0
-    buf.nfilled = trace.input_basis.nfilled
+    buf.n_processed = buf.n_nonredundant = 0
+    buf.n_filled = trace.input_basis.n_filled
     basis_make_monic!(basis, arithmetic, false)
 end
 
@@ -526,9 +523,6 @@ function f4_apply!(
 
     symbol_ht = hashtable_initialize_secondary(hashtable)
     matrix = matrix_initialize(ring, C)
-    @invariant (
-        _T = typeof(divisor(params.arithmetic)); _T(ring.ch) == divisor(params.arithmetic)
-    )
 
     basis_update!(basis, hashtable)
 

@@ -53,9 +53,9 @@ function pairset_resize_if_needed!(ps::Pairset, to_add::Int)
     nothing
 end
 
-function pairset_resize_lcms_if_needed!(ps::Pairset, nfilled::Int)
-    if length(ps.lcms) < nfilled + 1
-        resize!(ps.lcms, floor(Int, nfilled * 1.1) + 1)
+function pairset_resize_lcms_if_needed!(ps::Pairset, n_filled::Int)
+    if length(ps.lcms) < n_filled + 1
+        resize!(ps.lcms, floor(Int, n_filled * 1.1) + 1)
     end
     nothing
 end
@@ -101,16 +101,9 @@ end
 # critical pairs so that the first N pairs in the pairset are the smallest with
 # respect to degree.
 function pairset_lowest_degree_pairs!(pairset::Pairset)
-    n = if true
-        n_lowest_degree_pairs = pairset_partition_by_degree!(pairset)
-        n_lowest_degree_pairs
-    else
-        sort_pairset_by_degree!(pairset, 1, pairset.load - 1)
-        pair_idx, _ = pairset_find_smallest_degree_pair(pairset)
-        pair_idx
-    end
-    @invariant n > 0
-    n
+    n_lowest_degree_pairs = pairset_partition_by_degree!(pairset)
+    @invariant n_lowest_degree_pairs > 0
+    n_lowest_degree_pairs
 end
 
 ###
@@ -126,51 +119,31 @@ mutable struct Basis{C <: Coeff}
     monoms::Vector{Vector{MonomId}}
     coeffs::Vector{Vector{C}}
 
-    size::Int
-    nprocessed::Int
-    nfilled::Int
+    # filled >= processed at any time.
+    n_filled::Int
+    n_processed::Int
 
-    isredundant::Vector{Bool}
-    nonredundant::Vector{Int}
+    n_nonredundant::Int
+    is_redundant::Vector{Bool}
+    nonredundant_indices::Vector{Int}
+
     divmasks::Vector{DivisionMask}
-    nnonredundant::Int
 
     # usually empty
     changematrix::Vector{Dict{Int, Dict{MonomId, C}}}
 end
 
-function basis_initialize(ring::PolyRing, sz::Int, ::Type{T}) where {T <: Coeff}
+function basis_initialize(ring::PolyRing, sz::Int, ::Type{C}) where {C <: Coeff}
     Basis(
         Vector{Vector{MonomId}}(undef, sz),
-        Vector{Vector{T}}(undef, sz),
-        sz,
+        Vector{Vector{C}}(undef, sz),
+        0,
         0,
         0,
         zeros(Bool, sz),
         Vector{Int}(undef, sz),
         Vector{DivisionMask}(undef, sz),
-        0,
-        Vector{Dict{Int, Dict{MonomId, T}}}(undef, 0)
-    )
-end
-
-function basis_initialize(
-    ring::PolyRing,
-    hashedexps::Vector{Vector{MonomId}},
-    coeffs::Vector{Vector{T}}
-) where {T <: Coeff}
-    sz = length(hashedexps)
-    Basis(
-        hashedexps,
-        coeffs,
-        sz,
-        0,
-        sz,
-        zeros(Bool, sz),
-        Vector{Int}(undef, sz),
-        Vector{DivisionMask}(undef, sz),
-        0,
-        Vector{Dict{Int, Dict{MonomId, T}}}(undef, 0)
+        Vector{Dict{Int, Dict{MonomId, C}}}(undef, 0)
     )
 end
 
@@ -188,10 +161,10 @@ end
 
 function basis_well_formed(ring::PolyRing, basis::Basis, hashtable::MonomialHashtable)
     (isempty(basis.monoms) || isempty(basis.coeffs)) && error("Basis cannot be empty")
-    (basis.size == 0 || basis.nfilled == 0) && error("Basis cannot be empty")
+    !(basis.n_filled >= basis.n_processed) && error("Basis cannot be empty")
     !is_sorted_by_lead_increasing(basis, hashtable) &&
         error("Basis elements must be sorted")
-    for i in basis.nfilled
+    for i in basis.n_filled
         isempty(basis.monoms[i]) && error("Zero polynomials are not allowed.")
         !(length(basis.monoms[i]) == length(basis.coeffs[i])) && error("Beda!")
         for j in 1:length(basis.coeffs[i])
@@ -212,9 +185,9 @@ function basis_changematrix_initialize!(
     basis::Basis{C},
     hashtable::MonomialHashtable{M, Ord}
 ) where {C <: Coeff, M <: Monom, Ord}
-    resize!(basis.changematrix, basis.nfilled)
+    resize!(basis.changematrix, basis.n_filled)
     id_of_1 = hashtable_insert!(hashtable, monom_construct_const(M, hashtable.nvars))
-    for i in 1:(basis.nfilled)
+    for i in 1:(basis.n_filled)
         basis.changematrix[i] = Dict{Int, Dict{MonomId, C}}()
         basis.changematrix[i][i] = Dict{MonomId, C}(id_of_1 => one(C))
     end
@@ -251,35 +224,24 @@ function basis_changematrix_addmul!(
     arithmetic::AbstractArithmeticZp{AccumType, CoeffType}
 ) where {C <: Coeff, AccumType, CoeffType}
     row = basis.changematrix[idx]
-    if true
-        @inbounds for (ref_poly_idx, ref_quo) in basis.changematrix[poly_idx]
-            if !haskey(row, ref_poly_idx)
-                row[ref_poly_idx] = Dict{MonomId, C}()
+    @inbounds for (ref_poly_idx, ref_quo) in basis.changematrix[poly_idx]
+        if !haskey(row, ref_poly_idx)
+            row[ref_poly_idx] = Dict{MonomId, C}()
+        end
+        poly = row[ref_poly_idx]
+        hashtable_resize_if_needed!(ht, length(ref_quo))
+        for (ref_mult, ref_cf) in ref_quo
+            ref_monom = ht.monoms[ref_mult]
+            quo_monom = ht.monoms[poly_mult]
+            new_monom = monom_copy(ref_monom)
+            new_monom = monom_product!(new_monom, ref_monom, quo_monom)
+            new_monom_id = hashtable_insert!(ht, new_monom)
+            if !haskey(poly, new_monom_id)
+                poly[new_monom_id] = zero(CoeffType)
             end
-            poly = row[ref_poly_idx]
-            hashtable_resize_if_needed!(ht, length(ref_quo))
-            for (ref_mult, ref_cf) in ref_quo
-                ref_monom = ht.monoms[ref_mult]
-                quo_monom = ht.monoms[poly_mult]
-                new_monom = monom_copy(ref_monom)
-                new_monom = monom_product!(new_monom, ref_monom, quo_monom)
-                new_monom_id = hashtable_insert!(ht, new_monom)
-                if !haskey(poly, new_monom_id)
-                    poly[new_monom_id] = zero(CoeffType)
-                end
-                poly[new_monom_id] =
-                    mod_p(poly[new_monom_id] + ref_cf * AccumType(cf), arithmetic)
-            end
+            poly[new_monom_id] =
+                mod_p(poly[new_monom_id] + ref_cf * AccumType(cf), arithmetic)
         end
-    else
-        if !haskey(row, poly_idx)
-            row[poly_idx] = Dict{MonomId, C}()
-        end
-        poly = row[poly_idx]
-        if !haskey(poly, poly_mult)
-            poly[poly_mult] = zero(CoeffType)
-        end
-        poly[poly_mult] = mod_p(poly[poly_mult] + AccumType(cf), arithmetic)
     end
     nothing
 end
@@ -313,12 +275,12 @@ function basis_changematrix_export(
     ht::MonomialHashtable{M},
     npolys
 ) where {C <: Coeff, M <: Monom}
-    matrix_monoms = Vector{Vector{Vector{M}}}(undef, basis.nnonredundant)
-    matrix_coeffs = Vector{Vector{Vector{C}}}(undef, basis.nnonredundant)
-    @inbounds for i in 1:(basis.nnonredundant)
+    matrix_monoms = Vector{Vector{Vector{M}}}(undef, basis.n_nonredundant)
+    matrix_coeffs = Vector{Vector{Vector{C}}}(undef, basis.n_nonredundant)
+    @inbounds for i in 1:(basis.n_nonredundant)
         matrix_monoms[i] = Vector{Vector{M}}(undef, npolys)
         matrix_coeffs[i] = Vector{Vector{M}}(undef, npolys)
-        idx = basis.nonredundant[i]
+        idx = basis.nonredundant_indices[i]
         row = basis.changematrix[idx]
         for poly_idx in 1:npolys
             matrix_monoms[i][poly_idx] = Vector{M}()
@@ -344,13 +306,12 @@ function basis_shallow_copy_with_new_coeffs(
     Basis(
         basis.monoms,
         new_sparse_row_coeffs,
-        basis.size,
-        basis.nprocessed,
-        basis.nfilled,
-        basis.isredundant,
-        basis.nonredundant,
+        basis.n_filled,
+        basis.n_processed,
+        basis.n_nonredundant,
+        basis.is_redundant,
+        basis.nonredundant_indices,
         basis.divmasks,
-        basis.nnonredundant,
         basis_changematrix_shallow_copy_with_new_type(
             basis.changematrix,
             new_sparse_row_coeffs
@@ -374,13 +335,12 @@ function basis_deep_copy_with_new_coeffs(
     Basis(
         monoms,
         new_sparse_row_coeffs,
-        basis.size,
-        basis.nprocessed,
-        basis.nfilled,
-        copy(basis.isredundant),
-        copy(basis.nonredundant),
+        basis.n_filled,
+        basis.n_processed,
+        basis.n_nonredundant,
+        copy(basis.is_redundant),
+        copy(basis.nonredundant_indices),
         copy(basis.divmasks),
-        basis.nnonredundant,
         basis_changematrix_deep_copy_with_new_type(
             basis.changematrix,
             new_sparse_row_coeffs
@@ -414,16 +374,17 @@ function basis_deepcopy(basis::Basis{C}) where {C <: Coeff}
 end
 
 function basis_resize_if_needed!(basis::Basis{T}, to_add::Int) where {T}
-    while basis.nprocessed + to_add >= basis.size
-        basis.size = max(basis.size * 2, basis.nprocessed + to_add)
-        resize!(basis.monoms, basis.size)
-        resize!(basis.coeffs, basis.size)
-        resize!(basis.isredundant, basis.size)
-        @inbounds basis.isredundant[(basis.nprocessed + 1):end] .= false
-        resize!(basis.nonredundant, basis.size)
-        resize!(basis.divmasks, basis.size)
+    size = length(basis.monoms)
+    while basis.n_processed + to_add >= size
+        size = max(size * 2, basis.n_processed + to_add)
+        resize!(basis.monoms, size)
+        resize!(basis.coeffs, size)
+        resize!(basis.is_redundant, size)
+        @inbounds basis.is_redundant[(basis.n_processed + 1):end] .= false
+        resize!(basis.nonredundant_indices, size)
+        resize!(basis.divmasks, size)
     end
-    @invariant basis.size >= basis.nprocessed + to_add
+    @invariant size >= basis.n_processed + to_add
     nothing
 end
 
@@ -433,7 +394,7 @@ function basis_make_monic!(
     changematrix::Bool
 ) where {A <: Union{CoeffZp, CompositeCoeffZp}, C <: Union{CoeffZp, CompositeCoeffZp}}
     cfs = basis.coeffs
-    @inbounds for i in 1:(basis.nfilled)
+    @inbounds for i in 1:(basis.n_filled)
         !isassigned(cfs, i) && continue
         isone(cfs[i][1]) && continue
         mul = inv_mod_p(A(cfs[i][1]), arithmetic)
@@ -458,7 +419,7 @@ function basis_make_monic!(
     changematrix::Bool
 ) where {A <: Union{CoeffZp, CompositeCoeffZp}, C <: Union{CoeffZp, CompositeCoeffZp}}
     cfs = basis.coeffs
-    @inbounds for i in 1:(basis.nfilled)
+    @inbounds for i in 1:(basis.n_filled)
         !isassigned(cfs, i) && continue
         isone(cfs[i][1]) && continue
         mul = inv_mod_p(A(cfs[i][1]), arithmetic)
@@ -480,7 +441,7 @@ function basis_make_monic!(
     changematrix::Bool
 ) where {C <: CoeffQQ}
     cfs = basis.coeffs
-    @inbounds for i in 1:(basis.nfilled)
+    @inbounds for i in 1:(basis.n_filled)
         !isassigned(cfs, i) && continue
         isone(cfs[i][1]) && continue
         mul = inv(cfs[i][1])
@@ -512,7 +473,7 @@ function pairset_update!(
     # Generate new pairs.
     @inbounds for i in 1:(bl - 1)
         newidx = pl + i
-        if !basis.isredundant[i] &&
+        if !basis.is_redundant[i] &&
            !monom_is_gcd_const(ht.monoms[basis.monoms[i][1]], ht.monoms[new_lead])
             lcms[i] = hashtable_get_lcm!(basis.monoms[i][1], new_lead, ht, update_ht)
             degs[newidx] = monom_totaldeg(update_ht.monoms[lcms[i]])
@@ -545,7 +506,7 @@ function pairset_update!(
     # Traverse new pairs to move non-redundant ones first.
     j = 1
     @inbounds for i in 1:(bl - 1)
-        if !basis.isredundant[i]
+        if !basis.is_redundant[i]
             ps[pl + j] = ps[pl + i]
             degs[pl + j] = degs[pl + i]
             j += 1
@@ -584,12 +545,12 @@ function pairset_update!(
     insert_lcms_in_basis_hashtable!(pairset, pl, ht, update_ht, basis, lcms, j, pc + 1)
 
     # Mark redundant polynomials in basis.
-    nonred = basis.nonredundant
-    lml = basis.nnonredundant
+    nonred = basis.nonredundant_indices
+    lml = basis.n_nonredundant
     @inbounds for i in 1:lml
-        if !basis.isredundant[nonred[i]]
+        if !basis.is_redundant[nonred[i]]
             if hashtable_monom_is_divisible(basis.monoms[nonred[i]][1], new_lead, ht)
-                basis.isredundant[nonred[i]] = true
+                basis.is_redundant[nonred[i]] = true
             end
         end
     end
@@ -600,26 +561,26 @@ end
 function basis_update!(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
     k = 1
     lead = basis.divmasks
-    nonred = basis.nonredundant
-    @inbounds for i in 1:(basis.nnonredundant)
-        if !basis.isredundant[nonred[i]]
+    nonred = basis.nonredundant_indices
+    @inbounds for i in 1:(basis.n_nonredundant)
+        if !basis.is_redundant[nonred[i]]
             basis.divmasks[k] = lead[i]
-            basis.nonredundant[k] = nonred[i]
+            basis.nonredundant_indices[k] = nonred[i]
             k += 1
         end
     end
-    basis.nnonredundant = k - 1
+    basis.n_nonredundant = k - 1
 
-    @inbounds for i in (basis.nprocessed + 1):(basis.nfilled)
-        if !basis.isredundant[i]
+    @inbounds for i in (basis.n_processed + 1):(basis.n_filled)
+        if !basis.is_redundant[i]
             lead[k] = ht.hashdata[basis.monoms[i][1]].divmask
             nonred[k] = i
             k += 1
         end
     end
 
-    basis.nnonredundant = k - 1
-    basis.nprocessed = basis.nfilled
+    basis.n_nonredundant = k - 1
+    basis.n_processed = basis.n_filled
 end
 
 function basis_is_new_polynomial_redundant!(
@@ -634,8 +595,8 @@ function basis_is_new_polynomial_redundant!(
     @inbounds lead_new = basis.monoms[idx][1]
     ps = pairset.pairs
     degs = pairset.degrees
-    @inbounds for i in (idx + 1):(basis.nfilled)
-        basis.isredundant[i] && continue
+    @inbounds for i in (idx + 1):(basis.n_filled)
+        basis.is_redundant[i] && continue
 
         lead_i = basis.monoms[i][1]
         @invariant !monom_isless(ht.monoms[lead_i], ht.monoms[lead_new], ht.ord)
@@ -647,7 +608,7 @@ function basis_is_new_polynomial_redundant!(
         degs[pairset.load + 1] = monom_totaldeg(ht.monoms[lead_i])
         pairset.load += 1
 
-        basis.isredundant[i] = true
+        basis.is_redundant[i] = true
     end
 
     false
@@ -673,22 +634,22 @@ function basis_fill_data!(
         end
     end
 
-    basis.nfilled = ngens
+    basis.n_filled = ngens
 end
 
-function basis_sweep_redundant!(basis::Basis, hashtable)
+function basis_sweep_redundant!(basis::Basis, hashtable::MonomialHashtable)
     # here -- assert that basis is in fact a Groebner basis.
     # NOTE: maybe sort generators for more effective sweeping?
-    @inbounds for i in 1:(basis.nprocessed)
-        for j in (i + 1):(basis.nprocessed)
-            basis.isredundant[i] && continue
-            basis.isredundant[j] && continue
+    @inbounds for i in 1:(basis.n_processed)
+        for j in (i + 1):(basis.n_processed)
+            basis.is_redundant[i] && continue
+            basis.is_redundant[j] && continue
             lead_i = basis.monoms[i][1]
             lead_j = basis.monoms[j][1]
             if hashtable_monom_is_divisible(lead_i, lead_j, hashtable)
-                basis.isredundant[i] = true
+                basis.is_redundant[i] = true
             elseif hashtable_monom_is_divisible(lead_j, lead_i, hashtable)
-                basis.isredundant[j] = true
+                basis.is_redundant[j] = true
             end
         end
     end
@@ -697,15 +658,15 @@ end
 
 function basis_mark_redundant_elements!(basis::Basis)
     j = 1
-    @inbounds for i in 1:(basis.nnonredundant)
-        if !basis.isredundant[basis.nonredundant[i]]
+    @inbounds for i in 1:(basis.n_nonredundant)
+        if !basis.is_redundant[basis.nonredundant_indices[i]]
             basis.divmasks[j] = basis.divmasks[i]
-            basis.nonredundant[j] = basis.nonredundant[i]
+            basis.nonredundant_indices[j] = basis.nonredundant_indices[i]
             j += 1
         end
     end
-    basis.nnonredundant = j - 1
-    @invariant basis.nprocessed == basis.nfilled
+    basis.n_nonredundant = j - 1
+    @invariant basis.n_processed == basis.n_filled
     basis
 end
 
@@ -716,23 +677,23 @@ function basis_standardize!(
     arithmetic::AbstractArithmetic,
     changematrix::Bool
 )
-    @inbounds for i in 1:(basis.nnonredundant)
-        idx = basis.nonredundant[i]
-        basis.nonredundant[i] = i
-        basis.isredundant[i] = false
+    @inbounds for i in 1:(basis.n_nonredundant)
+        idx = basis.nonredundant_indices[i]
+        basis.nonredundant_indices[i] = i
+        basis.is_redundant[i] = false
         basis.coeffs[i] = basis.coeffs[idx]
         basis.monoms[i] = basis.monoms[idx]
         if changematrix
             basis.changematrix[i] = basis.changematrix[idx]
         end
     end
-    basis.size = basis.nprocessed = basis.nfilled = basis.nnonredundant
-    resize!(basis.coeffs, basis.nprocessed)
-    resize!(basis.monoms, basis.nprocessed)
-    resize!(basis.divmasks, basis.nprocessed)
-    resize!(basis.nonredundant, basis.nprocessed)
-    resize!(basis.isredundant, basis.nprocessed)
-    resize!(basis.changematrix, basis.nprocessed)
+    basis.n_processed = basis.n_filled = basis.n_nonredundant
+    resize!(basis.coeffs, basis.n_processed)
+    resize!(basis.monoms, basis.n_processed)
+    resize!(basis.divmasks, basis.n_processed)
+    resize!(basis.nonredundant_indices, basis.n_processed)
+    resize!(basis.is_redundant, basis.n_processed)
+    resize!(basis.changematrix, basis.n_processed)
     perm = sort_polys_by_lead_increasing!(basis, ht, changematrix, ord=ht.ord)
     basis_make_monic!(basis, arithmetic, changematrix)
     perm
@@ -742,9 +703,9 @@ function basis_get_monoms_by_identifiers(
     basis::Basis,
     ht::MonomialHashtable{M}
 ) where {M <: Monom}
-    monoms = Vector{Vector{M}}(undef, basis.nnonredundant)
-    @inbounds for i in 1:(basis.nnonredundant)
-        idx = basis.nonredundant[i]
+    monoms = Vector{Vector{M}}(undef, basis.n_nonredundant)
+    @inbounds for i in 1:(basis.n_nonredundant)
+        idx = basis.nonredundant_indices[i]
         poly = basis.monoms[idx]
         monoms[i] = Vector{M}(undef, length(poly))
         for j in 1:length(poly)
@@ -759,9 +720,9 @@ function basis_export_data(
     ht::MonomialHashtable{M}
 ) where {M <: Monom, C <: Coeff}
     exps = basis_get_monoms_by_identifiers(basis, ht)
-    coeffs = Vector{Vector{C}}(undef, basis.nnonredundant)
-    @inbounds for i in 1:(basis.nnonredundant)
-        idx = basis.nonredundant[i]
+    coeffs = Vector{Vector{C}}(undef, basis.n_nonredundant)
+    @inbounds for i in 1:(basis.n_nonredundant)
+        idx = basis.nonredundant_indices[i]
         coeffs[i] = basis.coeffs[idx]
     end
     exps, coeffs

@@ -51,12 +51,6 @@ function linalg_randomized_reduce_matrix_lower_part!(
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
     _, nlow = matrix_nrows_filled(matrix)
-    if nlow <= 2
-        @log :debug """
-        Too few rows in the matrix. 
-        Consider switching to another backend to avoid the overhead of randomization.
-        TODO"""
-    end
 
     # Prepare the matrix
     pivots, row_idx_to_coeffs = linalg_prepare_matrix_pivots!(matrix)
@@ -126,7 +120,7 @@ function linalg_randomized_reduce_matrix_lower_part!(
                 first_nnz_col,
                 ncols,
                 arithmetic,
-                tmp_pos=-1
+                
             )
 
             zeroed && break

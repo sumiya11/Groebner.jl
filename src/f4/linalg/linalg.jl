@@ -49,8 +49,7 @@ function linalg_main!(
         :no
     elseif params.threaded_f4 === :auto && nthreads() > 1
         # try to use multi-threading by default whenever possible
-        # :yes
-        :no
+        :yes
     else
         :no
     end

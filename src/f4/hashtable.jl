@@ -279,8 +279,8 @@ function hashtable_is_hash_collision(ht::MonomialHashtable, vidx, e, he)
 end
 
 function hashtable_insert!(ht::MonomialHashtable{M}, e::M) where {M <: Monom}
-    # NOTE: optimizing for the case when the monomial is already in the table.
-    # NOTE: all of the functions in the main code path are inlined.
+    # Optimizing for the case when the monomial is already in the table.
+    # All of the functions in the main code path are inlined.
     @invariant ispow2(ht.size) && ht.size > 1
 
     he = monom_hash(e, ht.hasher)
@@ -498,70 +498,6 @@ function hashtable_check_monomial_division_in_update(
     nothing
 end
 
-# this function is not reentrant !
-function semigroup_normalize_monom!(monom::ExponentVector{T}) where {T}
-    semigroup_check_normalized_monom(monom) && return monom
-    
-    varmap = SEMIGROUP_VARMAP[]
-
-    _monom = deepcopy(monom)
-
-    monom_preimage = zeros(T, length(monom))
-    @inbounds for i in (length(monom) - length(varmap) + 1):length(monom)
-        for j in 1:length(monom)
-            monom_preimage[j] += varmap[length(monom) - i + 1][1][j] * monom[i]
-        end
-    end
-
-    new_monom = monom
-    new_monom .= T(0)
-    
-    @inbounds for i in 1:length(varmap)
-        flag = monom_is_divisible(monom_preimage, varmap[i][1])
-        while flag
-            monom_preimage .-= varmap[i][1]
-            new_monom .+= varmap[i][2]
-            flag = monom_is_divisible(monom_preimage, varmap[i][1])
-        end
-    end
-
-    @assert new_monom[1] == sum(view(new_monom, 2:length(new_monom)))
-    
-    # @error "" _monom new_monom
-
-    new_monom
-end
-
-function semigroup_is_a_relation_lead(monom::ExponentVector{T}) where {T}
-    for relation in SEMIGROUP_RELATIONS[]
-        if monom == relation[1]
-            return true
-        end
-    end
-    false
-end
-
-function semigroup_check_normalized_monom(monom::M) where {M <: Monom}
-    for relation in SEMIGROUP_RELATIONS[]
-        @assert length(relation) == 2
-        monom_is_divisible(monom, relation[1]) && return false
-    end
-    return true
-end
-
-function semigroup_normalized(basis, hashtable::MonomialHashtable)
-    for i in 1:(basis.nfilled)
-        if semigroup_is_a_relation_lead(hashtable.monoms[basis.monoms[i][1]])
-            continue
-        end
-        for j in 1:length(basis.monoms[i])
-            monom = hashtable.monoms[basis.monoms[i][j]]
-            !semigroup_check_normalized_monom(monom) && return false
-        end
-    end
-    true
-end
-
 # Inserts a multiple of the polynomial into symbolic hashtable.
 # Writes the resulting monomial identifiers to the given row.
 function hashtable_insert_polynomial_multiple!(
@@ -582,10 +518,6 @@ function hashtable_insert_polynomial_multiple!(
     mod = (symbol_ht.size - 1) % MonomHash
     @inbounds buf = symbol_ht.monoms[1]
 
-    if SEMIGROUP_ON[]
-        @assert !semigroup_is_a_relation_lead(ht.monoms[poly[1]])
-    end
-
     # Iterate over monomials of the given polynomial, multiply them by a
     # monomial multiple, and insert them into symbolic hashtable. 
     # We use the fact that the hash function is linear.
@@ -596,19 +528,8 @@ function hashtable_insert_polynomial_multiple!(
         oldmonom = ht.monoms[poly[j]]
         newmonom = monom_product!(buf, mult, oldmonom)
 
-        # @error "insertin " 
-        # println(mult)
-        # println(newmonom)
-        # println(oldmonom)
-
         oldhash = ht.hashdata[poly[j]].hash
         newhash = mult_hash + oldhash
-
-        if SEMIGROUP_ON[]
-            newmonom = semigroup_normalize_monom!(newmonom)
-            @assert semigroup_check_normalized_monom(newmonom)
-            newhash = monom_hash(newmonom, ht.hasher)
-        end
 
         hidx = hashtable_next_lookup_index(newhash, 0 % MonomHash, mod)
         vidx = symbol_ht.hashtable[hidx]

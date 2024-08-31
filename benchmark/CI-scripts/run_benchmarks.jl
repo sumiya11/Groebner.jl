@@ -64,6 +64,8 @@ function nemo_make_prime_finite_field(p)
 end
 
 function compute_gb(system, trials=7; kws...)
+    kws = Dict(kws)
+    haskey(kws, :threaded) && (kws[:threaded] = false) 
     times = []
     for _ in 1:trials
         GC.gc()

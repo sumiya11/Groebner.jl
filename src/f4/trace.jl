@@ -161,7 +161,7 @@ function trace_copy(
 
     new_buf_basis_coeffs = Vector{Vector{C2}}(undef, length(trace.buf_basis.coeffs))
     # for i in 1:length(trace.buf_basis.coeffs)
-    for i in 1:(trace.buf_basis.nfilled)
+    for i in 1:(trace.buf_basis.n_filled)
         # !isassigned(trace.buf_basis.coeffs, i) && continue
         new_buf_basis_coeffs[i] = Vector{C2}(undef, length(trace.buf_basis.coeffs[i]))
     end
@@ -173,7 +173,7 @@ function trace_copy(
 
     new_gb_basis_coeffs = Vector{Vector{C2}}(undef, length(trace.gb_basis.coeffs))
     # for i in 1:length(trace.gb_basis.coeffs)
-    for i in 1:(trace.gb_basis.nfilled)
+    for i in 1:(trace.gb_basis.n_filled)
         # !isassigned(trace.gb_basis.coeffs, i) && continue
         new_gb_basis_coeffs[i] = Vector{C2}(undef, length(trace.gb_basis.coeffs[i]))
     end
@@ -226,9 +226,9 @@ end
 
 function trace_finalize!(trace::Trace)
     trace.buf_basis = basis_deepcopy(trace.gb_basis)
-    trace.buf_basis.nnonredundant = trace.input_basis.nnonredundant
-    trace.buf_basis.nprocessed = trace.input_basis.nprocessed
-    trace.buf_basis.nfilled = trace.input_basis.nfilled
+    trace.buf_basis.n_nonredundant = trace.input_basis.n_nonredundant
+    trace.buf_basis.n_processed = trace.input_basis.n_processed
+    trace.buf_basis.n_filled = trace.input_basis.n_filled
     trace.stopwatch = time_ns() - trace.stopwatch
     nothing
 end
@@ -345,8 +345,8 @@ function Base.show(io::IO, ::MIME"text/plain", trace::Trace)
         io,
         """
         ring  : Z[x1,...,x$(trace.ring.nvars)] mod $(trace.ring.ch)
-        input : $(trace.input_basis.nfilled) polynomials
-        output: $(trace.gb_basis.nfilled) polynomials
+        input : $(trace.input_basis.n_filled) polynomials
+        output: $(trace.gb_basis.n_filled) polynomials
         apply : $(trace.napply) / $(trace.nfail) (success/fail)
         """
     )

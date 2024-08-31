@@ -17,10 +17,9 @@ function linalg_deterministic_sparse!(
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
 
-    @assert matrix.nrows_filled_upper > 0
-    @assert matrix.nrows_filled_upper == matrix.ncols_left
+    @invariant matrix.nrows_filled_upper == matrix.ncols_left
     for i in 1:matrix.nrows_filled_upper
-        @assert matrix.upper_rows[i][1] == i
+        @invariant matrix.upper_rows[i][1] == i
     end
 
     @log :matrix "linalg_deterministic_sparse!"
@@ -83,11 +82,7 @@ function linalg_reduce_matrix_lower_part!(
         # Select a row to be reduced from the lower part of the matrix
         # NOTE: no copy of coefficients is needed
         sparse_row_support = matrix.lower_rows[i]
-        if SEMIGROUP_ON[]
-            sparse_row_coeffs = matrix.semigroup_lower_coeffs[row_index_to_coeffs[i]]
-        else
-            sparse_row_coeffs = basis.coeffs[row_index_to_coeffs[i]]
-        end
+        sparse_row_coeffs = basis.coeffs[row_index_to_coeffs[i]]
         @invariant length(sparse_row_support) == length(sparse_row_coeffs)
 
         # Load the coefficients into a dense array
@@ -105,7 +100,7 @@ function linalg_reduce_matrix_lower_part!(
             first_nnz_column,
             ncols,
             arithmetic,
-            tmp_pos=-1
+            
         )
 
         # If the row is fully reduced
@@ -167,13 +162,7 @@ function linalg_interreduce_matrix_pivots!(
         sparse_row_support = pivots[abs_column_idx]
         if abs_column_idx <= nleft
             # upper part of matrix
-            if SEMIGROUP_ON[]
-                @assert false
-                sparse_row_coeffs =
-                    matrix.semigroup_upper_coeffs[matrix.upper_to_coeffs[abs_column_idx]]
-            else
-                sparse_row_coeffs = basis.coeffs[matrix.upper_to_coeffs[abs_column_idx]]
-            end
+            sparse_row_coeffs = basis.coeffs[matrix.upper_to_coeffs[abs_column_idx]]
         else
             # lower part of matrix
             sparse_row_coeffs = matrix.some_coeffs[matrix.lower_to_coeffs[abs_column_idx]]
@@ -196,7 +185,7 @@ function linalg_interreduce_matrix_pivots!(
             first_nnz_column,
             ncols,
             arithmetic,
-            tmp_pos=first_nnz_column
+            ignore_column=first_nnz_column
         )
 
         # If the row reduced to zero
@@ -228,75 +217,6 @@ function linalg_interreduce_matrix_pivots!(
     resize!(not_reduced_to_zero, new_pivots)
 
     true, any_zeroed, not_reduced_to_zero
-end
-
-# Puts the AB part of the matrix in the RREF, inplace.
-function linalg_interreduce_matrix_upper_part!(
-    matrix::MacaulayMatrix{CoeffType},
-    basis::Basis{CoeffType},
-    arithmetic::AbstractArithmetic{AccumType, CoeffType}
-) where {CoeffType <: Coeff, AccumType <: Coeff}
-    _, ncols = size(matrix)
-    nup, _ = matrix_nrows_filled(matrix)
-
-    # Prepare the matrix
-    resize!(matrix.upper_coeffs, nup)
-    resize!(matrix.upper_rows, ncols)
-    resize!(matrix.some_coeffs, matrix.nrows_filled_lower)
-
-    # Allocate the buffers
-    row = zeros(AccumType, ncols)
-    new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
-
-    @inbounds for i in nup:-1:1
-        # Locate the support and the coefficients of the row from the upper part
-        # of the matrix
-        sparse_row_support = matrix.upper_rows[i]
-        sparse_row_coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
-        @invariant length(sparse_row_support) == length(sparse_row_coeffs)
-
-        # Extract the coefficients into a dense array
-        @invariant isone(sparse_row_coeffs[1])
-        linalg_load_sparse_row!(row, sparse_row_support, sparse_row_coeffs)
-
-        # Reduce the row with respect to the known `pivots` from the upper part
-        # of the matrix.
-        # NOTE: note the `tmp_pos=first_nnz_column` argument. It ensures that we
-        # do not reduce the row with itself. Maybe think of a better name?..
-        first_nnz_column = sparse_row_support[1]
-        zeroed = linalg_reduce_dense_row_by_pivots_sparse!(
-            new_sparse_row_support,
-            new_sparse_row_coeffs,
-            row,
-            matrix,
-            basis,
-            matrix.upper_rows,
-            first_nnz_column,
-            ncols,
-            arithmetic,
-            tmp_pos=first_nnz_column,
-            computing_rref=true
-        )
-
-        # If the row is fully reduced
-        if zeroed
-            return false
-        end
-
-        @invariant length(new_sparse_row_coeffs) == length(new_sparse_row_support)
-        linalg_row_make_monic!(new_sparse_row_coeffs, arithmetic)
-
-        # Update the support and the coefficients of the vector
-        matrix.upper_coeffs[i] = new_sparse_row_coeffs
-        matrix.upper_rows[i] = new_sparse_row_support
-
-        new_sparse_row_support, new_sparse_row_coeffs =
-            linalg_new_empty_sparse_row(CoeffType)
-    end
-
-    matrix.upper_part_is_rref = true
-
-    true
 end
 
 function linalg_reduce_matrix_lower_part_invariant_pivots!(
@@ -336,7 +256,7 @@ function linalg_reduce_matrix_lower_part_invariant_pivots!(
             1,
             ncols,
             arithmetic,
-            tmp_pos=-1
+            
         )
 
         # NOTE: no normalization here
@@ -387,7 +307,7 @@ function linalg_reduce_matrix_lower_part_any_nonzero!(
             first_nnz_column,
             ncols,
             arithmetic,
-            tmp_pos=-1
+            
         )
 
         # If fully reduced
@@ -452,11 +372,8 @@ end
 ###
 # Reducing one dense vector by many pivots.
 
-# The most generic specialization.
-# 
-# Reduces the given dense `row` by the given `pivots`.
-# It is assumed that the leading coefficients of pivots are equal to one.
-# 
+# Reduces the given dense row by the given pivots.
+#
 # Returns `true` if the row is reduced to zero and `false`, otherwise.
 # Writes the nonzero elements of the resulting row to `new_sparse_row_support`
 # and `new_sparse_row_coeffs`.
@@ -477,9 +394,7 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
     end_column::Integer,
     arithmetic::AbstractArithmeticZp{A, C},
     active_reducers=nothing;
-    tmp_pos::Integer=-1,
-    exact_column_mapping::Bool=false,
-    computing_rref::Bool=false
+    ignore_column::Integer=-1,
 ) where {I, C <: Union{CoeffZp, CompositeCoeffZp}, A <: Union{CoeffZp, CompositeCoeffZp}}
     _, ncols = size(matrix)
     nleft, _ = matrix_ncols_filled(matrix)
@@ -487,16 +402,14 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
     n_nonzeros = 0
     new_pivot_column = -1
 
-    # TODO TODO TODO
-    # @inbounds for i in start_column:end_column
-    @inbounds for i in 1:end_column
+    @inbounds for i in start_column:end_column
         # if the element is zero -- no reduction is needed
         if iszero(row[i])
             continue
         end
 
         # if there is no pivot with the leading column equal to i
-        if !isassigned(pivots, i) || (tmp_pos != -1 && tmp_pos == i)
+        if !isassigned(pivots, i) || ignore_column == i
             if new_pivot_column == -1
                 new_pivot_column = i
             end
@@ -507,20 +420,9 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
 
         # Locate the support and the coefficients of the pivot row
         pivot_support = pivots[i]
-        if exact_column_mapping
-            # if pivot comes from the new pivots
-            pivot_coeffs = matrix.some_coeffs[tmp_pos]
-        elseif i <= nleft
+        if i <= nleft
             # if pivot comes from the original pivots
-            if matrix.upper_part_is_rref || computing_rref
-                pivot_coeffs = matrix.upper_coeffs[i]
-            else
-                if SEMIGROUP_ON[]
-                    pivot_coeffs = matrix.semigroup_upper_coeffs[matrix.upper_to_coeffs[i]]
-                else
-                    pivot_coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
-                end
-            end
+            pivot_coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
             record_active_reducer(active_reducers, matrix, i)
         else
             pivot_coeffs = matrix.some_coeffs[matrix.lower_to_coeffs[i]]
@@ -549,7 +451,7 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
         new_sparse_row_support,
         new_sparse_row_coeffs,
         row,
-        convert(Int, 1), # convert(Int, start_column), TODO TODO
+        convert(Int, start_column),
         ncols
     )
 
@@ -568,9 +470,7 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
     end_column::Integer,
     arithmetic::DelayedArithmeticZp{A, C},
     active_reducers=nothing;
-    tmp_pos::Integer=-1,
-    exact_column_mapping::Bool=false,
-    computing_rref::Bool=false
+    ignore_column::Integer=-1,
 ) where {I, C <: CoeffZp, A <: CoeffZp}
     _, ncols = size(matrix)
     nleft, _ = matrix_ncols_filled(matrix)
@@ -589,7 +489,7 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
         end
 
         # if there is no pivot with the leading column index equal to i
-        if !isassigned(pivots, i) || (tmp_pos != -1 && tmp_pos == i)
+        if !isassigned(pivots, i) || ignore_column == i
             if new_pivot_column == -1
                 new_pivot_column = i
             end
@@ -601,16 +501,9 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
 
         # Locate the support and the coefficients of the reducer row
         indices = pivots[i]
-        if exact_column_mapping
-            # if reducer is from new matrix pivots
-            coeffs = matrix.some_coeffs[tmp_pos]
-        elseif i <= nleft
+        if i <= nleft
             # if reducer is from the upper part of the matrix
-            if matrix.upper_part_is_rref || computing_rref
-                coeffs = matrix.upper_coeffs[i]
-            else
-                coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
-            end
+            coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
             record_active_reducer(active_reducers, matrix, i)
         else
             # if reducer is from the lower part of the matrix
@@ -660,9 +553,7 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
     end_column::Integer,
     arithmetic::Union{SignedArithmeticZp{A, C}, SignedCompositeArithmeticZp{A, C}},
     active_reducers=nothing;
-    tmp_pos::Integer=-1,
-    exact_column_mapping::Bool=false,
-    computing_rref::Bool=false
+    ignore_column::Integer=-1,
 ) where {I, C <: Union{CoeffZp, CompositeCoeffZp}, A <: Union{CoeffZp, CompositeCoeffZp}}
     _, ncols = size(matrix)
     nleft, _ = matrix_ncols_filled(matrix)
@@ -681,7 +572,7 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
         end
 
         # if there is no pivot with the leading column index equal to i
-        if !isassigned(pivots, i) || (tmp_pos != -1 && tmp_pos == i)
+        if !isassigned(pivots, i) || ignore_column == i
             if new_pivot_column == -1
                 new_pivot_column = i
             end
@@ -693,16 +584,9 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
 
         # Locate the support and the coefficients of the reducer row
         indices = pivots[i]
-        if exact_column_mapping
-            # if reducer is from new matrix pivots
-            coeffs = matrix.some_coeffs[tmp_pos]
-        elseif i <= nleft
+        if i <= nleft
             # if reducer is from the upper part of the matrix
-            if matrix.upper_part_is_rref || computing_rref
-                coeffs = matrix.upper_coeffs[i]
-            else
-                coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
-            end
+            coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
             record_active_reducer(active_reducers, matrix, i)
         else
             # if reducer is from the lower part of the matrix
@@ -749,9 +633,7 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
     end_column::Integer,
     arithmetic::AbstractArithmeticQQ,
     active_reducers=nothing;
-    tmp_pos::Integer=-1,
-    exact_column_mapping::Bool=false,
-    computing_rref::Bool=false
+    ignore_column::Integer=-1,
 ) where {I, C <: Coeff}
     _, ncols = size(matrix)
     nleft, _ = matrix_ncols_filled(matrix)
@@ -766,7 +648,7 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
         end
 
         # if there is no pivot with the leading column index equal to i
-        if !isassigned(pivots, i) || (tmp_pos != -1 && tmp_pos == i)
+        if !isassigned(pivots, i) || ignore_column == i
             if new_pivot_column == -1
                 new_pivot_column = i
             end
@@ -778,20 +660,9 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
 
         # Locate the support and the coefficients of the reducer row
         indices = pivots[i]
-        if exact_column_mapping
-            # if reducer is from new matrix pivots
-            coeffs = matrix.some_coeffs[tmp_pos]
-        elseif i <= nleft
+        if i <= nleft
             # if reducer is from the upper part of the matrix
-            if matrix.upper_part_is_rref || computing_rref
-                coeffs = matrix.upper_coeffs[i]
-            else
-                if SEMIGROUP_ON[]
-                    coeffs = matrix.semigroup_upper_coeffs[matrix.upper_to_coeffs[i]]
-                else
-                    coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
-                end
-            end
+            coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
             record_active_reducer(active_reducers, matrix, i)
         else
             # if reducer is from the lower part of the matrix
@@ -1058,40 +929,6 @@ function linalg_vector_addmul_sparsedense!(
     @inbounds for j in 1:length(indices)
         idx = indices[j]
         row[idx] = row[idx] + mul * coeffs[j]
-    end
-
-    nothing
-end
-
-# Linear combination of two dense vectors modulo a prime
-function linalg_vector_addmul_densedense_mod_p!(
-    row1::Vector{T},
-    row2::Vector{T},
-    mul::T,
-    arithmetic::AbstractArithmeticZp
-) where {T <: Union{CoeffZp, CompositeCoeffZp}}
-    @invariant length(row1) == length(row2)
-
-    @inbounds mul = divisor(arithmetic) - mul
-
-    @inbounds for j in 1:length(row1)
-        row1[j] = mod_p(row1[j] + mul * row2[j], arithmetic)
-    end
-
-    nothing
-end
-
-# Linear combination of two dense vectors
-function linalg_vector_addmul_densedense!(
-    row1::Vector{T},
-    row2::Vector{T},
-    mul::T,
-    arithmetic::AbstractArithmeticQQ
-) where {T <: CoeffQQ}
-    @invariant length(row1) == length(row2)
-
-    @inbounds for j in 1:length(row1)
-        row1[j] = row1[j] - mul * row2[j]
     end
 
     nothing

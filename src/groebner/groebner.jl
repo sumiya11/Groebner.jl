@@ -272,7 +272,7 @@ function _groebner_learn_and_apply(
                 gb_coeffs_1, gb_coeffs_2, gb_coeffs_3, gb_coeffs_4 =
                     ir_unpack_composite_coefficients(trace_4x.gb_basis.coeffs)
 
-                # TODO: (I) This causes unnecessary conversions of arrays.
+                # TODO: This causes unnecessary conversions of arrays.
                 push!(state.gb_coeffs_ff_all, gb_coeffs_1)
                 push!(state.gb_coeffs_ff_all, gb_coeffs_2)
                 push!(state.gb_coeffs_ff_all, gb_coeffs_3)

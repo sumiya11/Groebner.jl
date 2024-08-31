@@ -14,11 +14,6 @@ const aa_exponent_type = UInt64
 aa_is_multivariate_ring(ring) =
     AbstractAlgebra.elem_type(ring) <: AbstractAlgebra.MPolyRingElem
 
-# TODO TODO TODO: type piracy!
-(F::AbstractAlgebra.FinField)(x::AbstractFloat) = F(Int(x))
-(F::AbstractAlgebra.GFField{Int64})(x::AbstractFloat) = F(Int(x))
-(F::AbstractAlgebra.Rationals{BigInt})(x::AbstractFloat) = F(BigInt(x))
-
 function io_convert_polynomials_to_ir(polynomials, options::KeywordArguments)
     isempty(polynomials) && throw(DomainError("Empty input."))
     ring = io_extract_ring(polynomials)

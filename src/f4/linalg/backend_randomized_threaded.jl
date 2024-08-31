@@ -22,21 +22,12 @@ function linalg_randomized_sparse_threaded!(
     @log :matrix matrix_string_repr(matrix)
 
     # Reduce CD with AB
-    if true
-        linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
-            matrix,
-            basis,
-            arithmetic,
-            rng
-        )
-    else
-        linalg_randomized_reduce_matrix_lower_part_threaded_cas_fair!(
-            matrix,
-            basis,
-            arithmetic,
-            rng
-        )
-    end
+    linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
+        matrix,
+        basis,
+        arithmetic,
+        rng
+    )
     # Interreduce CD
     linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic)
     true
@@ -45,7 +36,6 @@ end
 ###
 # Low level
 
-# This function is incorrect.
 function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
@@ -54,12 +44,6 @@ function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
     nup, nlow = matrix_nrows_filled(matrix)
-    if nlow <= 2
-        @log :debug """
-        Too few rows in the matrix. 
-        Consider switching to another backend to avoid the overhead of randomization.
-        TODO"""
-    end
     if nthreads() == 1
         @log :info """
         Using multi-threaded linear algebra with nthreads() == 1.
@@ -94,9 +78,7 @@ function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
     buffers_row = map(_ -> zeros(AccumType, ncols), 1:nthreads())
     buffers_rng = map(_ -> copy(rng), 1:nthreads())
 
-    # NOTE: by default, @threads uses the :dynamic execution schedule, which
-    # does not guarantee that threadid() is constant within one iteration
-    @inbounds Base.Threads.@threads for i in 1:nblocks
+    @inbounds Base.Threads.@threads :static for i in 1:nblocks
         nrowsupper = min(i * rowsperblock, nlow)
         nrowstotal = nrowsupper - (i - 1) * rowsperblock
         nrowstotal == 0 && continue
@@ -151,7 +133,7 @@ function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
                     ncols,
                     arithmetic,
                     sentinels,
-                    tmp_pos=-1
+                    
                 )
 
                 if zeroed
@@ -162,7 +144,7 @@ function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
 
                 # Sync point. Everything before this point becomes visible to
                 # other threads once they reach this point.
-                # NOTE: Note the absense of a total order on atomic operations
+                # Note the absense of a total order on atomic operations
                 old, success = Atomix.replace!(
                     Atomix.IndexableRef(sentinels, (Int(new_sparse_row_support[1]),)),
                     Int8(0),

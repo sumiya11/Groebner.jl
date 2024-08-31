@@ -348,7 +348,7 @@ function modular_lift_randomized_check!(
     basis_make_monic!(gb_ff, arithmetic, params.changematrix)
     # Check that some polynomial is not reduced to zero
     f4_normalform!(ring_ff, gb_ff, input_ff, hashtable, arithmetic)
-    for i in 1:(input_ff.nprocessed)
+    for i in 1:(input_ff.n_processed)
         if !isempty(input_ff.coeffs[i])
             return false
         end
@@ -374,7 +374,7 @@ function modular_lift_certify_check!(
     input_qq = basis_deepcopy(input_qq)
     # Check that some polynomial is not reduced to zero modulo a prime
     f4_normalform!(ring_qq, gb_qq, input_qq, hashtable, params.arithmetic)
-    for i in 1:(input_qq.nprocessed)
+    for i in 1:(input_qq.n_processed)
         if !isempty(input_qq.coeffs[i])
             return false
         end

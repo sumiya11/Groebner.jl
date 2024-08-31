@@ -95,7 +95,7 @@ function linalg_reduce_matrix_lower_part_changematrix!(
             ncols,
             arithmetic,
             reducer_rows,
-            tmp_pos=-1
+            
         )
 
         # if fully reduced
@@ -202,7 +202,7 @@ function linalg_interreduce_matrix_pivots_changematrix!(
             first_nnz_column,
             ncols,
             arithmetic,
-            tmp_pos=first_nnz_column,
+            ignore_column=first_nnz_column,
             reducer_rows
         )
 
@@ -271,9 +271,7 @@ function linalg_reduce_dense_row_by_pivots_sparse_changematrix!(
     end_column::Integer,
     arithmetic::AbstractArithmeticZp{A, C},
     active_reducers;
-    tmp_pos::Integer=-1,
-    exact_column_mapping::Bool=false,
-    computing_rref::Bool=false
+    ignore_column::Integer=-1
 ) where {I, C <: Union{CoeffZp, CompositeCoeffZp}, A <: Union{CoeffZp, CompositeCoeffZp}}
     _, ncols = size(matrix)
     nleft, _ = matrix_ncols_filled(matrix)
@@ -288,7 +286,7 @@ function linalg_reduce_dense_row_by_pivots_sparse_changematrix!(
         end
 
         # if there is no pivot with the leading column equal to i
-        if !isassigned(pivots, i) || (tmp_pos != -1 && tmp_pos == i)
+        if !isassigned(pivots, i) || ignore_column == i
             if new_pivot_column == -1
                 new_pivot_column = i
             end
@@ -299,16 +297,9 @@ function linalg_reduce_dense_row_by_pivots_sparse_changematrix!(
 
         # Locate the support and the coefficients of the pivot row
         pivot_support = pivots[i]
-        if exact_column_mapping
-            # if pivot comes from the new pivots
-            pivot_coeffs = matrix.some_coeffs[tmp_pos]
-        elseif i <= nleft
+        if i <= nleft
             # if pivot comes from the original pivots
-            if matrix.upper_part_is_rref || computing_rref
-                pivot_coeffs = matrix.upper_coeffs[i]
-            else
-                pivot_coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
-            end
+            pivot_coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
         else
             pivot_coeffs = matrix.some_coeffs[matrix.lower_to_coeffs[i]]
         end

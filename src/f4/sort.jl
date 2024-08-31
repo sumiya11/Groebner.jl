@@ -37,7 +37,7 @@ function sort_polys_by_lead_increasing!(
 ) where {Ord <: AbstractMonomialOrdering}
     b_monoms = basis.monoms
     h_monoms = hashtable.monoms
-    permutation = collect(1:(basis.nfilled))
+    permutation = collect(1:(basis.n_filled))
     cmps =
         (x, y) -> monom_isless(
             @inbounds(h_monoms[b_monoms[x][1]]),
@@ -50,16 +50,16 @@ function sort_polys_by_lead_increasing!(
 
     # use array assignment insted of elemewise assignment
     # (seems to compile to better code)
-    basis.monoms[1:(basis.nfilled)] = basis.monoms[permutation]
-    basis.coeffs[1:(basis.nfilled)] = basis.coeffs[permutation]
+    basis.monoms[1:(basis.n_filled)] = basis.monoms[permutation]
+    basis.coeffs[1:(basis.n_filled)] = basis.coeffs[permutation]
     @inbounds for a in abc
         @invariant length(a) >= length(permutation)
-        a[1:(basis.nfilled)] = a[permutation]
+        a[1:(basis.n_filled)] = a[permutation]
     end
 
     if changematrix
-        @invariant length(basis.changematrix) >= basis.nfilled
-        @inbounds basis.changematrix[1:(basis.nfilled)] = basis.changematrix[permutation]
+        @invariant length(basis.changematrix) >= basis.n_filled
+        @inbounds basis.changematrix[1:(basis.n_filled)] = basis.changematrix[permutation]
     end
 
     permutation
@@ -72,7 +72,7 @@ function is_sorted_by_lead_increasing(
 ) where {Ord <: AbstractMonomialOrdering}
     b_monoms = basis.monoms
     h_monoms = hashtable.monoms
-    permutation = collect(1:(basis.nfilled))
+    permutation = collect(1:(basis.n_filled))
     cmps =
         (x, y) -> monom_isless(
             @inbounds(h_monoms[b_monoms[x][1]]),

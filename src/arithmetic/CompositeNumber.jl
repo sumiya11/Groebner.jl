@@ -52,11 +52,3 @@ Base.:-(a::CompositeNumber{N, T}, b::CompositeNumber{N, T}) where {N, T} =
 
 Base.:*(a::CompositeNumber{N, T}, b::CompositeNumber{N, T}) where {N, T} =
     CompositeNumber(a.data .* b.data)
-
-function Base.muladd(
-    c::CompositeNumber{N, T},
-    a::CompositeNumber{N, T},
-    b::CompositeNumber{N, T}
-) where {N, T}
-    CompositeNumber(c.data .* a.data .+ b.data)
-end

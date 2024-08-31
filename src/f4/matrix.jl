@@ -7,24 +7,8 @@
 # MacaulayMatrix represents a block matrix of the following structure:
 #
 #   | A  B |
-#   | C  D | 
+#   | C  D |
 #
-# The sparsity structure of the matrix upon creation may look similar to:
-#
-#           A          B
-#     ......... | ......
-#       ....... | ......
-#         ..... | ......
-#  A        ... | ......
-#             . |  .....
-#     ------------------
-#            .. | ......
-#  C      ..... | ......
-#      ........ | ......
-#
-# NOTE: Check out `matrix_string_repr` for printing this nice matrix representation in
-# runtime.
-
 # The primary action on a MacaulayMatrix is computing
 #   D - C inv(A) B,
 # which is equivalent to reducing the CD block (lower part of the matrix) with
@@ -58,21 +42,9 @@ mutable struct MacaulayMatrix{T <: Coeff}
     # Explicitly stored coefficients of *some* rows. Usage of this field may
     # differ in runtime depending on the algorithm in use
     some_coeffs::Vector{Vector{T}}
-
-    semigroup_upper_coeffs::Vector{Vector{T}}
-    semigroup_lower_coeffs::Vector{Vector{T}}
-
-    # Explicitly stored coefficients of block B.
-    B_coeffs_dense::Vector{Vector{T}}
-    # Explicitly stored coefficients of block D.
-    D_coeffs_dense::Vector{Vector{T}}
-
+    
     # Maps the columns of the matrix to corresponding monomial labels
     column_to_monom::Vector{MonomId}
-
-    # If the AB part of the matrix is in Row-Reduced-Echelon-Form.
-    # Generally, this field is `false`, and AB is only in Row-Echelon-Form.
-    upper_part_is_rref::Bool
 
     # The number of columns in the left part of the matrix (in the blocks A, C)
     ncols_left::Int
@@ -87,7 +59,7 @@ mutable struct MacaulayMatrix{T <: Coeff}
     # discovered in the block CD after performing linear reduction by AB
     npivots::Int
     # Maps a column to a pivot row. We have `pivots[i][1] == i`.
-    # NOTE: `pivots[i]` may be un-assigned.
+    # May be un-assigned.
     pivots::Vector{Vector{ColumnLabel}}
     # A lightweight version of the above `pivots`, only for some specific cases.
     pivot_indices::Vector{Int}
@@ -99,10 +71,6 @@ mutable struct MacaulayMatrix{T <: Coeff}
     # Index of the row --> monomial multiplier
     upper_to_mult::Vector{MonomId}
     lower_to_mult::Vector{MonomId}
-
-    # A vector of random elements from the ground field, which is used to
-    # compute hashes of matrix rows
-    hash_vector::Vector{T}
 
     sentinels::Vector{Int8}
 
@@ -143,12 +111,7 @@ function matrix_initialize(ring::PolyRing, ::Type{T}) where {T <: Coeff}
         Vector{Vector{ColumnLabel}}(),
         Vector{Vector{T}}(),
         Vector{Vector{T}}(),
-        Vector{Vector{T}}(),
-        Vector{Vector{T}}(),
-        Vector{Vector{T}}(),
-        Vector{Vector{T}}(),
         Vector{MonomId}(),
-        false,
         0,
         0,
         0,
@@ -160,7 +123,6 @@ function matrix_initialize(ring::PolyRing, ::Type{T}) where {T <: Coeff}
         Vector{Int}(),
         Vector{MonomId}(),
         Vector{MonomId}(),
-        Vector{T}(),
         Vector{Int8}(),
         Vector{Dict{Tuple{Int, MonomId}, T}}()
     )
@@ -243,7 +205,6 @@ end
 function matrix_resize_upper_part!(matrix::MacaulayMatrix, size::Int)
     size <= length(matrix.upper_rows) && return nothing
     resize!(matrix.upper_rows, size)
-    resize!(matrix.semigroup_upper_coeffs, size)
     resize!(matrix.upper_to_coeffs, size)
     resize!(matrix.upper_to_mult, size)
     nothing
@@ -252,7 +213,6 @@ end
 function matrix_resize_lower_part!(matrix::MacaulayMatrix, size::Int)
     size <= length(matrix.lower_rows) && return nothing
     resize!(matrix.lower_rows, size)
-    resize!(matrix.semigroup_lower_coeffs, size)
     resize!(matrix.lower_to_coeffs, size)
     resize!(matrix.lower_to_mult, size)
     nothing
@@ -263,7 +223,6 @@ function matrix_reinitialize!(matrix::MacaulayMatrix, size::Int)
     new_size = size * 2
     matrix_resize_upper_part!(matrix, new_size)
     matrix_resize_lower_part!(matrix, new_size)
-    matrix.upper_part_is_rref = false
     matrix.ncols_left = 0
     matrix.ncols_right = 0
     matrix.nrows_filled_upper = 0
@@ -311,7 +270,7 @@ function matrix_convert_rows_to_basis_elements!(
 
     basis_resize_if_needed!(basis, matrix.npivots)
     rows = matrix.lower_rows
-    crs = basis.nprocessed
+    crs = basis.n_processed
 
     _, _, nl, nr = matrix_block_sizes(matrix)
     support_size = sum(length, rows; init=0)
@@ -356,36 +315,8 @@ function matrix_convert_rows_to_basis_elements!(
         end
     end
 
-    if SEMIGROUP_ON[]
-        for i in 1:(matrix.npivots)
-            @assert issorted(
-                basis.monoms[crs + i],
-                lt=(a, b) -> monom_isless(ht.monoms[a], ht.monoms[b], ht.ord),
-                rev=true
-            )
-
-            sat = ht.monoms[basis.monoms[crs + i][1]][end]
-            if sat > 0
-                for j in 1:length(basis.monoms[crs + i])
-                    monom = ht.monoms[basis.monoms[crs + i][j]]
-                    new_monom = copy(monom)
-                    @assert new_monom[end] >= sat 
-                    new_monom[end] -= sat
-                    new_monom[1] -= sat
-                    basis.monoms[crs + i][j] = hashtable_insert!(ht, new_monom)
-                end
-            end
-            @assert issorted(
-                basis.monoms[crs + i],
-                lt=(a, b) -> monom_isless(ht.monoms[a], ht.monoms[b], ht.ord),
-                rev=true
-            )
-            @assert basis.coeffs[crs + i][1] == 1
-        end
-    end
-
     if params.changematrix
-        resize!(basis.changematrix, basis.nfilled + matrix.npivots)
+        resize!(basis.changematrix, basis.n_filled + matrix.npivots)
         for i in 1:(matrix.npivots)
             basis.changematrix[crs + i] = Dict{Int, Dict{MonomId, C}}()
             for ((poly_idx, poly_mult), cf) in matrix.changematrix[i]
@@ -403,7 +334,7 @@ function matrix_convert_rows_to_basis_elements!(
         end
     end
 
-    basis.nfilled += matrix.npivots
+    basis.n_filled += matrix.npivots
 end
 
 function matrix_convert_rows_to_basis_elements_nf!(
@@ -416,9 +347,9 @@ function matrix_convert_rows_to_basis_elements_nf!(
     basis_resize_if_needed!(basis, matrix.npivots)
 
     @inbounds for i in 1:nlow
-        basis.nprocessed += 1
-        basis.nnonredundant += 1
-        basis.nonredundant[basis.nnonredundant] = basis.nprocessed
+        basis.n_processed += 1
+        basis.n_nonredundant += 1
+        basis.nonredundant_indices[basis.n_nonredundant] = basis.n_processed
         if isassigned(matrix.some_coeffs, i)
             row = matrix.lower_rows[i]
             matrix_insert_in_basis_hashtable_pivots!(
@@ -427,11 +358,11 @@ function matrix_convert_rows_to_basis_elements_nf!(
                 symbol_ht,
                 matrix.column_to_monom
             )
-            basis.coeffs[basis.nprocessed] = matrix.some_coeffs[i]
-            basis.monoms[basis.nprocessed] = row
+            basis.coeffs[basis.n_processed] = matrix.some_coeffs[i]
+            basis.monoms[basis.n_processed] = row
         else
-            empty!(basis.coeffs[basis.nprocessed])
-            empty!(basis.monoms[basis.nprocessed])
+            empty!(basis.coeffs[basis.n_processed])
+            empty!(basis.monoms[basis.n_processed])
         end
     end
 

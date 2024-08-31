@@ -94,7 +94,7 @@ function linalg_learn_reduce_matrix_lower_part_threaded!(
                 ncols,
                 arithmetic,
                 useful_reducers,
-                tmp_pos=-1
+                
             )
 
             if zeroed

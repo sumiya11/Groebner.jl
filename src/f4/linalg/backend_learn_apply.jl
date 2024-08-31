@@ -135,8 +135,6 @@ function linalg_apply_reduce_matrix_lower_part!(
         @invariant length(sparse_row_support) == length(sparse_row_coeffs)
 
         # Load coefficients into a dense array
-        # TODO!!!: if `row` was fully reduced to zero on the previous iteration,
-        # then do not set it to zero in here
         linalg_load_sparse_row!(row, sparse_row_support, sparse_row_coeffs)
 
         # Reduce the row with respect to the known `pivots` from the upper part
@@ -152,7 +150,7 @@ function linalg_apply_reduce_matrix_lower_part!(
             first_nnz_column,
             ncols,
             arithmetic,
-            tmp_pos=-1
+            
         )
 
         # If the row is fully reduced
@@ -204,7 +202,6 @@ function linalg_learn_interreduce_matrix_pivots!(
         trace.matrix_upper_rows,
         (matrix.upper_to_coeffs[1:nup], matrix.upper_to_mult[1:nup])
     )
-    # TODO: see "TODO: (I)" in src/groebner/groebner.jl
     push!(trace.matrix_lower_rows, (Vector{Int}(), Vector{Int}()))
 
     true
@@ -268,7 +265,7 @@ function linalg_learn_reduce_matrix_lower_part!(
             ncols,
             arithmetic,
             reducer_rows,
-            tmp_pos=-1
+            
         )
 
         # if fully reduced

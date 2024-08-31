@@ -14,15 +14,6 @@ module Groebner
 # implementation and routines for critical pair handling, symbolic
 # preprocessing, and linear algebra from msolve.
 
-const DATA = Dict(
-    :i => [], 
-    :pairs => [], 
-    :degree => [],
-    :matrix_size => [], 
-    :useful_rows => [],
-)
-const TIME = Dict(:total => 0.0, :f4_reduction! => 0.0)
-
 ###
 # Global switches
 
@@ -34,7 +25,7 @@ checks are disabled, and entail no runtime overhead.
 
 It is useful to enable this when debugging the Groebner package.
 """
-invariants_enabled() = true
+invariants_enabled() = false
 
 """
     logging_enabled() -> Bool
@@ -171,8 +162,6 @@ include("groebner/isgroebner.jl")
 include("groebner/normalform.jl")
 include("groebner/autoreduce.jl")
 include("groebner/homogenization.jl")
-
-include("groebner/groebner_semigroup.jl")
 
 # API
 include("interface.jl")

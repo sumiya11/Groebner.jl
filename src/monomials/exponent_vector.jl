@@ -109,11 +109,7 @@ function monom_isless(ea::ExponentVector, eb::ExponentVector, ::DegRevLex{true})
     elseif monom_totaldeg(ea) != monom_totaldeg(eb)
         return false
     end
-    i = length(ea)
-    @inbounds while i > 2 && ea[i] == eb[i]
-        i -= 1
-    end
-    @inbounds return ea[i] > eb[i]
+    _vec_cmp_revlex(ea, eb)
 end
 
 # DegRevLex monomial comparison (shuffled variables).
@@ -152,11 +148,7 @@ function monom_isless(ea::ExponentVector, eb::ExponentVector, ::DegLex{true})
     elseif monom_totaldeg(ea) != monom_totaldeg(eb)
         return false
     end
-    i = 2
-    @inbounds while i < length(ea) && ea[i] == eb[i]
-        i += 1
-    end
-    @inbounds return ea[i] < eb[i]
+    _vec_cmp_lex(ea, eb)
 end
 
 # DegLex monomial comparison (shuffled variables).
@@ -190,11 +182,7 @@ end
 function monom_isless(ea::ExponentVector, eb::ExponentVector, ::Lex{true})
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
-    i = 2
-    @inbounds while i < length(ea) && ea[i] == eb[i]
-        i += 1
-    end
-    @inbounds return ea[i] < eb[i]
+    _vec_cmp_lex(ea, eb)
 end
 
 # Lex monomial comparison (shuffled variables).
@@ -286,12 +274,7 @@ end
 # Checks if the gcd of monomials is constant.
 function monom_is_gcd_const(ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
     @invariant length(ea) == length(eb)
-    @inbounds for j in 2:length(ea)
-        if !iszero(ea[j]) && !iszero(eb[j])
-            return false
-        end
-    end
-    return true
+    _vec_check_orth(ea, eb)
 end
 
 # Returns the product of two monomials. Writes the result to ec.
@@ -325,12 +308,7 @@ end
 # Checks monomial divisibility.
 function monom_is_divisible(ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
     @invariant length(ea) == length(eb)
-    @inbounds for j in 2:length(ea)
-        if ea[j] < eb[j]
-            return false
-        end
-    end
-    return true
+    _vec_not_any_lt(ea, eb)
 end
 
 # Checks monomial divisibility and performs division

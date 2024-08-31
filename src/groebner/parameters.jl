@@ -320,11 +320,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
 
     selection_strategy = kwargs.selection
     if selection_strategy === :auto
-        if target_ord isa Union{Lex, ProductOrdering}
-            selection_strategy = :normal # TODO :sugar
-        else
-            selection_strategy = :normal
-        end
+        selection_strategy = :normal
     end
 
     threaded = kwargs.threaded

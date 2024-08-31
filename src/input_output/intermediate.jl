@@ -7,6 +7,8 @@
 # an array of exponent vectors and an array of coefficients. Zero polynomial is
 # represented with two empty arrays.
 
+const IRexponent = UInt32
+
 # Intermediate representation (ir) enforces a number assumtpions:
 # - Intermediate representation owns the memory.
 # - Monomials in intermediate representation are sorted and unique.
@@ -218,12 +220,12 @@ function ir_convert_ir_to_internal(ring, monoms, coeffs, params, repr)
 end
 
 function ir_convert_internal_to_ir(ring, monoms, coeffs, params)
-    monoms2 = Vector{Vector{Vector{UInt64}}}(undef, length(monoms))
+    monoms2 = Vector{Vector{Vector{IRexponent}}}(undef, length(monoms))
     coeffs2 = coeffs
     @inbounds for i in 1:length(monoms)
-        monoms2[i] = Vector{Vector{UInt64}}(undef, length(monoms[i]))
+        monoms2[i] = Vector{Vector{IRexponent}}(undef, length(monoms[i]))
         for j in 1:length(monoms[i])
-            monoms2[i][j] = Vector{UInt64}(undef, ring.nvars)
+            monoms2[i][j] = Vector{IRexponent}(undef, ring.nvars)
             monom_to_vector!(monoms2[i][j], monoms[i][j])
         end
     end

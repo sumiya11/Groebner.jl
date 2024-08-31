@@ -73,9 +73,7 @@ function linalg_reduce_matrix_lower_part_threaded_cas!(
     # Allocate thread-local buffers
     buffers_row = map(_ -> zeros(AccumType, ncols), 1:nthreads())
 
-    # NOTE: by default, @threads uses the :dynamic execution schedule, which
-    # does not guarantee that threadid() is constant within one iteration
-    @inbounds Base.Threads.@threads for i in 1:nlow
+    @inbounds Base.Threads.@threads :static for i in 1:nlow
         t_id = threadid()
         t_local_row = buffers_row[t_id]
         new_sparse_row_support, new_sparse_row_coeffs =
@@ -110,7 +108,7 @@ function linalg_reduce_matrix_lower_part_threaded_cas!(
                 ncols,
                 arithmetic,
                 sentinels,
-                tmp_pos=-1
+                
             )
 
             # If the row is fully reduced
@@ -118,7 +116,7 @@ function linalg_reduce_matrix_lower_part_threaded_cas!(
 
             # Sync point. Everything before this point becomes visible to
             # all other threads once they reach this point.
-            # NOTE: Note the absense of a total ordering on atomic operations
+            # Note the absense of a total ordering on atomic operations
             old, success = Atomix.replace!(
                 Atomix.IndexableRef(sentinels, (Int(new_sparse_row_support[1]),)),
                 Int8(0),
@@ -177,9 +175,7 @@ function linalg_reduce_dense_row_by_pivots_sparse_threadsafe0!(
     arithmetic::AbstractArithmeticZp{A, C},
     sentinels::Vector{Int8},
     active_reducers=nothing;
-    tmp_pos::Integer=-1,
-    exact_column_mapping::Bool=false,
-    computing_rref::Bool=false
+    ignore_column::Integer=-1,
 ) where {I, C <: Union{CoeffZp, CompositeCoeffZp}, A <: Union{CoeffZp, CompositeCoeffZp}}
     _, ncols = size(matrix)
     nleft, _ = matrix_ncols_filled(matrix)
@@ -204,7 +200,7 @@ function linalg_reduce_dense_row_by_pivots_sparse_threadsafe0!(
         # that modifies, modified, or will modify it
 
         # if there is no pivot with the leading column equal to i
-        if !isassigned(pivots, i) || (tmp_pos != -1 && tmp_pos == i)
+        if !isassigned(pivots, i) || ignore_column == i
             if new_pivot_column == -1
                 new_pivot_column = i
             end
@@ -215,16 +211,9 @@ function linalg_reduce_dense_row_by_pivots_sparse_threadsafe0!(
 
         # Locate the support and the coefficients of the pivot row
         pivot_support = pivots[i]
-        if exact_column_mapping
-            # if pivot comes from the new pivots
-            pivot_coeffs = matrix.some_coeffs[tmp_pos]
-        elseif i <= nleft
+        if i <= nleft
             # if pivot comes from the original pivots
-            if matrix.upper_part_is_rref || computing_rref
-                pivot_coeffs = matrix.upper_coeffs[i]
-            else
-                pivot_coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
-            end
+            pivot_coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
             record_active_reducer(active_reducers, matrix, i)
         else
             pivot_coeffs = matrix.some_coeffs[matrix.lower_to_coeffs[i]]
