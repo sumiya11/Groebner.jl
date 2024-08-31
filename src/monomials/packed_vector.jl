@@ -214,14 +214,14 @@ end
 
 # Hash of a packed monomial
 function monom_hash(x::PackedTuple1{T, B}, b::Vector{MH}) where {T, B, MH}
-    h = packed_dot_product(x.a1, b, B, 1)
+    h = _packed_vec_dot(x.a1, b, B, 1)
     mod(h, MonomHash)
 end
 function monom_hash(x::PackedTuple2{T, B}, b::Vector{MH}) where {T, B, MH}
     epc = packed_elperchunk(T, B)
-    h = packed_dot_product(x.a2, b, B, 0)
+    h = _packed_vec_dot(x.a2, b, B, 0)
     h =
-        h + packed_dot_product(
+        h + _packed_vec_dot(
             x.a1,
             view(b, (epc + 1):length(b)),
             B,
@@ -231,10 +231,10 @@ function monom_hash(x::PackedTuple2{T, B}, b::Vector{MH}) where {T, B, MH}
 end
 function monom_hash(x::PackedTuple3{T, B}, b::Vector{MH}) where {T, B, MH}
     epc = packed_elperchunk(T, B)
-    h = packed_dot_product(x.a3, b, B, 0)
-    h = h + packed_dot_product(x.a2, view(b, (epc + 1):(2 * epc)), B, 0)
+    h = _packed_vec_dot(x.a3, b, B, 0)
+    h = h + _packed_vec_dot(x.a2, view(b, (epc + 1):(2 * epc)), B, 0)
     h =
-        h + packed_dot_product(
+        h + _packed_vec_dot(
             x.a1,
             view(b, (2 * epc + 1):length(b)),
             B,
@@ -244,11 +244,11 @@ function monom_hash(x::PackedTuple3{T, B}, b::Vector{MH}) where {T, B, MH}
 end
 function monom_hash(x::PackedTuple4{T, B}, b::Vector{MH}) where {T, B, MH}
     epc = packed_elperchunk(T, B)
-    h = packed_dot_product(x.a4, b, B, 0)
-    h = packed_dot_product(x.a3, view(b, (epc + 1):(2 * epc)), B, 0)
-    h = h + packed_dot_product(x.a2, view(b, (2 * epc + 1):(3 * epc)), B, 0)
+    h = _packed_vec_dot(x.a4, b, B, 0)
+    h = _packed_vec_dot(x.a3, view(b, (epc + 1):(2 * epc)), B, 0)
+    h = h + _packed_vec_dot(x.a2, view(b, (2 * epc + 1):(3 * epc)), B, 0)
     h =
-        h + packed_dot_product(
+        h + _packed_vec_dot(
             x.a1,
             view(b, (3 * epc + 1):length(b)),
             B,
@@ -261,16 +261,16 @@ end
 function monom_to_vector!(tmp::Vector{I}, pv::PackedTuple1{T, B}) where {I, T, B}
     epc = packed_elperchunk(T, B)
     indent = epc - min(epc - 1, length(tmp))
-    packed_unpack!(tmp, pv.a1, B, indent)
+    _packed_vec_unpack!(tmp, pv.a1, B, indent)
     tmp
 end
 function monom_to_vector!(tmp::Vector{I}, pv::PackedTuple2{T, B}) where {I, T, B}
     epc = packed_elperchunk(T, B)
     (length(tmp) < epc) && return monom_to_vector!(tmp, PackedTuple1{T, B}(pv.a1))
     indent = 0
-    packed_unpack!(tmp, pv.a2, B, indent)
+    _packed_vec_unpack!(tmp, pv.a2, B, indent)
     indent = epc - min(epc - 1, length(tmp) - epc)
-    packed_unpack!(view(tmp, (epc + 1):length(tmp)), pv.a1, B, indent)
+    _packed_vec_unpack!(view(tmp, (epc + 1):length(tmp)), pv.a1, B, indent)
     tmp
 end
 function monom_to_vector!(tmp::Vector{I}, pv::PackedTuple3{T, B}) where {I, T, B}
@@ -278,11 +278,11 @@ function monom_to_vector!(tmp::Vector{I}, pv::PackedTuple3{T, B}) where {I, T, B
     (length(tmp) < 2 * epc) &&
         return monom_to_vector!(tmp, PackedTuple2{T, B}(pv.a1, pv.a2))
     indent = 0
-    packed_unpack!(tmp, pv.a3, B, indent)
+    _packed_vec_unpack!(tmp, pv.a3, B, indent)
     indent = 0
-    packed_unpack!(view(tmp, (epc + 1):(2 * epc)), pv.a2, B, indent)
+    _packed_vec_unpack!(view(tmp, (epc + 1):(2 * epc)), pv.a2, B, indent)
     indent = epc - min(epc - 1, length(tmp) - 2 * epc)
-    packed_unpack!(view(tmp, (2 * epc + 1):length(tmp)), pv.a1, B, indent)
+    _packed_vec_unpack!(view(tmp, (2 * epc + 1):length(tmp)), pv.a1, B, indent)
     tmp
 end
 function monom_to_vector!(tmp::Vector{I}, pv::PackedTuple4{T, B}) where {I, T, B}
@@ -290,13 +290,13 @@ function monom_to_vector!(tmp::Vector{I}, pv::PackedTuple4{T, B}) where {I, T, B
     (length(tmp) < 3 * epc) &&
         return monom_to_vector!(tmp, PackedTuple3{T, B}(pv.a1, pv.a2, pv.a3))
     indent = 0
-    packed_unpack!(tmp, pv.a4, B, indent)
+    _packed_vec_unpack!(tmp, pv.a4, B, indent)
     indent = 0
-    packed_unpack!(view(tmp, (epc + 1):(2 * epc)), pv.a3, B, indent)
+    _packed_vec_unpack!(view(tmp, (epc + 1):(2 * epc)), pv.a3, B, indent)
     indent = 0
-    packed_unpack!(view(tmp, (2 * epc + 1):(3 * epc)), pv.a2, B, indent)
+    _packed_vec_unpack!(view(tmp, (2 * epc + 1):(3 * epc)), pv.a2, B, indent)
     indent = epc - min(epc - 1, length(tmp) - 3 * epc)
-    packed_unpack!(view(tmp, (3 * epc + 1):length(tmp)), pv.a1, B, indent)
+    _packed_vec_unpack!(view(tmp, (3 * epc + 1):length(tmp)), pv.a1, B, indent)
     tmp
 end
 
