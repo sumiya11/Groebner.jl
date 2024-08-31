@@ -222,6 +222,9 @@ end
 function ir_convert_internal_to_ir(ring, monoms, coeffs, params)
     monoms2 = Vector{Vector{Vector{IRexponent}}}(undef, length(monoms))
     coeffs2 = coeffs
+    if eltype(eltype(coeffs)) <: AbstractFloat
+        coeffs2 = map(cc -> map(c -> UInt(c), cc), coeffs2)
+    end
     @inbounds for i in 1:length(monoms)
         monoms2[i] = Vector{Vector{IRexponent}}(undef, length(monoms[i]))
         for j in 1:length(monoms[i])

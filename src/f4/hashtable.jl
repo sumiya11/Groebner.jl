@@ -27,16 +27,6 @@ const MonomId = Int32
 # Division mask of a monomial
 const DivisionMask = UInt32
 
-# Hashvalue of a single monomial
-struct Hashvalue
-    # index of a monomial in the F4 matrix
-    idx::Int32
-    # hash of a monomial
-    hash::MonomHash
-    # divisibility mask to speed up divisibility checks
-    divmask::DivisionMask
-end
-
 # Hashtable implements open addressing with linear scan.
 mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractMonomialOrdering}
     #= Data =#
@@ -479,8 +469,7 @@ function hashtable_check_monomial_division_in_update(
             j += 1
             continue
         end
-        if ht.use_divmask &&
-           !divmask_is_probably_divisible(ht.divmasks[a[j]], divmask)
+        if ht.use_divmask && !divmask_is_probably_divisible(ht.divmasks[a[j]], divmask)
             j += 1
             continue
         end

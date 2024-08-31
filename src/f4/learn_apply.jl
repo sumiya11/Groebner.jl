@@ -144,8 +144,7 @@ function f4_reducegb_learn!(
         end
         k += 1
         basis.nonredundant_indices[k] = basis.n_filled - i + 1
-        basis.divmasks[k] =
-            ht.divmasks[basis.monoms[basis.nonredundant_indices[k]][1]]
+        basis.divmasks[k] = ht.divmasks[basis.monoms[basis.nonredundant_indices[k]][1]]
         i += 1
     end
     basis.n_nonredundant = k
