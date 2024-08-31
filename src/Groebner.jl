@@ -96,6 +96,7 @@ end
 include("utils/logging.jl")
 include("utils/invariants.jl")
 include("utils/simd.jl")
+include("utils/packed.jl")
 include("utils/plots.jl")
 
 # Test systems, such as katsura, cyclic, etc

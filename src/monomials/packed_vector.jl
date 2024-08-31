@@ -36,6 +36,17 @@ function monom_overflow_check(a::AbstractPackedTuple{T, B}) where {T, B}
     monom_overflow_check(monom_totaldeg(a), B)
 end
 
+function packed_elperchunk(::Type{T}, ::Type{B}) where {T, B}
+    div(sizeof(T), sizeof(B))
+end
+
+# How many bytes are allocated for the monomial degree.
+packed_degsize(::Type{T}, ::Type{B}, n) where {T, B} = sizeof(B)
+
+# How many chunks of type T are needed to store n elements of type B.
+packed_nchunks(::Type{T}, ::Type{B}, n) where {T, B} =
+    div((n - 1) * sizeof(B) + packed_degsize(T, B, n), sizeof(T)) + 1
+
 const _defined_packed_tuples =
     ((:PackedTuple1, 1), (:PackedTuple2, 2), (:PackedTuple3, 3), (:PackedTuple4, 4))
 
@@ -61,7 +72,7 @@ for (op, n) in _defined_packed_tuples
     end
 end
 
-# Creates a packed monomial of the given type from regular vector `ev`
+# Creates a packed monomial from a regular vector
 function monom_construct_from_vector(
     ::Type{PackedTuple1{T, B}},
     ev::Vector{U}
@@ -299,7 +310,6 @@ function monom_is_supported_ordering(
     Ord <: Union{DegRevLex{true}, InputOrdering}
 end
 
-# TODO: specialize for T == UInt64
 function monom_isless(
     ea::PackedTuple1{T, B},
     eb::PackedTuple1{T, B},
@@ -400,8 +410,10 @@ function monom_lcm!(
     ea::PackedTuple1{T, B},
     eb::PackedTuple1{T, B}
 ) where {T, B}
-    x, si = packed_max(ea.a1, eb.a1, B, Val(1))
-    x += si << ((sizeof(T) - sizeof(B)) * 8)
+    x = _packed_vec_max(ea.a1, eb.a1)
+    x = x & xor(typemax(T), T(typemax(B)) << ((sizeof(T) - sizeof(B)) * 8))
+    tdeg = T(_packed_vec_reduce(x))
+    x = x + (tdeg << ((sizeof(T) - sizeof(B)) * 8))
     ans = PackedTuple1{T, B}(x)
     monom_overflow_check(ans)
     ans
@@ -411,9 +423,11 @@ function monom_lcm!(
     ea::PackedTuple2{T, B},
     eb::PackedTuple2{T, B}
 ) where {T, B}
-    x1, si1 = packed_max(ea.a1, eb.a1, B, Val(1))
-    x2, si2 = packed_max(ea.a2, eb.a2, B, Val(0))
-    x1 = x1 + ((si1 + si2) << ((sizeof(T) - sizeof(B)) * 8))
+    x1 = _packed_vec_max(ea.a1, eb.a1)
+    x2 = _packed_vec_max(ea.a2, eb.a2)
+    x1 = x1 & xor(typemax(T), T(typemax(B)) << ((sizeof(T) - sizeof(B)) * 8))
+    tdeg = T(_packed_vec_reduce(x1) + _packed_vec_reduce(x2))
+    x1 = x1 + (tdeg << ((sizeof(T) - sizeof(B)) * 8))
     ans = PackedTuple2{T, B}(x1, x2)
     monom_overflow_check(ans)
     ans
@@ -423,10 +437,12 @@ function monom_lcm!(
     ea::PackedTuple3{T, B},
     eb::PackedTuple3{T, B}
 ) where {T, B}
-    x1, si1 = packed_max(ea.a1, eb.a1, B, Val(1))
-    x2, si2 = packed_max(ea.a2, eb.a2, B, Val(0))
-    x3, si3 = packed_max(ea.a3, eb.a3, B, Val(0))
-    x1 = x1 + ((si1 + si2 + si3) << ((sizeof(T) - sizeof(B)) * 8))
+    x1 = _packed_vec_max(ea.a1, eb.a1)
+    x2 = _packed_vec_max(ea.a2, eb.a2)
+    x3 = _packed_vec_max(ea.a3, eb.a3)
+    x1 = x1 & xor(typemax(T), T(typemax(B)) << ((sizeof(T) - sizeof(B)) * 8))
+    tdeg = T(_packed_vec_reduce(x1) + _packed_vec_reduce(x2) + _packed_vec_reduce(x3))
+    x1 = x1 + (tdeg << ((sizeof(T) - sizeof(B)) * 8))
     ans = PackedTuple3{T, B}(x1, x2, x3)
     monom_overflow_check(ans)
     ans
@@ -436,57 +452,46 @@ function monom_lcm!(
     ea::PackedTuple4{T, B},
     eb::PackedTuple4{T, B}
 ) where {T, B}
-    x1, si1 = packed_max(ea.a1, eb.a1, B, Val(1))
-    x2, si2 = packed_max(ea.a2, eb.a2, B, Val(0))
-    x3, si3 = packed_max(ea.a3, eb.a3, B, Val(0))
-    x4, si4 = packed_max(ea.a4, eb.a4, B, Val(0))
-    x1 = x1 + ((si1 + si2 + si3 + si4) << ((sizeof(T) - sizeof(B)) * 8))
+    x1 = _packed_vec_max(ea.a1, eb.a1)
+    x2 = _packed_vec_max(ea.a2, eb.a2)
+    x3 = _packed_vec_max(ea.a3, eb.a3)
+    x4 = _packed_vec_max(ea.a4, eb.a4)
+    x1 = x1 & xor(typemax(T), T(typemax(B)) << ((sizeof(T) - sizeof(B)) * 8))
+    tdeg = T(_packed_vec_reduce(x1) + _packed_vec_reduce(x2) + _packed_vec_reduce(x3) + _packed_vec_reduce(x4))
+    x1 = x1 + (tdeg << ((sizeof(T) - sizeof(B)) * 8))
     ans = PackedTuple4{T, B}(x1, x2, x3, x4)
     monom_overflow_check(ans)
     ans
 end
 
 function monom_is_gcd_const(ea::PackedTuple1{T, B}, eb::PackedTuple1{T, B}) where {T, B}
-    if !packed_is_zero_dot_product(ea.a1, eb.a1, B, Val(1))
-        return false
-    end
-    return true
+    ea1 = ea.a1 & xor(typemax(T), T(typemax(B)) << ((sizeof(T) - sizeof(B)) * 8))
+    eb1 = eb.a1 & xor(typemax(T), T(typemax(B)) << ((sizeof(T) - sizeof(B)) * 8))
+    _packed_vec_is_orth(ea1, eb1)
 end
 function monom_is_gcd_const(ea::PackedTuple2{T, B}, eb::PackedTuple2{T, B}) where {T, B}
-    if !packed_is_zero_dot_product(ea.a1, eb.a1, B, Val(1))
-        return false
-    end
-    if !packed_is_zero_dot_product(ea.a2, eb.a2, B, Val(0))
-        return false
-    end
-    return true
+    ea1 = ea.a1 & xor(typemax(T), T(typemax(B)) << ((sizeof(T) - sizeof(B)) * 8))
+    eb1 = eb.a1 & xor(typemax(T), T(typemax(B)) << ((sizeof(T) - sizeof(B)) * 8))
+    res1 = _packed_vec_is_orth(ea1, eb1)
+    res2 = _packed_vec_is_orth(ea.a2, eb.a2)
+    res1 && res2
 end
 function monom_is_gcd_const(ea::PackedTuple3{T, B}, eb::PackedTuple3{T, B}) where {T, B}
-    if !packed_is_zero_dot_product(ea.a1, eb.a1, B, Val(1))
-        return false
-    end
-    if !packed_is_zero_dot_product(ea.a2, eb.a2, B, Val(0))
-        return false
-    end
-    if !packed_is_zero_dot_product(ea.a3, eb.a3, B, Val(0))
-        return false
-    end
-    return true
+    ea1 = ea.a1 & xor(typemax(T), T(typemax(B)) << ((sizeof(T) - sizeof(B)) * 8))
+    eb1 = eb.a1 & xor(typemax(T), T(typemax(B)) << ((sizeof(T) - sizeof(B)) * 8))
+    res1 = _packed_vec_is_orth(ea1, eb1)
+    res2 = _packed_vec_is_orth(ea.a2, eb.a2)
+    res3 = _packed_vec_is_orth(ea.a3, eb.a3)
+    res1 && res2 && res3
 end
 function monom_is_gcd_const(ea::PackedTuple4{T, B}, eb::PackedTuple4{T, B}) where {T, B}
-    if !packed_is_zero_dot_product(ea.a1, eb.a1, B, Val(1))
-        return false
-    end
-    if !packed_is_zero_dot_product(ea.a2, eb.a2, B, Val(0))
-        return false
-    end
-    if !packed_is_zero_dot_product(ea.a3, eb.a3, B, Val(0))
-        return false
-    end
-    if !packed_is_zero_dot_product(ea.a4, eb.a4, B, Val(0))
-        return false
-    end
-    return true
+    ea1 = ea.a1 & xor(typemax(T), T(typemax(B)) << ((sizeof(T) - sizeof(B)) * 8))
+    eb1 = eb.a1 & xor(typemax(T), T(typemax(B)) << ((sizeof(T) - sizeof(B)) * 8))
+    res1 = _packed_vec_is_orth(ea1, eb1)
+    res2 = _packed_vec_is_orth(ea.a2, eb.a2)
+    res3 = _packed_vec_is_orth(ea.a3, eb.a3)
+    res4 = _packed_vec_is_orth(ea.a4, eb.a4)
+    res1 && res2 && res3 && res4
 end
 
 function monom_product!(
@@ -542,8 +547,7 @@ function monom_division!(
     eb::PackedTuple1{T, B}
 ) where {T, B}
     x = ea.a1 - eb.a1
-    ans = PackedTuple1{T, B}(x)
-    ans
+    PackedTuple1{T, B}(x)
 end
 function monom_division!(
     ec::PackedTuple2{T, B},
@@ -552,8 +556,7 @@ function monom_division!(
 ) where {T, B}
     x1 = ea.a1 - eb.a1
     x2 = ea.a2 - eb.a2
-    ans = PackedTuple2{T, B}(x1, x2)
-    ans
+    PackedTuple2{T, B}(x1, x2)
 end
 function monom_division!(
     ec::PackedTuple3{T, B},
@@ -563,8 +566,7 @@ function monom_division!(
     x1 = ea.a1 - eb.a1
     x2 = ea.a2 - eb.a2
     x3 = ea.a3 - eb.a3
-    ans = PackedTuple3{T, B}(x1, x2, x3)
-    ans
+    PackedTuple3{T, B}(x1, x2, x3)
 end
 function monom_division!(
     ec::PackedTuple4{T, B},
@@ -575,51 +577,32 @@ function monom_division!(
     x2 = ea.a2 - eb.a2
     x3 = ea.a3 - eb.a3
     x4 = ea.a4 - eb.a4
-    ans = PackedTuple4{T, B}(x1, x2, x3, x4)
-    ans
+    PackedTuple4{T, B}(x1, x2, x3, x4)
 end
 
 function monom_is_divisible(ea::PackedTuple1{T, B}, eb::PackedTuple1{T, B}) where {T, B}
-    if !packed_ge(ea.a1, eb.a1, B, Val(1))
-        return false
-    end
-    return true
+    res1 = _packed_vec_ge(ea.a1, eb.a1)
+    res1
 end
+
 function monom_is_divisible(ea::PackedTuple2{T, B}, eb::PackedTuple2{T, B}) where {T, B}
-    if !packed_ge(ea.a1, eb.a1, B, Val(1))
-        return false
-    end
-    if !packed_ge(ea.a2, eb.a2, B, Val(0))
-        return false
-    end
-    return true
+    res1 = _packed_vec_ge(ea.a1, eb.a1)
+    res2 = _packed_vec_ge(ea.a2, eb.a2)
+    res1 && res2
 end
+
 function monom_is_divisible(ea::PackedTuple3{T, B}, eb::PackedTuple3{T, B}) where {T, B}
-    if !packed_ge(ea.a1, eb.a1, B, Val(1))
-        return false
-    end
-    if !packed_ge(ea.a2, eb.a2, B, Val(0))
-        return false
-    end
-    if !packed_ge(ea.a3, eb.a3, B, Val(0))
-        return false
-    end
-    return true
+    res1 = _packed_vec_ge(ea.a1, eb.a1)
+    res2 = _packed_vec_ge(ea.a2, eb.a2)
+    res3 = _packed_vec_ge(ea.a3, eb.a3)
+    res1 && res2 && res3
 end
 function monom_is_divisible(ea::PackedTuple4{T, B}, eb::PackedTuple4{T, B}) where {T, B}
-    if !packed_ge(ea.a1, eb.a1, B, Val(1))
-        return false
-    end
-    if !packed_ge(ea.a2, eb.a2, B, Val(0))
-        return false
-    end
-    if !packed_ge(ea.a3, eb.a3, B, Val(0))
-        return false
-    end
-    if !packed_ge(ea.a4, eb.a4, B, Val(0))
-        return false
-    end
-    return true
+    res1 = _packed_vec_ge(ea.a1, eb.a1)
+    res2 = _packed_vec_ge(ea.a2, eb.a2)
+    res3 = _packed_vec_ge(ea.a3, eb.a3)
+    res4 = _packed_vec_ge(ea.a4, eb.a4)
+    res1 && res2 && res3 && res4
 end
 
 function monom_is_divisible!(

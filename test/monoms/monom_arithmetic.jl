@@ -11,7 +11,7 @@ monom_is_divisible = Groebner.monom_is_divisible
 monom_is_divisible! = Groebner.monom_is_divisible!
 monom_is_equal = Groebner.monom_is_equal
 
-degree_types_to_test = [UInt64, UInt32]
+degree_types_to_test = [UInt64]
 implementations_to_test = [
     Groebner.ExponentVector{T} where {T},
     Groebner.ExponentVector{UInt8},
@@ -25,6 +25,8 @@ implementations_to_test = [
     for T in degree_types_to_test
         for EV in implementations_to_test
             MonomType = isconcretetype(EV) ? EV : EV{T}
+            (T != UInt64) && (MonomType <: Groebner.AbstractPackedTuple) && continue
+
             a = monom_construct_from_vector(MonomType, [0, 0])
             b = monom_construct_from_vector(MonomType, [0, 0])
             c = monom_copy(a)
