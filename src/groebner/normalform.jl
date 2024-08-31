@@ -88,15 +88,9 @@ function __normalform1(
     @invariant ir_is_valid(ring, monoms, coeffs)
     @invariant ir_is_valid(ring_tbr, monoms_tbr, coeffs_tbr)
 
-    _, ring2, monoms2, coeffs2 =
-        ir_convert_ir_to_internal(ring, monoms, coeffs, params, params.representation)
-    _, ring_tbr2, monoms_tbr2, coeffs_tbr2 = ir_convert_ir_to_internal(
-        ring_tbr,
-        monoms_tbr,
-        coeffs_tbr,
-        params,
-        params.representation
-    )
+    _, ring2, monoms2, coeffs2 = ir_convert_ir_to_internal(ring, monoms, coeffs, params)
+    _, ring_tbr2, monoms_tbr2, coeffs_tbr2 =
+        ir_convert_ir_to_internal(ring_tbr, monoms_tbr, coeffs_tbr, params)
     monoms_reduced2, coeffs_reduced2 =
         normalform2(ring2, monoms2, coeffs2, ring_tbr2, monoms_tbr2, coeffs_tbr2, params)
     monoms_reduced, coeffs_reduced =

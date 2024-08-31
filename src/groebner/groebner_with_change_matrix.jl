@@ -42,8 +42,7 @@ end
 
 function __groebner_with_change_matrix1(ring, monoms, coeffs, params)
     @invariant ir_is_valid(ring, monoms, coeffs)
-    _, ring2, monoms2, coeffs2 =
-        ir_convert_ir_to_internal(ring, monoms, coeffs, params, params.representation)
+    _, ring2, monoms2, coeffs2 = ir_convert_ir_to_internal(ring, monoms, coeffs, params)
     gb_monoms2, gb_coeffs2, matrix_monoms2, matrix_coeffs2 =
         groebner_with_change_matrix2(ring2, monoms2, coeffs2, params)
     gb_monoms, gb_coeffs = ir_convert_internal_to_ir(ring2, gb_monoms2, gb_coeffs2, params)

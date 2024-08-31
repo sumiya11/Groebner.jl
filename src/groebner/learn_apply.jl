@@ -57,7 +57,7 @@ function __groebner_learn1(
 ) where {I <: Integer, C <: Coeff}
     @invariant ir_is_valid(ring, monoms, coeffs)
     term_sorting_permutations, ring2, monoms2, coeffs2 =
-        ir_convert_ir_to_internal(ring, monoms, coeffs, params, params.representation)
+        ir_convert_ir_to_internal(ring, monoms, coeffs, params)
     trace, gb_monoms2, gb_coeffs2 = groebner_learn2(ring2, monoms2, coeffs2, params)
     gb_monoms, gb_coeffs = ir_convert_internal_to_ir(ring2, gb_monoms2, gb_coeffs2, params)
 

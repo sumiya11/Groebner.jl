@@ -13,7 +13,10 @@ end
 ###
 # Conversion from DynamicPolynomials.jl to intermediate representation and back.
 
-function Groebner.io_convert_polynomials_to_ir(polynomials::Vector{<:AbstractPolynomialLike{T}}, options::Groebner.KeywordArguments) where {T}
+function Groebner.io_convert_polynomials_to_ir(
+    polynomials::Vector{<:AbstractPolynomialLike{T}},
+    options::Groebner.KeywordArguments
+) where {T}
     isempty(polynomials) && throw(DomainError("Empty input."))
     ring = io_extract_ring(polynomials)
     coeffs = io_extract_coeffs(ring, polynomials)
@@ -24,7 +27,11 @@ function Groebner.io_convert_polynomials_to_ir(polynomials::Vector{<:AbstractPol
             reverse!(coeffs[i])
         end
     end
-    ring = Groebner.PolyRing(ring.nvars, Groebner.ordering_transform(ring.ord, var_to_index), ring.ch)
+    ring = Groebner.PolyRing(
+        ring.nvars,
+        Groebner.ordering_transform(ring.ord, var_to_index),
+        ring.ch
+    )
     options.ordering = Groebner.ordering_transform(options.ordering, var_to_index)
     ring, monoms, coeffs, options
 end
@@ -62,9 +69,12 @@ function dp_ord_to_symbol(ord)
     }
         :degrevlex
     else
-        throw(DomainError(ord,
-            """This ordering from DynamicPolynomials.jl is not supported by Groebner.jl. 
-            Consider opening a Github issue if you need it.""")
+        throw(
+            DomainError(
+                ord,
+                """This ordering from DynamicPolynomials.jl is not supported by Groebner.jl. 
+                Consider opening a Github issue if you need it."""
+            )
         )
     end
 end
@@ -140,13 +150,11 @@ function _io_convert_to_output(
         for j in 1:length(gbcoeffs[i])
             cfs[j] = gbcoeffs[i][j]
         end
-        expvectors =
-            [gbexps[i][j] for j in 1:length(gbexps[i])]
+        expvectors = [gbexps[i][j] for j in 1:length(gbexps[i])]
         expvars = map(t -> t[1] * prod(map(^, origvars, t[2])), zip(cfs, expvectors))
         exported[i] = sum(expvars; init=zero(origpolys[1]))
     end
     map(identity, exported)
 end
-
 
 end

@@ -33,8 +33,7 @@ end
 
 function __isgroebner1(ring, monoms, coeffs, params)
     @invariant ir_is_valid(ring, monoms, coeffs)
-    _, ring2, monoms2, coeffs2 =
-        ir_convert_ir_to_internal(ring, monoms, coeffs, params, params.representation)
+    _, ring2, monoms2, coeffs2 = ir_convert_ir_to_internal(ring, monoms, coeffs, params)
     isgroebner2(ring2, monoms2, coeffs2, params)
 end
 

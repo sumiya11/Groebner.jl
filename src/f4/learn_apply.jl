@@ -103,10 +103,7 @@ function f4_reducegb_learn!(
 
         matrix.upper_to_coeffs[row_idx] = basis.nonredundant_indices[i]
         matrix.upper_to_mult[row_idx] = hashtable_insert!(ht, etmp)
-        # set lead index as 1
-        hv = symbol_ht.hashdata[uprows[row_idx][1]]
-        symbol_ht.hashdata[uprows[row_idx][1]] =
-            Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask)
+        symbol_ht.labels[uprows[row_idx][1]] = UNKNOWN_PIVOT_COLUMN
     end
     trace.nonredundant_indices_before_reduce =
         basis.nonredundant_indices[1:(basis.n_nonredundant)]
@@ -117,8 +114,7 @@ function f4_reducegb_learn!(
     f4_symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
     # set all pivots to unknown
     @inbounds for i in (symbol_ht.offset):(symbol_ht.load)
-        hv = symbol_ht.hashdata[i]
-        symbol_ht.hashdata[i] = Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask)
+        symbol_ht.labels[i] = UNKNOWN_PIVOT_COLUMN
     end
 
     matrix_fill_column_to_monom_map!(matrix, symbol_ht)
@@ -148,8 +144,7 @@ function f4_reducegb_learn!(
         end
         k += 1
         basis.nonredundant_indices[k] = basis.n_filled - i + 1
-        basis.divmasks[k] =
-            ht.hashdata[basis.monoms[basis.nonredundant_indices[k]][1]].divmask
+        basis.divmasks[k] = ht.divmasks[basis.monoms[basis.nonredundant_indices[k]][1]]
         i += 1
     end
     basis.n_nonredundant = k
@@ -228,13 +223,12 @@ function matrix_fill_column_to_monom_map!(
     symbol_ht::MonomialHashtable
 )
     # monoms from symbolic table represent one column in the matrix
-    hdata = symbol_ht.hashdata
     load = symbol_ht.load
 
     # number of pivotal cols
     k = 0
     @inbounds for i in (symbol_ht.offset):load
-        if hdata[i].idx == PIVOT_COLUMN
+        if symbol_ht.labels[i] == PIVOT_COLUMN
             k += 1
         end
     end
@@ -248,21 +242,20 @@ function matrix_fill_column_to_monom_map!(
     # store the other direction of mapping,
     # hash -> column
     @inbounds for k in 1:length(column_to_monom)
-        hv = hdata[column_to_monom[k]]
-        hdata[column_to_monom[k]] = Hashvalue(k, hv.hash, hv.divmask)
+        symbol_ht.labels[column_to_monom[k]] = k
     end
 
     @inbounds for k in 1:(matrix.nrows_filled_upper)
         row = matrix.upper_rows[k]
         for j in 1:length(row)
-            row[j] = hdata[row[j]].idx
+            row[j] = symbol_ht.labels[row[j]]
         end
     end
 
     @inbounds for k in 1:(matrix.nrows_filled_lower)
         row = matrix.lower_rows[k]
         for j in 1:length(row)
-            row[j] = hdata[row[j]].idx
+            row[j] = symbol_ht.labels[row[j]]
         end
     end
 end
@@ -353,16 +346,14 @@ function f4_symbolic_preprocessing!(
         mult_idx = lowmults[i]
         poly_idx = lowrows[i]
 
-        h = hashtable.hashdata[mult_idx].hash
+        h = hashtable.hashvals[mult_idx]
         etmp = hashtable.monoms[mult_idx]
         rpoly = basis.monoms[poly_idx]
 
         matrix.lower_rows[i] =
             matrix_polynomial_multiple_to_row!(matrix, symbol_ht, hashtable, h, etmp, rpoly)
 
-        hv = symbol_ht.hashdata[matrix.lower_rows[i][1]]
-        symbol_ht.hashdata[matrix.lower_rows[i][1]] =
-            Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask)
+        symbol_ht.labels[matrix.lower_rows[i][1]] = PIVOT_COLUMN
 
         matrix.lower_to_coeffs[i] = poly_idx
     end
@@ -374,16 +365,14 @@ function f4_symbolic_preprocessing!(
         mult_idx = upmults[i]
         poly_idx = uprows[i]
 
-        h = hashtable.hashdata[mult_idx].hash
+        h = hashtable.hashvals[mult_idx]
         etmp = hashtable.monoms[mult_idx]
         rpoly = basis.monoms[poly_idx]
 
         matrix.upper_rows[i] =
             matrix_polynomial_multiple_to_row!(matrix, symbol_ht, hashtable, h, etmp, rpoly)
 
-        hv = symbol_ht.hashdata[matrix.upper_rows[i][1]]
-        symbol_ht.hashdata[matrix.upper_rows[i][1]] =
-            Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask)
+        symbol_ht.labels[matrix.upper_rows[i][1]] = PIVOT_COLUMN
 
         matrix.upper_to_coeffs[i] = poly_idx
     end
@@ -393,9 +382,8 @@ function f4_symbolic_preprocessing!(
 
     i = MonomId(symbol_ht.offset)
     @inbounds while i <= symbol_ht.load
-        if symbol_ht.hashdata[i].idx == NON_PIVOT_COLUMN
-            hv = symbol_ht.hashdata[i]
-            symbol_ht.hashdata[i] = Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask)
+        if symbol_ht.labels[i] == NON_PIVOT_COLUMN
+            symbol_ht.labels[i] = UNKNOWN_PIVOT_COLUMN
         end
         i += MonomId(1)
     end
@@ -441,7 +429,7 @@ function f4_autoreduce_apply!(
         mult_idx = upmults[i]
         poly_idx = uprows[i]
 
-        h = hashtable.hashdata[mult_idx].hash
+        h = hashtable.hashvals[mult_idx]
         etmp = hashtable.monoms[mult_idx]
         rpoly = basis.monoms[poly_idx]
 
@@ -454,8 +442,7 @@ function f4_autoreduce_apply!(
 
     # set all pivots to unknown
     @inbounds for i in (symbol_ht.offset):(symbol_ht.load)
-        hv = symbol_ht.hashdata[i]
-        symbol_ht.hashdata[i] = Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask)
+        symbol_ht.labels[i] = UNKNOWN_PIVOT_COLUMN
     end
 
     matrix.nrows_filled_lower = nlow
@@ -487,7 +474,7 @@ function f4_autoreduce_apply!(
     for i in 1:length(output_nonredundant)
         basis.nonredundant_indices[i] = output_nonredundant[i]
         basis.divmasks[i] =
-            hashtable.hashdata[basis.monoms[basis.nonredundant_indices[i]][1]].divmask
+            hashtable.divmasks[basis.monoms[basis.nonredundant_indices[i]][1]]
     end
     basis.n_nonredundant = length(output_nonredundant)
     true

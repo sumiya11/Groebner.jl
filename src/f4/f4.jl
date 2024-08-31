@@ -96,15 +96,13 @@ function f4_symbolic_preprocessing!(
     # are added to the matrix, and the loop accounts for that.
     i = symbol_ht.offset
     @inbounds while i <= symbol_ht.load
-        if symbol_ht.hashdata[i].idx != NON_PIVOT_COLUMN
+        if symbol_ht.labels[i] != NON_PIVOT_COLUMN
             i += 1
             continue
         end
         matrix_resize_upper_part_if_needed!(matrix, matrix.nrows_filled_upper + 1)
 
-        hashval = symbol_ht.hashdata[i]
-        symbol_ht.hashdata[i] =
-            Hashvalue(UNKNOWN_PIVOT_COLUMN, hashval.hash, hashval.divmask)
+        symbol_ht.labels[i] = UNKNOWN_PIVOT_COLUMN
         matrix.ncols_left += 1
         f4_find_multiplied_reducer!(basis, matrix, ht, symbol_ht, MonomId(i))
         i += 1
@@ -140,16 +138,13 @@ function f4_autoreduce!(
         )
         matrix.upper_to_coeffs[row_idx] = basis.nonredundant_indices[i]
         matrix.upper_to_mult[row_idx] = hashtable_insert!(ht, etmp)
-        hv = symbol_ht.hashdata[uprows[row_idx][1]]
-        symbol_ht.hashdata[uprows[row_idx][1]] =
-            Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask)
+        symbol_ht.labels[uprows[row_idx][1]] = UNKNOWN_PIVOT_COLUMN
     end
 
     f4_symbolic_preprocessing!(basis, matrix, ht, symbol_ht)
 
     @inbounds for i in (symbol_ht.offset):(symbol_ht.load)
-        hv = symbol_ht.hashdata[i]
-        symbol_ht.hashdata[i] = Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask)
+        symbol_ht.labels[i] = UNKNOWN_PIVOT_COLUMN
     end
 
     matrix_fill_column_to_monom_map!(matrix, symbol_ht)
@@ -177,8 +172,7 @@ function f4_autoreduce!(
         end
         k += 1
         basis.nonredundant_indices[k] = basis.n_filled - i + 1
-        basis.divmasks[k] =
-            ht.hashdata[basis.monoms[basis.nonredundant_indices[k]][1]].divmask
+        basis.divmasks[k] = ht.divmasks[basis.monoms[basis.nonredundant_indices[k]][1]]
         i += 1
     end
     basis.n_nonredundant = k
@@ -215,7 +209,7 @@ function f4_select_tobereduced!(
     basis.is_redundant .= 0
     @inbounds for i in 1:(basis.n_nonredundant)
         basis.nonredundant_indices[i] = i
-        basis.divmasks[i] = ht.hashdata[basis.monoms[i][1]].divmask
+        basis.divmasks[i] = ht.divmasks[basis.monoms[i][1]]
     end
 
     nothing
@@ -255,7 +249,7 @@ function f4_find_multiplied_reducer!(
 )
     @inbounds monom = symbol_ht.monoms[monomid]
     @inbounds quotient = ht.monoms[1]
-    @inbounds divmask = symbol_ht.hashdata[monomid].divmask
+    @inbounds divmask = symbol_ht.divmasks[monomid]
 
     # Start of the search loop.
     i = 1
@@ -282,8 +276,8 @@ function f4_find_multiplied_reducer!(
     end
 
     # Using the fact that the hash is linear.
-    @inbounds quotient_hash = symbol_ht.hashdata[monomid].hash - ht.hashdata[poly[1]].hash
-    @invariant quotient_hash == monom_hash(quotient, ht.hasher)
+    @inbounds quotient_hash = symbol_ht.hashvals[monomid] - ht.hashvals[poly[1]]
+    @invariant quotient_hash == monom_hash(quotient, ht.hash_vector)
 
     hashtable_resize_if_needed!(ht, length(poly))
     row = matrix_polynomial_multiple_to_row!(
@@ -305,9 +299,7 @@ function f4_find_multiplied_reducer!(
     @inbounds matrix.upper_to_mult[row_id] = hashtable_insert!(ht, quotient)
 
     # Mark the current monomial as a pivot since a reducer has been found.
-    @inbounds monom_hashval = symbol_ht.hashdata[monomid]
-    @inbounds symbol_ht.hashdata[monomid] =
-        Hashvalue(PIVOT_COLUMN, monom_hashval.hash, monom_hashval.divmask)
+    @inbounds symbol_ht.labels[monomid] = PIVOT_COLUMN
 
     nothing
 end
@@ -393,7 +385,7 @@ function f4_add_critical_pairs_to_matrix!(
         prev = polys[1]
         vidx = basis.monoms[prev][1]
         etmp = monom_division!(etmp, ht.monoms[lcm], ht.monoms[vidx])
-        htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
+        htmp = ht.hashvals[lcm] - ht.hashvals[vidx]
 
         matrix.ncols_left += 1
 
@@ -410,9 +402,7 @@ function f4_add_critical_pairs_to_matrix!(
         matrix.upper_to_coeffs[row_idx] = prev
         matrix.upper_to_mult[row_idx] = hashtable_insert!(ht, etmp)
 
-        hv = symbol_ht.hashdata[uprows[row_idx][1]]
-        symbol_ht.hashdata[uprows[row_idx][1]] =
-            Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask)
+        symbol_ht.labels[uprows[row_idx][1]] = PIVOT_COLUMN
 
         for k in 1:npolys
             polys[k] == prev && continue
@@ -424,7 +414,7 @@ function f4_add_critical_pairs_to_matrix!(
             vidx = basis.monoms[prev][1]
             eidx = ht.monoms[vidx]
             etmp = monom_division!(etmp, elcm, eidx)
-            htmp = ht.hashdata[lcm].hash - ht.hashdata[vidx].hash
+            htmp = ht.hashvals[lcm] - ht.hashvals[vidx]
 
             matrix.nrows_filled_lower += 1
             row_idx = matrix.nrows_filled_lower
@@ -439,9 +429,7 @@ function f4_add_critical_pairs_to_matrix!(
             matrix.lower_to_coeffs[row_idx] = prev
             matrix.lower_to_mult[row_idx] = hashtable_insert!(ht, etmp)
 
-            hv = symbol_ht.hashdata[lowrows[row_idx][1]]
-            symbol_ht.hashdata[lowrows[row_idx][1]] =
-                Hashvalue(PIVOT_COLUMN, hv.hash, hv.divmask)
+            symbol_ht.labels[lowrows[row_idx][1]] = PIVOT_COLUMN
         end
 
         i = j
