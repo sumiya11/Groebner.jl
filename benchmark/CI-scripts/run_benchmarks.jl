@@ -65,7 +65,7 @@ end
 
 function compute_gb(system, trials=7; kws...)
     kws = Dict(kws)
-    haskey(kws, :threaded) && (kws[:threaded] = false) 
+    !haskey(kws, :threaded) && (kws[:threaded] = :no) 
     times = []
     for _ in 1:trials
         GC.gc()
