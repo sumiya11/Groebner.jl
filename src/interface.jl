@@ -179,7 +179,7 @@ function groebner(
 
     logging_setup(keywords)
 
-    ir_basic_is_valid(ring, monoms, coeffs)
+    ir_is_valid_basic(ring, monoms, coeffs)
     result = groebner1(ring, monoms, coeffs, keywords)
 
     result
@@ -378,7 +378,7 @@ function groebner_learn(
 
     logging_setup(keywords)
 
-    ir_basic_is_valid(ring, monoms, coeffs)
+    ir_is_valid_basic(ring, monoms, coeffs)
     result = groebner_learn1(ring, monoms, coeffs, keywords)
 
     result
@@ -462,7 +462,7 @@ function groebner_apply!(
 
     logging_setup(keywords)
 
-    ir_basic_is_valid(ring, monoms, coeffs)
+    ir_is_valid_basic(ring, monoms, coeffs)
     result = groebner_apply1!(trace, ring, monoms, coeffs, keywords)
 
     result
@@ -477,7 +477,7 @@ function groebner_apply!(trace::WrappedTrace, batch::NTuple{N, T}; options...) w
 
     logging_setup(keywords)
 
-    ir_basic_is_valid(batch)
+    ir_is_valid_basic(batch)
     result = groebner_apply_batch1!(trace, batch, keywords)
 
     result
@@ -568,7 +568,7 @@ function isgroebner(
 
     logging_setup(keywords)
 
-    ir_basic_is_valid(ring, monoms, coeffs)
+    ir_is_valid_basic(ring, monoms, coeffs)
     result = isgroebner1(ring, monoms, coeffs, keywords)
 
     result
@@ -662,8 +662,8 @@ function normalform(
 
     logging_setup(keywords)
 
-    ir_basic_is_valid(ring, monoms, coeffs)
-    ir_basic_is_valid(ring_to_be_reduced, monoms_to_be_reduced, coeffs_to_be_reduced)
+    ir_is_valid_basic(ring, monoms, coeffs)
+    ir_is_valid_basic(ring_to_be_reduced, monoms_to_be_reduced, coeffs_to_be_reduced)
     result = normalform1(
         ring,
         monoms,
