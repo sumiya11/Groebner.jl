@@ -8,6 +8,7 @@
 
 abstract type AbstractPackedTuple{T <: Unsigned, B <: Unsigned} end
 
+# Note: in practice we always have T = UInt64 and B = UInt8.
 struct PackedTuple1{T <: Unsigned, B <: Unsigned} <: AbstractPackedTuple{T, B}
     a1::T
 end
