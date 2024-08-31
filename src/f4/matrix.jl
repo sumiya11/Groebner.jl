@@ -389,18 +389,13 @@ function matrix_fill_column_to_monom_map!(
 )
     @invariant !symbol_ht.frozen
 
-    hdata = symbol_ht.hashdata
-    monoms = symbol_ht.monoms
-    load = symbol_ht.load
-
-    column_to_monom = Vector{MonomId}(undef, load - 1)
+    column_to_monom = Vector{MonomId}(undef, symbol_ht.load - 1)
     j = 1
     k = 0
-    @inbounds for i in (symbol_ht.offset):load
+    @inbounds for i in (symbol_ht.offset):symbol_ht.load
         column_to_monom[j] = i
         j += 1
-        # meaning the column is pivoted
-        if hdata[i].idx == PIVOT_COLUMN
+        if symbol_ht.labels[i] == PIVOT_COLUMN
             k += 1
         end
     end
@@ -417,27 +412,26 @@ function matrix_fill_column_to_monom_map!(
     sort_part!(column_to_monom, k + 1, length(column_to_monom), lt=cmp)
 
     matrix.ncols_left = k
-    # -1 as long as hashtable load is always 1 more than actual
-    matrix.ncols_right = load - matrix.ncols_left - 1
+    # -1 as long as hashtable symbol_ht.load is always 1 more than actual
+    matrix.ncols_right = symbol_ht.load - matrix.ncols_left - 1
 
     # store the other direction of mapping,
     # hash -> column
     @inbounds for k in 1:length(column_to_monom)
-        hv = hdata[column_to_monom[k]]
-        hdata[column_to_monom[k]] = Hashvalue(k, hv.hash, hv.divmask)
+        symbol_ht.labels[column_to_monom[k]] = k
     end
 
     @inbounds for k in 1:(matrix.nrows_filled_upper)
         row = matrix.upper_rows[k]
         for j in 1:length(row)
-            row[j] = hdata[row[j]].idx
+            row[j] = symbol_ht.labels[row[j]]
         end
     end
 
     @inbounds for k in 1:(matrix.nrows_filled_lower)
         row = matrix.lower_rows[k]
         for j in 1:length(row)
-            row[j] = hdata[row[j]].idx
+            row[j] = symbol_ht.labels[row[j]]
         end
     end
 
@@ -453,11 +447,9 @@ function matrix_insert_in_basis_hashtable_pivots!(
 ) where {M <: Monom}
     hashtable_resize_if_needed!(ht, length(row))
 
-    sdata = symbol_ht.hashdata
     sexps = symbol_ht.monoms
 
     mod = MonomHash(ht.size - 1)
-    bdata = ht.hashdata
     bexps = ht.monoms
     bhash = ht.hashtable
 
@@ -465,9 +457,7 @@ function matrix_insert_in_basis_hashtable_pivots!(
     @label Letsgo
     @inbounds while l <= length(row)
         hidx = column_to_monom[row[l]]
-
-        # symbolic hash
-        h = sdata[hidx].hash
+        h = symbol_ht.hashvals[hidx]
 
         lastidx = ht.load + 1
         bexps[lastidx] = sexps[hidx]
@@ -497,7 +487,9 @@ function matrix_insert_in_basis_hashtable_pivots!(
         row[l] = pos
         l += 1
 
-        bdata[pos] = Hashvalue(sdata[hidx].idx, h, sdata[hidx].divmask)
+        ht.labels[pos] = symbol_ht.labels[hidx]
+        ht.hashvals[pos] = h
+        ht.divmasks[pos] = symbol_ht.divmasks[hidx]
 
         ht.load += 1
     end
@@ -515,11 +507,9 @@ function matrix_insert_in_basis_hashtable_pivots_masked!(
 ) where {M <: Monom}
     hashtable_resize_if_needed!(ht, length(row))
 
-    sdata = symbol_ht.hashdata
     sexps = symbol_ht.monoms
 
     mod = MonomHash(ht.size - 1)
-    bdata = ht.hashdata
     bexps = ht.monoms
     bhash = ht.hashtable
 
@@ -533,8 +523,7 @@ function matrix_insert_in_basis_hashtable_pivots_masked!(
 
         hidx = column_to_monom[shift + l]
 
-        # symbolic hash
-        h = sdata[hidx].hash
+        h = symbol_ht.hashvals[hidx]
 
         lastidx = ht.load + 1
         bexps[lastidx] = sexps[hidx]
@@ -564,7 +553,9 @@ function matrix_insert_in_basis_hashtable_pivots_masked!(
         row[l] = pos
         l += 1
 
-        bdata[pos] = Hashvalue(sdata[hidx].idx, h, sdata[hidx].divmask)
+        ht.labels[pos] = symbol_ht.labels[hidx]
+        ht.hashvals[pos] = h
+        ht.divmasks[pos] = symbol_ht.divmasks[hidx]
 
         ht.load += 1
     end

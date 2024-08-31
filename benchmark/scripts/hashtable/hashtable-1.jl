@@ -160,7 +160,7 @@ function hashtable_insert!(ht::MonomialHashtable1{M}, e::M) where {M <: Monom}
     # exception is monom_create_divmask
 
     # generate hash
-    he = monom_hash(e, ht.hasher)
+    he = monom_hash(e, ht.hash_vector)
 
     hsize = ht.size
     mod = (hsize - 1) % MonomHash

@@ -573,7 +573,7 @@ function basis_update!(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom
 
     @inbounds for i in (basis.n_processed + 1):(basis.n_filled)
         if !basis.is_redundant[i]
-            lead[k] = ht.hashdata[basis.monoms[i][1]].divmask
+            lead[k] = ht.divmasks[basis.monoms[i][1]]
             nonred[k] = i
             k += 1
         end
@@ -771,7 +771,7 @@ function insert_lcms_in_basis_hashtable!(
         ps[m] = ps[off + l]
         degs[m] = degs[off + l]
 
-        h = update_ht.hashdata[plcm[l]].hash
+        h = update_ht.hashvals[plcm[l]]
         ht.monoms[ht.load + 1] = monom_copy(update_ht.monoms[plcm[l]])
         n = ht.monoms[ht.load + 1]
 
@@ -799,9 +799,9 @@ function insert_lcms_in_basis_hashtable!(
 
         ht.hashtable[k] = pos = ht.load + 1
 
-        uhd = update_ht.hashdata
-        ll = plcm[l]
-        ht.hashdata[ht.load + 1] = Hashvalue(0, h, uhd[ll].divmask)
+        ht.labels[ht.load + 1] = NON_PIVOT_COLUMN
+        ht.hashvals[ht.load + 1] = h
+        ht.divmasks[ht.load + 1] = update_ht.divmasks[plcm[l]]
 
         ht.load += 1
         ps[m] = CriticalPair(ps[m].poly1, ps[m].poly2, MonomId(pos))

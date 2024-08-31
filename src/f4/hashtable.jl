@@ -42,8 +42,11 @@ mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractMonomialOrdering}
     #= Data =#
     monoms::Vector{M}
     hashtable::Vector{MonomId}
-    hashdata::Vector{Hashvalue}
-    hasher::Vector{MonomHash}
+    labels::Vector{Int32}
+    hashvals::Vector{MonomHash}
+    divmasks::Vector{DivisionMask}
+
+    hash_vector::Vector{MonomHash}
 
     #= Ring information =#
     nvars::Int
@@ -78,14 +81,16 @@ function hashtable_initialize(
     MonomT::T,
     initial_size::Int
 ) where {Ord <: AbstractMonomialOrdering, T}
-    exponents = Vector{MonomT}(undef, initial_size)
-    hashdata = Vector{Hashvalue}(undef, initial_size)
+    monoms = Vector{MonomT}(undef, initial_size)
     hashtable = zeros(MonomId, initial_size)
+    labels = Vector{Int32}(undef, initial_size)
+    hashvals = Vector{MonomHash}(undef, initial_size)
+    divmasks = Vector{DivisionMask}(undef, initial_size)
 
     nvars = ring.nvars
     ord = ring.ord
 
-    hasher = monom_construct_hash_vector(rng, MonomT, nvars)
+    hash_vector = monom_construct_hash_vector(rng, MonomT, nvars)
 
     load = 1
     @invariant initial_size > 1
@@ -108,13 +113,15 @@ function hashtable_initialize(
     divmap = zeros(DivisionMask, ndivvars * ndivbits)
 
     # first stored exponent used as buffer lately
-    exponents[1] = monom_construct_const(MonomT, nvars)
+    monoms[1] = monom_construct_const(MonomT, nvars)
 
     MonomialHashtable(
-        exponents,
+        monoms,
         hashtable,
-        hashdata,
-        hasher,
+        labels,
+        hashvals,
+        divmasks,
+        hash_vector,
         nvars,
         ord,
         use_divmask,
@@ -134,9 +141,11 @@ function hashtable_initialize_secondary(ht::MonomialHashtable{M}) where {M <: Mo
     initial_size = 2^6
     @invariant initial_size > 1
 
-    exponents = Vector{M}(undef, initial_size)
-    hashdata = Vector{Hashvalue}(undef, initial_size)
+    monoms = Vector{M}(undef, initial_size)
     hashtable = zeros(MonomId, initial_size)
+    labels = Vector{Int32}(undef, initial_size)
+    hashvals = Vector{MonomHash}(undef, initial_size)
+    divmasks = Vector{DivisionMask}(undef, initial_size)
 
     # preserve ring info
     nvars = ht.nvars
@@ -147,20 +156,22 @@ function hashtable_initialize_secondary(ht::MonomialHashtable{M}) where {M <: Mo
     ndivbits = ht.ndivbits
     ndivvars = ht.ndivvars
 
-    # preserve hasher
-    hasher = ht.hasher
+    # preserve hash_vector
+    hash_vector = ht.hash_vector
 
     load = 1
     size = initial_size
     offset = 2
 
-    exponents[1] = monom_construct_const(M, nvars)
+    monoms[1] = monom_construct_const(M, nvars)
 
     MonomialHashtable(
-        exponents,
+        monoms,
         hashtable,
-        hashdata,
-        hasher,
+        labels,
+        hashvals,
+        divmasks,
+        hash_vector,
         nvars,
         ord,
         ht.use_divmask,
@@ -176,7 +187,6 @@ function hashtable_initialize_secondary(ht::MonomialHashtable{M}) where {M <: Mo
 end
 
 function hashtable_reinitialize!(ht::MonomialHashtable{M}) where {M}
-    # NOTE: Preserve division info, hasher, and polynomial ring info
     @invariant !ht.frozen
 
     initial_size = 2^6
@@ -188,8 +198,10 @@ function hashtable_reinitialize!(ht::MonomialHashtable{M}) where {M}
     ht.size = initial_size
 
     resize!(ht.monoms, ht.size)
-    resize!(ht.hashdata, ht.size)
     resize!(ht.hashtable, ht.size)
+    resize!(ht.labels, ht.size)
+    resize!(ht.hashvals, ht.size)
+    resize!(ht.divmasks, ht.size)
     hashtable = ht.hashtable
     @inbounds for i in 1:(ht.size)
         hashtable[i] = zero(MonomId)
@@ -212,12 +224,14 @@ function hashtable_resize_if_needed!(ht::MonomialHashtable, added::Int)
     newsize == ht.size && return nothing
 
     @invariant !ht.frozen
-    ht.size = newsize
-    @invariant ispow2(ht.size)
+    @invariant ispow2(newsize)
 
-    resize!(ht.hashdata, ht.size)
+    ht.size = newsize
     resize!(ht.monoms, ht.size)
     resize!(ht.hashtable, ht.size)
+    resize!(ht.labels, ht.size)
+    resize!(ht.hashvals, ht.size)
+    resize!(ht.divmasks, ht.size)
     @inbounds for i in 1:(ht.size)
         ht.hashtable[i] = zero(MonomId)
     end
@@ -226,7 +240,7 @@ function hashtable_resize_if_needed!(ht::MonomialHashtable, added::Int)
 
     @inbounds for i in (ht.offset):(ht.load)
         # hash for this elem is already computed
-        he = ht.hashdata[i].hash
+        he = ht.hashvals[i]
         hidx = he
         for j in MonomHash(0):MonomHash(ht.size)
             hidx = hashtable_next_lookup_index(he, j, mod)
@@ -250,7 +264,7 @@ end
 # if hash collision happened
 function hashtable_is_hash_collision(ht::MonomialHashtable, vidx, e, he)
     # if not free and not same hash
-    @inbounds if ht.hashdata[vidx].hash != he
+    @inbounds if ht.hashvals[vidx] != he
         return true
     end
     # if not free and not same monomial
@@ -265,7 +279,7 @@ function hashtable_insert!(ht::MonomialHashtable{M}, e::M) where {M <: Monom}
     # All of the functions in the main code path are inlined.
     @invariant ispow2(ht.size) && ht.size > 1
 
-    he = monom_hash(e, ht.hasher)
+    he = monom_hash(e, ht.hash_vector)
 
     hsize = ht.size
     mod = (hsize - 1) % MonomHash
@@ -310,7 +324,9 @@ function hashtable_insert!(ht::MonomialHashtable{M}, e::M) where {M <: Monom}
         ht.ndivbits,
         ht.compress_divmask
     )
-    @inbounds ht.hashdata[vidx] = Hashvalue(0, he, divmask)
+    @inbounds ht.labels[vidx] = NON_PIVOT_COLUMN
+    @inbounds ht.hashvals[vidx] = he
+    @inbounds ht.divmasks[vidx] = divmask
 
     ht.load += 1
 
@@ -390,17 +406,16 @@ function hashtable_fill_divmasks!(ht::MonomialHashtable)
     end
 
     @inbounds for vidx in (ht.offset):(ht.load)
-        unmasked = ht.hashdata[vidx]
-        e = ht.monoms[vidx]
         divmask = monom_create_divmask(
-            e,
+            ht.monoms[vidx],
             DivisionMask,
             ht.ndivvars,
             ht.divmap,
             ht.ndivbits,
             ht.compress_divmask
         )
-        ht.hashdata[vidx] = Hashvalue(0, unmasked.hash, divmask)
+        ht.labels[vidx] = NON_PIVOT_COLUMN
+        ht.divmasks[vidx] = divmask
     end
 
     nothing
@@ -411,7 +426,7 @@ end
 
 function hashtable_monom_is_divisible(h1::MonomId, h2::MonomId, ht::MonomialHashtable)
     @inbounds if ht.use_divmask
-        if !divmask_is_probably_divisible(ht.hashdata[h1].divmask, ht.hashdata[h2].divmask)
+        if !divmask_is_probably_divisible(ht.divmasks[h1], ht.divmasks[h2])
             return false
         end
     end
@@ -455,7 +470,7 @@ function hashtable_check_monomial_division_in_update(
     # Pairs are sorted w.r.t. lcm, we only need to check entries above the
     # starting point.
 
-    @inbounds divmask = ht.hashdata[lcm].divmask
+    @inbounds divmask = ht.divmasks[lcm]
     @inbounds lcmexp = ht.monoms[lcm]
 
     j = first
@@ -465,7 +480,7 @@ function hashtable_check_monomial_division_in_update(
             continue
         end
         if ht.use_divmask &&
-           !divmask_is_probably_divisible(ht.hashdata[a[j]].divmask, divmask)
+           !divmask_is_probably_divisible(ht.divmasks[a[j]], divmask)
             j += 1
             continue
         end
@@ -510,7 +525,7 @@ function hashtable_insert_polynomial_multiple!(
         oldmonom = ht.monoms[poly[j]]
         newmonom = monom_product!(buf, mult, oldmonom)
 
-        oldhash = ht.hashdata[poly[j]].hash
+        oldhash = ht.hashvals[poly[j]]
         newhash = mult_hash + oldhash
 
         hidx = hashtable_next_lookup_index(newhash, 0 % MonomHash, mod)
@@ -550,7 +565,6 @@ function hashtable_insert_polynomial_multiple!(
         vidx = (symbol_ht.load + 1) % MonomId
         symbol_ht.monoms[vidx] = monom_copy(newmonom)
         symbol_ht.hashtable[hidx] = vidx
-
         divmask = monom_create_divmask(
             newmonom,
             DivisionMask,
@@ -559,7 +573,9 @@ function hashtable_insert_polynomial_multiple!(
             symbol_ht.ndivbits,
             symbol_ht.compress_divmask
         )
-        symbol_ht.hashdata[vidx] = Hashvalue(NON_PIVOT_COLUMN, newhash, divmask)
+        @inbounds symbol_ht.labels[vidx] = NON_PIVOT_COLUMN
+        @inbounds symbol_ht.hashvals[vidx] = newhash
+        @inbounds symbol_ht.divmasks[vidx] = divmask
 
         row[j] = vidx
         symbol_ht.load += 1
