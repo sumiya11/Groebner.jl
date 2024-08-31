@@ -94,8 +94,7 @@ function linalg_reduce_matrix_lower_part_changematrix!(
             first_nnz_column,
             ncols,
             arithmetic,
-            reducer_rows,
-            
+            reducer_rows
         )
 
         # if fully reduced

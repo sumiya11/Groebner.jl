@@ -16,7 +16,7 @@ function f4_initialize_structs(
     make_monic=true,
     sort_input=true
 ) where {M <: Monom, C <: Coeff}
-    tablesize = hashtable_select_initial_size(ring, monoms)
+    tablesize = hashtable_select_initial_size(ring)
     basis = basis_initialize(ring, length(monoms), C)
     pairset = pairset_initialize(monom_entrytype(M))
     hashtable = hashtable_initialize(ring, params.rng, M, tablesize)
@@ -84,7 +84,7 @@ function f4_symbolic_preprocessing!(
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
-    symbol_ht::MonomialHashtable,
+    symbol_ht::MonomialHashtable
 )
     # Monomials that represent the columns of the matrix are stored in the
     # symbol_ht hashtable.
@@ -177,7 +177,8 @@ function f4_autoreduce!(
         end
         k += 1
         basis.nonredundant_indices[k] = basis.n_filled - i + 1
-        basis.divmasks[k] = ht.hashdata[basis.monoms[basis.nonredundant_indices[k]][1]].divmask
+        basis.divmasks[k] =
+            ht.hashdata[basis.monoms[basis.nonredundant_indices[k]][1]].divmask
         i += 1
     end
     basis.n_nonredundant = k
@@ -250,7 +251,7 @@ function f4_find_multiplied_reducer!(
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable,
-    monomid::MonomId,
+    monomid::MonomId
 )
     @inbounds monom = symbol_ht.monoms[monomid]
     @inbounds quotient = ht.monoms[1]
@@ -345,14 +346,7 @@ function f4_select_critical_pairs!(
         end
     end
 
-    f4_add_critical_pairs_to_matrix!(
-        pairset,
-        npairs,
-        basis,
-        matrix,
-        ht,
-        symbol_ht,
-    )
+    f4_add_critical_pairs_to_matrix!(pairset, npairs, basis, matrix, ht, symbol_ht)
 
     # Remove selected parirs from the pairset.
     @inbounds for i in 1:(pairset.load - npairs)
@@ -360,7 +354,7 @@ function f4_select_critical_pairs!(
         degs[i] = degs[i + npairs]
     end
     pairset.load -= npairs
-    
+
     deg, npairs
 end
 
@@ -370,7 +364,7 @@ function f4_add_critical_pairs_to_matrix!(
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
-    symbol_ht::MonomialHashtable,
+    symbol_ht::MonomialHashtable
 )
     matrix_reinitialize!(matrix, npairs)
     pairs = pairset.pairs
@@ -522,14 +516,7 @@ function f4_isgroebner!(
     update_ht = hashtable_initialize_secondary(hashtable)
     f4_update!(pairset, basis, hashtable, update_ht)
     isempty(pairset) && return true
-    f4_select_critical_pairs!(
-        pairset,
-        basis,
-        matrix,
-        hashtable,
-        symbol_ht,
-        select_all=true
-    )
+    f4_select_critical_pairs!(pairset, basis, matrix, hashtable, symbol_ht, select_all=true)
     f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
     matrix_fill_column_to_monom_map!(matrix, symbol_ht)
     linalg_isgroebner!(matrix, basis, arithmetic)

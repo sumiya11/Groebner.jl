@@ -149,8 +149,7 @@ function linalg_apply_reduce_matrix_lower_part!(
             pivots,
             first_nnz_column,
             ncols,
-            arithmetic,
-            
+            arithmetic
         )
 
         # If the row is fully reduced
@@ -264,8 +263,7 @@ function linalg_learn_reduce_matrix_lower_part!(
             first_nnz_column,
             ncols,
             arithmetic,
-            reducer_rows,
-            
+            reducer_rows
         )
 
         # if fully reduced

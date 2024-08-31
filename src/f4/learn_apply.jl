@@ -108,7 +108,8 @@ function f4_reducegb_learn!(
         symbol_ht.hashdata[uprows[row_idx][1]] =
             Hashvalue(UNKNOWN_PIVOT_COLUMN, hv.hash, hv.divmask)
     end
-    trace.nonredundant_indices_before_reduce = basis.nonredundant_indices[1:(basis.n_nonredundant)]
+    trace.nonredundant_indices_before_reduce =
+        basis.nonredundant_indices[1:(basis.n_nonredundant)]
 
     # needed for correct column count in symbol hashtable
     matrix.ncols_left = matrix.nrows_filled_upper
@@ -147,7 +148,8 @@ function f4_reducegb_learn!(
         end
         k += 1
         basis.nonredundant_indices[k] = basis.n_filled - i + 1
-        basis.divmasks[k] = ht.hashdata[basis.monoms[basis.nonredundant_indices[k]][1]].divmask
+        basis.divmasks[k] =
+            ht.hashdata[basis.monoms[basis.nonredundant_indices[k]][1]].divmask
         i += 1
     end
     basis.n_nonredundant = k

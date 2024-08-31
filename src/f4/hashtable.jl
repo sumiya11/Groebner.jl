@@ -200,26 +200,8 @@ function hashtable_reinitialize!(ht::MonomialHashtable{M}) where {M}
     nothing
 end
 
-function hashtable_select_initial_size(ring::PolyRing, monoms::AbstractVector)
-    nvars = ring.nvars
-    sz = length(monoms)
-
-    tablesize = 2^10
-    if nvars > 4
-        tablesize = 2^14
-    end
-    if nvars > 7
-        tablesize = 2^16
-    end
-
-    if sz < 3
-        tablesize = div(tablesize, 2)
-    end
-    if sz < 2
-        tablesize = div(tablesize, 2)
-    end
-
-    tablesize
+function hashtable_select_initial_size(ring::PolyRing)
+    2^10
 end
 
 function hashtable_resize_if_needed!(ht::MonomialHashtable, added::Int)

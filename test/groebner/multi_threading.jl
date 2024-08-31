@@ -7,15 +7,15 @@ using Base.Threads
 
     s = [R(1), R(2), R(4)]
     @test Groebner.groebner(s, threaded=:yes) ==
-            Groebner.groebner(s, threaded=:no) ==
-            Groebner.groebner(s, threaded=:auto) ==
-            [R(1)]
+          Groebner.groebner(s, threaded=:no) ==
+          Groebner.groebner(s, threaded=:auto) ==
+          [R(1)]
 
     s = [x^(2^10) + 1, y^3000 + 2, z^1000 + 3]
     @test Groebner.groebner(s, threaded=:yes) ==
-            Groebner.groebner(s, threaded=:no) ==
-            Groebner.groebner(s, threaded=:auto) ==
-            [z^1000 + 3, y^3000 + 2, x^(2^10) + 1]
+          Groebner.groebner(s, threaded=:no) ==
+          Groebner.groebner(s, threaded=:auto) ==
+          [z^1000 + 3, y^3000 + 2, x^(2^10) + 1]
 
     linalg = [:deterministic, :randomized]
     threaded = [:yes, :no, :auto]

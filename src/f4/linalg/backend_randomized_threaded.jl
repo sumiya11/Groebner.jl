@@ -22,12 +22,7 @@ function linalg_randomized_sparse_threaded!(
     @log :matrix matrix_string_repr(matrix)
 
     # Reduce CD with AB
-    linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
-        matrix,
-        basis,
-        arithmetic,
-        rng
-    )
+    linalg_randomized_reduce_matrix_lower_part_threaded_cas!(matrix, basis, arithmetic, rng)
     # Interreduce CD
     linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic)
     true
@@ -132,8 +127,7 @@ function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
                     first_nnz_col,
                     ncols,
                     arithmetic,
-                    sentinels,
-                    
+                    sentinels
                 )
 
                 if zeroed

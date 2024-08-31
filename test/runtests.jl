@@ -39,10 +39,7 @@ end
     @time @includetests ["arithmetic/Zp"]
 
     # Different implementations of a monomial 
-    @time @includetests [
-        "monoms/exponentvector",
-        "monoms/packedtuples",
-    ]
+    @time @includetests ["monoms/exponentvector", "monoms/packedtuples"]
     # High-level monomial arithmetic and term orders
     @time @includetests ["monoms/monom_arithmetic", "monoms/monom_orders"]
 

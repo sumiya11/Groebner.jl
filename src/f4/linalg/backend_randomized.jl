@@ -119,8 +119,7 @@ function linalg_randomized_reduce_matrix_lower_part!(
                 pivots,
                 first_nnz_col,
                 ncols,
-                arithmetic,
-                
+                arithmetic
             )
 
             zeroed && break

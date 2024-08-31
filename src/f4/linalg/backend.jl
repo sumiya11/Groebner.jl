@@ -18,7 +18,7 @@ function linalg_deterministic_sparse!(
     sort_matrix_lower_rows!(matrix) # for the CD part
 
     @invariant matrix.nrows_filled_upper == matrix.ncols_left
-    for i in 1:matrix.nrows_filled_upper
+    for i in 1:(matrix.nrows_filled_upper)
         @invariant matrix.upper_rows[i][1] == i
     end
 
@@ -99,8 +99,7 @@ function linalg_reduce_matrix_lower_part!(
             pivots,
             first_nnz_column,
             ncols,
-            arithmetic,
-            
+            arithmetic
         )
 
         # If the row is fully reduced
@@ -255,8 +254,7 @@ function linalg_reduce_matrix_lower_part_invariant_pivots!(
             # https://github.com/sumiya11/Groebner.jl/issues/82
             1,
             ncols,
-            arithmetic,
-            
+            arithmetic
         )
 
         # NOTE: no normalization here
@@ -306,8 +304,7 @@ function linalg_reduce_matrix_lower_part_any_nonzero!(
             pivots,
             first_nnz_column,
             ncols,
-            arithmetic,
-            
+            arithmetic
         )
 
         # If fully reduced
@@ -394,7 +391,7 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
     end_column::Integer,
     arithmetic::AbstractArithmeticZp{A, C},
     active_reducers=nothing;
-    ignore_column::Integer=-1,
+    ignore_column::Integer=-1
 ) where {I, C <: Union{CoeffZp, CompositeCoeffZp}, A <: Union{CoeffZp, CompositeCoeffZp}}
     _, ncols = size(matrix)
     nleft, _ = matrix_ncols_filled(matrix)
@@ -470,7 +467,7 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
     end_column::Integer,
     arithmetic::DelayedArithmeticZp{A, C},
     active_reducers=nothing;
-    ignore_column::Integer=-1,
+    ignore_column::Integer=-1
 ) where {I, C <: CoeffZp, A <: CoeffZp}
     _, ncols = size(matrix)
     nleft, _ = matrix_ncols_filled(matrix)
@@ -553,7 +550,7 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
     end_column::Integer,
     arithmetic::Union{SignedArithmeticZp{A, C}, SignedCompositeArithmeticZp{A, C}},
     active_reducers=nothing;
-    ignore_column::Integer=-1,
+    ignore_column::Integer=-1
 ) where {I, C <: Union{CoeffZp, CompositeCoeffZp}, A <: Union{CoeffZp, CompositeCoeffZp}}
     _, ncols = size(matrix)
     nleft, _ = matrix_ncols_filled(matrix)
@@ -633,7 +630,7 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
     end_column::Integer,
     arithmetic::AbstractArithmeticQQ,
     active_reducers=nothing;
-    ignore_column::Integer=-1,
+    ignore_column::Integer=-1
 ) where {I, C <: Coeff}
     _, ncols = size(matrix)
     nleft, _ = matrix_ncols_filled(matrix)

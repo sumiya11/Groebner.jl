@@ -42,7 +42,7 @@ mutable struct MacaulayMatrix{T <: Coeff}
     # Explicitly stored coefficients of *some* rows. Usage of this field may
     # differ in runtime depending on the algorithm in use
     some_coeffs::Vector{Vector{T}}
-    
+
     # Maps the columns of the matrix to corresponding monomial labels
     column_to_monom::Vector{MonomId}
 
