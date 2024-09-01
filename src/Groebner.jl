@@ -96,6 +96,7 @@ end
 include("utils/logging.jl")
 include("utils/invariants.jl")
 include("utils/simd.jl")
+include("utils/packed.jl")
 include("utils/plots.jl")
 
 # Test systems, such as katsura, cyclic, etc
@@ -108,7 +109,6 @@ include("utils/keywords.jl")
 
 # Monomial implementations
 include("monomials/exponent_vector.jl")
-include("monomials/packed_utils.jl")
 include("monomials/packed_vector.jl")
 
 include("arithmetic/CompositeNumber.jl")

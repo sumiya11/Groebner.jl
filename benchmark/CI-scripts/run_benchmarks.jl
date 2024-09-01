@@ -74,6 +74,7 @@ function compute_gb(system, trials=7; kws...)
 end
 
 # Compute Groebner bases over integers modulo a large prime
+compute_gb(Groebner.Examples.katsuran(9, internal_ordering=:degrevlex, k=GF(2^31 - 1)))
 push!(
     suite,
     (
@@ -142,6 +143,48 @@ push!(
 push!(
     suite,
     (
+        problem_name="groebner,AA,2^30+3,1000xcyclic 6",
+        type=:time,
+        result=[
+            sum(
+                compute_gb(
+                    Groebner.Examples.cyclicn(
+                        6,
+                        internal_ordering=:degrevlex,
+                        k=GF(2^30 + 3)
+                    ),
+                    2000
+                )
+            )
+        ]
+    )
+)
+push!(
+    suite,
+    (
+        problem_name="groebner,AA,QQ,100xchandra 7",
+        type=:time,
+        result=[
+            sum(
+                compute_gb(
+                    Groebner.Examples.chandran(7, internal_ordering=:degrevlex, k=QQ),
+                    100
+                )
+            )
+        ]
+    )
+)
+push!(
+    suite,
+    (
+        problem_name="groebner,AA,QQ,HIV2",
+        type=:time,
+        result=compute_gb(Groebner.Examples.HIV2(internal_ordering=:degrevlex), 3)
+    )
+)
+push!(
+    suite,
+    (
         problem_name="groebner,AA,2^31-1,cyclic 8",
         type=:time,
         result=compute_gb(
@@ -172,6 +215,7 @@ function n_variable_set(n; internal_ordering=:degrevlex, k=GF(2^31 - 1))
     f
 end
 
+compute_gb(n_variable_set(100, internal_ordering=:degrevlex, k=GF(2^31 - 1)))
 push!(
     suite,
     (
