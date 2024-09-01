@@ -109,7 +109,9 @@ function io_extract_coeffs_ir_qq(ring::PolyRing, polys)
 end
 
 function io_extract_monoms_ir(ring::PolyRing, polys)
-    var_to_index = get_var_to_index(AbstractAlgebra.parent(polys[1]))
+    ring_aa = AbstractAlgebra.parent(polys[1])
+    v = AbstractAlgebra.gens(ring_aa)
+    var_to_index = Dict{elem_type(ring_aa), Int}(v .=> 1:AbstractAlgebra.nvars(ring_aa))
     res = Vector{Vector{Vector{UInt64}}}(undef, length(polys))
     @inbounds for i in 1:length(polys)
         poly = polys[i]
@@ -147,14 +149,6 @@ function _io_check_input(polynomials::Vector{T}) where {T}
     end
     true
 end
-
-# Determines the monomial ordering of the output,
-# given the original ordering `origord` and the targer ordering `targetord`
-ordering_typed2sym(origord, targetord::Lex) = :lex
-ordering_typed2sym(origord, targetord::DegLex) = :deglex
-ordering_typed2sym(origord, targetord::DegRevLex) = :degrevlex
-ordering_typed2sym(origord) = origord
-ordering_typed2sym(origord, targetord::AbstractMonomialOrdering) = origord
 
 function ordering_sym2typed(ord::Symbol)
     if !(ord in aa_supported_orderings)
@@ -219,156 +213,7 @@ function io_extract_coeffs_raw_X!(trace, coeffs)
 end
 
 ###
-
-# specialization for multivariate polynomials
-function io_extract_coeffs_qq(representation, ring::PolyRing, poly)
-    iszero(poly) && (return Vector{representation.coefftype}())
-    n = length(poly)
-    arr = Vector{Rational{BigInt}}(undef, n)
-    @inbounds for i in 1:n
-        arr[i] = Rational{BigInt}(AbstractAlgebra.coeff(poly, i))
-    end
-    arr
-end
-
-function get_var_to_index(
-    aa_ring::Union{AbstractAlgebra.MPolyRing{T}, AbstractAlgebra.PolyRing{T}}
-) where {T}
-    v = AbstractAlgebra.gens(aa_ring)
-    Dict{elem_type(aa_ring), Int}(v .=> 1:AbstractAlgebra.nvars(aa_ring))
-end
-
-function io_extract_monoms(
-    representation::PolynomialRepresentation,
-    ring::PolyRing,
-    poly::T
-) where {T}
-    exps = Vector{representation.monomtype}(undef, length(poly))
-    _io_extract_monoms!(representation.monomtype, exps, poly)
-    exps
-end
-
-function _io_extract_monoms!(::Type{MonomType}, exps, poly) where {MonomType}
-    @inbounds for j in 1:length(exps)
-        exps[j] =
-            monom_construct_from_vector(MonomType, AbstractAlgebra.exponent_vector(poly, j))
-    end
-    nothing
-end
-
-function io_extract_monoms(
-    representation::PolynomialRepresentation,
-    ring::PolyRing,
-    poly::P
-) where {P <: AbstractAlgebra.Generic.PolyRingElem}
-    exps = Vector{representation.monomtype}(undef, 0)
-    @inbounds while !AbstractAlgebra.iszero(poly)
-        push!(
-            exps,
-            monom_construct_from_vector(
-                representation.monomtype,
-                [AbstractAlgebra.degree(poly)]
-            )
-        )
-        poly = AbstractAlgebra.tail(poly)
-    end
-    exps
-end
-
-function io_extract_monoms(
-    representation::PolynomialRepresentation,
-    ring::PolyRing,
-    orig_polys::Vector{T}
-) where {T}
-    npolys = length(orig_polys)
-    var_to_index = get_var_to_index(AbstractAlgebra.parent(orig_polys[1]))
-    exps = Vector{Vector{representation.monomtype}}(undef, npolys)
-    @inbounds for i in 1:npolys
-        poly = orig_polys[i]
-        exps[i] = io_extract_monoms(representation, ring, poly)
-    end
-    false, var_to_index, exps
-end
-
-function io_extract_monoms(
-    representation::PolynomialRepresentation,
-    ring::PolyRing,
-    orig_polys::Vector{T},
-    ::DegLex
-) where {T}
-    npolys = length(orig_polys)
-    var_to_index = get_var_to_index(AbstractAlgebra.parent(orig_polys[1]))
-    exps = Vector{Vector{representation.monomtype}}(undef, npolys)
-    @inbounds for i in 1:npolys
-        poly = orig_polys[i]
-        exps[i] = Vector{representation.monomtype}(undef, length(poly))
-        for j in 1:length(poly)
-            exps[i][j] = monom_construct_from_vector(
-                representation.monomtype,
-                poly.exps[(end - 1):-1:1, j]
-            )
-        end
-    end
-    false, var_to_index, exps
-end
-
-function io_extract_monoms(
-    representation::PolynomialRepresentation,
-    ring::PolyRing,
-    orig_polys::Vector{T},
-    ::Lex
-) where {T}
-    npolys = length(orig_polys)
-    var_to_index = get_var_to_index(AbstractAlgebra.parent(orig_polys[1]))
-    exps = Vector{Vector{representation.monomtype}}(undef, npolys)
-    @inbounds for i in 1:npolys
-        poly = orig_polys[i]
-        exps[i] = Vector{representation.monomtype}(undef, length(poly))
-        for j in 1:length(poly)
-            exps[i][j] = monom_construct_from_vector(
-                representation.monomtype,
-                poly.exps[end:-1:1, j]
-            )
-        end
-    end
-    false, var_to_index, exps
-end
-
-function io_extract_monoms(
-    representation::PolynomialRepresentation,
-    ring::PolyRing,
-    orig_polys::Vector{T},
-    ::DegRevLex
-) where {T}
-    npolys = length(orig_polys)
-    var_to_index = get_var_to_index(AbstractAlgebra.parent(orig_polys[1]))
-    exps = Vector{Vector{representation.monomtype}}(undef, npolys)
-    @inbounds for i in 1:npolys
-        poly = orig_polys[i]
-        exps[i] = Vector{representation.monomtype}(undef, length(poly))
-        for j in 1:length(poly)
-            exps[i][j] = monom_construct_from_vector(
-                representation.monomtype,
-                poly.exps[1:(end - 1), j]
-            )
-        end
-    end
-    false, var_to_index, exps
-end
-
-###
 # Converting from internal representation to AbstractAlgebra.jl
-
-function _io_convert_ir_to_polynomials(
-    ring::PolyRing,
-    polynomials,
-    monoms::Vector{Vector{M}},
-    coeffs::Vector{Vector{C}},
-    params
-) where {M <: Monom, C <: Coeff}
-    origring = AbstractAlgebra.parent(first(polynomials))
-    _io_convert_ir_to_polynomials(origring, monoms, coeffs, params)
-end
 
 # Specialization for univariate polynomials
 function _io_convert_ir_to_polynomials(

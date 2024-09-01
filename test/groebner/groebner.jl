@@ -346,9 +346,7 @@ end
             @test gb_i == map(poly -> divexact(poly, leading_coefficient(poly)), system_i)
         end
     end
-end
 
-@testset "groebner corner cases" begin
     R, (x, y, z, w) =
         polynomial_ring(QQ, ["x", "y", "z", "w"], internal_ordering=:degrevlex)
 
@@ -387,6 +385,9 @@ end
     fs = [(12345678 // 12347)x, (222222221111123 // 2131232232097)y + z]
     G = Groebner.groebner(fs)
     @test G == [y + 2131232232097 // 222222221111123 * z, x]
+
+    # TODO TODO TODO: infinite loop
+    # groebner([x^2 + (2^31 - 1)*x + 1, y])    
 end
 
 @testset "groebner output sorted" begin
