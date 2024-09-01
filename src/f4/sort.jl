@@ -27,12 +27,10 @@ function sort_part!(
     nothing
 end
 
-# Also sorts any arrays passed in the `abc` optional argument in the same order.
 function sort_polys_by_lead_increasing!(
     basis::Basis,
     hashtable::MonomialHashtable,
-    changematrix::Bool,
-    abc...;
+    changematrix::Bool;
     ord::Ord=hashtable.ord
 ) where {Ord <: AbstractMonomialOrdering}
     b_monoms = basis.monoms
@@ -52,10 +50,6 @@ function sort_polys_by_lead_increasing!(
     # (seems to compile to better code)
     basis.monoms[1:(basis.n_filled)] = basis.monoms[permutation]
     basis.coeffs[1:(basis.n_filled)] = basis.coeffs[permutation]
-    @inbounds for a in abc
-        @invariant length(a) >= length(permutation)
-        a[1:(basis.n_filled)] = a[permutation]
-    end
 
     if changematrix
         @invariant length(basis.changematrix) >= basis.n_filled
@@ -251,36 +245,4 @@ function sort_input_terms_to_change_ordering!(
         permutations[polyidx] = permutation
     end
     permutations
-end
-
-function sort_monom_indices_decreasing!(
-    monoms::Vector{MonomId},
-    cnt::Integer,
-    hashtable::MonomialHashtable,
-    ord::AbstractMonomialOrdering
-)
-    exps = hashtable.monoms
-
-    cmps = (x, y) -> monom_isless(@inbounds(exps[y]), @inbounds(exps[x]), ord)
-
-    sort_part!(monoms, 1, cnt, lt=cmps, alg=_default_sorting_alg())
-end
-
-function sort_term_indices_decreasing!(
-    monoms::Vector{MonomId},
-    coeffs::Vector{C},
-    hashtable::MonomialHashtable,
-    ord::AbstractMonomialOrdering
-) where {C <: Coeff}
-    exps = hashtable.monoms
-
-    cmps =
-        (x, y) -> monom_isless(@inbounds(exps[monoms[y]]), @inbounds(exps[monoms[x]]), ord)
-
-    inds = collect(1:length(monoms))
-
-    sort!(inds, lt=cmps, alg=_default_sorting_alg())
-
-    monoms[1:end] = monoms[inds]
-    coeffs[1:end] = coeffs[inds]
 end
