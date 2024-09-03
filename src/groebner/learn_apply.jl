@@ -64,6 +64,7 @@ function __groebner_learn1(
     trace.representation = params.representation
     trace.term_sorting_permutations = term_sorting_permutations
     trace.support = monoms
+    trace.gb_support = gb_monoms
 
     WrappedTrace(trace), gb_monoms, gb_coeffs
 end
@@ -211,8 +212,7 @@ function __groebner_apply1!(
 
     flag, gb_monoms2, gb_coeffs2 = groebner_apply2!(trace, params)
 
-    gb_monoms, gb_coeffs = ir_convert_internal_to_ir(ring, gb_monoms2, gb_coeffs2, params)
-    flag, gb_monoms, gb_coeffs
+    flag, trace.gb_support, gb_coeffs2
 end
 
 function groebner_apply2!(trace, params)

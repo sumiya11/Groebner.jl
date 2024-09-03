@@ -8,7 +8,8 @@ mutable struct Trace{C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
 
     ring::PolyRing{Ord1, C2}
     original_ord::Ord2
-    support::Vector{Vector{Vector{Int}}}
+    support::Vector{Vector{Vector{IRexponent}}}
+    gb_support::Vector{Vector{Vector{IRexponent}}}
 
     # Buffers for storing basis elements
     input_basis::Basis{C1}
@@ -72,7 +73,8 @@ function trace_initialize(
         false,
         ring,
         params.original_ord,
-        Vector{Vector{Vector{Int}}}(),
+        Vector{Vector{Vector{IRexponent}}}(),
+        Vector{Vector{Vector{IRexponent}}}(),
         input_basis,
         basis_deepcopy(gb_basis),
         gb_basis,
@@ -111,6 +113,7 @@ function trace_deepcopy(
         PolyRing(trace.ring.nvars, trace.ring.ord, trace.ring.ch),
         deepcopy(trace.original_ord),
         deepcopy(trace.support),
+        deepcopy(trace.gb_support),
         basis_deepcopy(trace.input_basis),
         basis_deepcopy(trace.buf_basis),
         basis_deepcopy(trace.gb_basis),
@@ -196,6 +199,7 @@ function trace_copy(
         new_ring,
         trace.original_ord,
         trace.support,
+        trace.gb_support,
         new_input_basis,
         new_buf_basis,
         new_gb_basis,
