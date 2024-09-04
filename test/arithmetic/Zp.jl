@@ -22,7 +22,7 @@ import Primes
     @test Groebner.mod_p(UInt64(2^30 + 6), a) === UInt64(3)
 
     m = UInt64(2^27 + 29)
-    a = Groebner.DelayedArithmeticZp(UInt64, UInt32, m)
+    a = Groebner.DelayedArithmeticZp(UInt64, UInt32, UInt32(m))
     @test Groebner.n_spare_bits(a) == 4
     @test Groebner.n_safe_consecutive_additions(a) == 2^7
 

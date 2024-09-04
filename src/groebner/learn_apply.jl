@@ -220,7 +220,7 @@ function __groebner_apply1!(
     if !flag
         return flag, coeffs
     end
-    
+
     @assert length(gb_coeffs2) == length(wrapped_trace.gb_support)
     for i in 1:length(wrapped_trace.gb_support)
         @assert length(gb_coeffs2[i]) == length(wrapped_trace.gb_support[i])

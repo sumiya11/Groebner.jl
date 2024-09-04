@@ -601,7 +601,7 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
     end
 
     if end_column != length(row)
-        linalg_dense_row_mod_p!(row, arithmetic, end_columns + 1, length(row))
+        linalg_dense_row_mod_p!(row, arithmetic, end_column + 1, length(row))
     end
 
     # form the resulting row in sparse format
@@ -807,7 +807,7 @@ function linalg_vector_addmul_sparsedense_mod_p!(
     @invariant !isempty(indices)
 
     @inbounds mul = divisor(arithmetic) - row[indices[1]]
-    @inbounds for j in 1:length(indices)
+    @fastmath @inbounds for j in 1:length(indices)
         idx = indices[j]
         row[idx] = fma_mod_p(mul, coeffs[j], row[idx], arithmetic)
     end

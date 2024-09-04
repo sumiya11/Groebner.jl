@@ -77,6 +77,8 @@ end
 ###
 # Element-wise CRT
 
+# table of big integers needs to be initialized
+#
 # A mod M, a_1 mod m_1, ..., a_n mod m_n  =>  B mod M m_1 ... m_n.
 # Reconstructs only the witness set.
 function crt_vec_partial!(

@@ -21,6 +21,7 @@ end
 ###
 # Element-wise rational reconstruction
 
+# table of rationals need not be initialized
 function ratrec_vec_partial!(
     table_qq::Vector{Vector{Rational{BigInt}}},
     table_zz::Vector{Vector{BigInt}},

@@ -309,7 +309,7 @@ end
 # Checks monomial divisibility.
 function monom_is_divisible(ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
     @invariant length(ea) == length(eb)
-    _vec_not_any_lt(ea, eb)
+    _vec_not_any_lt(ea, eb)::Bool
 end
 
 # Checks monomial divisibility and performs division
