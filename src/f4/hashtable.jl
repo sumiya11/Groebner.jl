@@ -561,7 +561,7 @@ function hashtable_insert_polynomial_multiple!(
         @invariant !symbol_ht.frozen
 
         vidx = (symbol_ht.load + 1) % MonomId
-        @invariant vidx <= length(ht.monoms)
+        @invariant vidx <= length(symbol_ht.monoms)
         symbol_ht.monoms[vidx] = monom_copy(newmonom)
         symbol_ht.hashtable[hidx] = vidx
         divmask = monom_create_divmask(
