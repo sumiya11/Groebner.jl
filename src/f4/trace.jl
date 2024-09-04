@@ -8,8 +8,6 @@ mutable struct Trace{C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
 
     ring::PolyRing{Ord1, C2}
     original_ord::Ord2
-    support::Vector{Vector{Vector{IRexponent}}}
-    gb_support::Vector{Vector{Vector{IRexponent}}}
 
     # Buffers for storing basis elements
     input_basis::Basis{C1}
@@ -27,7 +25,7 @@ mutable struct Trace{C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
     matrix_nonzeroed_rows::Vector{Vector{Int}}
     matrix_upper_rows::Vector{Tuple{Vector{Int}, Vector{MonomId}}}
     matrix_lower_rows::Vector{Tuple{Vector{Int}, Vector{MonomId}}}
-    matrix_sorted_columns::Vector{Vector{Int}}
+    matrix_sorted_columns::Vector{Vector{Int32}}
     matrix_pivot_signatures::Vector{UInt64}
     matrix_pivot_indices::Vector{Vector{Int}}
     matrix_is_columns_cached::Bool
@@ -73,8 +71,6 @@ function trace_initialize(
         false,
         ring,
         params.original_ord,
-        Vector{Vector{Vector{IRexponent}}}(),
-        Vector{Vector{Vector{IRexponent}}}(),
         input_basis,
         basis_deepcopy(gb_basis),
         gb_basis,
@@ -86,7 +82,7 @@ function trace_initialize(
         Vector{Vector{Int}}(),
         Vector{Tuple{Vector{Int}, Vector{MonomId}}}(),
         Vector{Tuple{Vector{Int}, Vector{MonomId}}}(),
-        Vector{Vector{Int}}(),
+        Vector{Vector{Int32}}(),
         Vector{UInt64}(),
         Vector{Vector{Int}}(),
         false,
@@ -112,8 +108,6 @@ function trace_deepcopy(
         trace.empty,
         PolyRing(trace.ring.nvars, trace.ring.ord, trace.ring.ch),
         deepcopy(trace.original_ord),
-        deepcopy(trace.support),
-        deepcopy(trace.gb_support),
         basis_deepcopy(trace.input_basis),
         basis_deepcopy(trace.buf_basis),
         basis_deepcopy(trace.gb_basis),
@@ -198,8 +192,6 @@ function trace_copy(
         trace.empty,
         new_ring,
         trace.original_ord,
-        trace.support,
-        trace.gb_support,
         new_input_basis,
         new_buf_basis,
         new_gb_basis,
@@ -237,23 +229,6 @@ function trace_finalize!(trace::Trace)
     nothing
 end
 
-function trace_check_input(
-    trace::Trace,
-    monoms::Vector{Vector{Vector{I}}},
-    coeffs::Vector{Vector{C}}
-) where {I <: Integer, C <: Coeff}
-    !(length(trace.support) == length(monoms)) && return false
-    for i in 1:length(monoms)
-        !(length(trace.support[i]) == length(monoms[i])) && return false
-        for j in 1:length(monoms[i])
-            if trace.support[i][j] != monoms[i][j]
-                return false
-            end
-        end
-    end
-    true
-end
-
 ###
 # A wrapper around the tracer exposed to the user
 
@@ -261,23 +236,35 @@ mutable struct WrappedTrace
     # For each type of coefficients, we maintain a separate tracer object
     recorded_traces::Dict{Any, Any}
 
+    sys_support::Vector{Vector{Vector{IRexponent}}}
+    gb_support::Vector{Vector{Vector{IRexponent}}}
+
     function WrappedTrace(
         trace::Trace{C1, C2, M, Ord1, Ord2}
     ) where {C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
-        recorded_traces = Dict{Any, Any}((C1, 42) => trace)
-        WrappedTrace(recorded_traces)
-    end
-
-    function WrappedTrace(d::Dict{A, B}) where {A, B}
-        new(d)
+        new(
+            Dict{Any, Any}((C1, 42) => trace),
+            Vector{Vector{Vector{IRexponent}}}(),
+            Vector{Vector{Vector{IRexponent}}}()
+        )
     end
 end
 
-# Does not provide the same guarantees as Base.deepcopy.
-function trace_deepcopy(wrapped_trace::WrappedTrace)
-    WrappedTrace(
-        Dict(deepcopy(k) => trace_deepcopy(v) for (k, v) in wrapped_trace.recorded_traces)
-    )
+function trace_check_input(
+    trace::WrappedTrace,
+    monoms::Vector{Vector{Vector{I}}},
+    coeffs::Vector{Vector{C}}
+) where {I <: Integer, C <: Coeff}
+    !(length(trace.sys_support) == length(monoms)) && return false
+    for i in 1:length(monoms)
+        !(length(trace.sys_support[i]) == length(monoms[i])) && return false
+        for j in 1:length(monoms[i])
+            if trace.sys_support[i][j] != monoms[i][j]
+                return false
+            end
+        end
+    end
+    true
 end
 
 function get_default_trace(wrapped_trace::WrappedTrace)

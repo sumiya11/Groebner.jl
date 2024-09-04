@@ -402,10 +402,9 @@ end
         gb_monoms2 = map(f -> collect(exponent_vectors(f)), gb2)
         gb_coeffs2 = map(f -> collect(T.(coefficients(f))), gb2)
         @test (gb_monoms1, gb_coeffs1) == (gb_monoms2, gb_coeffs2)
-        flag3, gb_monoms3, gb_coeffs3 =
+        flag3, gb_coeffs3 =
             Groebner.groebner_apply!(trace1, ring, monoms, coeffs; passthrough...)
         flag4, gb4 = Groebner.groebner_apply!(trace2, sys; passthrough...)
-        gb_monoms4 = map(f -> collect(exponent_vectors(f)), gb4)
         gb_coeffs4 = map(f -> collect(T.(coefficients(f))), gb4)
         @test (flag3, gb_coeffs3) == (flag4, gb_coeffs4)
     end
@@ -417,8 +416,7 @@ end
     @test ([[[0, 0]]], [[1]]) == Groebner.groebner_learn(ring, [[[0, 0]]], [[1]])[2:3]
     @test ([[[1, 1]]], [[1]]) == Groebner.groebner_learn(ring, [[[1, 1]]], [[2]])[2:3]
     trace, _ = Groebner.groebner_learn(ring, [[[1, 1]]], [[2]])
-    @test (true, [[[1, 1]]], [[1]]) ==
-          Groebner.groebner_apply!(trace, ring, [[[1, 1]]], [[2]])
+    @test (true, [[1]]) == Groebner.groebner_apply!(trace, ring, [[[1, 1]]], [[2]])
     # ring = Groebner.PolyRing(2, Groebner.Lex(), 2^30 + 3)
     # @test ([[[0, 0]]], [[1]]) == Groebner.groebner_learn(ring, [[[0, 0]]], [[1]])[2:3]
     # @test ([[[1, 1]]], [[1]]) == Groebner.groebner_learn(ring, [[[1, 1]]], [[2]])[2:3]
@@ -430,22 +428,22 @@ end
     ring4 = Groebner.PolyRing(2, Groebner.DegLex(), 17)
     trace, (gb0...) = Groebner.groebner_learn(ring0, [[[0, 0], [1, 1]]], [[1, -1]])
     @test gb0 == ([[[1, 1], [0, 0]]], [[1, 4]])
-    flag1, (gb1...) = Groebner.groebner_apply!(trace, ring1, [[[0, 0], [1, 1]]], [[1, -1]])
-    flag2, (gb2...) = Groebner.groebner_apply!(trace, ring2, [[[1, 1], [0, 0]]], [[-1, 1]])
-    flag3, (gb3...) =
+    flag1, gb1 = Groebner.groebner_apply!(trace, ring1, [[[0, 0], [1, 1]]], [[1, -1]])
+    flag2, gb2 = Groebner.groebner_apply!(trace, ring2, [[[1, 1], [0, 0]]], [[-1, 1]])
+    flag3, gb3 =
         Groebner.groebner_apply!(trace, ring3, [[[0, 0], [0, 1], [1, 1]]], [[1, 0, -1]])
-    flag4, (gb4...) = Groebner.groebner_apply!(trace, ring4, [[[0, 0], [1, 1]]], [[1, -1]])
+    flag4, gb4 = Groebner.groebner_apply!(trace, ring4, [[[0, 0], [1, 1]]], [[1, -1]])
     @test flag1 && flag2 && flag3 && flag4
-    @test gb1 == ([[[1, 1], [0, 0]]], [[1, 6]])
-    @test gb2 == ([[[1, 1], [0, 0]]], [[1, 10]])
-    @test gb3 == ([[[1, 1], [0, 0]]], [[1, 12]])
-    @test gb4 == ([[[1, 1], [0, 0]]], [[1, 16]])
+    @test gb1 == ([[1, 6]])
+    @test gb2 == ([[1, 10]])
+    @test gb3 == ([[1, 12]])
+    @test gb4 == ([[1, 16]])
 
-    flag1, (gb1...) = Groebner.groebner_apply!(trace, ring1, [[[0, 0]]], [[1]])
-    flag2, (gb2...) = Groebner.groebner_apply!(trace, ring2, [[[1, 1], [0, 0]]], [[-1, 0]])
-    flag3, (gb3...) =
+    flag1, gb1 = Groebner.groebner_apply!(trace, ring1, [[[0, 0]]], [[1]])
+    flag2, gb2 = Groebner.groebner_apply!(trace, ring2, [[[1, 1], [0, 0]]], [[-1, 0]])
+    flag3, gb3 =
         Groebner.groebner_apply!(trace, ring3, [[[0, 0], [0, 1], [1, 1]]], [[1, 0, -1]])
-    flag4, (gb4...) = Groebner.groebner_apply!(trace, ring4, [[[0, 0], [1, 1]]], [[1, -1]])
+    flag4, gb4 = Groebner.groebner_apply!(trace, ring4, [[[0, 0], [1, 1]]], [[1, -1]])
     @test !flag1 && !flag2 && flag3 && flag4
 
     sys = Groebner.Examples.cyclicn(5, k=GF(2^40 + 15))

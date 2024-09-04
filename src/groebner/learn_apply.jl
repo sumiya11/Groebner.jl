@@ -63,10 +63,12 @@ function __groebner_learn1(
 
     trace.representation = params.representation
     trace.term_sorting_permutations = term_sorting_permutations
-    trace.support = monoms
-    trace.gb_support = gb_monoms
 
-    WrappedTrace(trace), gb_monoms, gb_coeffs
+    wrapped_trace = WrappedTrace(trace)
+    wrapped_trace.sys_support = monoms
+    wrapped_trace.gb_support = gb_monoms
+
+    wrapped_trace, gb_monoms, gb_coeffs
 end
 
 # internal structs => internal structs
@@ -113,10 +115,15 @@ function groebner_apply0!(
     options::KeywordArguments
 )
     ring, monoms, coeffs, options = io_convert_polynomials_to_ir(polynomials, options)
-    flag, gb_monoms, gb_coeffs =
-        __groebner_apply1!(wrapped_trace, ring, monoms, coeffs, options)
+    flag, gb_coeffs = __groebner_apply1!(wrapped_trace, ring, monoms, coeffs, options)
     !flag && return (flag, polynomials)
-    result = io_convert_ir_to_polynomials(ring, polynomials, gb_monoms, gb_coeffs, options)
+    result = io_convert_ir_to_polynomials(
+        ring,
+        polynomials,
+        wrapped_trace.gb_support,
+        gb_coeffs,
+        options
+    )
     flag, result
 end
 
@@ -174,12 +181,10 @@ function _groebner_apply_batch1!(
 ) where {N, T}
     flag, ring, monoms, coeffs = ir_pack_coeffs(batch)
     !flag && return flag, map(el -> el[2:end], batch)
-    flag, gb_monoms, gb_coeffs =
-        __groebner_apply1!(wrapped_trace, ring, monoms, coeffs, options)
+    flag, gb_coeffs = __groebner_apply1!(wrapped_trace, ring, monoms, coeffs, options)
     !flag && return flag, map(el -> el[2:end], batch)
     unpacked = ir_unpack_composite_coefficients(gb_coeffs)
-    gb_batch = map(el -> (gb_monoms, el), unpacked)
-    true, gb_batch
+    true, unpacked
 end
 
 function __groebner_apply1!(
@@ -191,57 +196,55 @@ function __groebner_apply1!(
 ) where {I <: Integer, C <: Coeff}
     params = AlgorithmParameters(ring, options)
 
-    trace = get_trace!(wrapped_trace, ring, params)
+    flag = trace_check_input(wrapped_trace, monoms, coeffs)
+    !flag && return flag, coeffs
 
-    flag = trace_check_input(trace, monoms, coeffs)
-    !flag && return flag, monoms, coeffs
+    trace = get_trace!(wrapped_trace, ring, params)
 
     _monoms = filter(!isempty, monoms)
     _coeffs = filter(!isempty, coeffs)
     if trace.empty
         if isempty(_monoms)
-            return true, [monoms[1]], [coeffs[1]]
+            return true, [coeffs[1]]
         else
-            return false, monoms, coeffs
+            return false, coeffs
         end
     end
     monoms, coeffs = _monoms, _coeffs
 
     flag = io_extract_coeffs_raw_X!(trace, coeffs)
-    !flag && return flag, monoms, coeffs
+    !flag && return flag, coeffs
 
-    flag, gb_monoms2, gb_coeffs2 = groebner_apply2!(trace, params)
+    flag, gb_coeffs2 = groebner_apply2!(trace, params)
+    if !flag
+        return flag, coeffs
+    end
+    
+    @assert length(gb_coeffs2) == length(wrapped_trace.gb_support)
+    for i in 1:length(wrapped_trace.gb_support)
+        @assert length(gb_coeffs2[i]) == length(wrapped_trace.gb_support[i])
+    end
 
-    flag, trace.gb_support, gb_coeffs2
+    flag, gb_coeffs2
 end
 
 function groebner_apply2!(trace, params)
-    flag, gb_monoms, gb_coeffs = _groebner_apply2!(trace, params)
+    flag, gb_coeffs = _groebner_apply2!(trace, params)
     if !flag
         # Recover trace
         @log :info "Trace might be corrupted. Recovering..."
         trace.nfail += 1
         empty!(trace.matrix_sorted_columns)
         trace.buf_basis = basis_deepcopy(trace.input_basis)
-        return flag, gb_monoms, gb_coeffs
+        return flag, gb_coeffs
     end
-    flag, gb_monoms, gb_coeffs
+    flag, gb_coeffs
 end
 
 function _groebner_apply2!(trace, params)
     flag = f4_apply!(trace, trace.ring, trace.buf_basis, params)
 
-    gb_monoms, gb_coeffs = basis_export_data(trace.gb_basis, trace.hashtable)
+    gb_coeffs = basis_export_coeffs(trace.gb_basis)
 
-    # Check once again that the sizes coincide
-    if length(gb_monoms) != length(gb_coeffs)
-        return false, gb_monoms, gb_coeffs
-    end
-    @inbounds for i in 1:length(gb_monoms)
-        if length(gb_monoms[i]) != length(gb_coeffs[i])
-            return false, gb_monoms, gb_coeffs
-        end
-    end
-
-    flag, gb_monoms, gb_coeffs
+    flag, gb_coeffs
 end
