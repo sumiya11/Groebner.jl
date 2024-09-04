@@ -194,6 +194,7 @@ function hashtable_reinitialize!(ht::MonomialHashtable{M}) where {M}
     ht.load = 1
     ht.offset = 2
     ht.size = initial_size
+
     resize!(ht.hashtable, ht.size)
 
     half_size = div(ht.size, 2)
@@ -201,6 +202,7 @@ function hashtable_reinitialize!(ht::MonomialHashtable{M}) where {M}
     resize!(ht.labels, half_size)
     resize!(ht.hashvals, half_size)
     resize!(ht.divmasks, half_size)
+
     hashtable = ht.hashtable
     @inbounds for i in 1:(ht.size)
         hashtable[i] = zero(MonomId)
@@ -230,6 +232,7 @@ function hashtable_resize_if_needed!(ht::MonomialHashtable, added::Int)
     resize!(ht.labels, half_size)
     resize!(ht.hashvals, half_size)
     resize!(ht.divmasks, half_size)
+
     @inbounds for i in 1:(ht.size)
         ht.hashtable[i] = zero(MonomId)
     end
