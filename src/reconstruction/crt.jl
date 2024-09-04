@@ -77,7 +77,7 @@ end
 ###
 # Element-wise CRT
 
-# table of big integers needs to be initialized
+# table of big integers must be initialized
 #
 # A mod M, a_1 mod m_1, ..., a_n mod m_n  =>  B mod M m_1 ... m_n.
 # Reconstructs only the witness set.
@@ -155,7 +155,7 @@ function crt_vec_full!(
             for j in 1:length(table_zz[i])
                 rem_ij = UInt64(table_ff[i][j])
                 @invariant 0 <= rem_ij < moduli[1]
-                table_zz[i][j] = rem_ij
+                Base.GMP.MPZ.set_ui!(table_zz[i][j], rem_ij)
             end
         end
         return nothing
