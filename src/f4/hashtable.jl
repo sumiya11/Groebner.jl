@@ -68,14 +68,20 @@ hashtable_needs_resize(size, load, added) =
 function hashtable_initialize(
     ring::PolyRing{Ord},
     rng::AbstractRNG,
-    MonomT::T,
-    initial_size::Int
+    MonomT::T
 ) where {Ord <: AbstractMonomialOrdering, T}
-    monoms = Vector{MonomT}(undef, initial_size)
+    initial_size = 2^10
+
     hashtable = zeros(MonomId, initial_size)
-    labels = Vector{Int32}(undef, initial_size)
-    hashvals = Vector{MonomHash}(undef, initial_size)
-    divmasks = Vector{DivisionMask}(undef, initial_size)
+
+    # The table is filled to no more than 50% at any time so there is no need to
+    # allocate the full storage
+    half_size = div(initial_size, 2)
+    @assert half_size > 0
+    monoms = Vector{MonomT}(undef, half_size)
+    labels = Vector{Int32}(undef, half_size)
+    hashvals = Vector{MonomHash}(undef, half_size)
+    divmasks = Vector{DivisionMask}(undef, half_size)
 
     nvars = ring.nvars
     ord = ring.ord
@@ -131,11 +137,13 @@ function hashtable_initialize_secondary(ht::MonomialHashtable{M}) where {M <: Mo
     initial_size = 2^6
     @invariant initial_size > 1
 
-    monoms = Vector{M}(undef, initial_size)
     hashtable = zeros(MonomId, initial_size)
-    labels = Vector{Int32}(undef, initial_size)
-    hashvals = Vector{MonomHash}(undef, initial_size)
-    divmasks = Vector{DivisionMask}(undef, initial_size)
+
+    half_size = div(initial_size, 2)
+    monoms = Vector{M}(undef, half_size)
+    labels = Vector{Int32}(undef, half_size)
+    hashvals = Vector{MonomHash}(undef, half_size)
+    divmasks = Vector{DivisionMask}(undef, half_size)
 
     # preserve ring info
     nvars = ht.nvars
@@ -186,12 +194,13 @@ function hashtable_reinitialize!(ht::MonomialHashtable{M}) where {M}
     ht.load = 1
     ht.offset = 2
     ht.size = initial_size
-
-    resize!(ht.monoms, ht.size)
     resize!(ht.hashtable, ht.size)
-    resize!(ht.labels, ht.size)
-    resize!(ht.hashvals, ht.size)
-    resize!(ht.divmasks, ht.size)
+
+    half_size = div(ht.size, 2)
+    resize!(ht.monoms, half_size)
+    resize!(ht.labels, half_size)
+    resize!(ht.hashvals, half_size)
+    resize!(ht.divmasks, half_size)
     hashtable = ht.hashtable
     @inbounds for i in 1:(ht.size)
         hashtable[i] = zero(MonomId)
@@ -200,10 +209,6 @@ function hashtable_reinitialize!(ht::MonomialHashtable{M}) where {M}
     ht.monoms[1] = monom_construct_const(M, ht.nvars)
 
     nothing
-end
-
-function hashtable_select_initial_size(ring::PolyRing)
-    2^10
 end
 
 function hashtable_resize_if_needed!(ht::MonomialHashtable, added::Int)
@@ -217,11 +222,14 @@ function hashtable_resize_if_needed!(ht::MonomialHashtable, added::Int)
     @invariant ispow2(newsize)
 
     ht.size = newsize
-    resize!(ht.monoms, ht.size)
     resize!(ht.hashtable, ht.size)
-    resize!(ht.labels, ht.size)
-    resize!(ht.hashvals, ht.size)
-    resize!(ht.divmasks, ht.size)
+
+    half_size = div(ht.size, 2)
+    @assert half_size >= ht.load
+    resize!(ht.monoms, half_size)
+    resize!(ht.labels, half_size)
+    resize!(ht.hashvals, half_size)
+    resize!(ht.divmasks, half_size)
     @inbounds for i in 1:(ht.size)
         ht.hashtable[i] = zero(MonomId)
     end
@@ -304,6 +312,7 @@ function hashtable_insert!(ht::MonomialHashtable{M}, e::M) where {M <: Monom}
 
     # add monomial to hashtable
     vidx = (ht.load + 1) % MonomId
+    @invariant vidx <= length(ht.monoms)
     @inbounds ht.hashtable[hidx] = vidx
     @inbounds ht.monoms[vidx] = monom_copy(e)
     divmask = monom_create_divmask(
@@ -552,6 +561,7 @@ function hashtable_insert_polynomial_multiple!(
         @invariant !symbol_ht.frozen
 
         vidx = (symbol_ht.load + 1) % MonomId
+        @invariant vidx <= length(ht.monoms)
         symbol_ht.monoms[vidx] = monom_copy(newmonom)
         symbol_ht.hashtable[hidx] = vidx
         divmask = monom_create_divmask(

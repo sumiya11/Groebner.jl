@@ -16,10 +16,9 @@ function f4_initialize_structs(
     make_monic=true,
     sort_input=true
 ) where {M <: Monom, C <: Coeff}
-    tablesize = hashtable_select_initial_size(ring)
     basis = basis_initialize(ring, length(monoms), C)
     pairset = pairset_initialize(monom_entrytype(M))
-    hashtable = hashtable_initialize(ring, params.rng, M, tablesize)
+    hashtable = hashtable_initialize(ring, params.rng, M)
 
     basis_fill_data!(basis, hashtable, monoms, coeffs)
     hashtable_fill_divmasks!(hashtable)
