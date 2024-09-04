@@ -471,6 +471,7 @@ function pairset_update!(
     @inbounds new_lead = basis.monoms[idx][1]
 
     # Generate new pairs.
+    hashtable_resize_if_needed!(update_ht, bl)
     @inbounds for i in 1:(bl - 1)
         newidx = pl + i
         if !basis.is_redundant[i] &&

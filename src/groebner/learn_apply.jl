@@ -142,7 +142,8 @@ function groebner_apply_batch0!(
         i -> io_convert_ir_to_polynomials(
             ir_batch[i][1],
             batch[i],
-            gb_batch[i]...,
+            wrapped_trace.gb_support,
+            gb_batch[i],
             options
         ),
         1:length(gb_batch)
