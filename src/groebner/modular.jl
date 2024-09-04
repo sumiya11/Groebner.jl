@@ -175,7 +175,7 @@ function modular_prepare!(state::ModularState)
 
     @inbounds for i in 1:length(gb_coeffs)
         state.gb_coeffs_zz[i] = [BigInt(0) for _ in 1:length(gb_coeffs[i])]
-        state.gb_coeffs_qq[i] = [Rational{BigInt}(1) for _ in 1:length(gb_coeffs[i])]
+        state.gb_coeffs_qq[i] = Vector{Rational{BigInt}}(undef, length(gb_coeffs[i])) # [Rational{BigInt}(1) for _ in 1:length(gb_coeffs[i])]
         state.crt_mask[i] = falses(length(gb_coeffs[i]))
         state.ratrec_mask[i] = falses(length(gb_coeffs[i]))
     end

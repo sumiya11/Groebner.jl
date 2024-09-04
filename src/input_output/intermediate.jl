@@ -232,9 +232,10 @@ function ir_convert_internal_to_ir(
     params
 ) where {M <: Monom, C <: Coeff}
     monoms2 = Vector{Vector{Vector{IRexponent}}}(undef, length(monoms))
-    coeffs2 = coeffs
     if eltype(eltype(coeffs)) <: AbstractFloat
-        coeffs2 = map(cc -> map(c -> UInt(c), cc), coeffs2)
+        coeffs2 = map(cc -> map(c -> UInt(c), cc), coeffs)
+    else
+        coeffs2 = coeffs
     end
     @inbounds for i in 1:length(monoms)
         monoms2[i] = Vector{Vector{IRexponent}}(undef, length(monoms[i]))

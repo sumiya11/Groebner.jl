@@ -471,6 +471,7 @@ function pairset_update!(
     @inbounds new_lead = basis.monoms[idx][1]
 
     # Generate new pairs.
+    hashtable_resize_if_needed!(update_ht, bl)
     @inbounds for i in 1:(bl - 1)
         newidx = pl + i
         if !basis.is_redundant[i] &&
@@ -715,16 +716,21 @@ function basis_get_monoms_by_identifiers(
     monoms
 end
 
-function basis_export_data(
-    basis::Basis{C},
-    ht::MonomialHashtable{M}
-) where {M <: Monom, C <: Coeff}
-    exps = basis_get_monoms_by_identifiers(basis, ht)
+function basis_export_coeffs(basis::Basis{C}) where {C <: Coeff}
     coeffs = Vector{Vector{C}}(undef, basis.n_nonredundant)
     @inbounds for i in 1:(basis.n_nonredundant)
         idx = basis.nonredundant_indices[i]
         coeffs[i] = basis.coeffs[idx]
     end
+    coeffs
+end
+
+function basis_export_data(
+    basis::Basis{C},
+    ht::MonomialHashtable{M}
+) where {M <: Monom, C <: Coeff}
+    exps = basis_get_monoms_by_identifiers(basis, ht)
+    coeffs = basis_export_coeffs(basis)
     exps, coeffs
 end
 

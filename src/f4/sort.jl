@@ -13,14 +13,14 @@ _default_sorting_alg() = Base.Sort.DEFAULT_UNSTABLE
 # Sorts arr at the range of indices from..to. 
 # This function is perhaps type unstable
 function sort_part!(
-    arr,
-    from::Integer,
-    to::Integer;
+    arr::AbstractVector{T},
+    from::Int,
+    to::Int;
     lt=isless,
     alg=_default_sorting_alg(),
     by=identity,
-    scratch=nothing
-)
+    scratch::Union{Vector{T}, Nothing}=nothing
+) where {T}
     from > to && return nothing
     ordr = Base.Sort.ord(lt, by, nothing)
     sort!(arr, from, to, alg, ordr, scratch)

@@ -31,8 +31,6 @@ struct ArithmeticZp{AccumType, CoeffType} <: AbstractArithmeticZp{AccumType, Coe
     divisor::AccumType
     add::Bool
 
-    ArithmeticZp(::Type{A}, ::Type{C}, p) where {A, C} = ArithmeticZp(A, C, C(p))
-
     function ArithmeticZp(
         ::Type{AccumType},
         ::Type{CoeffType},
@@ -71,9 +69,6 @@ struct SpecializedArithmeticZp{AccumType, CoeffType, Add} <:
     multiplier::AccumType
     shift::UInt8
     divisor::AccumType
-
-    SpecializedArithmeticZp(::Type{A}, ::Type{C}, p) where {A, C} =
-        SpecializedArithmeticZp(A, C, C(p))
 
     function SpecializedArithmeticZp(
         ::Type{AccumType},
@@ -143,9 +138,6 @@ struct DelayedArithmeticZp{AccumType, CoeffType, Add} <:
     shift::UInt8
     divisor::AccumType
 
-    DelayedArithmeticZp(::Type{A}, ::Type{C}, p) where {A, C} =
-        DelayedArithmeticZp(A, C, C(p))
-
     function DelayedArithmeticZp(
         ::Type{AccumType},
         ::Type{CoeffType},
@@ -205,20 +197,6 @@ struct CompositeArithmeticZp{AccumType, CoeffType, TT} <:
     arithmetics::TT
 
     function CompositeArithmeticZp(
-        ::Type{CompositeNumber{2, AccumType}},
-        ::Type{CompositeNumber{2, CoeffType}},
-        p::CompositeNumber{2, CoeffType}
-    ) where {AccumType <: CoeffZp, CoeffType <: CoeffZp}
-        a1 = SpecializedArithmeticZp(AccumType, CoeffType, p.data[1])
-        a2 = SpecializedArithmeticZp(AccumType, CoeffType, p.data[2])
-        new{
-            CompositeNumber{2, AccumType},
-            CompositeNumber{2, CoeffType},
-            Tuple{typeof(a1), typeof(a2)}
-        }((a1, a2))
-    end
-
-    function CompositeArithmeticZp(
         ::Type{CompositeNumber{N, AccumType}},
         ::Type{CompositeNumber{N, CoeffType}},
         p::CompositeNumber{N, CoeffType}
@@ -267,9 +245,6 @@ struct SignedArithmeticZp{AccumType, CoeffType} <:
     multiplier::AccumType
     addmul::Int8
     shift::UInt8
-
-    SignedArithmeticZp(::Type{A}, ::Type{C}, p) where {A, C} =
-        SignedArithmeticZp(A, C, C(p))
 
     function SignedArithmeticZp(
         ::Type{AccumType},
@@ -383,7 +358,7 @@ end
 
 @inline function fma_mod_p(
     a1::T,
-    a2::T,
+    a2::C,
     a3::T,
     mod::FloatingPointArithmeticZp{T, C}
 ) where {T, C}
@@ -425,7 +400,7 @@ end
 
 @inline function fma_mod_p(
     a1::T,
-    a2::T,
+    a2::C,
     a3::T,
     mod::FloatingPointCompositeArithmeticZp{T, C}
 ) where {T, C}
@@ -487,7 +462,7 @@ function select_arithmetic(
     end
 
     if hint === :signed
-        return SignedArithmeticZp(AccumType, CoeffType, characteristic)
+        return SignedArithmeticZp(AccumType, CoeffType, CoeffType(characteristic))
     end
 
     if hint === :delayed
@@ -495,11 +470,11 @@ function select_arithmetic(
             @log :warn "Cannot use $hint arithmetic with characteristic $characteristic"
             @assert false
         end
-        return DelayedArithmeticZp(AccumType, CoeffType, characteristic)
+        return DelayedArithmeticZp(AccumType, CoeffType, CoeffType(characteristic))
     end
 
     if hint === :basic
-        SpecializedArithmeticZp(AccumType, CoeffType, characteristic)
+        SpecializedArithmeticZp(AccumType, CoeffType, CoeffType(characteristic))
     end
 
     if hint === :auto
@@ -518,14 +493,10 @@ function select_arithmetic(
                using_wide_type_for_coeffs &&
                ((8 * sizeof(CoeffType)) >> 1) -
                (8 * sizeof(CoeffType) - leading_zeros(CoeffType(characteristic))) > 4
-                return DelayedArithmeticZp(
-                    AccumType,
-                    CoeffType,
-                    convert(AccumType, characteristic)
-                )
+                return DelayedArithmeticZp(AccumType, CoeffType, CoeffType(characteristic))
             end
         end
     end
 
-    SpecializedArithmeticZp(AccumType, CoeffType, characteristic)
+    SpecializedArithmeticZp(AccumType, CoeffType, CoeffType(characteristic))
 end

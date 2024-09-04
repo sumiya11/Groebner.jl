@@ -224,8 +224,10 @@ function linalg_interreduce_matrix_pivots_changematrix!(
                     if !haskey(cm, (poly_idx, poly_mult))
                         cm[(poly_idx, poly_mult)] = zero(CoeffType)
                     end
-                    cm[(poly_idx, poly_mult)] =
-                        mod_p(cm[(poly_idx, poly_mult)] + quo * AccumType(cf), arithmetic)
+                    cm[(poly_idx, poly_mult)] = mod_p(
+                        cm[(poly_idx, poly_mult)] + quo * convert(AccumType, cf),
+                        arithmetic
+                    )
                 end
             end
         end
