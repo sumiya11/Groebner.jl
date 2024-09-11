@@ -215,18 +215,8 @@ end
 divisor(arithm::CompositeArithmeticZp) = CompositeNumber(map(divisor, arithm.arithmetics))
 
 # No chance vectorizing this!
-function mod_p(a::CompositeNumber{2, T}, arithm::CompositeArithmeticZp) where {T}
-    a1 = mod_p(a.data[1], arithm.arithmetics[1])
-    a2 = mod_p(a.data[2], arithm.arithmetics[2])
-    CompositeNumber((a1, a2))
-end
-
-function mod_p(a::CompositeNumber{4, T}, arithm::CompositeArithmeticZp) where {T}
-    a1 = mod_p(a.data[1], arithm.arithmetics[1])
-    a2 = mod_p(a.data[2], arithm.arithmetics[2])
-    a3 = mod_p(a.data[3], arithm.arithmetics[3])
-    a4 = mod_p(a.data[4], arithm.arithmetics[4])
-    CompositeNumber((a1, a2, a3, a4))
+function mod_p(a::CompositeNumber{N, T}, arithm::CompositeArithmeticZp) where {N, T}
+    CompositeNumber(map(mod_p, a.data, arithm.arithmetics))
 end
 
 function inv_mod_p(a::T, arithm::CompositeArithmeticZp) where {T}
