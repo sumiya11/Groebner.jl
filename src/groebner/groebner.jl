@@ -239,14 +239,6 @@ function _groebner_learn_and_apply(
 
     witness_set = modular_witness_set(state.gb_coeffs_zz, params)
 
-    crt_vec_partial!(
-        state.gb_coeffs_zz,
-        lucky.modulo,
-        state.gb_coeffs_ff_all,
-        lucky.used_primes,
-        witness_set,
-        state.crt_mask
-    )
     # Initialize a tracer that computes the bases in batches of 4
     trace_4x = trace_copy(trace, CompositeNumber{4, Int32}, false)
 
@@ -465,15 +457,6 @@ function _groebner_learn_and_apply_threaded(
     # CRT and rational reconstrction settings
     witness_set = modular_witness_set(state.gb_coeffs_zz, params)
 
-    # Initialize partial CRT reconstruction
-    crt_vec_partial!(
-        state.gb_coeffs_zz,
-        lucky.modulo,
-        state.gb_coeffs_ff_all,
-        lucky.used_primes,
-        witness_set,
-        state.crt_mask
-    )
     # Initialize a tracer that computes the bases in batches of 4
     trace_4x = trace_copy(trace, CompositeNumber{4, Int32}, false)
 
@@ -688,15 +671,6 @@ function _groebner_classic_modular(
 
     # CRT and rational reconstrction settings
     witness_set = modular_witness_set(state.gb_coeffs_zz, params)
-
-    crt_vec_partial!(
-        state.gb_coeffs_zz,
-        lucky.modulo,
-        state.gb_coeffs_ff_all,
-        lucky.used_primes,
-        witness_set,
-        state.crt_mask
-    )
 
     iters = 0
     while !correct_basis
