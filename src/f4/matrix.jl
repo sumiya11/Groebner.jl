@@ -123,68 +123,6 @@ function matrix_initialize(ring::PolyRing, ::Type{T}) where {T <: Coeff}
     )
 end
 
-# Returns a string with human-readable information about the matrix
-function matrix_string_repr(matrix::MacaulayMatrix{T}) where {T}
-    m, n = size(matrix)
-    nupper, nlower = matrix_nrows_filled(matrix)
-    nleft, nright = matrix_ncols_filled(matrix)
-    m_A, n_A = nupper, nleft
-    m_B, n_B = nupper, nright
-    m_C, n_C = nlower, nleft
-    m_D, n_D = nlower, nright
-    nnz_A, nnz_B, nnz_C, nnz_D = 0, 0, 0, 0
-    A_ref, A_rref = true, true
-    # NOTE: probably want to adjust this when the terminal shrinks
-    max_canvas_width = CustomUnicodePlots.DEFAULT_CANVAS_WIDTH
-    canvas = CustomUnicodePlots.CanvasMatrix2x2(m_A, m_C, n_A, n_B, max_width=max_canvas_width)
-    @inbounds for i in 1:nupper
-        row = matrix.upper_rows[i]
-        if row[1] < i
-            A_ref = false
-        end
-        if row[1] != i
-            A_rref = false
-        end
-        for j in 1:length(row)
-            CustomUnicodePlots.point!(canvas, i, row[j])
-            if row[j] <= nleft
-                if row[j] != i
-                    A_rref = false
-                end
-                nnz_A += 1
-            else
-                nnz_B += 1
-            end
-        end
-    end
-    @inbounds for i in 1:nlower
-        row = matrix.lower_rows[i]
-        for j in 1:length(row)
-            CustomUnicodePlots.point!(canvas, nupper + i, row[j])
-            if row[j] <= nleft
-                nnz_C += 1
-            else
-                nnz_D += 1
-            end
-        end
-    end
-    nnz = nnz_A + nnz_B + nnz_C + nnz_D
-    percent(x) = round(100 * x, digits=5)
-    s = """
-    $(typeof(matrix))
-    $m x $n with $nnz nnz ($(percent(nnz / (m * n)))%)
-    A: $(m_A) x $(n_A) with $(nnz_A) nnz ($(percent(nnz_A / (m_A * n_A)))%) (REF: $(A_ref), RREF: $(A_rref))
-    B: $(m_B) x $(n_B) with $(nnz_B) nnz ($(percent(nnz_B / (m_B * n_B)))%)
-    C: $(m_C) x $(n_C) with $(nnz_C) nnz ($(percent(nnz_C / (m_C * n_C)))%)
-    D: $(m_D) x $(n_D) with $(nnz_D) nnz ($(percent(nnz_D / (m_D * n_D)))%)
-
-    Sparsity pattern:
-
-    $(canvas)
-    """
-    s
-end
-
 # It may be a good idea to call this on the entry to linear algebra
 function matrix_well_formed(matrix::MacaulayMatrix)
     # TODO: not much is checked at the moment, but it can be improved :^)
