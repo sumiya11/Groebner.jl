@@ -17,9 +17,6 @@ function linalg_deterministic_sparse_threaded!(
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
 
-    @log :matrix "linalg_deterministic_sparse!"
-    @log :matrix matrix_string_repr(matrix)
-
     # Reduce CD with AB
     linalg_reduce_matrix_lower_part_threaded_cas!(matrix, basis, arithmetic)
     # Interreduce CD
@@ -44,7 +41,7 @@ function linalg_reduce_matrix_lower_part_threaded_cas!(
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     if nthreads() == 1
-        @log :info """
+        @info """
         Using multi-threaded linear algebra with nthreads() == 1.
         Something probably went wrong."""
     end
@@ -76,8 +73,7 @@ function linalg_reduce_matrix_lower_part_threaded_cas!(
     @inbounds Base.Threads.@threads :static for i in 1:nlow
         t_id = threadid()
         t_local_row = buffers_row[t_id]
-        new_sparse_row_support, new_sparse_row_coeffs =
-            linalg_new_empty_sparse_row(CoeffType)
+        new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
 
         # Select a row to be reduced from the lower part of the matrix
         # NOTE: no copy of coefficients is needed
@@ -155,8 +151,7 @@ function linalg_reduce_matrix_lower_part_threaded_cas!(
             end
         end
 
-        new_sparse_row_support, new_sparse_row_coeffs =
-            linalg_new_empty_sparse_row(CoeffType)
+        new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
     end
 
     true
@@ -219,12 +214,7 @@ function linalg_reduce_dense_row_by_pivots_sparse_threadsafe0!(
         end
         @invariant length(pivot_support) == length(pivot_coeffs)
 
-        linalg_vector_addmul_sparsedense_mod_p!(
-            row,
-            pivot_support,
-            pivot_coeffs,
-            arithmetic
-        )
+        linalg_vector_addmul_sparsedense_mod_p!(row, pivot_support, pivot_coeffs, arithmetic)
 
         @invariant iszero(row[i])
     end

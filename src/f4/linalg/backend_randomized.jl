@@ -18,9 +18,6 @@ function linalg_randomized_sparse!(
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
 
-    @log :matrix "linalg_randomized_sparse!"
-    @log :matrix matrix_string_repr(matrix)
-
     # Reduce CD with AB
     linalg_randomized_reduce_matrix_lower_part!(matrix, basis, arithmetic, rng)
     # Interreduce CD
@@ -60,10 +57,6 @@ function linalg_randomized_reduce_matrix_lower_part!(
     nblocks = linalg_nblocks_in_randomized(nlow)
     rem = nlow % nblocks == 0 ? 0 : 1
     rowsperblock = div(nlow, nblocks) + rem
-    @log :matrix """
-    Rows in the lower part: $nlow
-    The bumber of blocks: $nblocks
-    Rows per block: $rowsperblock"""
 
     # Allocate the buffers
     row = zeros(AccumType, ncols)
@@ -135,8 +128,7 @@ function linalg_randomized_reduce_matrix_lower_part!(
             matrix.some_coeffs[absolute_row_index] = new_sparse_row_coeffs
             matrix.lower_to_coeffs[new_sparse_row_support[1]] = absolute_row_index
 
-            new_sparse_row_support, new_sparse_row_coeffs =
-                linalg_new_empty_sparse_row(CoeffType)
+            new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
         end
     end
 

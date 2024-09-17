@@ -159,14 +159,8 @@ implementations_to_test = [
             if sum(y) >= Groebner.monom_overflow_threshold(UInt8)
                 continue
             end
-            as = [
-                monom_construct_from_vector(EV{T}, x) for
-                EV in implementations_to_test_local
-            ]
-            bs = [
-                monom_construct_from_vector(EV{T}, y) for
-                EV in implementations_to_test_local
-            ]
+            as = [monom_construct_from_vector(EV{T}, x) for EV in implementations_to_test_local]
+            bs = [monom_construct_from_vector(EV{T}, y) for EV in implementations_to_test_local]
 
             @test length(unique(map(lex, as, bs))) == 1
             @test length(unique(map(dl, as, bs))) == 1
@@ -192,10 +186,7 @@ end
 function test_circular_shift(a, b, n, Ord, answers)
     R, x = AbstractAlgebra.QQ[["x$i" for i in 1:n]...]
     vars_to_index = Dict(x .=> 1:n)
-    orders = map(
-        i -> Groebner.ordering_transform(Ord(circshift(x, -i)), vars_to_index),
-        0:(n - 1)
-    )
+    orders = map(i -> Groebner.ordering_transform(Ord(circshift(x, -i)), vars_to_index), 0:(n - 1))
     cmps = map(ord -> ((x, y) -> Groebner.monom_isless(x, y, ord)), orders)
 
     for (cmp, answer) in zip(cmps, answers)
@@ -228,13 +219,7 @@ end
 
             test_circular_shift(a, b, n, Groebner.Lex, [true, true, false, false, true])
             test_circular_shift(a, b, n, Groebner.DegLex, [true, true, false, false, true])
-            test_circular_shift(
-                a,
-                b,
-                n,
-                Groebner.DegRevLex,
-                [true, false, false, true, true]
-            )
+            test_circular_shift(a, b, n, Groebner.DegRevLex, [true, false, false, true, true])
         end
     end
 end

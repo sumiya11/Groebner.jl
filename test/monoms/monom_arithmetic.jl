@@ -133,10 +133,8 @@ implementations_to_test = [
             if sum(x) + sum(y) >= Groebner.monom_overflow_threshold(UInt8)
                 continue
             end
-            as =
-                [monom_construct_from_vector(MT, x) for MT in implementations_to_test_local]
-            bs =
-                [monom_construct_from_vector(MT, y) for MT in implementations_to_test_local]
+            as = [monom_construct_from_vector(MT, x) for MT in implementations_to_test_local]
+            bs = [monom_construct_from_vector(MT, y) for MT in implementations_to_test_local]
 
             results = []
             for (a, b) in zip(as, bs)
@@ -257,11 +255,7 @@ end
                 b = monom_construct_from_vector(MonomType, y)
                 c = Groebner.monom_construct_const(MonomType, n)
                 c = monom_product!(c, a, b)
-                h = Groebner.monom_construct_hash_vector(
-                    Random.MersenneTwister(),
-                    MonomType,
-                    n
-                )
+                h = Groebner.monom_construct_hash_vector(Random.MersenneTwister(), MonomType, n)
                 @test typeof(Groebner.monom_hash(a, h)) === Groebner.MonomHash
                 @test Groebner.monom_hash(a, h) + Groebner.monom_hash(b, h) ==
                       Groebner.monom_hash(c, h)

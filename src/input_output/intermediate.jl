@@ -19,17 +19,13 @@ const IRexponent = UInt32
 # - The Groebner basis of [0] is [0].
 # - The Groebner basis of [f1,...,fn, 0] is the Groebner basis of [f1...fn]
 
-mutable struct PolyRing{
-    Ord <: AbstractMonomialOrdering,
-    C <: Union{CoeffZp, CompositeCoeffZp}
-}
+mutable struct PolyRing{Ord <: AbstractMonomialOrdering, C <: Union{CoeffZp, CompositeCoeffZp}}
     nvars::Int
     ord::Ord
     ch::C
 end
 
-Base.:(==)(r1::PolyRing, r2::PolyRing) =
-    r1.nvars == r2.nvars && r1.ord == r2.ord && r1.ch == r2.ch
+Base.:(==)(r1::PolyRing, r2::PolyRing) = r1.nvars == r2.nvars && r1.ord == r2.ord && r1.ch == r2.ch
 
 ir_is_valid_basic(batch) = throw(DomainError("Invalid IR, unknown types."))
 ir_is_valid_basic(ring, monoms, coeffs) = throw(DomainError("Invalid IR, unknown types."))
@@ -47,8 +43,7 @@ function ir_is_valid_basic(
 ) where {T <: Integer, C <: Number}
     !(length(monoms) == length(coeffs)) && throw(DomainError("Invalid IR."))
     isempty(monoms) && throw(DomainError("Invalid IR."))
-    !(ring.nvars >= 0) &&
-        throw(DomainError("The number of variables must be non-negative."))
+    !(ring.nvars >= 0) && throw(DomainError("The number of variables must be non-negative."))
     !(ring.ch >= 0) && throw(DomainError("Field characteristic must be nonnegative."))
     if ring.ch > 0
         !(C <: Integer) && throw(DomainError("Coefficients must be integers."))
@@ -111,16 +106,11 @@ function ir_ensure_assumptions(
     # Sort terms if needed
     tdeg(e) = vcat(sum(e), e)
     for i in 1:length(new_monoms)
-        if !issorted(
-            new_monoms[i],
-            lt=(a, b) -> monom_isless(tdeg(a), tdeg(b), ring.ord),
-            rev=true
-        )
+        if !issorted(new_monoms[i], lt=(a, b) -> monom_isless(tdeg(a), tdeg(b), ring.ord), rev=true)
             perm = collect(1:length(new_monoms[i]))
             sort!(
                 perm,
-                lt=(a, b) ->
-                    monom_isless(tdeg(new_monoms[i][a]), tdeg(new_monoms[i][b]), ring.ord),
+                lt=(a, b) -> monom_isless(tdeg(new_monoms[i][a]), tdeg(new_monoms[i][b]), ring.ord),
                 rev=true
             )
             new_monoms[i] = new_monoms[i][perm]
@@ -162,6 +152,46 @@ function ir_ensure_assumptions(
         new_coeffs[i] = new_coeffs[i][perm]
     end
     ring, new_monoms, new_coeffs
+end
+
+# Process polynomials on the apply stage
+
+function ir_extract_coeffs_raw!(trace, coeffs::Vector{Vector{C}}) where {C <: Coeff}
+    # write new coefficients directly to trace buffer
+    input_polys_perm = trace.input_permutation
+    term_perms = trace.term_sorting_permutations
+    homog_term_perms = trace.term_homogenizing_permutations
+    CoeffsType = trace.representation.coefftype
+
+    permute_input_terms = !isempty(term_perms)
+    permute_homogenizing_terms = !isempty(homog_term_perms)
+
+    @inbounds for i in 1:length(coeffs)
+        basis_cfs = trace.buf_basis.coeffs[i]
+        poly_index = input_polys_perm[i]
+        poly = coeffs[poly_index]
+        isempty(poly) && return false
+        !(length(poly) == length(basis_cfs)) && return false
+        for j in 1:length(poly)
+            coeff_index = j
+            if permute_input_terms
+                coeff_index = term_perms[poly_index][coeff_index]
+            end
+            if permute_homogenizing_terms
+                coeff_index = homog_term_perms[poly_index][coeff_index]
+            end
+            coeff = poly[coeff_index]
+            basis_cfs[j] = convert(CoeffsType, coeff)
+        end
+    end
+
+    if trace.homogenize
+        @invariant !iszero(trace.ring.ch)
+        trace.buf_basis.coeffs[length(coeffs) + 1][1] = one(CoeffsType)
+        trace.buf_basis.coeffs[length(coeffs) + 1][2] = trace.ring.ch - one(typeof(trace.ring.ch))
+    end
+
+    true
 end
 
 # Packed coefficients utils
@@ -220,8 +250,7 @@ function ir_convert_ir_to_internal(
             coeffs2[i][j] = repr.coefftype(coeffs[i][j])
         end
     end
-    ring2, term_sorting_permutations =
-        ir_set_monomial_ordering!(ring, monoms2, coeffs2, params)
+    ring2, term_sorting_permutations = ir_set_monomial_ordering!(ring, monoms2, coeffs2, params)
     term_sorting_permutations, ring2, monoms2, coeffs2
 end
 

@@ -11,8 +11,7 @@
 const aa_supported_orderings = (:lex, :deglex, :degrevlex)
 const aa_exponent_type = UInt64
 
-aa_is_multivariate_ring(ring) =
-    AbstractAlgebra.elem_type(ring) <: AbstractAlgebra.MPolyRingElem
+aa_is_multivariate_ring(ring) = AbstractAlgebra.elem_type(ring) <: AbstractAlgebra.MPolyRingElem
 
 function io_convert_polynomials_to_ir(polynomials, options::KeywordArguments)
     isempty(polynomials) && throw(DomainError("Empty input."))
@@ -66,17 +65,10 @@ function io_extract_coeffs_ir(ring::PolyRing, polys)
     end
 end
 
-function io_lift_coeff_ff(c::Union{Nemo.FqFieldElem, Nemo.fpFieldElem})
+io_lift_coeff_ff(c) = UInt64(AbstractAlgebra.lift(c))
+io_lift_coeff_ff(c::AbstractAlgebra.GFElem) = AbstractAlgebra.data(c)
+io_lift_coeff_ff(c::Union{Nemo.FqFieldElem, Nemo.fpFieldElem}) =
     UInt64(AbstractAlgebra.lift(Nemo.ZZ, c))
-end
-
-function io_lift_coeff_ff(c::AbstractAlgebra.GFElem)
-    AbstractAlgebra.data(c)
-end
-
-function io_lift_coeff_ff(c)
-    UInt64(AbstractAlgebra.lift(c))
-end
 
 function io_extract_coeffs_ir_ff(ring::PolyRing{T}, polys) where {T}
     res = Vector{Vector{UInt64}}(undef, length(polys))
@@ -161,55 +153,6 @@ function ordering_sym2typed(ord::Symbol)
     elseif ord === :degrevlex
         DegRevLex()
     end
-end
-
-###
-# Process input polynomials on the apply stage
-
-function io_extract_coeffs_raw_X!(trace, coeffs)
-    basis = trace.buf_basis
-    input_polys_perm = trace.input_permutation
-    term_perms = trace.term_sorting_permutations
-    homog_term_perms = trace.term_homogenizing_permutations
-    CoeffsType = trace.representation.coefftype
-
-    # write new coefficients directly to trace.buf_basis
-    permute_input_terms = !isempty(term_perms)
-    permute_homogenizing_terms = !isempty(homog_term_perms)
-
-    @log :misc """
-    Permuting input terms: $permute_input_terms
-    Permuting for homogenization: $permute_homogenizing_terms"""
-    @log :all """Permutations:
-      Of polynomials: $input_polys_perm
-      Of terms (change of ordering): $term_perms
-      Of terms (homogenization): $homog_term_perms"""
-    @inbounds for i in 1:length(coeffs)
-        basis_cfs = basis.coeffs[i]
-        poly_index = input_polys_perm[i]
-        poly = coeffs[poly_index]
-        if isempty(poly)
-            @log :warn "In apply, input contains too many zero polynomials."
-            return false
-        end
-        if !(length(poly) == length(basis_cfs))
-            @log :warn "In apply, some coefficients in the input cancelled out."
-            return false
-        end
-        for j in 1:length(poly)
-            coeff_index = j
-            if permute_input_terms
-                coeff_index = term_perms[poly_index][coeff_index]
-            end
-            if permute_homogenizing_terms
-                coeff_index = homog_term_perms[poly_index][coeff_index]
-            end
-            coeff = poly[coeff_index]
-            basis_cfs[j] = convert(CoeffsType, coeff)
-        end
-    end
-
-    true
 end
 
 ###
@@ -303,9 +246,6 @@ function _io_convert_ir_to_polynomials(
     target_ord = params.ordering isa InputOrdering ? _ord_aa : params.ordering
     if (target_ord != _ord_aa)
         input_ordering_matches_output = false
-        @log :misc """
-          Basis is computed in $(target_ord).
-          Terms in the output are in $(ord_aa)"""
     end
     _io_convert_ir_to_polynomials(
         origring,

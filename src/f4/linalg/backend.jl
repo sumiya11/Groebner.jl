@@ -22,9 +22,6 @@ function linalg_deterministic_sparse!(
         @invariant matrix.upper_rows[i][1] == i
     end
 
-    @log :matrix "linalg_deterministic_sparse!"
-    @log :matrix matrix_string_repr(matrix)
-
     # Reduce CD with AB
     linalg_reduce_matrix_lower_part!(matrix, basis, arithmetic)
     # Interreduce CD
@@ -38,8 +35,6 @@ function linalg_deterministic_sparse_interreduction!(
     arithmetic::AbstractArithmetic
 )
     sort_matrix_upper_rows!(matrix)
-    @log :matrix "linalg_deterministic_sparse_interreduction!"
-    @log :matrix matrix_string_repr(matrix)
 
     # Prepare the matrix
     linalg_prepare_matrix_pivots_in_interreduction!(matrix, basis)
@@ -115,8 +110,7 @@ function linalg_reduce_matrix_lower_part!(
         matrix.some_coeffs[i] = new_sparse_row_coeffs
         matrix.lower_to_coeffs[new_sparse_row_support[1]] = i
 
-        new_sparse_row_support, new_sparse_row_coeffs =
-            linalg_new_empty_sparse_row(CoeffType)
+        new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
     end
 
     true
@@ -171,8 +165,7 @@ function linalg_interreduce_matrix_pivots!(
         # Load the row into a dense array
         linalg_load_sparse_row!(row, sparse_row_support, sparse_row_coeffs)
 
-        new_sparse_row_support, new_sparse_row_coeffs =
-            linalg_new_empty_sparse_row(CoeffType)
+        new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
         first_nnz_column = sparse_row_support[1]
         zeroed = linalg_reduce_dense_row_by_pivots_sparse!(
             new_sparse_row_support,
@@ -200,13 +193,11 @@ function linalg_interreduce_matrix_pivots!(
         # TODO: maybe get rid of the reversed_rows parameter?
         if !reversed_rows
             matrix.lower_rows[new_pivots] = new_sparse_row_support
-            matrix.some_coeffs[matrix.lower_to_coeffs[abs_column_idx]] =
-                new_sparse_row_coeffs
+            matrix.some_coeffs[matrix.lower_to_coeffs[abs_column_idx]] = new_sparse_row_coeffs
             pivots[abs_column_idx] = matrix.lower_rows[new_pivots]
         else
             matrix.lower_rows[nupper - new_pivots + 1] = new_sparse_row_support
-            matrix.some_coeffs[matrix.lower_to_coeffs[abs_column_idx]] =
-                new_sparse_row_coeffs
+            matrix.some_coeffs[matrix.lower_to_coeffs[abs_column_idx]] = new_sparse_row_coeffs
             pivots[abs_column_idx] = matrix.lower_rows[nupper - new_pivots + 1]
         end
     end
@@ -265,8 +256,7 @@ function linalg_reduce_matrix_lower_part_invariant_pivots!(
         matrix.lower_rows[i] = new_sparse_row_support
         matrix.lower_to_coeffs[i] = i
 
-        new_sparse_row_support, new_sparse_row_coeffs =
-            linalg_new_empty_sparse_row(CoeffType)
+        new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
     end
 
     matrix.npivots = matrix.nrows_filled_lower = matrix.nrows_filled_lower
@@ -426,12 +416,7 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
         end
         @invariant length(pivot_support) == length(pivot_coeffs)
 
-        linalg_vector_addmul_sparsedense_mod_p!(
-            row,
-            pivot_support,
-            pivot_coeffs,
-            arithmetic
-        )
+        linalg_vector_addmul_sparsedense_mod_p!(row, pivot_support, pivot_coeffs, arithmetic)
 
         @invariant iszero(row[i])
     end
@@ -733,10 +718,7 @@ end
 
 function linalg_row_make_monic!(
     row::Vector{T},
-    arithmetic::Union{
-        FloatingPointCompositeArithmeticZp{A, T},
-        FloatingPointArithmeticZp{A, T}
-    },
+    arithmetic::Union{FloatingPointCompositeArithmeticZp{A, T}, FloatingPointArithmeticZp{A, T}},
     first_nnz_index::Int=1
 ) where {A <: Union{CoeffZp, CompositeCoeffZp}, T <: Union{CoeffZp, CompositeCoeffZp}}
     @invariant !iszero(row[first_nnz_index])

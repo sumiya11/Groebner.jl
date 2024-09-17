@@ -44,8 +44,7 @@ import Primes
                 x = abs(rand(T))
                 @test Groebner.mod_p(T(x), arithmetic) == Base.mod(x, T(modulo))
                 if gcd(modulo, T(x)) == 1
-                    @test Groebner.inv_mod_p(T(x), arithmetic) ==
-                          Base.invmod(T(x), T(modulo))
+                    @test Groebner.inv_mod_p(T(x), arithmetic) == Base.invmod(T(x), T(modulo))
                 end
             end
         end

@@ -74,10 +74,7 @@ for (op, n) in _defined_packed_tuples
 end
 
 # Creates a packed monomial from a regular vector
-function monom_construct_from_vector(
-    ::Type{PackedTuple1{T, B}},
-    ev::Vector{U}
-) where {T, B, U}
+function monom_construct_from_vector(::Type{PackedTuple1{T, B}}, ev::Vector{U}) where {T, B, U}
     n = length(ev)
     epc = packed_elperchunk(T, B)
     @invariant n < epc
@@ -95,10 +92,7 @@ function monom_construct_from_vector(
     a1 |= s << (indent * 8)
     PackedTuple1{T, B}(a1)
 end
-function monom_construct_from_vector(
-    ::Type{PackedTuple2{T, B}},
-    ev::Vector{U}
-) where {T, B, U}
+function monom_construct_from_vector(::Type{PackedTuple2{T, B}}, ev::Vector{U}) where {T, B, U}
     n = length(ev)
     epc = packed_elperchunk(T, B)
     @invariant n < 2 * epc
@@ -125,10 +119,7 @@ function monom_construct_from_vector(
     a1 |= s << (indent * 8)
     PackedTuple2{T, B}(a1, a2)
 end
-function monom_construct_from_vector(
-    ::Type{PackedTuple3{T, B}},
-    ev::Vector{U}
-) where {T, B, U}
+function monom_construct_from_vector(::Type{PackedTuple3{T, B}}, ev::Vector{U}) where {T, B, U}
     n = length(ev)
     epc = packed_elperchunk(T, B)
     @invariant n < 3 * epc
@@ -158,10 +149,7 @@ function monom_construct_from_vector(
     a1 |= s << (indent * 8)
     PackedTuple3{T, B}(a1, a2, a3)
 end
-function monom_construct_from_vector(
-    ::Type{PackedTuple4{T, B}},
-    ev::Vector{U}
-) where {T, B, U}
+function monom_construct_from_vector(::Type{PackedTuple4{T, B}}, ev::Vector{U}) where {T, B, U}
     n = length(ev)
     epc = packed_elperchunk(T, B)
     @invariant n < 4 * epc
@@ -222,12 +210,8 @@ function monom_hash(x::PackedTuple2{T, B}, b::Vector{MH}) where {T, B, MH}
     epc = packed_elperchunk(T, B)
     h = _packed_vec_dot(x.a2, b, B, 0)
     h =
-        h + _packed_vec_dot(
-            x.a1,
-            view(b, (epc + 1):length(b)),
-            B,
-            epc - max(epc - 1, length(b) - epc)
-        )
+        h +
+        _packed_vec_dot(x.a1, view(b, (epc + 1):length(b)), B, epc - max(epc - 1, length(b) - epc))
     mod(h, MonomHash)
 end
 function monom_hash(x::PackedTuple3{T, B}, b::Vector{MH}) where {T, B, MH}
@@ -276,8 +260,7 @@ function monom_to_vector!(tmp::Vector{I}, pv::PackedTuple2{T, B}) where {I, T, B
 end
 function monom_to_vector!(tmp::Vector{I}, pv::PackedTuple3{T, B}) where {I, T, B}
     epc = packed_elperchunk(T, B)
-    (length(tmp) < 2 * epc) &&
-        return monom_to_vector!(tmp, PackedTuple2{T, B}(pv.a1, pv.a2))
+    (length(tmp) < 2 * epc) && return monom_to_vector!(tmp, PackedTuple2{T, B}(pv.a1, pv.a2))
     indent = 0
     _packed_vec_unpack!(tmp, pv.a3, B, indent)
     indent = 0
@@ -288,8 +271,7 @@ function monom_to_vector!(tmp::Vector{I}, pv::PackedTuple3{T, B}) where {I, T, B
 end
 function monom_to_vector!(tmp::Vector{I}, pv::PackedTuple4{T, B}) where {I, T, B}
     epc = packed_elperchunk(T, B)
-    (length(tmp) < 3 * epc) &&
-        return monom_to_vector!(tmp, PackedTuple3{T, B}(pv.a1, pv.a2, pv.a3))
+    (length(tmp) < 3 * epc) && return monom_to_vector!(tmp, PackedTuple3{T, B}(pv.a1, pv.a2, pv.a3))
     indent = 0
     _packed_vec_unpack!(tmp, pv.a4, B, indent)
     indent = 0
@@ -304,10 +286,7 @@ end
 ###
 # Monomial orderings for the `PackedTupleI` monomial implementation.
 
-function monom_is_supported_ordering(
-    ::Type{APP},
-    ::Ord
-) where {APP <: AbstractPackedTuple, Ord}
+function monom_is_supported_ordering(::Type{APP}, ::Ord) where {APP <: AbstractPackedTuple, Ord}
     Ord <: Union{DegRevLex{true}, InputOrdering}
 end
 

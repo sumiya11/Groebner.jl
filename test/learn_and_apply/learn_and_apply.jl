@@ -119,25 +119,21 @@ end
     # @test_broken gb_2 == [y2 + (2^56 + 99) // K2(2^50), x2 - 1 // K2(2^49 + 1)]
 
     # Going from one monomial ordering to another is not allowed
-    # K1, K2 = GF(2^31 - 1), GF(2^60 + 33)
-    # R, (x, y) = polynomial_ring(K1, ["x", "y"], internal_ordering=:lex)
-    # R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], internal_ordering=:degrevlex)
-    # system = [x + 1, y - 1]
-    # system2 = [x2 + 1, y2 - 1]
-    # trace, gb_1 = Groebner.groebner_learn(system)
-    # @test_throws DomainError Groebner.groebner_apply!(trace, system2)
+    K1, K2 = GF(2^31 - 1), GF(2^60 + 33)
+    R, (x, y) = polynomial_ring(K1, ["x", "y"], internal_ordering=:lex)
+    R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], internal_ordering=:degrevlex)
+    system = [x + 1, y - 1]
+    system2 = [x2 + 1, y2 - 1]
+    trace, gb_1 = Groebner.groebner_learn(system)
+    @test_throws DomainError Groebner.groebner_apply!(trace, system2)
 
-    # K1, K2 = GF(2^31 - 1), GF(2^60 + 33)
-    # R, (x, y) = polynomial_ring(K1, ["x", "y"], internal_ordering=:lex)
-    # R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], internal_ordering=:degrevlex)
-    # system = [x + 1, y - 1]
-    # system2 = [x2 + 1, y2 - 1]
-    # trace, gb_1 = Groebner.groebner_learn(system)
-    # @test_throws DomainError Groebner.groebner_apply!(
-    #     trace,
-    #     system2;
-    #     ordering=Groebner.DegRevLex()
-    # )
+    K1, K2 = GF(2^31 - 1), GF(2^60 + 33)
+    R, (x, y) = polynomial_ring(K1, ["x", "y"], internal_ordering=:lex)
+    R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], internal_ordering=:degrevlex)
+    system = [x + 1, y - 1]
+    system2 = [x2 + 1, y2 - 1]
+    trace, gb_1 = Groebner.groebner_learn(system)
+    @test_throws DomainError Groebner.groebner_apply!(trace, system2; ordering=Groebner.DegRevLex())
 
     # NOTE: these systems are only relatively very large.
     # We should also test for larger systems and larger primes!!
@@ -151,9 +147,9 @@ end
         (system=[x + 1, y + 2, x * y + 3],),
         (system=[x^20 * y + x + 1, x * y^20 + y + 1],),
         (system=[x^20 * y + x + 1, x * y^20 + y + 1],),
-        # (system=Groebner.Examples.noonn(3, internal_ordering=:lex, k=ZZ),),
+        (system=Groebner.Examples.noonn(3, internal_ordering=:lex, k=ZZ),),
         (system=Groebner.Examples.noonn(4, internal_ordering=:deglex, k=ZZ),),
-        # (system=Groebner.Examples.noonn(5, internal_ordering=:degrevlex, k=ZZ),),
+        (system=Groebner.Examples.noonn(5, internal_ordering=:degrevlex, k=ZZ),),
         (system=Groebner.Examples.katsuran(3, internal_ordering=:degrevlex, k=ZZ),),
         (system=Groebner.Examples.katsuran(4, internal_ordering=:degrevlex, k=ZZ),),
         (system=Groebner.Examples.katsuran(5, internal_ordering=:degrevlex, k=ZZ),),
@@ -161,7 +157,7 @@ end
         (system=Groebner.Examples.katsuran(7, internal_ordering=:degrevlex, k=ZZ),),
         (system=Groebner.Examples.cyclicn(5, internal_ordering=:degrevlex, k=ZZ),),
         (system=Groebner.Examples.cyclicn(6, internal_ordering=:degrevlex, k=ZZ),),
-        # (system=Groebner.Examples.rootn(5, internal_ordering=:lex, k=ZZ),),
+        (system=Groebner.Examples.rootn(5, internal_ordering=:lex, k=ZZ),),
         (system=Groebner.Examples.rootn(5, internal_ordering=:deglex, k=ZZ),),
         (system=Groebner.Examples.rootn(6, internal_ordering=:degrevlex, k=ZZ),),
         (system=Groebner.Examples.eco5(internal_ordering=:degrevlex, k=ZZ),),
@@ -198,8 +194,7 @@ end
 
         # Apply on the same system but modulo a different prime 
         for K_ in Ks
-            system_zp_2 =
-                map(f -> AbstractAlgebra.map_coefficients(c -> K_(BigInt(c)), f), system)
+            system_zp_2 = map(f -> AbstractAlgebra.map_coefficients(c -> K_(BigInt(c)), f), system)
             flag, gb_2 = Groebner.groebner_apply!(trace, system_zp_2)
             @test flag && gb_2 == Groebner.groebner(system_zp_2)
         end
@@ -212,82 +207,80 @@ end
     _x, _y = gens(parent(system_zp[1]))
     trace, gb_1 = Groebner.groebner_learn(system_zp; ordering=Groebner.DegRevLex(_y, _x))
     for K in Primes.nextprimes(2^31, 200)
-        system_zp =
-            map(f -> AbstractAlgebra.map_coefficients(c -> GF(K)(BigInt(c)), f), system)
+        system_zp = map(f -> AbstractAlgebra.map_coefficients(c -> GF(K)(BigInt(c)), f), system)
         _x, _y = gens(parent(system_zp[1]))
         true_gb = Groebner.groebner(system_zp; ordering=Groebner.DegRevLex(_y, _x))
-        flag, gb_2 =
-            Groebner.groebner_apply!(trace, system_zp; ordering=Groebner.DegRevLex(_y, _x))
+        flag, gb_2 = Groebner.groebner_apply!(trace, system_zp; ordering=Groebner.DegRevLex(_y, _x))
         @test flag && gb_2 == true_gb
     end
 end
 
-# @testset "learn & apply, orderings" begin
-#     K = GF(2^31 - 1)
-#     R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:lex)
+@testset "learn & apply, orderings" begin
+    K = GF(2^31 - 1)
+    R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:lex)
 
-#     ord_1 = Groebner.Lex()
-#     trace_1, gb_1 = Groebner.groebner_learn([x + 2y + 3, y], ordering=ord_1)
-#     @test gb_1 == [y, x + 3]
+    ord_1 = Groebner.Lex()
+    trace_1, gb_1 = Groebner.groebner_learn([x + 2y + 3, y], ordering=ord_1)
+    @test gb_1 == [y, x + 3]
 
-#     flag, gb_1_apply = Groebner.groebner_apply!(trace_1, [x + y + 3, y])
-#     @test flag && gb_1 == gb_1_apply
+    flag, gb_1_apply = Groebner.groebner_apply!(trace_1, [x + y + 3, y])
+    @test flag && gb_1 == gb_1_apply
 
-#     ord_2 = Groebner.Lex(y, x)
-#     trace_2, gb_2 = Groebner.groebner_learn([y, x + 2y^2 + 3], ordering=ord_2)
-#     @test gb_2 == [x + 3, y]
+    ord_2 = Groebner.Lex(y, x)
+    trace_2, gb_2 = Groebner.groebner_learn([y, x + 2y^2 + 3], ordering=ord_2)
+    @test gb_2 == [x + 3, y]
 
-#     flag, gb_2_apply = Groebner.groebner_apply!(trace_2, [y, x + 2y^2 + 3])
-#     @test flag && gb_2 == gb_2_apply
+    flag, gb_2_apply = Groebner.groebner_apply!(trace_2, [y, x + 2y^2 + 3])
+    @test flag && gb_2 == gb_2_apply
 
-#     K = GF(2^31 - 1)
-#     n = 10
-#     R, x = polynomial_ring(K, [["x$i" for i in 1:n]...], internal_ordering=:degrevlex)
-#     F = (x .+ (1:n) .* circshift(x, 1)) .^ 2
-#     # F = [(x1 + xn)^2, (x2 + 2 x1)^2, ..., (xn + n x_{n-1})^2]
-#     for i in 0:(2n)
-#         if i < n
-#             xi = circshift(x, -i)
-#         else
-#             xi = Random.shuffle(x)
-#         end
+    K = GF(2^31 - 1)
+    n = 10
+    R, x = polynomial_ring(K, [["x$i" for i in 1:n]...], internal_ordering=:degrevlex)
+    F = (x .+ (1:n) .* circshift(x, 1)) .^ 2
+    # F = [(x1 + xn)^2, (x2 + 2 x1)^2, ..., (xn + n x_{n-1})^2]
+    for i in 0:(2n)
+        if i < n
+            xi = circshift(x, -i)
+        else
+            xi = Random.shuffle(x)
+        end
 
-#         ord = Groebner.Lex(xi)
-#         input = Random.shuffle(F)
-#         gb = Groebner.groebner(input, ordering=ord)
-#         trace, gb_1 = Groebner.groebner_learn(input, ordering=ord)
-#         flag, gb_2 = Groebner.groebner_apply!(trace, input)
-#         @test gb == gb_1
-#         @test flag && gb == gb_2
+        ord = Groebner.Lex(xi)
+        input = Random.shuffle(F)
+        gb = Groebner.groebner(input, ordering=ord)
+        trace, gb_1 = Groebner.groebner_learn(input, ordering=ord)
+        flag, gb_2 = Groebner.groebner_apply!(trace, input)
+        @test gb == gb_1
+        @test flag && gb == gb_2
 
-#         ord = Groebner.DegRevLex(xi)
-#         input = Random.shuffle(F)
-#         gb = Groebner.groebner(input, ordering=ord)
-#         trace, gb_1 = Groebner.groebner_learn(input, ordering=ord)
-#         flag, gb_2 = Groebner.groebner_apply!(trace, input)
-#         @test gb == gb_1
-#         @test flag && gb == gb_2
-#     end
-# end
+        ord = Groebner.DegRevLex(xi)
+        input = Random.shuffle(F)
+        gb = Groebner.groebner(input, ordering=ord)
+        trace, gb_1 = Groebner.groebner_learn(input, ordering=ord)
+        flag, gb_2 = Groebner.groebner_apply!(trace, input)
+        @test gb == gb_1
+        @test flag && gb == gb_2
+    end
+end
 
-# @testset "learn & apply, copy trace" begin
-#     K1, K2 = GF(2^30 + 3), GF(2^31 - 1)
-#     R1, (x1, y1) = polynomial_ring(K1, ["x", "y"])
-#     R2, (x2, y2) = polynomial_ring(K2, ["x", "y"])
+@testset "learn & apply, copy trace" begin
+    K1, K2 = GF(2^30 + 3), GF(2^31 - 1)
+    R1, (x1, y1) = polynomial_ring(K1, ["x", "y"])
+    R2, (x2, y2) = polynomial_ring(K2, ["x", "y"])
 
-#     trace1, gb1 = Groebner.groebner_learn([x1 + 2y1 + 3, y1])
-#     @test gb1 == [y1, x1 + 3]
+    trace1, gb1 = Groebner.groebner_learn([x1 + 2y1 + 3, y1])
+    @test gb1 == [y1, x1 + 3]
 
-#     trace2 = deepcopy(trace1)
+    trace2 = deepcopy(trace1)
 
-#     flag, gb1_apply = Groebner.groebner_apply!(trace2, [x1 + y1 + 3, y1])
-#     @test flag && gb1 == gb1_apply
+    flag, gb1_apply = Groebner.groebner_apply!(trace2, [x1 + y1 + 3, y1])
+    @test flag && gb1 == gb1_apply
 
-#     flag, gb2_apply = Groebner.groebner_apply!(trace1, [x2 + y2 + 3, y2])
-#     @test flag && [y2, x2 + 3] == gb2_apply
-#     flag, gb2_apply = Groebner.groebner_apply!(trace2, [x2 + y2 + 3, y2])
-#     @test flag && [y2, x2 + 3] == gb2_apply
-# end
+    flag, gb2_apply = Groebner.groebner_apply!(trace1, [x2 + y2 + 3, y2])
+    @test flag && [y2, x2 + 3] == gb2_apply
+    flag, gb2_apply = Groebner.groebner_apply!(trace2, [x2 + y2 + 3, y2])
+    @test flag && [y2, x2 + 3] == gb2_apply
+end
 
 @testset "learn & apply, tricky" begin
     for K in [GF(2^31 - 1), GF(2^62 + 135)]
@@ -310,8 +303,6 @@ end
             flag, gb_2 = Groebner.groebner_apply!(trace, s)
             @test gb_1 == gb_2 == [x * y^1000 + y, x^1000 * y + y^1000, y^1999 - x^999 * y]
         end
-
-        #        @test_throws DomainError Groebner.groebner_apply!(trace, s)
     end
 
     K = AbstractAlgebra.GF(2^31 - 1)
@@ -402,8 +393,7 @@ end
         gb_monoms2 = map(f -> collect(exponent_vectors(f)), gb2)
         gb_coeffs2 = map(f -> collect(T.(coefficients(f))), gb2)
         @test (gb_monoms1, gb_coeffs1) == (gb_monoms2, gb_coeffs2)
-        flag3, gb_coeffs3 =
-            Groebner.groebner_apply!(trace1, ring, monoms, coeffs; passthrough...)
+        flag3, gb_coeffs3 = Groebner.groebner_apply!(trace1, ring, monoms, coeffs; passthrough...)
         flag4, gb4 = Groebner.groebner_apply!(trace2, sys; passthrough...)
         gb_coeffs4 = map(f -> collect(T.(coefficients(f))), gb4)
         @test (flag3, gb_coeffs3) == (flag4, gb_coeffs4)
@@ -430,8 +420,7 @@ end
     @test gb0 == ([[[1, 1], [0, 0]]], [[1, 4]])
     flag1, gb1 = Groebner.groebner_apply!(trace, ring1, [[[0, 0], [1, 1]]], [[1, -1]])
     flag2, gb2 = Groebner.groebner_apply!(trace, ring2, [[[1, 1], [0, 0]]], [[-1, 1]])
-    flag3, gb3 =
-        Groebner.groebner_apply!(trace, ring3, [[[0, 0], [0, 1], [1, 1]]], [[1, 0, -1]])
+    flag3, gb3 = Groebner.groebner_apply!(trace, ring3, [[[0, 0], [0, 1], [1, 1]]], [[1, 0, -1]])
     flag4, gb4 = Groebner.groebner_apply!(trace, ring4, [[[0, 0], [1, 1]]], [[1, -1]])
     @test flag1 && flag2 && flag3 && flag4
     @test gb1 == ([[1, 6]])
@@ -441,8 +430,7 @@ end
 
     flag1, gb1 = Groebner.groebner_apply!(trace, ring1, [[[0, 0]]], [[1]])
     flag2, gb2 = Groebner.groebner_apply!(trace, ring2, [[[1, 1], [0, 0]]], [[-1, 0]])
-    flag3, gb3 =
-        Groebner.groebner_apply!(trace, ring3, [[[0, 0], [0, 1], [1, 1]]], [[1, 0, -1]])
+    flag3, gb3 = Groebner.groebner_apply!(trace, ring3, [[[0, 0], [0, 1], [1, 1]]], [[1, 0, -1]])
     flag4, gb4 = Groebner.groebner_apply!(trace, ring4, [[[0, 0], [1, 1]]], [[1, -1]])
     @test !flag1 && !flag2 && flag3 && flag4
 
@@ -482,10 +470,8 @@ end
                     end
                     push!(sys_x, _f)
                 end
-                sys_x_mod_p = map(
-                    f -> AbstractAlgebra.map_coefficients(c -> GF(p)(numerator(c)), f),
-                    sys_x
-                )
+                sys_x_mod_p =
+                    map(f -> AbstractAlgebra.map_coefficients(c -> GF(p)(numerator(c)), f), sys_x)
                 all(iszero, sys_x_mod_p) && continue
                 trace, gb = Groebner.groebner_learn(sys_x_mod_p)
                 backup = deepcopy(trace)
@@ -495,8 +481,7 @@ end
                         f -> AbstractAlgebra.map_coefficients(c -> GF(p2)(numerator(c)), f),
                         sys_x
                     )
-                    success, gb2 =
-                        Groebner.groebner_apply!(trace, sys_x_mod_p2, loglevel=10_000)
+                    success, gb2 = Groebner.groebner_apply!(trace, sys_x_mod_p2)
                     if !success
                         A += 1
                         trace = backup

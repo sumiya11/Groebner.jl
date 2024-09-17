@@ -12,9 +12,6 @@ function linalg_deterministic_sparse_changematrix!(
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
 
-    @log :matrix "linalg_deterministic_sparse_changematrix!"
-    @log :matrix matrix_string_repr(matrix)
-
     matrix_changematrix_initialize!(matrix, matrix.nrows_filled_lower)
 
     # Reduce CD with AB
@@ -30,8 +27,6 @@ function linalg_deterministic_sparse_interreduction_changematrix!(
     arithmetic::AbstractArithmetic
 ) where {C}
     sort_matrix_upper_rows!(matrix)
-    @log :matrix "linalg_deterministic_sparse_interreduction_changematrix!"
-    @log :matrix matrix_string_repr(matrix)
 
     matrix_changematrix_initialize!(matrix, matrix.nrows_filled_upper)
     for i in 1:(matrix.nrows_filled_upper)
@@ -43,12 +38,7 @@ function linalg_deterministic_sparse_interreduction_changematrix!(
     # Prepare the matrix
     linalg_prepare_matrix_pivots_in_interreduction!(matrix, basis)
     # Interreduce AB
-    linalg_interreduce_matrix_pivots_changematrix!(
-        matrix,
-        basis,
-        arithmetic,
-        reversed_rows=true
-    )
+    linalg_interreduce_matrix_pivots_changematrix!(matrix, basis, arithmetic, reversed_rows=true)
     true
 end
 
@@ -136,8 +126,7 @@ function linalg_reduce_matrix_lower_part_changematrix!(
         pivots[new_sparse_row_support[1]] = new_sparse_row_support
         matrix.lower_to_coeffs[new_sparse_row_support[1]] = i
 
-        new_sparse_row_support, new_sparse_row_coeffs =
-            linalg_new_empty_sparse_row(CoeffType)
+        new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
     end
 
     true
@@ -188,8 +177,7 @@ function linalg_interreduce_matrix_pivots_changematrix!(
         linalg_load_sparse_row!(row, sparse_row_support, sparse_row_coeffs)
 
         empty!(reducer_rows)
-        new_sparse_row_support, new_sparse_row_coeffs =
-            linalg_new_empty_sparse_row(CoeffType)
+        new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
         first_nnz_column = sparse_row_support[1]
         zeroed = linalg_reduce_dense_row_by_pivots_sparse_changematrix!(
             new_sparse_row_support,
@@ -224,10 +212,8 @@ function linalg_interreduce_matrix_pivots_changematrix!(
                     if !haskey(cm, (poly_idx, poly_mult))
                         cm[(poly_idx, poly_mult)] = zero(CoeffType)
                     end
-                    cm[(poly_idx, poly_mult)] = mod_p(
-                        cm[(poly_idx, poly_mult)] + quo * convert(AccumType, cf),
-                        arithmetic
-                    )
+                    cm[(poly_idx, poly_mult)] =
+                        mod_p(cm[(poly_idx, poly_mult)] + quo * convert(AccumType, cf), arithmetic)
                 end
             end
         end
@@ -240,14 +226,12 @@ function linalg_interreduce_matrix_pivots_changematrix!(
         if !reversed_rows
             compact_changematrix[new_pivots] = cm
             matrix.lower_rows[new_pivots] = new_sparse_row_support
-            matrix.some_coeffs[matrix.lower_to_coeffs[abs_column_idx]] =
-                new_sparse_row_coeffs
+            matrix.some_coeffs[matrix.lower_to_coeffs[abs_column_idx]] = new_sparse_row_coeffs
             pivots[abs_column_idx] = matrix.lower_rows[new_pivots]
         else
             compact_changematrix[nupper - new_pivots + 1] = cm
             matrix.lower_rows[nupper - new_pivots + 1] = new_sparse_row_support
-            matrix.some_coeffs[matrix.lower_to_coeffs[abs_column_idx]] =
-                new_sparse_row_coeffs
+            matrix.some_coeffs[matrix.lower_to_coeffs[abs_column_idx]] = new_sparse_row_coeffs
             pivots[abs_column_idx] = matrix.lower_rows[nupper - new_pivots + 1]
         end
     end
@@ -306,12 +290,7 @@ function linalg_reduce_dense_row_by_pivots_sparse_changematrix!(
         end
         @invariant length(pivot_support) == length(pivot_coeffs)
 
-        mul = linalg_vector_addmul_sparsedense_mod_p!(
-            row,
-            pivot_support,
-            pivot_coeffs,
-            arithmetic
-        )
+        mul = linalg_vector_addmul_sparsedense_mod_p!(row, pivot_support, pivot_coeffs, arithmetic)
 
         push!(active_reducers, (i, mul))
 

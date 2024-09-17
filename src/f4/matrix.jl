@@ -80,12 +80,7 @@ end
 # The number of allocated (not necessarily filled) rows and columns in the
 # blocks in the matrix
 function matrix_block_sizes(matrix::MacaulayMatrix)
-    (
-        matrix.nrows_filled_upper,
-        matrix.nrows_filled_lower,
-        matrix.ncols_left,
-        matrix.ncols_right
-    )
+    (matrix.nrows_filled_upper, matrix.nrows_filled_lower, matrix.ncols_left, matrix.ncols_right)
 end
 
 # The total number of allocated (not necessarily filled) rows and columns
@@ -128,8 +123,7 @@ function matrix_initialize(ring::PolyRing, ::Type{T}) where {T <: Coeff}
     )
 end
 
-# Returns a string with human-readable information about the matrix. Currently,
-# used in logging (call, e.g., `groebner(system, loglevel=-3)`)
+# Returns a string with human-readable information about the matrix
 function matrix_string_repr(matrix::MacaulayMatrix{T}) where {T}
     m, n = size(matrix)
     nupper, nlower = matrix_nrows_filled(matrix)
@@ -142,8 +136,7 @@ function matrix_string_repr(matrix::MacaulayMatrix{T}) where {T}
     A_ref, A_rref = true, true
     # NOTE: probably want to adjust this when the terminal shrinks
     max_canvas_width = CustomUnicodePlots.DEFAULT_CANVAS_WIDTH
-    canvas =
-        CustomUnicodePlots.CanvasMatrix2x2(m_A, m_C, n_A, n_B, max_width=max_canvas_width)
+    canvas = CustomUnicodePlots.CanvasMatrix2x2(m_A, m_C, n_A, n_B, max_width=max_canvas_width)
     @inbounds for i in 1:nupper
         row = matrix.upper_rows[i]
         if row[1] < i
@@ -301,12 +294,7 @@ function matrix_convert_rows_to_basis_elements!(
     else
         @inbounds for i in 1:(matrix.npivots)
             colidx = rows[i][1]
-            matrix_insert_in_basis_hashtable_pivots!(
-                rows[i],
-                ht,
-                symbol_ht,
-                matrix.column_to_monom
-            )
+            matrix_insert_in_basis_hashtable_pivots!(rows[i], ht, symbol_ht, matrix.column_to_monom)
             basis.coeffs[crs + i] = matrix.some_coeffs[matrix.lower_to_coeffs[colidx]]
             basis.monoms[crs + i] = matrix.lower_rows[i]
             @invariant length(basis.coeffs[crs + i]) == length(basis.monoms[crs + i])
@@ -350,12 +338,7 @@ function matrix_convert_rows_to_basis_elements_nf!(
         basis.nonredundant_indices[basis.n_nonredundant] = basis.n_processed
         if isassigned(matrix.some_coeffs, i)
             row = matrix.lower_rows[i]
-            matrix_insert_in_basis_hashtable_pivots!(
-                row,
-                ht,
-                symbol_ht,
-                matrix.column_to_monom
-            )
+            matrix_insert_in_basis_hashtable_pivots!(row, ht, symbol_ht, matrix.column_to_monom)
             basis.coeffs[basis.n_processed] = matrix.some_coeffs[i]
             basis.monoms[basis.n_processed] = row
         else
@@ -381,10 +364,7 @@ function matrix_polynomial_multiple_to_row!(
     hashtable_insert_polynomial_multiple!(row, monom_hash, mult, poly, basis_ht, symbol_ht)
 end
 
-function matrix_fill_column_to_monom_map!(
-    matrix::MacaulayMatrix,
-    symbol_ht::MonomialHashtable
-)
+function matrix_fill_column_to_monom_map!(matrix::MacaulayMatrix, symbol_ht::MonomialHashtable)
     @invariant !symbol_ht.frozen
 
     column_to_monom = Vector{MonomId}(undef, symbol_ht.load - 1)

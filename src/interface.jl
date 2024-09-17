@@ -118,14 +118,8 @@ correct with high probability, however, no precise bound on the probability is
 known.
 """
 function groebner(polynomials::AbstractVector; options...)
-    Base.require_one_based_indexing(polynomials)
-
     keywords = KeywordArguments(:groebner, options)
-
-    logging_setup(keywords)
-
     result = groebner0(polynomials, keywords)
-
     result
 end
 
@@ -166,22 +160,10 @@ Groebner.groebner(ring, monoms, coeffs)
 
 Same as for `groebner`.
 """
-function groebner(
-    ring::PolyRing,
-    monoms::AbstractVector,
-    coeffs::AbstractVector;
-    options...
-)
-    Base.require_one_based_indexing(monoms)
-    Base.require_one_based_indexing(coeffs)
-
+function groebner(ring::PolyRing, monoms::AbstractVector, coeffs::AbstractVector; options...)
     keywords = KeywordArguments(:groebner, options)
-
-    logging_setup(keywords)
-
     ir_is_valid_basic(ring, monoms, coeffs)
     result = groebner1(ring, monoms, coeffs, keywords)
-
     result
 end
 
@@ -222,14 +204,8 @@ g, m = groebner_with_change_matrix(f, ordering=DegRevLex())
 Same as for `groebner`.
 """
 function groebner_with_change_matrix(polynomials::AbstractVector; options...)
-    Base.require_one_based_indexing(polynomials)
-
     keywords = KeywordArguments(:groebner_with_change_matrix, options)
-
-    logging_setup(keywords)
-
     result = groebner_with_change_matrix0(polynomials, keywords)
-
     result
 end
 
@@ -349,14 +325,8 @@ Observe the better amortized performance of the batched `groebner_apply!`.
 The function `groebner_learn` is thread-safe.
 """
 function groebner_learn(polynomials::AbstractVector; options...)
-    Base.require_one_based_indexing(polynomials)
-
     keywords = KeywordArguments(:groebner_learn, options)
-
-    logging_setup(keywords)
-
     result = groebner_learn0(polynomials, keywords)
-
     result
 end
 
@@ -365,22 +335,10 @@ end
 
 Computes a Groebner basis and emits the trace.
 """
-function groebner_learn(
-    ring::PolyRing,
-    monoms::AbstractVector,
-    coeffs::AbstractVector;
-    options...
-)
-    Base.require_one_based_indexing(monoms)
-    Base.require_one_based_indexing(coeffs)
-
+function groebner_learn(ring::PolyRing, monoms::AbstractVector, coeffs::AbstractVector; options...)
     keywords = KeywordArguments(:groebner_learn, options)
-
-    logging_setup(keywords)
-
     ir_is_valid_basic(ring, monoms, coeffs)
     result = groebner_learn1(ring, monoms, coeffs, keywords)
-
     result
 end
 
@@ -417,14 +375,8 @@ function groebner_apply! end
 
 # Specialization for a single input
 function groebner_apply!(trace::WrappedTrace, polynomials::AbstractVector; options...)
-    Base.require_one_based_indexing(polynomials)
-
     keywords = KeywordArguments(:groebner_apply!, options)
-
-    logging_setup(keywords)
-
     result = groebner_apply0!(trace, polynomials, keywords)
-
     result
 end
 
@@ -436,17 +388,10 @@ function groebner_apply!(
     batch::NTuple{N, T}; # deliberately not ::Tuple{T, Vararg{T, Nminus1}}
     options...
 ) where {N, T <: AbstractVector}
-    !(N in _supported_batch_size) && throw(
-        DomainError("The batch size must be one of the following: $_supported_batch_size")
-    )
-    all(Base.require_one_based_indexing, batch)
-
+    !(N in _supported_batch_size) &&
+        throw(DomainError("The batch size must be one of the following: $_supported_batch_size"))
     keywords = KeywordArguments(:groebner_apply!, options)
-
-    logging_setup(keywords)
-
     result = groebner_apply_batch0!(trace, batch, keywords)
-
     result
 end
 
@@ -459,27 +404,18 @@ function groebner_apply!(
     options...
 )
     keywords = KeywordArguments(:groebner_apply!, options)
-
-    logging_setup(keywords)
-
     ir_is_valid_basic(ring, monoms, coeffs)
     result = groebner_apply1!(trace, ring, monoms, coeffs, keywords)
-
     result
 end
 
 # Low level specialization for a batch of inputs
 function groebner_apply!(trace::WrappedTrace, batch::NTuple{N, T}; options...) where {N, T}
-    !(N in _supported_batch_size) && throw(
-        DomainError("The batch size must be one of the following: $_supported_batch_size")
-    )
+    !(N in _supported_batch_size) &&
+        throw(DomainError("The batch size must be one of the following: $_supported_batch_size"))
     keywords = KeywordArguments(:groebner_apply!, options)
-
-    logging_setup(keywords)
-
     ir_is_valid_basic(batch)
     result = groebner_apply_batch1!(trace, batch, keywords)
-
     result
 end
 
@@ -544,33 +480,15 @@ isgroebner([x*y^2 + x, y*x^2 + y])
 The function `isgroebner` is thread-safe.
 """
 function isgroebner(polynomials::AbstractVector; options...)
-    Base.require_one_based_indexing(polynomials)
-
     keywords = KeywordArguments(:isgroebner, options)
-
-    logging_setup(keywords)
-
     result = isgroebner0(polynomials, keywords)::Bool
-
     result
 end
 
-function isgroebner(
-    ring::PolyRing,
-    monoms::AbstractVector,
-    coeffs::AbstractVector;
-    options...
-)
-    Base.require_one_based_indexing(monoms)
-    Base.require_one_based_indexing(coeffs)
-
+function isgroebner(ring::PolyRing, monoms::AbstractVector, coeffs::AbstractVector; options...)
     keywords = KeywordArguments(:isgroebner, options)
-
-    logging_setup(keywords)
-
     ir_is_valid_basic(ring, monoms, coeffs)
     result = isgroebner1(ring, monoms, coeffs, keywords)
-
     result
 end
 
@@ -631,15 +549,8 @@ normalform([y^2 + x, x^2 + y], [x^2 + y^2 + 1, x^10*y^10])
 The function `normalform` is thread-safe.
 """
 function normalform(basis::AbstractVector, to_be_reduced::AbstractVector; options...)
-    Base.require_one_based_indexing(basis)
-    Base.require_one_based_indexing(to_be_reduced)
-
     keywords = KeywordArguments(:normalform, options)
-
-    logging_setup(keywords)
-
     result = normalform0(basis, to_be_reduced, keywords)
-
     result
 end
 
@@ -655,13 +566,7 @@ function normalform(
     coeffs_to_be_reduced::AbstractVector;
     options...
 )
-    Base.require_one_based_indexing(monoms)
-    Base.require_one_based_indexing(coeffs)
-
     keywords = KeywordArguments(:normalform, options)
-
-    logging_setup(keywords)
-
     ir_is_valid_basic(ring, monoms, coeffs)
     ir_is_valid_basic(ring_to_be_reduced, monoms_to_be_reduced, coeffs_to_be_reduced)
     result = normalform1(
@@ -673,6 +578,5 @@ function normalform(
         coeffs_to_be_reduced,
         keywords
     )
-
     result
 end

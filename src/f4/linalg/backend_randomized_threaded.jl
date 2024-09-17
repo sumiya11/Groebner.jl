@@ -18,9 +18,6 @@ function linalg_randomized_sparse_threaded!(
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
 
-    @log :matrix "linalg_randomized_sparse_threaded!"
-    @log :matrix matrix_string_repr(matrix)
-
     # Reduce CD with AB
     linalg_randomized_reduce_matrix_lower_part_threaded_cas!(matrix, basis, arithmetic, rng)
     # Interreduce CD
@@ -40,7 +37,7 @@ function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
     _, ncols = size(matrix)
     nup, nlow = matrix_nrows_filled(matrix)
     if nthreads() == 1
-        @log :info """
+        @info """
         Using multi-threaded linear algebra with nthreads() == 1.
         Something probably went wrong."""
     end
@@ -82,14 +79,12 @@ function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
         t_local_rows_multipliers = buffers_rows_multipliers[t_id]
         t_local_row = buffers_row[t_id]
         t_local_rng = buffers_rng[t_id]
-        new_sparse_row_support, new_sparse_row_coeffs =
-            linalg_new_empty_sparse_row(CoeffType)
+        new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
 
         new_pivots_count = 0
         @inbounds while new_pivots_count < nrowstotal
             for j in 1:nrowstotal
-                t_local_rows_multipliers[j] =
-                    mod_p(rand(t_local_rng, AccumType), arithmetic)
+                t_local_rows_multipliers[j] = mod_p(rand(t_local_rng, AccumType), arithmetic)
             end
             t_local_row .= AccumType(0)
             first_nnz_col = ncols
@@ -105,8 +100,7 @@ function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
                     colidx = sparse_row_support[l]
                     t_local_row[colidx] = mod_p(
                         t_local_row[colidx] +
-                        AccumType(t_local_rows_multipliers[k]) *
-                        AccumType(sparse_row_coeffs[l]),
+                        AccumType(t_local_rows_multipliers[k]) * AccumType(sparse_row_coeffs[l]),
                         arithmetic
                     )
                 end
@@ -181,8 +175,7 @@ function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
                 end
             end
 
-            new_sparse_row_support, new_sparse_row_coeffs =
-                linalg_new_empty_sparse_row(CoeffType)
+            new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
         end
     end
 

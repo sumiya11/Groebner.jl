@@ -114,11 +114,7 @@ function monom_isless(ea::ExponentVector, eb::ExponentVector, ::DegRevLex{true})
 end
 
 # DegRevLex monomial comparison (shuffled variables).
-function monom_isless(
-    ea::ExponentVector{T},
-    eb::ExponentVector{T},
-    ord::DegRevLex{false}
-) where {T}
+function monom_isless(ea::ExponentVector{T}, eb::ExponentVector{T}, ord::DegRevLex{false}) where {T}
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
     variables = ordering_variables(ord)
@@ -153,11 +149,7 @@ function monom_isless(ea::ExponentVector, eb::ExponentVector, ::DegLex{true})
 end
 
 # DegLex monomial comparison (shuffled variables).
-function monom_isless(
-    ea::ExponentVector{T},
-    eb::ExponentVector{T},
-    ord::DegLex{false}
-) where {T}
+function monom_isless(ea::ExponentVector{T}, eb::ExponentVector{T}, ord::DegLex{false}) where {T}
     @invariant length(ea) == length(eb)
     @invariant length(ea) > 1
     variables = ordering_variables(ord)
@@ -256,11 +248,7 @@ end
 # Monomial-monomial arithmetic.
 
 # Returns the lcm of two monomials. Writes the result to ec.
-function monom_lcm!(
-    ec::ExponentVector{T},
-    ea::ExponentVector{T},
-    eb::ExponentVector{T}
-) where {T}
+function monom_lcm!(ec::ExponentVector{T}, ea::ExponentVector{T}, eb::ExponentVector{T}) where {T}
     @invariant length(ec) == length(ea) == length(eb)
     s = zero(T)
     @inbounds for i in 2:length(ec)

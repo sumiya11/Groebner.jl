@@ -47,28 +47,16 @@ function test_params_nf(
                                         f = rand(set1)
 
                                         @test iszero(
-                                            Groebner.normalform(
-                                                gb,
-                                                f,
-                                                ordering=ord_groebner
-                                            )
+                                            Groebner.normalform(gb, f, ordering=ord_groebner)
                                         )
                                         @test all(
                                             iszero,
-                                            Groebner.normalform(
-                                                gb,
-                                                gb,
-                                                ordering=ord_groebner
-                                            )
+                                            Groebner.normalform(gb, gb, ordering=ord_groebner)
                                         )
 
                                         isempty(set2) && continue
                                         f = rand(set2)
-                                        f_nf = Groebner.normalform(
-                                            gb,
-                                            f,
-                                            ordering=ord_groebner
-                                        )
+                                        f_nf = Groebner.normalform(gb, f, ordering=ord_groebner)
                                         @test iszero(
                                             Groebner.normalform(
                                                 gb,
@@ -110,16 +98,7 @@ end
     p = prod(
         map(
             length,
-            (
-                nvariables,
-                exps,
-                nterms,
-                npolys,
-                grounds,
-                orderings,
-                orderings_groebner,
-                coeffssize
-            )
+            (nvariables, exps, nterms, npolys, grounds, orderings, orderings_groebner, coeffssize)
         )
     )
     @info "Producing $p tests for normal form. This may take a minute"

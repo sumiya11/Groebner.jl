@@ -29,7 +29,7 @@ function param_select_polynomial_representation(
     hint::Symbol=:none
 )
     if !(hint in (:none, :large_exponents))
-        @log :warn "The given hint=$hint was discarded"
+        @info "The given hint=$hint was discarded"
     end
     monomtype = param_select_monomtype(char, nvars, ordering, homogenize, hint, monoms)
     coefftype, using_wide_type_for_coeffs =
@@ -80,15 +80,7 @@ function param_select_monomtype(
             elseif nvars < 4 * variables_per_word
                 return PackedTuple4{UInt64, ExponentSize}
             end
-            @log :misc """
-            Unable to use $(monoms) monomial representation, too many
-            variables ($nvars). Falling back to dense monomial
-            representation.""" maxlog = 1
-        else
-            @log :misc """
-            The given monomial ordering $(ordering) is not implemented for
-            $(monoms) monomial representation. Falling back to dense
-            representation.""" maxlog = 1
+            # falling back to dense representation
         end
     end
 
@@ -152,9 +144,8 @@ function param_select_coefftype(
     end
 
     if arithmetic === :signed
-        if typemax(Int32) < char < typemax(UInt32) ||
-           typemax(Int64) < char < typemax(UInt64)
-            @log :warn "Cannot use $(arithmetic) arithmetic with characteristic $char"
+        if typemax(Int32) < char < typemax(UInt32) || typemax(Int64) < char < typemax(UInt64)
+            @info "Cannot use $(arithmetic) arithmetic with characteristic $char"
             @assert false
         elseif !using_wide_type_for_coeffs
             return tight_signed_type, using_wide_type_for_coeffs
@@ -270,8 +261,6 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         end
     end
 
-    homogenize && kwargs.function_id == :groebner_learn && (@assert false)
-
     linalg = kwargs.linalg
     if !iszero(ring.ch) && (linalg === :randomized || linalg === :auto)
         # Do not use randomized linear algebra if the field characteristic is
@@ -279,11 +268,6 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         # TODO: In the future, it would be good to adapt randomized linear
         # algebra to this case by taking more random samples
         if ring.ch < 500
-            if linalg === :randomized
-                @log :misc """
-                The field characteristic is too small ($(ring.ch)).
-                Switching from randomized linear algebra to a deterministic one."""
-            end
             linalg = :deterministic
         end
     end
@@ -326,12 +310,12 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
     threaded = kwargs.threaded
     if !(_threaded[])
         if threaded === :yes
-            @log :warn """
-            You have explicitly provided keyword argument `threaded = :yes`,
+            @info """
+            Keyword argument `threaded = :yes` was provided to Groebner.jl,
             however, multi-threading is disabled globally in Groebner.jl due to
             the environment variable GROEBNER_NO_THREADED = 0.
 
-            Consider enabling threading by setting GROEBNER_NO_THREADED to 1"""
+            Consider enabling threading by setting GROEBNER_NO_THREADED to 1."""
         end
         threaded = :no
     end

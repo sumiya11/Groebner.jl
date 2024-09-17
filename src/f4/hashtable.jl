@@ -62,8 +62,7 @@ end
 # Initialization
 
 hashtable_resize_threshold() = 0.4
-hashtable_needs_resize(size, load, added) =
-    (load + added) / size > hashtable_resize_threshold()
+hashtable_needs_resize(size, load, added) = (load + added) / size > hashtable_resize_threshold()
 
 function hashtable_initialize(
     ring::PolyRing{Ord},

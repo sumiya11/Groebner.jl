@@ -55,10 +55,7 @@ end
 
     @time @includetests ["groebner/groebner_with_change_matrix"]
 
-    @time @includetests [
-        "learn_and_apply/learn_and_apply",
-        "learn_and_apply/apply_in_batches"
-    ]
+    @time @includetests ["learn_and_apply/learn_and_apply", "learn_and_apply/apply_in_batches"]
 
     @time @includetests ["isgroebner/isgroebner"]
 
@@ -76,8 +73,6 @@ end
     end
 
     @time @includetests ["output_inferred"]
-
-    @time @includetests ["utils/logging"]
 
     # test for regressions
     @time @includetests ["regressions"]

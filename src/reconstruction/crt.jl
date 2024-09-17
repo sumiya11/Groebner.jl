@@ -20,14 +20,7 @@ Writes the answer to `buf` inplace.
 
 Then, `x` is obtained as `x = ∑ ci[i] ai[i] mod M`.
 """
-function crt!(
-    M::BigInt,
-    buf::BigInt,
-    n1::BigInt,
-    n2::BigInt,
-    ai::Vector{UInt},
-    ci::Vector{BigInt}
-)
+function crt!(M::BigInt, buf::BigInt, n1::BigInt, n2::BigInt, ai::Vector{UInt}, ci::Vector{BigInt})
     @invariant length(ai) == length(ci)
 
     Base.GMP.MPZ.set_ui!(n1, UInt(0))

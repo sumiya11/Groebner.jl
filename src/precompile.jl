@@ -8,18 +8,14 @@
     @compile_workload begin
         # all calls in this block will be precompiled, regardless of whether
         # they belong to your package or not (on Julia 1.8 and higher)
-        R, (x, y) = AbstractAlgebra.polynomial_ring(
-            AbstractAlgebra.QQ,
-            ["x", "y"],
-            internal_ordering=:lex
-        )
+        R, (x, y) =
+            AbstractAlgebra.polynomial_ring(AbstractAlgebra.QQ, ["x", "y"], internal_ordering=:lex)
         arr = [x * y^3 + x * y + 1, x^3 * y^2 + x * y^2 + x + 1]
         gb = groebner(arr)
         isgroebner(arr)
         normalform(arr, arr)
 
-        R, (x, y) =
-            AbstractAlgebra.polynomial_ring(AbstractAlgebra.GF(2^31 - 1), ["x", "y"])
+        R, (x, y) = AbstractAlgebra.polynomial_ring(AbstractAlgebra.GF(2^31 - 1), ["x", "y"])
         arr = [x^2 * y + x * y + 1, x * y^5 + y^4 + 1]
         gb = groebner(arr, ordering=DegRevLex())
 
@@ -39,7 +35,4 @@
     end
 end
 
-precompile(
-    groebner,
-    (Vector{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.Rational{BigInt}}},)
-)
+precompile(groebner, (Vector{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.Rational{BigInt}}},))

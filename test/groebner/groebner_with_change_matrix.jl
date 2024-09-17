@@ -1,8 +1,7 @@
 using AbstractAlgebra
 
 @testset "groebner, change matrix" begin
-    R, (x, y, z) =
-        polynomial_ring(GF(2^30 + 3), ["x", "y", "z"], internal_ordering=:degrevlex)
+    R, (x, y, z) = polynomial_ring(GF(2^30 + 3), ["x", "y", "z"], internal_ordering=:degrevlex)
     f = [x * y * z - 1, x * y + x * z + y * z, x + y + z]
     g, m = Groebner.groebner_with_change_matrix(f)
     @test m * f == g
@@ -37,9 +36,6 @@ using AbstractAlgebra
     f = Groebner.Examples.katsuran(4, k=QQ, internal_ordering=:lex)
     g, m = Groebner.groebner_with_change_matrix(f, ordering=Groebner.DegRevLex())
     @test m * f == g
-    @test_throws DomainError Groebner.groebner_with_change_matrix(
-        f,
-        ordering=Groebner.DegLex()
-    )
+    @test_throws DomainError Groebner.groebner_with_change_matrix(f, ordering=Groebner.DegLex())
     @test_throws DomainError Groebner.groebner_with_change_matrix(f)
 end

@@ -41,9 +41,7 @@ function linalg_main!(
     threaded = if params.threaded_f4 === :yes && nthreads() > 1
         # use multi-threading if explicitly requested
         :yes
-    elseif params.threaded_multimodular === :yes &&
-           linalg.algorithm === :learn &&
-           nthreads() > 1
+    elseif params.threaded_multimodular === :yes && linalg.algorithm === :learn && nthreads() > 1
         # TODO: we do not use threading at the learn stage, but we could. One of
         # the obstactles here are frequent allocations and GC.
         :no
@@ -55,16 +53,7 @@ function linalg_main!(
     end
 
     flag = if !isnothing(trace)
-        _linalg_main_with_trace!(
-            trace,
-            matrix,
-            basis,
-            linalg,
-            threaded,
-            changematrix,
-            arithmetic,
-            rng
-        )
+        _linalg_main_with_trace!(trace, matrix, basis, linalg, threaded, changematrix, arithmetic, rng)
     else
         _linalg_main!(matrix, basis, linalg, threaded, changematrix, arithmetic, rng)
     end
@@ -118,11 +107,7 @@ interreduction (or, autoreduction) of the matrix rows.
 
 Returns `true` if successful and `false` otherwise.
 """
-function linalg_normalform!(
-    matrix::MacaulayMatrix,
-    basis::Basis,
-    arithmetic::AbstractArithmetic
-)
+function linalg_normalform!(matrix::MacaulayMatrix, basis::Basis, arithmetic::AbstractArithmetic)
     @invariant matrix_well_formed(matrix)
     _linalg_normalform!(matrix, basis, arithmetic)
 end
@@ -141,11 +126,7 @@ returns `true` if
 
 is zero and `false`, otherwise.
 """
-function linalg_isgroebner!(
-    matrix::MacaulayMatrix,
-    basis::Basis,
-    arithmetic::AbstractArithmetic
-)
+function linalg_isgroebner!(matrix::MacaulayMatrix, basis::Basis, arithmetic::AbstractArithmetic)
     @invariant matrix_well_formed(matrix)
     _linalg_isgroebner!(matrix, basis, arithmetic)
 end
@@ -260,27 +241,13 @@ function _linalg_autoreduce_with_trace!(
     true
 end
 
-function _linalg_normalform!(
-    matrix::MacaulayMatrix,
-    basis::Basis,
-    arithmetic::AbstractArithmetic
-)
+function _linalg_normalform!(matrix::MacaulayMatrix, basis::Basis, arithmetic::AbstractArithmetic)
     sort_matrix_upper_rows!(matrix)
-    @log :matrix "linalg_normalform!"
-    @log :matrix matrix_string_repr(matrix)
-
     linalg_reduce_matrix_lower_part_invariant_pivots!(matrix, basis, arithmetic)
 end
 
-function _linalg_isgroebner!(
-    matrix::MacaulayMatrix,
-    basis::Basis,
-    arithmetic::AbstractArithmetic
-)
+function _linalg_isgroebner!(matrix::MacaulayMatrix, basis::Basis, arithmetic::AbstractArithmetic)
     sort_matrix_upper_rows!(matrix)
     sort_matrix_lower_rows!(matrix)
-    @log :matrix "linalg_isgroebner!"
-    @log :matrix matrix_string_repr(matrix)
-
     linalg_reduce_matrix_lower_part_any_nonzero!(matrix, basis, arithmetic)
 end

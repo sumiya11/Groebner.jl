@@ -153,10 +153,7 @@ function modular_reduce_mod_p_in_batch!(
             for k in 1:N
                 Base.GMP.MPZ.set!(xn[k], cfs_zz_i[j])
             end
-            data = ntuple(
-                k -> T(bigint_mod_p!(buf, xn[k], UInt(prime_xn[k]), prime_big_xn[k])),
-                N
-            )
+            data = ntuple(k -> T(bigint_mod_p!(buf, xn[k], UInt(prime_xn[k]), prime_big_xn[k])), N)
             coeffs_ff_xn[i][j] = CompositeNumber{N, T}(data)
         end
     end
@@ -208,13 +205,11 @@ function modular_crt_full_changematrix!(state::ModularState, lucky::LuckyPrimes)
         resize!(state.changematrix_coeffs_zz, length(coeffs_ff))
         resize!(state.changematrix_coeffs_qq, length(coeffs_ff))
         @inbounds for i in 1:length(coeffs_ff)
-            state.changematrix_coeffs_zz[i] =
-                Vector{Vector{BigInt}}(undef, length(coeffs_ff[i]))
+            state.changematrix_coeffs_zz[i] = Vector{Vector{BigInt}}(undef, length(coeffs_ff[i]))
             state.changematrix_coeffs_qq[i] =
                 Vector{Vector{Rational{BigInt}}}(undef, length(coeffs_ff[i]))
             for j in 1:length(coeffs_ff[i])
-                state.changematrix_coeffs_zz[i][j] =
-                    [BigInt(0) for _ in 1:length(coeffs_ff[i][j])]
+                state.changematrix_coeffs_zz[i][j] = [BigInt(0) for _ in 1:length(coeffs_ff[i][j])]
                 state.changematrix_coeffs_qq[i][j] =
                     [Rational{BigInt}(1) for _ in 1:length(coeffs_ff[i][j])]
             end
@@ -226,10 +221,7 @@ function modular_crt_full_changematrix!(state::ModularState, lucky::LuckyPrimes)
         crt_vec_full!(
             state.changematrix_coeffs_zz[i],
             modulo,
-            [
-                state.changematrix_coeffs_ff_all[ell][i] for
-                ell in 1:length(lucky.used_primes)
-            ],
+            [state.changematrix_coeffs_ff_all[ell][i] for ell in 1:length(lucky.used_primes)],
             lucky.used_primes,
             [
                 falses(length(state.changematrix_coeffs_ff_all[1][i][j])) for
@@ -278,14 +270,7 @@ function modular_lift_check!(
 
     # Finally we check over the rationals
     if params.certify_check
-        return modular_lift_certify_check!(
-            state,
-            ring,
-            basis_qq,
-            basis_ff,
-            hashtable,
-            params
-        )
+        return modular_lift_certify_check!(state, ring, basis_qq, basis_ff, hashtable, params)
     end
 
     true

@@ -7,11 +7,8 @@ import AbstractAlgebra
     @test @inferred Groebner.normalform([x, y], [x + 1, y + 1, R(0)]) == [R(1), R(1), R(0)]
     @test @inferred Groebner.isgroebner([x, y]) == true
 
-    R, (x, y) = polynomial_ring(
-        AbstractAlgebra.GF(2^31 - 1),
-        ["x", "y"];
-        internal_ordering=:degrevlex
-    )
+    R, (x, y) =
+        polynomial_ring(AbstractAlgebra.GF(2^31 - 1), ["x", "y"]; internal_ordering=:degrevlex)
     @test @inferred Groebner.groebner([x, y]) == [y, x]
     @test @inferred Groebner.normalform([x, y], x + 1) == R(1)
     @test @inferred Groebner.normalform([x, y], [x + 1, y + 1, R(0)]) == [R(1), R(1), R(0)]

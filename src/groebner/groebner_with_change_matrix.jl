@@ -28,7 +28,7 @@ function _groebner_with_change_matrix1(ring::PolyRing, monoms, coeffs, options)
         return __groebner_with_change_matrix1(ring, monoms, coeffs, params)
     catch err
         if isa(err, MonomialDegreeOverflow)
-            @log :info """
+            @info """
             Possible overflow of exponent vector detected. 
             Restarting with at least 32 bits per exponent.""" maxlog = 1
             params = AlgorithmParameters(ring, options; hint=:large_exponents)
@@ -79,8 +79,7 @@ function groebner_with_change_matrix2(ring, monoms, coeffs, params)
         _groebner_with_change_matrix2(ring, monoms, coeffs, params)
 
     if params.homogenize
-        ring, gb_monoms, gb_coeffs =
-            dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
+        ring, gb_monoms, gb_coeffs = dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
     end
 
     if !isempty(zero_indices)
@@ -114,8 +113,7 @@ function _groebner_with_change_matrix2(
     basis, pairset, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
     f4!(ring, basis, pairset, hashtable, params)
     gbmonoms, gbcoeffs = basis_export_data(basis, hashtable)
-    matrix_monoms, matrix_coeffs =
-        basis_changematrix_export(basis, hashtable, length(monoms))
+    matrix_monoms, matrix_coeffs = basis_changematrix_export(basis, hashtable, length(monoms))
     gbmonoms, gbcoeffs, matrix_monoms, matrix_coeffs
 end
 
@@ -178,27 +176,15 @@ function _groebner_with_change_classic_modular(
     )
     modular_crt_full_changematrix!(state, lucky)
 
-    success_reconstruct = ratrec_vec_full!(
-        state.gb_coeffs_qq,
-        state.gb_coeffs_zz,
-        lucky.modulo,
-        state.ratrec_mask
-    )
+    success_reconstruct =
+        ratrec_vec_full!(state.gb_coeffs_qq, state.gb_coeffs_zz, lucky.modulo, state.ratrec_mask)
 
     changematrix_success_reconstruct = modular_ratrec_full_changematrix!(state, lucky)
 
     correct_basis = false
     if success_reconstruct && changematrix_success_reconstruct
-        correct_basis = modular_lift_check!(
-            state,
-            lucky,
-            ring_ff,
-            basis,
-            basis_zz,
-            basis_ff,
-            hashtable,
-            params
-        )
+        correct_basis =
+            modular_lift_check!(state, lucky, ring_ff, basis, basis_zz, basis_ff, hashtable, params)
         # At this point, if the constructed basis is correct, we return it.
         if correct_basis
             gb_monoms, _ = basis_export_data(basis_ff, hashtable)
@@ -236,8 +222,7 @@ function _groebner_with_change_classic_modular(
             f4!(ring_ff, basis_ff, pairset, hashtable, params_zp)
 
             push!(state.gb_coeffs_ff_all, basis_ff.coeffs)
-            _, changematrix_coeffs =
-                basis_changematrix_export(basis_ff, hashtable, length(monoms))
+            _, changematrix_coeffs = basis_changematrix_export(basis_ff, hashtable, length(monoms))
             push!(state.changematrix_coeffs_ff_all, changematrix_coeffs)
 
             if !modular_majority_vote!(state, basis_ff, params)
@@ -271,11 +256,8 @@ function _groebner_with_change_classic_modular(
         end
 
         if params.heuristic_check
-            success_check = modular_lift_heuristic_check_partial(
-                state.gb_coeffs_qq,
-                lucky.modulo,
-                witness_set
-            )
+            success_check =
+                modular_lift_heuristic_check_partial(state.gb_coeffs_qq, lucky.modulo, witness_set)
             if !success_check
                 iters += 1
                 batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
@@ -313,16 +295,8 @@ function _groebner_with_change_classic_modular(
             continue
         end
 
-        correct_basis = modular_lift_check!(
-            state,
-            lucky,
-            ring_ff,
-            basis,
-            basis_zz,
-            basis_ff,
-            hashtable,
-            params
-        )
+        correct_basis =
+            modular_lift_check!(state, lucky, ring_ff, basis, basis_zz, basis_ff, hashtable, params)
 
         iters += 1
         batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)

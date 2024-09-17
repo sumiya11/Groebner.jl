@@ -233,7 +233,7 @@ struct ProductOrdering{Ord1, Ord2} <: AbstractMonomialOrdering
         ord2::Ord2
     ) where {Ord1 <: AbstractMonomialOrdering, Ord2 <: AbstractMonomialOrdering}
         if !isempty(intersect(ordering_variables(ord1), ordering_variables(ord2)))
-            @log :info """
+            @info """
             Two blocks of the product ordering intersect by their variables.
             Block 1: $(ord1)
             Block 2: $(ord2)"""
@@ -285,10 +285,7 @@ struct MatrixOrdering{T} <: AbstractMonomialOrdering
         MatrixOrdering(variables, rows)
     end
 
-    function MatrixOrdering(
-        variables::Vector{V},
-        rows::Vector{Vector{T}}
-    ) where {V, T <: Integer}
+    function MatrixOrdering(variables::Vector{V}, rows::Vector{Vector{T}}) where {V, T <: Integer}
         isempty(rows) && throw(DomainError("Invalid ordering."))
         !(length(unique(map(length, rows))) == 1) && throw(DomainError("Invalid ordering."))
         !all(row -> length(row) == length(variables), rows) &&
@@ -311,10 +308,8 @@ ordering_variables(ord::MatrixOrdering) = ord.variables
 
 # Equality of orderings
 Base.:(==)(ord1::Lex, ord2::Lex) = ordering_variables(ord1) == ordering_variables(ord2)
-Base.:(==)(ord1::DegLex, ord2::DegLex) =
-    ordering_variables(ord1) == ordering_variables(ord2)
-Base.:(==)(ord1::DegRevLex, ord2::DegRevLex) =
-    ordering_variables(ord1) == ordering_variables(ord2)
+Base.:(==)(ord1::DegLex, ord2::DegLex) = ordering_variables(ord1) == ordering_variables(ord2)
+Base.:(==)(ord1::DegRevLex, ord2::DegRevLex) = ordering_variables(ord1) == ordering_variables(ord2)
 Base.:(==)(ord1::WeightedOrdering, ord2::WeightedOrdering) =
     ordering_variables(ord1) == ordering_variables(ord2) && (ord1.weights == ord2.weights)
 Base.:(==)(ord1::ProductOrdering, ord2::ProductOrdering) =
@@ -373,10 +368,7 @@ end
 function ordering_transform(ord::ProductOrdering, varmap::AbstractDict)
     !isempty(setdiff(ordering_variables(ord), collect(keys(varmap)))) &&
         throw(DomainError("Invalid ordering transformation."))
-    ProductOrdering(
-        ordering_transform(ord.ord1, varmap),
-        ordering_transform(ord.ord2, varmap)
-    )
+    ProductOrdering(ordering_transform(ord.ord1, varmap), ordering_transform(ord.ord2, varmap))
 end
 
 function ordering_transform(ord::MatrixOrdering, varmap::AbstractDict)

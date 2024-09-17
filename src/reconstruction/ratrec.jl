@@ -8,12 +8,7 @@ function ratrec_reconstruction_bound(m::BigInt)
     isqrt((m >> UInt64(1)) - 1)
 end
 
-function ratrec_nemo(
-    a::Nemo.ZZRingElem,
-    m::Nemo.ZZRingElem,
-    N::Nemo.ZZRingElem,
-    D::Nemo.ZZRingElem
-)
+function ratrec_nemo(a::Nemo.ZZRingElem, m::Nemo.ZZRingElem, N::Nemo.ZZRingElem, D::Nemo.ZZRingElem)
     success, pq = Nemo.reconstruct(a, m, N, D)
     success, Rational{BigInt}(pq)
 end

@@ -58,10 +58,7 @@ end
             (system=[x + 5y + 11z], ord=Groebner.DegRevLex(y) * Groebner.Lex(z, x)),
             (system=[x + 5y + 11z], ord=Groebner.DegRevLex(z) * Groebner.DegRevLex(y, x)),
             (system=[x * y^2 + x + 1, y * z^2 + y + 1, z^4 - z^2 - 1], ord=Groebner.Lex()),
-            (
-                system=[x * y^2 + x + 1, y * z^2 + y + 1, z^4 - z^2 - 1],
-                ord=Groebner.DegRevLex()
-            ),
+            (system=[x * y^2 + x + 1, y * z^2 + y + 1, z^4 - z^2 - 1], ord=Groebner.DegRevLex()),
             (
                 system=[x * y^2 + x + 1, y * z^2 + y + 1, z^4 - z^2 - 1],
                 ord=Groebner.DegRevLex(z) * Groebner.DegRevLex(x, y)

@@ -18,7 +18,6 @@ const _supported_kw_args = (
         monoms       = :auto,
         arithmetic   = :auto,
         seed         = 42,
-        loglevel     = _loglevel_default,
         maxpairs     = INT_INF,
         selection    = :auto,
         modular      = :auto,
@@ -33,7 +32,6 @@ const _supported_kw_args = (
         check       = false,
         ordering    = InputOrdering(),
         monoms      = :dense,
-        loglevel    = _loglevel_default,
         statistics  = :no
     ),
     isgroebner = (
@@ -41,7 +39,6 @@ const _supported_kw_args = (
         certify     = true,
         seed        = 42,
         monoms      = :dense,
-        loglevel    = _loglevel_default,
         statistics  = :no
     ),
     groebner_learn = (
@@ -49,7 +46,6 @@ const _supported_kw_args = (
         ordering    = InputOrdering(),
         monoms      = :auto,
         arithmetic  = :auto,
-        loglevel    = _loglevel_default,
         homogenize  = :auto,
         sweep       = true,
         statistics  = :no,
@@ -60,7 +56,6 @@ const _supported_kw_args = (
         ordering    = InputOrdering(),
         monoms      = :auto,
         arithmetic  = :auto,
-        loglevel    = _loglevel_default,
         sweep       = true,
         statistics  = :no,
         threaded    = :auto,
@@ -73,7 +68,6 @@ const _supported_kw_args = (
         monoms       = :auto,
         arithmetic   = :auto,
         seed         = 42,
-        loglevel     = _loglevel_default,
         maxpairs     = INT_INF,
         selection    = :auto,
         modular      = :auto,
@@ -108,7 +102,6 @@ mutable struct KeywordArguments
     monoms::Symbol
     arithmetic::Symbol
     seed::Int
-    loglevel::Int
     maxpairs::Int
     selection::Symbol
     modular::Symbol
@@ -128,11 +121,9 @@ mutable struct KeywordArguments
         for (key, _) in kws
             if !haskey(default_kw_args, key)
                 error_msg = join(sort(map(string, collect(keys(default_kw_args)))), ", ")
-                throw(
-                    AssertionError("""
-              Keyword \"$key\" is not supported by Groebner.$(function_id).
-              Supported keyword arguments for Groebner.$(function_id) are:\n$error_msg""")
-                )
+                throw(AssertionError("""
+                Keyword \"$key\" is not supported by Groebner.$(function_id).
+                Supported keyword arguments for Groebner.$(function_id) are:\n$error_msg"""))
             end
         end
 
@@ -172,19 +163,6 @@ mutable struct KeywordArguments
         `:auto`, `:delayed`, `:signed`, `:basic`, `:floating`"""
 
         seed = get(kws, :seed, get(default_kw_args, :seed, 42))
-
-        loglevel_int_or_sym =
-            get(kws, :loglevel, get(default_kw_args, :loglevel, _loglevel_default))
-        @assert loglevel_int_or_sym isa Integer ||
-                loglevel_int_or_sym in _loglevels_spelled_out """
-        Not recognized logging level: $loglevel_int_or_sym.
-        Value passed to keyword "loglevel" must be either an integer or one of $_loglevels_spelled_out."""
-
-        loglevel = if loglevel_int_or_sym in _loglevels_spelled_out
-            _loglevel_spell_to_int[loglevel_int_or_sym]
-        else
-            loglevel_int_or_sym
-        end
 
         maxpairs = get(kws, :maxpairs, get(default_kw_args, :maxpairs, INT_INF))
         @assert maxpairs > 0 "The limit on the number of critical pairs must be positive"
@@ -226,7 +204,6 @@ mutable struct KeywordArguments
             monoms,
             arithmetic,
             seed,
-            loglevel,
             maxpairs,
             selection,
             modular,
@@ -238,9 +215,4 @@ mutable struct KeywordArguments
             changematrix
         )
     end
-end
-
-function logging_setup(keywords::KeywordArguments)
-    logger_update(loglevel=keywords.loglevel)
-    nothing
 end

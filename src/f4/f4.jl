@@ -279,14 +279,7 @@ function f4_find_multiplied_reducer!(
     @invariant quotient_hash == monom_hash(quotient, ht.hash_vector)
 
     hashtable_resize_if_needed!(ht, length(poly))
-    row = matrix_polynomial_multiple_to_row!(
-        matrix,
-        symbol_ht,
-        ht,
-        quotient_hash,
-        quotient,
-        poly
-    )
+    row = matrix_polynomial_multiple_to_row!(matrix, symbol_ht, ht, quotient_hash, quotient, poly)
     matrix.nrows_filled_upper += 1
     row_id = matrix.nrows_filled_upper
     @inbounds matrix.upper_rows[row_id] = row

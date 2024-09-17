@@ -72,13 +72,8 @@ function homogenize_generators!(
     new_ring = PolyRing(new_nvars, new_ord, ring.ch)
     term_permutation = sort_input_terms_to_change_ordering!(new_monoms, coeffs, new_ord)
     sat_var_index = new_nvars
-    new_ring_sat, new_monoms, coeffs = saturate_generators_by_variable!(
-        new_ring,
-        new_monoms,
-        coeffs,
-        params,
-        sat_var_index
-    )
+    new_ring_sat, new_monoms, coeffs =
+        saturate_generators_by_variable!(new_ring, new_monoms, coeffs, params, sat_var_index)
     params.target_ord = new_ring_sat.ord
     term_permutation, new_ring_sat, new_monoms, coeffs
 end

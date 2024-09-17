@@ -46,7 +46,7 @@ function _groebner1(
         return __groebner1(ring, monoms, coeffs, params)
     catch err
         if isa(err, MonomialDegreeOverflow)
-            @log :info """
+            @info """
             Possible overflow of exponent vector detected. 
             Restarting with at least 32 bits per exponent.""" maxlog = 1
             params = AlgorithmParameters(ring, options; hint=:large_exponents)
@@ -92,8 +92,7 @@ function groebner2(
     gb_monoms, gb_coeffs = _groebner2(ring, monoms, coeffs, params)
 
     if params.homogenize
-        ring, gb_monoms, gb_coeffs =
-            dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
+        ring, gb_monoms, gb_coeffs = dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
     end
 
     gb_monoms, gb_coeffs
@@ -125,9 +124,8 @@ function _groebner2(
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
     if params.modular_strategy === :learn_and_apply
-        if (
-            params.threaded_multimodular === :yes || params.threaded_multimodular === :auto
-        ) && nthreads() > 1
+        if (params.threaded_multimodular === :yes || params.threaded_multimodular === :auto) &&
+           nthreads() > 1
             _groebner_learn_and_apply_threaded(ring, monoms, coeffs, params)
         else
             _groebner_learn_and_apply(ring, monoms, coeffs, params)
@@ -143,11 +141,7 @@ end
 
 # The next batchsize is a multiple of the previous one aligned to some nice
 # power of two.
-function get_next_batchsize(
-    primes_used::Int,
-    prev_batchsize::Int,
-    batchsize_scaling::Float64
-)
+function get_next_batchsize(primes_used::Int, prev_batchsize::Int, batchsize_scaling::Float64)
     new_batchsize = if prev_batchsize == 1
         4
     else
@@ -204,12 +198,8 @@ function _groebner_learn_and_apply(
         state.crt_mask
     )
 
-    success_reconstruct = ratrec_vec_full!(
-        state.gb_coeffs_qq,
-        state.gb_coeffs_zz,
-        lucky.modulo,
-        state.ratrec_mask
-    )
+    success_reconstruct =
+        ratrec_vec_full!(state.gb_coeffs_qq, state.gb_coeffs_zz, lucky.modulo, state.ratrec_mask)
 
     correct_basis = false
     if success_reconstruct
@@ -249,8 +239,7 @@ function _groebner_learn_and_apply(
                 prime_4x = ntuple(_ -> Int32(primes_next_lucky_prime!(lucky)), 4)
 
                 # Perform reduction modulo primes and store result in basis_ff_4x
-                ring_ff_4x, basis_ff_4x =
-                    modular_reduce_mod_p_in_batch!(ring, basis_zz, prime_4x)
+                ring_ff_4x, basis_ff_4x = modular_reduce_mod_p_in_batch!(ring, basis_zz, prime_4x)
                 params_zp_4x = params_mod_p(
                     params,
                     CompositeNumber{4, Int32}(prime_4x),
@@ -274,8 +263,7 @@ function _groebner_learn_and_apply(
             for j in 1:batchsize
                 prime = primes_next_lucky_prime!(lucky)
 
-                ring_ff, basis_ff =
-                    modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
+                ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
                 params_zp = params_mod_p(params, prime)
 
                 trace.buf_basis = basis_ff
@@ -315,11 +303,8 @@ function _groebner_learn_and_apply(
         end
 
         if params.heuristic_check
-            success_check = modular_lift_heuristic_check_partial(
-                state.gb_coeffs_qq,
-                lucky.modulo,
-                witness_set
-            )
+            success_check =
+                modular_lift_heuristic_check_partial(state.gb_coeffs_qq, lucky.modulo, witness_set)
             if !success_check
                 iters += 1
                 batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
@@ -381,7 +366,7 @@ function _groebner_learn_and_apply_threaded(
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
     if nthreads() == 1
-        @log :info "Using threaded backend with nthreads() == 1, how did we end up here?"
+        @info "Using threaded backend with nthreads() == 1, how did we end up here?"
     end
 
     # Initialize supporting structs
@@ -422,12 +407,8 @@ function _groebner_learn_and_apply_threaded(
         state.crt_mask
     )
 
-    success_reconstruct = ratrec_vec_full!(
-        state.gb_coeffs_qq,
-        state.gb_coeffs_zz,
-        lucky.modulo,
-        state.ratrec_mask
-    )
+    success_reconstruct =
+        ratrec_vec_full!(state.gb_coeffs_qq, state.gb_coeffs_zz, lucky.modulo, state.ratrec_mask)
 
     correct_basis = false
     if success_reconstruct
@@ -462,8 +443,7 @@ function _groebner_learn_and_apply_threaded(
 
     # Thread buffers
     threadbuf_trace_4x = map(_ -> trace_deepcopy(trace_4x), 1:nthreads())
-    threadbuf_gb_coeffs =
-        Vector{Vector{Tuple{Int32, Vector{Vector{Int32}}}}}(undef, nthreads())
+    threadbuf_gb_coeffs = Vector{Vector{Tuple{Int32, Vector{Vector{Int32}}}}}(undef, nthreads())
     for i in 1:nthreads()
         threadbuf_gb_coeffs[i] = Vector{Tuple{Int, Vector{Vector{Int32}}}}()
     end
@@ -542,11 +522,8 @@ function _groebner_learn_and_apply_threaded(
         end
 
         if params.heuristic_check
-            success_check = modular_lift_heuristic_check_partial(
-                state.gb_coeffs_qq,
-                lucky.modulo,
-                witness_set
-            )
+            success_check =
+                modular_lift_heuristic_check_partial(state.gb_coeffs_qq, lucky.modulo, witness_set)
             if !success_check
                 iters += 1
                 batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
@@ -637,25 +614,13 @@ function _groebner_classic_modular(
         state.crt_mask
     )
 
-    success_reconstruct = ratrec_vec_full!(
-        state.gb_coeffs_qq,
-        state.gb_coeffs_zz,
-        lucky.modulo,
-        state.ratrec_mask
-    )
+    success_reconstruct =
+        ratrec_vec_full!(state.gb_coeffs_qq, state.gb_coeffs_zz, lucky.modulo, state.ratrec_mask)
 
     correct_basis = false
     if success_reconstruct
-        correct_basis = modular_lift_check!(
-            state,
-            lucky,
-            ring_ff,
-            basis,
-            basis_zz,
-            basis_ff,
-            hashtable,
-            params
-        )
+        correct_basis =
+            modular_lift_check!(state, lucky, ring_ff, basis, basis_zz, basis_ff, hashtable, params)
         if correct_basis
             gb_monoms, _ = basis_export_data(basis_ff, hashtable)
             gb_coeffs_qq = state.gb_coeffs_qq
@@ -713,11 +678,8 @@ function _groebner_classic_modular(
         end
 
         if params.heuristic_check
-            success_check = modular_lift_heuristic_check_partial(
-                state.gb_coeffs_qq,
-                lucky.modulo,
-                witness_set
-            )
+            success_check =
+                modular_lift_heuristic_check_partial(state.gb_coeffs_qq, lucky.modulo, witness_set)
             if !success_check
                 iters += 1
                 batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
@@ -746,16 +708,8 @@ function _groebner_classic_modular(
             continue
         end
 
-        correct_basis = modular_lift_check!(
-            state,
-            lucky,
-            ring_ff,
-            basis,
-            basis_zz,
-            basis_ff,
-            hashtable,
-            params
-        )
+        correct_basis =
+            modular_lift_check!(state, lucky, ring_ff, basis, basis_zz, basis_ff, hashtable, params)
 
         iters += 1
         batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)

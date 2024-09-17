@@ -17,9 +17,6 @@ function linalg_learn_sparse!(
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
 
-    @log :matrix "linalg_learn_sparse!"
-    @log :matrix matrix_string_repr(matrix)
-
     # Reduce CD with AB
     linalg_learn_reduce_matrix_lower_part!(trace, matrix, basis, arithmetic)
     # Interreduce CD
@@ -38,9 +35,6 @@ function linalg_apply_sparse!(
     # have already been collected in the right order
     sort_matrix_lower_rows!(matrix) # for the CD part
 
-    @log :matrix "linalg_apply_sparse!"
-    @log :matrix matrix_string_repr(matrix)
-
     # Reduce CD with AB
     flag = linalg_apply_reduce_matrix_lower_part!(trace, matrix, basis, arithmetic)
     if !flag
@@ -58,19 +52,10 @@ function linalg_learn_deterministic_sparse_interreduction!(
     basis::Basis,
     arithmetic::AbstractArithmetic
 )
-    @log :matrix "linalg_learn_deterministic_sparse_interreduction!"
-    @log :matrix matrix_string_repr(matrix)
-
     # Prepare the matrix
     linalg_prepare_matrix_pivots_in_interreduction!(matrix, basis)
     # Interreduce AB
-    linalg_learn_interreduce_matrix_pivots!(
-        trace,
-        matrix,
-        basis,
-        arithmetic,
-        reversed_rows=true
-    )
+    linalg_learn_interreduce_matrix_pivots!(trace, matrix, basis, arithmetic, reversed_rows=true)
 
     true
 end
@@ -81,9 +66,6 @@ function linalg_apply_deterministic_sparse_interreduction!(
     basis::Basis,
     arithmetic::AbstractArithmetic
 )
-    @log :matrix "linalg_apply_deterministic_sparse_interreduction!"
-    @log :matrix matrix_string_repr(matrix)
-
     # Prepare the matrix
     linalg_prepare_matrix_pivots_in_interreduction!(matrix, basis)
     # Interreduce AB
@@ -166,8 +148,7 @@ function linalg_apply_reduce_matrix_lower_part!(
         # Set a reference to the coefficients of this row in the matrix
         matrix.lower_to_coeffs[new_sparse_row_support[1]] = i
 
-        new_sparse_row_support, new_sparse_row_coeffs =
-            linalg_new_empty_sparse_row(CoeffType)
+        new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
     end
 
     true
@@ -181,12 +162,8 @@ function linalg_learn_interreduce_matrix_pivots!(
     reversed_rows::Bool=false
 ) where {C <: Coeff, A <: AbstractArithmetic}
     # Perform interreduction
-    flag, _, not_reduced_to_zero = linalg_interreduce_matrix_pivots!(
-        matrix,
-        basis,
-        arithmetic,
-        reversed_rows=reversed_rows
-    )
+    flag, _, not_reduced_to_zero =
+        linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic, reversed_rows=reversed_rows)
     !flag && return flag
 
     # Update the computation trace
@@ -197,10 +174,7 @@ function linalg_learn_interreduce_matrix_pivots!(
         (nup=matrix.nrows_filled_upper, nlow=matrix.nrows_filled_lower, ncols=ncols)
     )
     push!(trace.matrix_nonzeroed_rows, not_reduced_to_zero)
-    push!(
-        trace.matrix_upper_rows,
-        (matrix.upper_to_coeffs[1:nup], matrix.upper_to_mult[1:nup])
-    )
+    push!(trace.matrix_upper_rows, (matrix.upper_to_coeffs[1:nup], matrix.upper_to_mult[1:nup]))
     push!(trace.matrix_lower_rows, (Vector{Int}(), Vector{Int}()))
 
     true
@@ -213,12 +187,8 @@ function linalg_apply_interreduce_matrix_pivots!(
     arithmetic::A;
     reversed_rows::Bool=false
 ) where {C <: Coeff, A <: AbstractArithmetic}
-    flag, any_zeroed, _ = linalg_interreduce_matrix_pivots!(
-        matrix,
-        basis,
-        arithmetic,
-        reversed_rows=reversed_rows
-    )
+    flag, any_zeroed, _ =
+        linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic, reversed_rows=reversed_rows)
     flag && !any_zeroed
 end
 
@@ -283,8 +253,7 @@ function linalg_learn_reduce_matrix_lower_part!(
         pivots[new_sparse_row_support[1]] = new_sparse_row_support
         matrix.lower_to_coeffs[new_sparse_row_support[1]] = i
 
-        new_sparse_row_support, new_sparse_row_coeffs =
-            linalg_new_empty_sparse_row(CoeffType)
+        new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
     end
 
     # Update the tracer information

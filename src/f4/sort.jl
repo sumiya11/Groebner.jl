@@ -171,12 +171,10 @@ function sort_matrix_upper_rows!(matrix::MacaulayMatrix)
         )
     sort!(permutation, lt=cmp, alg=_default_sorting_alg())
     matrix.upper_rows[1:(matrix.nrows_filled_upper)] = matrix.upper_rows[permutation]
-    matrix.upper_to_coeffs[1:(matrix.nrows_filled_upper)] =
-        matrix.upper_to_coeffs[permutation]
+    matrix.upper_to_coeffs[1:(matrix.nrows_filled_upper)] = matrix.upper_to_coeffs[permutation]
     # TODO: this is a bit hacky
     if !isempty(matrix.upper_to_mult)
-        matrix.upper_to_mult[1:(matrix.nrows_filled_upper)] =
-            matrix.upper_to_mult[permutation]
+        matrix.upper_to_mult[1:(matrix.nrows_filled_upper)] = matrix.upper_to_mult[permutation]
     end
     matrix
 end
@@ -192,12 +190,10 @@ function sort_matrix_lower_rows!(matrix::MacaulayMatrix)
         )
     sort!(permutation, lt=cmp, alg=_default_sorting_alg())
     matrix.lower_rows[1:(matrix.nrows_filled_lower)] = matrix.lower_rows[permutation]
-    matrix.lower_to_coeffs[1:(matrix.nrows_filled_lower)] =
-        matrix.lower_to_coeffs[permutation]
+    matrix.lower_to_coeffs[1:(matrix.nrows_filled_lower)] = matrix.lower_to_coeffs[permutation]
     # TODO: this is a bit hacky
     if !isempty(matrix.lower_to_mult)
-        matrix.lower_to_mult[1:(matrix.nrows_filled_lower)] =
-            matrix.lower_to_mult[permutation]
+        matrix.lower_to_mult[1:(matrix.nrows_filled_lower)] = matrix.lower_to_mult[permutation]
     end
     matrix
 end
@@ -215,8 +211,7 @@ function sort_partition_columns_by_labels!(
         while i < m && labels[i + 1] == PIVOT_COLUMN
             i += 1
         end
-        while j > 1 &&
-            (labels[j + 1] == NON_PIVOT_COLUMN || labels[j + 1] == UNKNOWN_PIVOT_COLUMN)
+        while j > 1 && (labels[j + 1] == NON_PIVOT_COLUMN || labels[j + 1] == UNKNOWN_PIVOT_COLUMN)
             j -= 1
         end
         i >= j && break
@@ -233,8 +228,7 @@ function sort_input_terms_to_change_ordering!(
     permutations = Vector{Vector{Int}}(undef, length(exps))
     @inbounds for polyidx in 1:length(exps)
         comparator =
-            (x, y) ->
-                monom_isless(@inbounds(exps[polyidx][y]), @inbounds(exps[polyidx][x]), ord)
+            (x, y) -> monom_isless(@inbounds(exps[polyidx][y]), @inbounds(exps[polyidx][x]), ord)
 
         permutation = collect(1:length(exps[polyidx]))
         sort!(permutation, lt=comparator, alg=_default_sorting_alg())

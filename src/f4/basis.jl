@@ -162,8 +162,7 @@ end
 function basis_well_formed(ring::PolyRing, basis::Basis, hashtable::MonomialHashtable)
     (isempty(basis.monoms) || isempty(basis.coeffs)) && error("Basis cannot be empty")
     !(basis.n_filled >= basis.n_processed) && error("Basis cannot be empty")
-    !is_sorted_by_lead_increasing(basis, hashtable) &&
-        error("Basis elements must be sorted")
+    !is_sorted_by_lead_increasing(basis, hashtable) && error("Basis elements must be sorted")
     for i in basis.n_filled
         isempty(basis.monoms[i]) && error("Zero polynomials are not allowed.")
         !(length(basis.monoms[i]) == length(basis.coeffs[i])) && error("Beda!")
@@ -239,8 +238,7 @@ function basis_changematrix_addmul!(
             if !haskey(poly, new_monom_id)
                 poly[new_monom_id] = zero(CoeffType)
             end
-            poly[new_monom_id] =
-                mod_p(poly[new_monom_id] + ref_cf * AccumType(cf), arithmetic)
+            poly[new_monom_id] = mod_p(poly[new_monom_id] + ref_cf * AccumType(cf), arithmetic)
         end
     end
     nothing
@@ -312,10 +310,7 @@ function basis_shallow_copy_with_new_coeffs(
         basis.is_redundant,
         basis.nonredundant_indices,
         basis.divmasks,
-        basis_changematrix_shallow_copy_with_new_type(
-            basis.changematrix,
-            new_sparse_row_coeffs
-        )
+        basis_changematrix_shallow_copy_with_new_type(basis.changematrix, new_sparse_row_coeffs)
     )
 end
 
@@ -341,10 +336,7 @@ function basis_deep_copy_with_new_coeffs(
         copy(basis.is_redundant),
         copy(basis.nonredundant_indices),
         copy(basis.divmasks),
-        basis_changematrix_deep_copy_with_new_type(
-            basis.changematrix,
-            new_sparse_row_coeffs
-        )
+        basis_changematrix_deep_copy_with_new_type(basis.changematrix, new_sparse_row_coeffs)
     )
 end
 
@@ -412,10 +404,7 @@ end
 
 function basis_make_monic!(
     basis::Basis{C},
-    arithmetic::Union{
-        FloatingPointCompositeArithmeticZp{A, C},
-        FloatingPointArithmeticZp{A, C}
-    },
+    arithmetic::Union{FloatingPointCompositeArithmeticZp{A, C}, FloatingPointArithmeticZp{A, C}},
     changematrix::Bool
 ) where {A <: Union{CoeffZp, CompositeCoeffZp}, C <: Union{CoeffZp, CompositeCoeffZp}}
     cfs = basis.coeffs
@@ -700,10 +689,7 @@ function basis_standardize!(
     perm
 end
 
-function basis_get_monoms_by_identifiers(
-    basis::Basis,
-    ht::MonomialHashtable{M}
-) where {M <: Monom}
+function basis_get_monoms_by_identifiers(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
     monoms = Vector{Vector{M}}(undef, basis.n_nonredundant)
     @inbounds for i in 1:(basis.n_nonredundant)
         idx = basis.nonredundant_indices[i]
@@ -725,10 +711,7 @@ function basis_export_coeffs(basis::Basis{C}) where {C <: Coeff}
     coeffs
 end
 
-function basis_export_data(
-    basis::Basis{C},
-    ht::MonomialHashtable{M}
-) where {M <: Monom, C <: Coeff}
+function basis_export_data(basis::Basis{C}, ht::MonomialHashtable{M}) where {M <: Monom, C <: Coeff}
     exps = basis_get_monoms_by_identifiers(basis, ht)
     coeffs = basis_export_coeffs(basis)
     exps, coeffs

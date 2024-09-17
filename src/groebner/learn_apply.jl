@@ -37,7 +37,7 @@ function _groebner_learn1(
         return __groebner_learn1(ring, monoms, coeffs, params)
     catch err
         if isa(err, MonomialDegreeOverflow)
-            @log :info """
+            @info """
             Possible overflow of exponent vector detected. 
             Restarting with at least 32 bits per exponent.""" maxlog = 1
             params = AlgorithmParameters(ring, options; hint=:large_exponents)
@@ -81,13 +81,21 @@ function groebner_learn2(
     _monoms = filter(!isempty, monoms)
     _coeffs = filter(!isempty, coeffs)
     if isempty(_monoms)
-        return trace_initialize_empty(ring, monoms, coeffs, params),
-        [monoms[1]],
-        [coeffs[1]]
+        return trace_initialize_empty(ring, monoms, coeffs, params), [monoms[1]], [coeffs[1]]
     end
     monoms, coeffs = _monoms, _coeffs
 
+    if params.homogenize
+        term_homogenizing_permutation, ring, monoms, coeffs =
+            homogenize_generators!(ring, monoms, coeffs, params)
+    end
+
     trace, gb_monoms, gb_coeffs = _groebner_learn2(ring, monoms, coeffs, params)
+
+    if params.homogenize
+        ring, gb_monoms, gb_coeffs = dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
+        trace.term_homogenizing_permutations = term_homogenizing_permutation
+    end
 
     trace, gb_monoms, gb_coeffs
 end
@@ -200,6 +208,13 @@ function __groebner_apply1!(
     flag = trace_check_input(wrapped_trace, monoms, coeffs)
     !flag && return flag, coeffs
 
+    if params.homogenize
+        new_ord = extend_ordering_in_homogenization(ring.nvars, ring.ord)
+        ring = PolyRing(ring.nvars + 1, new_ord, ring.ch)
+        new_ord = extend_ordering_in_saturation(ring.nvars, ring.ord)
+        ring = PolyRing(ring.nvars + 1, new_ord, ring.ch)
+    end
+
     trace = get_trace!(wrapped_trace, ring, params)
 
     _monoms = filter(!isempty, monoms)
@@ -213,10 +228,10 @@ function __groebner_apply1!(
     end
     monoms, coeffs = _monoms, _coeffs
 
-    flag = io_extract_coeffs_raw_X!(trace, coeffs)
+    flag = ir_extract_coeffs_raw!(trace, coeffs)
     !flag && return flag, coeffs
 
-    flag, gb_coeffs2 = groebner_apply2!(trace, params)
+    flag, ring, gb_coeffs2 = groebner_apply2!(trace, params)
     if !flag
         return flag, coeffs
     end
@@ -226,20 +241,22 @@ function __groebner_apply1!(
         @assert length(gb_coeffs2[i]) == length(wrapped_trace.gb_support[i])
     end
 
+    options.ordering = ring.ord
+
     flag, gb_coeffs2
 end
 
 function groebner_apply2!(trace, params)
-    flag, gb_coeffs = _groebner_apply2!(trace, params)
+    flag, ring, gb_coeffs = _groebner_apply2!(trace, params)
     if !flag
         # Recover trace
-        @log :info "Trace might be corrupted. Recovering..."
+        @info "Trace might be corrupted. Recovering..." maxlog = 1
         trace.nfail += 1
         empty!(trace.matrix_sorted_columns)
         trace.buf_basis = basis_deepcopy(trace.input_basis)
-        return flag, gb_coeffs
+        return flag, ring, gb_coeffs
     end
-    flag, gb_coeffs
+    flag, ring, gb_coeffs
 end
 
 function _groebner_apply2!(trace, params)
@@ -247,5 +264,12 @@ function _groebner_apply2!(trace, params)
 
     gb_coeffs = basis_export_coeffs(trace.gb_basis)
 
-    flag, gb_coeffs
+    ring = trace.ring
+    if trace.params.homogenize
+        gb_monoms, gb_coeffs = basis_export_data(trace.gb_basis, trace.hashtable)
+        ring, gb_monoms, gb_coeffs =
+            dehomogenize_generators!(trace.ring, gb_monoms, gb_coeffs, params)
+    end
+
+    flag, ring, gb_coeffs
 end

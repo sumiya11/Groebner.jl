@@ -180,11 +180,8 @@ function trace_copy(
         basis_shallow_copy_with_new_coeffs(trace.gb_basis, new_gb_basis_coeffs)
     end
 
-    new_representation = PolynomialRepresentation(
-        trace.representation.monomtype,
-        C2,
-        using_wide_type_for_coeffs
-    )
+    new_representation =
+        PolynomialRepresentation(trace.representation.monomtype, C2, using_wide_type_for_coeffs)
     new_ring = PolyRing(trace.ring.nvars, trace.ring.ord, zero(C2))
 
     Trace(
@@ -282,11 +279,7 @@ function get_default_trace(wrapped_trace::WrappedTrace)
     first(values(wrapped_trace.recorded_traces))
 end
 
-function get_trace!(
-    wrapped_trace::WrappedTrace,
-    ring::PolyRing,
-    params::AlgorithmParameters
-)
+function get_trace!(wrapped_trace::WrappedTrace, ring::PolyRing, params::AlgorithmParameters)
     # Try to find a suitable trace among the existing ones
     for id in keys(wrapped_trace.recorded_traces)
         if id[1] == params.representation.coefftype
@@ -304,6 +297,7 @@ function get_trace!(
         params.representation.using_wide_type_for_coeffs,
         deepcopy=false
     )
+    new_trace.ring.ord != ring.ord && throw(DomainError("ordering invalid in trace"))
     new_trace.ring =
         PolyRing(ring.nvars, ring.ord, convert(params.representation.coefftype, ring.ch))
     wrapped_trace.recorded_traces[(params.representation.coefftype, 1)] = new_trace

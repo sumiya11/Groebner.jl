@@ -3,8 +3,7 @@
 # Arithmetic in the rationals.
 
 # All implementations of arithmetic in the rationals are a subtype of this 
-abstract type AbstractArithmeticQQ{AccumType, CoeffType} <:
-              AbstractArithmetic{AccumType, CoeffType} end
+abstract type AbstractArithmeticQQ{AccumType, CoeffType} <: AbstractArithmetic{AccumType, CoeffType} end
 
 # Standard arithmetic that uses Base.GMP.MPQ
 struct ArithmeticQQ{AccumType, CoeffType} <: AbstractArithmeticQQ{AccumType, CoeffType}

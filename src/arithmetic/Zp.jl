@@ -16,8 +16,7 @@ abstract type AbstractArithmetic{AccumType, CoeffType} end
 # - divisor(arithmetic)      : returns the prime number p
 # - mod_p(x, arithmetic)     : returns x modulo p
 # - inv_mod_p(x, arithmetic) : returns x^(-1) modulo p
-abstract type AbstractArithmeticZp{AccumType, CoeffType} <:
-              AbstractArithmetic{AccumType, CoeffType} end
+abstract type AbstractArithmeticZp{AccumType, CoeffType} <: AbstractArithmetic{AccumType, CoeffType} end
 
 ###
 # ArithmeticZp
@@ -132,8 +131,7 @@ inv_mod_p(a::T, arithm::SpecializedArithmeticZp{T}) where {T} = invmod(a, diviso
 
 # Exploits the case when the representation of the prime has spare leading bits
 # and thus delays reduction modulo a prime
-struct DelayedArithmeticZp{AccumType, CoeffType, Add} <:
-       AbstractArithmeticZp{AccumType, CoeffType}
+struct DelayedArithmeticZp{AccumType, CoeffType, Add} <: AbstractArithmeticZp{AccumType, CoeffType}
     multiplier::AccumType
     shift::UInt8
     divisor::AccumType
@@ -192,8 +190,7 @@ inv_mod_p(a::T, arithm::DelayedArithmeticZp{T}) where {T} = invmod(a, divisor(ar
 # CompositeArithmeticZp
 
 # Can operate on several integers at once
-struct CompositeArithmeticZp{AccumType, CoeffType, TT} <:
-       AbstractArithmeticZp{AccumType, CoeffType}
+struct CompositeArithmeticZp{AccumType, CoeffType, TT} <: AbstractArithmeticZp{AccumType, CoeffType}
     arithmetics::TT
 
     function CompositeArithmeticZp(
@@ -202,11 +199,7 @@ struct CompositeArithmeticZp{AccumType, CoeffType, TT} <:
         p::CompositeNumber{N, CoeffType}
     ) where {N, AccumType <: CoeffZp, CoeffType <: CoeffZp}
         ai = ntuple(i -> SpecializedArithmeticZp(AccumType, CoeffType, p.data[i]), N)
-        new{
-            CompositeNumber{N, AccumType},
-            CompositeNumber{N, CoeffType},
-            Tuple{map(typeof, ai)...}
-        }(
+        new{CompositeNumber{N, AccumType}, CompositeNumber{N, CoeffType}, Tuple{map(typeof, ai)...}}(
             ai
         )
     end
@@ -227,8 +220,7 @@ end
 # SignedArithmeticZp
 
 # Uses signed types and exploits the trick with adding p^2 to negative values
-struct SignedArithmeticZp{AccumType, CoeffType} <:
-       AbstractArithmeticZp{AccumType, CoeffType}
+struct SignedArithmeticZp{AccumType, CoeffType} <: AbstractArithmeticZp{AccumType, CoeffType}
     p::AccumType
     p2::AccumType # = p*p
 
@@ -320,8 +312,7 @@ end
 ###
 # FloatingPointArithmeticZp
 
-struct FloatingPointArithmeticZp{AccumType, CoeffType} <:
-       AbstractArithmeticZp{AccumType, CoeffType}
+struct FloatingPointArithmeticZp{AccumType, CoeffType} <: AbstractArithmeticZp{AccumType, CoeffType}
     multiplier::AccumType
     divisor::AccumType
 
@@ -346,12 +337,7 @@ divisor(arithm::FloatingPointArithmeticZp) = arithm.divisor
     a - mod.divisor * c # may be fused
 end
 
-@inline function fma_mod_p(
-    a1::T,
-    a2::C,
-    a3::T,
-    mod::FloatingPointArithmeticZp{T, C}
-) where {T, C}
+@inline function fma_mod_p(a1::T, a2::C, a3::T, mod::FloatingPointArithmeticZp{T, C}) where {T, C}
     b = muladd(a1, a2, a3)
     mod_p(b, mod)
 end
@@ -431,11 +417,7 @@ function select_arithmetic(
 
     if CoeffType <: CompositeCoeffZp
         if hint === :signed || CoeffType <: CompositeNumber{N, T} where {N, T <: Signed}
-            return SignedCompositeArithmeticZp(
-                AccumType,
-                CoeffType,
-                CoeffType(characteristic)
-            )
+            return SignedCompositeArithmeticZp(AccumType, CoeffType, CoeffType(characteristic))
         elseif hint === :floating
             return FloatingPointCompositeArithmeticZp(
                 AccumType,
@@ -457,7 +439,6 @@ function select_arithmetic(
 
     if hint === :delayed
         if iszero(leading_zeros(characteristic) - (8 >> 1) * sizeof(AccumType))
-            @log :warn "Cannot use $hint arithmetic with characteristic $characteristic"
             @assert false
         end
         return DelayedArithmeticZp(AccumType, CoeffType, CoeffType(characteristic))
@@ -478,8 +459,7 @@ function select_arithmetic(
         # looks like it rarely pays off to use delayed modular arithmetic in
         # such cases
         if !(AccumType === UInt128)
-            if !using_wide_type_for_coeffs &&
-               leading_zeros(CoeffType(characteristic)) > 4 ||
+            if !using_wide_type_for_coeffs && leading_zeros(CoeffType(characteristic)) > 4 ||
                using_wide_type_for_coeffs &&
                ((8 * sizeof(CoeffType)) >> 1) -
                (8 * sizeof(CoeffType) - leading_zeros(CoeffType(characteristic))) > 4

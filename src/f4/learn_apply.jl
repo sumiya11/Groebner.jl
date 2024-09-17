@@ -27,8 +27,7 @@ function f4_initialize_structs_with_trace(
         sort_input=sort_input
     )
 
-    trace =
-        trace_initialize(ring, basis_deepcopy(basis), basis, hashtable, permutation, params)
+    trace = trace_initialize(ring, basis_deepcopy(basis), basis, hashtable, permutation, params)
 
     trace, basis, pairset, hashtable, permutation
 end
@@ -65,8 +64,7 @@ function f4_reduction_learn!(
         params;
         batched_ht_insert=true
     )
-    pivot_indices =
-        map(i -> Int32(basis.monoms[basis.n_processed + i][1]), 1:(matrix.npivots))
+    pivot_indices = map(i -> Int32(basis.monoms[basis.n_processed + i][1]), 1:(matrix.npivots))
     push!(trace.matrix_pivot_indices, pivot_indices)
     matrix_pivot_signature =
         matrix_compute_pivot_signature(basis.monoms, basis.n_processed + 1, matrix.npivots)
@@ -105,8 +103,7 @@ function f4_reducegb_learn!(
         matrix.upper_to_mult[row_idx] = hashtable_insert!(ht, etmp)
         symbol_ht.labels[uprows[row_idx][1]] = UNKNOWN_PIVOT_COLUMN
     end
-    trace.nonredundant_indices_before_reduce =
-        basis.nonredundant_indices[1:(basis.n_nonredundant)]
+    trace.nonredundant_indices_before_reduce = basis.nonredundant_indices[1:(basis.n_nonredundant)]
 
     # needed for correct column count in symbol hashtable
     matrix.ncols_left = matrix.nrows_filled_upper
@@ -285,10 +282,7 @@ function f4_reduction_apply!(
     end
 
     flag = linalg_main!(matrix, basis, params, trace, linalg=LinearAlgebra(:apply, :sparse))
-    if !flag
-        @log :info "In apply, some of the matrix rows unexpectedly reduced to zero."
-        return false, false
-    end
+    !flag && return (false, false)
 
     matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht, params)
 
@@ -296,24 +290,13 @@ function f4_reduction_apply!(
     pivot_indices = trace.matrix_pivot_indices[f4_iteration]
     @inbounds for i in 1:(matrix.npivots)
         sgn = basis.monoms[basis.n_processed + i][1]
-        if sgn != pivot_indices[i]
-            @log :info "In apply, some leading terms cancelled out!"
-            return false, false
-        end
+        sgn != pivot_indices[i] && return (false, false)
     end
 
     if cache_column_order
-        matrix_pivot_signature = matrix_compute_pivot_signature(
-            basis.monoms,
-            basis.n_processed + 1,
-            matrix.npivots
-        )
+        matrix_pivot_signature =
+            matrix_compute_pivot_signature(basis.monoms, basis.n_processed + 1, matrix.npivots)
         if matrix_pivot_signature != trace.matrix_pivot_signatures[f4_iteration]
-            @log :info """
-            In apply, on iteration $(f4_iteration) of F4, some terms cancelled out.
-            hash (expected):    $(trace.matrix_pivot_signatures[f4_iteration])
-            hash (got):         $(matrix_pivot_signature)"""
-            # return false, false
             return false, false
         end
     end
@@ -461,10 +444,8 @@ function f4_autoreduce_apply!(
     end
 
     flag = linalg_autoreduce!(matrix, basis, params, linalg=LinearAlgebra(:apply, :sparse))
-    if !flag
-        @log :info "In apply, the final autoreduction of the basis failed"
-        return false
-    end
+    !flag && return false
+
     matrix_convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht, params)
 
     basis.n_filled = matrix.npivots + basis.n_processed
@@ -473,8 +454,7 @@ function f4_autoreduce_apply!(
     output_nonredundant = trace.output_nonredundant_indices
     for i in 1:length(output_nonredundant)
         basis.nonredundant_indices[i] = output_nonredundant[i]
-        basis.divmasks[i] =
-            hashtable.divmasks[basis.monoms[basis.nonredundant_indices[i]][1]]
+        basis.divmasks[i] = hashtable.divmasks[basis.monoms[basis.nonredundant_indices[i]][1]]
     end
     basis.n_nonredundant = length(output_nonredundant)
     true

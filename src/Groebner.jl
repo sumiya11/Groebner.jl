@@ -82,22 +82,15 @@ const _threaded = Ref(true)
 
 function __init__()
     _threaded[] = !(get(ENV, "GROEBNER_NO_THREADED", "") == "1")
-
-    # Setup the global logger
-    _groebner_log_lock[] = ReentrantLock()
-    logger_update(loglevel=Logging.Info)
-
     nothing
 end
 
 ###
 # Includes
 
-include("utils/logging.jl")
 include("utils/invariants.jl")
 include("utils/simd.jl")
 include("utils/packed.jl")
-include("utils/plots.jl")
 
 # Test systems, such as katsura, cyclic, etc
 include("utils/examples.jl")
@@ -176,8 +169,7 @@ export groebner_with_change_matrix
 export isgroebner
 export normalform
 
-export Lex,
-    DegLex, DegRevLex, InputOrdering, WeightedOrdering, ProductOrdering, MatrixOrdering
+export Lex, DegLex, DegRevLex, InputOrdering, WeightedOrdering, ProductOrdering, MatrixOrdering
 
 @doc read(joinpath(dirname(@__DIR__), "README.md"), String) Groebner
 

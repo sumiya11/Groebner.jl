@@ -12,17 +12,11 @@ function normalform0(
     # TODO: this deepcopy is sad
     _options = deepcopy(options)
     ring, monoms, coeffs, options = io_convert_polynomials_to_ir(polynomials, options)
-    ring_tbr, monoms_tbr, coeffs_tbr, _ =
-        io_convert_polynomials_to_ir(to_be_reduced, _options)
+    ring_tbr, monoms_tbr, coeffs_tbr, _ = io_convert_polynomials_to_ir(to_be_reduced, _options)
     monoms_reduced, coeffs_reduced =
         _normalform1(ring, monoms, coeffs, ring_tbr, monoms_tbr, coeffs_tbr, options)
-    result = io_convert_ir_to_polynomials(
-        ring,
-        polynomials,
-        monoms_reduced,
-        coeffs_reduced,
-        options
-    )
+    result =
+        io_convert_ir_to_polynomials(ring, polynomials, monoms_reduced, coeffs_reduced, options)
     result
 end
 
@@ -37,8 +31,7 @@ function normalform1(
     options::KeywordArguments
 ) where {I1 <: Integer, C1 <: Coeff, I2 <: Integer, C2 <: Coeff}
     ring, monoms, coeffs = ir_ensure_assumptions(ring, monoms, coeffs)
-    ring_tbr, monoms_tbr, coeffs_tbr =
-        ir_ensure_assumptions(ring_tbr, monoms_tbr, coeffs_tbr)
+    ring_tbr, monoms_tbr, coeffs_tbr = ir_ensure_assumptions(ring_tbr, monoms_tbr, coeffs_tbr)
     _normalform1(ring, monoms, coeffs, ring_tbr, monoms_tbr, coeffs_tbr, options)
 end
 
@@ -56,19 +49,11 @@ function _normalform1(
         return __normalform1(ring, monoms, coeffs, ring_tbr, monoms_tbr, coeffs_tbr, params)
     catch err
         if isa(err, MonomialDegreeOverflow)
-            @log :info """
+            @info """
             Possible overflow of exponent vector detected. 
             Restarting with at least 32 bits per exponent.""" maxlog = 1
             params = AlgorithmParameters(ring, options; hint=:large_exponents)
-            return __normalform1(
-                ring,
-                monoms,
-                coeffs,
-                ring_tbr,
-                monoms_tbr,
-                coeffs_tbr,
-                params
-            )
+            return __normalform1(ring, monoms, coeffs, ring_tbr, monoms_tbr, coeffs_tbr, params)
         else
             # Something bad happened.
             rethrow(err)
@@ -153,8 +138,7 @@ function _normalform2(
     params::AlgorithmParameters
 ) where {M <: Monom, C <: Coeff}
     basis, _, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
-    tobereduced =
-        basis_initialize_using_existing_hashtable(ring, monoms_tbr, coeffs_tbr, hashtable)
+    tobereduced = basis_initialize_using_existing_hashtable(ring, monoms_tbr, coeffs_tbr, hashtable)
     f4_normalform!(ring, basis, tobereduced, hashtable, params.arithmetic)
     basis_export_data(tobereduced, hashtable)
 end
