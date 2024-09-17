@@ -1,12 +1,5 @@
 
-function generate_benchmark_source_for_groebner(
-    name,
-    system,
-    dir,
-    validate,
-    nruns,
-    time_filename
-)
+function generate_benchmark_source_for_groebner(name, system, dir, validate, nruns, time_filename)
     ring = parent(system[1])
     field = base_ring(ring)
     vars_repr = join(map(string, gens(ring)), ", ")
@@ -33,32 +26,11 @@ function generate_benchmark_source_for_groebner(
     String(take!(buf))
 end
 
-function generate_benchmark_source_for_singular(
-    name,
-    system,
-    dir,
-    validate,
-    nruns,
-    time_filename
-)
-    generate_benchmark_source_for_groebner(
-        name,
-        system,
-        dir,
-        validate,
-        nruns,
-        time_filename
-    )
+function generate_benchmark_source_for_singular(name, system, dir, validate, nruns, time_filename)
+    generate_benchmark_source_for_groebner(name, system, dir, validate, nruns, time_filename)
 end
 
-function generate_benchmark_source_for_maplefgb(
-    name,
-    system,
-    dir,
-    validate,
-    nruns,
-    time_filename
-)
+function generate_benchmark_source_for_maplefgb(name, system, dir, validate, nruns, time_filename)
     ring = parent(system[1])
     field = base_ring(ring)
     buf = IOBuffer()
@@ -84,10 +56,7 @@ function generate_benchmark_source_for_maplefgb(
     println(buf, "")
     println(buf, "timings_fn := \"$time_filename\":")
     println(buf, "FileTools[Text][WriteLine](timings_fn, \"$name\");")
-    println(
-        buf,
-        "FileTools[Text][WriteLine](timings_fn, cat(\"total_time, \", String(runtime))):"
-    )
+    println(buf, "FileTools[Text][WriteLine](timings_fn, cat(\"total_time, \", String(runtime))):")
     if validate
         println(buf)
         output_fn = output_filename()
@@ -106,14 +75,7 @@ function generate_benchmark_source_for_maplefgb(
     String(take!(buf))
 end
 
-function generate_benchmark_source_for_mgb(
-    name,
-    system,
-    dir,
-    validate,
-    nruns,
-    time_filename
-)
+function generate_benchmark_source_for_mgb(name, system, dir, validate, nruns, time_filename)
     ring = parent(system[1])
     field = base_ring(ring)
     buf = IOBuffer()
@@ -136,10 +98,7 @@ function generate_benchmark_source_for_mgb(
     println(buf, "")
     println(buf, "timings_fn := \"$time_filename\":")
     println(buf, "FileTools[Text][WriteLine](timings_fn, \"$name\");")
-    println(
-        buf,
-        "FileTools[Text][WriteLine](timings_fn, cat(\"total_time, \", String(runtime))):"
-    )
+    println(buf, "FileTools[Text][WriteLine](timings_fn, cat(\"total_time, \", String(runtime))):")
     if validate
         println(buf)
         output_fn = output_filename()
@@ -158,14 +117,7 @@ function generate_benchmark_source_for_mgb(
     String(take!(buf))
 end
 
-function generate_benchmark_source_for_msolve(
-    name,
-    system,
-    dir,
-    validate,
-    nruns,
-    time_filename
-)
+function generate_benchmark_source_for_msolve(name, system, dir, validate, nruns, time_filename)
     ring = parent(system[1])
     field = base_ring(ring)
     vars_repr = join(map(string, gens(ring)), ", ")
@@ -177,14 +129,7 @@ function generate_benchmark_source_for_msolve(
     String(take!(buf))
 end
 
-function generate_benchmark_source_for_openf4(
-    name,
-    system,
-    dir,
-    validate,
-    nruns,
-    time_filename
-)
+function generate_benchmark_source_for_openf4(name, system, dir, validate, nruns, time_filename)
     ring = parent(system[1])
     field = base_ring(ring)
     buf = IOBuffer()
@@ -203,10 +148,8 @@ function generate_benchmark_source_for_openf4(
         {
         """
     )
-    vars_repr =
-        join(map(s -> "\tvariableName.push_back(\"$s\");", map(repr, gens(ring))), "\n")
-    system_repr =
-        join(map(s -> "\tpolynomialArray.emplace_back(\"$s\");", map(repr, system)), "\n")
+    vars_repr = join(map(s -> "\tvariableName.push_back(\"$s\");", map(repr, gens(ring))), "\n")
+    system_repr = join(map(s -> "\tpolynomialArray.emplace_back(\"$s\");", map(repr, system)), "\n")
     println(
         buf,
         """

@@ -38,17 +38,13 @@ It works with polynomials from AbstractAlgebra.jl, DynamicPolynomials.jl, and Ne
 
 ### with AbstractAlgebra.jl
 
-We create a ring of polynomials in 3 variables
+We create a ring of polynomials in 3 variables and a simple polynomial system
 
 ```julia
 using AbstractAlgebra
 
 R, (x1, x2, x3) = QQ["x1", "x2", "x3"]
-```
 
-Then, we can define a simple polynomial system
-
-```julia
 system = [
   x1 + x2 + x3,
   x1*x2 + x1*x3 + x2*x3,
@@ -66,9 +62,9 @@ G = groebner(system)
 ```julia
 # result
 3-element Vector{AbstractAlgebra.Generic.MPoly{Rational{BigInt}}}:
- x1 + x2 + x3
- x2^2 + x2*x3 + x3^2
  x3^3 - 1
+ x2^2 + x2*x3 + x3^2
+ x1 + x2 + x3
 ```
 
 ### with DynamicPolynomials.jl
@@ -86,10 +82,10 @@ G = groebner(system)
 ```
 ```julia
 # result
-3-element Vector{Polynomial{DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}, Graded{LexOrder}, Int64}}:
- 10x2 - 10x1 - 11x2² + 11x1²
- 110 - 121x2 - 100x2² + 100x1x2 + 110x2³
- 10 - 11x1 + 10x1x2²
+3-element Vector{Polynomial{DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}, Graded{LexOrder}, Rational{BigInt}}}:
+ 10//11x2 - 10//11x1 - x2² + x1²
+ 1//1 - 11//10x2 - 10//11x2² + 10//11x1x2 + x2³
+ 1//1 - 11//10x1 + x1x2²
 ```
 
 ## Contacts

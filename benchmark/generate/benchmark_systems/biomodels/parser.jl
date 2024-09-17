@@ -36,9 +36,7 @@ function read_BIOMDs(nspecies)
 
         symvs = map(x -> Symbol(x), vs)
         expvs = Meta.parse(join(symvs, ","))
-        R, xs = eval(
-            :((R, $expvs) = AbstractAlgebra.polynomial_ring(AbstractAlgebra.QQ, $symvs))
-        )
+        R, xs = eval(:((R, $expvs) = AbstractAlgebra.polynomial_ring(AbstractAlgebra.QQ, $symvs)))
 
         for p in params
             p = eval(Meta.parse(p))

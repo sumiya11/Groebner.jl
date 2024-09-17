@@ -49,15 +49,9 @@ end
 # hashtable must be smaller than hashtable_resize_threshold at any point of its
 # lifetime
 hashtable_resize_threshold() = 0.4
-hashtable_needs_resize(size, load, added) =
-    (load + added) / size > hashtable_resize_threshold()
+hashtable_needs_resize(size, load, added) = (load + added) / size > hashtable_resize_threshold()
 
-function hashtable_initialize1(
-    nvars,
-    rng::AbstractRNG,
-    MonomT::T,
-    initial_size::Int
-) where {T}
+function hashtable_initialize1(nvars, rng::AbstractRNG, MonomT::T, initial_size::Int) where {T}
     exponents = Vector{MonomT}(undef, initial_size)
     hashdata = Vector{Hashvalue1}(undef, initial_size)
     hashtable = zeros(MonomId, initial_size)
@@ -78,17 +72,7 @@ function hashtable_initialize1(
     # first stored exponent used as buffer lately
     exponents[1] = zeros(UInt8, nvars)
 
-    MonomialHashtable1(
-        exponents,
-        hashtable,
-        hashdata,
-        hasher,
-        nvars,
-        size,
-        load,
-        offset,
-        false
-    )
+    MonomialHashtable1(exponents, hashtable, hashdata, hasher, nvars, size, load, offset, false)
 end
 
 function hashtable_resize_if_needed!(ht::MonomialHashtable1, added::Int)

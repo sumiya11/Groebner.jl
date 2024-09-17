@@ -90,8 +90,7 @@ function process_system()
         singular_system = aa_system_to_singular(system)
         timing = @timed result = Singular.std(singular_system, complete_reduction=true)
         @debug "Result is" result
-        runtime[PROBLEM_NAME][:total_time] =
-            min(runtime[PROBLEM_NAME][:total_time], timing.time)
+        runtime[PROBLEM_NAME][:total_time] = min(runtime[PROBLEM_NAME][:total_time], timing.time)
         if VALIDATE
             output_fn = (@__DIR__) * "/$BENCHMARK_DIR/$PROBLEM_NAME/$(output_filename())"
             @info "Printing the basis to $output_fn"

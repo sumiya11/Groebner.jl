@@ -31,8 +31,7 @@ function describe_data(data)
     println("-------------------------------------------------------------------------")
     res = []
     for (j, x) in enumerate(data)
-        ht, update_ht, basis, pairset, i =
-            x["ht"], x["update_ht"], x["basis"], x["pairset"], x["i"]
+        ht, update_ht, basis, pairset, i = x["ht"], x["update_ht"], x["basis"], x["pairset"], x["i"]
         # println("$j\t$(basis.nfilled)\t\t$(pairset.load)\t\t$(update_ht.load)/$(update_ht.size)")
         push!(res, [basis.nfilled, pairset.load, update_ht.load, update_ht.size, i])
     end
@@ -56,8 +55,7 @@ clear_data()
 _data = deepcopy(data);
 @time begin
     for x in data
-        ht, update_ht, basis, pairset, i =
-            x["ht"], x["update_ht"], x["basis"], x["pairset"], x["i"]
+        ht, update_ht, basis, pairset, i = x["ht"], x["update_ht"], x["basis"], x["pairset"], x["i"]
         Groebner.pairset_update!(pairset, basis, ht, update_ht, i)
     end
 end
@@ -69,8 +67,7 @@ end
 _data = deepcopy(data);
 @pstats "(cpu-cycles,task-clock),(instructions,branch-instructions,branch-misses), (L1-dcache-load-misses, L1-dcache-loads, cache-misses, cache-references)" begin
     for x in _data
-        ht, update_ht, basis, pairset, i =
-            x["ht"], x["update_ht"], x["basis"], x["pairset"], x["i"]
+        ht, update_ht, basis, pairset, i = x["ht"], x["update_ht"], x["basis"], x["pairset"], x["i"]
         Groebner.pairset_update!(pairset, basis, ht, update_ht, i)
     end
 end

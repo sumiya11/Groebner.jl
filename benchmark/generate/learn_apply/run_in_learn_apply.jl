@@ -57,8 +57,8 @@ function process_system()
         timing1 = @timed trace, gb = groebner_learn(system, threaded=:no)
         timing2 = @timed flag, gb = groebner_apply!(trace, system, threaded=:no)
         @assert flag
-        timing3 = @timed flag, _ =
-            groebner_apply!(trace, (system, system, system, system), threaded=:no)
+        timing3 =
+            @timed flag, _ = groebner_apply!(trace, (system, system, system, system), threaded=:no)
         @assert flag
         timing4 = @timed flag, _ = groebner_apply!(
             trace,

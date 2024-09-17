@@ -14,11 +14,7 @@ n = Groebner.Examples.noonn(3);
 Groebner.groebner(n, ordering=DegRevLex(), maxpairs=maxpairs);
 
 # Run!
-@time gb = Groebner.groebner(
-    system,
-    ordering=DegRevLex(),
-    maxpairs=maxpairs,
-    monoms=Packed{UInt8}()
-);
+@time gb =
+    Groebner.groebner(system, ordering=DegRevLex(), maxpairs=maxpairs, monoms=Packed{UInt8}());
 
 GC.gc()

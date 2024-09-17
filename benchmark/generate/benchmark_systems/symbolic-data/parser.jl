@@ -20,12 +20,8 @@ function parse_polys_with_given_ring(ring, polys_str)
             append!(terms_str, map(s -> "-1*$(strip(s))", term_str_minus[2:end]))
         end
         terms_exploded_str = map(t -> map(strip, split(t, "*")), terms_str)
-        cfs, exps = parse_polynomial_from_terms(
-            ring,
-            constant_type,
-            terms_exploded_str,
-            str_to_var_idx
-        )
+        cfs, exps =
+            parse_polynomial_from_terms(ring, constant_type, terms_exploded_str, str_to_var_idx)
         poly = ring(cfs, exps)
         push!(polys, poly)
     end
@@ -66,8 +62,7 @@ function load_system_symbolic_data(filename)
     return ring, polys
 end
 
-ring, sys = load_system_symbolic_data(
-    "/home/demin/SymbolicData/XMLResources/IntPS/SignalTheory.f966.xml"
-)
+ring, sys =
+    load_system_symbolic_data("/home/demin/SymbolicData/XMLResources/IntPS/SignalTheory.f966.xml")
 
 @time groebner(sys);

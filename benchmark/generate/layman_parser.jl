@@ -5,8 +5,7 @@ function extract_ring(line1, line2)
     char = parse(BigInt, strip(line2))
     @assert char < typemax(UInt)
     base_field = iszero(char) ? Nemo.QQ : Nemo.GF(UInt(char))
-    ring_nemo, vars_nemo =
-        Nemo.polynomial_ring(base_field, vars_str, internal_ordering=:degrevlex)
+    ring_nemo, vars_nemo = Nemo.polynomial_ring(base_field, vars_str, internal_ordering=:degrevlex)
     base_field, ring_nemo, vars_nemo
 end
 
@@ -56,8 +55,7 @@ function getlines_backend_dependent(result)
         @assert all(line -> startswith(line, "#"), lines[1:7])
         line2 = strip(split(lines[3])[end])
         line1 = join(map(strip, split(split(lines[4], ":")[end], ",")), ",")
-        lines_polys =
-            filter(!isempty, map(f -> string(strip(f, [' ', '\n', '\r'])), lines[8:end]))
+        lines_polys = filter(!isempty, map(f -> string(strip(f, [' ', '\n', '\r'])), lines[8:end]))
         @assert startswith(lines_polys[1], "[")
         lines_polys[1] = lines_polys[1][2:end]
         @assert endswith(lines_polys[end], "]:")
@@ -88,12 +86,8 @@ function parse_polys_with_given_ring(ring, polys_str)
             append!(terms_str, map(s -> "-1*$(strip(s))", term_str_minus[2:end]))
         end
         terms_exploded_str = map(t -> map(strip, split(t, "*")), terms_str)
-        cfs, exps = parse_polynomial_from_terms(
-            ring,
-            constant_type,
-            terms_exploded_str,
-            str_to_var_idx
-        )
+        cfs, exps =
+            parse_polynomial_from_terms(ring, constant_type, terms_exploded_str, str_to_var_idx)
         poly_nemo = ring(cfs, exps)
         push!(polys, poly_nemo)
     end

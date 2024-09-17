@@ -29,8 +29,7 @@ global_logger(Logging.ConsoleLogger(stdout, Logging.Info))
 # Set the properties of progress bars
 const _progressbar_color = :light_green
 const _progressbar_value_color = :light_green
-progressbar_enabled() =
-    Logging.Info <= Logging.min_enabled_level(current_logger()) < Logging.Warn
+progressbar_enabled() = Logging.Info <= Logging.min_enabled_level(current_logger()) < Logging.Warn
 
 const _available_backends = ["groebner", "singular", "maplefgb", "mgb", "msolve", "openf4"]
 
@@ -115,16 +114,7 @@ function parse_commandline()
 end
 #! format: on
 
-function generate_benchmark_file(
-    backend,
-    name,
-    system,
-    dir,
-    validate,
-    nruns,
-    time_filename,
-    args
-)
+function generate_benchmark_file(backend, name, system, dir, validate, nruns, time_filename, args)
     if backend == "groebner"
         benchmark_source = generate_benchmark_source_for_groebner(
             name,
@@ -174,38 +164,20 @@ function generate_benchmark_file(
         println(fd, benchmark_source)
         close(fd)
     elseif backend == "mgb"
-        benchmark_source = generate_benchmark_source_for_mgb(
-            name,
-            system,
-            dir,
-            validate,
-            nruns,
-            time_filename
-        )
+        benchmark_source =
+            generate_benchmark_source_for_mgb(name, system, dir, validate, nruns, time_filename)
         fd = open("$dir/$name.mpl", "w")
         println(fd, benchmark_source)
         close(fd)
     elseif backend == "msolve"
-        benchmark_source = generate_benchmark_source_for_msolve(
-            name,
-            system,
-            dir,
-            validate,
-            nruns,
-            time_filename
-        )
+        benchmark_source =
+            generate_benchmark_source_for_msolve(name, system, dir, validate, nruns, time_filename)
         fd = open("$dir/$name.in", "w")
         println(fd, benchmark_source)
         close(fd)
     elseif backend == "openf4"
-        benchmark_source = generate_benchmark_source_for_openf4(
-            name,
-            system,
-            dir,
-            validate,
-            nruns,
-            time_filename
-        )
+        benchmark_source =
+            generate_benchmark_source_for_openf4(name, system, dir, validate, nruns, time_filename)
         fd = open("$dir/$name.cpp", "w")
         println(fd, benchmark_source)
         close(fd)
@@ -507,9 +479,7 @@ function run_benchmarks(args)
     end
 
     println()
-    println(
-        "Benchmarking finished in $(round((time_ns() - timestamp) / 1e9, digits=2)) seconds."
-    )
+    println("Benchmarking finished in $(round((time_ns() - timestamp) / 1e9, digits=2)) seconds.")
     printstyled("Benchmark results", color=:light_green)
     println(" are written to $benchmark_dir")
 
@@ -578,8 +548,7 @@ function validate_results(args, problem_names)
         end
         # At this point, the recently computed basis is stored in `result`
         @assert result_exists
-        success, result_validation_certificate =
-            compute_basis_validation_certificate(result)
+        success, result_validation_certificate = compute_basis_validation_certificate(result)
         if !success
             @warn "Bad file encountered at $problem_result_path. Skipping"
             continue
@@ -837,10 +806,7 @@ function collect_all_timings(args, runtimes, systems)
             j > 1 &&
                 strip(data[i, j]) != "-" &&
                 parse(Float64, data[i, j]) == minimum(
-                    map(
-                        x -> parse(Float64, x),
-                        filter(x -> strip(x) != "-", data[i, 2:end])
-                    )
+                    map(x -> parse(Float64, x), filter(x -> strip(x) != "-", data[i, 2:end]))
                 ),
         bold=true
     )
@@ -908,8 +874,7 @@ function collect_all_timings(args, runtimes, systems)
         end
     end
 
-    table_filename =
-        (@__DIR__) * "/$BENCHMARK_RESULTS/$(BENCHMARK_TABLE)_$(benchmark_id).md"
+    table_filename = (@__DIR__) * "/$BENCHMARK_RESULTS/$(BENCHMARK_TABLE)_$(benchmark_id).md"
     open(table_filename, "w") do io
         write(io, resulting_md)
     end
@@ -921,16 +886,8 @@ end
 
 function check_args(args)
     backend = args["backend"]
-    @assert backend in (
-        "groebner",
-        "singular",
-        "maplefgb",
-        "mgb",
-        "openf4",
-        "msolve",
-        "learn_apply",
-        "ALL"
-    )
+    @assert backend in
+            ("groebner", "singular", "maplefgb", "mgb", "openf4", "msolve", "learn_apply", "ALL")
     if backend == "openf4" && args["suite"] in [3, 7]
         throw("Running benchmarks over the rationals is not possible for openf4")
     end

@@ -41,26 +41,11 @@ systems = [
     # ("eco12", Groebner.Examples.eco12(internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
     # ("eco13", Groebner.Examples.eco13(internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
     # ("noon4", Groebner.Examples.noonn(4, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
-    (
-        "noon5",
-        Groebner.Examples.noonn(5, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
-    ),
-    (
-        "noon6",
-        Groebner.Examples.noonn(6, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
-    ),
-    (
-        "noon7",
-        Groebner.Examples.noonn(7, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
-    ),
-    (
-        "noon8",
-        Groebner.Examples.noonn(8, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
-    ),
-    (
-        "noon9",
-        Groebner.Examples.noonn(9, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))
-    )
+    ("noon5", Groebner.Examples.noonn(5, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
+    ("noon6", Groebner.Examples.noonn(6, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
+    ("noon7", Groebner.Examples.noonn(7, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
+    ("noon8", Groebner.Examples.noonn(8, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p))),
+    ("noon9", Groebner.Examples.noonn(9, internal_ordering=:degrevlex, k=AbstractAlgebra.GF(p)))
     # ("hexapod", hexapod)
 ]
 

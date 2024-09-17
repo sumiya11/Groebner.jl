@@ -229,13 +229,7 @@ end
     """
     quote
         GC.@preserve a begin
-            Base.llvmcall(
-                ($textir, "entry"),
-                Bool,
-                Tuple{Ptr{T}, Int64},
-                pointer(a),
-                length(a)
-            )
+            Base.llvmcall(($textir, "entry"), Bool, Tuple{Ptr{T}, Int64}, pointer(a), length(a))
         end
     end
 end

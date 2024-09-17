@@ -14,11 +14,7 @@ function aa_to_singular(poly)
     xstrings = map(string, AbstractAlgebra.gens(Rxx))
     base = Singular.QQ
     new_ring, _ = Singular.polynomial_ring(base, xstrings, internal_ordering=:degrevlex)
-    AbstractAlgebra.change_base_ring(
-        AbstractAlgebra.base_ring(new_ring),
-        poly,
-        parent=new_ring
-    )
+    AbstractAlgebra.change_base_ring(AbstractAlgebra.base_ring(new_ring), poly, parent=new_ring)
 end
 
 setup_memuse_tracker()

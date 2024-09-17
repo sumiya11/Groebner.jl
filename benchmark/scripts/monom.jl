@@ -62,17 +62,13 @@ end
 
 funcs = ["monom_lcm!", "monom_is_divisible"]
 execs = [
-    (
-        (n, setup) -> @btime Groebner.monom_lcm!(z, x, y) setup = begin
-            x, y = $(setup)($n)
-            z = Groebner.monom_copy(x)
-        end
-    ),
-    (
-        (n, setup) -> @btime Groebner.monom_is_divisible(x, y) setup = begin
-            x, y = $(setup)($n)
-        end
-    )
+    ((n, setup) -> @btime Groebner.monom_lcm!(z, x, y) setup = begin
+        x, y = $(setup)($n)
+        z = Groebner.monom_copy(x)
+    end),
+    ((n, setup) -> @btime Groebner.monom_is_divisible(x, y) setup = begin
+        x, y = $(setup)($n)
+    end)
 ]
 impls = ["dense:u8", "dense:u32", "packed", "sparse"]
 setup = [

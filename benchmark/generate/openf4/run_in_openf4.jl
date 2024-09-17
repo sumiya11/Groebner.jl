@@ -59,8 +59,7 @@ function process_system()
             exit(1)
         end
         @debug "Result is" result
-        runtime[PROBLEM_NAME][:total_time] =
-            min(runtime[PROBLEM_NAME][:total_time], timing.time)
+        runtime[PROBLEM_NAME][:total_time] = min(runtime[PROBLEM_NAME][:total_time], timing.time)
     end
 end
 

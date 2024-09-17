@@ -75,8 +75,7 @@ function process_system()
         #             deepcopy(StructuralIdentifiability._runtime_logger[cat])
         #     end
         # end
-        runtime[PROBLEM_NAME][:total_time] =
-            min(runtime[PROBLEM_NAME][:total_time], timing.time)
+        runtime[PROBLEM_NAME][:total_time] = min(runtime[PROBLEM_NAME][:total_time], timing.time)
     end
     # for cat in ID_TIME_CATEGORIES
     #     if haskey(runtime[PROBLEM_NAME], cat)

@@ -112,10 +112,7 @@ push!(
     (
         problem_name="groebner,AA,2^30+3,yang1",
         type=:time,
-        result=compute_gb(
-            Groebner.Examples.yang1(internal_ordering=:degrevlex, k=GF(2^30 + 3)),
-            2
-        )
+        result=compute_gb(Groebner.Examples.yang1(internal_ordering=:degrevlex, k=GF(2^30 + 3)), 2)
     )
 )
 push!(
@@ -148,11 +145,7 @@ push!(
         result=[
             sum(
                 compute_gb(
-                    Groebner.Examples.cyclicn(
-                        6,
-                        internal_ordering=:degrevlex,
-                        k=GF(2^30 + 3)
-                    ),
+                    Groebner.Examples.cyclicn(6, internal_ordering=:degrevlex, k=GF(2^30 + 3)),
                     2000
                 )
             )
@@ -165,12 +158,7 @@ push!(
         problem_name="groebner,AA,QQ,100xchandra 7",
         type=:time,
         result=[
-            sum(
-                compute_gb(
-                    Groebner.Examples.chandran(7, internal_ordering=:degrevlex, k=QQ),
-                    100
-                )
-            )
+            sum(compute_gb(Groebner.Examples.chandran(7, internal_ordering=:degrevlex, k=QQ), 100))
         ]
     )
 )
@@ -221,9 +209,7 @@ push!(
     (
         problem_name="groebner,AA,100 vars drl",
         type=:time,
-        result=compute_gb(
-            n_variable_set(100, internal_ordering=:degrevlex, k=GF(2^31 - 1))
-        )
+        result=compute_gb(n_variable_set(100, internal_ordering=:degrevlex, k=GF(2^31 - 1)))
     )
 )
 
@@ -343,9 +329,7 @@ push!(
     (
         problem_name="groebner,AA,QQ,katsura 8",
         type=:time,
-        result=compute_gb(
-            Groebner.Examples.katsuran(8, internal_ordering=:degrevlex, k=QQ)
-        )
+        result=compute_gb(Groebner.Examples.katsuran(8, internal_ordering=:degrevlex, k=QQ))
     )
 )
 push!(
@@ -353,9 +337,7 @@ push!(
     (
         problem_name="groebner,Nemo,QQ,katsura 8",
         type=:time,
-        result=compute_gb(
-            Groebner.Examples.katsuran(8, internal_ordering=:degrevlex, k=Nemo.QQ)
-        )
+        result=compute_gb(Groebner.Examples.katsuran(8, internal_ordering=:degrevlex, k=Nemo.QQ))
     )
 )
 push!(
@@ -379,10 +361,7 @@ push!(
     (
         problem_name="groebner,AA,QQ,noon 8",
         type=:time,
-        result=compute_gb(
-            Groebner.Examples.noonn(8, internal_ordering=:degrevlex, k=QQ),
-            3
-        )
+        result=compute_gb(Groebner.Examples.noonn(8, internal_ordering=:degrevlex, k=QQ), 3)
     )
 )
 push!(
