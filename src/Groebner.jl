@@ -27,14 +27,6 @@ It is useful to enable this when debugging the Groebner package.
 """
 invariants_enabled() = false
 
-"""
-    logging_enabled() -> Bool
-
-Specifies if logging is enabled. If `false`, then all logging in Groebner is
-disabled, and entails **(almost)** no runtime overhead.
-"""
-logging_enabled() = true
-
 ###
 # Imports
 
@@ -159,7 +151,7 @@ include("groebner/homogenization.jl")
 include("interface.jl")
 
 using PrecompileTools
-include("precompile.jl")
+# include("precompile.jl")
 
 ###
 # Exports

@@ -1,17 +1,5 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-# Groebner.jl interface goes in four levels of access:
-# high level (0), intermediate level (1), low level (2), and very low level (3).
-#
-# Level (0) works with frontend polynomials (say, AbstractAlgebra.jl).
-# Level (1) works with exponent vectors and coefficients.
-# Level (2) works with internal representations of monomials and coefficients.
-# Level (3) works with internal F4 data structures (matrices, hashtables, etc).
-#
-# User interface is levels (0) and (1). Useful work is done on levels (2) and
-# (3). F4 runs on level (3). A series of conversions carries data across levels.
-# Generally, input and output of a function must live on the same level.
-
 ###
 # Backend for `groebner`
 

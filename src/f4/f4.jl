@@ -28,8 +28,8 @@ function f4_initialize_structs(
     end
 
     if sort_input
-        # The sorting of input polynomials is not deterministic across different
-        # Julia versions when sorting only w.r.t. the leading term.
+        # The order of polynomials is not deterministic across different Julia
+        # versions when sorting only w.r.t. the leading term.
         permutation = sort_polys_by_lead_increasing!(basis, hashtable, params.changematrix)
     else
         permutation = collect(1:(basis.n_filled))
@@ -69,30 +69,25 @@ function f4_update!(
     ht::MonomialHashtable,
     update_ht::MonomialHashtable
 )
-    @invariant basis.n_filled >= basis.n_processed
-    @inbounds for i in (basis.n_processed + 1):(basis.n_filled)
-        basis_is_new_polynomial_redundant!(pairset, basis, ht, update_ht, i) && continue
-        pairset_resize_lcms_if_needed!(pairset, basis.n_filled)
-        pairset_resize_if_needed!(pairset, basis.n_filled)
+    @invariant basis.n_processed <= basis.n_filled
+    for i in (basis.n_processed + 1):(basis.n_filled)
+        basis_mark_redundant_elements!(pairset, basis, ht, update_ht, i)
         pairset_update!(pairset, basis, ht, update_ht, i)
     end
     basis_update!(basis, ht)
 end
 
+# Monomials that represent the columns of the matrix are stored in the symbol_ht
+# hashtable.
+# We traverse monomials searching for a reducer for each monomial. The hashtable
+# may grow as reducers are added to the matrix, and the loop accounts for that.
 function f4_symbolic_preprocessing!(
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable
 )
-    # Monomials that represent the columns of the matrix are stored in the
-    # symbol_ht hashtable.
-    ncols = matrix.ncols_left
     matrix_resize_upper_part_if_needed!(matrix, matrix.ncols_left + symbol_ht.load)
-
-    # Traverse all monomials in symbol_ht and search for a polynomial reducer
-    # for each monomial. The hashtable grows as polynomials with new monomials
-    # are added to the matrix, and the loop accounts for that.
     i = symbol_ht.offset
     @inbounds while i <= symbol_ht.load
         if symbol_ht.labels[i] != NON_PIVOT_COLUMN
@@ -106,8 +101,6 @@ function f4_symbolic_preprocessing!(
         f4_find_multiplied_reducer!(basis, matrix, ht, symbol_ht, MonomId(i))
         i += 1
     end
-
-    nothing
 end
 
 function f4_autoreduce!(
@@ -210,8 +203,6 @@ function f4_select_tobereduced!(
         basis.nonredundant_indices[i] = i
         basis.divmasks[i] = ht.divmasks[basis.monoms[i][1]]
     end
-
-    nothing
 end
 
 function f4_find_lead_divisor_use_divmask(i, divmask, basis)
@@ -297,49 +288,30 @@ function f4_find_multiplied_reducer!(
 end
 
 function f4_select_critical_pairs!(
-    pairset::Pairset{ExponentType},
+    pairset::Pairset,
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
     symbol_ht::MonomialHashtable;
-    maxpairs::Int=INT_INF,
     select_all::Bool=false
-) where {ExponentType}
-    npairs::Int = pairset.load
-    if !select_all
-        npairs = pairset_lowest_degree_pairs!(pairset)
+)
+    if select_all
+        npairs = pairset.load
+    else
+        npairs = pairset_partition_by_degree!(pairset)
     end
-    npairs = min(npairs, maxpairs)
-
     @invariant npairs > 0
-
-    ps = pairset.pairs
-    degs = pairset.degrees
-    @inbounds deg::ExponentType = degs[1]
 
     sort_pairset_by_lcm!(pairset, npairs, ht)
 
-    # When there is a limit on the number of selected pairs, we still add pairs
-    # which have the same lcm as the selected ones.
-    if npairs > maxpairs
-        navailable = npairs
-        npairs = maxpairs
-        lastlcm = ps[npairs].lcm
-        while npairs < navailable && ps[npairs + 1].lcm == lastlcm
-            npairs += 1
-        end
-    end
-
     f4_add_critical_pairs_to_matrix!(pairset, npairs, basis, matrix, ht, symbol_ht)
 
-    # Remove selected parirs from the pairset.
+    # Remove selected pairs from the pairset.
     @inbounds for i in 1:(pairset.load - npairs)
-        ps[i] = ps[i + npairs]
-        degs[i] = degs[i + npairs]
+        pairset.pairs[i] = pairset.pairs[i + npairs]
+        pairset.degs[i] = pairset.degs[i + npairs]
     end
     pairset.load -= npairs
-
-    deg, npairs
 end
 
 function f4_add_critical_pairs_to_matrix!(
@@ -446,14 +418,7 @@ function f4!(
     f4_update!(pairset, basis, hashtable, update_ht)
 
     while !isempty(pairset)
-        f4_select_critical_pairs!(
-            pairset,
-            basis,
-            matrix,
-            hashtable,
-            symbol_ht,
-            maxpairs=params.maxpairs
-        )
+        f4_select_critical_pairs!(pairset, basis, matrix, hashtable, symbol_ht)
 
         f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
 
@@ -465,12 +430,8 @@ function f4!(
         hashtable_reinitialize!(symbol_ht)
     end
 
-    if params.sweep
-        basis_sweep_redundant!(basis, hashtable)
-    end
-
-    basis_mark_redundant_elements!(basis)
-
+    basis_move_redundant_elements!(basis)
+    
     if params.reduced
         f4_autoreduce!(ring, basis, matrix, hashtable, symbol_ht, params)
     end

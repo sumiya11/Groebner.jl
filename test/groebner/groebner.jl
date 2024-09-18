@@ -490,25 +490,6 @@ end
     @test Groebner.groebner(system) == Groebner.groebner(system, certify=true)
 end
 
-@testset "groebner maxpairs" begin
-    # TODO: fix some bugs in maxpairs
-    s = Groebner.Examples.noonn(5, internal_ordering=:degrevlex, k=GF(2^31 - 1))
-    gb = Groebner.groebner(s)
-    # @test gb == Groebner.groebner(s, maxpairs=100)
-    # @test gb == Groebner.groebner(s, maxpairs=10)
-    # @test gb == Groebner.groebner(s, maxpairs=2)
-    # @test gb == Groebner.groebner(s, maxpairs=1)
-    @test_throws AssertionError Groebner.groebner(s, maxpairs=0)
-
-    s = Groebner.Examples.katsuran(5, internal_ordering=:degrevlex, k=QQ)
-    gb = Groebner.groebner(s)
-    # @test gb == Groebner.groebner(s, maxpairs=100)
-    # @test gb == Groebner.groebner(s, maxpairs=10)
-    # @test gb == Groebner.groebner(s, maxpairs=2)
-    # @test gb == Groebner.groebner(s, maxpairs=1)
-    @test_throws AssertionError Groebner.groebner(s, maxpairs=0)
-end
-
 @testset "groebner orderings" begin
     R, (x, y, z, w) = polynomial_ring(QQ, ["x", "y", "z", "w"], internal_ordering=:deglex)
 
@@ -815,7 +796,7 @@ end
 @testset "groebner arithmetic" begin
     R, (x, y, z) = polynomial_ring(GF(10007), ["x", "y", "z"], internal_ordering=:degrevlex)
 
-    for arithmetic in [:auto, :delayed, :signed, :basic, :floating]
+    for arithmetic in [:auto, :delayed, :signed, :basic]
         @test Groebner.groebner([x, y], arithmetic=arithmetic, linalg=:deterministic) ==
               Groebner.groebner([y, x]) ==
               [y, x]

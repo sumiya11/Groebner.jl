@@ -171,14 +171,7 @@ function f4_learn!(
     pairset_size = f4_update!(pairset, basis, hashtable, update_ht)
 
     while !isempty(pairset)
-        degree_i, npairs_i = f4_select_critical_pairs!(
-            pairset,
-            basis,
-            matrix,
-            hashtable,
-            symbol_ht,
-            maxpairs=params.maxpairs
-        )
+        degree_i, npairs_i = f4_select_critical_pairs!(pairset, basis, matrix, hashtable, symbol_ht)
         push!(trace.critical_pair_sequence, (degree_i, npairs_i))
 
         f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
@@ -191,11 +184,7 @@ function f4_learn!(
         hashtable_reinitialize!(symbol_ht)
     end
 
-    if params.sweep
-        basis_sweep_redundant!(basis, hashtable)
-    end
-
-    basis_mark_redundant_elements!(basis)
+    basis_move_redundant_elements!(basis)
 
     if params.reduced
         f4_reducegb_learn!(trace, ring, basis, matrix, hashtable, symbol_ht, params)
@@ -522,8 +511,6 @@ function f4_apply!(
 
         hashtable_reinitialize!(symbol_ht)
     end
-
-    # basis_mark_redundant_elements!(basis)
 
     if params.reduced
         symbol_ht = hashtable_initialize_secondary(hashtable)

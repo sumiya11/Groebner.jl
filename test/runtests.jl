@@ -9,7 +9,6 @@ using Groebner
 
 # Check invariants during testing.
 Groebner.invariants_enabled() = true
-Groebner.logging_enabled() = true
 
 function is_github_ci()
     return parse(Bool, get(ENV, "GITHUB_ACTIONS", "false"))
