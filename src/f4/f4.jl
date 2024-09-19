@@ -306,12 +306,16 @@ function f4_select_critical_pairs!(
 
     f4_add_critical_pairs_to_matrix!(pairset, npairs, basis, matrix, ht, symbol_ht)
 
+    deg = pairset.degrees[1]
+
     # Remove selected pairs from the pairset.
     @inbounds for i in 1:(pairset.load - npairs)
         pairset.pairs[i] = pairset.pairs[i + npairs]
-        pairset.degs[i] = pairset.degs[i + npairs]
+        pairset.degrees[i] = pairset.degrees[i + npairs]
     end
     pairset.load -= npairs
+
+    deg, npairs
 end
 
 function f4_add_critical_pairs_to_matrix!(

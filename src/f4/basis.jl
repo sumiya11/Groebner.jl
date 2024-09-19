@@ -164,7 +164,9 @@ function basis_well_formed(ring::PolyRing, basis::Basis, hashtable::MonomialHash
     !is_sorted_by_lead_increasing(basis, hashtable) && error("Basis elements must be sorted")
     for i in basis.n_filled
         isempty(basis.monoms[i]) && error("Zero polynomials are not allowed.")
-        !(length(basis.monoms[i]) == length(basis.coeffs[i])) && error("Beda!")
+        !(length(basis.monoms[i]) == length(basis.coeffs[i])) && error("Bad polynomial")
+        !allunique(basis.monoms[i]) && error("Bad polynomial")
+        !issorted(basis.monoms[i], lt=(j,k) -> monom_isless(hashtable.monoms[k], hashtable.monoms[j], ring.ord)) && error("Bad polynomial")
         for j in 1:length(basis.coeffs[i])
             iszero(basis.coeffs[i][j]) && error("Coefficient is zero")
             (ring.ch > 0) &&
