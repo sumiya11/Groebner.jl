@@ -37,7 +37,6 @@ mutable struct Trace{C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
     output_sort_indices::Vector{Int}
 
     params::AlgorithmParameters
-    sweep_output::Bool
     representation::PolynomialRepresentation
     homogenize::Bool
 
@@ -91,7 +90,6 @@ function trace_initialize(
         Vector{Int}(),
         Vector{Int}(),
         params,
-        params.sweep,
         PolynomialRepresentation(ExponentVector{UInt64}, UInt64, false),
         params.homogenize,
         0,
@@ -131,7 +129,6 @@ function trace_deepcopy(
         copy(trace.nonredundant_indices_before_reduce),
         copy(trace.output_sort_indices),
         deepcopy(trace.params),
-        trace.sweep_output,
         PolynomialRepresentation(
             trace.representation.monomtype,
             trace.representation.coefftype,
@@ -209,7 +206,6 @@ function trace_copy(
         trace.nonredundant_indices_before_reduce,
         trace.output_sort_indices,
         trace.params,
-        trace.sweep_output,
         new_representation,
         trace.homogenize,
         trace.napply,
@@ -345,7 +341,6 @@ function Base.show(io::IO, ::MIME"text/plain", trace::Trace)
         """
         input order  : $(trace.original_ord)
         output order : $(trace.ring.ord)
-        sweep        : $(trace.sweep_output)
         homogenize   : $(trace.homogenize)
         permute      : $(permute_input)
         monom. type  : $(trace.representation.monomtype)

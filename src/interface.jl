@@ -58,20 +58,11 @@ The `groebner` routine takes the following optional arguments:
 - `loglevel`: Logging level, one of `:all`, `:debug`, `:info`, `:warn`, `:no`,
     or an integer. An integer `0` is equivalent to `:info`, and lower integer
     values mean more verbose. Default is `:info`.
-- `maxpairs`: The maximum number of critical pairs used at once in matrix
-    construction in the F4 algorithm. By default, this is not specified. Tweak
-    this option to try to lower the amount of RAM consumed.
 - `homogenize`: Controls the use of homogenization in the algorithm. Possible
   options are:
     - `:yes`, always homogenize the input ideal,
     - `:no`, never homogenize the input ideal,
     - `:auto`, for the automatic choice (default).
-- `statistics`: After the function exits, print some runtime statistics.
-  Possible options are:
-  - `:no`, print nothing (default),
-  - `:timings`, print the table with timings and allocations. Note that
-    `Groebner.performance_counters_enabled()` must be set to `true` for this to
-    have effect.
 
 ## Example
 
@@ -450,12 +441,6 @@ The `isgroebner` routine takes the following optional arguments:
 - `loglevel`: Logging level, one of `:all`, `:debug`, `:info`, `:warn`, `:no`,
     or an integer. An integer `0` is equivalent to `:info`, and lower integer
     values mean more verbose. Default is `:info`.
-- `statistics`: After the function exits, print some runtime statistics.
-    Possible options are:
-    - `:no`, do not print anything (default),
-    - `:timings`, print the table with timings and allocations. Note that
-      `Groebner.performance_counters_enabled()` must be set to `true` for this to
-      have effect.
 
 ## Example
 
@@ -519,12 +504,6 @@ The `normalform` routine takes the following optional arguments:
 - `loglevel`: Logging level, one of `:all`, `:debug`, `:info`, `:warn`, `:no`,
     or an integer. An integer `0` is equivalent to `:info`, and lower integer
     values mean more verbose. Default is `:info`.
-- `statistics`: After the function exits, print some runtime statistics.
-  Possible options are:
-  - `:no`, do not print anything (default),
-  - `:timings`, print the table with timings and allocations. Note that
-    `Groebner.performance_counters_enabled()` must be set to `true` for this to
-    have effect.
 
 ## Example
 

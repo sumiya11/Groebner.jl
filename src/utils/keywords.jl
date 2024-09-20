@@ -18,13 +18,10 @@ const _supported_kw_args = (
         monoms       = :auto,
         arithmetic   = :auto,
         seed         = 42,
-        maxpairs     = INT_INF,
         selection    = :auto,
         modular      = :auto,
         threaded     = :auto,
-        sweep        = false,
         homogenize   = :auto,
-        statistics   = :no,
         batched      = true,
         changematrix = false
     ),
@@ -32,14 +29,12 @@ const _supported_kw_args = (
         check       = false,
         ordering    = InputOrdering(),
         monoms      = :dense,
-        statistics  = :no
     ),
     isgroebner = (
         ordering    = InputOrdering(),
         certify     = true,
         seed        = 42,
-        monoms      = :dense,
-        statistics  = :no
+        monoms      = :dense
     ),
     groebner_learn = (
         seed        = 42,
@@ -47,8 +42,6 @@ const _supported_kw_args = (
         monoms      = :auto,
         arithmetic  = :auto,
         homogenize  = :auto,
-        sweep       = true,
-        statistics  = :no,
         threaded    = :auto,
     ),
     groebner_apply! = (
@@ -56,8 +49,6 @@ const _supported_kw_args = (
         ordering    = InputOrdering(),
         monoms      = :auto,
         arithmetic  = :auto,
-        sweep       = true,
-        statistics  = :no,
         threaded    = :auto,
     ),
     groebner_with_change_matrix = (
@@ -68,13 +59,10 @@ const _supported_kw_args = (
         monoms       = :auto,
         arithmetic   = :auto,
         seed         = 42,
-        maxpairs     = INT_INF,
         selection    = :auto,
         modular      = :auto,
         threaded     = :auto,
-        sweep        = false,
         homogenize   = :auto,
-        statistics   = :no,
         batched      = true,
         changematrix = true
     ),
@@ -102,14 +90,11 @@ mutable struct KeywordArguments
     monoms::Symbol
     arithmetic::Symbol
     seed::Int
-    maxpairs::Int
     selection::Symbol
     modular::Symbol
     batched::Bool
     check::Bool
-    sweep::Bool
     homogenize::Symbol
-    statistics::Symbol
     changematrix::Bool
 
     KeywordArguments(function_id::Symbol; passthrough...) =
@@ -157,15 +142,12 @@ mutable struct KeywordArguments
         `:auto`, `:dense`, `:packed`"""
 
         arithmetic = get(kws, :arithmetic, get(default_kw_args, :arithmetic, :auto))
-        @assert arithmetic in (:auto, :delayed, :signed, :basic, :floating) """
+        @assert arithmetic in (:auto, :delayed, :signed, :basic) """
         Not recognized arithmetic: $arithmetic
         Possible choices for keyword "arithmetic" are:
-        `:auto`, `:delayed`, `:signed`, `:basic`, `:floating`"""
+        `:auto`, `:delayed`, `:signed`, `:basic`"""
 
         seed = get(kws, :seed, get(default_kw_args, :seed, 42))
-
-        maxpairs = get(kws, :maxpairs, get(default_kw_args, :maxpairs, INT_INF))
-        @assert maxpairs > 0 "The limit on the number of critical pairs must be positive"
 
         modular = get(kws, :modular, get(default_kw_args, :modular, :auto))
         @assert modular in (:auto, :classic_modular, :learn_and_apply) """
@@ -179,18 +161,11 @@ mutable struct KeywordArguments
         @assert selection in (:auto, :normal, :sugar, :be_divided_and_perish)
 
         check = get(kws, :check, get(default_kw_args, :check, true))
-        sweep = get(kws, :sweep, get(default_kw_args, :sweep, false))
         homogenize = get(kws, :homogenize, get(default_kw_args, :homogenize, :auto))
         @assert homogenize in (:auto, :no, :yes) """
         Not recognized homogenization strategy: $homogenize
         Possible choices for keyword "homogenize" are:
         `:auto`, `:no`, `:yes`"""
-
-        statistics = get(kws, :statistics, get(default_kw_args, :statistics, :no))
-        @assert statistics in (:no, :timings, :stats, :all) """
-        Not recognized option for collecting statistics: $statistics
-        Possible choices for keyword "statistics" are:
-        `:no`, `:timings`, `:stats`, `:all`"""
 
         changematrix = get(kws, :changematrix, get(default_kw_args, :changematrix, false))
 
@@ -204,14 +179,11 @@ mutable struct KeywordArguments
             monoms,
             arithmetic,
             seed,
-            maxpairs,
             selection,
             modular,
             batched,
             check,
-            sweep,
             homogenize,
-            statistics,
             changematrix
         )
     end

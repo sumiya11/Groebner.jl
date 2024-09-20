@@ -16,7 +16,8 @@ end
 ###
 # Element-wise rational reconstruction
 
-# table of rationals need not be initialized
+# Table of rationals need not be initialized.
+# Reconstructs only the witness set.
 function ratrec_vec_partial!(
     table_qq::Vector{Vector{Rational{BigInt}}},
     table_zz::Vector{Vector{BigInt}},
@@ -25,6 +26,7 @@ function ratrec_vec_partial!(
     mask::Vector{BitVector}
 )
     @invariant length(table_qq) == length(table_zz)
+    @invariant modulo > 1
 
     bound = ratrec_reconstruction_bound(modulo)
     nemo_bound = Nemo.ZZRingElem(bound)
@@ -47,6 +49,7 @@ function ratrec_vec_partial!(
     true
 end
 
+# Table of rationals need not be initialized.
 function ratrec_vec_full!(
     table_qq::Vector{Vector{Rational{BigInt}}},
     table_zz::Vector{Vector{BigInt}},
@@ -63,9 +66,7 @@ function ratrec_vec_full!(
     @inbounds for i in 1:length(table_zz)
         @invariant length(table_zz[i]) == length(table_qq[i])
         for j in 1:length(table_zz[i])
-            if mask[i][j]
-                continue
-            end
+            mask[i][j] && continue
 
             rem_nemo = Nemo.ZZRingElem(table_zz[i][j])
             @invariant 0 <= rem_nemo < modulo

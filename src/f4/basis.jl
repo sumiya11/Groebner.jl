@@ -15,6 +15,11 @@ struct CriticalPair
     poly2::Int32
     # Index of lcm(lm(poly1), lm(poly2)) in the hashtable
     lcm::MonomId
+
+    function CriticalPair(poly1, poly2, lcm)
+        @invariant poly1 < poly2
+        new(poly1, poly2, lcm)
+    end
 end
 
 mutable struct Pairset{ExponentType <: Integer}
@@ -73,6 +78,9 @@ function pairset_find_smallest_degree_pair(ps::Pairset)
     pair_idx, pair_min_deg
 end
 
+# Returns N, the number of critical pairs of the smallest degree. Sorts the
+# critical pairs so that the first N pairs in the pairset are the smallest with
+# respect to degree.
 function pairset_partition_by_degree!(ps::Pairset)
     @invariant ps.load > 0
     _, pair_min_deg = pairset_find_smallest_degree_pair(ps)
@@ -95,15 +103,6 @@ function pairset_partition_by_degree!(ps::Pairset)
     end
 
     i - 1
-end
-
-# Returns N, the number of critical pairs of the smallest degree. Sorts the
-# critical pairs so that the first N pairs in the pairset are the smallest with
-# respect to degree.
-function pairset_lowest_degree_pairs!(pairset::Pairset)
-    n_lowest_degree_pairs = pairset_partition_by_degree!(pairset)
-    @invariant n_lowest_degree_pairs > 0
-    n_lowest_degree_pairs
 end
 
 ###
@@ -165,7 +164,12 @@ function basis_well_formed(ring::PolyRing, basis::Basis, hashtable::MonomialHash
     !is_sorted_by_lead_increasing(basis, hashtable) && error("Basis elements must be sorted")
     for i in basis.n_filled
         isempty(basis.monoms[i]) && error("Zero polynomials are not allowed.")
-        !(length(basis.monoms[i]) == length(basis.coeffs[i])) && error("Beda!")
+        !(length(basis.monoms[i]) == length(basis.coeffs[i])) && error("Bad polynomial")
+        !allunique(basis.monoms[i]) && error("Bad polynomial")
+        !issorted(
+            basis.monoms[i],
+            lt=(j, k) -> monom_isless(hashtable.monoms[k], hashtable.monoms[j], ring.ord)
+        ) && error("Bad polynomial")
         for j in 1:length(basis.coeffs[i])
             iszero(basis.coeffs[i][j]) && error("Coefficient is zero")
             (ring.ch > 0) &&
@@ -190,7 +194,6 @@ function basis_changematrix_initialize!(
         basis.changematrix[i] = Dict{Int, Dict{MonomId, C}}()
         basis.changematrix[i][i] = Dict{MonomId, C}(id_of_1 => one(C))
     end
-    nothing
 end
 
 function basis_changematrix_mul!(
@@ -209,7 +212,6 @@ function basis_changematrix_mul!(
         new_row[pos] = new_poly
     end
     basis.changematrix[idx] = new_row
-    nothing
 end
 
 function basis_changematrix_addmul!(
@@ -241,7 +243,6 @@ function basis_changematrix_addmul!(
             poly[new_monom_id] = mod_p(poly[new_monom_id] + ref_cf * AccumType(cf), arithmetic)
         end
     end
-    nothing
 end
 
 function basis_changematrix_deep_copy_with_new_type(
@@ -404,28 +405,6 @@ end
 
 function basis_make_monic!(
     basis::Basis{C},
-    arithmetic::Union{FloatingPointCompositeArithmeticZp{A, C}, FloatingPointArithmeticZp{A, C}},
-    changematrix::Bool
-) where {A <: Union{CoeffZp, CompositeCoeffZp}, C <: Union{CoeffZp, CompositeCoeffZp}}
-    cfs = basis.coeffs
-    @inbounds for i in 1:(basis.n_filled)
-        !isassigned(cfs, i) && continue
-        isone(cfs[i][1]) && continue
-        mul = inv_mod_p(A(cfs[i][1]), arithmetic)
-        cfs[i][1] = one(C)
-        for j in 2:length(cfs[i])
-            cfs[i][j] = mod_p(A(cfs[i][j]) * A(mul), arithmetic)
-        end
-        @invariant isone(cfs[i][1])
-        if changematrix
-            basis_changematrix_mul!(basis, i, A(mul), arithmetic)
-        end
-    end
-    basis
-end
-
-function basis_make_monic!(
-    basis::Basis{C},
     arithmetic::AbstractArithmeticQQ,
     changematrix::Bool
 ) where {C <: CoeffQQ}
@@ -442,9 +421,8 @@ function basis_make_monic!(
     basis
 end
 
-# Generate new S-pairs from pairs of polynomials
-#   (basis[idx], basis[i])
-# for every i < idx
+# Follows paragraph 4.4. from 
+# Gebauer, Möller, On an Installation of Buchberger's Algorithm
 function pairset_update!(
     pairset::Pairset{D},
     basis::Basis{C},
@@ -452,100 +430,112 @@ function pairset_update!(
     update_ht::MonomialHashtable{M},
     idx::Int
 ) where {D, C <: Coeff, M <: Monom}
-    pl, bl = pairset.load, idx
-    ps = pairset.pairs
+    pairset_resize_lcms_if_needed!(pairset, basis.n_filled)
+    pairset_resize_if_needed!(pairset, basis.n_filled)
+
+    pairs = pairset.pairs
     lcms = pairset.lcms
     degs = pairset.degrees
 
-    @inbounds new_lead = basis.monoms[idx][1]
+    @inbounds lead_idx = basis.monoms[idx][1]
 
     # Generate new pairs.
-    hashtable_resize_if_needed!(update_ht, bl)
-    @inbounds for i in 1:(bl - 1)
-        newidx = pl + i
+    hashtable_resize_if_needed!(update_ht, idx)
+    @inbounds for i in 1:(idx - 1)
+        newidx = pairset.load + i
         if !basis.is_redundant[i] &&
-           !monom_is_gcd_const(ht.monoms[basis.monoms[i][1]], ht.monoms[new_lead])
-            lcms[i] = hashtable_get_lcm!(basis.monoms[i][1], new_lead, ht, update_ht)
+           !monom_is_gcd_const(ht.monoms[basis.monoms[i][1]], ht.monoms[lead_idx])
+            lcms[i] = hashtable_get_lcm!(basis.monoms[i][1], lead_idx, ht, update_ht)
             degs[newidx] = monom_totaldeg(update_ht.monoms[lcms[i]])
-            ps[newidx] = CriticalPair(Int32(i), Int32(idx), lcms[i])
+            pairs[newidx] = CriticalPair(Int32(i), Int32(idx), lcms[i])
         else
             lcms[i] = CRITICAL_PAIR_REDUNDANT
             degs[newidx] = typemax(D)
-            ps[newidx] = CriticalPair(Int32(i), Int32(idx), CRITICAL_PAIR_REDUNDANT)
+            pairs[newidx] = CriticalPair(Int32(i), Int32(idx), CRITICAL_PAIR_REDUNDANT)
         end
     end
 
-    # Traverse existing pairs...
-    @inbounds for i in 1:pl
-        if ps[i].lcm == CRITICAL_PAIR_REDUNDANT
-            continue
-        end
-
-        j = ps[i].poly1
-        l = ps[i].poly2
-        m = max(degs[pl + l], degs[pl + j])
-
-        # ...if an existing pair is divisible by the lead of the new poly and
-        # has a greater degree than newly generated critical pair, then mark the
-        # existing pair redundant
-        if degs[i] > m && hashtable_monom_is_divisible(ps[i].lcm, new_lead, ht)
-            ps[i] = CriticalPair(ps[i].poly1, ps[i].poly2, CRITICAL_PAIR_REDUNDANT)
+    # Criterion B_k(j, l).
+    # T(j, l) is divisible by T(k)
+    # max(deg T(j, k), deg T(l, k)) < deg T(j, l)
+    @inbounds for i in 1:(pairset.load)
+        (pairs[i].lcm == CRITICAL_PAIR_REDUNDANT) && continue
+        j = pairs[i].poly1
+        l = pairs[i].poly2
+        m = max(degs[pairset.load + l], degs[pairset.load + j])
+        if degs[i] > m && hashtable_monom_is_divisible(pairs[i].lcm, lead_idx, ht)
+            pairs[i] = CriticalPair(pairs[i].poly1, pairs[i].poly2, CRITICAL_PAIR_REDUNDANT)
         end
     end
 
     # Traverse new pairs to move non-redundant ones first.
-    j = 1
-    @inbounds for i in 1:(bl - 1)
-        if !basis.is_redundant[i]
-            ps[pl + j] = ps[pl + i]
-            degs[pl + j] = degs[pl + i]
-            j += 1
-        end
+    cnt = 1
+    @inbounds for i in 1:(idx - 1)
+        (lcms[i] == CRITICAL_PAIR_REDUNDANT) && continue
+        # if !basis.is_redundant[i]
+        pairs[pairset.load + cnt] = pairs[pairset.load + i]
+        degs[pairset.load + cnt] = degs[pairset.load + i]
+        cnt += 1
+        # end
     end
 
-    sort_pairset_by_degree!(pairset, pl + 1, j - 2)
+    sort_pairset_by_degree!(pairset, pairset.load + 1, cnt - 2)
 
-    @inbounds for i in 1:(j - 1)
-        lcms[i] = ps[pl + i].lcm
+    @inbounds for i in 1:(cnt - 1)
+        lcms[i] = pairs[pairset.load + i].lcm
     end
-    @inbounds lcms[j] = CRITICAL_PAIR_REDUNDANT
-    pc = j
-    pc -= 1
+    @inbounds lcms[cnt] = CRITICAL_PAIR_REDUNDANT
+    new_pairs = cnt - 1
 
-    # Mark redundancy of some pairs based on their lcms.
-    @inbounds for j in 1:pc
-        if !(lcms[j] == CRITICAL_PAIR_REDUNDANT)
-            hashtable_check_monomial_division_in_update(lcms, j + 1, pc, lcms[j], update_ht)
-        end
-    end
-
-    # Remove redundant pairs from the pairset.
-    j = 1
-    @inbounds for i in 1:(pairset.load)
-        (ps[i].lcm == CRITICAL_PAIR_REDUNDANT) && continue
-        ps[j] = ps[i]
-        degs[j] = degs[i]
-        j += 1
-    end
-
-    hashtable_resize_if_needed!(ht, pc)
-
-    # Add new lcm monomials to the basis hashtable 
-    # (including index j and not including index pc).
-    insert_lcms_in_basis_hashtable!(pairset, pl, ht, update_ht, basis, lcms, j, pc + 1)
-
-    # Mark redundant polynomials in basis.
-    nonred = basis.nonredundant_indices
-    lml = basis.n_nonredundant
-    @inbounds for i in 1:lml
-        if !basis.is_redundant[nonred[i]]
-            if hashtable_monom_is_divisible(basis.monoms[nonred[i]][1], new_lead, ht)
-                basis.is_redundant[nonred[i]] = true
+    # Criterion M(i, j).
+    # T(i, j) | T(k, j)
+    @inbounds for i in 1:new_pairs
+        (lcms[i] == CRITICAL_PAIR_REDUNDANT) && continue
+        divmask_i = update_ht.divmasks[lcms[i]]
+        lcm_i = update_ht.monoms[lcms[i]]
+        k = i + 1
+        for k in (i + 1):new_pairs
+            (lcms[k] == CRITICAL_PAIR_REDUNDANT) && continue
+            if update_ht.use_divmask &&
+               !divmask_is_probably_divisible(update_ht.divmasks[lcms[k]], divmask_i)
+                continue
+            end
+            ea = update_ht.monoms[lcms[k]]
+            if monom_is_divisible(update_ht.monoms[lcms[k]], lcm_i)
+                lcms[k] = CRITICAL_PAIR_REDUNDANT
             end
         end
     end
 
-    nothing
+    # Remove redundant pairs from the pairset.
+    cnt = 1
+    @inbounds for i in 1:(pairset.load)
+        (pairs[i].lcm == CRITICAL_PAIR_REDUNDANT) && continue
+        pairs[cnt] = pairs[i]
+        degs[cnt] = degs[i]
+        cnt += 1
+    end
+
+    # Add new lcm monomials to the main hashtable.
+    hashtable_resize_if_needed!(ht, new_pairs)
+    @inbounds for i in 1:new_pairs
+        (lcms[i] == CRITICAL_PAIR_REDUNDANT) && continue
+        id = hashtable_insert!(ht, update_ht.monoms[lcms[i]])
+        pair = pairs[pairset.load + i]
+        pairs[cnt] = CriticalPair(pair.poly1, pair.poly2, id)
+        degs[cnt] = degs[pairset.load + i]
+        cnt += 1
+    end
+    pairset.load = cnt - 1
+
+    # Mark redundant polynomials in the generating set.
+    nonred = basis.nonredundant_indices
+    @inbounds for i in 1:(basis.n_nonredundant)
+        basis.is_redundant[nonred[i]] && continue
+        if hashtable_monom_is_divisible(basis.monoms[nonred[i]][1], lead_idx, ht)
+            basis.is_redundant[nonred[i]] = true
+        end
+    end
 end
 
 function basis_update!(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
@@ -573,24 +563,21 @@ function basis_update!(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom
     basis.n_processed = basis.n_filled
 end
 
-function basis_is_new_polynomial_redundant!(
+function basis_mark_redundant_elements!(
     pairset::Pairset,
     basis::Basis,
     ht::MonomialHashtable{M},
     update_ht::MonomialHashtable{M},
     idx::Int
 ) where {M <: Monom}
-    hashtable_resize_if_needed!(update_ht, 0)
-
-    @inbounds lead_new = basis.monoms[idx][1]
+    @inbounds lead_idx = basis.monoms[idx][1]
     ps = pairset.pairs
     degs = pairset.degrees
     @inbounds for i in (idx + 1):(basis.n_filled)
         basis.is_redundant[i] && continue
-
         lead_i = basis.monoms[i][1]
-        @invariant !monom_isless(ht.monoms[lead_i], ht.monoms[lead_new], ht.ord)
-        !hashtable_monom_is_divisible(lead_i, lead_new, ht) && continue
+        @invariant !monom_isless(ht.monoms[lead_i], ht.monoms[lead_idx], ht.ord)
+        !hashtable_monom_is_divisible(lead_i, lead_idx, ht) && continue
 
         # Add a new critical pair corresponding to Spoly(i, idx).
         pairset_resize_if_needed!(pairset, 1)
@@ -600,8 +587,6 @@ function basis_is_new_polynomial_redundant!(
 
         basis.is_redundant[i] = true
     end
-
-    false
 end
 
 function basis_fill_data!(
@@ -627,26 +612,7 @@ function basis_fill_data!(
     basis.n_filled = ngens
 end
 
-function basis_sweep_redundant!(basis::Basis, hashtable::MonomialHashtable)
-    # here -- assert that basis is in fact a Groebner basis.
-    # NOTE: maybe sort generators for more effective sweeping?
-    @inbounds for i in 1:(basis.n_processed)
-        for j in (i + 1):(basis.n_processed)
-            basis.is_redundant[i] && continue
-            basis.is_redundant[j] && continue
-            lead_i = basis.monoms[i][1]
-            lead_j = basis.monoms[j][1]
-            if hashtable_monom_is_divisible(lead_i, lead_j, hashtable)
-                basis.is_redundant[i] = true
-            elseif hashtable_monom_is_divisible(lead_j, lead_i, hashtable)
-                basis.is_redundant[j] = true
-            end
-        end
-    end
-    nothing
-end
-
-function basis_mark_redundant_elements!(basis::Basis)
+function basis_discard_redundant_elements!(basis::Basis)
     j = 1
     @inbounds for i in 1:(basis.n_nonredundant)
         if !basis.is_redundant[basis.nonredundant_indices[i]]
@@ -692,8 +658,7 @@ end
 function basis_get_monoms_by_identifiers(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
     monoms = Vector{Vector{M}}(undef, basis.n_nonredundant)
     @inbounds for i in 1:(basis.n_nonredundant)
-        idx = basis.nonredundant_indices[i]
-        poly = basis.monoms[idx]
+        poly = basis.monoms[basis.nonredundant_indices[i]]
         monoms[i] = Vector{M}(undef, length(poly))
         for j in 1:length(poly)
             monoms[i][j] = ht.monoms[poly[j]]
@@ -705,8 +670,7 @@ end
 function basis_export_coeffs(basis::Basis{C}) where {C <: Coeff}
     coeffs = Vector{Vector{C}}(undef, basis.n_nonredundant)
     @inbounds for i in 1:(basis.n_nonredundant)
-        idx = basis.nonredundant_indices[i]
-        coeffs[i] = basis.coeffs[idx]
+        coeffs[i] = basis.coeffs[basis.nonredundant_indices[i]]
     end
     coeffs
 end
@@ -715,88 +679,4 @@ function basis_export_data(basis::Basis{C}, ht::MonomialHashtable{M}) where {M <
     exps = basis_get_monoms_by_identifiers(basis, ht)
     coeffs = basis_export_coeffs(basis)
     exps, coeffs
-end
-
-# For a given list of S-pairs and a list of indices `plcm`
-# adds indices from plcm[ifirst:ilast]
-# to the hashtable ht
-function insert_lcms_in_basis_hashtable!(
-    pairset::Pairset,
-    off::Int,
-    ht::MonomialHashtable{M},
-    update_ht::MonomialHashtable{M},
-    basis::Basis,
-    plcm::Vector{MonomId},
-    ifirst::Int,
-    ilast::Int
-) where {M}
-    # including ifirst and not including ilast
-
-    monoms = basis.monoms
-    ps = pairset.pairs
-    degs = pairset.degrees
-
-    mod = MonomHash(ht.size - 1)
-    @invariant ispow2(mod + 1)
-
-    m = ifirst
-    l = 1
-    @label Letsgo
-    @inbounds while l < ilast
-        if plcm[l] == CRITICAL_PAIR_REDUNDANT
-            l += 1
-            continue
-        end
-
-        if hashtable_monom_is_gcd_const(
-            monoms[ps[off + l].poly1][1],
-            monoms[ps[off + 1].poly2][1],
-            ht
-        )
-            l += 1
-            continue
-        end
-
-        ps[m] = ps[off + l]
-        degs[m] = degs[off + l]
-
-        h = update_ht.hashvals[plcm[l]]
-        ht.monoms[ht.load + 1] = monom_copy(update_ht.monoms[plcm[l]])
-        n = ht.monoms[ht.load + 1]
-
-        k = h
-        i = MonomHash(0)
-        @inbounds while i <= ht.size
-            k = hashtable_next_lookup_index(h, i, mod)
-            hm = ht.hashtable[k]
-
-            # if free
-            iszero(hm) && break
-
-            if hashtable_is_hash_collision(ht, hm, n, h)
-                i += MonomHash(1)
-                continue
-            end
-
-            ps[m] = CriticalPair(ps[m].poly1, ps[m].poly2, hm)
-            m += 1
-            l += 1
-            @goto Letsgo
-        end
-
-        @invariant !ht.frozen
-
-        ht.hashtable[k] = pos = ht.load + 1
-
-        ht.labels[ht.load + 1] = NON_PIVOT_COLUMN
-        ht.hashvals[ht.load + 1] = h
-        ht.divmasks[ht.load + 1] = update_ht.divmasks[plcm[l]]
-
-        ht.load += 1
-        ps[m] = CriticalPair(ps[m].poly1, ps[m].poly2, MonomId(pos))
-        m += 1
-        l += 1
-    end
-
-    pairset.load = m - 1
 end

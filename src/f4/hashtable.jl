@@ -255,22 +255,14 @@ end
 ###
 # Insertion of monomials
 
-# Returns the next look-up position in the table.
 # Must be within 1 <= ... <= mod+1
 function hashtable_next_lookup_index(h::MonomHash, j::MonomHash, mod::MonomHash)
     ((h + j) & mod) + MonomHash(1)
 end
 
-# if hash collision happened
 function hashtable_is_hash_collision(ht::MonomialHashtable, vidx, e, he)
-    # if not free and not same hash
-    @inbounds if ht.hashvals[vidx] != he
-        return true
-    end
-    # if not free and not same monomial
-    @inbounds if !monom_is_equal(ht.monoms[vidx], e)
-        return true
-    end
+    @inbounds ht.hashvals[vidx] != he && return true
+    @inbounds !monom_is_equal(ht.monoms[vidx], e) && return true
     false
 end
 
@@ -436,12 +428,6 @@ function hashtable_monom_is_divisible(h1::MonomId, h2::MonomId, ht::MonomialHash
     monom_is_divisible(e1, e2)
 end
 
-function hashtable_monom_is_gcd_const(h1::MonomId, h2::MonomId, ht::MonomialHashtable)
-    @inbounds e1 = ht.monoms[h1]
-    @inbounds e2 = ht.monoms[h2]
-    monom_is_gcd_const(e1, e2)
-end
-
 function hashtable_get_lcm!(
     he1::MonomId,
     he2::MonomId,
@@ -458,42 +444,6 @@ function hashtable_get_lcm!(
 end
 
 ###
-# What are those once again?..
-
-# compare pairwise divisibility of lcms from a[first:last] with lcm
-function hashtable_check_monomial_division_in_update(
-    a::Vector{MonomId},
-    first::Int,
-    last::Int,
-    lcm::MonomId,
-    ht::MonomialHashtable{M}
-) where {M <: Monom}
-    # Pairs are sorted w.r.t. lcm, we only need to check entries above the
-    # starting point.
-
-    @inbounds divmask = ht.divmasks[lcm]
-    @inbounds lcmexp = ht.monoms[lcm]
-
-    j = first
-    @inbounds while j <= last
-        if a[j] == CRITICAL_PAIR_REDUNDANT
-            j += 1
-            continue
-        end
-        if ht.use_divmask && !divmask_is_probably_divisible(ht.divmasks[a[j]], divmask)
-            j += 1
-            continue
-        end
-        ea = ht.monoms[a[j]]
-        if !monom_is_divisible(ea, lcmexp)
-            j += 1
-            continue
-        end
-        a[j] = CRITICAL_PAIR_REDUNDANT
-    end
-
-    nothing
-end
 
 # Inserts a multiple of the polynomial into symbolic hashtable.
 # Writes the resulting monomial identifiers to the given row.

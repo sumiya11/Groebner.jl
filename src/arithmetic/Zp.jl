@@ -310,84 +310,6 @@ function inv_mod_p(a::T, arithm::SignedCompositeArithmeticZp{T}) where {T}
 end
 
 ###
-# FloatingPointArithmeticZp
-
-struct FloatingPointArithmeticZp{AccumType, CoeffType} <: AbstractArithmeticZp{AccumType, CoeffType}
-    multiplier::AccumType
-    divisor::AccumType
-
-    function FloatingPointArithmeticZp(
-        ::Type{AccumType},
-        ::Type{CoeffType},
-        p::CoeffType
-    ) where {AccumType <: CoeffZp, CoeffType <: CoeffZp}
-        @invariant AccumType === Float64
-        @invariant 0 < p < 2^25  # < 52 / 2 - 1
-        @invariant Primes.isprime(Int(p))
-        multiplier = 1 / p
-        new{AccumType, CoeffType}(multiplier, p)
-    end
-end
-
-divisor(arithm::FloatingPointArithmeticZp) = arithm.divisor
-
-@inline function mod_p(a::T, mod::FloatingPointArithmeticZp{T, C}) where {T, C}
-    b = a * mod.multiplier
-    c = floor(b)
-    a - mod.divisor * c # may be fused
-end
-
-@inline function fma_mod_p(a1::T, a2::C, a3::T, mod::FloatingPointArithmeticZp{T, C}) where {T, C}
-    b = muladd(a1, a2, a3)
-    mod_p(b, mod)
-end
-
-inv_mod_p(a::T, arithm::FloatingPointArithmeticZp{T}) where {T} =
-    T(invmod(Int(a), Int(divisor(arithm))))
-
-###
-# FloatingPointCompositeArithmeticZp
-
-struct FloatingPointCompositeArithmeticZp{AccumType, CoeffType, T, N} <:
-       AbstractArithmeticZp{AccumType, CoeffType}
-    multiplier::CompositeNumber{N, T}
-    divisor::CompositeNumber{N, T}
-
-    function FloatingPointCompositeArithmeticZp(
-        ::Type{CompositeNumber{N, AT}},
-        ::Type{CompositeNumber{N, CT}},
-        ps::CompositeNumber{N, CT}
-    ) where {N, AT <: CoeffZp, CT <: CoeffZp}
-        @invariant AT === Float64
-        @invariant all(0 .< ps.data .< 2^25)  # < 52 / 2 - 1
-        @invariant all(Primes.isprime.(Int.(ps.data)))
-        multiplier = inv(ps)
-        new{CompositeNumber{N, AT}, CompositeNumber{N, CT}, AT, N}(multiplier, ps)
-    end
-end
-
-divisor(arithm::FloatingPointCompositeArithmeticZp) = arithm.divisor
-
-@inline function mod_p(a::T, mod::FloatingPointCompositeArithmeticZp{T, C}) where {T, C}
-    b = a * mod.multiplier
-    c = T(floor.(b.data))
-    a - mod.divisor * c # may be fused
-end
-
-@inline function fma_mod_p(
-    a1::T,
-    a2::C,
-    a3::T,
-    mod::FloatingPointCompositeArithmeticZp{T, C}
-) where {T, C}
-    b = CompositeNumber(muladd.(a1.data, a2.data, a3.data))
-    mod_p(b, mod)
-end
-
-inv_mod_p(a::T, arithm::FloatingPointCompositeArithmeticZp{T}) where {T} =
-    T(invmod.(Int.(a.data), Int.(divisor(arithm).data)))
-
-###
 # Selection of arithmetic
 
 # Returns the most suitable algorithm for doing arithmetic in the ground field.
@@ -418,19 +340,9 @@ function select_arithmetic(
     if CoeffType <: CompositeCoeffZp
         if hint === :signed || CoeffType <: CompositeNumber{N, T} where {N, T <: Signed}
             return SignedCompositeArithmeticZp(AccumType, CoeffType, CoeffType(characteristic))
-        elseif hint === :floating
-            return FloatingPointCompositeArithmeticZp(
-                AccumType,
-                CoeffType,
-                CoeffType(characteristic)
-            )
         else
             return CompositeArithmeticZp(AccumType, CoeffType, CoeffType(characteristic))
         end
-    end
-
-    if hint === :floating
-        return FloatingPointArithmeticZp(AccumType, CoeffType, CoeffType(characteristic))
     end
 
     if hint === :signed

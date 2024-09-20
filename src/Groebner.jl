@@ -27,21 +27,13 @@ It is useful to enable this when debugging the Groebner package.
 """
 invariants_enabled() = false
 
-"""
-    logging_enabled() -> Bool
-
-Specifies if logging is enabled. If `false`, then all logging in Groebner is
-disabled, and entails **(almost)** no runtime overhead.
-"""
-logging_enabled() = true
-
 ###
 # Imports
 
 # Groebner does not provide a polynomial implementation of its own but relies on
 # existing symbolic computation packages in Julia for communicating with the
 # user. Groebner accepts as its input polynomials from the Julia packages
-# AbstractAlgebra.jl, Nemo.jl (Oscar.jl), and MultivariatePolynomials.jl.
+# AbstractAlgebra.jl, Nemo.jl, and MultivariatePolynomials.jl.
 import AbstractAlgebra
 import AbstractAlgebra: base_ring, elem_type
 
@@ -145,7 +137,6 @@ include("reconstruction/crt.jl")
 include("reconstruction/ratrec.jl")
 
 #= more high level functions =#
-include("groebner/primes.jl")
 include("groebner/modular.jl")
 include("groebner/groebner.jl")
 include("groebner/groebner_with_change_matrix.jl")

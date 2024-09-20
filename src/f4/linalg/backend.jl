@@ -718,25 +718,6 @@ end
 
 function linalg_row_make_monic!(
     row::Vector{T},
-    arithmetic::Union{FloatingPointCompositeArithmeticZp{A, T}, FloatingPointArithmeticZp{A, T}},
-    first_nnz_index::Int=1
-) where {A <: Union{CoeffZp, CompositeCoeffZp}, T <: Union{CoeffZp, CompositeCoeffZp}}
-    @invariant !iszero(row[first_nnz_index])
-
-    lead = row[first_nnz_index]
-    isone(lead) && return lead
-
-    @inbounds pinv = inv_mod_p(A(lead), arithmetic)
-    @inbounds row[first_nnz_index] = one(T)
-    @inbounds for i in (first_nnz_index + 1):length(row)
-        row[i] = mod_p(A(row[i]) * A(pinv), arithmetic)
-    end
-
-    pinv
-end
-
-function linalg_row_make_monic!(
-    row::Vector{T},
     arithmetic::AbstractArithmeticQQ{T},
     first_nnz_index::Int=1
 ) where {T <: CoeffQQ}
@@ -772,46 +753,6 @@ function linalg_vector_addmul_sparsedense_mod_p!(
         # if A === T, then the type cast is a no-op
         a = row[idx] + A(mul) * A(coeffs[j])
         row[idx] = mod_p(a, arithmetic)
-    end
-
-    mul
-end
-
-# Linear combination of dense vector and sparse vector modulo a prime.
-function linalg_vector_addmul_sparsedense_mod_p!(
-    row::Vector{A},
-    indices::Vector{I},
-    coeffs::Vector{T},
-    arithmetic::FloatingPointArithmeticZp
-) where {I, A <: CoeffZp, T <: CoeffZp}
-    @invariant isone(coeffs[1])
-    @invariant length(indices) == length(coeffs)
-    @invariant !isempty(indices)
-
-    @inbounds mul = divisor(arithmetic) - row[indices[1]]
-    @fastmath @inbounds for j in 1:length(indices)
-        idx = indices[j]
-        row[idx] = fma_mod_p(mul, coeffs[j], row[idx], arithmetic)
-    end
-
-    mul
-end
-
-# Linear combination of dense vector and sparse vector modulo a prime.
-function linalg_vector_addmul_sparsedense_mod_p!(
-    row::Vector{A},
-    indices::Vector{I},
-    coeffs::Vector{T},
-    arithmetic::FloatingPointCompositeArithmeticZp
-) where {I, A <: CompositeCoeffZp, T <: CompositeCoeffZp}
-    @invariant isone(coeffs[1])
-    @invariant length(indices) == length(coeffs)
-    @invariant !isempty(indices)
-
-    @inbounds mul = divisor(arithmetic) - row[indices[1]]
-    @fastmath @inbounds for j in 1:length(indices)
-        idx = indices[j]
-        row[idx] = fma_mod_p(mul, coeffs[j], row[idx], arithmetic)
     end
 
     mul

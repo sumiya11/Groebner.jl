@@ -1,9 +1,22 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
+# The sequence of lucky prime candidates is decreasing and deterministic.
+# Make sure this number is at most 31 bits to be able to use signed ints.
+const FIRST_LUCKY_PRIME_CANDIDATE = 2^31 - 1
+
+const RANDOM_PRIME_LB = 2^29
+const RANDOM_PRIME_UB = 2^30
+
 mutable struct ModularState{T1 <: CoeffZZ, T2 <: CoeffQQ, T3}
     gb_coeffs_zz::Vector{Vector{T1}}
     gb_coeffs_qq::Vector{Vector{T2}}
     gb_coeffs_ff_all::Vector{Vector{Vector{T3}}}
+
+    gen_coeffs_zz::Vector{Vector{T1}}
+
+    modulo::BigInt
+    current_prime::UInt64
+    used_primes::Vector{UInt64}
 
     crt_mask::Vector{BitVector}
     ratrec_mask::Vector{BitVector}
@@ -12,11 +25,17 @@ mutable struct ModularState{T1 <: CoeffZZ, T2 <: CoeffQQ, T3}
     changematrix_coeffs_zz::Vector{Vector{Vector{T1}}}
     changematrix_coeffs_qq::Vector{Vector{Vector{T2}}}
 
-    function ModularState{T1, T2, T3}() where {T1 <: CoeffZZ, T2 <: CoeffQQ, T3 <: CoeffZp}
+    function ModularState{T1, T2, T3}(
+        coeffs_zz::Vector{Vector{T1}}
+    ) where {T1 <: CoeffZZ, T2 <: CoeffQQ, T3 <: CoeffZp}
         new(
             Vector{Vector{T1}}(),
             Vector{Vector{T2}}(),
             Vector{Vector{Vector{T3}}}(),
+            coeffs_zz,
+            BigInt(),
+            UInt64(FIRST_LUCKY_PRIME_CANDIDATE),
+            Vector{UInt64}(),
             Vector{BitVector}(),
             Vector{BitVector}(),
             Vector{Vector{Vector{Vector{T3}}}}(),
@@ -25,6 +44,47 @@ mutable struct ModularState{T1 <: CoeffZZ, T2 <: CoeffQQ, T3}
         )
     end
 end
+
+###
+# Prime number selection
+
+function modular_accept_prime(state::ModularState, prime::UInt64)
+    p = BigInt(prime)
+    buf = BigInt()
+    @inbounds for coeffs in state.gen_coeffs_zz
+        c = coeffs[1]
+        if Base.GMP.MPZ.cmp_ui(Base.GMP.MPZ.tdiv_r!(buf, c, p), 0) == 0
+            return false
+        end
+        c = coeffs[end]
+        if Base.GMP.MPZ.cmp_ui(Base.GMP.MPZ.tdiv_r!(buf, c, p), 0) == 0
+            return false
+        end
+    end
+    true
+end
+
+function modular_next_prime!(state::ModularState)
+    prime = Primes.prevprime(state.current_prime - 1)
+    while !modular_accept_prime(state, prime)
+        prime = Primes.prevprime(prime - 1)
+    end
+    state.current_prime = prime
+    prime
+end
+
+function modular_random_prime(state::ModularState, rng::AbstractRNG)
+    lb, ub = RANDOM_PRIME_LB, RANDOM_PRIME_UB
+    while true
+        candidate = rand(rng, lb:ub) % UInt64
+        !modular_accept_prime(state, candidate) && continue
+        Primes.isprime(candidate) && return UInt64(candidate)
+    end
+    UInt64(0)
+end
+
+###
+# Other stuff
 
 function modular_witness_set(
     gb_coeffs::Vector{Vector{C}},
@@ -183,12 +243,12 @@ end
 ###
 # Lifting change matrix
 
-function modular_ratrec_full_changematrix!(state::ModularState, lucky::LuckyPrimes)
+function modular_ratrec_full_changematrix!(state::ModularState)
     @inbounds for i in 1:length(state.changematrix_coeffs_zz)
         flag = ratrec_vec_full!(
             state.changematrix_coeffs_qq[i],
             state.changematrix_coeffs_zz[i],
-            lucky.modulo,
+            state.modulo,
             [
                 falses(length(state.changematrix_coeffs_qq[i][j])) for
                 j in 1:length(state.changematrix_coeffs_qq[i])
@@ -199,7 +259,7 @@ function modular_ratrec_full_changematrix!(state::ModularState, lucky::LuckyPrim
     true
 end
 
-function modular_crt_full_changematrix!(state::ModularState, lucky::LuckyPrimes)
+function modular_crt_full_changematrix!(state::ModularState)
     if isempty(state.changematrix_coeffs_zz)
         coeffs_ff = state.changematrix_coeffs_ff_all[1]
         resize!(state.changematrix_coeffs_zz, length(coeffs_ff))
@@ -221,16 +281,14 @@ function modular_crt_full_changematrix!(state::ModularState, lucky::LuckyPrimes)
         crt_vec_full!(
             state.changematrix_coeffs_zz[i],
             modulo,
-            [state.changematrix_coeffs_ff_all[ell][i] for ell in 1:length(lucky.used_primes)],
-            lucky.used_primes,
+            [state.changematrix_coeffs_ff_all[ell][i] for ell in 1:length(state.used_primes)],
+            state.used_primes,
             [
                 falses(length(state.changematrix_coeffs_ff_all[1][i][j])) for
                 j in 1:length(state.changematrix_coeffs_ff_all[1][i])
             ]
         )
     end
-
-    nothing
 end
 
 ### 
@@ -238,7 +296,6 @@ end
 
 function modular_lift_check!(
     state::ModularState,
-    lucky::LuckyPrimes,
     ring::PolyRing,
     basis_qq::Basis,
     basis_zz::Basis,
@@ -248,22 +305,14 @@ function modular_lift_check!(
 )
     # First we check the size of the coefficients with a heuristic
     if params.heuristic_check
-        if !modular_lift_heuristic_check(state.gb_coeffs_qq, lucky.modulo)
+        if !modular_lift_heuristic_check(state.gb_coeffs_qq, state.modulo)
             return false
         end
     end
 
     # Then check that a basis is also a basis modulo a prime
     if params.randomized_check
-        if !modular_lift_randomized_check!(
-            state,
-            ring,
-            basis_zz,
-            basis_ff,
-            lucky,
-            hashtable,
-            params
-        )
+        if !modular_lift_randomized_check!(state, ring, basis_zz, basis_ff, hashtable, params)
             return false
         end
     end
@@ -318,12 +367,11 @@ function modular_lift_randomized_check!(
     ring::PolyRing,
     input_zz::Basis,
     gb_ff::Basis,
-    lucky::LuckyPrimes,
     hashtable::MonomialHashtable,
     params::AlgorithmParameters
 )
     # !!! note that this function may modify the given hashtable!
-    prime = primes_next_aux_prime!(lucky)
+    prime = modular_random_prime(state, params.rng)
     ring_ff, input_ff = modular_reduce_mod_p!(ring, input_zz, prime, deepcopy=true)
     # TODO: do we really need to re-scale things to be fraction-free?
     gb_coeffs_zz = _clear_denominators!(state.gb_coeffs_qq)
@@ -357,14 +405,14 @@ function modular_lift_certify_check!(
     gb_qq = basis_deep_copy_with_new_coeffs(gb_ff, state.gb_coeffs_qq)
     ring_qq = PolyRing(ring.nvars, ring.ord, 0)
     input_qq = basis_deepcopy(input_qq)
-    # Check that some polynomial is not reduced to zero modulo a prime
+    # Check that some polynomial is not reduced to zero
     f4_normalform!(ring_qq, gb_qq, input_qq, hashtable, params.arithmetic)
     for i in 1:(input_qq.n_processed)
         if !isempty(input_qq.coeffs[i])
             return false
         end
     end
-    # Check that the basis is a groebner basis modulo a prime
+    # Check that the basis is a groebner basis
     pairset = pairset_initialize(UInt64)
     if !f4_isgroebner!(ring_qq, gb_qq, pairset, hashtable, params.arithmetic)
         return false

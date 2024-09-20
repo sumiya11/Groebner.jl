@@ -139,10 +139,6 @@ function param_select_coefftype(
 
     tight_signed_type = tight_signed_int_type(char)
 
-    if arithmetic === :floating
-        return Float64, true
-    end
-
     if arithmetic === :signed
         if typemax(Int32) < char < typemax(UInt32) || typemax(Int64) < char < typemax(UInt64)
             @info "Cannot use $(arithmetic) arithmetic with characteristic $char"
@@ -195,11 +191,6 @@ mutable struct AlgorithmParameters{Arithmetic <: AbstractArithmetic}
     # If reduced Groebner basis is needed
     reduced::Bool
 
-    # Limit the number of critical pairs in the F4 matrix by this number
-    maxpairs::Int
-
-    selection_strategy::Symbol
-
     # Strategy for modular computation in groebner. This can be one of the
     # following:
     # - :classic_modular
@@ -209,25 +200,11 @@ mutable struct AlgorithmParameters{Arithmetic <: AbstractArithmetic}
     # If learn & apply strategy can use apply in batches
     batched::Bool
 
-    # In modular computation of the basis, compute (at least!) this many bases
-    # modulo different primes until a consensus in is reached
-    majority_threshold::Int
-
     # Multi-threading
     threaded_f4::Symbol
     threaded_multimodular::Symbol
 
-    # Random number generator
     rng::Random.Xoshiro
-
-    # Internal option.
-    # At the end of F4, polynomials are interreduced. 
-    # We can mark and sweep polynomials that are redundant prior to
-    # interreduction to speed things up a bit. This option specifies if such
-    # sweep should be done.
-    sweep::Bool
-
-    statistics::Symbol
 
     changematrix::Bool
 end
@@ -300,12 +277,6 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
     end
 
     reduced = kwargs.reduced
-    maxpairs = kwargs.maxpairs
-
-    selection_strategy = kwargs.selection
-    if selection_strategy === :auto
-        selection_strategy = :normal
-    end
 
     threaded = kwargs.threaded
     if !(_threaded[])
@@ -341,14 +312,8 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
     end
     batched = kwargs.batched
 
-    majority_threshold = 1
-
     seed = kwargs.seed
     rng = Random.Xoshiro(seed)
-
-    sweep = kwargs.sweep
-
-    statistics = kwargs.statistics
 
     changematrix = kwargs.changematrix
     if changematrix
@@ -369,16 +334,11 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         arithmetic,
         representation,
         reduced,
-        maxpairs,
-        selection_strategy,
         modular_strategy,
         batched,
-        majority_threshold,
         threaded_f4,
         threaded_multimodular,
         rng,
-        sweep,
-        statistics,
         changematrix
     )
 end
@@ -410,16 +370,11 @@ function params_mod_p(
         select_arithmetic(C, prime, :auto, is_wide_type_coeffs),
         representation,
         params.reduced,
-        params.maxpairs,
-        params.selection_strategy,
         params.modular_strategy,
         params.batched,
-        params.majority_threshold,
         params.threaded_f4,
         params.threaded_multimodular,
         params.rng,
-        params.sweep,
-        params.statistics,
         params.changematrix
     )
 end

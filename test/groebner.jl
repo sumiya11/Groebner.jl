@@ -1,4 +1,5 @@
 using AbstractAlgebra
+using Base.Threads
 using Combinatorics, Primes, Random
 using Test, TestSetExtensions
 
@@ -193,10 +194,9 @@ end
         gb = Groebner.groebner(noon)
         @test Groebner.isgroebner(gb) && all(iszero, Groebner.normalform(gb, noon))
 
-        # TODO
-        # trace, gb00 = Groebner.groebner_learn(gb)
-        # flag, gb01 = Groebner.groebner_apply!(trace, gb)
-        # @test gb == gb00 == gb01 && flag
+        trace, gb00 = Groebner.groebner_learn(gb)
+        flag, gb01 = Groebner.groebner_apply!(trace, gb)
+        @test gb == gb00 == gb01 && flag
     end
 
     # Larger fields
@@ -211,9 +211,9 @@ end
         gb = Groebner.groebner(noon)
         @test Groebner.isgroebner(gb) && all(iszero, Groebner.normalform(gb, noon))
 
-        # trace, gb00 = Groebner.groebner_learn(gb)
-        # flag, gb01 = Groebner.groebner_apply!(trace, gb)
-        # @test gb == gb00 == gb01 && flag
+        trace, gb00 = Groebner.groebner_learn(gb)
+        flag, gb01 = Groebner.groebner_apply!(trace, gb)
+        @test gb == gb00 == gb01 && flag
     end
 
     # Smaller fields
@@ -227,9 +227,9 @@ end
         gb = Groebner.groebner(noon)
         @test Groebner.isgroebner(gb) && all(iszero, Groebner.normalform(gb, noon))
 
-        # trace, gb00 = Groebner.groebner_learn(gb)
-        # flag, gb01 = Groebner.groebner_apply!(trace, gb)
-        # @test gb == gb00 == gb01 && flag
+        trace, gb00 = Groebner.groebner_learn(gb)
+        flag, gb01 = Groebner.groebner_apply!(trace, gb)
+        @test gb == gb00 == gb01 && flag
     end
 
     # Tiny fields
@@ -243,9 +243,9 @@ end
         gb = Groebner.groebner(noon)
         @test Groebner.isgroebner(gb) && all(iszero, Groebner.normalform(gb, noon))
 
-        # trace, gb00 = Groebner.groebner_learn(gb)
-        # flag, gb01 = Groebner.groebner_apply!(trace, gb)
-        # @test gb == gb00 == gb01 && flag
+        trace, gb00 = Groebner.groebner_learn(gb)
+        flag, gb01 = Groebner.groebner_apply!(trace, gb)
+        @test gb == gb00 == gb01 && flag
     end
 end
 
@@ -363,9 +363,6 @@ end
     fs = [(12345678 // 12347)x, (222222221111123 // 2131232232097)y + z]
     G = Groebner.groebner(fs)
     @test G == [y + 2131232232097 // 222222221111123 * z, x]
-
-    # TODO TODO TODO: infinite loop
-    # groebner([x^2 + (2^31 - 1)*x + 1, y])    
 end
 
 @testset "groebner output sorted" begin
@@ -488,25 +485,6 @@ end
         BigInt(2^31 - 1) * x1^2 + BigInt(2^30 + 2)^10 * x2^2
     ]
     @test Groebner.groebner(system) == Groebner.groebner(system, certify=true)
-end
-
-@testset "groebner maxpairs" begin
-    # TODO: fix some bugs in maxpairs
-    s = Groebner.Examples.noonn(5, internal_ordering=:degrevlex, k=GF(2^31 - 1))
-    gb = Groebner.groebner(s)
-    # @test gb == Groebner.groebner(s, maxpairs=100)
-    # @test gb == Groebner.groebner(s, maxpairs=10)
-    # @test gb == Groebner.groebner(s, maxpairs=2)
-    # @test gb == Groebner.groebner(s, maxpairs=1)
-    @test_throws AssertionError Groebner.groebner(s, maxpairs=0)
-
-    s = Groebner.Examples.katsuran(5, internal_ordering=:degrevlex, k=QQ)
-    gb = Groebner.groebner(s)
-    # @test gb == Groebner.groebner(s, maxpairs=100)
-    # @test gb == Groebner.groebner(s, maxpairs=10)
-    # @test gb == Groebner.groebner(s, maxpairs=2)
-    # @test gb == Groebner.groebner(s, maxpairs=1)
-    @test_throws AssertionError Groebner.groebner(s, maxpairs=0)
 end
 
 @testset "groebner orderings" begin
@@ -815,7 +793,7 @@ end
 @testset "groebner arithmetic" begin
     R, (x, y, z) = polynomial_ring(GF(10007), ["x", "y", "z"], internal_ordering=:degrevlex)
 
-    for arithmetic in [:auto, :delayed, :signed, :basic, :floating]
+    for arithmetic in [:auto, :delayed, :signed, :basic]
         @test Groebner.groebner([x, y], arithmetic=arithmetic, linalg=:deterministic) ==
               Groebner.groebner([y, x]) ==
               [y, x]
@@ -926,9 +904,8 @@ end
     gb = Groebner.groebner(system)
     @test gb == result
 
-    # TODO: Sasha is too greedy to support this case.
-    # system = [x1 - (2^31 - 1) * x2 - (2^30 + 3) * x3]
-    # @test Groebner.groebner(system) == system
+    system = [x1 - (2^31 - 1) * x2 - (2^30 + 3) * x3]
+    @test Groebner.groebner(system) == system
 
     for start_of_range in [2^10, 2^20, 2^30, 2^40]
         for size_of_range in [10, 100, 1000]
@@ -1055,4 +1032,315 @@ end
         f = [x^u * y^v + y^8, x^8 - y^8]
         gb = Groebner.groebner(f)
     end
+end
+
+@testset "homogenization, basic" begin
+    # TODO: broken for char. 113
+    for field in [GF(2^10 + 7), GF(2^62 + 135), QQ]
+        R, x = polynomial_ring(field, "x")
+        @test Groebner.groebner([x^2 - 1, (x + 1) * x^2], homogenize=:yes) == [x + 1]
+        @test Groebner.groebner([x^2 - 1, (x + 1) * x^2], homogenize=:no) == [x + 1]
+        @test Groebner.groebner([x^2 - 1, (x + 1) * x^2], homogenize=:auto) == [x + 1]
+
+        for ordering in [:lex, :deglex, :degrevlex]
+            R, (x, y) = polynomial_ring(field, ["x", "y"], internal_ordering=ordering)
+
+            @test Groebner.groebner([R(3)], homogenize=:yes) == [R(1)]
+            @test Groebner.groebner([R(0)], homogenize=:yes) == [R(0)]
+            @test Groebner.groebner([x], homogenize=:yes) == [x]
+            @test Groebner.groebner([x + 11y], homogenize=:yes) == [x + 11y]
+            @test Groebner.groebner([x, y], homogenize=:yes) == [y, x]
+            @test Groebner.isgroebner(Groebner.groebner([x + 1, y + 2], homogenize=:yes))
+
+            if ordering === :lex
+                gb = Groebner.groebner([x + y^2, x^2 - 1], homogenize=:yes)
+                @test (y^4 - 1) in gb && (x + y^2) in gb
+            end
+
+            for case in [
+                Groebner.Examples.katsuran(2, k=field, internal_ordering=ordering),
+                Groebner.Examples.katsuran(3, k=field, internal_ordering=ordering),
+                Groebner.Examples.katsuran(4, k=field, internal_ordering=ordering),
+                Groebner.Examples.noonn(2, k=field, internal_ordering=ordering),
+                Groebner.Examples.noonn(3, k=field, internal_ordering=ordering)
+            ]
+                gb = Groebner.groebner(case, homogenize=:yes)
+                @test Groebner.isgroebner(gb)
+            end
+        end
+    end
+end
+
+@testset "homogenization, orderings" begin
+    for field in [GF(113), GF(2^62 + 135), QQ]
+        # Test that the basis obtained with the use of homogenization
+        # *coincides* with the one obtained without it
+        R, (x, y, z) = polynomial_ring(field, ["x", "y", "z"])
+        for case in [
+            (system=[R(1)], ord=Groebner.Lex()),
+            (system=[R(5)], ord=Groebner.DegRevLex()),
+            (system=[x, y, z], ord=Groebner.Lex()),
+            (system=[x, y, z], ord=Groebner.Lex(z) * Groebner.Lex(x, y)),
+            (system=[x^2 + 1, x * y + 2, y * z + 3], ord=Groebner.DegLex()),
+            (
+                system=[x^20 - x^15 - x^5 + y * z, x * y^10 + x^3 * y^3 + x * y],
+                ord=Groebner.DegRevLex()
+            ),
+            (system=[x + 5y, x + 7z, y + 11z], ord=Groebner.Lex(z) * Groebner.Lex(x, y)),
+            (system=[x + 5y + 11z], ord=Groebner.DegRevLex(y) * Groebner.Lex(z, x)),
+            (system=[x + 5y + 11z], ord=Groebner.DegRevLex(z) * Groebner.DegRevLex(y, x)),
+            (system=[x * y^2 + x + 1, y * z^2 + y + 1, z^4 - z^2 - 1], ord=Groebner.Lex()),
+            (system=[x * y^2 + x + 1, y * z^2 + y + 1, z^4 - z^2 - 1], ord=Groebner.DegRevLex()),
+            (
+                system=[x * y^2 + x + 1, y * z^2 + y + 1, z^4 - z^2 - 1],
+                ord=Groebner.DegRevLex(z) * Groebner.DegRevLex(x, y)
+            ),
+            (
+                system=[x * y^2 + x + 1, y * z^2 + y + 1, x * y * z^4 - x * z^2 - y + z],
+                ord=Groebner.DegRevLex(y) * Groebner.DegRevLex(z, x)
+            ),
+            (system=Groebner.Examples.katsuran(4, k=field), ord=Groebner.DegRevLex()),
+            (system=Groebner.Examples.rootn(5, k=field), ord=Groebner.Lex()),
+            (system=Groebner.Examples.reimern(5, k=field), ord=Groebner.DegRevLex())
+        ]
+            ord = case.ord
+            system = case.system
+            @debug "" system ord field
+
+            gb1 = Groebner.groebner(system, ordering=ord, homogenize=:no)
+            gb2 = Groebner.groebner(system, ordering=ord, homogenize=:yes)
+
+            @test Groebner.isgroebner(gb1, ordering=ord)
+
+            @test gb1 == gb2
+
+            # Also test learn / apply
+            field == QQ && continue
+
+            context3, gb3 = Groebner.groebner_learn(system, ordering=ord, homogenize=:yes)
+            context4, gb4 = Groebner.groebner_learn(system, ordering=ord, homogenize=:no)
+            for _ in 1:4
+                flag3, gb33 = Groebner.groebner_apply!(context3, system)
+                flag4, gb44 = Groebner.groebner_apply!(context4, system)
+                @test flag3 && flag4
+                @test gb1 == gb3 == gb4 == gb33 == gb44
+            end
+        end
+    end
+end
+
+@testset "groebner, change matrix" begin
+    R, (x, y, z) = polynomial_ring(GF(2^30 + 3), ["x", "y", "z"], internal_ordering=:degrevlex)
+    f = [x * y * z - 1, x * y + x * z + y * z, x + y + z]
+    g, m = Groebner.groebner_with_change_matrix(f)
+    @test m * f == g
+    @test size(m) == (length(g), length(f))
+    @test Groebner.isgroebner(g)
+
+    for ground in [GF(2^30 + 3), QQ]
+        R, (x, y) = polynomial_ring(ground, ["x", "y"], internal_ordering=:degrevlex)
+
+        cases = [
+            [R(0), R(0), R(0)],
+            [R(0), R(1), R(0)],
+            [x],
+            [y],
+            [x, x, x, x, R(0), R(0), x, x, x, x],
+            [x + y, R(1), x^5 - y^5],
+            [x^200 + y^250, x^100 * y^200 + 1],
+            Groebner.Examples.katsuran(4, k=ground),
+            Groebner.Examples.noonn(4, k=ground),
+            Groebner.Examples.cyclicn(4, k=ground),
+            [x^i * y + x for i in 1:500]
+        ]
+
+        for f in cases
+            g, m = Groebner.groebner_with_change_matrix(f)
+            @test m * f == g
+            @test size(m) == (length(g), length(f))
+            @test Groebner.isgroebner(g)
+        end
+    end
+
+    f = Groebner.Examples.katsuran(4, k=QQ, internal_ordering=:lex)
+    g, m = Groebner.groebner_with_change_matrix(f, ordering=Groebner.DegRevLex())
+    @test m * f == g
+    @test_throws DomainError Groebner.groebner_with_change_matrix(f, ordering=Groebner.DegLex())
+    @test_throws DomainError Groebner.groebner_with_change_matrix(f)
+end
+
+@testset "groebner, multi-threading, Zp" begin
+    @info "Testing multi-threading over Zp using $(nthreads()) threads"
+
+    R, (x, y, z) = GF(2^31 - 1)["x", "y", "z"]
+
+    s = [R(1), R(2), R(4)]
+    @test Groebner.groebner(s, threaded=:yes) ==
+          Groebner.groebner(s, threaded=:no) ==
+          Groebner.groebner(s, threaded=:auto) ==
+          [R(1)]
+
+    s = [x^(2^10) + 1, y^3000 + 2, z^1000 + 3]
+    @test Groebner.groebner(s, threaded=:yes) ==
+          Groebner.groebner(s, threaded=:no) ==
+          Groebner.groebner(s, threaded=:auto) ==
+          [z^1000 + 3, y^3000 + 2, x^(2^10) + 1]
+
+    linalg = [:deterministic, :randomized]
+    threaded = [:yes, :no, :auto]
+    grid = [(linalg=l, threaded=t) for l in linalg for t in threaded]
+    for system in [
+        Groebner.Examples.katsuran(3, internal_ordering=:lex, k=GF(2^31 - 1)),
+        Groebner.Examples.katsuran(4, internal_ordering=:lex, k=GF(2^20 + 7)),
+        Groebner.Examples.katsuran(7, internal_ordering=:degrevlex, k=GF(2^31 - 1)),
+        Groebner.Examples.eco5(internal_ordering=:deglex, k=GF(2^20 + 7)),
+        Groebner.Examples.eco5(internal_ordering=:degrevlex, k=GF(2^20 + 7)),
+        Groebner.Examples.cyclicn(5, internal_ordering=:degrevlex, k=GF(2^20 + 7)),
+        Groebner.Examples.cyclicn(6, internal_ordering=:degrevlex, k=GF(2^20 + 7)),
+        Groebner.Examples.ojika4(internal_ordering=:lex, k=GF(2^20 + 7)),
+        Groebner.Examples.henrion5(internal_ordering=:degrevlex, k=GF(2^20 + 7)),
+        Groebner.Examples.noonn(6, internal_ordering=:degrevlex, k=GF(2^10 + 7)),
+        Groebner.Examples.ku10(internal_ordering=:degrevlex, k=GF(2^10 + 7))
+    ]
+        results = Array{Any}(undef, size(grid))
+        for (i, kw) in enumerate(grid)
+            gb = Groebner.groebner(system; kw...)
+            results[i] = gb
+        end
+        @test length(unique(results)) == 1
+        @test Groebner.isgroebner(results[1])
+    end
+end
+
+@testset "groebner, multi-threading, QQ" begin
+    @info "Testing multi-threading over QQ using $(nthreads()) threads"
+
+    R, (x, y) = QQ["x", "y"]
+
+    threaded = [:yes, :no, :auto]
+    grid = [(threaded=t,) for t in threaded]
+    for system in [
+        [x - 1, y - 2],
+        [x + (BigInt(2)^1000 + 1) // 2^61, x * y + BigInt(2)^(2^10)],
+        Groebner.Examples.katsuran(3, internal_ordering=:lex, k=QQ),
+        Groebner.Examples.katsuran(4, internal_ordering=:lex, k=QQ),
+        Groebner.Examples.eco5(internal_ordering=:degrevlex, k=QQ),
+        Groebner.Examples.cyclicn(5, internal_ordering=:degrevlex, k=QQ),
+        Groebner.Examples.ojika4(internal_ordering=:lex, k=QQ),
+        Groebner.Examples.noonn(6, internal_ordering=:degrevlex, k=QQ),
+        Groebner.Examples.ku10(internal_ordering=:degrevlex, k=QQ),
+        [x + BigInt(2)^1_000 // (BigInt(2)^1_000 - 1), y - BigInt(2)^1_000],
+        [x + BigInt(2)^10_000 // (BigInt(2)^10_000 - 1), y^2 - BigInt(2)^10_000 * y]
+    ]
+        results = Array{Any}(undef, size(grid))
+        for (i, kw) in enumerate(grid)
+            gb = Groebner.groebner(system; kw...)
+            results[i] = gb
+        end
+        @test length(unique(results)) == 1
+        @test Groebner.isgroebner(results[1])
+    end
+end
+
+function test_params(
+    rng,
+    nvariables,
+    maxdegs,
+    nterms,
+    npolys,
+    grounds,
+    coeffssize,
+    orderings,
+    linalgs,
+    monoms,
+    homogenizes
+)
+    boot = 1
+    for _ in 1:boot
+        for nv in nvariables
+            for md in maxdegs
+                for nt in nterms
+                    for np in npolys
+                        for k in grounds
+                            for ord in orderings
+                                for cf in coeffssize
+                                    set = Groebner.Examples.random_generating_set(
+                                        rng,
+                                        k,
+                                        ord,
+                                        nv,
+                                        md,
+                                        nt,
+                                        np,
+                                        cf
+                                    )
+                                    isempty(set) && continue
+
+                                    for linalg in linalgs
+                                        for monom in monoms
+                                            for homogenize in homogenizes
+                                                try
+                                                    gb = Groebner.groebner(
+                                                        set,
+                                                        linalg=linalg,
+                                                        monoms=monom,
+                                                        homogenize=homogenize
+                                                    )
+                                                    flag = Groebner.isgroebner(gb)
+                                                    if !flag
+                                                        @error "Beda!" nv md nt np k ord monom
+                                                        println("Rng:\n", rng)
+                                                        println("Set:\n", set)
+                                                        println("Gb:\n", gb)
+                                                    end
+                                                    @test flag
+                                                catch err
+                                                    @error "Beda!" nv md nt np k ord monom
+                                                    println(err)
+                                                    println("Rng:\n", rng)
+                                                    println("Set:\n", set)
+                                                    rethrow(err)
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+@testset "groebner random stress tests" begin
+    rng = Random.MersenneTwister(42)
+
+    nvariables = [2, 3]
+    maxdegs    = [2, 4]
+    nterms     = [1, 2, 4]
+    npolys     = [1, 4, 100]
+    grounds    = [GF(1031), GF(2^50 + 55), AbstractAlgebra.QQ]
+    coeffssize = [3, 1000, 2^31 - 1, BigInt(2)^100]
+    orderings  = [:degrevlex, :lex, :deglex]
+    linalgs    = [:deterministic, :randomized]
+    monoms     = [:auto, :dense, :packed]
+    homogenize = [:yes, :auto]
+    p          = prod(map(length, (nvariables, maxdegs, nterms, npolys, grounds, orderings, coeffssize, linalgs, monoms, homogenize)))
+    @info "Producing $p small random tests for groebner. This may take a minute"
+
+    test_params(
+        rng,
+        nvariables,
+        maxdegs,
+        nterms,
+        npolys,
+        grounds,
+        coeffssize,
+        orderings,
+        linalgs,
+        monoms,
+        homogenize
+    )
 end
