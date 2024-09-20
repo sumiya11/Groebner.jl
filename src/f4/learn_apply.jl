@@ -26,9 +26,7 @@ function f4_initialize_structs_with_trace(
         make_monic=make_monic,
         sort_input=sort_input
     )
-
     trace = trace_initialize(ring, basis_deepcopy(basis), basis, hashtable, permutation, params)
-
     trace, basis, pairset, hashtable, permutation
 end
 
@@ -129,7 +127,7 @@ function f4_reducegb_learn!(
     i = 1
     @label Letsgo
     @inbounds while i <= basis.n_processed
-        @inbounds for j in 1:k
+        for j in 1:k
             if hashtable_monom_is_divisible(
                 basis.monoms[basis.n_filled - i + 1][1],
                 basis.monoms[basis.nonredundant_indices[j]][1],
@@ -158,7 +156,6 @@ function f4_learn!(
     params::AlgorithmParameters
 ) where {M <: Monom, C <: Coeff}
     @invariant basis_well_formed(ring, basis, hashtable)
-
     @invariant basis == trace.gb_basis
     @invariant params.reduced
 
@@ -168,7 +165,7 @@ function f4_learn!(
     update_ht = hashtable_initialize_secondary(hashtable)
     symbol_ht = hashtable_initialize_secondary(hashtable)
 
-    pairset_size = f4_update!(pairset, basis, hashtable, update_ht)
+    f4_update!(pairset, basis, hashtable, update_ht)
 
     while !isempty(pairset)
         degree_i, npairs_i = f4_select_critical_pairs!(pairset, basis, matrix, hashtable, symbol_ht)
@@ -178,13 +175,12 @@ function f4_learn!(
 
         f4_reduction_learn!(trace, basis, matrix, hashtable, symbol_ht, params)
 
-        pairset_size = f4_update!(pairset, basis, hashtable, update_ht)
+        f4_update!(pairset, basis, hashtable, update_ht)
 
-        matrix_reinitialize!(matrix, 0)
         hashtable_reinitialize!(symbol_ht)
     end
 
-    basis_move_redundant_elements!(basis)
+    basis_discard_redundant_elements!(basis)
 
     if params.reduced
         f4_reducegb_learn!(trace, ring, basis, matrix, hashtable, symbol_ht, params)
@@ -469,15 +465,14 @@ function f4_apply!(
     basis::Basis{C},
     params::AlgorithmParameters
 ) where {C <: Coeff}
-    ring = trace.ring
     @invariant basis_well_formed(ring, basis, trace.hashtable)
     @invariant params.reduced
-
-    basis_make_monic!(basis, params.arithmetic, params.changematrix)
 
     iters_total = length(trace.matrix_infos) - 1
     iters = 0
     hashtable = trace.hashtable
+
+    basis_make_monic!(basis, params.arithmetic, params.changematrix)
 
     symbol_ht = hashtable_initialize_secondary(hashtable)
     matrix = matrix_initialize(ring, C)
@@ -501,10 +496,7 @@ function f4_apply!(
             cache_column_order,
             params
         )
-        if !flag
-            # Unlucky cancellation of basis coefficients may have happened
-            return false
-        end
+        !flag && return false
         cache_column_order = new_cache_column_order && cache_column_order
 
         basis_update!(basis, hashtable)
@@ -524,17 +516,14 @@ function f4_apply!(
             cache_column_order,
             params
         )
-        if !flag
-            return false
-        end
+        !flag && return false
     end
 
     f4_standardize_basis_in_apply!(ring, trace, params.arithmetic)
-    basis = trace.gb_basis
-
-    @invariant basis_well_formed(ring, basis, hashtable)
 
     trace.napply += 1
+
+    @invariant basis_well_formed(ring, trace.gb_basis, hashtable)
 
     true
 end

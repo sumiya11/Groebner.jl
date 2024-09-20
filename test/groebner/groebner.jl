@@ -193,10 +193,9 @@ end
         gb = Groebner.groebner(noon)
         @test Groebner.isgroebner(gb) && all(iszero, Groebner.normalform(gb, noon))
 
-        # TODO
-        # trace, gb00 = Groebner.groebner_learn(gb)
-        # flag, gb01 = Groebner.groebner_apply!(trace, gb)
-        # @test gb == gb00 == gb01 && flag
+        trace, gb00 = Groebner.groebner_learn(gb)
+        flag, gb01 = Groebner.groebner_apply!(trace, gb)
+        @test gb == gb00 == gb01 && flag
     end
 
     # Larger fields
@@ -211,9 +210,9 @@ end
         gb = Groebner.groebner(noon)
         @test Groebner.isgroebner(gb) && all(iszero, Groebner.normalform(gb, noon))
 
-        # trace, gb00 = Groebner.groebner_learn(gb)
-        # flag, gb01 = Groebner.groebner_apply!(trace, gb)
-        # @test gb == gb00 == gb01 && flag
+        trace, gb00 = Groebner.groebner_learn(gb)
+        flag, gb01 = Groebner.groebner_apply!(trace, gb)
+        @test gb == gb00 == gb01 && flag
     end
 
     # Smaller fields
@@ -227,9 +226,9 @@ end
         gb = Groebner.groebner(noon)
         @test Groebner.isgroebner(gb) && all(iszero, Groebner.normalform(gb, noon))
 
-        # trace, gb00 = Groebner.groebner_learn(gb)
-        # flag, gb01 = Groebner.groebner_apply!(trace, gb)
-        # @test gb == gb00 == gb01 && flag
+        trace, gb00 = Groebner.groebner_learn(gb)
+        flag, gb01 = Groebner.groebner_apply!(trace, gb)
+        @test gb == gb00 == gb01 && flag
     end
 
     # Tiny fields
@@ -243,9 +242,9 @@ end
         gb = Groebner.groebner(noon)
         @test Groebner.isgroebner(gb) && all(iszero, Groebner.normalform(gb, noon))
 
-        # trace, gb00 = Groebner.groebner_learn(gb)
-        # flag, gb01 = Groebner.groebner_apply!(trace, gb)
-        # @test gb == gb00 == gb01 && flag
+        trace, gb00 = Groebner.groebner_learn(gb)
+        flag, gb01 = Groebner.groebner_apply!(trace, gb)
+        @test gb == gb00 == gb01 && flag
     end
 end
 
@@ -363,9 +362,6 @@ end
     fs = [(12345678 // 12347)x, (222222221111123 // 2131232232097)y + z]
     G = Groebner.groebner(fs)
     @test G == [y + 2131232232097 // 222222221111123 * z, x]
-
-    # TODO TODO TODO: infinite loop
-    # groebner([x^2 + (2^31 - 1)*x + 1, y])    
 end
 
 @testset "groebner output sorted" begin
@@ -907,9 +903,8 @@ end
     gb = Groebner.groebner(system)
     @test gb == result
 
-    # TODO: Sasha is too greedy to support this case.
-    # system = [x1 - (2^31 - 1) * x2 - (2^30 + 3) * x3]
-    # @test Groebner.groebner(system) == system
+    system = [x1 - (2^31 - 1) * x2 - (2^30 + 3) * x3]
+    @test Groebner.groebner(system) == system
 
     for start_of_range in [2^10, 2^20, 2^30, 2^40]
         for size_of_range in [10, 100, 1000]

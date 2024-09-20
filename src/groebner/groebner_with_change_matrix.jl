@@ -139,17 +139,15 @@ function _groebner_with_change_classic_modular(
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
-
     # Initialize supporting structs
-    state = ModularState{BigInt, C, CoeffModular}()
     basis, pairset, hashtable =
         f4_initialize_structs(ring, monoms, coeffs, params, make_monic=false)
 
     basis_zz = clear_denominators!(basis, deepcopy=false)
 
-    # Handler for lucky primes
-    lucky = LuckyPrimes(basis_zz.coeffs)
-    prime = primes_next_lucky_prime!(lucky)
+    state = ModularState{BigInt, C, CoeffModular}(basis_zz.coeffs)
+
+    prime = modular_next_prime!(state)
 
     # Perform reduction modulo prime and store result in basis_ff
     ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
@@ -159,6 +157,7 @@ function _groebner_with_change_classic_modular(
     # NOTE: basis_ff may not own its coefficients, one should not mutate it
     # directly further in the code
 
+    push!(state.used_primes, prime)
     push!(state.gb_coeffs_ff_all, basis_ff.coeffs)
 
     changematrix_monoms, changematrix_coeffs =
@@ -169,22 +168,22 @@ function _groebner_with_change_classic_modular(
     modular_prepare!(state)
     crt_vec_full!(
         state.gb_coeffs_zz,
-        lucky.modulo,
+        state.modulo,
         state.gb_coeffs_ff_all,
-        lucky.used_primes,
+        state.used_primes,
         state.crt_mask
     )
-    modular_crt_full_changematrix!(state, lucky)
+    modular_crt_full_changematrix!(state)
 
     success_reconstruct =
-        ratrec_vec_full!(state.gb_coeffs_qq, state.gb_coeffs_zz, lucky.modulo, state.ratrec_mask)
+        ratrec_vec_full!(state.gb_coeffs_qq, state.gb_coeffs_zz, state.modulo, state.ratrec_mask)
 
-    changematrix_success_reconstruct = modular_ratrec_full_changematrix!(state, lucky)
+    changematrix_success_reconstruct = modular_ratrec_full_changematrix!(state)
 
     correct_basis = false
     if success_reconstruct && changematrix_success_reconstruct
         correct_basis =
-            modular_lift_check!(state, lucky, ring_ff, basis, basis_zz, basis_ff, hashtable, params)
+            modular_lift_check!(state, ring_ff, basis, basis_zz, basis_ff, hashtable, params)
         # At this point, if the constructed basis is correct, we return it.
         if correct_basis
             gb_monoms, _ = basis_export_data(basis_ff, hashtable)
@@ -204,9 +203,9 @@ function _groebner_with_change_classic_modular(
 
     crt_vec_partial!(
         state.gb_coeffs_zz,
-        lucky.modulo,
+        state.modulo,
         state.gb_coeffs_ff_all,
-        lucky.used_primes,
+        state.used_primes,
         witness_set,
         state.crt_mask
     )
@@ -214,13 +213,14 @@ function _groebner_with_change_classic_modular(
     iters = 0
     while !correct_basis
         for j in 1:batchsize
-            prime = primes_next_lucky_prime!(lucky)
+            prime = modular_next_prime!(state)
 
             ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
             params_zp = params_mod_p(params, prime)
 
             f4!(ring_ff, basis_ff, pairset, hashtable, params_zp)
 
+            push!(state.used_primes, prime)
             push!(state.gb_coeffs_ff_all, basis_ff.coeffs)
             _, changematrix_coeffs = basis_changematrix_export(basis_ff, hashtable, length(monoms))
             push!(state.changematrix_coeffs_ff_all, changematrix_coeffs)
@@ -234,9 +234,9 @@ function _groebner_with_change_classic_modular(
 
         crt_vec_partial!(
             state.gb_coeffs_zz,
-            lucky.modulo,
+            state.modulo,
             state.gb_coeffs_ff_all,
-            lucky.used_primes,
+            state.used_primes,
             witness_set,
             state.crt_mask
         )
@@ -244,7 +244,7 @@ function _groebner_with_change_classic_modular(
         success_reconstruct = ratrec_vec_partial!(
             state.gb_coeffs_qq,
             state.gb_coeffs_zz,
-            lucky.modulo,
+            state.modulo,
             witness_set,
             state.ratrec_mask
         )
@@ -257,7 +257,7 @@ function _groebner_with_change_classic_modular(
 
         if params.heuristic_check
             success_check =
-                modular_lift_heuristic_check_partial(state.gb_coeffs_qq, lucky.modulo, witness_set)
+                modular_lift_heuristic_check_partial(state.gb_coeffs_qq, state.modulo, witness_set)
             if !success_check
                 iters += 1
                 batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
@@ -268,16 +268,16 @@ function _groebner_with_change_classic_modular(
         # Perform full reconstruction
         crt_vec_full!(
             state.gb_coeffs_zz,
-            lucky.modulo,
+            state.modulo,
             state.gb_coeffs_ff_all,
-            lucky.used_primes,
+            state.used_primes,
             state.crt_mask
         )
 
         success_reconstruct = ratrec_vec_full!(
             state.gb_coeffs_qq,
             state.gb_coeffs_zz,
-            lucky.modulo,
+            state.modulo,
             state.ratrec_mask
         )
 
@@ -287,8 +287,8 @@ function _groebner_with_change_classic_modular(
             continue
         end
 
-        modular_crt_full_changematrix!(state, lucky)
-        success_reconstruct_changematrix = modular_ratrec_full_changematrix!(state, lucky)
+        modular_crt_full_changematrix!(state)
+        success_reconstruct_changematrix = modular_ratrec_full_changematrix!(state)
         if !success_reconstruct_changematrix
             iters += 1
             batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
@@ -296,7 +296,7 @@ function _groebner_with_change_classic_modular(
         end
 
         correct_basis =
-            modular_lift_check!(state, lucky, ring_ff, basis, basis_zz, basis_ff, hashtable, params)
+            modular_lift_check!(state, ring_ff, basis, basis_zz, basis_ff, hashtable, params)
 
         iters += 1
         batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)

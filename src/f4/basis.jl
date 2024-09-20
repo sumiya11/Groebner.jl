@@ -166,7 +166,10 @@ function basis_well_formed(ring::PolyRing, basis::Basis, hashtable::MonomialHash
         isempty(basis.monoms[i]) && error("Zero polynomials are not allowed.")
         !(length(basis.monoms[i]) == length(basis.coeffs[i])) && error("Bad polynomial")
         !allunique(basis.monoms[i]) && error("Bad polynomial")
-        !issorted(basis.monoms[i], lt=(j,k) -> monom_isless(hashtable.monoms[k], hashtable.monoms[j], ring.ord)) && error("Bad polynomial")
+        !issorted(
+            basis.monoms[i],
+            lt=(j, k) -> monom_isless(hashtable.monoms[k], hashtable.monoms[j], ring.ord)
+        ) && error("Bad polynomial")
         for j in 1:length(basis.coeffs[i])
             iszero(basis.coeffs[i][j]) && error("Coefficient is zero")
             (ring.ch > 0) &&
@@ -455,7 +458,7 @@ function pairset_update!(
     # Criterion B_k(j, l).
     # T(j, l) is divisible by T(k)
     # max(deg T(j, k), deg T(l, k)) < deg T(j, l)
-    @inbounds for i in 1:pairset.load
+    @inbounds for i in 1:(pairset.load)
         (pairs[i].lcm == CRITICAL_PAIR_REDUNDANT) && continue
         j = pairs[i].poly1
         l = pairs[i].poly2
@@ -470,9 +473,9 @@ function pairset_update!(
     @inbounds for i in 1:(idx - 1)
         (lcms[i] == CRITICAL_PAIR_REDUNDANT) && continue
         # if !basis.is_redundant[i]
-            pairs[pairset.load + cnt] = pairs[pairset.load + i]
-            degs[pairset.load + cnt] = degs[pairset.load + i]
-            cnt += 1
+        pairs[pairset.load + cnt] = pairs[pairset.load + i]
+        degs[pairset.load + cnt] = degs[pairset.load + i]
+        cnt += 1
         # end
     end
 
@@ -491,9 +494,10 @@ function pairset_update!(
         divmask_i = update_ht.divmasks[lcms[i]]
         lcm_i = update_ht.monoms[lcms[i]]
         k = i + 1
-        for k in (i+1):new_pairs
+        for k in (i + 1):new_pairs
             (lcms[k] == CRITICAL_PAIR_REDUNDANT) && continue
-            if update_ht.use_divmask && !divmask_is_probably_divisible(update_ht.divmasks[lcms[k]], divmask_i)
+            if update_ht.use_divmask &&
+               !divmask_is_probably_divisible(update_ht.divmasks[lcms[k]], divmask_i)
                 continue
             end
             ea = update_ht.monoms[lcms[k]]
@@ -522,11 +526,11 @@ function pairset_update!(
         degs[cnt] = degs[pairset.load + i]
         cnt += 1
     end
-    pairset.load = cnt - 1 
+    pairset.load = cnt - 1
 
     # Mark redundant polynomials in the generating set.
     nonred = basis.nonredundant_indices
-    @inbounds for i in 1:basis.n_nonredundant
+    @inbounds for i in 1:(basis.n_nonredundant)
         basis.is_redundant[nonred[i]] && continue
         if hashtable_monom_is_divisible(basis.monoms[nonred[i]][1], lead_idx, ht)
             basis.is_redundant[nonred[i]] = true
@@ -608,7 +612,7 @@ function basis_fill_data!(
     basis.n_filled = ngens
 end
 
-function basis_move_redundant_elements!(basis::Basis)
+function basis_discard_redundant_elements!(basis::Basis)
     j = 1
     @inbounds for i in 1:(basis.n_nonredundant)
         if !basis.is_redundant[basis.nonredundant_indices[i]]

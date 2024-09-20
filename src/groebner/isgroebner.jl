@@ -72,8 +72,8 @@ function _isgroebner2(
     end
     # Otherwise, check modulo a prime
     basis_zz = clear_denominators!(basis, deepcopy=false)
-    luckyprimes = LuckyPrimes(basis_zz.coeffs)
-    prime = primes_next_aux_prime!(luckyprimes)
+    state = ModularState{BigInt, Rational{BigInt}, UInt32}(basis_zz.coeffs)
+    prime = modular_random_prime(state, params.rng)
     ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
     arithmetic = select_arithmetic(CoeffModular, prime, :auto, false)
     flag = f4_isgroebner!(ring_ff, basis_ff, pairset, hashtable, arithmetic)

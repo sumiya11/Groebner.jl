@@ -70,10 +70,8 @@ end
 ###
 # Element-wise CRT
 
-# table of big integers must be initialized
-#
-# A mod M, a_1 mod m_1, ..., a_n mod m_n  =>  B mod M m_1 ... m_n.
 # Reconstructs only the witness set.
+# Table of big integers must be initialized.
 function crt_vec_partial!(
     table_zz::Vector{Vector{BigInt}},
     modulo::BigInt,
@@ -82,23 +80,8 @@ function crt_vec_partial!(
     witness_set::Vector{Tuple{Int, Int}},
     mask::Vector{BitVector}
 ) where {T <: Integer, U <: Integer}
-    @invariant isbitstype(T)
     @invariant length(tables_ff) == length(moduli)
-    @invariant all(<(typemax(UInt64)), moduli)
-
-    # Base case
-    if length(moduli) == 1
-        table_ff = tables_ff[1]
-        Base.GMP.MPZ.set_ui!(modulo, UInt64(moduli[1]))
-        @invariant length(table_zz) == length(table_ff)
-        @inbounds for k in 1:length(witness_set)
-            i, j = witness_set[k]
-            @invariant 1 <= i <= length(table_ff) && 1 <= j <= length(table_ff[i])
-            rem_ij = UInt64(table_ff[i][j])
-            Base.GMP.MPZ.set_ui!(table_zz[i][j], rem_ij)
-        end
-        return nothing
-    end
+    @invariant length(table_zz) == length(mask)
 
     # Precompute CRT multipliers
     buf, n1, n2 = BigInt(), BigInt(), BigInt()
@@ -106,12 +89,12 @@ function crt_vec_partial!(
     for i in 1:length(mults)
         mults[i] = BigInt(0)
     end
+
     crt_precompute!(modulo, n1, n2, mults, map(UInt64, moduli))
 
     rems = Vector{UInt64}(undef, length(moduli))
     @inbounds for k in 1:length(witness_set)
         i, j = witness_set[k]
-        @invariant 1 <= i <= length(tables_ff[1]) && 1 <= j <= length(tables_ff[1][i])
 
         for t in 1:length(moduli)
             rems[t] = UInt64(tables_ff[t][i][j])
@@ -127,7 +110,7 @@ function crt_vec_partial!(
     nothing
 end
 
-# A mod M, a_1 mod m_1, ..., a_n mod m_n  =>  B mod M m_1 ... m_n.
+# Table of big integers must be initialized.
 function crt_vec_full!(
     table_zz::Vector{Vector{BigInt}},
     modulo::BigInt,
@@ -135,41 +118,23 @@ function crt_vec_full!(
     moduli::Vector{U},
     mask::Vector{BitVector}
 ) where {T <: Integer, U <: Integer}
-    @invariant isbitstype(T)
     @invariant length(tables_ff) == length(moduli)
-    @invariant all(<(typemax(UInt64)), moduli)
-
-    # Base case
-    if length(moduli) == 1
-        table_ff = tables_ff[1]
-        Base.GMP.MPZ.set_ui!(modulo, UInt64(moduli[1]))
-        @inbounds for i in 1:length(table_zz)
-            @invariant length(table_zz[i]) == length(table_ff[i])
-            for j in 1:length(table_zz[i])
-                rem_ij = UInt64(table_ff[i][j])
-                @invariant 0 <= rem_ij < moduli[1]
-                Base.GMP.MPZ.set_ui!(table_zz[i][j], rem_ij)
-            end
-        end
-        return nothing
-    end
+    @invariant length(table_zz) == length(mask)
 
     buf, n1, n2 = BigInt(), BigInt(), BigInt()
     mults = Vector{BigInt}(undef, length(moduli))
     for i in 1:length(mults)
         mults[i] = BigInt(0)
     end
+
     crt_precompute!(modulo, n1, n2, mults, map(UInt64, moduli))
 
     rems = Vector{UInt64}(undef, length(moduli))
     @inbounds for i in 1:length(table_zz)
         for j in 1:length(table_zz[i])
-            if mask[i][j]
-                continue
-            end
+            mask[i][j] && continue
 
             for k in 1:length(moduli)
-                @invariant length(table_zz[i]) == length(tables_ff[k][i])
                 @invariant 0 <= tables_ff[k][i][j] < moduli[k]
                 rems[k] = UInt64(tables_ff[k][i][j])
             end
@@ -179,6 +144,4 @@ function crt_vec_full!(
             Base.GMP.MPZ.set!(table_zz[i][j], buf)
         end
     end
-
-    nothing
 end

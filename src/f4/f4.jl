@@ -430,12 +430,11 @@ function f4!(
 
         f4_update!(pairset, basis, hashtable, update_ht)
 
-        matrix_reinitialize!(matrix, 0)
         hashtable_reinitialize!(symbol_ht)
     end
 
-    basis_move_redundant_elements!(basis)
-    
+    basis_discard_redundant_elements!(basis)
+
     if params.reduced
         f4_autoreduce!(ring, basis, matrix, hashtable, symbol_ht, params)
     end
