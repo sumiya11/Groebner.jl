@@ -70,12 +70,28 @@ function _isgroebner2(
         flag = f4_isgroebner!(ring, basis, pairset, hashtable, params.arithmetic)
         return flag
     end
-    # Otherwise, check modulo a prime
+    # Otherwise, check modulo primes
     basis_zz = clear_denominators!(basis, deepcopy=false)
     state = ModularState{BigInt, Rational{BigInt}, UInt32}(basis_zz.coeffs)
     prime = modular_random_prime(state, params.rng)
     ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
     arithmetic = select_arithmetic(CoeffModular, prime, :auto, false)
-    flag = f4_isgroebner!(ring_ff, basis_ff, pairset, hashtable, arithmetic)
-    flag
+    flag1 = f4_isgroebner!(ring_ff, basis_ff, pairset, hashtable, arithmetic)
+    prime = modular_random_prime(state, params.rng)
+    ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
+    arithmetic = select_arithmetic(CoeffModular, prime, :auto, false)
+    flag2 = f4_isgroebner!(ring_ff, basis_ff, pairset, hashtable, arithmetic)
+    if flag1 == flag2
+        return flag1
+    end
+    prime = modular_random_prime(state, params.rng)
+    ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
+    arithmetic = select_arithmetic(CoeffModular, prime, :auto, false)
+    flag3 = f4_isgroebner!(ring_ff, basis_ff, pairset, hashtable, arithmetic)
+    if flag1 == flag3
+        return flag1
+    else
+        return flag2
+    end
+    flag1
 end

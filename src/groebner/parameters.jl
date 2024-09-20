@@ -200,10 +200,6 @@ mutable struct AlgorithmParameters{Arithmetic <: AbstractArithmetic}
     # If learn & apply strategy can use apply in batches
     batched::Bool
 
-    # In multi-modular computation, compute (at least!) this many bases modulo
-    # different primes until a consensus in is reached
-    majority_threshold::Int
-
     # Multi-threading
     threaded_f4::Symbol
     threaded_multimodular::Symbol
@@ -316,8 +312,6 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
     end
     batched = kwargs.batched
 
-    majority_threshold = 1
-
     seed = kwargs.seed
     rng = Random.Xoshiro(seed)
 
@@ -342,7 +336,6 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         reduced,
         modular_strategy,
         batched,
-        majority_threshold,
         threaded_f4,
         threaded_multimodular,
         rng,
@@ -379,7 +372,6 @@ function params_mod_p(
         params.reduced,
         params.modular_strategy,
         params.batched,
-        params.majority_threshold,
         params.threaded_f4,
         params.threaded_multimodular,
         params.rng,

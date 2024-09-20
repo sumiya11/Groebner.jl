@@ -240,7 +240,7 @@ function _groebner_learn_and_apply(
     # At this point, either the reconstruction or the correctness check failed.
     # Continue to compute Groebner bases modulo different primes in batches. 
     primes_used = 1
-    batchsize = 1
+    batchsize = 4
     batchsize_scaling = 0.10
 
     witness_set = modular_witness_set(state.gb_coeffs_zz, params)
@@ -250,52 +250,30 @@ function _groebner_learn_and_apply(
 
     iters = 0
     while !correct_basis
-        if iszero(batchsize % 4) && params.batched
-            for j in 1:4:batchsize
-                prime_4x = ntuple(i -> Int32(modular_next_prime!(state)), 4)
+        for j in 1:4:batchsize
+            prime_4x = ntuple(i -> Int32(modular_next_prime!(state)), 4)
 
-                # Perform reduction modulo primes and store result in basis_ff_4x
-                ring_ff_4x, basis_ff_4x = modular_reduce_mod_p_in_batch!(ring, basis_zz, prime_4x)
-                params_zp_4x = params_mod_p(
-                    params,
-                    CompositeNumber{4, Int32}(prime_4x),
-                    using_wide_type_for_coeffs=false
-                )
-                trace_4x.buf_basis = basis_ff_4x
-                trace_4x.ring = ring_ff_4x
+            # Perform reduction modulo primes and store result in basis_ff_4x
+            ring_ff_4x, basis_ff_4x = modular_reduce_mod_p_in_batch!(ring, basis_zz, prime_4x)
+            params_zp_4x = params_mod_p(
+                params,
+                CompositeNumber{4, Int32}(prime_4x),
+                using_wide_type_for_coeffs=false
+            )
+            trace_4x.buf_basis = basis_ff_4x
+            trace_4x.ring = ring_ff_4x
 
-                f4_apply!(trace_4x, ring_ff_4x, trace_4x.buf_basis, params_zp_4x)
-                gb_coeffs_1, gb_coeffs_2, gb_coeffs_3, gb_coeffs_4 =
-                    ir_unpack_composite_coefficients(trace_4x.gb_basis.coeffs)
+            f4_apply!(trace_4x, ring_ff_4x, trace_4x.buf_basis, params_zp_4x)
+            gb_coeffs_1, gb_coeffs_2, gb_coeffs_3, gb_coeffs_4 =
+                ir_unpack_composite_coefficients(trace_4x.gb_basis.coeffs)
 
-                # TODO: This causes unnecessary conversions of arrays.
-                append!(state.used_primes, prime_4x)
-                push!(state.gb_coeffs_ff_all, gb_coeffs_1)
-                push!(state.gb_coeffs_ff_all, gb_coeffs_2)
-                push!(state.gb_coeffs_ff_all, gb_coeffs_3)
-                push!(state.gb_coeffs_ff_all, gb_coeffs_4)
-                primes_used += 4
-            end
-        else
-            for j in 1:batchsize
-                prime = modular_next_prime!(state)
-
-                ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
-                params_zp = params_mod_p(params, prime)
-
-                trace.buf_basis = basis_ff
-                trace.ring = ring_ff
-
-                f4_apply!(trace, ring_ff, trace.buf_basis, params_zp)
-
-                push!(state.used_primes, prime)
-                push!(state.gb_coeffs_ff_all, deepcopy(trace.gb_basis.coeffs))
-
-                if !modular_majority_vote!(state, trace.gb_basis, params)
-                    continue
-                end
-                primes_used += 1
-            end
+            # TODO: This causes unnecessary conversions of arrays.
+            append!(state.used_primes, prime_4x)
+            push!(state.gb_coeffs_ff_all, gb_coeffs_1)
+            push!(state.gb_coeffs_ff_all, gb_coeffs_2)
+            push!(state.gb_coeffs_ff_all, gb_coeffs_3)
+            push!(state.gb_coeffs_ff_all, gb_coeffs_4)
+            primes_used += 4
         end
 
         crt_vec_partial!(

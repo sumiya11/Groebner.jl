@@ -147,7 +147,7 @@ function _groebner_with_change_classic_modular(
 
     state = ModularState{BigInt, C, CoeffModular}(basis_zz.coeffs)
 
-    prime = modular_next_prime!(state)
+    prime = _groebner_guess_lucky_prime(state, ring, basis_zz, pairset, hashtable, params)
 
     # Perform reduction modulo prime and store result in basis_ff
     ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)

@@ -150,7 +150,7 @@ include("groebner/homogenization.jl")
 include("interface.jl")
 
 using PrecompileTools
-# include("precompile.jl")
+include("precompile.jl")
 
 ###
 # Exports

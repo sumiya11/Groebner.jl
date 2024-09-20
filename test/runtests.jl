@@ -34,36 +34,27 @@ end
 @test isempty(Test.detect_ambiguities(Groebner))
 
 @time @testset "All tests" verbose = true begin
-    # Basic tests for addition in Zp
-    @time @includetests ["arithmetic/Zp"]
+    @time @includetests ["arithmetic"]
 
     # Different implementations of a monomial 
     @time @includetests ["monoms/exponentvector", "monoms/packedtuples"]
-    # High-level monomial arithmetic and term orders
     @time @includetests ["monoms/monom_arithmetic", "monoms/monom_orders"]
 
-    # Consistency of input-output
-    @time @includetests ["input_output/AbstractAlgebra"]
-
     @time @includetests [
-        "groebner/groebner",
-        "groebner/groebner_stress",
-        "groebner/homogenization",
-        "groebner/multi_threading"
+        "groebner"
     ]
 
-    @time @includetests ["groebner/groebner_with_change_matrix"]
+    @time @includetests ["learn_and_apply"]
 
-    @time @includetests ["learn_and_apply/learn_and_apply", "learn_and_apply/apply_in_batches"]
+    @time @includetests ["isgroebner"]
 
-    @time @includetests ["isgroebner/isgroebner"]
-
-    @time @includetests ["normalform/normalform", "normalform/normalform_stress"]
+    @time @includetests ["normalform"]
 
     # Test for different frontends: 
-    # - AbstractAlgebra.jl  (AbstractAlgebra.Generic.MPoly{T})
-    # - Nemo.jl  (Nemo.fmpq_mpoly, Nemo.gfp_mpoly)
-    # - DynamicPolynomials.jl  (DynamicPolynomials.Polynomial{true, T})
+    # - AbstractAlgebra.jl
+    # - Nemo.jl
+    # - DynamicPolynomials.jl
+    @time @includetests ["input_output/AbstractAlgebra"]
     if try_import(:DynamicPolynomials)
         @time @includetests ["input_output/GroebnerDynamicPolynomialsExt"]
     end
