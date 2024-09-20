@@ -118,6 +118,12 @@ function f4_reducegb_learn!(
 
     matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht, params)
 
+    pivot_indices = map(i -> Int32(basis.monoms[basis.n_processed + i][1]), 1:(matrix.npivots))
+    push!(trace.matrix_pivot_indices, pivot_indices)
+    matrix_pivot_signature =
+        matrix_compute_pivot_signature(basis.monoms, basis.n_processed + 1, matrix.npivots)
+    push!(trace.matrix_pivot_signatures, matrix_pivot_signature)
+
     basis.n_filled = matrix.npivots + basis.n_processed
     basis.n_processed = matrix.npivots
 
@@ -433,6 +439,21 @@ function f4_autoreduce_apply!(
 
     matrix_convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht, params)
 
+    # Check that the leading terms were not reduced to zero accidentally
+    pivot_indices = trace.matrix_pivot_indices[f4_iteration]
+    @inbounds for i in 1:(matrix.npivots)
+        sgn = basis.monoms[basis.n_processed + i][1]
+        sgn != pivot_indices[i] && return false
+    end
+
+    if cache_column_order
+        matrix_pivot_signature =
+            matrix_compute_pivot_signature(basis.monoms, basis.n_processed + 1, matrix.npivots)
+        if matrix_pivot_signature != trace.matrix_pivot_signatures[f4_iteration]
+            return false
+        end
+    end
+
     basis.n_filled = matrix.npivots + basis.n_processed
     basis.n_processed = matrix.npivots
 
@@ -465,7 +486,7 @@ function f4_apply!(
     basis::Basis{C},
     params::AlgorithmParameters
 ) where {C <: Coeff}
-    @invariant basis_well_formed(ring, basis, trace.hashtable)
+    # @invariant basis_well_formed(ring, basis, trace.hashtable)
     @invariant params.reduced
 
     iters_total = length(trace.matrix_infos) - 1

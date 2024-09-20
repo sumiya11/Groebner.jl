@@ -263,7 +263,9 @@ function _groebner_learn_and_apply(
             trace_4x.buf_basis = basis_ff_4x
             trace_4x.ring = ring_ff_4x
 
-            f4_apply!(trace_4x, ring_ff_4x, trace_4x.buf_basis, params_zp_4x)
+            flag = f4_apply!(trace_4x, ring_ff_4x, trace_4x.buf_basis, params_zp_4x)
+            !flag && continue
+
             gb_coeffs_1, gb_coeffs_2, gb_coeffs_3, gb_coeffs_4 =
                 ir_unpack_composite_coefficients(trace_4x.gb_basis.coeffs)
 
@@ -454,12 +456,13 @@ function _groebner_learn_and_apply_threaded(
             threadlocal_trace_4x.buf_basis = basis_ff_4x
             threadlocal_trace_4x.ring = ring_ff_4x
 
-            f4_apply!(
+            flag = f4_apply!(
                 threadlocal_trace_4x,
                 ring_ff_4x,
                 threadlocal_trace_4x.buf_basis,
                 threadlocal_params_zp_4x
             )
+            !flag && continue
 
             gb_coeffs_1, gb_coeffs_2, gb_coeffs_3, gb_coeffs_4 =
                 ir_unpack_composite_coefficients(threadlocal_trace_4x.gb_basis.coeffs)
@@ -622,9 +625,6 @@ function _groebner_classic_modular(
             push!(state.used_primes, prime)
             push!(state.gb_coeffs_ff_all, basis_ff.coeffs)
 
-            if !modular_majority_vote!(state, basis_ff, params)
-                continue
-            end
             primes_used += 1
         end
 

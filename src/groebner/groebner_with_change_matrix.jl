@@ -225,10 +225,6 @@ function _groebner_with_change_classic_modular(
             _, changematrix_coeffs = basis_changematrix_export(basis_ff, hashtable, length(monoms))
             push!(state.changematrix_coeffs_ff_all, changematrix_coeffs)
 
-            if !modular_majority_vote!(state, basis_ff, params)
-                continue
-            end
-
             primes_used += 1
         end
 

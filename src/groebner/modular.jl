@@ -419,8 +419,3 @@ function modular_lift_certify_check!(
     end
     true
 end
-
-# TODO :)
-function modular_majority_vote!(state, basis_ff, params)
-    true
-end
