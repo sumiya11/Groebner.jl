@@ -1,7 +1,7 @@
 name = "Groebner"
 uuid = "0b43b601-686d-58a3-8a1c-6623616c7cd4"
 authors = ["sumiya11"]
-version = "0.7.5"
+version = "0.8.0"
 
 [deps]
 AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
@@ -32,7 +32,7 @@ Nemo = "0.45.4, 0.46, 0.47"
 PrecompileTools = "1"
 Primes = "0.5"
 TestSetExtensions = "2"
-julia = "1.6"
+julia = "1.10"
 
 [extras]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
