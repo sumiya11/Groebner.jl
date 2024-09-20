@@ -363,6 +363,9 @@ end
     fs = [(12345678 // 12347)x, (222222221111123 // 2131232232097)y + z]
     G = Groebner.groebner(fs)
     @test G == [y + 2131232232097 // 222222221111123 * z, x]
+
+    P = prod(BigInt, prevprimes(2^31, 100))
+    @test groebner([x^2 + P*x + 1]) == [x^2 + P*x + 1]
 end
 
 @testset "groebner output sorted" begin
