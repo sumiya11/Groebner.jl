@@ -160,6 +160,8 @@ function _groebner_guess_lucky_prime(
     f4!(ring_ff_2, basis_ff_2, pairset, hashtable, params_zp)
 
     if basis_ff_1.monoms == basis_ff_2.monoms
+        push!(state.used_primes, prime_2)
+        push!(state.gb_coeffs_ff_all, basis_ff_2.coeffs)
         return prime_1
     end
 

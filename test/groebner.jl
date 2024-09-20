@@ -1117,10 +1117,8 @@ end
             # Also test learn / apply
             field == QQ && continue
 
-            context3, gb3 =
-                Groebner.groebner_learn(system, ordering=ord, homogenize=:yes)
-            context4, gb4 =
-                Groebner.groebner_learn(system, ordering=ord, homogenize=:no)
+            context3, gb3 = Groebner.groebner_learn(system, ordering=ord, homogenize=:yes)
+            context4, gb4 = Groebner.groebner_learn(system, ordering=ord, homogenize=:no)
             for _ in 1:4
                 flag3, gb33 = Groebner.groebner_apply!(context3, system)
                 flag4, gb44 = Groebner.groebner_apply!(context4, system)

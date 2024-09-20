@@ -40,9 +40,7 @@ end
     @time @includetests ["monoms/exponentvector", "monoms/packedtuples"]
     @time @includetests ["monoms/monom_arithmetic", "monoms/monom_orders"]
 
-    @time @includetests [
-        "groebner"
-    ]
+    @time @includetests ["groebner"]
 
     @time @includetests ["learn_and_apply"]
 
