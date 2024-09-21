@@ -46,9 +46,6 @@ import Base.MultiplicativeInverses: UnsignedMultiplicativeInverse
 
 import Combinatorics
 
-import HostCPUFeatures:
-    cpu_name, register_count, register_size, has_feature, pick_vector_width, fma_fast
-
 using Logging
 
 # At the moment, used only for rational reconstruction
@@ -81,7 +78,6 @@ end
 # Includes
 
 include("utils/invariants.jl")
-include("utils/simd.jl")
 include("utils/packed.jl")
 
 # Test systems, such as katsura, cyclic, etc

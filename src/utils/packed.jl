@@ -1,7 +1,8 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
 ###
-# This file provides some fast operations on packed vectors of integers.
+# This file provides some operations on packed integers.
+# One 64-bit integer packs 8 integers 8-bit each.
 
 # checks that a[i] >= b[i] for all i.
 @inline @generated function _packed_vec_ge(a::UInt64, b::UInt64)
