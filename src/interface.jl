@@ -55,9 +55,6 @@ The `groebner` routine takes the following optional arguments:
     - `:learn_and_apply` for the learn & apply algorithm.
 - `seed`: The seed for randomization. Default value is `42`. Groebner uses
     `Random.Xoshiro` and `Random.MersenneTwister` for random number generation.
-- `loglevel`: Logging level, one of `:all`, `:debug`, `:info`, `:warn`, `:no`,
-    or an integer. An integer `0` is equivalent to `:info`, and lower integer
-    values mean more verbose. Default is `:info`.
 - `homogenize`: Controls the use of homogenization in the algorithm. Possible
   options are:
     - `:yes`, always homogenize the input ideal,
@@ -114,7 +111,7 @@ function groebner(polynomials::AbstractVector; options...)
     result
 end
 
-"""
+#=
     groebner(ring, monoms, coeffs; options...)
 
 Computes a Groebner basis. This function is a part of low level interface.
@@ -150,7 +147,7 @@ Groebner.groebner(ring, monoms, coeffs)
 ## Notes
 
 Same as for `groebner`.
-"""
+=#
 function groebner(ring::PolyRing, monoms::AbstractVector, coeffs::AbstractVector; options...)
     keywords = KeywordArguments(:groebner, options)
     ir_is_valid_basic(ring, monoms, coeffs)
@@ -321,11 +318,7 @@ function groebner_learn(polynomials::AbstractVector; options...)
     result
 end
 
-"""
-    groebner_learn(ring, monoms, coeffs; options...)
-
-Computes a Groebner basis and emits the trace.
-"""
+# This function is a part of low level interface.
 function groebner_learn(ring::PolyRing, monoms::AbstractVector, coeffs::AbstractVector; options...)
     keywords = KeywordArguments(:groebner_learn, options)
     ir_is_valid_basic(ring, monoms, coeffs)
@@ -438,9 +431,6 @@ The `isgroebner` routine takes the following optional arguments:
 - `certify`: Use deterministic algorithm (default is `false`).
 - `seed`: The seed for randomization. Default value is `42`. Groebner uses
     `Random.Xoshiro` and `Random.MersenneTwister` for random number generation.
-- `loglevel`: Logging level, one of `:all`, `:debug`, `:info`, `:warn`, `:no`,
-    or an integer. An integer `0` is equivalent to `:info`, and lower integer
-    values mean more verbose. Default is `:info`.
 
 ## Example
 
@@ -501,9 +491,6 @@ The `normalform` routine takes the following optional arguments:
     - `ProductOrdering(args...)` for block ordering, 
     - `MatrixOrdering(matrix)` for matrix ordering. 
     For details and examples see the corresponding documentation page.
-- `loglevel`: Logging level, one of `:all`, `:debug`, `:info`, `:warn`, `:no`,
-    or an integer. An integer `0` is equivalent to `:info`, and lower integer
-    values mean more verbose. Default is `:info`.
 
 ## Example
 

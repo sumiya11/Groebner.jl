@@ -339,42 +339,32 @@ end
 
 # Transform orderings
 
-ordering_transform(::InputOrdering, varmap::AbstractDict) = InputOrdering()
-
-function ordering_transform(ord::Lex, varmap::AbstractDict)
-    !isempty(setdiff(ordering_variables(ord), collect(keys(varmap)))) &&
-        throw(DomainError("Invalid ordering transformation."))
-    Lex(map(v -> varmap[v], ordering_variables(ord)))
+function map_variables(vars, varmap)
+    if !isempty(setdiff(vars, collect(keys(varmap))))
+        # Fallback to string representation
+        varmap_str = Dict(string(k) => v for (k, v) in varmap)
+        vars_str = map(string, vars)
+        !isempty(setdiff(vars_str, collect(keys(varmap_str)))) && throw(DomainError("Invalid monomial ordering."))
+        return map(v -> varmap_str[v], vars_str)
+    end
+    map(v -> varmap[v], vars)
 end
 
-function ordering_transform(ord::DegLex, varmap::AbstractDict)
-    !isempty(setdiff(ordering_variables(ord), collect(keys(varmap)))) &&
-        throw(DomainError("Invalid ordering transformation."))
-    DegLex(map(v -> varmap[v], ordering_variables(ord)))
-end
-
-function ordering_transform(ord::DegRevLex, varmap::AbstractDict)
-    !isempty(setdiff(ordering_variables(ord), collect(keys(varmap)))) &&
-        throw(DomainError("Invalid ordering transformation."))
-    DegRevLex(map(v -> varmap[v], ordering_variables(ord)))
-end
+ordering_transform(ord::InputOrdering, varmap::AbstractDict) = InputOrdering()
+ordering_transform(ord::Lex, varmap::AbstractDict) = Lex(map_variables(ordering_variables(ord), varmap))
+ordering_transform(ord::DegLex, varmap::AbstractDict) = DegLex(map_variables(ordering_variables(ord), varmap))
+ordering_transform(ord::DegRevLex, varmap::AbstractDict) = DegRevLex(map_variables(ordering_variables(ord), varmap))
 
 function ordering_transform(ord::WeightedOrdering, varmap::AbstractDict)
-    !isempty(setdiff(ordering_variables(ord), collect(keys(varmap)))) &&
-        throw(DomainError("Invalid ordering transformation."))
-    WeightedOrdering(Dict(map(v -> varmap[v], ordering_variables(ord)) .=> ord.weights))
+    WeightedOrdering(Dict(map_variables(ordering_variables(ord), varmap) .=> ord.weights))
 end
 
 function ordering_transform(ord::ProductOrdering, varmap::AbstractDict)
-    !isempty(setdiff(ordering_variables(ord), collect(keys(varmap)))) &&
-        throw(DomainError("Invalid ordering transformation."))
     ProductOrdering(ordering_transform(ord.ord1, varmap), ordering_transform(ord.ord2, varmap))
 end
 
 function ordering_transform(ord::MatrixOrdering, varmap::AbstractDict)
-    !isempty(setdiff(ordering_variables(ord), collect(keys(varmap)))) &&
-        throw(DomainError("Invalid ordering transformation."))
-    MatrixOrdering(map(v -> varmap[v], ordering_variables(ord)), ord.rows)
+    MatrixOrdering(map_variables(ordering_variables(ord), varmap), ord.rows)
 end
 
 # Print orderings
