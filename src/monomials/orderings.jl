@@ -344,16 +344,20 @@ function map_variables(vars, varmap)
         # Fallback to string representation
         varmap_str = Dict(string(k) => v for (k, v) in varmap)
         vars_str = map(string, vars)
-        !isempty(setdiff(vars_str, collect(keys(varmap_str)))) && throw(DomainError("Invalid monomial ordering."))
+        !isempty(setdiff(vars_str, collect(keys(varmap_str)))) &&
+            throw(DomainError("Invalid monomial ordering."))
         return map(v -> varmap_str[v], vars_str)
     end
     map(v -> varmap[v], vars)
 end
 
 ordering_transform(ord::InputOrdering, varmap::AbstractDict) = InputOrdering()
-ordering_transform(ord::Lex, varmap::AbstractDict) = Lex(map_variables(ordering_variables(ord), varmap))
-ordering_transform(ord::DegLex, varmap::AbstractDict) = DegLex(map_variables(ordering_variables(ord), varmap))
-ordering_transform(ord::DegRevLex, varmap::AbstractDict) = DegRevLex(map_variables(ordering_variables(ord), varmap))
+ordering_transform(ord::Lex, varmap::AbstractDict) =
+    Lex(map_variables(ordering_variables(ord), varmap))
+ordering_transform(ord::DegLex, varmap::AbstractDict) =
+    DegLex(map_variables(ordering_variables(ord), varmap))
+ordering_transform(ord::DegRevLex, varmap::AbstractDict) =
+    DegRevLex(map_variables(ordering_variables(ord), varmap))
 
 function ordering_transform(ord::WeightedOrdering, varmap::AbstractDict)
     WeightedOrdering(Dict(map_variables(ordering_variables(ord), varmap) .=> ord.weights))
