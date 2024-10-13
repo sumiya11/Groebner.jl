@@ -9,7 +9,7 @@ where appropriate -->
 ![](/assets/logo-with-text.svg)
 @@
 
-Groebner.jl is a package for fast and generic Gröbner bases computations based on Faugère's [F4 algorithm](https://www-polsys.lip6.fr/~jcf/Papers/F99a.pdf) written in Julia.
+Groebner.jl is a package for Gröbner bases computation based on the Faugère's F4 algorithm written in Julia.
 
 ## Installation
 
@@ -24,12 +24,19 @@ Pkg.add(url="https://github.com/sumiya11/Groebner.jl") # hide
 using Pkg; Pkg.add("Groebner")
 ```
 
-See [Interface](interface) for a description of all exported functions. For a quick introduction to Groebner bases we refer to [Tutorials](tutorial). Meanwhile, below are simple examples.
+## Features
+
+Groebner.jl features:
+
+- Gröbner bases over integers modulo a prime and over the rationals
+- Gröbner trace algorithms
+- Multi-threading by default
+
+See [Interface](interface) page for a list of all exported functions.
 
 ## Examples
 
-Currently, polynomials from AbstractAlgebra.jl, DynamicPolynomials.jl, and Nemo.jl
-are supported as input.
+As input, Groebner.jl supports polynomials from AbstractAlgebra.jl, DynamicPolynomials.jl, and Nemo.jl.
 
 ### with AbstractAlgebra.jl
 
