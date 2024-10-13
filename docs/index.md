@@ -28,7 +28,7 @@ using Pkg; Pkg.add("Groebner")
 
 Groebner.jl features:
 
-- Gröbner bases over integers modulo a prime and over the rationals
+- Gröbner basis computation over integers modulo a prime and over the rationals
 - Gröbner trace algorithms
 - Multi-threading by default
 
