@@ -5,78 +5,86 @@
 # One 64-bit integer packs 8 integers 8-bit each.
 
 # checks that a[i] >= b[i] for all i.
-@inline function _packed_vec_ge(a::UInt64, b::UInt64)
+@inline @generated function _packed_vec_ge(a::UInt64, b::UInt64)
     N = 8
     textir = """
     define i8 @entry(i64 %0, i64 %1) #0 {
     top:
-        %av      = bitcast i64 %0 to <8 x i8>
-        %bv      = bitcast i64 %1 to <8 x i8>
-        %mask    = icmp uge <8 x i8> %av, %bv
-        %mask.i  = bitcast <8 x i1> %mask to i8
-        %res     = icmp eq i8 %mask.i, 255
+        %av      = bitcast i64 %0 to <$N x i8>
+        %bv      = bitcast i64 %1 to <$N x i8>
+        %mask    = icmp uge <$N x i8> %av, %bv
+        %mask.i  = bitcast <$N x i1> %mask to i$N
+        %res     = icmp eq i$N %mask.i, $(big(2)^N - 1)
         %retval  = zext i1 %res to i8
         ret i8 %retval
     }
     attributes #0 = { alwaysinline }
     """
-    Base.llvmcall((textir, "entry"), Bool, Tuple{UInt64, UInt64}, a, b)
+    quote
+        Base.llvmcall(($textir, "entry"), Bool, Tuple{UInt64, UInt64}, a, b)
+    end
 end
 
 # checks that a, b are orthogonal
-@inline function _packed_vec_is_orth(a::UInt64, b::UInt64)
+@inline @generated function _packed_vec_is_orth(a::UInt64, b::UInt64)
     N = 8
     textir = """
     define i8 @entry(i64 %0, i64 %1) #0 {
     top:
-        %av      = bitcast i64 %0 to <8 x i8>
-        %bv      = bitcast i64 %1 to <8 x i8>
-        %zero    = bitcast i64 0 to <8 x i8>
-        %mask.a  = icmp ne <8 x i8> %av, %zero
-        %mask.b  = icmp ne <8 x i8> %bv, %zero
-        %mask    = and <8 x i1> %mask.a, %mask.b
-        %mask.i  = bitcast <8 x i1> %mask to i8
-        %res     = icmp eq i8 %mask.i, 0
+        %av      = bitcast i64 %0 to <$N x i8>
+        %bv      = bitcast i64 %1 to <$N x i8>
+        %zero    = bitcast i64 0 to <$N x i8>
+        %mask.a  = icmp ne <$N x i8> %av, %zero
+        %mask.b  = icmp ne <$N x i8> %bv, %zero
+        %mask    = and <$N x i1> %mask.a, %mask.b
+        %mask.i  = bitcast <$N x i1> %mask to i$N
+        %res     = icmp eq i$N %mask.i, 0
         %retval  = zext i1 %res to i8
         ret i8 %retval
     }
     attributes #0 = { alwaysinline }
     """
-    Base.llvmcall((textir, "entry"), Bool, Tuple{UInt64, UInt64}, a, b)
+    quote
+        Base.llvmcall(($textir, "entry"), Bool, Tuple{UInt64, UInt64}, a, b)
+    end
 end
 
 # returns sum a[i]
-@inline function _packed_vec_reduce(a::UInt64)
+@inline @generated function _packed_vec_reduce(a::UInt64)
     N = 8
     textir = """
-    declare i8 @llvm.vector.reduce.add.v8i8(<8 x i8>)
+    declare i8 @llvm.vector.reduce.add.v$(N)i8(<$N x i8>)
     define i8 @entry(i64 %0) #0 {
     top:
-        %a.v    = bitcast i64 %0 to <8 x i8>
-        %sum    = call i8 @llvm.vector.reduce.add.v8i8(<8 x i8> %a.v)
+        %a.v    = bitcast i64 %0 to <$N x i8>
+        %sum    = call i8 @llvm.vector.reduce.add.v$(N)i8(<$N x i8> %a.v)
         ret i8 %sum
     }
     attributes #0 = { alwaysinline }
     """
-    Base.llvmcall((textir, "entry"), UInt8, Tuple{UInt64}, a)
+    quote
+        Base.llvmcall(($textir, "entry"), UInt8, Tuple{UInt64}, a)
+    end
 end
 
 # returns c[i] = max a[i], b[i]
-@inline function _packed_vec_max(a::UInt64, b::UInt64)
+@inline @generated function _packed_vec_max(a::UInt64, b::UInt64)
     N = 8
     textir = """
-    declare <8 x i8> @llvm.umax.v8i8(<8 x i8>, <8 x i8>)
+    declare <$N x i8> @llvm.umax.v$(N)i8(<$N x i8>, <$N x i8>)
     define i64 @entry(i64 %0, i64 %1) #0 {
     top:
-        %a.v    = bitcast i64 %0 to <8 x i8>
-        %b.v    = bitcast i64 %1 to <8 x i8>
-        %max.v  = call <8 x i8> @llvm.umax.v8i8(<8 x i8> %a.v, <8 x i8> %b.v)
-        %max    = bitcast <8 x i8> %max.v to i64
+        %a.v    = bitcast i64 %0 to <$N x i8>
+        %b.v    = bitcast i64 %1 to <$N x i8>
+        %max.v  = call <$N x i8> @llvm.umax.v$(N)i8(<$N x i8> %a.v, <$N x i8> %b.v)
+        %max    = bitcast <$N x i8> %max.v to i64
         ret i64 %max
     }
     attributes #0 = { alwaysinline }
     """
-    Base.llvmcall((textir, "entry"), UInt64, Tuple{UInt64, UInt64}, a, b)
+    quote
+        Base.llvmcall(($textir, "entry"), UInt64, Tuple{UInt64, UInt64}, a, b)
+    end
 end
 
 @inline @generated function _packed_vec_unpack!(
