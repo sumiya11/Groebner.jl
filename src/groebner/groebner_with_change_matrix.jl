@@ -80,6 +80,9 @@ function groebner_with_change_matrix2(ring, monoms, coeffs, params)
 
     if params.homogenize
         ring, gb_monoms, gb_coeffs = dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
+        if params.reduced
+            gb_monoms, gb_coeffs = groebner2(ring, gb_monoms, gb_coeffs, params)
+        end
     end
 
     if !isempty(zero_indices)

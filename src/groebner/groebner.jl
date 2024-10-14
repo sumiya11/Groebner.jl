@@ -81,6 +81,9 @@ function groebner2(
 
     if params.homogenize
         ring, gb_monoms, gb_coeffs = dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
+        if params.reduced
+            gb_monoms, gb_coeffs = _groebner2(ring, gb_monoms, gb_coeffs, params)
+        end
     end
 
     gb_monoms, gb_coeffs

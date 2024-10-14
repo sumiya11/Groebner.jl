@@ -94,6 +94,9 @@ function groebner_learn2(
 
     if params.homogenize
         ring, gb_monoms, gb_coeffs = dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
+        if params.reduced
+            gb_monoms, gb_coeffs = autoreduce2(ring, gb_monoms, gb_coeffs, params)
+        end
         trace.term_homogenizing_permutations = term_homogenizing_permutation
     end
 
@@ -269,6 +272,9 @@ function _groebner_apply2!(trace, params)
         gb_monoms, gb_coeffs = basis_export_data(trace.gb_basis, trace.hashtable)
         ring, gb_monoms, gb_coeffs =
             dehomogenize_generators!(trace.ring, gb_monoms, gb_coeffs, params)
+        if params.reduced
+            gb_monoms, gb_coeffs = autoreduce2(ring, gb_monoms, gb_coeffs, params)
+        end
     end
 
     flag, ring, gb_coeffs

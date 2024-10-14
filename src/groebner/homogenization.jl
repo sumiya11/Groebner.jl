@@ -110,7 +110,6 @@ function dehomogenize_generators!(
     new_ring = PolyRing(new_nvars, new_ord, ring_desat.ch)
     sort_input_terms_to_change_ordering!(new_monoms, coeffs, new_ord)
     params.target_ord = new_ring.ord
-    new_monoms, coeffs = autoreduce2(new_ring, new_monoms, coeffs, params)
     new_ring, new_monoms, coeffs
 end
 

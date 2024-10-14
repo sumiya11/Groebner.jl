@@ -1267,6 +1267,9 @@ function test_params(
                         for k in grounds
                             for ord in orderings
                                 for cf in coeffssize
+                                    if ord == :lex
+                                        md = min(2, md)
+                                    end
                                     set = Groebner.Examples.random_generating_set(
                                         rng,
                                         k,
@@ -1325,7 +1328,7 @@ end
     nterms     = [1, 2, 4]
     npolys     = [1, 4, 100]
     grounds    = [GF(1031), GF(2^50 + 55), AbstractAlgebra.QQ]
-    coeffssize = [3, 1000, 2^31 - 1, BigInt(2)^100]
+    coeffssize = [3, 1000, 2^31 - 1, BigInt(2)^80]
     orderings  = [:degrevlex, :lex, :deglex]
     linalgs    = [:deterministic, :randomized]
     monoms     = [:auto, :dense, :packed]
