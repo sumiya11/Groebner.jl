@@ -245,11 +245,6 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         # TODO: In the future, it would be good to adapt randomized linear
         # algebra to this case by taking more random samples
         if ring.ch < 500
-            if linalg === :randomized
-                @info """
-                The option linalg=:randomized was ignored:
-                the ground field characteristic is small."""
-            end
             linalg = :deterministic
         end
     end

@@ -253,7 +253,7 @@ flag, gb_2 = groebner_apply!(
 @assert gb_2 == groebner([2x2*y2^2 + 3x2, 4y2*x2^2 + 5y2], ordering=DegRevLex())
 ```
 
-Using `groebner_apply!` in batches:
+Using `groebner_apply!` in batches (works only in `:degrevlex` at the moment):
 
 ```jldoctest
 using Groebner, AbstractAlgebra
