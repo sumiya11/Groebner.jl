@@ -340,7 +340,7 @@ end
 # Transform orderings
 
 function map_variables(vars, varmap)
-    if !isempty(setdiff(vars, collect(keys(varmap))))
+    if !(Set(vars) == Set(collect(keys(varmap))))
         # Fallback to string representation
         varmap_str = Dict(string(k) => v for (k, v) in varmap)
         vars_str = map(string, vars)
