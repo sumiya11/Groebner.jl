@@ -19,7 +19,7 @@ function groebner1(
     coeffs::Vector{Vector{C}},
     options::KeywordArguments
 ) where {I <: Integer, C <: Coeff}
-    ring, monoms, coeffs = ir_ensure_assumptions(ring, monoms, coeffs)
+    ring, monoms, coeffs = ir_ensure_valid(ring, monoms, coeffs)
     _groebner1(ring, monoms, coeffs, options)
 end
 

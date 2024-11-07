@@ -61,6 +61,16 @@ end
         [[[0, 0]]],
         [[1]]
     )
+    @test_throws DomainError Groebner.groebner(
+        Groebner.PolyRing(2, Groebner.DegRevLex(3, 2, 1), 0),
+        [[[0, 0]]],
+        [[1]]
+    )
+    @test_throws DomainError Groebner.groebner(
+        Groebner.PolyRing(2, Groebner.DegRevLex(1, 2, 2), 0),
+        [[[0, 0]]],
+        [[1]]
+    )
 
     @test_throws DomainError Groebner.groebner(ring_ff, [], [])
     @test_throws DomainError Groebner.groebner(ring_ff, [[]], [[]])
@@ -76,7 +86,7 @@ end
     @test ([[[1, 1]]], [[1]]) ==
           Groebner.groebner(ring_ff, [[[1, 1]]], [[2]]; ordering=Groebner.DegRevLex())
     @test ([[[1, 1]]], [[1]]) ==
-          Groebner.groebner(ring_ff, [[[1, 1]]], [[2]]; ordering=Groebner.Lex())
+          Groebner.groebner(ring_ff, [[[1, 1]]], [[2]]; ordering=Groebner.Lex(1, 2))
     @test ([[[0, 1], [0, 0]]], [[1, 5]]) ==
           Groebner.groebner(ring_ff, [[[0, 1], [0, 0], [0, 0]]], [[1, 2, 3]])
     @test ([[[0, 1], [0, 0]]], [[1, 5]]) ==

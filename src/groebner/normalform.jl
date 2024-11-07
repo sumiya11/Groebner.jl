@@ -30,8 +30,8 @@ function normalform1(
     coeffs_tbr::Vector{Vector{C2}},
     options::KeywordArguments
 ) where {I1 <: Integer, C1 <: Coeff, I2 <: Integer, C2 <: Coeff}
-    ring, monoms, coeffs = ir_ensure_assumptions(ring, monoms, coeffs)
-    ring_tbr, monoms_tbr, coeffs_tbr = ir_ensure_assumptions(ring_tbr, monoms_tbr, coeffs_tbr)
+    ring, monoms, coeffs = ir_ensure_valid(ring, monoms, coeffs)
+    ring_tbr, monoms_tbr, coeffs_tbr = ir_ensure_valid(ring_tbr, monoms_tbr, coeffs_tbr)
     _normalform1(ring, monoms, coeffs, ring_tbr, monoms_tbr, coeffs_tbr, options)
 end
 

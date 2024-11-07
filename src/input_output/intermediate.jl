@@ -53,7 +53,17 @@ function ir_is_valid_basic(
         !(C <: Rational || C <: Integer) &&
             throw(DomainError("Coefficients must be integer or rationals."))
     end
-    (ring.ord == InputOrdering()) && throw(DomainError("Invalid IR."))
+    (ring.ord == InputOrdering()) && throw(DomainError("Invalid monomial ordering."))
+    vars = ordering_variables(ring.ord)
+    if !isempty(vars)
+        if !(Set(vars) == Set(1:(ring.nvars)))
+            throw(
+                DomainError(
+                    "Invalid monomial ordering. Expected variables to be numbers from 1 to $(ring.nvars), got $(vars)"
+                )
+            )
+        end
+    end
 end
 
 function ir_is_valid(
@@ -76,7 +86,7 @@ function ir_is_valid(
     true
 end
 
-function ir_ensure_assumptions(
+function ir_ensure_valid(
     ring::PolyRing,
     monoms::Vector{Vector{Vector{M}}},
     coeffs::Vector{Vector{C}}

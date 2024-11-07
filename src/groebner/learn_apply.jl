@@ -22,7 +22,7 @@ function groebner_learn1(
     coeffs::Vector{Vector{C}},
     options::KeywordArguments
 ) where {I <: Integer, C <: Coeff}
-    ring, monoms, coeffs = ir_ensure_assumptions(ring, monoms, coeffs)
+    ring, monoms, coeffs = ir_ensure_valid(ring, monoms, coeffs)
     _groebner_learn1(ring, monoms, coeffs, options)
 end
 
@@ -170,7 +170,7 @@ function groebner_apply1!(
     coeffs::Vector{Vector{C}},
     options::KeywordArguments
 ) where {I <: Integer, C <: Coeff}
-    ring, monoms, coeffs = ir_ensure_assumptions(ring, monoms, coeffs)
+    ring, monoms, coeffs = ir_ensure_valid(ring, monoms, coeffs)
     __groebner_apply1!(wrapped_trace, ring, monoms, coeffs, options)
 end
 
@@ -182,7 +182,7 @@ function groebner_apply_batch1!(
     batch::NTuple{N, T},
     options::KeywordArguments
 ) where {N, T}
-    batch = map(x -> ir_ensure_assumptions(x...), batch)
+    batch = map(x -> ir_ensure_valid(x...), batch)
     _groebner_apply_batch1!(wrapped_trace, batch, options)
 end
 

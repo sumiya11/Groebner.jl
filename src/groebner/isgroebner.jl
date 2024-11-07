@@ -9,11 +9,11 @@ function isgroebner0(polynomials, options)
 end
 
 function isgroebner1(ring, monoms, coeffs, options)
-    ring, monoms, coeffs = ir_ensure_assumptions(ring, monoms, coeffs)
+    ring, monoms, coeffs = ir_ensure_valid(ring, monoms, coeffs)
     _isgroebner1(ring, monoms, coeffs, options)
 end
 
-function _isgroebner1(ring::PolyRing, monoms, coeffs, options)
+function _isgroebner1(ring, monoms, coeffs, options)
     try
         params = AlgorithmParameters(ring, options)
         return __isgroebner1(ring, monoms, coeffs, params)

@@ -18,7 +18,7 @@ function groebner_with_change_matrix0(polynomials, options)
 end
 
 function groebner_with_change_matrix1(ring, monoms, coeffs, options)
-    ring, monoms, coeffs = ir_ensure_assumptions(ring, monoms, coeffs)
+    ring, monoms, coeffs = ir_ensure_valid(ring, monoms, coeffs)
     _groebner_with_change_matrix1(ring, monoms, coeffs, options)
 end
 
