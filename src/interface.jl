@@ -354,6 +354,10 @@ For examples, see the documentation of `groebner_learn`.
 ## Notes
 
 This function is **not** thread-safe, since it mutates the `trace`.
+
+This function is **not** safe against program interruptions.
+For example, pressing `Ctrl + C` while `groebner_apply!(trace, ...)` is
+running may leave the `trace` corrupted.
 """
 function groebner_apply! end
 
