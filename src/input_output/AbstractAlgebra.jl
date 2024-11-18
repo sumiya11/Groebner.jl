@@ -59,7 +59,7 @@ function io_extract_ring(polynomials)
     else
         # Detect that K is either AbstractAlgebra.QQ or Nemo.QQ
         base = AbstractAlgebra.base_ring(K)
-        if !(hasmethod(AbstractAlgebra.base_ring, typeof(base)))
+        if !(hasmethod(AbstractAlgebra.base_ring, (typeof(base),)))
             ground = :generic
         elseif !(AbstractAlgebra.base_ring(base) == Union{})
             ground = :generic
