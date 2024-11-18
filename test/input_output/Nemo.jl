@@ -26,6 +26,8 @@ import Nemo, Primes
 end
 
 @testset "Nemo.jl, generic" begin
+    # Test generic coefficients with some interesting fields from Nemo.jl.
+
     # Single extension
     K, a = Nemo.finite_field(3, 2, "a")
     R, (X, Y) = K["X", "Y"]
@@ -39,6 +41,19 @@ end
     # sys = [a * b * X - Y, X * Y - 1]
     # res = [Y^2 + b^5 + b^4 + 2*b^2 + 2*b + 2, X + (b^3 + 2*b^2 + b)*Y]
     # @test groebner(sys) == res
+
+    # Q bar
+    Q_bar = Nemo.algebraic_closure(Nemo.QQ)
+    R, (X, Y) = Q_bar["X", "Y"]
+    e2 = Nemo.root_of_unity(Q_bar, 5, 2)
+    e3 = Nemo.root_of_unity(Q_bar, 5, 3)
+    e4 = Nemo.root_of_unity(Q_bar, 5, 4)
+    @test groebner([e3*X - e2*Y]) == [X - e4*Y]
+
+    # Cyclic extension
+    K, a = Nemo.cyclotomic_field(5)
+    R, (X, Y) = K["X", "Y"]
+    @test groebner([a*X + 1]) == [X - a^3 - a^2 - a - 1]
 end
 
 @testset "Nemo.jl, input-output" begin

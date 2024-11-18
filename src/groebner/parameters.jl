@@ -243,6 +243,11 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         end
     end
 
+    # Over Z_p, linalg = :randomized signals randomized linear algebra.
+    # Over Q, linalg = :randomized has almost no effect since multi-modular
+    # tracing is used by default. Still, we say "almost" since some routines in
+    # multi-modular tracing may compute Groebner bases in Zp for
+    # checking/verification, and they benefit from linalg = :randomized.
     linalg = kwargs.linalg
     if ring.ground === :zp && (linalg === :randomized || linalg === :auto)
         # Do not use randomized linear algebra if the field characteristic is
@@ -257,7 +262,8 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
             end
             linalg = :deterministic
         end
-    else
+    end
+    if ring.ground == :generic
         linalg = :deterministic
     end
     if linalg === :auto

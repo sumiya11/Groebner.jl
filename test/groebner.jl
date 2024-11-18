@@ -159,14 +159,18 @@ end
     # - Zp
     # - Zp for large p
     # - QQ
+    n = 5
     syss = [
-        Groebner.Examples.cyclicn(5, k=GF(2^40 + 15)),
-        Groebner.Examples.cyclicn(5, k=GF(2)),
-        Groebner.Examples.cyclicn(5, k=GF(nextprime(big(2)^1000))),
-        Groebner.Examples.cyclicn(5, k=QQ)
+        Groebner.Examples.cyclicn(n, k=GF(2^40 + 15)),
+        Groebner.Examples.cyclicn(n, k=GF(2^40 + 15), internal_ordering=:lex),
+        Groebner.Examples.cyclicn(n, k=GF(2)),
+        Groebner.Examples.cyclicn(n, k=GF(nextprime(big(2)^1000))),
+        Groebner.Examples.cyclicn(n, k=GF(nextprime(big(2)^1000)), internal_ordering=:lex),
+        Groebner.Examples.cyclicn(n, k=QQ)
     ]
     for sys in syss
-        ring = Groebner.PolyRing(5, Groebner.DegRevLex(), 0, :generic)
+        ord = internal_ordering(parent(sys[1])) == :lex ? Groebner.Lex() : Groebner.DegRevLex()
+        ring = Groebner.PolyRing(n, ord, 0, :generic)
         exps, cfs = get_data(sys, Groebner.CoeffGeneric)
         gbexps, gbcfs = groebner(ring, exps, cfs)
         gb = groebner(sys)
