@@ -93,6 +93,7 @@ include("monomials/exponent_vector.jl")
 include("monomials/packed_vector.jl")
 
 include("arithmetic/CompositeNumber.jl")
+include("arithmetic/Generic.jl")
 
 # Defines some type aliases
 include("types.jl")

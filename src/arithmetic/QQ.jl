@@ -23,3 +23,9 @@ function select_arithmetic(
     @invariant iszero(characteristic)
     ArithmeticQQ()
 end
+
+struct ArithmeticGeneric{CoeffType, AccumType} <: AbstractArithmetic{CoeffType, AccumType} end
+
+function select_arithmetic(::Type{CoeffGeneric}, _, _, _)
+    ArithmeticGeneric{CoeffGeneric, CoeffGeneric}()
+end

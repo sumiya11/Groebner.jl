@@ -23,9 +23,20 @@ mutable struct PolyRing{Ord <: AbstractMonomialOrdering, C <: Union{CoeffZp, Com
     nvars::Int
     ord::Ord
     ch::C
+    ground::Symbol
+
+    PolyRing(nvars::Int, ord, ch) = PolyRing(nvars, ord, ch, iszero(ch) ? :qq : :zp)
+
+    function PolyRing(nvars::Int, ord::Ord, ch::C, ground::Symbol) where {Ord, C}
+        new{Ord, C}(nvars, ord, ch, ground)
+    end
 end
 
-Base.:(==)(r1::PolyRing, r2::PolyRing) = r1.nvars == r2.nvars && r1.ord == r2.ord && r1.ch == r2.ch
+Base.:(==)(r1::PolyRing, r2::PolyRing) =
+    r1.nvars == r2.nvars &&
+    r1.ord == r2.ord &&
+    r1.ch == r2.ch &&
+    r1.generic_coeffs == r2.generic_coeffs
 
 ir_is_valid_basic(batch) = throw(DomainError("Invalid IR, unknown types."))
 ir_is_valid_basic(ring, monoms, coeffs) = throw(DomainError("Invalid IR, unknown types."))
@@ -40,18 +51,20 @@ function ir_is_valid_basic(
     ring::PolyRing,
     monoms::Vector{Vector{Vector{T}}},
     coeffs::Vector{Vector{C}}
-) where {T <: Integer, C <: Number}
+) where {T <: Integer, C <: Union{Number, CoeffGeneric}}
     !(length(monoms) == length(coeffs)) && throw(DomainError("Invalid IR."))
     isempty(monoms) && throw(DomainError("Invalid IR."))
     !(ring.nvars >= 0) && throw(DomainError("The number of variables must be non-negative."))
     !(ring.ch >= 0) && throw(DomainError("Field characteristic must be nonnegative."))
-    if ring.ch > 0
+    if ring.ground == :zp
         !(C <: Integer) && throw(DomainError("Coefficients must be integers."))
         (C <: BigInt) && throw(DomainError("Coefficients must fit in a machine register."))
         !(ring.ch <= typemax(C)) && throw(DomainError("Invalid IR."))
-    else
-        !(C <: Rational || C <: Integer) &&
+    elseif ring.ground == :qq
+        !(C <: Rational || C <: Integer || C <: CoeffGeneric) &&
             throw(DomainError("Coefficients must be integer or rationals."))
+    else
+        !(C <: CoeffGeneric) && throw(DomainError("Coefficients must be CoeffGeneric."))
     end
     (ring.ord == InputOrdering()) && throw(DomainError("Invalid monomial ordering."))
     vars = ordering_variables(ring.ord)
@@ -70,7 +83,7 @@ function ir_is_valid(
     ring::PolyRing,
     monoms::Vector{Vector{Vector{T}}},
     coeffs::Vector{Vector{C}}
-) where {T <: Integer, C <: Number}
+) where {T <: Integer, C <: Union{Number, CoeffGeneric}}
     ir_is_valid_basic(ring, monoms, coeffs)
     for i in 1:length(monoms)
         !(length(monoms[i]) == length(coeffs[i])) && throw(DomainError("Invalid IR."))
@@ -78,7 +91,7 @@ function ir_is_valid(
             !(length(monoms[i][j]) == ring.nvars) && throw(DomainError("Invalid IR."))
             !(all(>=(0), monoms[i][j])) && throw(DomainError("Invalid IR."))
             iszero(coeffs[i][j]) && throw(DomainError("Invalid IR")) # can be relaxed
-            if (ring.ch > 0)
+            if (ring.ground == :zp)
                 !(0 < coeffs[i][j] < ring.ch) && throw(DomainError("Invalid IR."))
             end
         end
@@ -108,7 +121,7 @@ function ir_ensure_valid(
     # Normalize
     for i in 1:length(new_monoms)
         for j in 1:length(new_monoms[i])
-            if ring.ch > 0
+            if ring.ground == :zp
                 new_coeffs[i][j] = mod(new_coeffs[i][j], ring.ch)
             end
         end
@@ -147,7 +160,7 @@ function ir_ensure_valid(
             end
             _new_coeffs[i][slow_idx] =
                 Base.Checked.checked_add(_new_coeffs[i][slow_idx], new_coeffs[i][fast_idx])
-            if ring.ch > 0 && _new_coeffs[i][slow_idx] >= ring.ch
+            if ring.ground == :zp && _new_coeffs[i][slow_idx] >= ring.ch
                 _new_coeffs[i][slow_idx] -= ring.ch
                 @invariant _new_coeffs[i][slow_idx] < ring.ch
             end
@@ -196,7 +209,7 @@ function ir_extract_coeffs_raw!(trace, coeffs::Vector{Vector{C}}) where {C <: Co
     end
 
     if trace.homogenize
-        @invariant !iszero(trace.ring.ch)
+        @invariant trace.ring.ground == :zp
         trace.buf_basis.coeffs[length(coeffs) + 1][1] = one(CoeffsType)
         trace.buf_basis.coeffs[length(coeffs) + 1][2] = trace.ring.ch - one(typeof(trace.ring.ch))
     end
@@ -209,7 +222,7 @@ end
 function ir_pack_coeffs(batch::NTuple{N, T}) where {N, T}
     ring = batch[1][1]
     ch = CompositeNumber(map(el -> el[1].ch, batch))
-    new_ring = PolyRing(ring.nvars, ring.ord, ch)
+    new_ring = PolyRing(ring.nvars, ring.ord, ch, ring.ground)
     monoms = batch[1][2]
     coeffs = Vector{Vector{CompositeNumber{N, UInt64}}}(undef, length(monoms))
     @assert allequal(map(el -> el[2], batch))
@@ -251,13 +264,18 @@ function ir_convert_ir_to_internal(
 ) where {M <: Monom, C <: Coeff}
     repr = params.representation
     monoms2 = Vector{Vector{repr.monomtype}}(undef, length(monoms))
-    coeffs2 = Vector{Vector{repr.coefftype}}(undef, length(monoms))
+    CT = repr.coefftype
+    if !isconcretetype(CT)
+        CT = C
+    end
+
+    coeffs2 = Vector{Vector{CT}}(undef, length(monoms))
     @inbounds for i in 1:length(monoms)
         monoms2[i] = Vector{repr.monomtype}(undef, length(monoms[i]))
-        coeffs2[i] = Vector{repr.coefftype}(undef, length(monoms[i]))
+        coeffs2[i] = Vector{CT}(undef, length(monoms[i]))
         for j in 1:length(monoms[i])
             monoms2[i][j] = monom_construct_from_vector(repr.monomtype, monoms[i][j])
-            coeffs2[i][j] = repr.coefftype(coeffs[i][j])
+            coeffs2[i][j] = CT(coeffs[i][j])
         end
     end
     ring2, term_sorting_permutations = ir_set_monomial_ordering!(ring, monoms2, coeffs2, params)
@@ -299,7 +317,7 @@ function ir_set_monomial_ordering!(
         # No reordering of terms needed
         return ring, Vector{Vector{Int}}()
     end
-    ring = PolyRing(ring.nvars, params.target_ord, ring.ch)
+    ring = PolyRing(ring.nvars, params.target_ord, ring.ch, ring.ground)
     permutations = sort_input_terms_to_change_ordering!(monoms, coeffs, params.target_ord)
     ring, permutations
 end

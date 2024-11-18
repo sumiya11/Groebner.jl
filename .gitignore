@@ -1,4 +1,13 @@
 Manifest.toml
 LocalPreferences.toml
-.vscode
 .benchmarkci
+
+# ignore coverage
+*.cov
+*.info
+*.png
+*.html
+*.css
+
+# ignore editor settings
+.vscode

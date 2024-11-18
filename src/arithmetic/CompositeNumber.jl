@@ -37,6 +37,9 @@ Base.isless(x::U, ci::CompositeNumber{N, T}) where {N, T, U <: Number} = all(x .
 Base.iszero(ci::CompositeNumber) = all(iszero, ci.data)
 Base.isone(ci::CompositeNumber)  = all(isone, ci.data)
 
+Base.zero(x::CompositeNumber{N, T}) where {N, T} = zero(typeof(x))
+Base.one(x::CompositeNumber{N, T}) where {N, T} = one(typeof(x))
+
 Base.zero(::Type{CompositeNumber{N, T}}) where {N, T} =
     CompositeNumber(ntuple(_ -> zero(T), Val(N)))
 Base.one(::Type{CompositeNumber{N, T}}) where {N, T} = CompositeNumber(ntuple(_ -> one(T), N))

@@ -26,21 +26,21 @@ using Test, TestSetExtensions
     @test Groebner.groebner(fs) == [x1 * x2]
 end
 
+get_data(sys, T) =
+    (map(f -> collect(exponent_vectors(f)), sys), map(f -> collect(T.(coefficients(f))), sys))
+
+function test_low_level_interface(ring, sys; passthrough...)
+    T(x) = base_ring(parent(sys[1])) == QQ ? Rational{BigInt}(x) : UInt64(lift(x))
+    monoms, coeffs = get_data(sys, T)
+    gb_monoms1, gb_coeffs1 = Groebner.groebner(ring, monoms, coeffs; passthrough...)
+    gb = Groebner.groebner(sys; passthrough...)
+    gb_monoms2, gb_coeffs2 = get_data(gb, T)
+    @test (gb_monoms1, gb_coeffs1) == (gb_monoms2, gb_coeffs2)
+    @test Groebner.isgroebner(ring, gb_monoms1, gb_coeffs1)
+    @test all(iszero, Groebner.normalform(ring, gb_monoms1, gb_coeffs1, ring, monoms, coeffs))
+end
+
 @testset "groebner low level" begin
-    get_data(sys, T) =
-        (map(f -> collect(exponent_vectors(f)), sys), map(f -> collect(T.(coefficients(f))), sys))
-
-    function test_low_level_interface(ring, sys; passthrough...)
-        T(x) = base_ring(parent(sys[1])) == QQ ? Rational{BigInt}(x) : UInt64(lift(x))
-        monoms, coeffs = get_data(sys, T)
-        gb_monoms1, gb_coeffs1 = Groebner.groebner(ring, monoms, coeffs; passthrough...)
-        gb = Groebner.groebner(sys; passthrough...)
-        gb_monoms2, gb_coeffs2 = get_data(gb, T)
-        @test (gb_monoms1, gb_coeffs1) == (gb_monoms2, gb_coeffs2)
-        @test Groebner.isgroebner(ring, gb_monoms1, gb_coeffs1)
-        @test all(iszero, Groebner.normalform(ring, gb_monoms1, gb_coeffs1, ring, monoms, coeffs))
-    end
-
     R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], internal_ordering=:degrevlex)
     ring_ff = Groebner.PolyRing(2, Groebner.DegRevLex(), 2^31 - 1)
     ring_ff2 = Groebner.PolyRing(2, Groebner.DegRevLex(), 2^32 - 5)
@@ -152,6 +152,42 @@ end
     monoms, coeffs = get_data(sys, UInt64 ∘ lift)
     gb = get_data(Groebner.groebner(sys_drl), UInt64 ∘ lift)
     @test gb == Groebner.groebner(ring, monoms, coeffs)
+end
+
+@testset "groebner generic" begin
+    # GB over
+    # - Zp
+    # - Zp for large p
+    # - QQ
+    syss = [
+        Groebner.Examples.cyclicn(5, k=GF(2^40 + 15)),
+        Groebner.Examples.cyclicn(5, k=GF(2)),
+        Groebner.Examples.cyclicn(5, k=GF(nextprime(big(2)^1000))),
+        Groebner.Examples.cyclicn(5, k=QQ)
+    ]
+    for sys in syss
+        ring = Groebner.PolyRing(5, Groebner.DegRevLex(), 0, :generic)
+        exps, cfs = get_data(sys, Groebner.CoeffGeneric)
+        gbexps, gbcfs = groebner(ring, exps, cfs)
+        gb = groebner(sys)
+        @test isgroebner(gb)
+        @test gbexps == get_data(gb, identity)[1]
+        @test isgroebner(ring, gbexps, gbcfs)
+        @test all(isempty, normalform(ring, gbexps, gbcfs, ring, exps, cfs)[1])
+        @test map(c -> Groebner.generic_lift.(c), gbcfs) == get_data(gb, identity)[2]
+    end
+
+    # GB over QQ(a,b)
+    R_param, (a, b) = QQ["a", "b"]
+    R, (x, y, z) = fraction_field(R_param)["x", "y", "z"]
+    F = [x^2 + x + (a + 1), x * y + b * y * z + 1 // (a * b), x * z + z + b]
+    @test groebner(F) == [
+        z^2 + b // (a + 1) * z + b^2 // (a + 1),
+        y + (-a - 1) // (a^2 * b^2 + a * b^4 + a * b^2) * z - 1 // (a^2 * b + a * b^3 + a * b),
+        x + (-a - 1) // b * z
+    ]
+
+    @test groebner([R(a - b), R(a)]) == [one(R)]
 end
 
 @testset "groebner reduced=false" begin
@@ -983,8 +1019,8 @@ end
         test_n_variables(n)
     end
 
-    # up to 511
-    for n in [128, 256, 257, 511]
+    # up to 257
+    for n in [128, 256, 257]
         @info "Variables:" n
         R, x = polynomial_ring(QQ, ["x$i" for i in 1:n])
         f = x

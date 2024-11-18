@@ -57,8 +57,8 @@ end
 function linalg_reduce_matrix_lower_part!(
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
-    arithmetic::AbstractArithmetic{AccumType, CoeffType}
-) where {CoeffType <: Coeff, AccumType <: Coeff}
+    arithmetic::AbstractArithmetic{AccumType, CoeffType2}
+) where {CoeffType <: Coeff, AccumType <: Coeff, CoeffType2}
     _, ncols = size(matrix)
     _, nlow = matrix_nrows_filled(matrix)
 
@@ -68,7 +68,7 @@ function linalg_reduce_matrix_lower_part!(
 
     # Allocate the buffers
     # TODO: allocate just once, and then reuse for later iterations of F4
-    row = zeros(AccumType, ncols)
+    row = [AccumType(zero(basis.coeffs[1][1])) for _ in 1:ncols] # zeros(AccumType, ncols)
     new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
 
     # At each iteration, take a row from the lower part of the matrix (from the
@@ -127,9 +127,9 @@ end
 function linalg_interreduce_matrix_pivots!(
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
-    arithmetic::AbstractArithmetic{AccumType, CoeffType};
+    arithmetic::AbstractArithmetic{AccumType, CoeffType2};
     reversed_rows::Bool=false
-) where {CoeffType <: Coeff, AccumType <: Coeff}
+) where {CoeffType <: Coeff, AccumType <: Coeff, CoeffType2}
     _, ncols = size(matrix)
     nleft, nright = matrix_ncols_filled(matrix)
     nupper, _ = matrix_nrows_filled(matrix)
@@ -141,7 +141,7 @@ function linalg_interreduce_matrix_pivots!(
     any_zeroed = false
 
     # Allocate the buffers
-    row = zeros(AccumType, ncols)
+    row = [AccumType(zero(basis.coeffs[1][1])) for _ in 1:ncols] # zeros(AccumType, ncols)
     # Indices of rows that did no reduce to zero
     not_reduced_to_zero = Vector{Int}(undef, nright)
 
@@ -212,8 +212,8 @@ end
 function linalg_reduce_matrix_lower_part_invariant_pivots!(
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
-    arithmetic::AbstractArithmetic{AccumType, CoeffType}
-) where {CoeffType <: Coeff, AccumType <: Coeff}
+    arithmetic::AbstractArithmetic{AccumType, CoeffType2}
+) where {CoeffType <: Coeff, AccumType <: Coeff, CoeffType2}
     _, ncols = size(matrix)
     _, nlow = matrix_nrows_filled(matrix)
 
@@ -222,7 +222,7 @@ function linalg_reduce_matrix_lower_part_invariant_pivots!(
     resize!(matrix.some_coeffs, nlow)
 
     # Allocate the buffers
-    row = zeros(AccumType, ncols)
+    row = [AccumType(zero(basis.coeffs[1][1])) for _ in 1:ncols] # zeros(AccumType, ncols)
     new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
 
     @inbounds for i in 1:nlow
@@ -265,8 +265,8 @@ end
 function linalg_reduce_matrix_lower_part_any_nonzero!(
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
-    arithmetic::AbstractArithmetic{AccumType, CoeffType}
-) where {CoeffType <: Coeff, AccumType <: Coeff}
+    arithmetic::AbstractArithmetic{AccumType, CoeffType2}
+) where {CoeffType <: Coeff, AccumType <: Coeff, CoeffType2}
     _, ncols = size(matrix)
     _, nlow = matrix_nrows_filled(matrix)
 
@@ -275,7 +275,7 @@ function linalg_reduce_matrix_lower_part_any_nonzero!(
     resize!(matrix.some_coeffs, nlow)
 
     # Allocate the buffers
-    row = zeros(AccumType, ncols)
+    row = [AccumType(zero(basis.coeffs[1][1])) for _ in 1:ncols] # zeros(AccumType, ncols)
     new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
 
     @inbounds for i in 1:nlow
@@ -613,7 +613,7 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
     pivots::Vector{Vector{I}},
     start_column::Integer,
     end_column::Integer,
-    arithmetic::AbstractArithmeticQQ,
+    arithmetic::Union{AbstractArithmeticQQ, ArithmeticGeneric},
     active_reducers=nothing;
     ignore_column::Integer=-1
 ) where {I, C <: Coeff}
@@ -704,7 +704,7 @@ function linalg_row_make_monic!(
 ) where {A <: Union{CoeffZp, CompositeCoeffZp}, T <: Union{CoeffZp, CompositeCoeffZp}}
     @invariant !iszero(row[first_nnz_index])
 
-    lead = row[first_nnz_index]
+    @inbounds lead = row[first_nnz_index]
     isone(lead) && return lead
 
     @inbounds pinv = inv_mod_p(A(lead), arithmetic) % T
@@ -718,16 +718,16 @@ end
 
 function linalg_row_make_monic!(
     row::Vector{T},
-    arithmetic::AbstractArithmeticQQ{T},
+    arithmetic::Union{AbstractArithmeticQQ, ArithmeticGeneric},
     first_nnz_index::Int=1
-) where {T <: CoeffQQ}
+) where {T <: Union{CoeffQQ, CoeffGeneric}}
     @invariant !iszero(row[first_nnz_index])
 
-    lead = row[first_nnz_index]
+    @inbounds lead = row[first_nnz_index]
     isone(lead) && return lead
 
     @inbounds pinv = inv(lead)
-    @inbounds row[1] = one(T)
+    @inbounds row[1] = one(row[1])
     @inbounds for i in 2:length(row)
         row[i] = row[i] * pinv
     end
@@ -839,8 +839,8 @@ function linalg_vector_addmul_sparsedense!(
     row::Vector{T},
     indices::Vector{I},
     coeffs::Vector{T},
-    arithmetic::AbstractArithmeticQQ{T}
-) where {I, T <: CoeffQQ}
+    arithmetic::Union{AbstractArithmeticQQ{T}, ArithmeticGeneric}
+) where {I, T <: Union{CoeffQQ, CoeffGeneric}}
     @invariant isone(coeffs[1])
     @invariant length(indices) == length(coeffs)
     @invariant !isempty(indices)
@@ -880,10 +880,12 @@ function linalg_load_sparse_row!(
     row::Vector{T},
     indices::Vector{I},
     coeffs::Vector{T}
-) where {I, T <: CoeffQQ}
+) where {I, T <: Union{CoeffQQ, CoeffGeneric}}
     @invariant length(indices) == length(coeffs)
 
-    row .= T(0)
+    @inbounds for i in 1:length(row)
+        row[i] = zero(row[1])
+    end
     @inbounds for j in 1:length(indices)
         row[indices[j]] = coeffs[j]
     end
@@ -935,10 +937,9 @@ function linalg_extract_sparse_row!(
     @invariant length(indices) == length(coeffs)
     @invariant 1 <= from <= to <= length(row)
 
-    z = zero(T)
     j = 1
     @inbounds for i in from:to
-        if row[i] != z
+        if !iszero(row[i])
             indices[j] = i
             coeffs[j] = row[i]
             j += 1

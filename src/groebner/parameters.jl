@@ -22,6 +22,7 @@ end
 function param_select_polynomial_representation(
     char::Coeff,
     nvars::Int,
+    ground::Symbol,
     ordering::AbstractMonomialOrdering,
     homogenize::Bool,
     monoms::Symbol,
@@ -33,7 +34,7 @@ function param_select_polynomial_representation(
     end
     monomtype = param_select_monomtype(char, nvars, ordering, homogenize, hint, monoms)
     coefftype, using_wide_type_for_coeffs =
-        param_select_coefftype(char, nvars, ordering, homogenize, hint, monoms, arithmetic)
+        param_select_coefftype(char, nvars, ground, ordering, homogenize, hint, monoms, arithmetic)
     PolynomialRepresentation(monomtype, coefftype, using_wide_type_for_coeffs)
 end
 
@@ -124,6 +125,7 @@ end
 function param_select_coefftype(
     char::Coeff,
     nvars::Int,
+    ground::Symbol,
     ordering::AbstractMonomialOrdering,
     homogenize::Bool,
     hint::Symbol,
@@ -131,6 +133,9 @@ function param_select_coefftype(
     arithmetic::Symbol;
     using_wide_type_for_coeffs::Bool=false
 )
+    if ground == :generic
+        return CoeffGeneric, true
+    end
     if iszero(char)
         return Rational{BigInt}, true
     end
@@ -239,7 +244,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
     end
 
     linalg = kwargs.linalg
-    if !iszero(ring.ch) && (linalg === :randomized || linalg === :auto)
+    if ring.ground === :zp && (linalg === :randomized || linalg === :auto)
         # Do not use randomized linear algebra if the field characteristic is
         # too small. 
         # TODO: In the future, it would be good to adapt randomized linear
@@ -252,6 +257,8 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
             end
             linalg = :deterministic
         end
+    else
+        linalg = :deterministic
     end
     if linalg === :auto
         linalg = :randomized
@@ -262,6 +269,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
     representation = param_select_polynomial_representation(
         ring.ch,
         ring.nvars,
+        ring.ground,
         target_ord,
         homogenize,
         kwargs.monoms,
@@ -276,10 +284,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         representation.using_wide_type_for_coeffs
     )
 
-    ground = :zp
-    if iszero(ring.ch)
-        ground = :qq
-    end
+    ground = ring.ground
 
     reduced = kwargs.reduced
 
@@ -299,10 +304,12 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
     if ground === :zp
         threaded_f4 = threaded
         threaded_multimodular = :no
-    else
-        @assert ground === :qq
+    elseif ground == :qq
         threaded_f4 = :no
         threaded_multimodular = threaded
+    else
+        threaded_f4 = :no
+        threaded_multimodular = :no
     end
 
     # By default, modular computation uses learn & apply

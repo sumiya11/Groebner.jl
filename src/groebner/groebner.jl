@@ -105,6 +105,21 @@ function _groebner2(
 end
 
 ###
+# Groebner basis over generic field. Calls F4 directly.
+
+function _groebner2(
+    ring::PolyRing,
+    monoms::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    params::AlgorithmParameters
+) where {M <: Monom, C <: CoeffGeneric}
+    basis, pairset, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
+    f4!(ring, basis, pairset, hashtable, params)
+    gbmonoms, gbcoeffs = basis_export_data(basis, hashtable)
+    gbmonoms, gbcoeffs
+end
+
+###
 # Groebner basis over Q.
 
 # GB over the rationals uses modular computation.

@@ -69,7 +69,7 @@ function homogenize_generators!(
     end
     # TODO: clarify the order of variables
     new_ord = extend_ordering_in_homogenization(ring.nvars, ring.ord)
-    new_ring = PolyRing(new_nvars, new_ord, ring.ch)
+    new_ring = PolyRing(new_nvars, new_ord, ring.ch, ring.ground)
     term_permutation = sort_input_terms_to_change_ordering!(new_monoms, coeffs, new_ord)
     sat_var_index = new_nvars
     new_ring_sat, new_monoms, coeffs =
@@ -107,7 +107,7 @@ function dehomogenize_generators!(
     deleteat!(new_monoms, reduced_to_zero)
     deleteat!(coeffs, reduced_to_zero)
     new_ord = restrict_ordering_in_dehomogenization(ring_desat.ord)
-    new_ring = PolyRing(new_nvars, new_ord, ring_desat.ch)
+    new_ring = PolyRing(new_nvars, new_ord, ring_desat.ch, ring.ground)
     sort_input_terms_to_change_ordering!(new_monoms, coeffs, new_ord)
     params.target_ord = new_ring.ord
     new_ring, new_monoms, coeffs
@@ -152,7 +152,7 @@ function desaturate_generators!(
     resize!(new_sparse_row_coeffs, new_size)
     resize!(new_monoms, new_size)
     new_ord = restrict_ordering_in_desaturation(ring.ord)
-    new_ring = PolyRing(new_nvars, new_ord, ring.ch)
+    new_ring = PolyRing(new_nvars, new_ord, ring.ch, ring.ground)
     params.target_ord = new_ring.ord
     new_ring, new_monoms, new_sparse_row_coeffs
 end
@@ -189,13 +189,19 @@ function saturate_generators_by_variable!(
     new_poly_monoms[1] = lead_monom
     new_poly_monoms[2] = const_monom
     new_poly_coeffs = Vector{C}(undef, 2)
-    new_poly_coeffs[1] = one(C)
-    # NOTE: minus one in the current ground field
-    new_poly_coeffs[2] = iszero(ring.ch) ? -one(C) : (ring.ch - one(ring.ch))
+    new_poly_coeffs[1] = one(coeffs[1][1])
+    minus_one = if ring.ground == :qq
+        -one(coeffs[1][1])
+    elseif ring.ground == :zp
+        ring.ch - one(coeffs[1][1])
+    else
+        -one(coeffs[1][1])
+    end
+    new_poly_coeffs[2] = minus_one
     push!(new_monoms, new_poly_monoms)
     push!(coeffs, new_poly_coeffs)
     new_ord = extend_ordering_in_saturation(ring.nvars, ring.ord)
-    new_ring = PolyRing(new_nvars, new_ord, ring.ch)
+    new_ring = PolyRing(new_nvars, new_ord, ring.ch, ring.ground)
     params.target_ord = new_ring.ord
     new_ring, new_monoms, coeffs
 end

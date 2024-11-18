@@ -57,6 +57,18 @@ function _isgroebner2(
     res
 end
 
+# Generic fields
+function _isgroebner2(
+    ring::PolyRing,
+    monoms::Vector{Vector{M}},
+    coeffs::Vector{Vector{C}},
+    params::AlgorithmParameters
+) where {M <: Monom, C <: CoeffGeneric}
+    basis, pairset, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
+    res = f4_isgroebner!(ring, basis, pairset, hashtable, params.arithmetic)
+    res
+end
+
 # Rational numbers
 function _isgroebner2(
     ring::PolyRing,
