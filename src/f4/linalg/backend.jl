@@ -262,7 +262,7 @@ function linalg_reduce_matrix_lower_part_invariant_pivots!(
     matrix.npivots = matrix.nrows_filled_lower = matrix.nrows_filled_lower
 end
 
-function linalg_reduce_matrix_lower_part_any_nonzero!(
+function linalg_reduce_matrix_lower_part_all_zero!(
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType, CoeffType2}
@@ -330,10 +330,7 @@ function linalg_prepare_matrix_pivots!(matrix::MacaulayMatrix)
     pivots, lower_to_coeffs
 end
 
-function linalg_prepare_matrix_pivots_in_interreduction!(
-    matrix::MacaulayMatrix,
-    basis::Basis{C}
-) where {C}
+function linalg_prepare_matrix_pivots_in_interreduction!(matrix::MacaulayMatrix, basis::Basis)
     _, ncols = size(matrix)
     nup, nlow = matrix_nrows_filled(matrix)
 
@@ -603,7 +600,7 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
     false
 end
 
-# Specialization for arithmetic in the rational numbers
+# Generic fallback.
 function linalg_reduce_dense_row_by_pivots_sparse!(
     new_sparse_row_support::Vector{I},
     new_sparse_row_coeffs::Vector{C},
@@ -613,7 +610,7 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
     pivots::Vector{Vector{I}},
     start_column::Integer,
     end_column::Integer,
-    arithmetic::Union{AbstractArithmeticQQ, ArithmeticGeneric},
+    arithmetic::AbstractArithmetic,
     active_reducers=nothing;
     ignore_column::Integer=-1
 ) where {I, C <: Coeff}
