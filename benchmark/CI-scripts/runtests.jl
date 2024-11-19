@@ -183,7 +183,7 @@ function post(fail, table)
 end
 
 function main()
-    # runbench()
+    runbench()
     fail, table = compare()
     post(fail, table)
     versioninfo(verbose=true)
