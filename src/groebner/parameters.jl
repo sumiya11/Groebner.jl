@@ -338,6 +338,9 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         if !(target_ord isa DegRevLex)
             throw(DomainError("Only DegRevLex is supported with changematrix = true."))
         end
+        if (ground == :generic)
+            throw(DomainError("Generic fields are not supported with changematrix = true."))
+        end
     end
 
     AlgorithmParameters(

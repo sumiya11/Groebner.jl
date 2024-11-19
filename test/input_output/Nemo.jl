@@ -54,6 +54,13 @@ end
     K, a = Nemo.cyclotomic_field(5)
     R, (X, Y) = K["X", "Y"]
     @test groebner([a * X + 1]) == [X - a^3 - a^2 - a - 1]
+    @test isgroebner([X - a^3 - a^2 - a - 1])
+    @test normalform([X - a^3 - a^2 - a - 1], [X, X - a^3 - a^2 - a - 1]) ==
+          [R(a^3 + a^2 + a + 1), R(0)]
+    @test_throws DomainError groebner_with_change_matrix(
+        [X - a^3 - a^2 - a - 1],
+        ordering=Groebner.DegRevLex()
+    )
 end
 
 @testset "Nemo.jl, input-output" begin

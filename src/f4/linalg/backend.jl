@@ -57,8 +57,8 @@ end
 function linalg_reduce_matrix_lower_part!(
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
-    arithmetic::AbstractArithmetic{AccumType, CoeffType2}
-) where {CoeffType <: Coeff, AccumType <: Coeff, CoeffType2}
+    arithmetic::AbstractArithmetic{AccumType}
+) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
     _, nlow = matrix_nrows_filled(matrix)
 
@@ -68,7 +68,7 @@ function linalg_reduce_matrix_lower_part!(
 
     # Allocate the buffers
     # TODO: allocate just once, and then reuse for later iterations of F4
-    row = [AccumType(zero(basis.coeffs[1][1])) for _ in 1:ncols] # zeros(AccumType, ncols)
+    row = [AccumType(zero(basis.coeffs[1][1])) for _ in 1:ncols]
     new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
 
     # At each iteration, take a row from the lower part of the matrix (from the
@@ -127,9 +127,9 @@ end
 function linalg_interreduce_matrix_pivots!(
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
-    arithmetic::AbstractArithmetic{AccumType, CoeffType2};
+    arithmetic::AbstractArithmetic{AccumType};
     reversed_rows::Bool=false
-) where {CoeffType <: Coeff, AccumType <: Coeff, CoeffType2}
+) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
     nleft, nright = matrix_ncols_filled(matrix)
     nupper, _ = matrix_nrows_filled(matrix)
@@ -141,7 +141,7 @@ function linalg_interreduce_matrix_pivots!(
     any_zeroed = false
 
     # Allocate the buffers
-    row = [AccumType(zero(basis.coeffs[1][1])) for _ in 1:ncols] # zeros(AccumType, ncols)
+    row = [AccumType(zero(basis.coeffs[1][1])) for _ in 1:ncols]
     # Indices of rows that did no reduce to zero
     not_reduced_to_zero = Vector{Int}(undef, nright)
 
@@ -209,11 +209,11 @@ function linalg_interreduce_matrix_pivots!(
     true, any_zeroed, not_reduced_to_zero
 end
 
-function linalg_reduce_matrix_lower_part_invariant_pivots!(
+function linalg_reduce_matrix_lower_part_do_not_modify_pivots!(
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
-    arithmetic::AbstractArithmetic{AccumType, CoeffType2}
-) where {CoeffType <: Coeff, AccumType <: Coeff, CoeffType2}
+    arithmetic::AbstractArithmetic{AccumType}
+) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
     _, nlow = matrix_nrows_filled(matrix)
 
@@ -222,7 +222,7 @@ function linalg_reduce_matrix_lower_part_invariant_pivots!(
     resize!(matrix.some_coeffs, nlow)
 
     # Allocate the buffers
-    row = [AccumType(zero(basis.coeffs[1][1])) for _ in 1:ncols] # zeros(AccumType, ncols)
+    row = [AccumType(zero(basis.coeffs[1][1])) for _ in 1:ncols]
     new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
 
     @inbounds for i in 1:nlow
@@ -265,17 +265,16 @@ end
 function linalg_reduce_matrix_lower_part_all_zero!(
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
-    arithmetic::AbstractArithmetic{AccumType, CoeffType2}
-) where {CoeffType <: Coeff, AccumType <: Coeff, CoeffType2}
+    arithmetic::AbstractArithmetic{AccumType}
+) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
     _, nlow = matrix_nrows_filled(matrix)
 
     # Prepare the matrix
     pivots, row_idx_to_coeffs = linalg_prepare_matrix_pivots!(matrix)
-    resize!(matrix.some_coeffs, nlow)
 
     # Allocate the buffers
-    row = [AccumType(zero(basis.coeffs[1][1])) for _ in 1:ncols] # zeros(AccumType, ncols)
+    row = [AccumType(zero(basis.coeffs[1][1])) for _ in 1:ncols]
     new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
 
     @inbounds for i in 1:nlow
