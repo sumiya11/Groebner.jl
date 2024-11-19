@@ -31,7 +31,7 @@ end
     # Single extension
     K, a = Nemo.finite_field(3, 2, "a")
     R, (X, Y) = K["X", "Y"]
-    @test groebner([a*X - Y, X*Y - 1]) == [Y^2 + 2*a, X + (2*a + 1)*Y]
+    @test groebner([a * X - Y, X * Y - 1]) == [Y^2 + 2 * a, X + (2 * a + 1) * Y]
 
     # TODO: Tower of extensions
     # K, a = Nemo.finite_field(3, 2, "a")
@@ -48,12 +48,12 @@ end
     e2 = Nemo.root_of_unity(Q_bar, 5, 2)
     e3 = Nemo.root_of_unity(Q_bar, 5, 3)
     e4 = Nemo.root_of_unity(Q_bar, 5, 4)
-    @test groebner([e3*X - e2*Y]) == [X - e4*Y]
+    @test groebner([e3 * X - e2 * Y]) == [X - e4 * Y]
 
     # Cyclic extension
     K, a = Nemo.cyclotomic_field(5)
     R, (X, Y) = K["X", "Y"]
-    @test groebner([a*X + 1]) == [X - a^3 - a^2 - a - 1]
+    @test groebner([a * X + 1]) == [X - a^3 - a^2 - a - 1]
 end
 
 @testset "Nemo.jl, input-output" begin

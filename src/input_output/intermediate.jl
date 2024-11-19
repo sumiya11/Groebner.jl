@@ -7,7 +7,8 @@
 # an array of exponent vectors and an array of coefficients. Zero polynomial is
 # represented with two empty arrays.
 
-const IRexponent = UInt32
+const IR_exponent = UInt32
+const IR_coeff = Union{Number, CoeffGeneric}
 
 # Intermediate representation (ir) enforces a number assumtpions:
 # - Intermediate representation owns the memory.
@@ -28,15 +29,14 @@ mutable struct PolyRing{Ord <: AbstractMonomialOrdering, C <: Union{CoeffZp, Com
     PolyRing(nvars::Int, ord, ch) = PolyRing(nvars, ord, ch, iszero(ch) ? :qq : :zp)
 
     function PolyRing(nvars::Int, ord::Ord, ch::C, ground::Symbol) where {Ord, C}
+        !(ground in (:zp, :qq, :generic)) && throw(DomainError("Invalid ground field."))
+        !(nvars >= 0) && throw(DomainError("The number of variables must be non-negative."))
         new{Ord, C}(nvars, ord, ch, ground)
     end
 end
 
 Base.:(==)(r1::PolyRing, r2::PolyRing) =
-    r1.nvars == r2.nvars &&
-    r1.ord == r2.ord &&
-    r1.ch == r2.ch &&
-    r1.generic_coeffs == r2.generic_coeffs
+    r1.nvars == r2.nvars && r1.ord == r2.ord && r1.ch == r2.ch && r1.ground == r2.ground
 
 ir_is_valid_basic(batch) = throw(DomainError("Invalid IR, unknown types."))
 ir_is_valid_basic(ring, monoms, coeffs) = throw(DomainError("Invalid IR, unknown types."))
@@ -49,9 +49,9 @@ end
 
 function ir_is_valid_basic(
     ring::PolyRing,
-    monoms::Vector{Vector{Vector{T}}},
+    monoms::Vector{Vector{Vector{E}}},
     coeffs::Vector{Vector{C}}
-) where {T <: Integer, C <: Union{Number, CoeffGeneric}}
+) where {E <: Integer, C <: IR_coeff}
     !(length(monoms) == length(coeffs)) && throw(DomainError("Invalid IR."))
     isempty(monoms) && throw(DomainError("Invalid IR."))
     !(ring.nvars >= 0) && throw(DomainError("The number of variables must be non-negative."))
@@ -60,30 +60,29 @@ function ir_is_valid_basic(
         !(C <: Integer) && throw(DomainError("Coefficients must be integers."))
         (C <: BigInt) && throw(DomainError("Coefficients must fit in a machine register."))
         !(ring.ch <= typemax(C)) && throw(DomainError("Invalid IR."))
+        !Primes.isprime(ring.ch) && throw(DomainError("Ring characteristic must be prime"))
     elseif ring.ground == :qq
         !(C <: Rational || C <: Integer || C <: CoeffGeneric) &&
-            throw(DomainError("Coefficients must be integer or rationals."))
+            throw(DomainError("Coefficients must be integer or rational."))
     else
         !(C <: CoeffGeneric) && throw(DomainError("Coefficients must be CoeffGeneric."))
     end
     (ring.ord == InputOrdering()) && throw(DomainError("Invalid monomial ordering."))
     vars = ordering_variables(ring.ord)
-    if !isempty(vars)
-        if !(Set(vars) == Set(1:(ring.nvars)))
-            throw(
-                DomainError(
-                    "Invalid monomial ordering. Expected variables to be numbers from 1 to $(ring.nvars), got $(vars)"
-                )
+    if !isempty(vars) && !(Set(vars) == Set(1:(ring.nvars)))
+        throw(
+            DomainError(
+                "Invalid monomial ordering. Expected variables to be numbers from 1 to $(ring.nvars), but got: $(vars)"
             )
-        end
+        )
     end
 end
 
 function ir_is_valid(
     ring::PolyRing,
-    monoms::Vector{Vector{Vector{T}}},
+    monoms::Vector{Vector{Vector{I}}},
     coeffs::Vector{Vector{C}}
-) where {T <: Integer, C <: Union{Number, CoeffGeneric}}
+) where {I <: Integer, C <: IR_coeff}
     ir_is_valid_basic(ring, monoms, coeffs)
     for i in 1:length(monoms)
         !(length(monoms[i]) == length(coeffs[i])) && throw(DomainError("Invalid IR."))
@@ -101,9 +100,9 @@ end
 
 function ir_ensure_valid(
     ring::PolyRing,
-    monoms::Vector{Vector{Vector{M}}},
+    monoms::Vector{Vector{Vector{I}}},
     coeffs::Vector{Vector{C}}
-) where {M <: Integer, C <: Coeff}
+) where {I <: Integer, C <: Coeff}
     ir_is_valid_basic(ring, monoms, coeffs)
     # Copy input
     new_monoms, new_coeffs = empty(monoms), empty(coeffs)
@@ -288,16 +287,16 @@ function ir_convert_internal_to_ir(
     coeffs::Vector{Vector{C}},
     params
 ) where {M <: Monom, C <: Coeff}
-    monoms2 = Vector{Vector{Vector{IRexponent}}}(undef, length(monoms))
+    monoms2 = Vector{Vector{Vector{IR_exponent}}}(undef, length(monoms))
     if eltype(eltype(coeffs)) <: AbstractFloat
         coeffs2 = map(cc -> map(c -> UInt(c), cc), coeffs)
     else
         coeffs2 = coeffs
     end
     @inbounds for i in 1:length(monoms)
-        monoms2[i] = Vector{Vector{IRexponent}}(undef, length(monoms[i]))
+        monoms2[i] = Vector{Vector{IR_exponent}}(undef, length(monoms[i]))
         for j in 1:length(monoms[i])
-            monoms2[i][j] = Vector{IRexponent}(undef, ring.nvars)
+            monoms2[i][j] = Vector{IR_exponent}(undef, ring.nvars)
             monom_to_vector!(monoms2[i][j], monoms[i][j])
         end
     end

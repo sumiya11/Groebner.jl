@@ -49,25 +49,33 @@ function io_extract_ring(polynomials)
     end
     ch = AbstractAlgebra.characteristic(R)
     ground = iszero(ch) ? :qq : :zp
+    # Only characteristics < 2^64 are supported natively
     if (ch > typemax(UInt64))
         ground = :generic
     end
     if !iszero(ch)
-        if !isone(AbstractAlgebra.degree(K))
+        # Only prime fields are supported natively
+        if !(hasmethod(AbstractAlgebra.degree, (typeof(K),)))
+            ground = :generic
+        elseif !isone(AbstractAlgebra.degree(K))
             ground = :generic
         end
     else
-        # Detect that K is either AbstractAlgebra.QQ or Nemo.QQ
-        base = AbstractAlgebra.base_ring(K)
-        if !(hasmethod(AbstractAlgebra.base_ring, (typeof(base),)))
+        # Supported implementations of rationals are AbstractAlgebra.QQ or Nemo.QQ
+        if !(hasmethod(AbstractAlgebra.base_ring, (typeof(K),)))
             ground = :generic
-        elseif !(AbstractAlgebra.base_ring(base) == Union{})
-            ground = :generic
+        else
+            base = AbstractAlgebra.base_ring(K)
+            if !(hasmethod(AbstractAlgebra.base_ring, (typeof(base),)))
+                ground = :generic
+            elseif !(AbstractAlgebra.base_ring(base) == Union{})
+                ground = :generic
+            end
         end
     end
     if ground == :generic
         @warn "Groebner.jl does not have a native implementation for the given field: $K.\n" *
-              "Falling back to a generic implementation.\n" *
+              "Falling back to a generic implementation (may be slower).\n" *
               "If this is unexpected, please consider submitting a GitHub issue." maxlog = 1
     end
     nv = AbstractAlgebra.nvars(R)
@@ -79,8 +87,8 @@ function io_extract_ring(polynomials)
     end
     # type unstable:
     ordT = ordering_sym2typed(ord)
-    ch_ = ground == :zp ? UInt(ch) : UInt(0)
-    ring = PolyRing(nv, ordT, ch_, ground)
+    ch_uint = ground == :zp ? UInt(ch) : UInt(0)
+    ring = PolyRing(nv, ordT, ch_uint, ground)
     ring
 end
 

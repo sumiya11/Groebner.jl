@@ -105,7 +105,7 @@ function clean_data(results)
             )
             append!(results_master[j], times_master)
             append!(results_nightly[j], times_nightly)
-            results_problems[j] = join(split(problem_name_master, ","), ", ")
+            results_problems[j] = join(split(problem_name_master, ","), " ")
             results_types[j] = type
         end
     end
@@ -118,6 +118,7 @@ function compare()
     results_problems, results_types, results_master, results_nightly = clean_data(results)
     table = Matrix{Any}(undef, length(results_master), 4)
     fail = false
+    tolerance = 0.02
     for (i, (master, nightly)) in enumerate(zip(results_master, results_nightly))
         if results_types[i] == "time"
             master = 1e9 .* master
@@ -133,22 +134,22 @@ function compare()
                 0, "insignificant"
             elseif (1 + MAX_DEVIATION) * m1 < m2
                 fail = true
-                2, "slower❌"
+                2, "worse❌"
             elseif m1 > (1 + MAX_DEVIATION) * m2
-                1, "faster✅"
+                1, "better✅"
             else
-                0, "insignificant"
+                0, "don't care"
             end
         elseif results_types[i] == "allocs"
             label_master = mean(master)
             label_nightly = mean(nightly)
-            indicator = if label_master < label_nightly
+            indicator = if label_master < (1 - tolerance) * label_nightly
                 fail = true
                 2, "worse❌"
-            elseif label_master > label_nightly
+            elseif label_master > (1 + tolerance) * label_nightly
                 1, "better✅"
             else
-                0, "same"
+                0, "don't care"
             end
         else
             error("Beda!")
@@ -176,13 +177,13 @@ function post(fail, table)
         println(io, "No regressions detected✅")
     end
     table_header = ["Problem", "Master", "This commit", "Result"]
-    pretty_table(io, table, header=table_header)
+    pretty_table(io, table, header=table_header, alignment=[:l, :r, :r, :r])
     comment_str = String(take!(io))
     println(comment_str)
 end
 
 function main()
-    runbench()
+    # runbench()
     fail, table = compare()
     post(fail, table)
     versioninfo(verbose=true)

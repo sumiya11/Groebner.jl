@@ -62,6 +62,11 @@ end
         [[1]]
     )
     @test_throws DomainError Groebner.groebner(
+        Groebner.PolyRing(2, Groebner.DegRevLex(), 33),
+        [[[0, 0]]],
+        [[1]]
+    )
+    @test_throws DomainError Groebner.groebner(
         Groebner.PolyRing(2, Groebner.DegRevLex(3, 2, 1), 0),
         [[[0, 0]]],
         [[1]]
@@ -430,6 +435,10 @@ end
 
 @testset "monomial overflow" begin
     R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"], internal_ordering=:degrevlex)
+
+    @test groebner([x^(2^31)]) == [x^2^31]
+    @test_throws Groebner.MonomialDegreeOverflow groebner([x^(2^33)])
+
     for monoms in [:auto, :dense, :packed]
         gb_1 = [x * y^100 + y, x^100 * y + y^100, y^199 + 2147483646 * x^99 * y]
         gb_2 = [x * y^200 + y, x^200 * y + y^200, y^399 + 2147483646 * x^199 * y]
