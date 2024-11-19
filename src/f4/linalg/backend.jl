@@ -736,8 +736,8 @@ function linalg_row_make_monic!(
     pinv
 end
 
-# Linear combination of dense vector and sparse vector modulo a prime.
-# The most generic version.
+# Linear combination of dense vector and sparse vector
+# with explicit reduction modulo a prime.
 function linalg_vector_addmul_sparsedense_mod_p!(
     row::Vector{A},
     indices::Vector{I},
@@ -760,30 +760,6 @@ function linalg_vector_addmul_sparsedense_mod_p!(
 end
 
 # Linear combination of dense vector and sparse vector.
-# The most generic version.
-function linalg_vector_addmul_sparsedense!(
-    row::Vector{A},
-    indices::Vector{I},
-    coeffs::Vector{T},
-    arithmetic::AbstractArithmeticZp
-) where {I, A <: Union{CoeffZp, CompositeCoeffZp}, T <: Union{CoeffZp, CompositeCoeffZp}}
-    @invariant isone(coeffs[1])
-    @invariant length(indices) == length(coeffs)
-    @invariant !isempty(indices)
-
-    @inbounds mul = divisor(arithmetic) - row[indices[1]]
-    @inbounds for j in 1:length(indices)
-        idx = indices[j]
-        # if A === T, then the type cast is a no-op
-        a = row[idx] + A(mul) * A(coeffs[j])
-        row[idx] = a
-    end
-
-    nothing
-end
-
-# Linear combination of dense vector and sparse vector.
-# Specialization for SignedArithmeticZp.
 function linalg_vector_addmul_sparsedense!(
     row::Vector{A},
     indices::Vector{I},
@@ -794,8 +770,8 @@ function linalg_vector_addmul_sparsedense!(
     @invariant length(indices) == length(coeffs)
     @invariant !isempty(indices)
 
-    # NOTE: mul is guaranteed to be < typemax(T)
     p2 = arithmetic.p2
+    @invariant row[indices[1]] < typemax(T)
     @inbounds mul = row[indices[1]] % T
 
     @fastmath @inbounds for j in 1:length(indices)
@@ -809,7 +785,6 @@ function linalg_vector_addmul_sparsedense!(
 end
 
 # Linear combination of dense vector and sparse vector.
-# Specialization for SignedCompositeArithmeticZp.
 function linalg_vector_addmul_sparsedense!(
     row::Vector{CompositeNumber{N, A}},
     indices::Vector{I},
@@ -820,8 +795,8 @@ function linalg_vector_addmul_sparsedense!(
     @invariant length(indices) == length(coeffs)
     @invariant !isempty(indices)
 
-    # NOTE: mul is guaranteed to be < typemax(T)
     p2 = arithmetic.p2s
+    @invariant row[indices[1]] < typemax(T)
     @inbounds mul = row[indices[1]].data .% T
 
     @fastmath @inbounds for j in 1:length(indices)
@@ -834,14 +809,13 @@ function linalg_vector_addmul_sparsedense!(
     nothing
 end
 
-# Linear combination of dense vector and sparse vector.
-# Specialization for AbstractArithmeticQQ.
+# Generic fallback.
 function linalg_vector_addmul_sparsedense!(
-    row::Vector{T},
+    row::Vector{A},
     indices::Vector{I},
     coeffs::Vector{T},
-    arithmetic::Union{AbstractArithmeticQQ{T}, ArithmeticGeneric}
-) where {I, T <: Union{CoeffQQ, CoeffGeneric}}
+    arithmetic::AbstractArithmetic
+) where {I, A <: Coeff, T <: Coeff}
     @invariant isone(coeffs[1])
     @invariant length(indices) == length(coeffs)
     @invariant !isempty(indices)
@@ -849,7 +823,7 @@ function linalg_vector_addmul_sparsedense!(
     @inbounds mul = -row[indices[1]]
     @inbounds for j in 1:length(indices)
         idx = indices[j]
-        row[idx] = row[idx] + mul * coeffs[j]
+        row[idx] = row[idx] + A(mul) * coeffs[j]
     end
 
     nothing
