@@ -764,6 +764,28 @@ function linalg_vector_addmul_sparsedense!(
     row::Vector{A},
     indices::Vector{I},
     coeffs::Vector{T},
+    arithmetic::AbstractArithmeticZp
+) where {I, A <: Union{CoeffZp, CompositeCoeffZp}, T <: Union{CoeffZp, CompositeCoeffZp}}
+    @invariant isone(coeffs[1])
+    @invariant length(indices) == length(coeffs)
+    @invariant !isempty(indices)
+
+    @inbounds mul = divisor(arithmetic) - row[indices[1]]
+    @inbounds for j in 1:length(indices)
+        idx = indices[j]
+        # if A === T, then the type cast is a no-op
+        a = row[idx] + A(mul) * A(coeffs[j])
+        row[idx] = a
+    end
+
+    nothing
+end
+
+# Linear combination of dense vector and sparse vector.
+function linalg_vector_addmul_sparsedense!(
+    row::Vector{A},
+    indices::Vector{I},
+    coeffs::Vector{T},
     arithmetic::SignedArithmeticZp{A, T}
 ) where {I, A <: CoeffZp, T <: CoeffZp}
     @invariant isone(coeffs[1])
