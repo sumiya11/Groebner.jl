@@ -75,7 +75,7 @@ function io_extract_ring(polynomials)
     end
     if ground == :generic
         @warn "Groebner.jl does not have a native implementation for the given field: $K.\n" *
-              "Falling back to a generic implementation (may be slower).\n" *
+              "Falling back to a generic implementation (may be slow).\n" *
               "If this is unexpected, please consider submitting a GitHub issue." maxlog = 1
     end
     nv = AbstractAlgebra.nvars(R)

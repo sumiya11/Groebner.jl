@@ -716,11 +716,12 @@ function linalg_row_make_monic!(
     pinv
 end
 
+# Generic fallback
 function linalg_row_make_monic!(
     row::Vector{T},
-    arithmetic::Union{AbstractArithmeticQQ, ArithmeticGeneric},
+    arithmetic::AbstractArithmetic,
     first_nnz_index::Int=1
-) where {T <: Union{CoeffQQ, CoeffGeneric}}
+) where {T <: Coeff}
     @invariant !iszero(row[first_nnz_index])
 
     @inbounds lead = row[first_nnz_index]
@@ -854,8 +855,8 @@ function linalg_vector_addmul_sparsedense!(
     nothing
 end
 
-# Load the contiguous coefficients from `coeffs` into dense `row` at `indices`.
-# Zero the entries of `row` before that.
+# Loads the given sparse row into the given dense row.
+# Zero out the entries of the dense row before that.
 function linalg_load_sparse_row!(
     row::Vector{A},
     indices::Vector{I},
@@ -863,8 +864,9 @@ function linalg_load_sparse_row!(
 ) where {I, A <: Union{CoeffZp, CompositeCoeffZp}, T <: Union{CoeffZp, CompositeCoeffZp}}
     @invariant length(indices) == length(coeffs)
 
+    @inbounds z = zero(row[1])
     @inbounds for i in 1:length(row)
-        row[i] = zero(A)
+        row[i] = z
     end
 
     @inbounds for j in 1:length(indices)
@@ -874,78 +876,54 @@ function linalg_load_sparse_row!(
     nothing
 end
 
-# Load the contiguous coefficients from `coeffs` into dense `row` at `indices`.
-# Zero the entries of `row` before that.
-function linalg_load_sparse_row!(
-    row::Vector{T},
-    indices::Vector{I},
-    coeffs::Vector{T}
-) where {I, T <: Union{CoeffQQ, CoeffGeneric}}
-    @invariant length(indices) == length(coeffs)
-
-    @inbounds for i in 1:length(row)
-        row[i] = zero(row[1])
-    end
-    @inbounds for j in 1:length(indices)
-        row[indices[j]] = coeffs[j]
-    end
-
-    nothing
-end
-
-# Traverses the dense `row` at positions `from..to` and extracts all nonzero
-# entries to the given sparse row. Returns the number of extracted nonzero
-# elements.
+# Extracts nonzeroes from the given dense row into the given sparse row.
+# Returns the number of extracted nonzeroes.
 function linalg_extract_sparse_row!(
     indices::Vector{I},
     coeffs::Vector{T},
     row::Vector{A},
-    from::J,
-    to::J
-) where {I, J, T <: Coeff, A <: Coeff}
-    # NOTE: assumes that the sparse row has the necessary capacity allocated
+    from::Int,
+    to::Int
+) where {I, T <: Coeff, A <: Coeff}
+    # NOTE: assumes that the sparse row has the necessary capacity
     @invariant length(indices) == length(coeffs)
     @invariant 1 <= from <= to <= length(row)
 
-    z = zero(A)
-    j = 1
+    nnz = 1
     @inbounds for i in from:to
-        if row[i] != z
-            indices[j] = i
-            # row[i] is expected to be less than typemax(T)
-            coeffs[j] = row[i] % T
-            j += 1
+        if !iszero(row[i])
+            indices[nnz] = i
+            @invariant row[i] <= typemax(T)
+            coeffs[nnz] = row[i] % T
+            nnz += 1
         end
     end
 
-    @invariant j - 1 <= length(coeffs)
-    j - 1
+    @invariant nnz - 1 <= length(coeffs)
+    nnz - 1
 end
 
-# Traverses the dense `row` at positions `from..to` and extracts all nonzero
-# entries to the given sparse row. Returns the number of extracted nonzero
-# elements.
-# Specialization with eltype(coeffs) == eltype(row)
+# Generic fallback.
 function linalg_extract_sparse_row!(
     indices::Vector{I},
     coeffs::Vector{T},
     row::Vector{T},
-    from::J,
-    to::J
-) where {I, J, T <: Coeff}
-    # NOTE: assumes that the sparse row has the necessary capacity allocated
+    from::Int,
+    to::Int
+) where {I, T <: Coeff}
+    # NOTE: assumes that the sparse row has the necessary capacity
     @invariant length(indices) == length(coeffs)
     @invariant 1 <= from <= to <= length(row)
 
-    j = 1
+    nnz = 1
     @inbounds for i in from:to
         if !iszero(row[i])
-            indices[j] = i
-            coeffs[j] = row[i]
-            j += 1
+            indices[nnz] = i
+            coeffs[nnz] = row[i]
+            nnz += 1
         end
     end
 
-    @invariant j - 1 <= length(coeffs)
-    j - 1
+    @invariant nnz - 1 <= length(coeffs)
+    nnz - 1
 end
