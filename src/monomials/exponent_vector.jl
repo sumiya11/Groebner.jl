@@ -47,14 +47,6 @@ monom_entrytype(::Type{ExponentVector{T}}) where {T} = T
 
 monom_copy(pv::ExponentVector) = Base.copy(pv)
 
-function monom_copy!(dst::ExponentVector, src::ExponentVector)
-    @invariant length(dst) == length(src)
-    @inbounds for i in 1:length(src)
-        dst[i] = src[i]
-    end
-    dst
-end
-
 monom_construct_const(::Type{ExponentVector{T}}, n::Integer) where {T} = zeros(T, n + 1)
 
 function monom_construct_from_vector(::Type{ExponentVector{T}}, ev::Vector{U}) where {T, U}

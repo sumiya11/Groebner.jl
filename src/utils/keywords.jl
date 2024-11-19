@@ -23,7 +23,8 @@ const _supported_kw_args = (
         threaded     = :auto,
         homogenize   = :auto,
         batched      = true,
-        changematrix = false
+        changematrix = false,
+        _generic     = false
     ),
     normalform = (
         check       = false,
@@ -96,9 +97,7 @@ mutable struct KeywordArguments
     check::Bool
     homogenize::Symbol
     changematrix::Bool
-
-    KeywordArguments(function_id::Symbol; passthrough...) =
-        KeywordArguments(function_id, passthrough)
+    _generic::Bool
 
     function KeywordArguments(function_id::Symbol, kws)
         @assert haskey(_supported_kw_args, function_id)
@@ -169,6 +168,8 @@ mutable struct KeywordArguments
 
         changematrix = get(kws, :changematrix, get(default_kw_args, :changematrix, false))
 
+        _generic = get(kws, :_generic, get(default_kw_args, :_generic, false))
+
         new(
             function_id,
             reduced,
@@ -184,7 +185,8 @@ mutable struct KeywordArguments
             batched,
             check,
             homogenize,
-            changematrix
+            changematrix,
+            _generic
         )
     end
 end

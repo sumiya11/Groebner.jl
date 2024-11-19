@@ -290,8 +290,6 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         representation.using_wide_type_for_coeffs
     )
 
-    ground = ring.ground
-
     reduced = kwargs.reduced
 
     threaded = kwargs.threaded
@@ -307,10 +305,10 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         threaded = :no
     end
 
-    if ground === :zp
+    if ring.ground === :zp
         threaded_f4 = threaded
         threaded_multimodular = :no
-    elseif ground == :qq
+    elseif ring.ground == :qq
         threaded_f4 = :no
         threaded_multimodular = threaded
     else
@@ -338,7 +336,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         if !(target_ord isa DegRevLex)
             throw(DomainError("Only DegRevLex is supported with changematrix = true."))
         end
-        if (ground == :generic)
+        if (ring.ground == :generic)
             throw(DomainError("Generic fields are not supported with changematrix = true."))
         end
     end

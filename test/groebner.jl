@@ -24,6 +24,8 @@ using Test, TestSetExtensions
 
     fs = [x1 * x2^2 + x1 * x2, x1^2 * x2^2 + 2 * x1 * x2, 2 * x1^2 * x2^2 + x1 * x2]
     @test Groebner.groebner(fs) == [x1 * x2]
+
+    @test_throws AssertionError Groebner.groebner([x1, x2], this_keyword_does_not_exist=":^(")
 end
 
 get_data(sys, T) =
