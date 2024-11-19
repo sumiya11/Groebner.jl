@@ -861,7 +861,7 @@ function linalg_load_sparse_row!(
     row::Vector{A},
     indices::Vector{I},
     coeffs::Vector{T}
-) where {I, A <: Union{CoeffZp, CompositeCoeffZp}, T <: Union{CoeffZp, CompositeCoeffZp}}
+) where {I, A <: Coeff, T <: Coeff}
     @invariant length(indices) == length(coeffs)
 
     @inbounds z = zero(row[1])
