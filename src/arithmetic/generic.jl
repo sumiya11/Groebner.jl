@@ -24,6 +24,8 @@ function select_arithmetic(
     ArithmeticQQ()
 end
 
+# Arithmetic with generic coefficients.
+
 struct ArithmeticGeneric{CoeffType, AccumType} <: AbstractArithmetic{CoeffType, AccumType} end
 
 function select_arithmetic(::Type{CoeffGeneric}, _, _, _)

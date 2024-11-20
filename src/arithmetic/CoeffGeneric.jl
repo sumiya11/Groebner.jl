@@ -4,8 +4,8 @@ struct CoeffGeneric{T}
     data::T
 end
 
-generic_lift(x) = x
-generic_lift(x::CoeffGeneric) = x.data
+generic_coeff_data(x) = x
+generic_coeff_data(x::CoeffGeneric) = x.data
 
 CoeffGeneric(x::CoeffGeneric{T}) where {T} = x
 CoeffGeneric{T}(x::CoeffGeneric{T}) where {T} = x

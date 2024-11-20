@@ -185,7 +185,7 @@ end
         @test gbexps == get_data(gb, identity)[1]
         @test isgroebner(ring, gbexps, gbcfs)
         @test all(isempty, normalform(ring, gbexps, gbcfs, ring, exps, cfs)[1])
-        @test map(c -> Groebner.generic_lift.(c), gbcfs) == get_data(gb, identity)[2]
+        @test map(c -> Groebner.generic_coeff_data.(c), gbcfs) == get_data(gb, identity)[2]
     end
 
     # GB over QQ(a,b)

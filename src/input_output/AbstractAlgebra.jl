@@ -217,7 +217,7 @@ function _io_convert_ir_to_polynomials(
         end
         cfs = zeros(ground, Int(sum(gbexps[i][1]) + 1))
         for (idx, j) in enumerate(gbexps[i])
-            cfs[sum(j) + 1] = ground(generic_lift(gbcoeffs[i][idx]))
+            cfs[sum(j) + 1] = ground(generic_coeff_data(gbcoeffs[i][idx]))
         end
         exported[i] = origring(cfs)
     end
@@ -236,7 +236,7 @@ function _io_convert_ir_to_polynomials(
     ground   = AbstractAlgebra.base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     @inbounds for i in 1:length(gbexps)
-        cfs = map(ground ∘ generic_lift, gbcoeffs[i])
+        cfs = map(ground ∘ generic_coeff_data, gbcoeffs[i])
         exps = Vector{Vector{Int}}(undef, length(gbcoeffs[i]))
         for jt in 1:length(gbcoeffs[i])
             exps[jt] = gbexps[i][jt]
@@ -308,7 +308,7 @@ function _io_convert_ir_to_polynomials(
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     tmp      = Vector{aa_exponent_type}(undef, nv)
     @inbounds for i in 1:length(gbexps)
-        cfs  = map(ground ∘ generic_lift, gbcoeffs[i])
+        cfs  = map(ground ∘ generic_coeff_data, gbcoeffs[i])
         exps = Matrix{aa_exponent_type}(undef, nv + 1, length(gbcoeffs[i]))
         for jt in 1:length(gbcoeffs[i])
             for k in 1:length(tmp)
@@ -334,7 +334,7 @@ function _io_convert_ir_to_polynomials(
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     tmp      = Vector{aa_exponent_type}(undef, nv)
     @inbounds for i in 1:length(gbexps)
-        cfs  = map(ground ∘ generic_lift, gbcoeffs[i])
+        cfs  = map(ground ∘ generic_coeff_data, gbcoeffs[i])
         exps = Matrix{aa_exponent_type}(undef, nv, length(gbcoeffs[i]))
         for jt in 1:length(gbcoeffs[i])
             exps[end:-1:1, jt] .= gbexps[i][jt]
@@ -357,7 +357,7 @@ function _io_convert_ir_to_polynomials(
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     tmp      = Vector{aa_exponent_type}(undef, nv)
     @inbounds for i in 1:length(gbexps)
-        cfs  = map(ground ∘ generic_lift, gbcoeffs[i])
+        cfs  = map(ground ∘ generic_coeff_data, gbcoeffs[i])
         exps = Matrix{aa_exponent_type}(undef, nv + 1, length(gbcoeffs[i]))
         for jt in 1:length(gbcoeffs[i])
             # monom_to_vector!(tmp, gbexps[i][jt])
@@ -382,7 +382,7 @@ function _io_convert_ir_to_polynomials(
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     tmp      = Vector{aa_exponent_type}(undef, nv)
     @inbounds for i in 1:length(gbexps)
-        cfs  = map(ground ∘ generic_lift, gbcoeffs[i])
+        cfs  = map(ground ∘ generic_coeff_data, gbcoeffs[i])
         exps = Vector{Vector{Int}}(undef, length(gbcoeffs[i]))
         for jt in 1:length(gbcoeffs[i])
             exps[jt] = gbexps[i][jt]

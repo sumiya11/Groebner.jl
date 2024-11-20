@@ -100,7 +100,7 @@ include("types.jl")
 
 # Fast arithmetic modulo a prime
 include("arithmetic/Zp.jl")
-include("arithmetic/QQ.jl")
+include("arithmetic/generic.jl")
 
 # Intermediate representation
 include("input_output/intermediate.jl")
