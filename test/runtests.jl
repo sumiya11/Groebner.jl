@@ -1,4 +1,4 @@
-using Test, TestSetExtensions
+using Test
 using InteractiveUtils, Random
 
 using AbstractAlgebra
@@ -34,34 +34,36 @@ end
 @test isempty(Test.detect_ambiguities(Groebner))
 
 @time @testset "All tests" verbose = true begin
-    @time @includetests ["arithmetic"]
+    @time include("arithmetic.jl")
 
     # Different implementations of a monomial 
-    @time @includetests ["monoms/exponentvector", "monoms/packedtuples"]
-    @time @includetests ["monoms/monom_arithmetic", "monoms/monom_orders"]
+    @time include("monoms/exponentvector.jl")
+    @time include("monoms/packedtuples.jl")
+    @time include("monoms/monom_arithmetic.jl")
+    @time include("monoms/monom_orders.jl")
 
-    @time @includetests ["groebner"]
+    @time include("groebner.jl")
 
-    @time @includetests ["learn_and_apply"]
+    @time include("learn_and_apply.jl")
 
-    @time @includetests ["isgroebner"]
+    @time include("isgroebner.jl")
 
-    @time @includetests ["normalform"]
+    @time include("normalform.jl")
 
     # Test for different frontends: 
     # - AbstractAlgebra.jl
     # - Nemo.jl
     # - DynamicPolynomials.jl
-    @time @includetests ["input_output/AbstractAlgebra"]
+    @time include("input_output/AbstractAlgebra.jl")
     if try_import(:DynamicPolynomials)
-        @time @includetests ["input_output/GroebnerDynamicPolynomialsExt"]
+        @time include("input_output/GroebnerDynamicPolynomialsExt.jl")
     end
     if try_import(:Nemo)
-        @time @includetests ["input_output/Nemo"]
+        @time include("input_output/Nemo.jl")
     end
 
-    @time @includetests ["output_inferred"]
+    @time include("output_inferred.jl")
 
     # test for regressions
-    @time @includetests ["regressions"]
+    @time include("regressions.jl")
 end

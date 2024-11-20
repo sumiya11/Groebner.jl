@@ -1,7 +1,7 @@
 using AbstractAlgebra
 using Base.Threads
 using Combinatorics, Primes, Random
-using Test, TestSetExtensions
+using Test
 
 @testset "groebner basic" begin
     R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], internal_ordering=:degrevlex)
