@@ -56,9 +56,11 @@ end
     # - DynamicPolynomials.jl
     @time include("input_output/AbstractAlgebra.jl")
     if try_import(:DynamicPolynomials)
+        @info "Testing frontend: DynamicPolynomials.jl"
         @time include("input_output/GroebnerDynamicPolynomialsExt.jl")
     end
     if try_import(:Nemo)
+        @info "Testing frontend: Nemo.jl"
         @time include("input_output/Nemo.jl")
     end
 
