@@ -215,6 +215,11 @@ end
     end
 end
 
+@testset "learn & apply, generic" begin
+    R, (x, y) = AbstractAlgebra.GF(nextprime(big(2)^100))["x", "y"]
+    @test_throws DomainError groebner_learn([x, y])
+end
+
 @testset "learn & apply, orderings" begin
     K = GF(2^31 - 1)
     R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:lex)

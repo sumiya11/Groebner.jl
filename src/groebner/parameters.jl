@@ -341,6 +341,12 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         end
     end
 
+    if kwargs.function_id == :groebner_learn || kwargs.function_id == :groebner_apply!
+        if ring.ground == :generic
+            throw(DomainError("Generic fields are not supported with learn & apply."))
+        end
+    end
+
     AlgorithmParameters(
         target_ord,
         original_ord,
