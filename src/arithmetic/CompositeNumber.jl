@@ -10,10 +10,6 @@ function CompositeNumber{N, T}(a::CompositeNumber{N, U}) where {N, T, U}
     CompositeNumber{N, T}(a.data .% T)
 end
 
-function CompositeNumber{N, FP}(a::CompositeNumber{N, U}) where {N, FP <: AbstractFloat, U}
-    CompositeNumber{N, FP}(a.data)
-end
-
 Base.convert(::Type{CompositeNumber{N, T}}, a::CompositeNumber{N, U}) where {N, T, U} =
     CompositeNumber{N, T}(map(x -> convert(T, x), a.data))
 
