@@ -1015,6 +1015,7 @@ end
 
         ans = [x[div(n, 2) - i + 2] - cf(i, n) for i in 1:(div(n, 2) + 1)]
 
+        @test Groebner.groebner(f, ordering=Groebner.DegRevLex()) == ans
         @test Groebner.isgroebner(gb)
         @test all(iszero, Groebner.normalform(gb, f))
         @test gb == ans
@@ -1022,9 +1023,11 @@ end
 
     # up to 63
     test_n_variables(8)
+    test_n_variables(13)
     test_n_variables(16)
+    test_n_variables(20)
     test_n_variables(32)
-    for n in 2:5:63
+    for n in 32:8:63
         test_n_variables(n)
     end
 

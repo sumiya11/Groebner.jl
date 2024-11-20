@@ -43,6 +43,9 @@ ir_is_valid_basic(ring, monoms, coeffs) = throw(DomainError("Invalid IR, unknown
 
 function ir_is_valid_basic(batch::NTuple{N, T}) where {N, T}
     for el in batch
+        length(el) != 3 && throw(DomainError("Invalid IR."))
+    end
+    for el in batch
         ir_is_valid_basic(el...)
     end
 end

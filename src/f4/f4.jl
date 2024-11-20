@@ -167,6 +167,9 @@ function f4_autoreduce!(
         basis.divmasks[k] = ht.divmasks[basis.monoms[basis.nonredundant_indices[k]][1]]
         i += 1
     end
+    if basis.n_nonredundant != k
+        @warn "!!" basis.n_nonredundant k
+    end
     basis.n_nonredundant = k
 end
 

@@ -564,22 +564,26 @@ end
     ring1 = Groebner.PolyRing(2, Groebner.DegLex(), 7)
     ring2 = Groebner.PolyRing(2, Groebner.DegLex(), 11)
     ring3 = Groebner.PolyRing(2, Groebner.DegLex(), 13)
-    ring4 = Groebner.PolyRing(2, Groebner.Lex(1) * Groebner.Lex(2), 17)
+    ring4 = Groebner.PolyRing(2, Groebner.DegLex(), 17)
     trace, (gb0...) = Groebner.groebner_learn(ring0, [[[0, 0], [1, 1]]], [[1, -1]])
     @test gb0 == ([[[1, 1], [0, 0]]], [[1, 4]])
-    flag1, gb1 = Groebner.groebner_apply!(trace, ring1, [[[0, 0], [1, 1]]], [[1, -1]])
-    flag2, gb2 = Groebner.groebner_apply!(trace, ring2, [[[1, 1], [0, 0]]], [[-1, 1]])
-    flag3, gb3 = Groebner.groebner_apply!(trace, ring3, [[[0, 0], [0, 1], [1, 1]]], [[1, 0, -1]])
-    flag4, gb4 = Groebner.groebner_apply!(trace, ring4, [[[0, 0], [1, 1]]], [[1, -1]])
-    @test flag1 && flag2 && flag3 && flag4
+    flag, (gb1, gb2, gb3, gb4) = Groebner.groebner_apply!(
+        trace,
+        (
+            (ring1, [[[0, 0], [1, 1]]], [[1, -1]]),
+            (ring2, [[[1, 1], [0, 0]]], [[-1, 1]]),
+            (ring3, [[[0, 0], [0, 1], [1, 1]]], [[1, 0, -1]]),
+            (ring4, [[[0, 0], [1, 1]]], [[1, -1]])
+        )
+    )
+    @test flag
     @test gb1 == ([[1, 6]])
     @test gb2 == ([[1, 10]])
     @test gb3 == ([[1, 12]])
     @test gb4 == ([[1, 16]])
 
-    flag1, gb1 = Groebner.groebner_apply!(trace, ring1, [[[0, 0]]], [[1]])
-    flag2, gb2 = Groebner.groebner_apply!(trace, ring2, [[[1, 1], [0, 0]]], [[-1, 0]])
-    flag3, gb3 = Groebner.groebner_apply!(trace, ring3, [[[0, 0], [0, 1], [1, 1]]], [[1, 0, -1]])
-    flag4, (gb4...) = Groebner.groebner_apply!(trace, ring4, [[[0, 0], [1, 1]]], [[1, -1]])
-    @test !flag1 && !flag2 && flag3 && flag4
+    @test_throws AssertionError Groebner.groebner_apply!(
+        trace,
+        ((ring1, [[[0, 0]]], [[1]]), (ring2, [[[1, 1], [0, 0]]], [[-1, 1]]))
+    )
 end
