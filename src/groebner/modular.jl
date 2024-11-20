@@ -174,7 +174,7 @@ function modular_reduce_mod_p!(
             coeffs_ff[i][j] = CoeffModular(buf)
         end
     end
-    ring_ff = PolyRing(ring.nvars, ring.ord, UInt(prime))
+    ring_ff = PolyRing(ring.nvars, ring.ord, UInt(prime), :zp)
     ring_ff, coeffs_ff
 end
 
@@ -217,7 +217,7 @@ function modular_reduce_mod_p_in_batch!(
             coeffs_ff_xn[i][j] = CompositeNumber{N, T}(data)
         end
     end
-    ring_ff_4x = PolyRing(ring.nvars, ring.ord, CompositeNumber{N, T}(prime_xn))
+    ring_ff_4x = PolyRing(ring.nvars, ring.ord, CompositeNumber{N, T}(prime_xn), :zp)
     basis_ff_4x = basis_deep_copy_with_new_coeffs(basis, coeffs_ff_xn)
 
     ring_ff_4x, basis_ff_4x
@@ -403,7 +403,7 @@ function modular_lift_certify_check!(
     params::AlgorithmParameters
 )
     gb_qq = basis_deep_copy_with_new_coeffs(gb_ff, state.gb_coeffs_qq)
-    ring_qq = PolyRing(ring.nvars, ring.ord, 0)
+    ring_qq = PolyRing(ring.nvars, ring.ord, 0, :qq)
     input_qq = basis_deepcopy(input_qq)
     # Check that some polynomial is not reduced to zero
     f4_normalform!(ring_qq, gb_qq, input_qq, hashtable, params.arithmetic)

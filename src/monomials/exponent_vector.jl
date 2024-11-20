@@ -20,7 +20,7 @@ struct MonomialDegreeOverflow <: Exception
     msg::String
 end
 
-Base.showerror(io::IO, e::MonomialDegreeOverflow) = print(io, e.msg)
+Base.showerror(io::IO, e::MonomialDegreeOverflow) = print(io, typeof(e), ": ", e.msg)
 
 @noinline __throw_monom_overflow_error(c, B) =
     throw(MonomialDegreeOverflow("Overflow may happen with the entry $c of type $B."))
@@ -47,14 +47,6 @@ monom_entrytype(::Type{ExponentVector{T}}) where {T} = T
 
 monom_copy(pv::ExponentVector) = Base.copy(pv)
 
-function monom_copy!(dst::ExponentVector, src::ExponentVector)
-    @invariant length(dst) == length(src)
-    @inbounds for i in 1:length(src)
-        dst[i] = src[i]
-    end
-    dst
-end
-
 monom_construct_const(::Type{ExponentVector{T}}, n::Integer) where {T} = zeros(T, n + 1)
 
 function monom_construct_from_vector(::Type{ExponentVector{T}}, ev::Vector{U}) where {T, U}
@@ -72,6 +64,11 @@ end
 
 function monom_to_vector!(tmp::Vector{M}, pv::ExponentVector{T}) where {M, T}
     @invariant length(tmp) == length(pv) - 1
+    if promote_type(M, T) !== M
+        if !(all(i -> pv[i] < typemax(M), 2:length(pv)))
+            __throw_monom_overflow_error(-1, M)
+        end
+    end
     @inbounds tmp[1:end] = pv[2:end]
     tmp
 end
@@ -88,7 +85,7 @@ function monom_hash(x::ExponentVector{T}, b::Vector{MH}) where {T, MH}
     @invariant length(x) == length(b)
     h = zero(MH)
     @inbounds for i in 1:length(x)
-        h += MH(x[i]) * b[i]
+        h += (x[i] % MH) * b[i]
     end
     mod(h, MonomHash)
 end

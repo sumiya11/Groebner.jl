@@ -104,7 +104,7 @@ function trace_deepcopy(
     Trace(
         trace.stopwatch,
         trace.empty,
-        PolyRing(trace.ring.nvars, trace.ring.ord, trace.ring.ch),
+        PolyRing(trace.ring.nvars, trace.ring.ord, trace.ring.ch, trace.ring.ground),
         deepcopy(trace.original_ord),
         basis_deepcopy(trace.input_basis),
         basis_deepcopy(trace.buf_basis),
@@ -179,7 +179,7 @@ function trace_copy(
 
     new_representation =
         PolynomialRepresentation(trace.representation.monomtype, C2, using_wide_type_for_coeffs)
-    new_ring = PolyRing(trace.ring.nvars, trace.ring.ord, zero(C2))
+    new_ring = PolyRing(trace.ring.nvars, trace.ring.ord, zero(C2), trace.ring.ground)
 
     Trace(
         trace.stopwatch,
@@ -229,16 +229,16 @@ mutable struct WrappedTrace
     # For each type of coefficients, we maintain a separate tracer object
     recorded_traces::Dict{Any, Any}
 
-    sys_support::Vector{Vector{Vector{IRexponent}}}
-    gb_support::Vector{Vector{Vector{IRexponent}}}
+    sys_support::Vector{Vector{Vector{IR_exponent}}}
+    gb_support::Vector{Vector{Vector{IR_exponent}}}
 
     function WrappedTrace(
         trace::Trace{C1, C2, M, Ord1, Ord2}
     ) where {C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
         new(
             Dict{Any, Any}((C1, 42) => trace),
-            Vector{Vector{Vector{IRexponent}}}(),
-            Vector{Vector{Vector{IRexponent}}}()
+            Vector{Vector{Vector{IR_exponent}}}(),
+            Vector{Vector{Vector{IR_exponent}}}()
         )
     end
 end
@@ -294,8 +294,12 @@ function get_trace!(wrapped_trace::WrappedTrace, ring::PolyRing, params::Algorit
         deepcopy=false
     )
     new_trace.ring.ord != ring.ord && throw(DomainError("ordering invalid in trace"))
-    new_trace.ring =
-        PolyRing(ring.nvars, ring.ord, convert(params.representation.coefftype, ring.ch))
+    new_trace.ring = PolyRing(
+        ring.nvars,
+        ring.ord,
+        convert(params.representation.coefftype, ring.ch),
+        ring.ground
+    )
     wrapped_trace.recorded_traces[(params.representation.coefftype, 1)] = new_trace
 
     # the resulting trace may be in a invalid state, and needs to be filled with

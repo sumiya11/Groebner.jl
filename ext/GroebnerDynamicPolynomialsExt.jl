@@ -80,7 +80,7 @@ function io_extract_ring(orig_polys::Vector{<:AbstractPolynomialLike{T}}) where 
     nv = MultivariatePolynomials.nvariables(orig_polys)
     ord = dp_ord_to_symbol(MultivariatePolynomials.ordering(orig_polys[1]))
     ord_typed = dp_ordering_sym2typed(ord)
-    Groebner.PolyRing{typeof(ord_typed), UInt}(nv, ord_typed, UInt(0))
+    Groebner.PolyRing(nv, ord_typed, UInt(0))
 end
 
 function io_extract_coeffs(ring, orig_polys)

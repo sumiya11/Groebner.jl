@@ -172,7 +172,7 @@ function basis_well_formed(ring::PolyRing, basis::Basis, hashtable::MonomialHash
         ) && error("Bad polynomial")
         for j in 1:length(basis.coeffs[i])
             iszero(basis.coeffs[i][j]) && error("Coefficient is zero")
-            (ring.ch > 0) &&
+            (ring.ground == :zp) &&
                 !(basis.coeffs[i][j] < ring.ch) &&
                 error("Coefficients must be normalized")
             (basis.monoms[i][j] > hashtable.load) && error("Bad monomial")
@@ -405,9 +405,9 @@ end
 
 function basis_make_monic!(
     basis::Basis{C},
-    arithmetic::AbstractArithmeticQQ,
+    arithmetic::AbstractArithmetic,
     changematrix::Bool
-) where {C <: CoeffQQ}
+) where {C <: Union{CoeffQQ, CoeffGeneric}}
     cfs = basis.coeffs
     @inbounds for i in 1:(basis.n_filled)
         !isassigned(cfs, i) && continue

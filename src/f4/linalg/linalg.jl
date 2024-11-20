@@ -243,11 +243,11 @@ end
 
 function _linalg_normalform!(matrix::MacaulayMatrix, basis::Basis, arithmetic::AbstractArithmetic)
     sort_matrix_upper_rows!(matrix)
-    linalg_reduce_matrix_lower_part_invariant_pivots!(matrix, basis, arithmetic)
+    linalg_reduce_matrix_lower_part_do_not_modify_pivots!(matrix, basis, arithmetic)
 end
 
 function _linalg_isgroebner!(matrix::MacaulayMatrix, basis::Basis, arithmetic::AbstractArithmetic)
     sort_matrix_upper_rows!(matrix)
     sort_matrix_lower_rows!(matrix)
-    linalg_reduce_matrix_lower_part_any_nonzero!(matrix, basis, arithmetic)
+    linalg_reduce_matrix_lower_part_all_zero!(matrix, basis, arithmetic)
 end

@@ -16,10 +16,13 @@ aa_is_multivariate_ring(ring) = AbstractAlgebra.elem_type(ring) <: AbstractAlgeb
 function io_convert_polynomials_to_ir(polynomials, options::KeywordArguments)
     isempty(polynomials) && throw(DomainError("Empty input."))
     ring = io_extract_ring(polynomials)
+    if options._generic
+        ring.ground = :generic
+    end
     coeffs = io_extract_coeffs_ir(ring, polynomials)
     reversed_order, var_to_index, monoms = io_extract_monoms_ir(ring, polynomials)
     @invariant length(coeffs) == length(monoms)
-    ring = PolyRing(ring.nvars, ordering_transform(ring.ord, var_to_index), ring.ch)
+    ring = PolyRing(ring.nvars, ordering_transform(ring.ord, var_to_index), ring.ch, ring.ground)
     options.ordering = ordering_transform(options.ordering, var_to_index)
     ring, monoms, coeffs, options
 end
@@ -40,10 +43,44 @@ function io_extract_ring(polynomials)
         f -> f isa AbstractAlgebra.MPolyRingElem || f isa AbstractAlgebra.PolyRingElem,
         polynomials
     )
-        throw(DomainError("Unknown type."))
+        throw(DomainError("Unknown type of polynomials: $(typeof(polynomials))."))
     end
-    _io_check_input(polynomials)
-    R = parent(first(polynomials))
+    R = AbstractAlgebra.parent(first(polynomials))
+    K = AbstractAlgebra.base_ring(R)
+    if !(K isa AbstractAlgebra.Field)
+        throw(DomainError("Coefficient ring must be a field, but got: $K"))
+    end
+    ch = AbstractAlgebra.characteristic(R)
+    ground = iszero(ch) ? :qq : :zp
+    # Only characteristics < 2^64 are supported natively
+    if (ch > typemax(UInt64))
+        ground = :generic
+    end
+    if !iszero(ch)
+        # Only prime fields are supported natively
+        if !(hasmethod(AbstractAlgebra.degree, (typeof(K),)))
+            ground = :generic
+        elseif !isone(AbstractAlgebra.degree(K))
+            ground = :generic
+        end
+    else
+        # Supported implementations of rationals are AbstractAlgebra.QQ or Nemo.QQ
+        if !(hasmethod(AbstractAlgebra.base_ring, (typeof(K),)))
+            ground = :generic
+        else
+            base = AbstractAlgebra.base_ring(K)
+            if !(hasmethod(AbstractAlgebra.base_ring, (typeof(base),)))
+                ground = :generic
+            elseif !(AbstractAlgebra.base_ring(base) == Union{})
+                ground = :generic
+            end
+        end
+    end
+    if ground == :generic
+        @warn "Groebner.jl does not have a native implementation for the given field: $K.\n" *
+              "Falling back to a generic implementation (may be slow).\n" *
+              "If this is unexpected, please consider submitting a GitHub issue." maxlog = 1
+    end
     nv = AbstractAlgebra.nvars(R)
     # lex is the default ordering on univariate polynomials
     ord = if aa_is_multivariate_ring(R)
@@ -53,12 +90,15 @@ function io_extract_ring(polynomials)
     end
     # type unstable:
     ordT = ordering_sym2typed(ord)
-    ch   = AbstractAlgebra.characteristic(R)
-    PolyRing{typeof(ordT), UInt}(nv, ordT, UInt(ch))
+    ch_uint = ground == :zp ? UInt(ch) : UInt(0)
+    ring = PolyRing(nv, ordT, ch_uint, ground)
+    ring
 end
 
 function io_extract_coeffs_ir(ring::PolyRing, polys)
-    if ring.ch > 0
+    if ring.ground == :generic
+        io_extract_coeffs_ir_generic(ring, polys)
+    elseif ring.ground == :zp
         io_extract_coeffs_ir_ff(ring, polys)
     else
         io_extract_coeffs_ir_qq(ring, polys)
@@ -100,6 +140,22 @@ function io_extract_coeffs_ir_qq(ring::PolyRing, polys)
     res
 end
 
+function io_extract_coeffs_ir_generic(ring::PolyRing, polys)
+    T = AbstractAlgebra.elem_type(AbstractAlgebra.base_ring(polys[1]))
+    res = Vector{Vector{CoeffGeneric{T}}}(undef, length(polys))
+    for i in 1:length(polys)
+        poly = polys[i]
+        if !aa_is_multivariate_ring(parent(polys[1]))
+            res[i] = map(CoeffGeneric{T}, collect(AbstractAlgebra.coefficients(poly)))
+            reverse!(res[i])
+            filter!(!iszero, res[i])
+        else
+            res[i] = map(CoeffGeneric{T}, collect(AbstractAlgebra.coefficients(poly)))
+        end
+    end
+    res
+end
+
 function io_extract_monoms_ir(ring::PolyRing, polys)
     ring_aa = AbstractAlgebra.parent(polys[1])
     v = AbstractAlgebra.gens(ring_aa)
@@ -124,23 +180,6 @@ end
 
 ###
 # Converting from AbstractAlgebra to internal representation.
-
-function _io_check_input(polynomials::Vector{T}) where {T}
-    R = AbstractAlgebra.parent(first(polynomials))
-    K = AbstractAlgebra.base_ring(R)
-    if !(K isa AbstractAlgebra.Field)
-        throw(DomainError("Coefficient ring must be a field: $K"))
-    end
-    if (AbstractAlgebra.characteristic(K) > typemax(UInt64))
-        throw(DomainError("Field characteristic must be less than 2^64"))
-    end
-    if !iszero(AbstractAlgebra.characteristic(K))
-        if !isone(AbstractAlgebra.degree(K))
-            throw(DomainError("Non-prime coefficient fields are not supported"))
-        end
-    end
-    true
-end
 
 function ordering_sym2typed(ord::Symbol)
     if !(ord in aa_supported_orderings)
@@ -178,7 +217,7 @@ function _io_convert_ir_to_polynomials(
         end
         cfs = zeros(ground, Int(sum(gbexps[i][1]) + 1))
         for (idx, j) in enumerate(gbexps[i])
-            cfs[sum(j) + 1] = ground(gbcoeffs[i][idx])
+            cfs[sum(j) + 1] = ground(generic_coeff_data(gbcoeffs[i][idx]))
         end
         exported[i] = origring(cfs)
     end
@@ -197,7 +236,7 @@ function _io_convert_ir_to_polynomials(
     ground   = AbstractAlgebra.base_ring(origring)
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     @inbounds for i in 1:length(gbexps)
-        cfs = map(ground, gbcoeffs[i])
+        cfs = map(ground ∘ generic_coeff_data, gbcoeffs[i])
         exps = Vector{Vector{Int}}(undef, length(gbcoeffs[i]))
         for jt in 1:length(gbcoeffs[i])
             exps[jt] = gbexps[i][jt]
@@ -269,7 +308,7 @@ function _io_convert_ir_to_polynomials(
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     tmp      = Vector{aa_exponent_type}(undef, nv)
     @inbounds for i in 1:length(gbexps)
-        cfs  = map(ground, gbcoeffs[i])
+        cfs  = map(ground ∘ generic_coeff_data, gbcoeffs[i])
         exps = Matrix{aa_exponent_type}(undef, nv + 1, length(gbcoeffs[i]))
         for jt in 1:length(gbcoeffs[i])
             for k in 1:length(tmp)
@@ -295,7 +334,7 @@ function _io_convert_ir_to_polynomials(
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     tmp      = Vector{aa_exponent_type}(undef, nv)
     @inbounds for i in 1:length(gbexps)
-        cfs  = map(ground, gbcoeffs[i])
+        cfs  = map(ground ∘ generic_coeff_data, gbcoeffs[i])
         exps = Matrix{aa_exponent_type}(undef, nv, length(gbcoeffs[i]))
         for jt in 1:length(gbcoeffs[i])
             exps[end:-1:1, jt] .= gbexps[i][jt]
@@ -318,7 +357,7 @@ function _io_convert_ir_to_polynomials(
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     tmp      = Vector{aa_exponent_type}(undef, nv)
     @inbounds for i in 1:length(gbexps)
-        cfs  = map(ground, gbcoeffs[i])
+        cfs  = map(ground ∘ generic_coeff_data, gbcoeffs[i])
         exps = Matrix{aa_exponent_type}(undef, nv + 1, length(gbcoeffs[i]))
         for jt in 1:length(gbcoeffs[i])
             # monom_to_vector!(tmp, gbexps[i][jt])
@@ -343,7 +382,7 @@ function _io_convert_ir_to_polynomials(
     exported = Vector{elem_type(origring)}(undef, length(gbexps))
     tmp      = Vector{aa_exponent_type}(undef, nv)
     @inbounds for i in 1:length(gbexps)
-        cfs  = map(ground, gbcoeffs[i])
+        cfs  = map(ground ∘ generic_coeff_data, gbcoeffs[i])
         exps = Vector{Vector{Int}}(undef, length(gbcoeffs[i]))
         for jt in 1:length(gbcoeffs[i])
             exps[jt] = gbexps[i][jt]

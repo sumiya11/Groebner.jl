@@ -213,9 +213,9 @@ function __groebner_apply1!(
 
     if params.homogenize
         new_ord = extend_ordering_in_homogenization(ring.nvars, ring.ord)
-        ring = PolyRing(ring.nvars + 1, new_ord, ring.ch)
+        ring = PolyRing(ring.nvars + 1, new_ord, ring.ch, ring.ground)
         new_ord = extend_ordering_in_saturation(ring.nvars, ring.ord)
-        ring = PolyRing(ring.nvars + 1, new_ord, ring.ch)
+        ring = PolyRing(ring.nvars + 1, new_ord, ring.ch, ring.ground)
     end
 
     trace = get_trace!(wrapped_trace, ring, params)

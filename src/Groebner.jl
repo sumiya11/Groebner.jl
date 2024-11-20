@@ -93,13 +93,14 @@ include("monomials/exponent_vector.jl")
 include("monomials/packed_vector.jl")
 
 include("arithmetic/CompositeNumber.jl")
+include("arithmetic/CoeffGeneric.jl")
 
 # Defines some type aliases
 include("types.jl")
 
 # Fast arithmetic modulo a prime
 include("arithmetic/Zp.jl")
-include("arithmetic/QQ.jl")
+include("arithmetic/generic.jl")
 
 # Intermediate representation
 include("input_output/intermediate.jl")

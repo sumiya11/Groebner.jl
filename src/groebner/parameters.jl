@@ -22,6 +22,7 @@ end
 function param_select_polynomial_representation(
     char::Coeff,
     nvars::Int,
+    ground::Symbol,
     ordering::AbstractMonomialOrdering,
     homogenize::Bool,
     monoms::Symbol,
@@ -33,7 +34,7 @@ function param_select_polynomial_representation(
     end
     monomtype = param_select_monomtype(char, nvars, ordering, homogenize, hint, monoms)
     coefftype, using_wide_type_for_coeffs =
-        param_select_coefftype(char, nvars, ordering, homogenize, hint, monoms, arithmetic)
+        param_select_coefftype(char, nvars, ground, ordering, homogenize, hint, monoms, arithmetic)
     PolynomialRepresentation(monomtype, coefftype, using_wide_type_for_coeffs)
 end
 
@@ -124,6 +125,7 @@ end
 function param_select_coefftype(
     char::Coeff,
     nvars::Int,
+    ground::Symbol,
     ordering::AbstractMonomialOrdering,
     homogenize::Bool,
     hint::Symbol,
@@ -131,6 +133,9 @@ function param_select_coefftype(
     arithmetic::Symbol;
     using_wide_type_for_coeffs::Bool=false
 )
+    if ground == :generic
+        return CoeffGeneric, true
+    end
     if iszero(char)
         return Rational{BigInt}, true
     end
@@ -238,8 +243,13 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         end
     end
 
+    # Over Z_p, linalg = :randomized signals randomized linear algebra.
+    # Over Q, linalg = :randomized has almost no effect since multi-modular
+    # tracing is used by default. Still, we say "almost" since some routines in
+    # multi-modular tracing may compute Groebner bases in Zp for
+    # checking/verification, and they benefit from linalg = :randomized.
     linalg = kwargs.linalg
-    if !iszero(ring.ch) && (linalg === :randomized || linalg === :auto)
+    if ring.ground === :zp && (linalg === :randomized || linalg === :auto)
         # Do not use randomized linear algebra if the field characteristic is
         # too small. 
         # TODO: In the future, it would be good to adapt randomized linear
@@ -253,6 +263,9 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
             linalg = :deterministic
         end
     end
+    if ring.ground == :generic
+        linalg = :deterministic
+    end
     if linalg === :auto
         linalg = :randomized
     end
@@ -262,6 +275,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
     representation = param_select_polynomial_representation(
         ring.ch,
         ring.nvars,
+        ring.ground,
         target_ord,
         homogenize,
         kwargs.monoms,
@@ -275,11 +289,6 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         kwargs.arithmetic,
         representation.using_wide_type_for_coeffs
     )
-
-    ground = :zp
-    if iszero(ring.ch)
-        ground = :qq
-    end
 
     reduced = kwargs.reduced
 
@@ -296,13 +305,15 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         threaded = :no
     end
 
-    if ground === :zp
+    if ring.ground === :zp
         threaded_f4 = threaded
         threaded_multimodular = :no
-    else
-        @assert ground === :qq
+    elseif ring.ground == :qq
         threaded_f4 = :no
         threaded_multimodular = threaded
+    else
+        threaded_f4 = :no
+        threaded_multimodular = :no
     end
 
     # By default, modular computation uses learn & apply
@@ -324,6 +335,15 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
     if changematrix
         if !(target_ord isa DegRevLex)
             throw(DomainError("Only DegRevLex is supported with changematrix = true."))
+        end
+        if (ring.ground == :generic)
+            throw(DomainError("Generic fields are not supported with changematrix = true."))
+        end
+    end
+
+    if kwargs.function_id == :groebner_learn || kwargs.function_id == :groebner_apply!
+        if ring.ground == :generic
+            throw(DomainError("Generic fields are not supported with learn & apply."))
         end
     end
 
