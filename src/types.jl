@@ -22,7 +22,7 @@ const CoeffQQ = Union{Rational{BigInt}}
 const CoeffZZ = Union{BigInt}
 
 # All supported coefficient types in F4.
-const Coeff = Union{CoeffZp, CompositeCoeffZp, CoeffQQ, CoeffZZ, CoeffGeneric{T} where {T}}
+const Coeff = Union{CoeffZp, CompositeCoeffZp, CoeffQQ, CoeffZZ, CoeffGeneric}
 
 # Coefficient type used in a single run of classic modular computation
 const CoeffModular = UInt64
