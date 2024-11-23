@@ -328,11 +328,12 @@ ordering_make_not_simple(ord::DegRevLex{true}, n::Int) = DegRevLex(collect(1:n))
 # Checking consistency against a polynomial ring
 function ordering_check_consistency(nvars::Int, ord::AbstractMonomialOrdering)
     isempty(ordering_variables(ord)) && return nothing
-    if nvars != length(ordering_variables(ord))
-        throw(DomainError("The monomial ordering is invalid."))
-    end
     if !issubset(ordering_variables(ord), collect(1:nvars))
-        throw(DomainError("The monomial ordering is invalid."))
+        throw(
+            DomainError(
+                "Monomial ordering is invalid. The ring has variables $(collect(1:nvars)), the ordering has variables $(ordering_variables(ord)), which are incompatible."
+            )
+        )
     end
     nothing
 end
@@ -340,12 +341,19 @@ end
 # Transform orderings
 
 function map_variables(vars, varmap)
+    isempty(vars) && return vars
     if !(Set(vars) == Set(collect(keys(varmap))))
         # Fallback to string representation
         varmap_str = Dict(string(k) => v for (k, v) in varmap)
         vars_str = map(string, vars)
-        !isempty(setdiff(vars_str, collect(keys(varmap_str)))) &&
-            throw(DomainError("Invalid monomial ordering."))
+        if !isempty(setdiff(collect(keys(varmap_str)), vars_str))
+            throw(
+                DomainError(
+                    "Invalid monomial ordering. The ring has variables $(collect(keys(varmap_str))) and the ordering variables are $vars_str, which are incompatible."
+                )
+            )
+        end
+        vars_str = filter(var -> var in keys(varmap_str), vars_str)
         return map(v -> varmap_str[v], vars_str)
     end
     map(v -> varmap[v], vars)
@@ -364,7 +372,9 @@ function ordering_transform(ord::WeightedOrdering, varmap::AbstractDict)
 end
 
 function ordering_transform(ord::ProductOrdering, varmap::AbstractDict)
-    ProductOrdering(ordering_transform(ord.ord1, varmap), ordering_transform(ord.ord2, varmap))
+    varmap1 = filter(key_val -> key_val[1] in Set(ordering_variables(ord.ord1)), varmap)
+    varmap2 = filter(key_val -> key_val[1] in Set(ordering_variables(ord.ord2)), varmap)
+    ProductOrdering(ordering_transform(ord.ord1, varmap1), ordering_transform(ord.ord2, varmap2))
 end
 
 function ordering_transform(ord::MatrixOrdering, varmap::AbstractDict)

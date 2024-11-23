@@ -678,7 +678,8 @@ end
 
     # ProductOrdering
     ord = Groebner.Lex(x6, x2) * Groebner.Lex(x4, x1, x3)
-    @test_throws DomainError Groebner.groebner([x1], ordering=ord)
+    @test Groebner.groebner([x1, x2], ordering=ord) == [x1, x2]
+    @test Groebner.groebner([x4, x6, x3], ordering=ord) == [x3, x4, x6]
     @test_throws DomainError Groebner.Lex() * Groebner.Lex(x4, x1, x3)
 
     ord = Groebner.Lex(x6, x2, x5) * Groebner.Lex(x4, x1, x3)
