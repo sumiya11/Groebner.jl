@@ -114,6 +114,11 @@ using DynamicPolynomials, Test
     gb = Groebner.groebner(F, ordering=Groebner.Lex(y, x))
     @test gb == [(-15 // 8) * x + x^3, x * y + (4 // 5) * x^2, (24 // 25) * x + y^3]
 
+    # It is possible to over-specify the ordering
+    @polyvar x y z
+    @test groebner([x, y], ordering=Lex(x, y, z)) == [y, x]
+    @test groebner([x, y], ordering=Lex(y, x, z)) == [x, y]
+
     @polyvar x y monomial_order = Graded{Reverse{InverseLexOrder}}
     F = [2x^2 * y + 3x, 4x * y^2 + 5y^3]
     gb = Groebner.groebner(F)
