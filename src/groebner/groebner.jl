@@ -257,43 +257,42 @@ function _groebner_learn_and_apply(
 
     # At this point, either the reconstruction or the correctness check failed.
     # Continue to compute Groebner bases modulo different primes in batches. 
+    B = params.composite
     primes_used = 1
-    batchsize = 4
+    batchsize = B
     batchsize_scaling = 0.10
 
     witness_set = modular_witness_set(state.gb_coeffs_zz, params)
 
-    # Initialize a tracer that computes the bases in batches of 4
-    trace_4x = trace_copy(trace, CompositeNumber{4, Int32}, false)
+    # Initialize a tracer that computes the bases in batches
+    trace_Bx = trace_copy(trace, CompositeNumber{B, Int32}, false)
 
     iters = 0
     while !correct_basis
-        for j in 1:4:batchsize
-            prime_4x = ntuple(i -> Int32(modular_next_prime!(state)), 4)
+        @invariant iszero(batchsize % B)
 
-            # Perform reduction modulo primes and store result in basis_ff_4x
-            ring_ff_4x, basis_ff_4x = modular_reduce_mod_p_in_batch!(ring, basis_zz, prime_4x)
-            params_zp_4x = params_mod_p(
+        for j in 1:B:batchsize
+            prime_Bx = ntuple(i -> Int32(modular_next_prime!(state)), B)
+
+            # Perform reduction modulo several primes
+            ring_ff_Bx, basis_ff_Bx = modular_reduce_mod_p_in_batch!(ring, basis_zz, prime_Bx)
+            params_zp_Bx = params_mod_p(
                 params,
-                CompositeNumber{4, Int32}(prime_4x),
+                CompositeNumber{B, Int32}(prime_Bx),
                 using_wide_type_for_coeffs=false
             )
-            trace_4x.buf_basis = basis_ff_4x
-            trace_4x.ring = ring_ff_4x
+            trace_Bx.buf_basis = basis_ff_Bx
+            trace_Bx.ring = ring_ff_Bx
 
-            flag = f4_apply!(trace_4x, ring_ff_4x, trace_4x.buf_basis, params_zp_4x)
+            flag = f4_apply!(trace_Bx, ring_ff_Bx, trace_Bx.buf_basis, params_zp_Bx)
             !flag && continue
 
-            gb_coeffs_1, gb_coeffs_2, gb_coeffs_3, gb_coeffs_4 =
-                ir_unpack_composite_coefficients(trace_4x.gb_basis.coeffs)
+            gb_coeffs_unpacked = ir_unpack_composite_coefficients(trace_Bx.gb_basis.coeffs)
 
             # TODO: This causes unnecessary conversions of arrays.
-            append!(state.used_primes, prime_4x)
-            push!(state.gb_coeffs_ff_all, gb_coeffs_1)
-            push!(state.gb_coeffs_ff_all, gb_coeffs_2)
-            push!(state.gb_coeffs_ff_all, gb_coeffs_3)
-            push!(state.gb_coeffs_ff_all, gb_coeffs_4)
-            primes_used += 4
+            append!(state.used_primes, prime_Bx)
+            append!(state.gb_coeffs_ff_all, gb_coeffs_unpacked)
+            primes_used += B
         end
 
         crt_vec_partial!(
@@ -431,18 +430,19 @@ function _groebner_learn_and_apply_threaded(
 
     # At this point, either the reconstruction or the correctness check failed.
     # Continue to compute Groebner bases modulo different primes in batches. 
+    B = params.composite
     primes_used = 1
-    batchsize = align_up(min(32, 4 * nthreads()), 4)
+    batchsize = align_up(min(32, B * nthreads()), B)
     batchsize_scaling = 0.10
 
     # CRT and rational reconstrction settings
     witness_set = modular_witness_set(state.gb_coeffs_zz, params)
 
-    # Initialize a tracer that computes the bases in batches of 4
-    trace_4x = trace_copy(trace, CompositeNumber{4, Int32}, false)
+    # Initialize a tracer that computes the bases in batches
+    trace_Bx = trace_copy(trace, CompositeNumber{B, Int32}, false)
 
     # Thread buffers
-    threadbuf_trace_4x = map(_ -> trace_deepcopy(trace_4x), 1:nthreads())
+    threadbuf_trace_Bx = map(_ -> trace_deepcopy(trace_Bx), 1:nthreads())
     threadbuf_gb_coeffs = Vector{Vector{Tuple{Int32, Vector{Vector{Int32}}}}}(undef, nthreads())
     for i in 1:nthreads()
         threadbuf_gb_coeffs[i] = Vector{Tuple{Int, Vector{Vector{Int32}}}}()
@@ -451,44 +451,44 @@ function _groebner_learn_and_apply_threaded(
 
     iters = 0
     while !correct_basis
-        @invariant iszero(batchsize % 4)
+        @invariant iszero(batchsize % B)
 
         threadbuf_primes = ntuple(_ -> Int32(modular_next_prime!(state)), batchsize)
         for i in 1:nthreads()
             empty!(threadbuf_gb_coeffs[i])
         end
 
-        Base.Threads.@threads :static for j in 1:4:batchsize
+        Base.Threads.@threads :static for j in 1:B:batchsize
             t_id = threadid()
-            threadlocal_trace_4x = threadbuf_trace_4x[t_id]
-            threadlocal_prime_4x = ntuple(k -> threadbuf_primes[j + k - 1], 4)
+            threadlocal_trace_Bx = threadbuf_trace_Bx[t_id]
+            threadlocal_prime_Bx = ntuple(k -> threadbuf_primes[j + k - 1], B)
             threadlocal_params = threadbuf_params[t_id]
 
-            ring_ff_4x, basis_ff_4x =
-                modular_reduce_mod_p_in_batch!(ring, basis_zz, threadlocal_prime_4x)
-            threadlocal_params_zp_4x = params_mod_p(
+            ring_ff_Bx, basis_ff_Bx =
+                modular_reduce_mod_p_in_batch!(ring, basis_zz, threadlocal_prime_Bx)
+            threadlocal_params_zp_Bx = params_mod_p(
                 threadlocal_params,               # can be mutated later
-                CompositeNumber{4, Int32}(threadlocal_prime_4x),
+                CompositeNumber{B, Int32}(threadlocal_prime_Bx),
                 using_wide_type_for_coeffs=false
             )
-            threadlocal_trace_4x.buf_basis = basis_ff_4x
-            threadlocal_trace_4x.ring = ring_ff_4x
+            threadlocal_trace_Bx.buf_basis = basis_ff_Bx
+            threadlocal_trace_Bx.ring = ring_ff_Bx
 
             flag = f4_apply!(
-                threadlocal_trace_4x,
-                ring_ff_4x,
-                threadlocal_trace_4x.buf_basis,
-                threadlocal_params_zp_4x
+                threadlocal_trace_Bx,
+                ring_ff_Bx,
+                threadlocal_trace_Bx.buf_basis,
+                threadlocal_params_zp_Bx
             )
             !flag && continue
 
-            gb_coeffs_1, gb_coeffs_2, gb_coeffs_3, gb_coeffs_4 =
-                ir_unpack_composite_coefficients(threadlocal_trace_4x.gb_basis.coeffs)
+            gb_coeffs_unpacked =
+                ir_unpack_composite_coefficients(threadlocal_trace_Bx.gb_basis.coeffs)
 
-            push!(threadbuf_gb_coeffs[t_id], (threadlocal_prime_4x[1], gb_coeffs_1))
-            push!(threadbuf_gb_coeffs[t_id], (threadlocal_prime_4x[2], gb_coeffs_2))
-            push!(threadbuf_gb_coeffs[t_id], (threadlocal_prime_4x[3], gb_coeffs_3))
-            push!(threadbuf_gb_coeffs[t_id], (threadlocal_prime_4x[4], gb_coeffs_4))
+            append!(
+                threadbuf_gb_coeffs[t_id],
+                collect(zip(threadlocal_prime_Bx, gb_coeffs_unpacked))
+            )
         end
 
         primes_used += batchsize
