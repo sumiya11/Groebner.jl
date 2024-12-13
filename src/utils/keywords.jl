@@ -22,8 +22,8 @@ const _supported_kw_args = (
         modular      = :auto,
         threaded     = :auto,
         homogenize   = :auto,
-        batched      = true,
         changematrix = false,
+        _composite   = 4,
         _generic     = false
     ),
     normalform = (
@@ -64,8 +64,8 @@ const _supported_kw_args = (
         modular      = :auto,
         threaded     = :auto,
         homogenize   = :auto,
-        batched      = true,
-        changematrix = true
+        changematrix = true,
+        _composite   = 4,
     ),
 )
 #! format: on
@@ -93,7 +93,7 @@ mutable struct KeywordArguments
     seed::Int
     selection::Symbol
     modular::Symbol
-    batched::Bool
+    _composite::Int
     check::Bool
     homogenize::Symbol
     changematrix::Bool
@@ -154,7 +154,7 @@ mutable struct KeywordArguments
         Possible choices for keyword "modular" are:
         `:auto`, `:classic_modular`, `:learn_and_apply`"""
 
-        batched = get(kws, :batched, get(default_kw_args, :batched, true))
+        _composite = get(kws, :_composite, get(default_kw_args, :_composite, 4))
 
         selection = get(kws, :selection, get(default_kw_args, :selection, :auto))
         @assert selection in (:auto, :normal, :sugar, :be_divided_and_perish)
@@ -182,7 +182,7 @@ mutable struct KeywordArguments
             seed,
             selection,
             modular,
-            batched,
+            _composite,
             check,
             homogenize,
             changematrix,

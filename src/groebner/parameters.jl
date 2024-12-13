@@ -202,8 +202,8 @@ mutable struct AlgorithmParameters{Arithmetic <: AbstractArithmetic}
     # - :learn_and_apply
     modular_strategy::Symbol
 
-    # If learn & apply strategy can use apply in batches
-    batched::Bool
+    # The width of composite numbers in learn & apply
+    composite::Int
 
     # Multi-threading
     threaded_f4::Symbol
@@ -326,7 +326,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         # falling back to classic multi-modular algorithm.
         modular_strategy = :classic_modular
     end
-    batched = kwargs.batched
+    composite = kwargs._composite
 
     seed = kwargs.seed
     rng = Random.Xoshiro(seed)
@@ -360,7 +360,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         representation,
         reduced,
         modular_strategy,
-        batched,
+        composite,
         threaded_f4,
         threaded_multimodular,
         rng,
@@ -396,7 +396,7 @@ function params_mod_p(
         representation,
         params.reduced,
         params.modular_strategy,
-        params.batched,
+        params.composite,
         params.threaded_f4,
         params.threaded_multimodular,
         params.rng,

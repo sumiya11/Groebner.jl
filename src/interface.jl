@@ -306,7 +306,7 @@ trace, gb_0 = groebner_learn(kat_0);
 #  72.813 ms (23722 allocations: 59.44 MiB)
 ```
 
-Observe the better amortized performance of the batched `groebner_apply!`.
+Observe the better amortized performance of the composite `groebner_apply!`.
 
 ## Notes
 

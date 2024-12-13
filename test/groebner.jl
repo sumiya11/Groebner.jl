@@ -369,6 +369,13 @@ end
         gb = Groebner.groebner(noon, modular=modular)
         @test Groebner.isgroebner(gb)
 
+        chan = Groebner.Examples.chandran(6)
+        gb_truth = Groebner.groebner(chan)
+        for _composite in (1, 2, 4, 8, 16)
+            gb = groebner(chan, _composite=_composite)
+            @test gb == gb_truth
+        end
+
         # Test a number of cases directly
         R, (x, y, z) = QQ["x", "y", "z"]
         xs = gens(R)

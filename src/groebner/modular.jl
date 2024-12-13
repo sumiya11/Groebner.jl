@@ -217,10 +217,10 @@ function modular_reduce_mod_p_in_batch!(
             coeffs_ff_xn[i][j] = CompositeNumber{N, T}(data)
         end
     end
-    ring_ff_4x = PolyRing(ring.nvars, ring.ord, CompositeNumber{N, T}(prime_xn), :zp)
-    basis_ff_4x = basis_deep_copy_with_new_coeffs(basis, coeffs_ff_xn)
+    ring_ff_Nx = PolyRing(ring.nvars, ring.ord, CompositeNumber{N, T}(prime_xn), :zp)
+    basis_ff_Nx = basis_deep_copy_with_new_coeffs(basis, coeffs_ff_xn)
 
-    ring_ff_4x, basis_ff_4x
+    ring_ff_Nx, basis_ff_Nx
 end
 
 function modular_prepare!(state::ModularState)
