@@ -238,9 +238,10 @@ struct ProductOrdering{Ord1, Ord2} <: AbstractMonomialOrdering
             Block 1: $(ord1)
             Block 2: $(ord2)"""
         end
-        if ordering_is_simple(ord1) || ordering_is_simple(ord2)
-            throw(DomainError("Invalid monomial ordering"))
-        end
+        # this fires on, for example, Lex() * Lex(). Should be fine to allow.
+        # if ordering_is_simple(ord1) || ordering_is_simple(ord2)
+            # throw(DomainError("Invalid monomial ordering"))
+        # end
         new{Ord1, Ord2}(ord1, ord2)
     end
 end
