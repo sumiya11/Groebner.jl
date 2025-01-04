@@ -109,7 +109,6 @@ _, (x, y) = ff["x","y"]
 sys = [(t//t+1)*x*y - t^3, y^2 + t]
 
 gb = groebner(sys)
-gb
 ```
 
 Some other functions in Groebner.jl reuse the core F4 algorithm, so they can also be used:
