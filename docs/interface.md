@@ -83,11 +83,6 @@ The low-level functions may be faster than their user-facing analogues since the
 using Groebner # hide
 ```
 
-```julia:install_nemo
-using Pkg # hide
-Pkg.add("Nemo") # hide
-```
-
 Julia grants us the ability to write generic code. One consequence of that for
 Groebner.jl is that it can compute Groebner bases over anything that behaves like a field.
 
@@ -100,9 +95,9 @@ For other ground fields, it runs a possibly slower generic fallback. In this cas
 For example, we can compute a Groebner basis over a univariate rational function field over a finite field:
 
 ```julia:generic1
-using Groebner, Nemo
+using Groebner, AbstractAlgebra
 
-R, t = GF(101, 7)["t"]
+R, t = GF(101)["t"]
 ff = fraction_field(R)
 _, (x, y) = ff["x","y"]
 
@@ -111,7 +106,7 @@ sys = [(t//t+1)*x*y - t^3, y^2 + t]
 gb = groebner(sys)
 ```
 
-<!-- Some other functions in Groebner.jl reuse the core F4 algorithm, so they can also be used:
+Some other functions in Groebner.jl reuse the core F4 algorithm, so they can also be used:
 
 ```julia::generic2
 @assert isgroebner(gb)
@@ -199,4 +194,4 @@ max_diam(x::AbstractVector; rel=false) = maximum(map(f -> max_diam(f; rel=rel), 
     Max diam (rel): $(max_diam(gbcoeffs; rel=true))"
 ```
 
-Note that if we lower the precision to 256 bits some of the intervals become NaNs. -->
+Note that if we lower the precision to 256 bits some of the intervals become NaNs.
