@@ -106,7 +106,7 @@ sys = [(t//t+1)*x*y - t^3, y^2 + t]
 gb = groebner(sys)
 ```
 
-Some other functions in Groebner.jl reuse the core F4 algorithm, so they can also be used:
+<!-- Some other functions in Groebner.jl reuse the core F4 algorithm, so they can also be used:
 
 ```julia::generic2
 @assert isgroebner(gb)
@@ -194,4 +194,4 @@ max_diam(x::AbstractVector; rel=false) = maximum(map(f -> max_diam(f; rel=rel), 
     Max diam (rel): $(max_diam(gbcoeffs; rel=true))"
 ```
 
-Note that if we lower the precision to 256 bits some of the intervals become NaNs.
+Note that if we lower the precision to 256 bits some of the intervals become NaNs. -->
