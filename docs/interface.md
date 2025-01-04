@@ -83,6 +83,11 @@ The low-level functions may be faster than their user-facing analogues since the
 using Groebner # hide
 ```
 
+```julia:install_nemo
+using Pkg # hide
+Pkg.add("Nemo") # hide
+```
+
 Julia grants us the ability to write generic code. One consequence of that for
 Groebner.jl is that it can compute Groebner bases over anything that behaves like a field.
 
@@ -104,6 +109,7 @@ _, (x, y) = ff["x","y"]
 sys = [(t//t+1)*x*y - t^3, y^2 + t]
 
 gb = groebner(sys)
+gb
 ```
 
 Some other functions in Groebner.jl reuse the core F4 algorithm, so they can also be used:
