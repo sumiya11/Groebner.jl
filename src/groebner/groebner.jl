@@ -196,8 +196,6 @@ function _groebner_guess_lucky_prime(
     prime_1
 end
 
-const PRIMES = Ref(0)
-
 function _groebner_learn_and_apply(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
@@ -253,7 +251,6 @@ function _groebner_learn_and_apply(
         if correct_basis
             gb_monoms, _ = basis_export_data(trace.gb_basis, hashtable)
             gb_coeffs_qq = state.gb_coeffs_qq
-            PRIMES[] = 1
             return gb_monoms, gb_coeffs_qq
         end
     end
@@ -362,8 +359,6 @@ function _groebner_learn_and_apply(
     # Construct the output basis.
     gb_monoms, _ = basis_export_data(trace.gb_basis, hashtable)
     gb_coeffs_qq = state.gb_coeffs_qq
-
-    PRIMES[] = primes_used
 
     return gb_monoms, gb_coeffs_qq
 end
