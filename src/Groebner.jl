@@ -142,6 +142,7 @@ include("groebner/isgroebner.jl")
 include("groebner/normalform.jl")
 include("groebner/autoreduce.jl")
 include("groebner/homogenization.jl")
+include("groebner/auxiliary.jl")
 
 # API
 include("interface.jl")

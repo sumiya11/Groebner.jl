@@ -31,6 +31,9 @@ const _supported_kw_args = (
         ordering    = InputOrdering(),
         monoms      = :dense,
     ),
+    lead = (
+        ordering    = InputOrdering(),
+    ),
     isgroebner = (
         ordering    = InputOrdering(),
         certify     = true,

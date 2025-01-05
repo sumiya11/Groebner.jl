@@ -50,6 +50,8 @@ end
 
     @time include("normalform.jl")
 
+    @time include("auxiliary.jl")
+
     # Test for different frontends: 
     # - AbstractAlgebra.jl
     # - Nemo.jl

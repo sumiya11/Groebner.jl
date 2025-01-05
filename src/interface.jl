@@ -550,3 +550,36 @@ function normalform(
     )
     result
 end
+
+"""
+    lead(polynomial; options...)
+
+Returns the leading term of polynomial.
+
+## Possible Options
+
+The `lead` routine takes the following optional arguments:
+- `ordering`: Specifies the monomial ordering. Available monomial orderings are:
+    - `InputOrdering()` for inferring the ordering from the given `polynomials`
+      (default),
+    - `Lex()` for lexicographic,
+    - `DegLex()` for degree lexicographic,
+    - `DegRevLex()` for degree reverse lexicographic,
+    - `WeightedOrdering(weights)` for weighted ordering,
+    - `ProductOrdering(args...)` for block ordering,
+    - `MatrixOrdering(matrix)` for matrix ordering.
+    For details and examples see the corresponding documentation page.
+
+## Notes
+
+The function `lead` is thread-safe.
+"""
+function lead(polynomial; options...)
+    first(lead([polynomial]; options...))
+end
+
+function lead(polynomials::AbstractVector; options...)
+    keywords = KeywordArguments(:lead, options)
+    result = lead0(polynomials, keywords)
+    result
+end
