@@ -373,8 +373,14 @@ function ordering_transform(ord::WeightedOrdering, varmap::AbstractDict)
 end
 
 function ordering_transform(ord::ProductOrdering, varmap::AbstractDict)
-    varmap1 = filter(key_val -> key_val[1] in Set(ordering_variables(ord.ord1)), varmap)
-    varmap2 = filter(key_val -> key_val[1] in Set(ordering_variables(ord.ord2)), varmap)
+    varmap1 = filter(
+        key_val -> string(key_val[1]) in Set(map(string, ordering_variables(ord.ord1))),
+        varmap
+    )
+    varmap2 = filter(
+        key_val -> string(key_val[1]) in Set(map(string, ordering_variables(ord.ord2))),
+        varmap
+    )
     ProductOrdering(ordering_transform(ord.ord1, varmap1), ordering_transform(ord.ord2, varmap2))
 end
 
