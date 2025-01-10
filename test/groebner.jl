@@ -624,6 +624,14 @@ end
         @test map(leading_term, gb) == reverse(xs)
     end
 
+    # Handles rings that are not the same
+    R, (a, b) = polynomial_ring(QQ, ["a", "b"])
+    R, (A, B, C) = polynomial_ring(QQ, ["a", "b", "c"])
+    @test groebner([a, b], ordering=Lex(B, A)) == [a, b]
+    @test groebner([a, b], ordering=Lex(B, A, C)) == [a, b]
+    @test groebner([a, b], ordering=DegLex(B) * DegRevLex(A)) == [a, b]
+    @test groebner([a, b], ordering=DegLex(A) * DegRevLex(B)) == [b, a]
+
     # Correctness of Lex, DegLex, DegRevLex comparing with AbstractAlgebra
     for aa_ord in [:lex, :deglex, :degrevlex]
         R, (x1, x2, x3, x4) =
