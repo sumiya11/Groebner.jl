@@ -69,7 +69,7 @@ function monom_to_vector!(tmp::Vector{M}, pv::ExponentVector{T}) where {M, T}
             __throw_monom_overflow_error(-1, M)
         end
     end
-    @inbounds tmp[1:end] = pv[2:end]
+    @inbounds tmp[1:end] .= pv[2:end]
     tmp
 end
 
