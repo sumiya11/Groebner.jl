@@ -160,7 +160,7 @@ function io_extract_monoms_ir(ring::PolyRing, polys)
     ring_aa = AbstractAlgebra.parent(polys[1])
     v = AbstractAlgebra.gens(ring_aa)
     var_to_index = Dict{elem_type(ring_aa), Int}(v .=> 1:AbstractAlgebra.nvars(ring_aa))
-    res = Vector{Vector{Vector{UInt64}}}(undef, length(polys))
+    res = Vector{Vector{Vector{Int}}}(undef, length(polys))
     @inbounds for i in 1:length(polys)
         poly = polys[i]
         if !aa_is_multivariate_ring(parent(polys[1]))
