@@ -102,7 +102,7 @@ We would like to acknowledge the developers of the msolve library ([https://msol
 
 We thank Vladimir Kuznetsov for helpful discussions and providing the sources of his F4 implementation.
 
-We are grateful to The Max Planck Institute for Informatics and The MAX team at l'X for providing computational resources.
+We are grateful to The Max Planck Institute for Informatics, The MAX team at l'X, and the OURAGAN team at Inria for providing computational resources.
 
 ## See also
 
