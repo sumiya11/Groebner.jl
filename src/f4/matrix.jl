@@ -201,9 +201,12 @@ function matrix_convert_rows_to_basis_elements!(
     crs = basis.n_processed
 
     _, _, nl, nr = matrix_block_sizes(matrix)
-
-    @invariant all(i -> isdefined(rows, i), 1:length(rows))
-    support_size = sum(length, rows; init=0)
+    support_size = 0
+    for i in 1:length(rows)
+        if isdefined(rows, i)
+            support_size += length(rows[i])
+        end
+    end
 
     if batched_ht_insert && matrix.npivots > 1 && support_size > 4 * nr
         column_to_basis_monom = zeros(MonomId, nr)
