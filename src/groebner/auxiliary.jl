@@ -155,21 +155,26 @@ function quotient_basis2(
     end
     n = ring.nvars
     leading_exponents = map(m -> monom_to_vector!(zeros(Int, n), first(m)), monoms)
-    # GB != {1}
+    # GB != {1} and GB is not zero dimensional
     if monoms[1][1] != monom_construct_const(M, n) &&
        length(filter(e -> count(iszero, e) == n - 1, leading_exponents)) < n
         throw(DomainError("Input does not define a zero-dimensional ideal."))
     end
-
-    @invariant iszero(dimension2(ring, monoms, coeffs, params))
-
-    exponents_to_check = [[0 for _ in 1:n]]
-    exponents_checked = []
-    basis_exponents = []
+    @invariant dimension2(ring, monoms, coeffs, params) in (-1, 0)
+    exponents_to_check = Vector{Vector{Int}}()
+    exponents_checked = Set{Vector{Int}}()
+    basis_exponents = Set{Vector{Int}}()
+    push!(exponents_to_check, zeros(Int, n))
+    function _divisible(e1, e2)
+        for i in 1:length(e1)
+            e1[i] < e2[i] && return false
+        end
+        true
+    end
     while length(exponents_to_check) > 0
         e = popfirst!(exponents_to_check)
         push!(exponents_checked, e)
-        if !any(map(le -> all(e .>= le), leading_exponents))
+        if !any(le -> _divisible(e, le), leading_exponents)
             push!(basis_exponents, e)
             for i in 1:n
                 next_e = copy(e)
@@ -182,7 +187,8 @@ function quotient_basis2(
     end
     qb_len = length(basis_exponents)
     basis_exponents = [[monom_construct_from_vector(M, v)] for v in basis_exponents]
-    return basis_exponents, Vector{Vector{C}}([[one(coeffs[1][1])] for _ in 1:qb_len])
+    basis_coeffs = Vector{Vector{C}}([[one(coeffs[1][1])] for _ in 1:qb_len])
+    return basis_exponents, basis_coeffs
 end
 
 ###
@@ -226,14 +232,14 @@ function dimension2(
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters
 ) where {M <: Monom, C <: Coeff}
+    params = deepcopy(params)
     params.target_ord = DegRevLex()
     monoms, coeffs = leading_ideal2(ring, monoms, coeffs, params)
+    # GB = {0} or GB = {1}
     if isempty(monoms[1])
         return -1
     end
-
     res = [trues(ring.nvars)]
-
     lead_exps = map(x -> monom_to_vector!(zeros(Int, ring.nvars), first(x)), monoms)
     for lexp in lead_exps
         to_del = Int[]
@@ -254,7 +260,6 @@ function dimension2(
         append!(res, new_miss)
         unique!(res)
     end
-
     length(res) == 0 && return -1
     max_length = maximum(mis -> length(findall(mis)), res)
     return max_length
