@@ -21,6 +21,12 @@ using Groebner # hide
 
 {{doc normalform normalform fn}}
 
+{{doc leading_ideal leading_ideal fn}}
+
+{{doc dimension dimension fn}}
+
+{{doc quotient_basis quotient_basis fn}}
+
 ## Monomial orderings
 
 A list of all monomial orderings supported by Groebner.jl.

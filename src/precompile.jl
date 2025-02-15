@@ -13,7 +13,11 @@
         arr = [x * y^3 + x * y + 1, x^3 * y^2 + x * y^2 + x + 1]
         gb = groebner(arr)
         isgroebner(arr)
-        normalform(arr, arr)
+        normalform(gb, arr)
+        leading_term(arr)
+        leading_ideal(arr)
+        quotient_basis(arr)
+        # dimension(arr)
 
         R, (x, y) = AbstractAlgebra.polynomial_ring(AbstractAlgebra.GF(2^31 - 1), ["x", "y"])
         arr = [x^2 * y + x * y + 1, x * y^5 + y^4 + 1]

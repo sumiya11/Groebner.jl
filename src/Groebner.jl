@@ -155,8 +155,8 @@ include("precompile.jl")
 
 export groebner, groebner_learn, groebner_apply!
 export groebner_with_change_matrix
-export isgroebner
-export normalform
+export isgroebner, normalform
+export quotient_basis, leading_ideal, dimension
 
 export Lex, DegLex, DegRevLex, InputOrdering, WeightedOrdering, ProductOrdering, MatrixOrdering
 
