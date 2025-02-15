@@ -70,7 +70,7 @@ const _supported_kw_args = (
         ordering    = InputOrdering(),
     ),
     normalform = (
-        check       = true,
+        check       = false,
         ordering    = InputOrdering(),
         monoms      = :dense,
     ),
