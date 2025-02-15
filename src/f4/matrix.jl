@@ -201,6 +201,8 @@ function matrix_convert_rows_to_basis_elements!(
     crs = basis.n_processed
 
     _, _, nl, nr = matrix_block_sizes(matrix)
+
+    @invariant all(i -> isdefined(rows, i), 1:length(rows))
     support_size = sum(length, rows; init=0)
 
     if batched_ht_insert && matrix.npivots > 1 && support_size > 4 * nr
