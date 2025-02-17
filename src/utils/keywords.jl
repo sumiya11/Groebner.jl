@@ -10,6 +10,7 @@ const INT_INF = typemax(Int)
 # Maps a function name from the interface to a set of supported keyword
 # arguments with their corresponding default values.
 const _supported_kw_args = (
+    dimension = (;),
     groebner = (
         reduced      = true,
         ordering     = InputOrdering(),
@@ -26,19 +27,12 @@ const _supported_kw_args = (
         _composite   = 4,
         _generic     = false
     ),
-    normalform = (
-        check       = false,
-        ordering    = InputOrdering(),
-        monoms      = :dense,
-    ),
-    lead = (
-        ordering    = InputOrdering(),
-    ),
-    isgroebner = (
-        ordering    = InputOrdering(),
-        certify     = true,
+    groebner_apply! = (
         seed        = 42,
-        monoms      = :dense
+        ordering    = InputOrdering(),
+        monoms      = :auto,
+        arithmetic  = :auto,
+        threaded    = :auto,
     ),
     groebner_learn = (
         seed        = 42,
@@ -46,13 +40,6 @@ const _supported_kw_args = (
         monoms      = :auto,
         arithmetic  = :auto,
         homogenize  = :auto,
-        threaded    = :auto,
-    ),
-    groebner_apply! = (
-        seed        = 42,
-        ordering    = InputOrdering(),
-        monoms      = :auto,
-        arithmetic  = :auto,
         threaded    = :auto,
     ),
     groebner_with_change_matrix = (
@@ -69,6 +56,26 @@ const _supported_kw_args = (
         homogenize   = :auto,
         changematrix = true,
         _composite   = 4,
+    ),
+    isgroebner = (
+        ordering    = InputOrdering(),
+        certify     = true,
+        seed        = 42,
+        monoms      = :dense
+    ),
+    leading_term = (
+        ordering    = InputOrdering(),
+    ),
+    leading_ideal = (
+        ordering    = InputOrdering(),
+    ),
+    normalform = (
+        check       = false,
+        ordering    = InputOrdering(),
+        monoms      = :dense,
+    ),
+    quotient_basis = (
+        ordering    = InputOrdering(),
     ),
 )
 #! format: on

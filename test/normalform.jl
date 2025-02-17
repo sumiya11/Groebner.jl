@@ -153,10 +153,10 @@ function test_params_nf(
                                             )
                                         )
                                     catch
-                                        @error "Beda!" n e nt np gr ord
+                                        @error "Beda!" n e nt np gr ord ord_groebner
                                         println(err)
                                         println("Rng:\n", rng)
-                                        println("Set:\n", set)
+                                        println("Set:\n", set1)
                                         println("Gb:\n", gb)
                                         println("Nf:\n", nf)
                                         rethrow(err)
