@@ -184,6 +184,17 @@ end
 ###
 # Eco
 
+function econ(n; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
+	R, x = polynomial_ring(k, ["x$i" for i in 1:n], internal_ordering=internal_ordering)
+	vcat(
+		[
+			x[n]*(x[k] + sum(x[1:n-k-1] .* x[1+k:n-1]; init=0)) - k
+			for k in 1:n-1
+		],
+		sum(x[1:n-1]; init=0) + 1
+    )
+end
+
 function eco5(; np=AbstractAlgebra, k=np.GF(2^31 - 1), internal_ordering=:degrevlex)
     _, (x1, x2, x3, x4, x5) =
         np.polynomial_ring(k, ["x$i" for i in 1:5], internal_ordering=internal_ordering)
