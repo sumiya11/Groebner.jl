@@ -1307,6 +1307,7 @@ end
         Groebner.Examples.katsuran(3, internal_ordering=:lex, k=QQ),
         Groebner.Examples.katsuran(4, internal_ordering=:lex, k=QQ),
         Groebner.Examples.eco5(internal_ordering=:degrevlex, k=QQ),
+        Groebner.Examples.econ(4, internal_ordering=:degrevlex, k=QQ),
         Groebner.Examples.cyclicn(5, internal_ordering=:degrevlex, k=QQ),
         Groebner.Examples.ojika4(internal_ordering=:lex, k=QQ),
         Groebner.Examples.noonn(6, internal_ordering=:degrevlex, k=QQ),
