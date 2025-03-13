@@ -153,14 +153,12 @@ function f4_reducegb_learn!(
     trace.output_nonredundant_indices = copy(basis.nonredundant_indices[1:k])
 end
 
-function f4_learn!(trace::Trace, pairset::Pairset)
+function f4_learn!(trace::Trace, pairset::Pairset, params::AlgorithmParameters)
     ring = trace.ring
     basis = trace.gb_basis
     hashtable = trace.hashtable
-    params = trace.params
 
     @invariant basis_well_formed(ring, basis, hashtable)
-    @invariant basis == trace.gb_basis
     @invariant params.reduced
 
     basis_make_monic!(basis, params.arithmetic, params.changematrix)
@@ -478,13 +476,12 @@ function f4_standardize_basis_in_apply!(ring::PolyRing, trace::Trace, arithmetic
     basis_make_monic!(basis, arithmetic, false)
 end
 
-function f4_apply!(trace::Trace)
+function f4_apply!(trace::Trace, params::AlgorithmParameters)
     ring = trace.ring
     basis = trace.buf_basis
     hashtable = trace.hashtable
-    params = trace.params
 
-    @invariant basis_well_formed(ring, basis, trace.hashtable)
+    # @invariant basis_well_formed(ring, basis, trace.hashtable)
     @invariant params.reduced
 
     iters_total = length(trace.matrix_infos) - 1

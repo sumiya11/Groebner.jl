@@ -217,7 +217,7 @@ function _groebner_learn_and_apply(
     params_zp = params_mod_p(params, prime)
     trace = trace_initialize(ring_ff, basis_ff, hashtable, permutation, params_zp)
 
-    f4_learn!(trace, pairset)
+    f4_learn!(trace, pairset, params_zp)
 
     # TODO: no need to deepcopy!
     push!(state.used_primes, prime)
@@ -274,11 +274,10 @@ function _groebner_learn_and_apply(
                 CompositeNumber{B, Int32}(prime_Bx),
                 using_wide_type_for_coeffs=false
             )
-            trace_Bx.params = params_zp_Bx
             trace_Bx.buf_basis = basis_ff_Bx
             trace_Bx.ring = ring_ff_Bx
 
-            flag = f4_apply!(trace_Bx)
+            flag = f4_apply!(trace_Bx, params_zp_Bx)
             !flag && continue
 
             gb_coeffs_unpacked = ir_unpack_composite_coefficients(trace_Bx.gb_basis.coeffs)
@@ -385,7 +384,7 @@ function _groebner_learn_and_apply_threaded(
     params_zp = params_mod_p(params, prime)
     trace = trace_initialize(ring_ff, basis_ff, hashtable, permutation, params_zp)
 
-    f4_learn!(trace, pairset)
+    f4_learn!(trace, pairset, params_zp)
 
     # TODO: no need to deepcopy!
     push!(state.used_primes, prime)
@@ -458,11 +457,10 @@ function _groebner_learn_and_apply_threaded(
                 CompositeNumber{B, Int32}(threadlocal_prime_Bx),
                 using_wide_type_for_coeffs=false
             )
-            threadlocal_trace_Bx.params = threadlocal_params_zp_Bx
             threadlocal_trace_Bx.buf_basis = basis_ff_Bx
             threadlocal_trace_Bx.ring = ring_ff_Bx
 
-            flag = f4_apply!(threadlocal_trace_Bx)
+            flag = f4_apply!(threadlocal_trace_Bx, threadlocal_params_zp_Bx)
             !flag && continue
 
             gb_coeffs_unpacked =
