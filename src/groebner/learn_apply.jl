@@ -110,7 +110,7 @@ function _groebner_learn2(
 ) where {M <: Monom, C <: CoeffZp}
     trace, basis, pairset, hashtable =
         f4_initialize_structs_with_trace(ring, monoms, coeffs, params)
-    f4_learn!(trace, ring, trace.gb_basis, pairset, hashtable, params)
+    f4_learn!(trace, pairset)
     gb_monoms, gb_coeffs = basis_export_data(trace.gb_basis, trace.hashtable)
     trace, gb_monoms, gb_coeffs
 end
@@ -262,7 +262,7 @@ function groebner_apply2!(trace, params)
 end
 
 function _groebner_apply2!(trace, params)
-    flag = f4_apply!(trace, trace.ring, trace.buf_basis, params)
+    flag = f4_apply!(trace)
 
     gb_coeffs = basis_export_coeffs(trace.gb_basis)
 
