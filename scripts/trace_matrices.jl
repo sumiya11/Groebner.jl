@@ -20,13 +20,14 @@ function make_matrix(sys, matrix)
 end
 
 matrix_1 = make_matrix(sys, matrices[1])
-@info "" matrix_1.reducers matrix_1.to_be_reduced
+@info "The first matrix:" matrix_1.reducers matrix_1.to_be_reduced
 
 # 5. Construct a basis by reducing the matrices
 function follow_the_trace(sys, matrices)
     gb = sys
     for matrix in matrices
         matrix = make_matrix(gb, matrix)
+        # Can be computed via lin-alg
         reduced = broadcast(AbstractAlgebra.normal_form, matrix.to_be_reduced, Ref(matrix.reducers))
         gb = vcat(gb, reduced)
     end
@@ -35,4 +36,4 @@ end
 
 gb = follow_the_trace(sys, matrices)
 
-@assert groebner(gb) == gb_truth
+@assert groebner(gb) == gb_truth   # autoreduce by calling `groebner`
