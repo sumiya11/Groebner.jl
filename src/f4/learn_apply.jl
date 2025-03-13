@@ -481,7 +481,7 @@ function f4_apply!(trace::Trace, params::AlgorithmParameters)
     basis = trace.buf_basis
     hashtable = trace.hashtable
 
-    # @invariant basis_well_formed(ring, basis, trace.hashtable)
+    @invariant basis_well_formed(ring, basis, trace.hashtable)
     @invariant params.reduced
 
     iters_total = length(trace.matrix_infos) - 1
