@@ -26,7 +26,7 @@ function f4_initialize_structs_with_trace(
         make_monic=make_monic,
         sort_input=sort_input
     )
-    trace = trace_initialize(ring, basis_deepcopy(basis), basis, hashtable, permutation, params)
+    trace = trace_initialize(ring, basis, hashtable, permutation, params)
     trace, basis, pairset, hashtable, permutation
 end
 

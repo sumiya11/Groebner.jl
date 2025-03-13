@@ -215,14 +215,7 @@ function _groebner_learn_and_apply(
     ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
 
     params_zp = params_mod_p(params, prime)
-    trace = trace_initialize(
-        ring_ff,
-        basis_deepcopy(basis_ff),
-        basis_ff,
-        hashtable,
-        permutation,
-        params_zp
-    )
+    trace = trace_initialize(ring_ff, basis_ff, hashtable, permutation, params_zp)
 
     f4_learn!(trace, ring_ff, trace.gb_basis, pairset, hashtable, params_zp)
 
@@ -265,7 +258,7 @@ function _groebner_learn_and_apply(
     witness_set = modular_witness_set(state.gb_coeffs_zz, params)
 
     # Initialize a tracer that computes the bases in batches
-    trace_Bx = trace_copy(trace, CompositeNumber{B, Int32}, false)
+    trace_Bx = trace_copy(trace, PolynomialRepresentation(M, CompositeNumber{B, Int32}, false))
 
     iters = 0
     while !correct_basis
@@ -389,14 +382,7 @@ function _groebner_learn_and_apply_threaded(
     ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
 
     params_zp = params_mod_p(params, prime)
-    trace = trace_initialize(
-        ring_ff,
-        basis_deepcopy(basis_ff),
-        basis_ff,
-        hashtable,
-        permutation,
-        params_zp
-    )
+    trace = trace_initialize(ring_ff, basis_ff, hashtable, permutation, params_zp)
 
     f4_learn!(trace, ring_ff, trace.gb_basis, pairset, hashtable, params_zp)
 
@@ -439,10 +425,10 @@ function _groebner_learn_and_apply_threaded(
     witness_set = modular_witness_set(state.gb_coeffs_zz, params)
 
     # Initialize a tracer that computes the bases in batches
-    trace_Bx = trace_copy(trace, CompositeNumber{B, Int32}, false)
+    trace_Bx = trace_copy(trace, PolynomialRepresentation(M, CompositeNumber{B, Int32}, false))
 
     # Thread buffers
-    threadbuf_trace_Bx = map(_ -> trace_deepcopy(trace_Bx), 1:nthreads())
+    threadbuf_trace_Bx = map(_ -> deepcopy(trace_Bx), 1:nthreads())
     threadbuf_gb_coeffs = Vector{Vector{Tuple{Int32, Vector{Vector{Int32}}}}}(undef, nthreads())
     for i in 1:nthreads()
         threadbuf_gb_coeffs[i] = Vector{Tuple{Int, Vector{Vector{Int32}}}}()

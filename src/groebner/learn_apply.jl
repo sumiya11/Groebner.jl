@@ -64,9 +64,8 @@ function __groebner_learn1(
     trace.representation = params.representation
     trace.term_sorting_permutations = term_sorting_permutations
 
-    wrapped_trace = WrappedTrace(trace)
-    wrapped_trace.sys_support = monoms
-    wrapped_trace.gb_support = gb_monoms
+    wrapped_trace = WrappedTrace(monoms, gb_monoms)
+    wrapped_trace_save!(wrapped_trace, trace)
 
     wrapped_trace, gb_monoms, gb_coeffs
 end
@@ -208,9 +207,6 @@ function __groebner_apply1!(
 ) where {I <: Integer, C <: Coeff}
     params = AlgorithmParameters(ring, options)
 
-    flag = trace_check_input(wrapped_trace, monoms, coeffs)
-    !flag && return flag, coeffs
-
     if params.homogenize
         new_ord = extend_ordering_in_homogenization(ring.nvars, ring.ord)
         ring = PolyRing(ring.nvars + 1, new_ord, ring.ch, ring.ground)
@@ -218,7 +214,10 @@ function __groebner_apply1!(
         ring = PolyRing(ring.nvars + 1, new_ord, ring.ch, ring.ground)
     end
 
-    trace = get_trace!(wrapped_trace, ring, params)
+    flag = wrapped_trace_check_input(wrapped_trace, monoms, coeffs)
+    !flag && return flag, coeffs
+
+    trace = wrapped_trace_create_suitable_trace!(wrapped_trace, ring, params)
 
     _monoms = filter(!isempty, monoms)
     _coeffs = filter(!isempty, coeffs)

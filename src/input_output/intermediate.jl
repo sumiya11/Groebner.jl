@@ -210,7 +210,7 @@ function ir_extract_coeffs_raw!(trace, coeffs::Vector{Vector{C}}) where {C <: Co
         end
     end
 
-    if trace.homogenize
+    if trace.params.homogenize
         @invariant trace.ring.ground == :zp
         trace.buf_basis.coeffs[length(coeffs) + 1][1] = one(CoeffsType)
         trace.buf_basis.coeffs[length(coeffs) + 1][2] = trace.ring.ch - one(typeof(trace.ring.ch))
