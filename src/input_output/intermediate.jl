@@ -20,10 +20,10 @@ const IR_coeff = Union{Number, CoeffGeneric}
 # - The Groebner basis of [0] is [0].
 # - The Groebner basis of [f1,...,fn, 0] is the Groebner basis of [f1...fn]
 
-mutable struct PolyRing{Ord <: AbstractMonomialOrdering, C <: Union{CoeffZp, CompositeCoeffZp}}
+struct PolyRing{Ord <: AbstractMonomialOrdering, C <: Union{CoeffZp, CompositeCoeffZp}}
     nvars::Int
     ord::Ord
-    ch::C
+    characteristic::C
     ground::Symbol
 
     PolyRing(nvars::Int, ord, ch) = PolyRing(nvars, ord, ch, iszero(ch) ? :qq : :zp)
@@ -36,7 +36,10 @@ mutable struct PolyRing{Ord <: AbstractMonomialOrdering, C <: Union{CoeffZp, Com
 end
 
 Base.:(==)(r1::PolyRing, r2::PolyRing) =
-    r1.nvars == r2.nvars && r1.ord == r2.ord && r1.ch == r2.ch && r1.ground == r2.ground
+    r1.nvars == r2.nvars &&
+    r1.ord == r2.ord &&
+    r1.characteristic == r2.characteristic &&
+    r1.ground == r2.ground
 
 ir_is_valid_basic(batch) = throw(DomainError("Invalid IR, unknown types."))
 ir_is_valid_basic(ring, monoms, coeffs) = throw(DomainError("Invalid IR, unknown types."))
@@ -58,12 +61,13 @@ function ir_is_valid_basic(
     !(length(monoms) == length(coeffs)) && throw(DomainError("Invalid IR."))
     isempty(monoms) && throw(DomainError("Invalid IR."))
     !(ring.nvars >= 0) && throw(DomainError("The number of variables must be non-negative."))
-    !(ring.ch >= 0) && throw(DomainError("Field characteristic must be nonnegative."))
+    !(ring.characteristic >= 0) && throw(DomainError("Field characteristic must be nonnegative."))
     if ring.ground == :zp
         !(C <: Integer) && throw(DomainError("Coefficients must be integers."))
         (C <: BigInt) && throw(DomainError("Coefficients must fit in a machine register."))
-        !(ring.ch <= typemax(C)) && throw(DomainError("Invalid IR."))
-        !Primes.isprime(ring.ch) && throw(DomainError("Ring characteristic must be prime"))
+        !(ring.characteristic <= typemax(C)) && throw(DomainError("Invalid IR."))
+        !Primes.isprime(ring.characteristic) &&
+            throw(DomainError("Ring characteristic must be prime"))
     elseif ring.ground == :qq
         !(C <: Rational || C <: Integer || C <: CoeffGeneric) &&
             throw(DomainError("Coefficients must be integer or rational."))
@@ -94,7 +98,7 @@ function ir_is_valid(
             !(all(>=(0), monoms[i][j])) && throw(DomainError("Invalid IR."))
             iszero(coeffs[i][j]) && throw(DomainError("Invalid IR")) # can be relaxed
             if (ring.ground == :zp)
-                !(0 < coeffs[i][j] < ring.ch) && throw(DomainError("Invalid IR."))
+                !(0 < coeffs[i][j] < ring.characteristic) && throw(DomainError("Invalid IR."))
             end
         end
     end
@@ -124,7 +128,7 @@ function ir_ensure_valid(
     for i in 1:length(new_monoms)
         for j in 1:length(new_monoms[i])
             if ring.ground == :zp
-                new_coeffs[i][j] = mod(new_coeffs[i][j], ring.ch)
+                new_coeffs[i][j] = mod(new_coeffs[i][j], ring.characteristic)
             end
         end
     end
@@ -162,9 +166,9 @@ function ir_ensure_valid(
             end
             _new_coeffs[i][slow_idx] =
                 Base.Checked.checked_add(_new_coeffs[i][slow_idx], new_coeffs[i][fast_idx])
-            if ring.ground == :zp && _new_coeffs[i][slow_idx] >= ring.ch
-                _new_coeffs[i][slow_idx] -= ring.ch
-                @invariant _new_coeffs[i][slow_idx] < ring.ch
+            if ring.ground == :zp && _new_coeffs[i][slow_idx] >= ring.characteristic
+                _new_coeffs[i][slow_idx] -= ring.characteristic
+                @invariant _new_coeffs[i][slow_idx] < ring.characteristic
             end
         end
     end
@@ -213,7 +217,8 @@ function ir_extract_coeffs_raw!(trace, coeffs::Vector{Vector{C}}) where {C <: Co
     if trace.params.homogenize
         @invariant trace.ring.ground == :zp
         trace.buf_basis.coeffs[length(coeffs) + 1][1] = one(CoeffsType)
-        trace.buf_basis.coeffs[length(coeffs) + 1][2] = trace.ring.ch - one(typeof(trace.ring.ch))
+        trace.buf_basis.coeffs[length(coeffs) + 1][2] =
+            trace.ring.characteristic - one(typeof(trace.ring.characteristic))
     end
 
     true
@@ -223,7 +228,7 @@ end
 
 function ir_pack_coeffs(batch::NTuple{N, T}) where {N, T}
     ring = batch[1][1]
-    ch = CompositeNumber(map(el -> el[1].ch, batch))
+    ch = CompositeNumber(map(el -> el[1].characteristic, batch))
     new_ring = PolyRing(ring.nvars, ring.ord, ch, ring.ground)
     monoms = batch[1][2]
     coeffs = Vector{Vector{CompositeNumber{N, UInt64}}}(undef, length(monoms))
@@ -319,7 +324,7 @@ function ir_set_monomial_ordering!(
         # No reordering of terms needed
         return ring, Vector{Vector{Int}}()
     end
-    ring = PolyRing(ring.nvars, params.target_ord, ring.ch, ring.ground)
+    ring = PolyRing(ring.nvars, params.target_ord, ring.characteristic, ring.ground)
     permutations = sort_input_terms_to_change_ordering!(monoms, coeffs, params.target_ord)
     ring, permutations
 end

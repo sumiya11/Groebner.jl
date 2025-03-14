@@ -201,7 +201,7 @@ function Base.show(io::IO, ::MIME"text/plain", trace::Trace)
     println(
         io,
         """
-        ring  : Z[x1,...,x$(trace.ring.nvars)] mod $(trace.ring.ch)
+        ring  : Z[x1,...,x$(trace.ring.nvars)] mod $(trace.ring.characteristic)
         input : $(trace.input_basis.n_filled) polynomials
         output: $(trace.gb_basis.n_filled) polynomials
         apply : $(trace.napply) / $(trace.nfail) (success/fail)

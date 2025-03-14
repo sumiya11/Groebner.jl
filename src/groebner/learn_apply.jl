@@ -85,14 +85,14 @@ function groebner_learn2(
     monoms, coeffs = _monoms, _coeffs
 
     if params.homogenize
-        term_homogenizing_permutation, ring, monoms, coeffs =
-            homogenize_generators!(ring, monoms, coeffs, params)
+        term_homogenizing_permutation, ring, monoms, coeffs, params =
+            homogenize_generators(ring, monoms, coeffs, params)
     end
 
     trace, gb_monoms, gb_coeffs = _groebner_learn2(ring, monoms, coeffs, params)
 
     if params.homogenize
-        ring, gb_monoms, gb_coeffs = dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
+        ring, gb_monoms, gb_coeffs, params = dehomogenize_generators(ring, gb_monoms, gb_coeffs, params)
         if params.reduced
             gb_monoms, gb_coeffs = autoreduce2(ring, gb_monoms, gb_coeffs, params)
         end
@@ -209,9 +209,9 @@ function __groebner_apply1!(
 
     if params.homogenize
         new_ord = extend_ordering_in_homogenization(ring.nvars, ring.ord)
-        ring = PolyRing(ring.nvars + 1, new_ord, ring.ch, ring.ground)
+        ring = PolyRing(ring.nvars + 1, new_ord, ring.characteristic, ring.ground)
         new_ord = extend_ordering_in_saturation(ring.nvars, ring.ord)
-        ring = PolyRing(ring.nvars + 1, new_ord, ring.ch, ring.ground)
+        ring = PolyRing(ring.nvars + 1, new_ord, ring.characteristic, ring.ground)
     end
 
     flag = wrapped_trace_check_input(wrapped_trace, monoms, coeffs)
@@ -269,8 +269,8 @@ function _groebner_apply2!(trace, params)
     ring = trace.ring
     if trace.params.homogenize
         gb_monoms, gb_coeffs = basis_export_data(trace.gb_basis, trace.hashtable)
-        ring, gb_monoms, gb_coeffs =
-            dehomogenize_generators!(trace.ring, gb_monoms, gb_coeffs, params)
+        ring, gb_monoms, gb_coeffs, params =
+            dehomogenize_generators(trace.ring, gb_monoms, gb_coeffs, params)
         if params.reduced
             gb_monoms, gb_coeffs = autoreduce2(ring, gb_monoms, gb_coeffs, params)
         end

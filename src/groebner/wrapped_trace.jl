@@ -24,7 +24,11 @@ function wrapped_trace_create_suitable_trace!(
     # Try to find a suitable trace among the existing ones
     if haskey(wrapped_trace.recorded_traces, params.representation.coefftype)
         trace = wrapped_trace.recorded_traces[params.representation.coefftype]
-        trace.ring.ch = ring.ch
+        trace.ring = PolyRing(
+            trace.ring.nvars,
+            trace.ring.ord,
+            typeof(trace.ring.characteristic)(ring.characteristic)
+        )
         return trace
     end
 
@@ -35,7 +39,7 @@ function wrapped_trace_create_suitable_trace!(
     new_trace.ring = PolyRing(
         ring.nvars,
         ring.ord,
-        convert(params.representation.coefftype, ring.ch),
+        convert(params.representation.coefftype, ring.characteristic),
         ring.ground
     )
     wrapped_trace_save!(wrapped_trace, new_trace)

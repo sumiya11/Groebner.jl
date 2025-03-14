@@ -173,7 +173,7 @@ function basis_well_formed(ring::PolyRing, basis::Basis, hashtable::MonomialHash
 	iszero(basis.coeffs[i][1]) && error("Leading coefficient is zero")
 	for j in 1:length(basis.coeffs[i])
             (ring.ground == :zp) &&
-	    !(-1 < basis.coeffs[i][j] < ring.ch) &&
+	    !(-1 < basis.coeffs[i][j] < ring.characteristic) &&
                 error("Coefficients must be normalized")
             (basis.monoms[i][j] > hashtable.load) && error("Bad monomial")
         end

@@ -78,6 +78,7 @@ end
 # Includes
 
 include("utils/invariants.jl")
+include("utils/tuples.jl")
 include("utils/packed.jl")
 
 # Test systems, such as katsura, cyclic, etc
