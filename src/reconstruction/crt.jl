@@ -3,6 +3,44 @@
 ###
 # CRT
 
+# Auxiliary functions allowing to avoid overflow
+# on Windows for numbers between 32 and 64 bits
+function my_set_ui!(a::BigInt, b::UInt64)
+    @static if Culong == UInt64
+        Base.GMP.MPZ.set_ui!(a, b)
+    else
+        if b < 2^32
+            Base.GMP.MPZ.set_ui!(a, b)
+        else
+            Base.GMP.MPZ.set!(a, BigInt(b))
+        end
+    end
+end
+
+function my_mul_ui!(a::BigInt, b::BigInt, c::UInt64)
+    @static if Culong == UInt64
+        Base.GMP.MPZ.mul_ui!(a, b, c)
+    else
+        if c < 2^32
+            Base.GMP.MPZ.mul_ui!(a, b, c)
+        else
+            Base.GMP.MPZ.mul!(a, b, BigInt(c))
+        end
+    end
+end
+
+function my_mul_ui!(a::BigInt, b::UInt64)
+    @static if Culong == UInt64
+        Base.GMP.MPZ.mul_ui!(a, b)
+    else
+        if b < 2^32
+            Base.GMP.MPZ.mul_ui!(a, b)
+        else
+            Base.GMP.MPZ.mul!(a, BigInt(b))
+        end
+    end
+end
+
 """
     crt!
 
@@ -23,9 +61,9 @@ Then, `x` is obtained as `x = ∑ ci[i] ai[i] mod M`.
 function crt!(M::BigInt, buf::BigInt, n1::BigInt, n2::BigInt, ai::Vector{UInt}, ci::Vector{BigInt})
     @invariant length(ai) == length(ci)
 
-    Base.GMP.MPZ.set_ui!(n1, UInt(0))
+    my_set_ui!(n1, UInt(0))
     for i in 1:length(ai)
-        Base.GMP.MPZ.mul_ui!(n2, ci[i], ai[i])
+        my_mul_ui!(n2, ci[i], ai[i])
         Base.GMP.MPZ.add!(n1, n2)
     end
 
@@ -52,13 +90,13 @@ function crt_precompute!(
     @invariant length(ci) == length(moduli)
 
     n3, n4 = BigInt(), BigInt()
-    @inbounds Base.GMP.MPZ.set_ui!(M, moduli[1])
+    @inbounds my_set_ui!(M, moduli[1])
     @inbounds for i in 2:length(moduli)
-        Base.GMP.MPZ.mul_ui!(M, moduli[i])
+        my_mul_ui!(M, moduli[i])
     end
 
     @inbounds for i in 1:length(moduli)
-        Base.GMP.MPZ.set_ui!(n2, moduli[i])
+        my_set_ui!(n2, moduli[i])
         Base.GMP.MPZ.tdiv_q!(ci[i], M, n2)
         Base.GMP.MPZ.gcdext!(n2, n3, n4, ci[i], n2)
         Base.GMP.MPZ.mul!(ci[i], n3)
