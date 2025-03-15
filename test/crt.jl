@@ -1,13 +1,14 @@
 @testset "CRT" begin
     cases = []
-    
-    push!(cases,
+
+    push!(
+        cases,
         Dict(
             :moduli => Vector{UInt64}([1099511627791, 3518437208889]),
-            :ai => Vector{UInt64}([8590035092, 8589936485]),
+            :ai => Vector{UInt64}([8590035092, 8589936485])
         )
     )
-    
+
     for c in cases
         ai = c[:ai]
         moduli = c[:moduli]
