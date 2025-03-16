@@ -35,7 +35,7 @@
         end
         buf = BigInt(0)
         Groebner.crt!(M, buf, n1, n2, ai, ci)
-        @test buf < M
+        @test 0 <= buf < M
         for i in 1:length(ci)
             @test (buf - ai[i]) % moduli[i] == 0
         end
