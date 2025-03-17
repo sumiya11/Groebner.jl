@@ -1,6 +1,6 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
-### 
+###
 # Select parameters in Groebner basis computation
 
 # Specifies linear algebra algorithm
@@ -166,11 +166,11 @@ function param_select_coefftype(
 end
 
 # Stores parameters for a single GB computation.
-mutable struct AlgorithmParameters{Arithmetic <: AbstractArithmetic}
+struct AlgorithmParameters{Arithmetic <: AbstractArithmetic}
     # Desired monomial ordering of output polynomials
-    target_ord::Any
+    target_ord::AbstractMonomialOrdering
     # Original monomial ordering of input polynomials
-    original_ord::Any
+    original_ord::AbstractMonomialOrdering
 
     # Specifies correctness checks levels
     heuristic_check::Bool
@@ -254,7 +254,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         # too small. 
         # TODO: In the future, it would be good to adapt randomized linear
         # algebra to this case by taking more random samples
-        if ring.ch < 500
+        if ring.characteristic < 500
             if linalg === :randomized
                 @info """
                 The option linalg=:randomized was ignored:
@@ -273,7 +273,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
     linalg_algorithm = LinearAlgebra(linalg, linalg_sparsity)
 
     representation = param_select_polynomial_representation(
-        ring.ch,
+        ring.characteristic,
         ring.nvars,
         ring.ground,
         target_ord,
@@ -285,7 +285,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
 
     arithmetic = select_arithmetic(
         representation.coefftype,
-        ring.ch,
+        ring.characteristic,
         kwargs.arithmetic,
         representation.using_wide_type_for_coeffs
     )
@@ -368,7 +368,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
     )
 end
 
-function params_mod_p(
+function param_mod_p(
     params::AlgorithmParameters,
     prime::C;
     using_wide_type_for_coeffs=nothing
@@ -383,23 +383,12 @@ function params_mod_p(
         params.representation.coefftype,
         is_wide_type_coeffs
     )
-    AlgorithmParameters(
-        params.target_ord,
-        params.original_ord,
-        params.heuristic_check,
-        params.randomized_check,
-        params.certify_check,
-        params.homogenize,
-        params.check,
-        params.linalg,
-        select_arithmetic(C, prime, :auto, is_wide_type_coeffs),
-        representation,
-        params.reduced,
-        params.modular_strategy,
-        params.composite,
-        params.threaded_f4,
-        params.threaded_multimodular,
-        params.rng,
-        params.changematrix
+    struct_update(
+        AlgorithmParameters,
+        params,
+        (
+            arithmetic=select_arithmetic(C, prime, :auto, is_wide_type_coeffs),
+            representation=representation
+        )
     )
 end

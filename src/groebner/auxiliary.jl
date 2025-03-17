@@ -232,8 +232,7 @@ function dimension2(
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters
 ) where {M <: Monom, C <: Coeff}
-    params = deepcopy(params)
-    params.target_ord = DegRevLex()
+    params = struct_update(AlgorithmParameters, params, (target_ord=DegRevLex(),))
     monoms, coeffs = leading_ideal2(ring, monoms, coeffs, params)
     # GB = {0} or GB = {1}
     if isempty(monoms[1])

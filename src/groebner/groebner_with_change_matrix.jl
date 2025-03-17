@@ -155,7 +155,7 @@ function _groebner_with_change_classic_modular(
     # Perform reduction modulo prime and store result in basis_ff
     ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
 
-    params_zp = params_mod_p(params, prime)
+    params_zp = param_mod_p(params, prime)
     f4!(ring_ff, basis_ff, pairset, hashtable, params_zp)
     # NOTE: basis_ff may not own its coefficients, one should not mutate it
     # directly further in the code
@@ -219,7 +219,7 @@ function _groebner_with_change_classic_modular(
             prime = modular_next_prime!(state)
 
             ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
-            params_zp = params_mod_p(params, prime)
+            params_zp = param_mod_p(params, prime)
 
             f4!(ring_ff, basis_ff, pairset, hashtable, params_zp)
 
