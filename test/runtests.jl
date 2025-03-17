@@ -35,6 +35,7 @@ end
 
 @time @testset "All tests" verbose = true begin
     @time include("arithmetic.jl")
+    @time include("crt.jl")
 
     # Different implementations of a monomial 
     @time include("monoms/exponentvector.jl")
