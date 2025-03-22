@@ -260,7 +260,7 @@ function monom_lcm!(ec::ExponentVector{T}, ea::ExponentVector{T}, eb::ExponentVe
         ec[i] = max(ea[i], eb[i])
         s += ec[i]
     end
-    ec[1] = s
+    @inbounds ec[1] = s
     monom_overflow_check(ec)
     ec
 end

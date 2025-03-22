@@ -1048,13 +1048,13 @@ end
 
     # up to 127
     for n in [64, 100, 101, 127]
-        @info "Variables:" n
+        @info "Variables: $n"
         test_n_variables(n)
     end
 
     # up to 257
     for n in [128, 256, 257]
-        @info "Variables:" n
+        @info "Variables: $n"
         R, x = polynomial_ring(QQ, ["x$i" for i in 1:n])
         f = x
         Groebner.groebner(f)

@@ -74,13 +74,14 @@ function groebner2(
     monoms, coeffs = _monoms, _coeffs
 
     if params.homogenize
-        _, ring, monoms, coeffs = homogenize_generators!(ring, monoms, coeffs, params)
+        _, ring, monoms, coeffs, params = homogenize_generators(ring, monoms, coeffs, params)
     end
 
     gb_monoms, gb_coeffs = _groebner2(ring, monoms, coeffs, params)
 
     if params.homogenize
-        ring, gb_monoms, gb_coeffs = dehomogenize_generators!(ring, gb_monoms, gb_coeffs, params)
+        ring, gb_monoms, gb_coeffs, params =
+            dehomogenize_generators(ring, gb_monoms, gb_coeffs, params)
         if params.reduced
             gb_monoms, gb_coeffs = _groebner2(ring, gb_monoms, gb_coeffs, params)
         end
@@ -169,12 +170,12 @@ function _groebner_guess_lucky_prime(
 ) where {M <: Monom}
     prime_1 = modular_random_prime(state, params.rng)
     ring_ff_1, basis_ff_1 = modular_reduce_mod_p!(ring, basis_zz, prime_1, deepcopy=true)
-    params_zp = params_mod_p(params, prime_1)
+    params_zp = param_mod_p(params, prime_1)
     f4!(ring_ff_1, basis_ff_1, pairset, hashtable, params_zp)
 
     prime_2 = modular_random_prime(state, params.rng)
     ring_ff_2, basis_ff_2 = modular_reduce_mod_p!(ring, basis_zz, prime_2, deepcopy=true)
-    params_zp = params_mod_p(params, prime_2)
+    params_zp = param_mod_p(params, prime_2)
     f4!(ring_ff_2, basis_ff_2, pairset, hashtable, params_zp)
 
     if basis_ff_1.monoms == basis_ff_2.monoms
@@ -183,7 +184,7 @@ function _groebner_guess_lucky_prime(
 
     prime_3 = modular_random_prime(state, params.rng)
     ring_ff_3, basis_ff_3 = modular_reduce_mod_p!(ring, basis_zz, prime_3, deepcopy=true)
-    params_zp = params_mod_p(params, prime_3)
+    params_zp = param_mod_p(params, prime_3)
     f4!(ring_ff_3, basis_ff_3, pairset, hashtable, params_zp)
 
     if basis_ff_1.monoms == basis_ff_3.monoms
@@ -214,17 +215,10 @@ function _groebner_learn_and_apply(
 
     ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
 
-    params_zp = params_mod_p(params, prime)
-    trace = trace_initialize(
-        ring_ff,
-        basis_deepcopy(basis_ff),
-        basis_ff,
-        hashtable,
-        permutation,
-        params_zp
-    )
+    params_zp = param_mod_p(params, prime)
+    trace = trace_initialize(ring_ff, basis_ff, hashtable, permutation, params_zp)
 
-    f4_learn!(trace, ring_ff, trace.gb_basis, pairset, hashtable, params_zp)
+    f4_learn!(trace, pairset, params_zp)
 
     # TODO: no need to deepcopy!
     push!(state.used_primes, prime)
@@ -265,7 +259,7 @@ function _groebner_learn_and_apply(
     witness_set = modular_witness_set(state.gb_coeffs_zz, params)
 
     # Initialize a tracer that computes the bases in batches
-    trace_Bx = trace_copy(trace, CompositeNumber{B, Int32}, false)
+    trace_Bx = trace_copy(trace, PolynomialRepresentation(M, CompositeNumber{B, Int32}, false))
 
     iters = 0
     while !correct_basis
@@ -276,7 +270,7 @@ function _groebner_learn_and_apply(
 
             # Perform reduction modulo several primes
             ring_ff_Bx, basis_ff_Bx = modular_reduce_mod_p_in_batch!(ring, basis_zz, prime_Bx)
-            params_zp_Bx = params_mod_p(
+            params_zp_Bx = param_mod_p(
                 params,
                 CompositeNumber{B, Int32}(prime_Bx),
                 using_wide_type_for_coeffs=false
@@ -284,7 +278,7 @@ function _groebner_learn_and_apply(
             trace_Bx.buf_basis = basis_ff_Bx
             trace_Bx.ring = ring_ff_Bx
 
-            flag = f4_apply!(trace_Bx, ring_ff_Bx, trace_Bx.buf_basis, params_zp_Bx)
+            flag = f4_apply!(trace_Bx, params_zp_Bx)
             !flag && continue
 
             gb_coeffs_unpacked = ir_unpack_composite_coefficients(trace_Bx.gb_basis.coeffs)
@@ -388,17 +382,10 @@ function _groebner_learn_and_apply_threaded(
 
     ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
 
-    params_zp = params_mod_p(params, prime)
-    trace = trace_initialize(
-        ring_ff,
-        basis_deepcopy(basis_ff),
-        basis_ff,
-        hashtable,
-        permutation,
-        params_zp
-    )
+    params_zp = param_mod_p(params, prime)
+    trace = trace_initialize(ring_ff, basis_ff, hashtable, permutation, params_zp)
 
-    f4_learn!(trace, ring_ff, trace.gb_basis, pairset, hashtable, params_zp)
+    f4_learn!(trace, pairset, params_zp)
 
     # TODO: no need to deepcopy!
     push!(state.used_primes, prime)
@@ -439,10 +426,10 @@ function _groebner_learn_and_apply_threaded(
     witness_set = modular_witness_set(state.gb_coeffs_zz, params)
 
     # Initialize a tracer that computes the bases in batches
-    trace_Bx = trace_copy(trace, CompositeNumber{B, Int32}, false)
+    trace_Bx = trace_copy(trace, PolynomialRepresentation(M, CompositeNumber{B, Int32}, false))
 
     # Thread buffers
-    threadbuf_trace_Bx = map(_ -> trace_deepcopy(trace_Bx), 1:nthreads())
+    threadbuf_trace_Bx = map(_ -> deepcopy(trace_Bx), 1:nthreads())
     threadbuf_gb_coeffs = Vector{Vector{Tuple{Int32, Vector{Vector{Int32}}}}}(undef, nthreads())
     for i in 1:nthreads()
         threadbuf_gb_coeffs[i] = Vector{Tuple{Int, Vector{Vector{Int32}}}}()
@@ -466,7 +453,7 @@ function _groebner_learn_and_apply_threaded(
 
             ring_ff_Bx, basis_ff_Bx =
                 modular_reduce_mod_p_in_batch!(ring, basis_zz, threadlocal_prime_Bx)
-            threadlocal_params_zp_Bx = params_mod_p(
+            threadlocal_params_zp_Bx = param_mod_p(
                 threadlocal_params,               # can be mutated later
                 CompositeNumber{B, Int32}(threadlocal_prime_Bx),
                 using_wide_type_for_coeffs=false
@@ -474,12 +461,7 @@ function _groebner_learn_and_apply_threaded(
             threadlocal_trace_Bx.buf_basis = basis_ff_Bx
             threadlocal_trace_Bx.ring = ring_ff_Bx
 
-            flag = f4_apply!(
-                threadlocal_trace_Bx,
-                ring_ff_Bx,
-                threadlocal_trace_Bx.buf_basis,
-                threadlocal_params_zp_Bx
-            )
+            flag = f4_apply!(threadlocal_trace_Bx, threadlocal_params_zp_Bx)
             !flag && continue
 
             gb_coeffs_unpacked =
@@ -589,7 +571,7 @@ function _groebner_classic_modular(
 
     ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
 
-    params_zp = params_mod_p(params, prime)
+    params_zp = param_mod_p(params, prime)
     f4!(ring_ff, basis_ff, pairset, hashtable, params_zp)
     # NOTE: basis_ff may not own its coefficients, one should not mutate it
     # directly further in the code
@@ -636,7 +618,7 @@ function _groebner_classic_modular(
             prime = modular_next_prime!(state)
 
             ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
-            params_zp = params_mod_p(params, prime)
+            params_zp = param_mod_p(params, prime)
 
             f4!(ring_ff, basis_ff, pairset, hashtable, params_zp)
 

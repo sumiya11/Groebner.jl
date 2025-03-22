@@ -42,13 +42,14 @@ function restrict_ordering_in_desaturation(ord, saturating_vairable=:last)
     ord.ord2
 end
 
-function homogenize_generators!(
+function homogenize_generators(
     ring::PolyRing{Ord},
     monoms::Vector{Vector{Vector{T}}},
     coeffs::Vector{Vector{C}},
-    params
+    params::AlgorithmParameters
 ) where {Ord, T, C <: Coeff}
     @assert length(monoms) == length(coeffs)
+    coeffs = deepcopy(coeffs)
     nvars = ring.nvars
     new_nvars = nvars + 1
     new_monoms = Vector{Vector{Vector{T}}}(undef, length(monoms))
@@ -69,22 +70,22 @@ function homogenize_generators!(
     end
     # TODO: clarify the order of variables
     new_ord = extend_ordering_in_homogenization(ring.nvars, ring.ord)
-    new_ring = PolyRing(new_nvars, new_ord, ring.ch, ring.ground)
+    new_ring = PolyRing(new_nvars, new_ord, ring.characteristic, ring.ground)
     term_permutation = sort_input_terms_to_change_ordering!(new_monoms, coeffs, new_ord)
     sat_var_index = new_nvars
-    new_ring_sat, new_monoms, coeffs =
-        saturate_generators_by_variable!(new_ring, new_monoms, coeffs, params, sat_var_index)
-    params.target_ord = new_ring_sat.ord
-    term_permutation, new_ring_sat, new_monoms, coeffs
+    new_ring_sat, new_monoms, coeffs, params =
+        saturate_generators_by_variable(new_ring, new_monoms, coeffs, params, sat_var_index)
+    params = struct_update(AlgorithmParameters, params, (target_ord=new_ring_sat.ord,))
+    term_permutation, new_ring_sat, new_monoms, coeffs, params
 end
 
-function dehomogenize_generators!(
+function dehomogenize_generators(
     ring,
     monoms::Vector{Vector{Vector{T}}},
     coeffs::Vector{Vector{C}},
-    params
+    params::AlgorithmParameters
 ) where {T, C <: Coeff}
-    ring_desat, monoms, coeffs = desaturate_generators!(ring, monoms, coeffs, params)
+    ring_desat, monoms, coeffs, params = desaturate_generators(ring, monoms, coeffs, params)
     @assert length(monoms) == length(coeffs)
     nvars = ring_desat.nvars
     @assert nvars > 1
@@ -107,19 +108,20 @@ function dehomogenize_generators!(
     deleteat!(new_monoms, reduced_to_zero)
     deleteat!(coeffs, reduced_to_zero)
     new_ord = restrict_ordering_in_dehomogenization(ring_desat.ord)
-    new_ring = PolyRing(new_nvars, new_ord, ring_desat.ch, ring.ground)
+    new_ring = PolyRing(new_nvars, new_ord, ring_desat.characteristic, ring.ground)
     sort_input_terms_to_change_ordering!(new_monoms, coeffs, new_ord)
-    params.target_ord = new_ring.ord
-    new_ring, new_monoms, coeffs
+    params = struct_update(AlgorithmParameters, params, (target_ord=new_ring.ord,))
+    new_ring, new_monoms, coeffs, params
 end
 
-function desaturate_generators!(
+function desaturate_generators(
     ring,
     monoms::Vector{Vector{Vector{T}}},
     coeffs::Vector{Vector{C}},
-    params
+    params::AlgorithmParameters
 ) where {T, C <: Coeff}
     @assert length(monoms) == length(coeffs)
+    coeffs = deepcopy(coeffs)
     nvars = ring.nvars
     @assert nvars > 1
     new_nvars = nvars - 1
@@ -152,19 +154,20 @@ function desaturate_generators!(
     resize!(new_sparse_row_coeffs, new_size)
     resize!(new_monoms, new_size)
     new_ord = restrict_ordering_in_desaturation(ring.ord)
-    new_ring = PolyRing(new_nvars, new_ord, ring.ch, ring.ground)
-    params.target_ord = new_ring.ord
-    new_ring, new_monoms, new_sparse_row_coeffs
+    new_ring = PolyRing(new_nvars, new_ord, ring.characteristic, ring.ground)
+    params = struct_update(AlgorithmParameters, params, (target_ord=new_ring.ord,))
+    new_ring, new_monoms, new_sparse_row_coeffs, params
 end
 
-function saturate_generators_by_variable!(
+function saturate_generators_by_variable(
     ring,
     monoms::Vector{Vector{Vector{T}}},
     coeffs::Vector{Vector{C}},
-    params,
+    params::AlgorithmParameters,
     sat_var_index
 ) where {T, C <: Coeff}
     @assert length(monoms) == length(coeffs)
+    coeffs = deepcopy(coeffs)
     nvars = ring.nvars
     new_nvars = nvars + 1
     new_monoms = Vector{Vector{Vector{T}}}(undef, length(monoms))
@@ -193,7 +196,7 @@ function saturate_generators_by_variable!(
     minus_one = if ring.ground == :qq
         -one(coeffs[1][1])
     elseif ring.ground == :zp
-        ring.ch - one(coeffs[1][1])
+        ring.characteristic - one(coeffs[1][1])
     else
         -one(coeffs[1][1])
     end
@@ -201,7 +204,7 @@ function saturate_generators_by_variable!(
     push!(new_monoms, new_poly_monoms)
     push!(coeffs, new_poly_coeffs)
     new_ord = extend_ordering_in_saturation(ring.nvars, ring.ord)
-    new_ring = PolyRing(new_nvars, new_ord, ring.ch, ring.ground)
-    params.target_ord = new_ring.ord
-    new_ring, new_monoms, coeffs
+    new_ring = PolyRing(new_nvars, new_ord, ring.characteristic, ring.ground)
+    params = struct_update(AlgorithmParameters, params, (target_ord=new_ring.ord,))
+    new_ring, new_monoms, coeffs, params
 end

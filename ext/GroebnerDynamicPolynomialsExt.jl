@@ -27,8 +27,11 @@ function Groebner.io_convert_polynomials_to_ir(
             reverse!(coeffs[i])
         end
     end
-    ring =
-        Groebner.PolyRing(ring.nvars, Groebner.ordering_transform(ring.ord, var_to_index), ring.ch)
+    ring = Groebner.PolyRing(
+        ring.nvars,
+        Groebner.ordering_transform(ring.ord, var_to_index),
+        ring.characteristic
+    )
     options.ordering = Groebner.ordering_transform(options.ordering, var_to_index)
     ring, monoms, coeffs, options
 end

@@ -17,13 +17,19 @@ function io_convert_polynomials_to_ir(polynomials, options::KeywordArguments)
     isempty(polynomials) && throw(DomainError("Empty input."))
     ring = io_extract_ring(polynomials)
     if options._generic
-        ring.ground = :generic
+        ring = struct_update(PolyRing, ring, (ground=:generic,))
     end
     coeffs = io_extract_coeffs_ir(ring, polynomials)
     reversed_order, var_to_index, monoms = io_extract_monoms_ir(ring, polynomials)
     @invariant length(coeffs) == length(monoms)
-    ring = PolyRing(ring.nvars, ordering_transform(ring.ord, var_to_index), ring.ch, ring.ground)
-    options.ordering = ordering_transform(options.ordering, var_to_index)
+    ring = PolyRing(
+        ring.nvars,
+        ordering_transform(ring.ord, var_to_index),
+        ring.characteristic,
+        ring.ground
+    )
+    ordering = ordering_transform(options.ordering, var_to_index)
+    options = struct_update(KeywordArguments, options, (ordering=ordering,))
     ring, monoms, coeffs, options
 end
 

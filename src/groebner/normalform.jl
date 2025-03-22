@@ -94,7 +94,7 @@ function normalform2(
     params::AlgorithmParameters
 ) where {M <: Monom, C <: Coeff}
     @invariant ring.nvars == ring_tbr.nvars &&
-               ring.ch == ring_tbr.ch &&
+               ring.characteristic == ring_tbr.characteristic &&
                isequal(ring.ord, ring_tbr.ord)
 
     if params.check
