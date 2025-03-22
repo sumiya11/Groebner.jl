@@ -116,17 +116,11 @@ function KeywordArguments(function_id::Symbol, kws)
     certify = get(kws, :certify, get(default_kw_args, :certify, false))
 
     linalg = get(kws, :linalg, get(default_kw_args, :linalg, :auto))
-    @assert linalg in (
-        :auto,
-        :randomized,
-        :deterministic,
-        :experimental_1,
-        :experimental_2,
-        :experimental_3
-    ) """
-    Not recognized linear algebra option: $linalg
-    Possible choices for keyword "linalg" are:
-    `:auto`, `:randomized`, `:deterministic`"""
+    @assert linalg in
+            (:auto, :randomized, :deterministic, :experimental_1, :experimental_2, :experimental_3) """
+                                                                                                  Not recognized linear algebra option: $linalg
+                                                                                                  Possible choices for keyword "linalg" are:
+                                                                                                  `:auto`, `:randomized`, `:deterministic`"""
 
     threaded = get(kws, :threaded, get(default_kw_args, :threaded, :auto))
     @assert threaded in (:auto, :no, :yes, :force_yes) """

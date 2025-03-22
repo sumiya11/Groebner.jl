@@ -22,7 +22,12 @@ function io_convert_polynomials_to_ir(polynomials, options::KeywordArguments)
     coeffs = io_extract_coeffs_ir(ring, polynomials)
     reversed_order, var_to_index, monoms = io_extract_monoms_ir(ring, polynomials)
     @invariant length(coeffs) == length(monoms)
-    ring = PolyRing(ring.nvars, ordering_transform(ring.ord, var_to_index), ring.characteristic, ring.ground)
+    ring = PolyRing(
+        ring.nvars,
+        ordering_transform(ring.ord, var_to_index),
+        ring.characteristic,
+        ring.ground
+    )
     ordering = ordering_transform(options.ordering, var_to_index)
     options = struct_update(KeywordArguments, options, (ordering=ordering,))
     ring, monoms, coeffs, options

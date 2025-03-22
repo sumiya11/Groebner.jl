@@ -92,7 +92,8 @@ function groebner_learn2(
     trace, gb_monoms, gb_coeffs = _groebner_learn2(ring, monoms, coeffs, params)
 
     if params.homogenize
-        ring, gb_monoms, gb_coeffs, params = dehomogenize_generators(ring, gb_monoms, gb_coeffs, params)
+        ring, gb_monoms, gb_coeffs, params =
+            dehomogenize_generators(ring, gb_monoms, gb_coeffs, params)
         if params.reduced
             gb_monoms, gb_coeffs = autoreduce2(ring, gb_monoms, gb_coeffs, params)
         end
