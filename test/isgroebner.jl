@@ -1,4 +1,4 @@
-using AbstractAlgebra
+using Test, AbstractAlgebra, Groebner
 
 @testset "isgroebner" begin
     R, x = polynomial_ring(GF(2^31 - 1), "x")

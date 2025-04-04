@@ -1,3 +1,5 @@
+using Test, Groebner
+
 @testset "CRT" begin
     cases = []
 

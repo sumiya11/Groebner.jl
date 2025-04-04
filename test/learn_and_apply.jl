@@ -1,5 +1,4 @@
-import Random
-using Test, AbstractAlgebra, Primes
+using Test, Random, AbstractAlgebra, Primes, Groebner
 
 @testset "learn & apply, same field" begin
     K = AbstractAlgebra.GF(2^31 - 1)

@@ -1,4 +1,4 @@
-using AbstractAlgebra
+using Test, AbstractAlgebra, Groebner
 
 monom_construct_from_vector = Groebner.monom_construct_from_vector
 lex = (x, y) -> Groebner.monom_isless(x, y, Groebner.Lex())

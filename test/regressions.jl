@@ -1,4 +1,4 @@
-import Primes
+using Test, Primes, Groebner, AbstractAlgebra
 
 @testset "regression, SI.jl normalform" begin
     R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"])

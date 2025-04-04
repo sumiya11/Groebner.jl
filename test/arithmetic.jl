@@ -1,4 +1,4 @@
-import Primes
+using Test, Primes, Groebner
 
 @testset "arithmetic in Zp" begin
     a = Groebner.select_arithmetic(UInt32, 2^31 - 1, :auto, false)

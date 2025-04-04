@@ -1,5 +1,4 @@
-using Test
-import Nemo, Primes
+using Test, Nemo, Groebner
 
 @testset "Nemo.jl, univariate" begin
     for ff in [Nemo.Native.GF(2^62 + 135), Nemo.GF(2^62 + 135)]
