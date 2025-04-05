@@ -51,6 +51,4 @@ cp(
 
 # Deploy build/
 
-deploydocs(
-    repo="github.com/sumiya11/Groebner.jl.git"
-)
+deploydocs(repo="github.com/sumiya11/Groebner.jl.git")

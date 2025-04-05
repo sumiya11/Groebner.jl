@@ -17,7 +17,7 @@ This is the default value for the `ordering` keyword argument.
 
 ## Example
 
-```jldoctest_
+```@example
 using Groebner, AbstractAlgebra
 R, (x, y) = QQ["x", "y"]
 
@@ -42,7 +42,7 @@ Martin Kreuzer, Lorenzo Robbiano. DOI: https://doi.org/10.1007/978-3-540-70628-1
 
 ## Example
 
-```jldoctest_
+```@example
 using Groebner, AbstractAlgebra
 R, (x, y) = QQ["x", "y"];
 
@@ -89,7 +89,7 @@ Martin Kreuzer, Lorenzo Robbiano. DOI: https://doi.org/10.1007/978-3-540-70628-1
 
 ## Example
 
-```jldoctest_
+```@example
 using Groebner, AbstractAlgebra
 R, (x, y) = QQ["x", "y"];
 
@@ -125,7 +125,7 @@ Martin Kreuzer, Lorenzo Robbiano. DOI: https://doi.org/10.1007/978-3-540-70628-1
 
 ## Example
 
-```jldoctest_
+```@example
 using Groebner, AbstractAlgebra
 R, (x, y) = QQ["x", "y"];
 
@@ -158,7 +158,7 @@ Only positive weights are supported.
 
 ## Example
 
-```jldoctest_
+```@example
 using Groebner, AbstractAlgebra
 R, (x, y) = QQ["x", "y"];
 
@@ -197,7 +197,7 @@ Can also be constructed with `*`.
 
 ## Example
 
-```jldoctest_
+```@example
 using Groebner, AbstractAlgebra
 R, (x, y, z, w) = QQ["x", "y", "z", "w"];
 
@@ -208,7 +208,7 @@ groebner([x*y + w, y*z - w], ordering=ord)
 
 It is possible to use the `*` operator:
 
-```jldoctest_
+```@example
 using Groebner, AbstractAlgebra
 R, (x, y, z, t) = QQ["x", "y", "z", "t"];
 
@@ -255,7 +255,7 @@ Matrix monomial ordering.
 
 ## Example
 
-```jldoctest_
+```@example
 using Groebner, AbstractAlgebra
 R, (x, y, z, w) = QQ["x", "y", "z", "w"];
 
