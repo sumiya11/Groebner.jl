@@ -4,7 +4,7 @@
 CurrentModule = Groebner
 ```
 
-## Exported functions
+## Main functions
 
 ```@docs
 groebner

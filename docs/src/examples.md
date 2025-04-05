@@ -92,7 +92,7 @@ For other ground fields, a possibly slower generic fallback is used. In this cas
 
 For example, we can compute a Gröbner basis over a univariate rational function field over a finite field:
 
-```@example generic-2
+```@example generic2
 using Groebner, AbstractAlgebra
 
 R, t = GF(101)["t"]
@@ -106,7 +106,7 @@ gb = groebner(sys)
 
 Many functions reuse the core implementation, so they can also be used over generic fields:
 
-```@example generic-2
+```julia
 @assert isgroebner(gb)
 normalform(gb, x*y)
 ```

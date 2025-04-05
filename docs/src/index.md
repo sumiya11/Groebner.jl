@@ -2,6 +2,10 @@
 
 Groebner.jl is a package for computing Gröbner bases written in Julia.
 
+!!! note
+
+      This documentation is also available in PDF format: [Groebner.jl.pdf](Groebner.jl.pdf).
+
 ## Installation
 
 To install Groebner.jl, run the following in the Julia REPL:
