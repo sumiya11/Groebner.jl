@@ -17,7 +17,7 @@ This is the default value for the `ordering` keyword argument.
 
 ## Example
 
-```jldoctest
+```jldoctest_
 using Groebner, AbstractAlgebra
 R, (x, y) = QQ["x", "y"]
 
@@ -36,15 +36,13 @@ struct InputOrdering <: AbstractMonomialOrdering end
 Lexicographical monomial ordering.
 
 We use the definition from Chapter 1, Computational Commutative Algebra 1, by
-Martin Kreuzer, Lorenzo Robbiano. 
-
-DOI: https://doi.org/10.1007/978-3-540-70628-1.
+Martin Kreuzer, Lorenzo Robbiano. DOI: https://doi.org/10.1007/978-3-540-70628-1.
 
 *Dura Lex, sed Lex.*
 
 ## Example
 
-```jldoctest
+```jldoctest_
 using Groebner, AbstractAlgebra
 R, (x, y) = QQ["x", "y"];
 
@@ -87,13 +85,11 @@ end
 Degree lexicographical monomial ordering.
 
 We use the definition from Chapter 1, Computational Commutative Algebra 1, by
-Martin Kreuzer, Lorenzo Robbiano. 
-
-DOI: https://doi.org/10.1007/978-3-540-70628-1.
+Martin Kreuzer, Lorenzo Robbiano. DOI: https://doi.org/10.1007/978-3-540-70628-1.
 
 ## Example
 
-```jldoctest
+```jldoctest_
 using Groebner, AbstractAlgebra
 R, (x, y) = QQ["x", "y"];
 
@@ -125,13 +121,11 @@ end
 Degree reverse lexicographical monomial ordering.
 
 We use the definition from Chapter 1, Computational Commutative Algebra 1, by
-Martin Kreuzer, Lorenzo Robbiano. 
-
-DOI: https://doi.org/10.1007/978-3-540-70628-1.
+Martin Kreuzer, Lorenzo Robbiano. DOI: https://doi.org/10.1007/978-3-540-70628-1.
 
 ## Example
 
-```jldoctest
+```jldoctest_
 using Groebner, AbstractAlgebra
 R, (x, y) = QQ["x", "y"];
 
@@ -164,7 +158,7 @@ Only positive weights are supported.
 
 ## Example
 
-```jldoctest
+```jldoctest_
 using Groebner, AbstractAlgebra
 R, (x, y) = QQ["x", "y"];
 
@@ -203,7 +197,7 @@ Can also be constructed with `*`.
 
 ## Example
 
-```jldoctest
+```jldoctest_
 using Groebner, AbstractAlgebra
 R, (x, y, z, w) = QQ["x", "y", "z", "w"];
 
@@ -214,7 +208,7 @@ groebner([x*y + w, y*z - w], ordering=ord)
 
 It is possible to use the `*` operator:
 
-```jldoctest
+```jldoctest_
 using Groebner, AbstractAlgebra
 R, (x, y, z, t) = QQ["x", "y", "z", "t"];
 
@@ -261,7 +255,7 @@ Matrix monomial ordering.
 
 ## Example
 
-```jldoctest
+```jldoctest_
 using Groebner, AbstractAlgebra
 R, (x, y, z, w) = QQ["x", "y", "z", "w"];
 

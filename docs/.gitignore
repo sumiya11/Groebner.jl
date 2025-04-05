@@ -1,1 +1,3 @@
-__site
+__site/
+site/
+build/
