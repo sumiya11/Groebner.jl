@@ -41,4 +41,107 @@ sys = [(t//t+1)*x*y - t^3, y^2 + t]
 gb = groebner(sys)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2-element Vector{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.Generic.FracFieldElem{AbstractAlgebra.Generic.Poly{AbstractAlgebra.GFElem{Int64}}}}}:
  y^2 + t
  x + 51*t^2*y</code></pre><p>Many functions reuse the core implementation, so they can also be used over generic fields:</p><pre><code class="language-julia hljs">@assert isgroebner(gb)
-normalform(gb, x*y)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../interface/">Interface »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.10.1 on <span class="colophon-date" title="Sunday 6 April 2025 13:30">Sunday 6 April 2025</span>. Using Julia version 1.11.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+normalform(gb, x*y)</code></pre><h3 id="Computing-over-floating-point-intervals"><a class="docs-heading-anchor" href="#Computing-over-floating-point-intervals">Computing over floating point intervals</a><a id="Computing-over-floating-point-intervals-1"></a><a class="docs-heading-anchor-permalink" href="#Computing-over-floating-point-intervals" title="Permalink"></a></h3><p>In the following example, we combine low-level interface and generic coefficients. </p><p>We are going to compute a basis of the hexapod system over tuples (Z_p, Interval): each coefficient is treated as a pair, the first coordinate is a finite field element used for zero testing, and the second coordinate is a floating point interval with some fixed precision, the payload.</p><pre><code class="language-julia hljs">using Pkg;
+Pkg.add(url=&quot;https://gitlab.inria.fr/ckatsama/mpfi.jl&quot;)
+
+import Base: +, -, *, zero, iszero, one, isone, inv
+using AbstractAlgebra, Groebner, MPFI
+
+PRECISION = 1024 # For MPFI intervals
+
+struct Zp_And_FloatInterval{Zp, FloatInterval}
+    a::Zp
+    b::FloatInterval
+end
+
+# Pretend it is a field and hakuna matata
++(x::Zp_And_FloatInterval, y::Zp_And_FloatInterval) = Zp_And_FloatInterval(x.a + y.a, x.b + y.b)
+*(x::Zp_And_FloatInterval, y::Zp_And_FloatInterval) = Zp_And_FloatInterval(x.a * y.a, x.b * y.b)
+-(x::Zp_And_FloatInterval, y::Zp_And_FloatInterval) = Zp_And_FloatInterval(x.a - y.a, x.b - y.b)
+zero(x::Zp_And_FloatInterval) = Zp_And_FloatInterval(zero(x.a), zero(x.b))
+one(x::Zp_And_FloatInterval) = Zp_And_FloatInterval(one(x.a), one(x.b))
+inv(x::Zp_And_FloatInterval) = Zp_And_FloatInterval(inv(x.a), inv(x.b))
+iszero(x::Zp_And_FloatInterval) = iszero(x.a)
+isone(x::Zp_And_FloatInterval) = isone(x.a)
+
+@info &quot;
+    Computing Hexapod over QQ&quot;
+c_zp = Groebner.Examples.hexapod(k=AbstractAlgebra.GF(2^30+3));
+c_qq = Groebner.Examples.hexapod(k=AbstractAlgebra.QQ);
+@time gb_truth = groebner(c_qq);
+gbcoeffs_truth = map(f -&gt; collect(coefficients(f)), gb_truth);
+@info &quot;
+    Coefficient size (in bits): $(maximum(f -&gt; maximum(c -&gt; log2(abs(numerator(c))) + log2(denominator(c)), f), gbcoeffs_truth))&quot;
+
+@info &quot;
+    Computing Hexapod over (Zp, Interval). Precision = $PRECISION bits&quot;
+ring = Groebner.PolyRing(nvars(parent(c_qq[1])), Groebner.DegRevLex(), 0, :generic); # Note :generic
+
+exps = map(f -&gt; collect(exponent_vectors(f)), c_zp);
+cfs_qq = map(f -&gt; collect(coefficients(f)), c_qq);
+cfs_zp = map(f -&gt; collect(coefficients(f)), c_zp);
+cfs = map(f -&gt; map(c -&gt; Groebner.CoeffGeneric(Zp_And_FloatInterval(c[1], BigInterval(c[2], precision=PRECISION))), zip(f...)), zip(cfs_zp, cfs_qq));
+@time gbexps, gbcoeffs = groebner(ring, exps, cfs);
+
+to_inspect = gbcoeffs[end][end]
+@info &quot;
+    Inspect one coefficient in the basis:
+    Zp         = $(to_inspect.data.a)
+    Interval   = $(to_inspect.data.b)
+    Diam       = $(diam(to_inspect.data.b))
+    Diam (rel) = $(diam_rel(to_inspect.data.b))&quot;
+
+# Sanity check
+all_are_inside(x::Zp_And_FloatInterval, truth) = is_inside(BigInterval(truth; precision=PRECISION), x.b)
+all_are_inside(x::Groebner.CoeffGeneric, truth) = all_are_inside(x.data, truth)
+all_are_inside(x::AbstractVector, truth) = all(map(all_are_inside, x, truth))
+@assert all_are_inside(gbcoeffs, gbcoeffs_truth)
+
+# Max |midpoint - truth|
+max_error(x::Zp_And_FloatInterval, y; rel=false) = abs(mid(x.b) - y) / ifelse(rel, max(abs(y), 0), 1)
+max_error(x::Groebner.CoeffGeneric, y; rel=false) = max_error(x.data, y; rel=rel)
+max_error(x::AbstractVector, y::AbstractVector; rel=false) = maximum(map(f -&gt; max_error(f...; rel=rel), zip(x, y)))
+@info &quot;
+    Max error      : $(max_error(gbcoeffs, gbcoeffs_truth))
+    Max error (rel): $(max_error(gbcoeffs, gbcoeffs_truth; rel=true))&quot;
+
+# Max diameter
+max_diam(x::Zp_And_FloatInterval; rel=false) = ifelse(rel, diam_rel(x.b), diam(x.b))
+max_diam(x::Groebner.CoeffGeneric; rel=false) = max_diam(x.data; rel=rel)
+max_diam(x::AbstractVector; rel=false) = maximum(map(f -&gt; max_diam(f; rel=rel), x))
+@info &quot;
+    Max diam      : $(max_diam(gbcoeffs))
+    Max diam (rel): $(max_diam(gbcoeffs; rel=true))&quot;</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">     Cloning git-repo `https://gitlab.inria.fr/ckatsama/mpfi.jl`
+    Updating git-repo `https://gitlab.inria.fr/ckatsama/mpfi.jl`
+    Updating registry at `~/.julia/registries/General.toml`
+   Resolving package versions...
+   Installed MPFI_jll ─ v1.5.5+0
+    Updating `~/work/Groebner.jl/Groebner.jl/docs/Project.toml`
+  [e50a78b8] + MPFI v0.0.2 `https://gitlab.inria.fr/ckatsama/mpfi.jl#main`
+    Updating `~/work/Groebner.jl/Groebner.jl/docs/Manifest.toml`
+  [e50a78b8] + MPFI v0.0.2 `https://gitlab.inria.fr/ckatsama/mpfi.jl#main`
+  [e8b5fb6c] + MPFI_jll v1.5.5+0
+Precompiling project...
+    639.6 ms  ✓ MPFI_jll
+    663.3 ms  ✓ MPFI
+  2 dependencies successfully precompiled in 3 seconds. 96 already precompiled.
+┌ Info:
+└     Computing Hexapod over QQ
+  9.468587 seconds (10.02 M allocations: 730.935 MiB, 3.18% gc time, 62.43% compilation time: &lt;1% of which was recompilation)
+┌ Info:
+└     Coefficient size (in bits): 26417.51221660290345963338930851770671711863223901550154467730075030408186732383
+┌ Info:
+└     Computing Hexapod over (Zp, Interval). Precision = 1024 bits
+  3.713775 seconds (11.73 M allocations: 1.148 GiB, 4.18% gc time, 60.90% compilation time)
+┌ Info:
+│     Inspect one coefficient in the basis:
+│     Zp         = 431552538
+│     Interval   = [-558257.179964293499103254665884651072133515775095659908229364647551150274932701193122464225536926652554734945221948132871454167527388434046874351288631103703125550348669636711860001830212776691489177970139223435794155837851688962602302837393595905189272745160736969664558696826248382490457871185395585984926123, -558257.1799642934991032546658846510721335157750956599082293646475511502749327011931224642255369266525547349452219481328714541675273884340468743512886310103610088941292176909443184882076877145224507633076925224690573253769000560850048119805654343386272229278094367421056997174640715542658495229510391361784020301]
+│     Diam       = 1.672027158919651976006869310114122419663900773436204550000460151670795840150463e-151
+└     Diam (rel) = 1.672027158919651976006869310114122419663900773436204550000460151670795840150463e-151
+┌ Info:
+│     Max error      : 4.176194859519055697094588229924190435648745125164138590565527331500622876542391e-53
+└     Max error (rel): 2.789777100101180256328121190182563142952869389869300673856798562976183916725668e-77
+┌ Info:
+│     Max diam      : 1.202460211377052991684279730262989280695122676646933719333198938473338220666262e-132
+└     Max diam (rel): 1.202460211377052991684279730262989280695122676646933719333198938473338220666262e-132</code></pre><p>However, if we lower precision to 256 bits, some of the intervals become NaN.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../interface/">Interface »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.10.1 on <span class="colophon-date" title="Tuesday 8 April 2025 12:38">Tuesday 8 April 2025</span>. Using Julia version 1.11.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
