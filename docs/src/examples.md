@@ -6,7 +6,7 @@ Groebner.jl supports polynomials from the following frontends:
 - Nemo.jl
 - DynamicPolynomials.jl
 
-Additionally, Groebner.jl provides a low-level entry point that accepts raw polynomial data.
+Additionally, Groebner.jl has a low-level entry point that accepts raw polynomial data.
 
 ## Using AbstractAlgebra.jl
 
@@ -110,15 +110,13 @@ Many functions reuse the core implementation, so they can also be used over gene
 @assert isgroebner(gb)
 normalform(gb, x*y)
 ```
-
-
 ### Computing over floating point intervals
 
 In the following example, we combine low-level interface and generic coefficients. 
 
-We are going to compute a basis of the hexapod system over tuples (Z_p, Interval): each coefficient is treated as a pair, the first coordinate is a finite field element used for zero testing, and the second coordinate is a floating point interval with some fixed precision, the payload.
+We are going to compute a basis of the hexapod system over tuples (Z_p, Interval): each coefficient is treated as a pair, the first coordinate is a finite field element used for zero testing, and the second coordinate is a floating point interval with some fixed precision, the payload. For floating point arithmetic, we will be using MPFI.jl.
 
-```@example
+```@example zp_and_interval
 using Pkg;
 Pkg.add(url="https://gitlab.inria.fr/ckatsama/mpfi.jl")
 
@@ -142,19 +140,15 @@ inv(x::Zp_And_FloatInterval) = Zp_And_FloatInterval(inv(x.a), inv(x.b))
 iszero(x::Zp_And_FloatInterval) = iszero(x.a)
 isone(x::Zp_And_FloatInterval) = isone(x.a)
 
-@info "
-    Computing Hexapod over QQ"
+@info "Computing Hexapod over QQ"
 c_zp = Groebner.Examples.hexapod(k=AbstractAlgebra.GF(2^30+3));
 c_qq = Groebner.Examples.hexapod(k=AbstractAlgebra.QQ);
 @time gb_truth = groebner(c_qq);
 gbcoeffs_truth = map(f -> collect(coefficients(f)), gb_truth);
-@info "
-    Coefficient size (in bits): $(maximum(f -> maximum(c -> log2(abs(numerator(c))) + log2(denominator(c)), f), gbcoeffs_truth))"
+@info "Coefficient size (in bits): $(maximum(f -> maximum(c -> log2(abs(numerator(c))) + log2(denominator(c)), f), gbcoeffs_truth))"
 
-@info "
-    Computing Hexapod over (Zp, Interval). Precision = $PRECISION bits"
+@info "Computing Hexapod over (Zp, Interval). Precision = $PRECISION bits"
 ring = Groebner.PolyRing(nvars(parent(c_qq[1])), Groebner.DegRevLex(), 0, :generic); # Note :generic
-
 exps = map(f -> collect(exponent_vectors(f)), c_zp);
 cfs_qq = map(f -> collect(coefficients(f)), c_qq);
 cfs_zp = map(f -> collect(coefficients(f)), c_zp);
@@ -192,5 +186,5 @@ max_diam(x::AbstractVector; rel=false) = maximum(map(f -> max_diam(f; rel=rel), 
     Max diam (rel): $(max_diam(gbcoeffs; rel=true))"
 ```
 
-However, if we lower precision to 256 bits, some of the intervals become NaN.
+However, if we lower MPFI precision to 256 bits, some of the intervals become NaN.
 
