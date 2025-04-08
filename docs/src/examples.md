@@ -110,3 +110,87 @@ Many functions reuse the core implementation, so they can also be used over gene
 @assert isgroebner(gb)
 normalform(gb, x*y)
 ```
+
+
+### Computing over floating point intervals
+
+In the following example, we combine low-level interface and generic coefficients. 
+
+We are going to compute a basis of the hexapod system over tuples (Z_p, Interval): each coefficient is treated as a pair, the first coordinate is a finite field element used for zero testing, and the second coordinate is a floating point interval with some fixed precision, the payload.
+
+```@example
+using Pkg;
+Pkg.add(url="https://gitlab.inria.fr/ckatsama/mpfi.jl")
+
+import Base: +, -, *, zero, iszero, one, isone, inv
+using AbstractAlgebra, Groebner, MPFI
+
+PRECISION = 1024 # For MPFI intervals
+
+struct Zp_And_FloatInterval{Zp, FloatInterval}
+    a::Zp
+    b::FloatInterval
+end
+
+# Pretend it is a field and hakuna matata
++(x::Zp_And_FloatInterval, y::Zp_And_FloatInterval) = Zp_And_FloatInterval(x.a + y.a, x.b + y.b)
+*(x::Zp_And_FloatInterval, y::Zp_And_FloatInterval) = Zp_And_FloatInterval(x.a * y.a, x.b * y.b)
+-(x::Zp_And_FloatInterval, y::Zp_And_FloatInterval) = Zp_And_FloatInterval(x.a - y.a, x.b - y.b)
+zero(x::Zp_And_FloatInterval) = Zp_And_FloatInterval(zero(x.a), zero(x.b))
+one(x::Zp_And_FloatInterval) = Zp_And_FloatInterval(one(x.a), one(x.b))
+inv(x::Zp_And_FloatInterval) = Zp_And_FloatInterval(inv(x.a), inv(x.b))
+iszero(x::Zp_And_FloatInterval) = iszero(x.a)
+isone(x::Zp_And_FloatInterval) = isone(x.a)
+
+@info "
+    Computing Hexapod over QQ"
+c_zp = Groebner.Examples.hexapod(k=AbstractAlgebra.GF(2^30+3));
+c_qq = Groebner.Examples.hexapod(k=AbstractAlgebra.QQ);
+@time gb_truth = groebner(c_qq);
+gbcoeffs_truth = map(f -> collect(coefficients(f)), gb_truth);
+@info "
+    Coefficient size (in bits): $(maximum(f -> maximum(c -> log2(abs(numerator(c))) + log2(denominator(c)), f), gbcoeffs_truth))"
+
+@info "
+    Computing Hexapod over (Zp, Interval). Precision = $PRECISION bits"
+ring = Groebner.PolyRing(nvars(parent(c_qq[1])), Groebner.DegRevLex(), 0, :generic); # Note :generic
+
+exps = map(f -> collect(exponent_vectors(f)), c_zp);
+cfs_qq = map(f -> collect(coefficients(f)), c_qq);
+cfs_zp = map(f -> collect(coefficients(f)), c_zp);
+cfs = map(f -> map(c -> Groebner.CoeffGeneric(Zp_And_FloatInterval(c[1], BigInterval(c[2], precision=PRECISION))), zip(f...)), zip(cfs_zp, cfs_qq));
+@time gbexps, gbcoeffs = groebner(ring, exps, cfs);
+
+to_inspect = gbcoeffs[end][end]
+@info "
+    Inspect one coefficient in the basis:
+    Zp         = $(to_inspect.data.a)
+    Interval   = $(to_inspect.data.b)
+    Diam       = $(diam(to_inspect.data.b))
+    Diam (rel) = $(diam_rel(to_inspect.data.b))"
+
+# Sanity check
+all_are_inside(x::Zp_And_FloatInterval, truth) = is_inside(BigInterval(truth; precision=PRECISION), x.b)
+all_are_inside(x::Groebner.CoeffGeneric, truth) = all_are_inside(x.data, truth)
+all_are_inside(x::AbstractVector, truth) = all(map(all_are_inside, x, truth))
+@assert all_are_inside(gbcoeffs, gbcoeffs_truth)
+
+# Max |midpoint - truth|
+max_error(x::Zp_And_FloatInterval, y; rel=false) = abs(mid(x.b) - y) / ifelse(rel, max(abs(y), 0), 1)
+max_error(x::Groebner.CoeffGeneric, y; rel=false) = max_error(x.data, y; rel=rel)
+max_error(x::AbstractVector, y::AbstractVector; rel=false) = maximum(map(f -> max_error(f...; rel=rel), zip(x, y)))
+@info "
+    Max error      : $(max_error(gbcoeffs, gbcoeffs_truth))
+    Max error (rel): $(max_error(gbcoeffs, gbcoeffs_truth; rel=true))"
+
+# Max diameter
+max_diam(x::Zp_And_FloatInterval; rel=false) = ifelse(rel, diam_rel(x.b), diam(x.b))
+max_diam(x::Groebner.CoeffGeneric; rel=false) = max_diam(x.data; rel=rel)
+max_diam(x::AbstractVector; rel=false) = maximum(map(f -> max_diam(f; rel=rel), x))
+@info "
+    Max diam      : $(max_diam(gbcoeffs))
+    Max diam (rel): $(max_diam(gbcoeffs; rel=true))"
+```
+
+However, if we lower precision to 256 bits, some of the intervals become NaN.
+
