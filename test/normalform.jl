@@ -1,4 +1,4 @@
-using AbstractAlgebra, Random
+using Test, Groebner, AbstractAlgebra, Random
 
 @testset "normalform" begin
     R, x = polynomial_ring(GF(2^31 - 1), "x")

@@ -1,3 +1,4 @@
+using Test, Groebner
 
 @testset "packed exponent tuple-1" begin
     EV{T, U} = Groebner.PackedTuple1{T, U} where {T, U}

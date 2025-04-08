@@ -1,106 +1,98 @@
-@def title = "Groebner.jl — Interface"
-@def hasmath = true
-@def hascode = true
-<!-- Note: by default hasmath == true and hascode == false. You can change this in
-the config file by setting hasmath = false for instance and just setting it to true
-where appropriate -->
+# Examples
 
-# Interface
+Groebner.jl supports polynomials from the following frontends:
 
-## Exported functions
+- AbstractAlgebra.jl
+- Nemo.jl
+- DynamicPolynomials.jl
 
-```julia:load_groebner
-using Groebner # hide
+Additionally, Groebner.jl has a low-level entry point that accepts raw polynomial data.
+
+## Using AbstractAlgebra.jl
+
+First, we import AbstractAlgebra.jl. 
+Then, we create an array of polynomials over a finite field
+
+```@example aa
+using AbstractAlgebra
+
+R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"])
+polys = [x^2 + y + z, x*y + z];
 ```
 
-{{doc groebner groebner fn}}
+and compute a Gröbner basis with the `groebner` command
 
-{{doc groebner_with_change_matrix groebner_with_change_matrix fn}}
+```@example aa
+using Groebner
 
-{{doc isgroebner isgroebner fn}}
-
-{{doc normalform normalform fn}}
-
-{{doc leading_ideal leading_ideal fn}}
-
-{{doc dimension dimension fn}}
-
-{{doc quotient_basis quotient_basis fn}}
-
-## Monomial orderings
-
-A list of all monomial orderings supported by Groebner.jl.
-An ordering can be set by passing it with the keyword argument `ordering`.
-See below for some examples.
-
-\note{Some frontends, for example, AbstractAlgebra.jl, may not support weighted/product/matrix orderings from Groebner.jl. In such cases, the basis is computed in the ordering requested by user, but the terms of polynomials in the output are ordered w.r.t. some other ordering that is supported by the frontend.}
-
-{{doc Lex}}
-
-{{doc DegLex}}
-
-{{doc DegRevLex DegRevLex st}}
-
-{{doc InputOrdering InputOrdering st}}
-
-{{doc WeightedOrdering WeightedOrdering st}}
-
-{{doc ProductOrdering ProductOrdering str}}
-
-{{doc MatrixOrdering MatrixOrdering st}}
-
-## Learn and Apply
-
-```julia:load_groebner
-using Groebner # hide
+basis = groebner(polys)
 ```
 
-{{doc groebner_learn groebner_learn fn}}
+We can check if a set of polynomials forms a Gröbner basis
 
-{{doc groebner_apply! groebner_apply! fn}}
-
-## Low-level interface
-
-```julia:load_groebner
-using Groebner # hide
+```@example aa
+isgroebner(basis)
 ```
+
+Groebner.jl also provides several monomial orderings. 
+For example, we can eliminate `z` from the above system:
+
+```@example aa
+ordering = Lex(z) * DegRevLex(x, y)  # z > x, y
+groebner(polys, ordering=ordering)
+```
+
+You can find more information on monomial orderings in Groebner.jl in [Monomial orderings](@ref).
+
+## Using DynamicPolynomials.jl
+
+Computing the Gröbner basis of some system:
+
+```@example dp
+using DynamicPolynomials, Groebner
+
+@polyvar x1 x2
+system = [10*x1*x2^2 - 11*x1 + 10,
+        10*x1^2*x2 - 11*x2 + 10]
+
+groebner(system)
+```
+
+## Using Low-level interface
 
 Some functions in the interface have a low-level entry point. Low-level functions accept and output ''raw'' exponent vectors and coefficients. This could be convenient when one does not want to depend on a frontend.
 
 For example,
 
-```julia:lowlevel
+```@example
 using Groebner
-# define {x y - 1, x^3 + 7 y^2} modulo 65537 in DRL
+
+# define {x * y - 1, x^3 + 7 * y^2} modulo 65537 in DRL
 ring = Groebner.PolyRing(2, Groebner.DegRevLex(), 65537)
 monoms = [ [[1, 1], [0, 0]], [[3, 0], [0, 2]] ]
-coeffs = [ [1, -1], [1, 7] ]
+coeffs = [ [    1,     -1 ], [    1,      7 ] ]
+
 # compute a GB
 gb_monoms, gb_coeffs = Groebner.groebner(ring, monoms, coeffs)
 ```
 
 The list of functions that provide a low-level entry point: `groebner`, `normalform`, `isgroebner`, `groebner_learn`, `groebner_apply`.
 
-The low-level functions may be faster than their user-facing analogues since they bypass internal checks and conversions. Low-level functions do not make any specific assumptions, that is, all of these are correctly handled in the input: unsorted monomials, nonnormalized coefficients, duplicate terms, aliasing memory.
+Low-level functions may be faster than their user-facing analogues since they bypass data conversions. Low-level functions do not make any specific assumptions on input polynomials, that is, all of these cases are correctly handled: unsorted monomials, non-normalized coefficients, duplicate terms, aliasing memory.
 
 ## Generic coefficients
 
-```julia:load_groebner
-using Groebner # hide
-```
+The implementation in Groebner.jl uses a generic type for coefficients. Hence, in theory, Groebner.jl can compute Gröbner bases over any type that behaves like a field.
 
-Julia grants us the ability to write generic code. One consequence of that for
-Groebner.jl is that it can compute Groebner bases over anything that behaves like a field.
-
-For some ground fields Groebner.jl runs an efficient native implementation:
+For the following ground fields Groebner.jl runs an efficient native implementation:
 - integers modulo a prime,
 - rationals numbers.
 
-For other ground fields, it runs a possibly slower generic fallback. In this case, coefficients of polynomials are treated as black-boxes, which implement field operations: `zero`, `one`, `inv`, `==`, `+`, `*`, `-`.
+For other ground fields, a possibly slower generic fallback is used. In this case, coefficients of polynomials are treated as black-boxes which implement field operations: `zero`, `one`, `inv`, `==`, `+`, `*`, `-`.
 
-For example, we can compute a Groebner basis over a univariate rational function field over a finite field:
+For example, we can compute a Gröbner basis over a univariate rational function field over a finite field:
 
-```julia:generic1
+```@example generic2
 using Groebner, AbstractAlgebra
 
 R, t = GF(101)["t"]
@@ -112,20 +104,19 @@ sys = [(t//t+1)*x*y - t^3, y^2 + t]
 gb = groebner(sys)
 ```
 
-<!-- Some other functions in Groebner.jl reuse the core F4 algorithm, so they can also be used:
+Many functions reuse the core implementation, so they can also be used over generic fields:
 
-```julia::generic2
+```julia
 @assert isgroebner(gb)
 normalform(gb, x*y)
 ```
-
 ### Computing over floating point intervals
 
-Low-level interface supports generic coefficients.
+In the following example, we combine low-level interface and generic coefficients. 
 
-In the following example, we compute a Groebner basis of the `hexapod` system over tuples (Z_p, Interval): each coefficient is treated as a pair, the first coordinate is a finite field element that is used for zero testing, and the second coordinate is a floating point interval with some fixed precision, the payload.
+We are going to compute a basis of the hexapod system over tuples (Z_p, Interval): each coefficient is treated as a pair, the first coordinate is a finite field element used for zero testing, and the second coordinate is a floating point interval with some fixed precision, the payload. For floating point arithmetic, we will be using MPFI.jl.
 
-```julia:generic3
+```@example zp_and_interval
 using Pkg;
 Pkg.add(url="https://gitlab.inria.fr/ckatsama/mpfi.jl")
 
@@ -149,20 +140,15 @@ inv(x::Zp_And_FloatInterval) = Zp_And_FloatInterval(inv(x.a), inv(x.b))
 iszero(x::Zp_And_FloatInterval) = iszero(x.a)
 isone(x::Zp_And_FloatInterval) = isone(x.a)
 
-@info "
-    Computing Hexapod over QQ"
+@info "Computing Hexapod over QQ"
 c_zp = Groebner.Examples.hexapod(k=AbstractAlgebra.GF(2^30+3));
 c_qq = Groebner.Examples.hexapod(k=AbstractAlgebra.QQ);
 @time gb_truth = groebner(c_qq);
 gbcoeffs_truth = map(f -> collect(coefficients(f)), gb_truth);
-@info "
-    Coefficient size (in bits): $(maximum(f -> maximum(c -> log2(abs(numerator(c))) + log2(denominator(c)), f), gbcoeffs_truth))"
+@info "Coefficient size (in bits): $(maximum(f -> maximum(c -> log2(abs(numerator(c))) + log2(denominator(c)), f), gbcoeffs_truth))"
 
-@info "
-    Computing Hexapod over (Zp, Interval). Precision = $PRECISION bits"
-ring = Groebner.PolyRing(nvars(parent(c_qq[1])), Groebner.DegRevLex(), 0);
-ring.ground = :generic;
-
+@info "Computing Hexapod over (Zp, Interval). Precision = $PRECISION bits"
+ring = Groebner.PolyRing(nvars(parent(c_qq[1])), Groebner.DegRevLex(), 0, :generic); # Note :generic
 exps = map(f -> collect(exponent_vectors(f)), c_zp);
 cfs_qq = map(f -> collect(coefficients(f)), c_qq);
 cfs_zp = map(f -> collect(coefficients(f)), c_zp);
@@ -200,4 +186,5 @@ max_diam(x::AbstractVector; rel=false) = maximum(map(f -> max_diam(f; rel=rel), 
     Max diam (rel): $(max_diam(gbcoeffs; rel=true))"
 ```
 
-Note that if we lower the precision to 256 bits some of the intervals become NaNs. -->
+However, if we lower MPFI precision to 256 bits, some of the intervals become NaN.
+

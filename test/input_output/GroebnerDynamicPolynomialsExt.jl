@@ -1,4 +1,4 @@
-using DynamicPolynomials, Test
+using DynamicPolynomials, Test, Groebner
 
 @testset "DynamicPolynomials.jl input-output" begin
     @polyvar x y

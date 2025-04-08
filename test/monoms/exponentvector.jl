@@ -1,3 +1,4 @@
+using Test, Groebner
 
 @testset "exponent vector" begin
     PV{T} = Groebner.ExponentVector{T} where {T}

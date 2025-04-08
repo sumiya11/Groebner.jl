@@ -1,4 +1,4 @@
-using Random
+using Test, Random, Groebner
 
 monom_construct_from_vector = Groebner.monom_construct_from_vector
 monom_to_vector! = Groebner.monom_to_vector!

@@ -1,5 +1,4 @@
-using AbstractAlgebra
-using Test
+using Groebner, AbstractAlgebra, Test
 
 @testset "leading term" begin
     R, (x, y) = QQ["x", "y"]

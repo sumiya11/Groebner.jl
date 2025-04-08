@@ -1,4 +1,4 @@
-import AbstractAlgebra
+using Test, Groebner, AbstractAlgebra
 
 @testset "output type inferred" begin
     R, (x, y) = polynomial_ring(AbstractAlgebra.QQ, ["x", "y"]; internal_ordering=:lex)

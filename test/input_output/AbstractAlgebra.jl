@@ -1,5 +1,4 @@
-using AbstractAlgebra, Test
-import Primes
+using AbstractAlgebra, Test, Primes, Groebner
 
 @testset "AbstractAlgebra.jl, univariate" begin
     R, x = polynomial_ring(GF(2^62 + 135), "x")
