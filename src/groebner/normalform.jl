@@ -93,9 +93,7 @@ function normalform2(
     coeffs_tbr::Vector{Vector{C}},
     params::AlgorithmParameters
 ) where {M <: Monom, C <: Coeff}
-    @invariant ring.nvars == ring_tbr.nvars &&
-               ring.characteristic == ring_tbr.characteristic &&
-               isequal(ring.ord, ring_tbr.ord)
+    @invariant ring == ring_tbr
 
     if params.check
         if !isgroebner2(ring, monoms, coeffs, params)
