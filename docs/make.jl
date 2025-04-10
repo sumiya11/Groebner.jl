@@ -26,6 +26,11 @@ write(joinpath(@__DIR__, "src", "Groebner.jl.pdf"), "")
 @time Documenter.makedocs(
     modules   = [Groebner],
     sitename  = "Groebner.jl",
+    format = Documenter.HTML(
+        analytics = "G-09PS33NY4L",
+        # assets = ["assets/favicon.ico"],
+        canonical = "https://sumiya11.github.io/Groebner.jl/stable/",
+    ),
     doctest   = true,
     linkcheck = true,
     checkdocs = :exports,
