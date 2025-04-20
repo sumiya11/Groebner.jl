@@ -29,7 +29,6 @@ write(joinpath(@__DIR__, "src", "Groebner.jl.pdf"), "")
     format = Documenter.HTML(
         analytics = "G-09PS33NY4L",
         # assets = ["assets/favicon.ico"],
-        canonical = "https://sumiya11.github.io/Groebner.jl/stable/",
     ),
     doctest   = true,
     linkcheck = true,
@@ -59,5 +58,5 @@ cp(
 deploydocs(
     repo="github.com/sumiya11/Groebner.jl.git",
     versions = ["stable" => "v^", "v#.#", "dev" => "master"], # from Distributions.jl
-    push_preview=true
+    push_preview = true
 )
