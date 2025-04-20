@@ -57,6 +57,6 @@ cp(
 
 deploydocs(
     repo="github.com/sumiya11/Groebner.jl.git",
-    versions = ["stable" => "v^", "v#.#", "dev" => "master"], # from Distributions.jl
+    versions = nothing,
     push_preview = true
 )
