@@ -79,6 +79,9 @@ end
 end
 
 @testset "low level auxiliary funcs" begin
-
+    ring_qq = Groebner.PolyRing(2, Groebner.DegRevLex(), 0)
+    @test 1 == Groebner.dimension(ring_qq, [[[0, 0], [1, 1]]], [[3, 4]])
+    @test 0 == Groebner.dimension(ring_qq, [[[1, 0]], [[0, 1]]], [[3], [-7]])
+    @test -1 == Groebner.dimension(ring_qq, [[[1, 0]], [[0, 1]]], [[0], [0]])
 end
 
