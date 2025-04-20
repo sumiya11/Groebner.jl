@@ -77,3 +77,8 @@ end
     @test Groebner.dimension([sum(x)]) == n - 1
     @test Groebner.dimension([sum(x), prod(x), sum([i for i in 1:n] .* x)]) == n - 3
 end
+
+@testset "low level auxiliary funcs" begin
+
+end
+
