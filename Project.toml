@@ -21,7 +21,7 @@ DynamicPolynomials = "7c1d4256-1411-5781-91ec-d7bc3513ac07"
 GroebnerDynamicPolynomialsExt = "DynamicPolynomials"
 
 [compat]
-AbstractAlgebra = "0.41, 0.42, 0.43, 0.44"
+AbstractAlgebra = "0.41, 0.42, 0.43, 0.44, 0.46"
 Atomix = "0.1, 1"
 BenchmarkTools = "1"
 Combinatorics = "1"
