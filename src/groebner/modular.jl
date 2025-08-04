@@ -74,7 +74,7 @@ function modular_next_prime!(state::ModularState)
 end
 
 function modular_random_prime(state::ModularState, rng::AbstractRNG)
-    lb, ub = RANDOM_PRIME_LB, RANDOM_PRIME_UB
+    lb, ub = RANDOM_PRIME_LB, RANDOM_PRIME_UB # 2^20, 2^28
     while true
         candidate = rand(rng, lb:ub) % UInt64
         !modular_accept_prime(state, candidate) && continue
@@ -370,26 +370,52 @@ function modular_lift_randomized_check!(
     hashtable::MonomialHashtable,
     params::AlgorithmParameters
 )
-    # !!! note that this function may modify the given hashtable!
-    prime = modular_random_prime(state, params.rng)
-    ring_ff, input_ff = modular_reduce_mod_p!(ring, input_zz, prime, deepcopy=true)
-    # TODO: do we really need to re-scale things to be fraction-free?
-    gb_coeffs_zz = _clear_denominators!(state.gb_coeffs_qq)
-    gb_zz = basis_deep_copy_with_new_coeffs(gb_ff, gb_coeffs_zz)
-    ring_ff, gb_ff = modular_reduce_mod_p!(ring, gb_zz, prime, deepcopy=false)
-    arithmetic = select_arithmetic(CoeffModular, prime, :auto, false)
-    basis_make_monic!(gb_ff, arithmetic, params.changematrix)
-    # Check that some polynomial is not reduced to zero
-    f4_normalform!(ring_ff, gb_ff, input_ff, hashtable, arithmetic)
-    for i in 1:(input_ff.n_processed)
-        if !isempty(input_ff.coeffs[i])
+    checks = 1
+    for _ in 1:checks
+        # !!! note that this function may modify the given hashtable!
+        prime = UInt64(2^30+3) # modular_random_prime(state, params.rng) # UInt64(2^30+3) # modular_random_prime(state, params.rng)
+        @info "" prime
+        ring_ff, input_ff = modular_reduce_mod_p!(ring, input_zz, prime, deepcopy=true)
+        # TODO: do we really need to re-scale things to be fraction-free?
+        gb_coeffs_zz = _clear_denominators!(state.gb_coeffs_qq)
+        @info "" gb_coeffs_zz state.gb_coeffs_qq
+        gb_zz = basis_deep_copy_with_new_coeffs(gb_ff, gb_coeffs_zz)
+        ring_ff, gb_ff = modular_reduce_mod_p!(ring, gb_zz, prime, deepcopy=false)
+        arithmetic = select_arithmetic(CoeffModular, prime, :auto, false)
+        @info "" arithmetic
+        basis_make_monic!(gb_ff, arithmetic, params.changematrix)
+        # Check that some polynomial is not reduced to zero
+        @info "1" gb_ff.coeffs
+        f4_normalform!(ring_ff, gb_ff, input_ff, hashtable, arithmetic)
+        @info "1.2" input_ff.coeffs
+        for i in 1:(input_ff.n_processed)
+            if !isempty(input_ff.coeffs[i])
+                return false
+            end
+        end
+        # Check that the basis is a groebner basis
+        pairset = pairset_initialize(UInt64)
+        println("Full dump:")
+        println(ring_ff)
+        println(gb_ff)
+        println(pairset.load)
+        println(arithmetic)
+        _exps, _cfs = basis_export_data(gb_ff, hashtable)
+        _params = AlgorithmParameters(PolyRing(2, DegLex(), prime, :zp), KeywordArguments(:isgroebner, Dict()))
+        _params = struct_update(
+            AlgorithmParameters,
+            _params, (arithmetic = arithmetic, representation = params.representation))
+        _exps = map(f -> map(m -> monom_to_vector!(Vector{UInt64}(undef, ring_ff.nvars), m), f), _exps)
+        _, _ring, _monoms, _coeffs = ir_convert_ir_to_internal(PolyRing(2, DegLex(), prime, :zp), _exps, _cfs, _params)
+        _basis, _pairset, _hashtable = f4_initialize_structs(_ring, _monoms, _coeffs, _params)
+        @info "3" _exps _cfs ring_ff _ring
+        @info "" gb_ff _basis
+        # @info "" isgroebner1(ring_ff, _exps, _cfs, KeywordArguments(:isgroebner, Dict()))
+        # @info "" f4_isgroebner!(ring_ff, gb_ff, _pairset, _hashtable, arithmetic)
+        # @info "" f4_isgroebner!(ring_ff, gb_ff, pairset, hashtable, arithmetic)
+        if !f4_isgroebner!(ring_ff, gb_ff, pairset, hashtable, arithmetic)
             return false
         end
-    end
-    # Check that the basis is a groebner basis
-    pairset = pairset_initialize(UInt64)
-    if !f4_isgroebner!(ring_ff, gb_ff, pairset, hashtable, arithmetic)
-        return false
     end
     true
 end
