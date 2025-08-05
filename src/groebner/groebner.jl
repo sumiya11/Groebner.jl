@@ -571,7 +571,7 @@ function _groebner_classic_modular(
 
     ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
 
-    @info "" prime ring_ff basis_ff
+    # @info "" prime ring_ff basis_ff
 
     params_zp = param_mod_p(params, prime)
     f4!(ring_ff, basis_ff, pairset, hashtable, params_zp)
@@ -581,7 +581,7 @@ function _groebner_classic_modular(
     push!(state.used_primes, prime)
     push!(state.gb_coeffs_ff_all, basis_ff.coeffs)
 
-    @info "" basis_ff.coeffs
+    # @info "" basis_ff.coeffs
 
     # Reconstruct coefficients and write results to the accumulator.
     modular_prepare!(state)
