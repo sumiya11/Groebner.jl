@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Examples · Groebner.jl</title><meta name="title" content="Examples · Groebner.jl"/><meta property="og:title" content="Examples · Groebner.jl"/><meta property="twitter:title" content="Examples · Groebner.jl"/><meta name="description" content="Documentation for Groebner.jl."/><meta property="og:description" content="Documentation for Groebner.jl."/><meta property="twitter:description" content="Documentation for Groebner.jl."/><script async src="https://www.googletagmanager.com/gtag/js?id=G-09PS33NY4L"></script><script>  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-09PS33NY4L', {'page_path': location.pathname + location.search + location.hash});
+</script><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../"><img class="docs-light-only" src="../assets/logo.svg" alt="Groebner.jl logo"/><img class="docs-dark-only" src="../assets/logo-dark.svg" alt="Groebner.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../">Groebner.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li class="is-active"><a class="tocitem" href>Examples</a><ul class="internal"><li><a class="tocitem" href="#Using-AbstractAlgebra.jl"><span>Using AbstractAlgebra.jl</span></a></li><li><a class="tocitem" href="#Using-DynamicPolynomials.jl"><span>Using DynamicPolynomials.jl</span></a></li><li><a class="tocitem" href="#Using-Low-level-interface"><span>Using Low-level interface</span></a></li><li><a class="tocitem" href="#Generic-coefficients"><span>Generic coefficients</span></a></li></ul></li><li><a class="tocitem" href="../interface/">Interface</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Examples</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Examples</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/sumiya11/Groebner.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/sumiya11/Groebner.jl/blob/master/docs/src/examples.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Examples"><a class="docs-heading-anchor" href="#Examples">Examples</a><a id="Examples-1"></a><a class="docs-heading-anchor-permalink" href="#Examples" title="Permalink"></a></h1><p>Groebner.jl supports polynomials from the following frontends:</p><ul><li>AbstractAlgebra.jl</li><li>Nemo.jl</li><li>DynamicPolynomials.jl</li></ul><p>Additionally, Groebner.jl has a low-level entry point that accepts raw polynomial data.</p><h2 id="Using-AbstractAlgebra.jl"><a class="docs-heading-anchor" href="#Using-AbstractAlgebra.jl">Using AbstractAlgebra.jl</a><a id="Using-AbstractAlgebra.jl-1"></a><a class="docs-heading-anchor-permalink" href="#Using-AbstractAlgebra.jl" title="Permalink"></a></h2><p>First, we import AbstractAlgebra.jl.  Then, we create an array of polynomials over a finite field</p><pre><code class="language-julia hljs">using AbstractAlgebra
+
+R, (x, y, z) = polynomial_ring(GF(2^31 - 1), [&quot;x&quot;, &quot;y&quot;, &quot;z&quot;])
+polys = [x^2 + y + z, x*y + z];</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2-element Vector{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.GFElem{Int64}}}:
+ x^2 + y + z
+ x*y + z</code></pre><p>and compute a Gröbner basis with the <code>groebner</code> command</p><pre><code class="language-julia hljs">using Groebner
+
+basis = groebner(polys)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">4-element Vector{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.GFElem{Int64}}}:
+ y^3 + y^2*z + z^2
+ x*z + 2147483646*y^2 + 2147483646*y*z
+ x*y + z
+ x^2 + y + z</code></pre><p>We can check if a set of polynomials forms a Gröbner basis</p><pre><code class="language-julia hljs">isgroebner(basis)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">true</code></pre><p>Groebner.jl also provides several monomial orderings.  For example, we can eliminate <code>z</code> from the above system:</p><pre><code class="language-julia hljs">ordering = Lex(z) * DegRevLex(x, y)  # z &gt; x, y
+groebner(polys, ordering=ordering)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2-element Vector{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.GFElem{Int64}}}:
+ x^2 + 2147483646*x*y + y
+ x*y + z</code></pre><p>You can find more information on monomial orderings in Groebner.jl in <a href="../interface/#Monomial-orderings">Monomial orderings</a>.</p><h2 id="Using-DynamicPolynomials.jl"><a class="docs-heading-anchor" href="#Using-DynamicPolynomials.jl">Using DynamicPolynomials.jl</a><a id="Using-DynamicPolynomials.jl-1"></a><a class="docs-heading-anchor-permalink" href="#Using-DynamicPolynomials.jl" title="Permalink"></a></h2><p>Computing the Gröbner basis of some system:</p><pre><code class="language-julia hljs">using DynamicPolynomials, Groebner
+
+@polyvar x1 x2
+system = [10*x1*x2^2 - 11*x1 + 10,
+        10*x1^2*x2 - 11*x2 + 10]
+
+groebner(system)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3-element Vector{DynamicPolynomials.Polynomial{DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}, MultivariatePolynomials.Graded{MultivariatePolynomials.LexOrder}, Rational{BigInt}}}:
+ 10//11x2 - 10//11x1 - x2² + x1²
+ 1//1 - 11//10x2 - 10//11x2² + 10//11x1x2 + x2³
+ 1//1 - 11//10x1 + x1x2²</code></pre><h2 id="Using-Low-level-interface"><a class="docs-heading-anchor" href="#Using-Low-level-interface">Using Low-level interface</a><a id="Using-Low-level-interface-1"></a><a class="docs-heading-anchor-permalink" href="#Using-Low-level-interface" title="Permalink"></a></h2><p>Some functions in the interface have a low-level entry point. Low-level functions accept and output &#39;&#39;raw&#39;&#39; exponent vectors and coefficients. This could be convenient when one does not want to depend on a frontend.</p><p>For example,</p><pre><code class="language-julia hljs">using Groebner
+
+# define {x * y - 1, x^3 + 7 * y^2} modulo 65537 in DRL
+ring = Groebner.PolyRing(2, Groebner.DegRevLex(), 65537)
+monoms = [ [[1, 1], [0, 0]], [[3, 0], [0, 2]] ]
+coeffs = [ [    1,     -1 ], [    1,      7 ] ]
+
+# compute a GB
+gb_monoms, gb_coeffs = Groebner.groebner(ring, monoms, coeffs)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(Vector{Vector{UInt32}}[[[0x00000001, 0x00000001], [0x00000000, 0x00000000]], [[0x00000000, 0x00000003], [0x00000002, 0x00000000]], [[0x00000003, 0x00000000], [0x00000000, 0x00000002]]], Vector{UInt32}[[0x00000001, 0x00010000], [0x00000001, 0x00004925], [0x00000001, 0x00000007]])</code></pre><p>The list of functions that provide a low-level entry point: <code>groebner</code>, <code>normalform</code>, <code>isgroebner</code>, <code>groebner_learn</code>, <code>groebner_apply</code>.</p><p>Low-level functions may be faster than their user-facing analogues since they bypass data conversions. Low-level functions do not make any specific assumptions on input polynomials, that is, all of these cases are correctly handled: unsorted monomials, non-normalized coefficients, duplicate terms, aliasing memory.</p><h2 id="Generic-coefficients"><a class="docs-heading-anchor" href="#Generic-coefficients">Generic coefficients</a><a id="Generic-coefficients-1"></a><a class="docs-heading-anchor-permalink" href="#Generic-coefficients" title="Permalink"></a></h2><p>The implementation in Groebner.jl uses a generic type for coefficients. Hence, in theory, Groebner.jl can compute Gröbner bases over any type that behaves like a field.</p><p>For the following ground fields Groebner.jl runs an efficient native implementation:</p><ul><li>integers modulo a prime,</li><li>rationals numbers.</li></ul><p>For other ground fields, a possibly slower generic fallback is used. In this case, coefficients of polynomials are treated as black-boxes which implement field operations: <code>zero</code>, <code>one</code>, <code>inv</code>, <code>==</code>, <code>+</code>, <code>*</code>, <code>-</code>.</p><p>For example, we can compute a Gröbner basis over a univariate rational function field over a finite field:</p><pre><code class="language-julia hljs">using Groebner, AbstractAlgebra
+
+R, t = GF(101)[&quot;t&quot;]
+ff = fraction_field(R)
+_, (x, y) = ff[&quot;x&quot;,&quot;y&quot;]
+
+sys = [(t//t+1)*x*y - t^3, y^2 + t]
+
+gb = groebner(sys)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2-element Vector{AbstractAlgebra.Generic.MPoly{AbstractAlgebra.Generic.FracFieldElem{AbstractAlgebra.Generic.Poly{AbstractAlgebra.GFElem{Int64}}}}}:
+ y^2 + t
+ x + 51*t^2*y</code></pre><p>Many functions reuse the core implementation, so they can also be used over generic fields:</p><pre><code class="language-julia hljs">@assert isgroebner(gb)
+normalform(gb, x*y)</code></pre><h3 id="Computing-over-floating-point-intervals"><a class="docs-heading-anchor" href="#Computing-over-floating-point-intervals">Computing over floating point intervals</a><a id="Computing-over-floating-point-intervals-1"></a><a class="docs-heading-anchor-permalink" href="#Computing-over-floating-point-intervals" title="Permalink"></a></h3><p>In the following example, we combine low-level interface and generic coefficients. </p><p>We are going to compute a basis of the hexapod system over tuples (Z_p, Interval): each coefficient is treated as a pair, the first coordinate is a finite field element used for zero testing, and the second coordinate is a floating point interval with some fixed precision, the payload. For floating point arithmetic, we will be using MPFI.jl.</p><pre><code class="language-julia hljs">using Pkg;
+Pkg.add(url=&quot;https://gitlab.inria.fr/ckatsama/mpfi.jl&quot;)
+
+import Base: +, -, *, zero, iszero, one, isone, inv
+using AbstractAlgebra, Groebner, MPFI
+
+PRECISION = 1024 # For MPFI intervals
+
+struct Zp_And_FloatInterval{Zp, FloatInterval}
+    a::Zp
+    b::FloatInterval
+end
+
+# Pretend it is a field and hakuna matata
++(x::Zp_And_FloatInterval, y::Zp_And_FloatInterval) = Zp_And_FloatInterval(x.a + y.a, x.b + y.b)
+*(x::Zp_And_FloatInterval, y::Zp_And_FloatInterval) = Zp_And_FloatInterval(x.a * y.a, x.b * y.b)
+-(x::Zp_And_FloatInterval, y::Zp_And_FloatInterval) = Zp_And_FloatInterval(x.a - y.a, x.b - y.b)
+zero(x::Zp_And_FloatInterval) = Zp_And_FloatInterval(zero(x.a), zero(x.b))
+one(x::Zp_And_FloatInterval) = Zp_And_FloatInterval(one(x.a), one(x.b))
+inv(x::Zp_And_FloatInterval) = Zp_And_FloatInterval(inv(x.a), inv(x.b))
+iszero(x::Zp_And_FloatInterval) = iszero(x.a)
+isone(x::Zp_And_FloatInterval) = isone(x.a)
+
+@info &quot;Computing Hexapod over QQ&quot;
+c_zp = Groebner.Examples.hexapod(k=AbstractAlgebra.GF(2^30+3));
+c_qq = Groebner.Examples.hexapod(k=AbstractAlgebra.QQ);
+@time gb_truth = groebner(c_qq);
+gbcoeffs_truth = map(f -&gt; collect(coefficients(f)), gb_truth);
+@info &quot;Coefficient size (in bits): $(maximum(f -&gt; maximum(c -&gt; log2(abs(numerator(c))) + log2(denominator(c)), f), gbcoeffs_truth))&quot;
+
+@info &quot;Computing Hexapod over (Zp, Interval). Precision = $PRECISION bits&quot;
+ring = Groebner.PolyRing(nvars(parent(c_qq[1])), Groebner.DegRevLex(), 0, :generic); # Note :generic
+exps = map(f -&gt; collect(exponent_vectors(f)), c_zp);
+cfs_qq = map(f -&gt; collect(coefficients(f)), c_qq);
+cfs_zp = map(f -&gt; collect(coefficients(f)), c_zp);
+cfs = map(f -&gt; map(c -&gt; Groebner.CoeffGeneric(Zp_And_FloatInterval(c[1], BigInterval(c[2], precision=PRECISION))), zip(f...)), zip(cfs_zp, cfs_qq));
+@time gbexps, gbcoeffs = groebner(ring, exps, cfs);
+
+to_inspect = gbcoeffs[end][end]
+@info &quot;
+    Inspect one coefficient in the basis:
+    Zp         = $(to_inspect.data.a)
+    Interval   = $(to_inspect.data.b)
+    Diam       = $(diam(to_inspect.data.b))
+    Diam (rel) = $(diam_rel(to_inspect.data.b))&quot;
+
+# Sanity check
+all_are_inside(x::Zp_And_FloatInterval, truth) = is_inside(BigInterval(truth; precision=PRECISION), x.b)
+all_are_inside(x::Groebner.CoeffGeneric, truth) = all_are_inside(x.data, truth)
+all_are_inside(x::AbstractVector, truth) = all(map(all_are_inside, x, truth))
+@assert all_are_inside(gbcoeffs, gbcoeffs_truth)
+
+# Max |midpoint - truth|
+max_error(x::Zp_And_FloatInterval, y; rel=false) = abs(mid(x.b) - y) / ifelse(rel, max(abs(y), 0), 1)
+max_error(x::Groebner.CoeffGeneric, y; rel=false) = max_error(x.data, y; rel=rel)
+max_error(x::AbstractVector, y::AbstractVector; rel=false) = maximum(map(f -&gt; max_error(f...; rel=rel), zip(x, y)))
+@info &quot;
+    Max error      : $(max_error(gbcoeffs, gbcoeffs_truth))
+    Max error (rel): $(max_error(gbcoeffs, gbcoeffs_truth; rel=true))&quot;
+
+# Max diameter
+max_diam(x::Zp_And_FloatInterval; rel=false) = ifelse(rel, diam_rel(x.b), diam(x.b))
+max_diam(x::Groebner.CoeffGeneric; rel=false) = max_diam(x.data; rel=rel)
+max_diam(x::AbstractVector; rel=false) = maximum(map(f -&gt; max_diam(f; rel=rel), x))
+@info &quot;
+    Max diam      : $(max_diam(gbcoeffs))
+    Max diam (rel): $(max_diam(gbcoeffs; rel=true))&quot;</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">     Cloning git-repo `https://gitlab.inria.fr/ckatsama/mpfi.jl`
+    Updating git-repo `https://gitlab.inria.fr/ckatsama/mpfi.jl`
+    Updating registry at `~/.julia/registries/General.toml`
+   Resolving package versions...
+   Installed MPFI_jll ─ v1.5.5+0
+    Updating `~/work/Groebner.jl/Groebner.jl/docs/Project.toml`
+  [e50a78b8] + MPFI v0.0.2 `https://gitlab.inria.fr/ckatsama/mpfi.jl#main`
+    Updating `~/work/Groebner.jl/Groebner.jl/docs/Manifest.toml`
+  [e50a78b8] + MPFI v0.0.2 `https://gitlab.inria.fr/ckatsama/mpfi.jl#main`
+  [e8b5fb6c] + MPFI_jll v1.5.5+0
+Precompiling project...
+    545.7 ms  ✓ MPFI_jll
+    671.2 ms  ✓ MPFI
+  2 dependencies successfully precompiled in 3 seconds. 97 already precompiled.
+[ Info: Computing Hexapod over QQ
+  8.855054 seconds (9.83 M allocations: 722.404 MiB, 1.27% gc time, 62.95% compilation time: &lt;1% of which was recompilation)
+[ Info: Coefficient size (in bits): 26417.51221660290345963338930851770671711863223901550154467730075030408186732383
+[ Info: Computing Hexapod over (Zp, Interval). Precision = 1024 bits
+  3.704838 seconds (11.73 M allocations: 1.149 GiB, 4.26% gc time, 60.38% compilation time)
+┌ Info:
+│     Inspect one coefficient in the basis:
+│     Zp         = 431552538
+│     Interval   = [-558257.179964293499103254665884651072133515775095659908229364647551150274932701193122464225536926652554734945221948132871454167527388434046874351288631103703125550348669636711860001830212776691489177970139223435794155837851688962602302837393595905189272745160736969664558696826248382490457871185395585984926123, -558257.1799642934991032546658846510721335157750956599082293646475511502749327011931224642255369266525547349452219481328714541675273884340468743512886310103610088941292176909443184882076877145224507633076925224690573253769000560850048119805654343386272229278094367421056997174640715542658495229510391361784020301]
+│     Diam       = 1.672027158919651976006869310114122419663900773436204550000460151670795840150429914233907375269285425467809952395883667076524757044947623214739602859502895661246540434127220251528902176541619250486979776928932908889218902542513617616955221317679605184401593097164187620670059611908714068108646305179096756582447e-151
+└     Diam (rel) = 1.672027158919651976006869310114122419663900773436204550000460151670795840150429914233907375269285425467809952395883667076524757044947623214739602859502895661246540434127220251528902176541619250486979776928932908889218902542513617616955221317679605184401593097164187620670059611908714068108646305179096756582447e-151
+┌ Info:
+│     Max error      : 1.228864326279742133434060342410214649753730878890848130615480485662809941472111e-51
+└     Max error (rel): 2.127849791509757036887182607381235177361098814152126217820831601897105585301116e-77
+┌ Info:
+│     Max diam      : 1.202460211377052991684279730262989280695122676646933719333198938473338220666243005911208907254489599815389991605688400764539497569401287751641248190538361586297178234457598088451411818969961772698669019572643689781706754158694087745157768440540233361634518715844476807816772233724409911900292268141779522198055e-132
+└     Max diam (rel): 1.202460211377052991684279730262989280695122676646933719333198938473338220666243005911208907254489599815389991605688400764539497569401287751641248190538361586297178234457598088451411818969961772698669019572643689781706754158694087745157768440540233361634518715844476807816772233724409911900292268141779522198055e-132</code></pre><p>However, if we lower MPFI precision to 256 bits, some of the intervals become NaN.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../interface/">Interface »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Tuesday 5 August 2025 20:37">Tuesday 5 August 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
