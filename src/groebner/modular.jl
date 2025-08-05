@@ -74,7 +74,7 @@ function modular_next_prime!(state::ModularState)
 end
 
 function modular_random_prime(state::ModularState, rng::AbstractRNG)
-    lb, ub = RANDOM_PRIME_LB, RANDOM_PRIME_UB # 2^20, 2^28
+    lb, ub = RANDOM_PRIME_LB, RANDOM_PRIME_UB
     while true
         candidate = rand(rng, lb:ub) % UInt64
         !modular_accept_prime(state, candidate) && continue
