@@ -362,6 +362,7 @@ function modular_lift_heuristic_check_partial(
     true
 end
 
+# !!! note that this function may modify the given hashtable!
 function modular_lift_randomized_check!(
     state::ModularState,
     ring::PolyRing,
@@ -372,22 +373,16 @@ function modular_lift_randomized_check!(
 )
     checks = 1
     for _ in 1:checks
-        # !!! note that this function may modify the given hashtable!
-        prime = UInt64(2^30+3) # modular_random_prime(state, params.rng) # UInt64(2^30+3) # modular_random_prime(state, params.rng)
-        # @info "" prime
+        prime = modular_random_prime(state, params.rng)
         ring_ff, input_ff = modular_reduce_mod_p!(ring, input_zz, prime, deepcopy=true)
         # TODO: do we really need to re-scale things to be fraction-free?
         gb_coeffs_zz = _clear_denominators!(state.gb_coeffs_qq)
-        # @info "" gb_coeffs_zz state.gb_coeffs_qq
         gb_zz = basis_deep_copy_with_new_coeffs(gb_ff, gb_coeffs_zz)
         ring_ff, gb_ff = modular_reduce_mod_p!(ring, gb_zz, prime, deepcopy=false)
         arithmetic = select_arithmetic(CoeffModular, prime, :auto, false)
-        # @info "" arithmetic
         basis_make_monic!(gb_ff, arithmetic, params.changematrix)
         # Check that some polynomial is not reduced to zero
-        # @info "1" gb_ff.coeffs
         f4_normalform!(ring_ff, gb_ff, input_ff, hashtable, arithmetic)
-        # @info "1.2" input_ff.coeffs
         for i in 1:(input_ff.n_processed)
             if !isempty(input_ff.coeffs[i])
                 return false
@@ -395,37 +390,7 @@ function modular_lift_randomized_check!(
         end
         # Check that the basis is a groebner basis
         pairset = pairset_initialize(monom_entrytype(hashtable.monoms[1]))
-        # println("Full dump:")
-        # println(ring_ff)
-        # println(gb_ff)
-        # println(pairset.load)
-        # println(arithmetic)
-        _exps, _cfs = basis_export_data(gb_ff, hashtable)
-        _params = AlgorithmParameters(PolyRing(ring.nvars, ring.ord, prime, :zp), KeywordArguments(:isgroebner, Dict()))
-        _params = struct_update(
-            AlgorithmParameters,
-            _params, (arithmetic = arithmetic, representation = params.representation))
-        _exps = map(f -> map(m -> monom_to_vector!(Vector{UInt64}(undef, ring_ff.nvars), m), f), _exps)
-        _, _ring, _monoms, _coeffs = ir_convert_ir_to_internal(PolyRing(ring.nvars, ring.ord, prime, :zp), _exps, _cfs, _params)
-        _basis, _pairset, _hashtable = f4_initialize_structs(_ring, _monoms, _coeffs, _params)
-        # @info "3" _exps _cfs ring_ff _ring
-        # @info "" gb_ff _basis
-        # @info "" monom_entrytype(hashtable.monoms[1])
-        # @info "" arithmetic
-        # gb_ff.n_processed = 0
-        # gb_ff.n_nonredundant = 0
-        # Arguments check:
-        # ring_ff  -    OK
-        # pairset  -    OK
-        # basis_ff - 
-        # arithmetic -        
-        if isgroebner1(ring_ff, _exps, _cfs, KeywordArguments(:isgroebner, Dict())) !=
-            f4_isgroebner!(ring_ff, gb_ff, pairset, hashtable, arithmetic)
-            @info "Beda!"
-        end
-        # @info "" isgroebner1(ring_ff, _exps, _cfs, KeywordArguments(:isgroebner, Dict()))   # false
-        # @info "" f4_isgroebner!(ring_ff, gb_ff, _pairset, _hashtable, arithmetic)
-        # @info "" f4_isgroebner!(ring_ff, gb_ff, pairset, hashtable, arithmetic)             # true
+        # TODO: accessing fields in this way is not very nice.
         gb_ff.n_processed = 0
         gb_ff.n_nonredundant = 0
         if !f4_isgroebner!(ring_ff, gb_ff, pairset, hashtable, arithmetic)

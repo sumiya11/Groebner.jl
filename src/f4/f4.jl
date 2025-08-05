@@ -459,8 +459,6 @@ function f4_isgroebner!(
     symbol_ht = hashtable_initialize_secondary(hashtable)
     update_ht = hashtable_initialize_secondary(hashtable)
     f4_update!(pairset, basis, hashtable, update_ht)
-    # @info "hello!" pairset.pairs[1:pairset.load+1]
-    # @info "" basis
     isempty(pairset) && return true
     f4_select_critical_pairs!(pairset, basis, matrix, hashtable, symbol_ht, select_all=true)
     f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)

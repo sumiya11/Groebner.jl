@@ -53,9 +53,6 @@ function _isgroebner2(
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffZp}
     basis, pairset, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
-    # println("In high-level isgroebner")
-    # println(typeof(pairset))
-    # @info "" basis
     res = f4_isgroebner!(ring, basis, pairset, hashtable, params.arithmetic)
     res
 end
