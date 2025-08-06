@@ -110,8 +110,9 @@ include("input_output/intermediate.jl")
 include("groebner/parameters.jl")
 
 # Input-output conversions for polynomials
-include("input_output/AbstractAlgebra.jl")#= generic f4 =#
+include("input_output/AbstractAlgebra.jl")
 
+#= generic f4 =#
 include("f4/hashtable.jl")
 include("f4/basis.jl")
 include("f4/trace.jl")
@@ -131,8 +132,9 @@ include("f4/f4.jl")
 include("f4/learn_apply.jl")
 
 include("reconstruction/crt.jl")
-include("reconstruction/ratrec.jl")#= more high level functions =#
+include("reconstruction/ratrec.jl")
 
+#= more high level functions =#
 include("groebner/modular.jl")
 include("groebner/wrapped_trace.jl")
 include("groebner/groebner.jl")

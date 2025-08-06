@@ -29,101 +29,16 @@ const DivisionMask = UInt32
 
 # Hashtable implements open addressing with linear scan.
 mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractMonomialOrdering}
-
-    # This file is a part of Groebner.jl. License is GNU GPL v2.
-
-    # Parts of this file were adapted from msolve:
-    # https://github.com/algebraic-solving/msolve
-    # msolve is distributed under GNU GPL v2+:
-    # https://github.com/algebraic-solving/msolve/blob/master/COPYING
-
-    ### 
-    # Monomial hashtable.
-
-    # Some monomial implementations are mutable and some are not. To
-    # maintain generic code that will work for both, we usually write
-    #   m3 = monom_product!(m3, m1, m2). 
-    # If a mutable implementation is used, m3 would be overwritten inside
-    #= Data =#    # monom_product!. Otherwise, monom_product! would return a new immutable object
-    # that is then assigned to m3. That allows us to write more or less
-    # independently of the monomial implementation.
-
-    # Hash of a monomial in the hashtable
-
-    # The idenfifier of a monomial. This idenfifier is guaranteed to be unique
-    # within a particular hashtable. This allows one to use this idenfifier when
-    # working with monomials
-
-    # Division mask of a monomial
-
-    # Hashtable implements open addressing with linear scan.
-
-    # This file is a part of Groebner.jl. License is GNU GPL v2.
-
-    # Parts of this file were adapted from msolve:
-    # https://github.com/algebraic-solving/msolve
-    # msolve is distributed under GNU GPL v2+:
-    # https://github.com/algebraic-solving/msolve/blob/master/COPYING
-
-    ### 
-    # Monomial hashtable.
-
-    # Some monomial implementations are mutable and some are not. To
-    # maintain generic code that will work for both, we usually write
-    #   m3 = monom_product!(m3, m1, m2). 
-    # If a mutable implementation is used, m3 would be overwritten inside
-    # monom_product!. Otherwise, monom_product! would return a new immutable object
-    # that is then assigned to m3. That allows us to write more or less
-    # independently of the monomial implementation.
-
-    # Hash of a monomial in the hashtable
-
-    # The idenfifier of a monomial. This idenfifier is guaranteed to be unique
-    # within a particular hashtable. This allows one to use this idenfifier when
-    # working with monomials
-
-    # Division mask of a monomial
-
-    # Hashtable implements open addressing with linear scan.
-
-    # This file is a part of Groebner.jl. License is GNU GPL v2.
-
-    # Parts of this file were adapted from msolve:
-    # https://github.com/algebraic-solving/msolve
-    # msolve is distributed under GNU GPL v2+:
-    # https://github.com/algebraic-solving/msolve/blob/master/COPYING
-
-    ### 
-    # Monomial hashtable.
-
-    # Some monomial implementations are mutable and some are not. To
-    # maintain generic code that will work for both, we usually write
-    #   m3 = monom_product!(m3, m1, m2). 
-    # If a mutable implementation is used, m3 would be overwritten inside
-    # monom_product!. Otherwise, monom_product! would return a new immutable object
-    # that is then assigned to m3. That allows us to write more or less
-    # independently of the monomial implementation.
-
-    # Hash of a monomial in the hashtable
-
-    # The idenfifier of a monomial. This idenfifier is guaranteed to be unique
-    # within a particular hashtable. This allows one to use this idenfifier when
-    # working with monomials
-
-    # Division mask of a monomial
-
-    # Hashtable implements open addressing with linear scan.
-
     monoms::Vector{M}
     hashtable::Vector{MonomId}
     labels::Vector{Int32}
     hashvals::Vector{MonomHash}
     divmasks::Vector{DivisionMask}
 
-    hash_vector::Vector{MonomHash}#= Ring information =#
+    hash_vector::Vector{MonomHash}
 
     nvars::Int
-    ord::Ord#= Monom divisibility =#
+    ord::Ord
 
     use_divmask::Bool
     compress_divmask::Bool
