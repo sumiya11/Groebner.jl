@@ -185,6 +185,8 @@ function matrix_row_increasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: Colum
 end
 
 function sort_matrix_upper_rows!(matrix::MacaulayMatrix)
+    #= smaller means pivot being more to the left  =#
+    #= and density being smaller                   =#
     permutation = collect(1:(matrix.nrows_filled_upper))
     # TODO: use "let" here!
     cmp =
@@ -203,6 +205,8 @@ function sort_matrix_upper_rows!(matrix::MacaulayMatrix)
 end
 
 function sort_matrix_lower_rows!(matrix::MacaulayMatrix)
+    #= smaller means pivot being more to the right =#
+    #= and density being larger                    =#
     permutation = collect(1:(matrix.nrows_filled_lower))
     cmp =
         (x, y) -> matrix_row_increasing_cmp(
