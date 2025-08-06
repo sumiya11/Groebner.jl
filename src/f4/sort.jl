@@ -185,8 +185,106 @@ function matrix_row_increasing_cmp(a::Vector{T}, b::Vector{T}) where {T <: Colum
 end
 
 function sort_matrix_upper_rows!(matrix::MacaulayMatrix)
-    #= smaller means pivot being more to the left  =#
-    #= and density being smaller                   =#
+
+    # This file is a part of Groebner.jl. License is GNU GPL v2.
+
+    # Parts of this file were adapted from msolve:
+    # https://github.com/algebraic-solving/msolve
+    # msolve is distributed under GNU GPL v2+:
+    # https://github.com/algebraic-solving/msolve/blob/master/COPYING
+
+    # y, s.t. y >= x and n | y.
+
+    # y, s.t y <= x and n | y.
+
+    ### 
+    # Sorting monomials, polynomials, and other things.
+
+    # Sorts arr at the range of indices from..to. 
+    # This function is perhaps type unstable
+
+    #= smaller means pivot being more to the left  =##= and density being smaller                   =#    # Permute a part of the array from the given index according to the permutation.
+
+    # stable sort to preserve the order of polynomials with the same lead
+
+    # use array assignment insted of elemewise assignment
+    # (seems to compile to better code)
+
+    ###
+    # Sorting matrix rows and columns.
+
+    # Compare the indices of the leading columns
+
+    # Compare the indices of the leading columns
+
+    # Compare the density of rows
+
+    # This file is a part of Groebner.jl. License is GNU GPL v2.
+
+    # Parts of this file were adapted from msolve:
+    # https://github.com/algebraic-solving/msolve
+    # msolve is distributed under GNU GPL v2+:
+    # https://github.com/algebraic-solving/msolve/blob/master/COPYING
+
+    # y, s.t. y >= x and n | y.
+
+    # y, s.t y <= x and n | y.
+
+    ### 
+    # Sorting monomials, polynomials, and other things.
+
+    # Sorts arr at the range of indices from..to. 
+    # This function is perhaps type unstable
+
+    # Permute a part of the array from the given index according to the permutation.
+
+    # stable sort to preserve the order of polynomials with the same lead
+
+    # use array assignment insted of elemewise assignment
+    # (seems to compile to better code)
+
+    ###
+    # Sorting matrix rows and columns.
+
+    # Compare the indices of the leading columns
+
+    # Compare the indices of the leading columns
+
+    # Compare the density of rows
+
+    # This file is a part of Groebner.jl. License is GNU GPL v2.
+
+    # Parts of this file were adapted from msolve:
+    # https://github.com/algebraic-solving/msolve
+    # msolve is distributed under GNU GPL v2+:
+    # https://github.com/algebraic-solving/msolve/blob/master/COPYING
+
+    # y, s.t. y >= x and n | y.
+
+    # y, s.t y <= x and n | y.
+
+    ### 
+    # Sorting monomials, polynomials, and other things.
+
+    # Sorts arr at the range of indices from..to. 
+    # This function is perhaps type unstable
+
+    # Permute a part of the array from the given index according to the permutation.
+
+    # stable sort to preserve the order of polynomials with the same lead
+
+    # use array assignment insted of elemewise assignment
+    # (seems to compile to better code)
+
+    ###
+    # Sorting matrix rows and columns.
+
+    # Compare the indices of the leading columns
+
+    # Compare the indices of the leading columns
+
+    # Compare the density of rows
+
     permutation = collect(1:(matrix.nrows_filled_upper))
     # TODO: use "let" here!
     cmp =
@@ -205,8 +303,151 @@ function sort_matrix_upper_rows!(matrix::MacaulayMatrix)
 end
 
 function sort_matrix_lower_rows!(matrix::MacaulayMatrix)
-    #= smaller means pivot being more to the right =#
-    #= and density being larger                    =#
+
+    # This file is a part of Groebner.jl. License is GNU GPL v2.
+
+    # Parts of this file were adapted from msolve:
+    # https://github.com/algebraic-solving/msolve
+    # msolve is distributed under GNU GPL v2+:
+    # https://github.com/algebraic-solving/msolve/blob/master/COPYING
+
+    # y, s.t. y >= x and n | y.
+
+    # y, s.t y <= x and n | y.
+
+    ### 
+    # Sorting monomials, polynomials, and other things.
+
+    # Sorts arr at the range of indices from..to. 
+    # This function is perhaps type unstable
+
+    # Permute a part of the array from the given index according to the permutation.
+
+    # stable sort to preserve the order of polynomials with the same lead
+
+    #= smaller means pivot being more to the right =##= and density being larger                    =#    # use array assignment insted of elemewise assignment
+    # (seems to compile to better code)
+
+    ###
+    # Sorting matrix rows and columns.
+
+    # Compare the indices of the leading columns
+
+    # Compare the indices of the leading columns
+
+    # Compare the density of rows
+
+    # TODO: use "let" here!
+
+    # TODO: this is a bit hacky
+
+    # This file is a part of Groebner.jl. License is GNU GPL v2.
+
+    # Parts of this file were adapted from msolve:
+    # https://github.com/algebraic-solving/msolve
+    # msolve is distributed under GNU GPL v2+:
+    # https://github.com/algebraic-solving/msolve/blob/master/COPYING
+
+    # y, s.t. y >= x and n | y.
+
+    # y, s.t y <= x and n | y.
+
+    ### 
+    # Sorting monomials, polynomials, and other things.
+
+    # Sorts arr at the range of indices from..to. 
+    # This function is perhaps type unstable
+
+    # Permute a part of the array from the given index according to the permutation.
+
+    # stable sort to preserve the order of polynomials with the same lead
+
+    # use array assignment insted of elemewise assignment
+    # (seems to compile to better code)
+
+    ###
+    # Sorting matrix rows and columns.
+
+    # Compare the indices of the leading columns
+
+    # Compare the indices of the leading columns
+
+    # Compare the density of rows
+
+    # This file is a part of Groebner.jl. License is GNU GPL v2.
+
+    # Parts of this file were adapted from msolve:
+    # https://github.com/algebraic-solving/msolve
+    # msolve is distributed under GNU GPL v2+:
+    # https://github.com/algebraic-solving/msolve/blob/master/COPYING
+
+    # y, s.t. y >= x and n | y.
+
+    # y, s.t y <= x and n | y.
+
+    ### 
+    # Sorting monomials, polynomials, and other things.
+
+    # Sorts arr at the range of indices from..to. 
+    # This function is perhaps type unstable
+
+    # Permute a part of the array from the given index according to the permutation.
+
+    # stable sort to preserve the order of polynomials with the same lead
+
+    # use array assignment insted of elemewise assignment
+    # (seems to compile to better code)
+
+    ###
+    # Sorting matrix rows and columns.
+
+    # Compare the indices of the leading columns
+
+    # Compare the indices of the leading columns
+
+    # Compare the density of rows
+
+    # TODO: use "let" here!
+
+    # TODO: this is a bit hacky
+
+    # This file is a part of Groebner.jl. License is GNU GPL v2.
+
+    # Parts of this file were adapted from msolve:
+    # https://github.com/algebraic-solving/msolve
+    # msolve is distributed under GNU GPL v2+:
+    # https://github.com/algebraic-solving/msolve/blob/master/COPYING
+
+    # y, s.t. y >= x and n | y.
+
+    # y, s.t y <= x and n | y.
+
+    ### 
+    # Sorting monomials, polynomials, and other things.
+
+    # Sorts arr at the range of indices from..to. 
+    # This function is perhaps type unstable
+
+    # Permute a part of the array from the given index according to the permutation.
+
+    # stable sort to preserve the order of polynomials with the same lead
+
+    # use array assignment insted of elemewise assignment
+    # (seems to compile to better code)
+
+    ###
+    # Sorting matrix rows and columns.
+
+    # Compare the indices of the leading columns
+
+    # Compare the indices of the leading columns
+
+    # Compare the density of rows
+
+    # TODO: use "let" here!
+
+    # TODO: this is a bit hacky
+
     permutation = collect(1:(matrix.nrows_filled_lower))
     cmp =
         (x, y) -> matrix_row_increasing_cmp(

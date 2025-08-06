@@ -148,7 +148,7 @@ function linalg_randomized_reduce_matrix_lower_part_all_zero!(
     pivots, row_idx_to_coeffs = linalg_prepare_matrix_pivots!(matrix)
 
     # Set up the blocks
-    nblocks = 1 # linalg_nblocks_in_randomized(nlow)
+    nblocks = 1  # sum all the rows
     rem = nlow % nblocks == 0 ? 0 : 1
     rowsperblock = div(nlow, nblocks) + rem
 

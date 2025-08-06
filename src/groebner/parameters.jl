@@ -271,7 +271,9 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
     end
     if kwargs.function_id === :isgroebner
         linalg =
-            if ring.ground === :zp && (kwargs.linalg === :randomized || kwargs.linalg === :auto)
+            if ring.ground in (:zp, :qq) &&
+               (kwargs.linalg === :randomized || kwargs.linalg === :auto) &&
+               ring.characteristic < 500
                 :randomized
             else
                 :deterministic

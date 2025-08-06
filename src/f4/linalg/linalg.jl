@@ -253,13 +253,22 @@ function _linalg_normalform!(matrix::MacaulayMatrix, basis::Basis, arithmetic::A
     linalg_reduce_matrix_lower_part_do_not_modify_pivots!(matrix, basis, arithmetic)
 end
 
-function _linalg_isgroebner_deterministic!(matrix::MacaulayMatrix, basis::Basis, arithmetic::AbstractArithmetic)
+function _linalg_isgroebner_deterministic!(
+    matrix::MacaulayMatrix,
+    basis::Basis,
+    arithmetic::AbstractArithmetic
+)
     sort_matrix_upper_rows!(matrix)
     sort_matrix_lower_rows!(matrix)
     linalg_reduce_matrix_lower_part_all_zero!(matrix, basis, arithmetic)
 end
 
-function _linalg_isgroebner_randomized!(matrix::MacaulayMatrix, basis::Basis, arithmetic::AbstractArithmetic, rng::AbstractRNG)
+function _linalg_isgroebner_randomized!(
+    matrix::MacaulayMatrix,
+    basis::Basis,
+    arithmetic::AbstractArithmetic,
+    rng::AbstractRNG
+)
     sort_matrix_upper_rows!(matrix)
     sort_matrix_lower_rows!(matrix)
     linalg_randomized_reduce_matrix_lower_part_all_zero!(matrix, basis, arithmetic, rng)

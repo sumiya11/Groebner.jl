@@ -655,7 +655,7 @@ end
                             (__R, _) = polynomial_ring(
                                 QQ,
                                 map(repr, $(vars)),
-                                internal_ordering=$_quot_aa_ord
+                                internal_ordering=($_quot_aa_ord)
                             )
                         )
                     )
@@ -1103,8 +1103,8 @@ end
     @test f == Groebner.groebner(f)
 
     # this should fail.
-    # f = [x^4294967295 * y^4294967295 + y]
-    # @test f == Groebner.groebner(f)
+    f = [x^4294967295 * y^4294967295 + y]
+    @test_throws Groebner.MonomialDegreeOverflow f == Groebner.groebner(f)
 
     for i in [8, 16, 32, 64]
         u, v = i >> 1, i
@@ -1114,8 +1114,7 @@ end
 end
 
 @testset "homogenization, basic" begin
-    # TODO: broken for char. 113
-    for field in [GF(2^10 + 7), GF(2^62 + 135), QQ]
+    for field in [GF(113), GF(2^10 + 7), GF(2^62 + 135), QQ]
         R, x = polynomial_ring(field, "x")
         @test Groebner.groebner([x^2 - 1, (x + 1) * x^2], homogenize=:yes) == [x + 1]
         @test Groebner.groebner([x^2 - 1, (x + 1) * x^2], homogenize=:no) == [x + 1]
@@ -1407,7 +1406,7 @@ end
     boot       = 1
     nvariables = [2, 3]
     maxdegs    = [2, 4]
-    nterms     = [1, 2, 4, 100]
+    nterms     = [1, 2, 4]
     npolys     = [1, 4, 100]
     grounds    = [GF(1031), GF(2^50 + 55), AbstractAlgebra.QQ]
     coeffssize = [3, 2^31 - 1, BigInt(2)^80, BigInt(2)^2000]

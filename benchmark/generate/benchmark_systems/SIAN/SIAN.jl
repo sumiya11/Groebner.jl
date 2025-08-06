@@ -19,7 +19,7 @@ function load_SIAN_all(; np=AbstractAlgebra, ground=np.QQ, internal_ordering=:de
                 continue
             end
             name = Symbol(split(file, "/")[end][1:(end - 3)])
-            sys = eval(:($name(np=$np, k=$ground, ordering=$(Meta.quot(ordering)))))
+            sys = eval(:($name(np=($np), k=($ground), ordering=($(Meta.quot(ordering))))))
             push!(systems, (string(name), sys))
         end
     end

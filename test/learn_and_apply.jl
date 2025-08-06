@@ -506,8 +506,7 @@ end
     R, (x, y) = polynomial_ring(AbstractAlgebra.ZZ, ["x", "y"], internal_ordering=:degrevlex)
     sys_qq = [44x^2 + x + 2^50, y^10 - 10 * y^5 - 99]
     sys_gf = map(
-        j ->
-            map(poly -> AbstractAlgebra.map_coefficients(c -> (k = ks[j]; k(c)), poly), sys_qq),
+        j -> map(poly -> AbstractAlgebra.map_coefficients(c -> (k=ks[j]; k(c)), poly), sys_qq),
         1:length(ks)
     )
 
