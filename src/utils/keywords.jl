@@ -59,9 +59,10 @@ const _supported_kw_args = (
     ),
     isgroebner = (
         ordering    = InputOrdering(),
-        certify     = true,
+        certify     = false,
         seed        = 42,
-        monoms      = :dense
+        monoms      = :dense,
+        linalg      = :auto,
     ),
     leading_term = (
         ordering    = InputOrdering(),

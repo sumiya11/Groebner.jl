@@ -393,7 +393,12 @@ function modular_lift_randomized_check!(
         # TODO: accessing fields in this way is not very nice.
         gb_ff.n_processed = 0
         gb_ff.n_nonredundant = 0
-        if !f4_isgroebner!(ring_ff, gb_ff, pairset, hashtable, arithmetic)
+        params = struct_update(
+            AlgorithmParameters,
+            params,
+            (linalg=LinearAlgebra(:randomized, :sparse), arithmetic=arithmetic)
+        )
+        if !f4_isgroebner!(ring_ff, gb_ff, pairset, hashtable, params)
             return false
         end
     end
@@ -420,7 +425,10 @@ function modular_lift_certify_check!(
     end
     # Check that the basis is a groebner basis
     pairset = pairset_initialize(UInt64)
-    if !f4_isgroebner!(ring_qq, gb_qq, pairset, hashtable, params.arithmetic)
+    # TODO: accessing fields in this way is not very nice.
+    gb_qq.n_processed = 0
+    gb_qq.n_nonredundant = 0
+    if !f4_isgroebner!(ring_qq, gb_qq, pairset, hashtable, params)
         return false
     end
     true

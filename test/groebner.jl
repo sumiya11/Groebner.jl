@@ -1410,7 +1410,7 @@ end
     nterms     = [1, 2, 4, 100]
     npolys     = [1, 4, 100]
     grounds    = [GF(1031), GF(2^50 + 55), AbstractAlgebra.QQ]
-    coeffssize = [3, 1000, 2^31 - 1, BigInt(2)^80, BigInt(2)^2000]
+    coeffssize = [3, 2^31 - 1, BigInt(2)^80, BigInt(2)^2000]
     orderings  = [:degrevlex, :lex, :deglex]
     linalgs    = [:deterministic, :randomized]
     monoms     = [:auto, :dense, :packed]

@@ -159,8 +159,9 @@ function basis_initialize_using_existing_hashtable(
 end
 
 function basis_well_formed(ring::PolyRing, basis::Basis, hashtable::MonomialHashtable)
+    !(0 <= basis.n_processed <= basis.n_filled) && error("Bad indices in basis")
+    !(0 <= basis.n_nonredundant <= basis.n_filled) && error("Bad indices in basis")
     (isempty(basis.monoms) || isempty(basis.coeffs)) && error("Basis cannot be empty")
-    !(basis.n_filled >= basis.n_processed) && error("Basis cannot be empty")
     !is_sorted_by_lead_increasing(basis, hashtable) && error("Basis elements must be sorted")
     for i in basis.n_filled
         isempty(basis.monoms[i]) && error("Zero polynomials are not allowed.")

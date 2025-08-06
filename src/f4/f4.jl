@@ -412,6 +412,7 @@ function f4!(
     params::AlgorithmParameters
 ) where {M <: Monom, C <: Coeff}
     @invariant basis_well_formed(ring, basis, hashtable)
+    @invariant basis.n_processed == basis.n_nonredundant == 0
 
     basis_make_monic!(basis, params.arithmetic, params.changematrix)
 
@@ -442,6 +443,7 @@ function f4!(
     basis_standardize!(ring, basis, hashtable, params.arithmetic, params.changematrix)
 
     @invariant basis_well_formed(ring, basis, hashtable)
+    @invariant basis.n_processed == basis.n_nonredundant == basis.n_filled
 
     nothing
 end
@@ -451,10 +453,11 @@ function f4_isgroebner!(
     basis::Basis{C},
     pairset::Pairset,
     hashtable::MonomialHashtable,
-    arithmetic::AbstractArithmetic
+    params::AlgorithmParameters
 ) where {C <: Coeff}
     @invariant basis_well_formed(ring, basis, hashtable)
-    basis_make_monic!(basis, arithmetic, false)
+    @invariant basis.n_processed == basis.n_nonredundant == 0
+    basis_make_monic!(basis, params.arithmetic, false)
     matrix = matrix_initialize(ring, C)
     symbol_ht = hashtable_initialize_secondary(hashtable)
     update_ht = hashtable_initialize_secondary(hashtable)
@@ -463,7 +466,7 @@ function f4_isgroebner!(
     f4_select_critical_pairs!(pairset, basis, matrix, hashtable, symbol_ht, select_all=true)
     f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
     matrix_fill_column_to_monom_map!(matrix, symbol_ht)
-    linalg_isgroebner!(matrix, basis, arithmetic)
+    linalg_isgroebner!(matrix, basis, params)
 end
 
 function f4_normalform!(

@@ -134,3 +134,75 @@ function linalg_randomized_reduce_matrix_lower_part!(
 
     true
 end
+
+function linalg_randomized_reduce_matrix_lower_part_all_zero!(
+    matrix::MacaulayMatrix{CoeffType},
+    basis::Basis{CoeffType},
+    arithmetic::AbstractArithmetic{AccumType},
+    rng::AbstractRNG
+) where {CoeffType <: Coeff, AccumType <: Coeff}
+    _, ncols = size(matrix)
+    _, nlow = matrix_nrows_filled(matrix)
+
+    # Prepare the matrix
+    pivots, row_idx_to_coeffs = linalg_prepare_matrix_pivots!(matrix)
+
+    # Set up the blocks
+    nblocks = 1 # linalg_nblocks_in_randomized(nlow)
+    rem = nlow % nblocks == 0 ? 0 : 1
+    rowsperblock = div(nlow, nblocks) + rem
+
+    # Allocate the buffers
+    row = zeros(AccumType, ncols)
+    new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
+    rows_multipliers = zeros(AccumType, rowsperblock)
+
+    for i in 1:nblocks
+        nrowsupper = nlow > i * rowsperblock ? i * rowsperblock : nlow
+        nrowstotal = nrowsupper - (i - 1) * rowsperblock
+        nrowstotal == 0 && continue
+
+        for j in 1:nrowstotal
+            rows_multipliers[j] = mod_p(rand(rng, AccumType), arithmetic)
+        end
+        row .= AccumType(0)
+        first_nnz_col = ncols
+
+        for k in 1:nrowstotal
+            rowidx = (i - 1) * rowsperblock + k
+            sparse_row_support = matrix.lower_rows[rowidx]
+            sparse_row_coeffs = basis.coeffs[row_idx_to_coeffs[rowidx]]
+            @invariant length(sparse_row_support) == length(sparse_row_coeffs)
+
+            first_nnz_col = min(first_nnz_col, sparse_row_support[1])
+            for l in 1:length(sparse_row_coeffs)
+                colidx = sparse_row_support[l]
+                row[colidx] = mod_p(
+                    row[colidx] + AccumType(rows_multipliers[k]) * AccumType(sparse_row_coeffs[l]),
+                    arithmetic
+                )
+            end
+        end
+
+        # Reduce the random linear combination by pivots
+        @invariant 1 <= first_nnz_col <= length(row)
+        zeroed = linalg_reduce_dense_row_by_pivots_sparse!(
+            new_sparse_row_support,
+            new_sparse_row_coeffs,
+            row,
+            matrix,
+            basis,
+            pivots,
+            first_nnz_col,
+            ncols,
+            arithmetic
+        )
+
+        # If fully reduced
+        zeroed && continue
+
+        return false
+    end
+
+    true
+end

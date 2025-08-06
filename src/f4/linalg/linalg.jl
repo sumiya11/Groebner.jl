@@ -126,9 +126,16 @@ returns `true` if
 
 is zero and `false`, otherwise.
 """
-function linalg_isgroebner!(matrix::MacaulayMatrix, basis::Basis, arithmetic::AbstractArithmetic)
+function linalg_isgroebner!(matrix::MacaulayMatrix, basis::Basis, params::AlgorithmParameters)
     @invariant matrix_well_formed(matrix)
-    _linalg_isgroebner!(matrix, basis, arithmetic)
+    flag = if params.linalg.algorithm === :deterministic
+        _linalg_isgroebner_deterministic!(matrix, basis, params.arithmetic)
+    elseif params.linalg.algorithm === :randomized
+        _linalg_isgroebner_randomized!(matrix, basis, params.arithmetic, params.rng)
+    else
+        throw(DomainError("Cannot pick a suitable linear algebra backend"))
+    end
+    flag
 end
 
 ###
@@ -246,8 +253,14 @@ function _linalg_normalform!(matrix::MacaulayMatrix, basis::Basis, arithmetic::A
     linalg_reduce_matrix_lower_part_do_not_modify_pivots!(matrix, basis, arithmetic)
 end
 
-function _linalg_isgroebner!(matrix::MacaulayMatrix, basis::Basis, arithmetic::AbstractArithmetic)
+function _linalg_isgroebner_deterministic!(matrix::MacaulayMatrix, basis::Basis, arithmetic::AbstractArithmetic)
     sort_matrix_upper_rows!(matrix)
     sort_matrix_lower_rows!(matrix)
     linalg_reduce_matrix_lower_part_all_zero!(matrix, basis, arithmetic)
+end
+
+function _linalg_isgroebner_randomized!(matrix::MacaulayMatrix, basis::Basis, arithmetic::AbstractArithmetic, rng::AbstractRNG)
+    sort_matrix_upper_rows!(matrix)
+    sort_matrix_lower_rows!(matrix)
+    linalg_randomized_reduce_matrix_lower_part_all_zero!(matrix, basis, arithmetic, rng)
 end

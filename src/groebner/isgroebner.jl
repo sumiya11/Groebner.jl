@@ -53,7 +53,7 @@ function _isgroebner2(
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffZp}
     basis, pairset, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
-    res = f4_isgroebner!(ring, basis, pairset, hashtable, params.arithmetic)
+    res = f4_isgroebner!(ring, basis, pairset, hashtable, params)
     res
 end
 
@@ -65,7 +65,7 @@ function _isgroebner2(
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffGeneric}
     basis, pairset, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
-    res = f4_isgroebner!(ring, basis, pairset, hashtable, params.arithmetic)
+    res = f4_isgroebner!(ring, basis, pairset, hashtable, params)
     res
 end
 
@@ -79,7 +79,7 @@ function _isgroebner2(
     basis, pairset, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
     # If an honest computation over the rationals is requested
     if params.certify_check
-        flag = f4_isgroebner!(ring, basis, pairset, hashtable, params.arithmetic)
+        flag = f4_isgroebner!(ring, basis, pairset, hashtable, params)
         return flag
     end
     # Otherwise, check modulo primes
@@ -88,18 +88,21 @@ function _isgroebner2(
     prime = modular_random_prime(state, params.rng)
     ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
     arithmetic = select_arithmetic(CoeffModular, prime, :auto, false)
-    flag1 = f4_isgroebner!(ring_ff, basis_ff, pairset, hashtable, arithmetic)
+    params = struct_update(AlgorithmParameters, params, (arithmetic=arithmetic,))
+    flag1 = f4_isgroebner!(ring_ff, basis_ff, pairset, hashtable, params)
     prime = modular_random_prime(state, params.rng)
     ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
     arithmetic = select_arithmetic(CoeffModular, prime, :auto, false)
-    flag2 = f4_isgroebner!(ring_ff, basis_ff, pairset, hashtable, arithmetic)
+    params = struct_update(AlgorithmParameters, params, (arithmetic=arithmetic,))
+    flag2 = f4_isgroebner!(ring_ff, basis_ff, pairset, hashtable, params)
     if flag1 == flag2
         return flag1
     end
     prime = modular_random_prime(state, params.rng)
     ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
     arithmetic = select_arithmetic(CoeffModular, prime, :auto, false)
-    flag3 = f4_isgroebner!(ring_ff, basis_ff, pairset, hashtable, arithmetic)
+    params = struct_update(AlgorithmParameters, params, (arithmetic=arithmetic,))
+    flag3 = f4_isgroebner!(ring_ff, basis_ff, pairset, hashtable, params)
     if flag1 == flag3
         return flag1
     else
