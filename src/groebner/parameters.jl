@@ -273,7 +273,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         linalg =
             if ring.ground in (:zp, :qq) &&
                (kwargs.linalg === :randomized || kwargs.linalg === :auto) &&
-               ring.characteristic < 500
+               ring.characteristic < 500 && !certify_check
                 :randomized
             else
                 :deterministic
