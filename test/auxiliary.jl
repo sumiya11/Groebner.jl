@@ -85,4 +85,3 @@ end
 #     @test 0 == Groebner.dimension(ring_qq, [[[1, 0]], [[0, 1]]], [[3], [-7]])
 #     @test -1 == Groebner.dimension(ring_qq, [[[1, 0]], [[0, 1]]], [[0], [0]])
 # end
-
