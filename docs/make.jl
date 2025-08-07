@@ -11,11 +11,7 @@ latex_platform = _IS_GITHUB_ACTIONS ? "docker" : "native"
 
 # Documentation structure
 
-PAGES = [
-    "Home"      => "index.md", 
-    "Examples"  => "examples.md", 
-    "Interface" => "interface.md"
-]
+PAGES = ["Home"      => "index.md", "Examples"  => "examples.md", "Interface" => "interface.md"]
 
 # Build the HTML documentation
 
@@ -26,9 +22,7 @@ write(joinpath(@__DIR__, "src", "Groebner.jl.pdf"), "")
 @time Documenter.makedocs(
     modules   = [Groebner],
     sitename  = "Groebner.jl",
-    format = Documenter.HTML(
-        analytics = "G-09PS33NY4L",
-        # assets = ["assets/favicon.ico"],
+    format    = Documenter.HTML(analytics="G-09PS33NY4L"    # assets = ["assets/favicon.ico"],
     ),
     doctest   = true,
     linkcheck = true,
@@ -55,8 +49,4 @@ cp(
 
 # Deploy build/
 
-deploydocs(
-    repo="github.com/sumiya11/Groebner.jl.git",
-    versions = nothing,
-    push_preview = true
-)
+deploydocs(repo="github.com/sumiya11/Groebner.jl.git", versions=nothing, push_preview=true)

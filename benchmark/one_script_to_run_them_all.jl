@@ -804,10 +804,9 @@ function collect_all_timings(args, runtimes, systems)
     h1 = Highlighter(
         (data, i, j) ->
             j > 1 &&
-                strip(data[i, j]) != "-" &&
-                parse(Float64, data[i, j]) == minimum(
-                    map(x -> parse(Float64, x), filter(x -> strip(x) != "-", data[i, 2:end]))
-                ),
+            strip(data[i, j]) != "-" &&
+            parse(Float64, data[i, j]) ==
+            minimum(map(x -> parse(Float64, x), filter(x -> strip(x) != "-", data[i, 2:end]))),
         bold=true
     )
     pretty_table_with_conf(

@@ -147,7 +147,7 @@ implementations_to_test = [
             implementations_to_test_local = filter(
                 EV ->
                     !(EV{T} <: Groebner.AbstractPackedTuple{T}) &&
-                        Groebner.monom_max_vars(EV{T}) >= k,
+                    Groebner.monom_max_vars(EV{T}) >= k,
                 implementations_to_test
             )
 

@@ -655,7 +655,7 @@ end
                             (__R, _) = polynomial_ring(
                                 QQ,
                                 map(repr, $(vars)),
-                                internal_ordering=$_quot_aa_ord
+                                internal_ordering=($_quot_aa_ord)
                             )
                         )
                     )
@@ -1103,8 +1103,8 @@ end
     @test f == Groebner.groebner(f)
 
     # this should fail.
-    # f = [x^4294967295 * y^4294967295 + y]
-    # @test f == Groebner.groebner(f)
+    f = [x^4294967295 * y^4294967295 + y]
+    @test_throws Groebner.MonomialDegreeOverflow f == Groebner.groebner(f)
 
     for i in [8, 16, 32, 64]
         u, v = i >> 1, i
@@ -1114,8 +1114,7 @@ end
 end
 
 @testset "homogenization, basic" begin
-    # TODO: broken for char. 113
-    for field in [GF(2^10 + 7), GF(2^62 + 135), QQ]
+    for field in [GF(113), GF(2^10 + 7), GF(2^62 + 135), QQ]
         R, x = polynomial_ring(field, "x")
         @test Groebner.groebner([x^2 - 1, (x + 1) * x^2], homogenize=:yes) == [x + 1]
         @test Groebner.groebner([x^2 - 1, (x + 1) * x^2], homogenize=:no) == [x + 1]
@@ -1324,6 +1323,7 @@ end
 
 function test_params(
     rng,
+    boot,
     nvariables,
     maxdegs,
     nterms,
@@ -1333,9 +1333,9 @@ function test_params(
     orderings,
     linalgs,
     monoms,
-    homogenizes
+    homogenizes,
+    threaded
 )
-    boot = 1
     for _ in 1:boot
         for nv in nvariables
             for md in maxdegs
@@ -1362,27 +1362,30 @@ function test_params(
                                     for linalg in linalgs
                                         for monom in monoms
                                             for homogenize in homogenizes
-                                                try
-                                                    gb = Groebner.groebner(
-                                                        set,
-                                                        linalg=linalg,
-                                                        monoms=monom,
-                                                        homogenize=homogenize
-                                                    )
-                                                    flag = Groebner.isgroebner(gb)
-                                                    if !flag
+                                                for thr in threaded
+                                                    try
+                                                        gb = Groebner.groebner(
+                                                            set,
+                                                            linalg=linalg,
+                                                            monoms=monom,
+                                                            homogenize=homogenize,
+                                                            threaded=thr
+                                                        )
+                                                        flag = Groebner.isgroebner(gb)
+                                                        if !flag
+                                                            @error "Beda!" nv md nt np k ord monom
+                                                            println("Rng:\n", rng)
+                                                            println("Set:\n", set)
+                                                            println("Gb:\n", gb)
+                                                        end
+                                                        @test flag
+                                                    catch err
                                                         @error "Beda!" nv md nt np k ord monom
+                                                        println(err)
                                                         println("Rng:\n", rng)
                                                         println("Set:\n", set)
-                                                        println("Gb:\n", gb)
+                                                        rethrow(err)
                                                     end
-                                                    @test flag
-                                                catch err
-                                                    @error "Beda!" nv md nt np k ord monom
-                                                    println(err)
-                                                    println("Rng:\n", rng)
-                                                    println("Set:\n", set)
-                                                    rethrow(err)
                                                 end
                                             end
                                         end
@@ -1400,21 +1403,24 @@ end
 @testset "groebner random stress tests" begin
     rng = Random.MersenneTwister(42)
 
+    boot       = 1
     nvariables = [2, 3]
     maxdegs    = [2, 4]
     nterms     = [1, 2, 4]
     npolys     = [1, 4, 100]
     grounds    = [GF(1031), GF(2^50 + 55), AbstractAlgebra.QQ]
-    coeffssize = [3, 1000, 2^31 - 1, BigInt(2)^80]
+    coeffssize = [3, 2^31 - 1, BigInt(2)^80, BigInt(2)^2000]
     orderings  = [:degrevlex, :lex, :deglex]
     linalgs    = [:deterministic, :randomized]
     monoms     = [:auto, :dense, :packed]
     homogenize = [:yes, :auto]
-    p          = prod(map(length, (nvariables, maxdegs, nterms, npolys, grounds, orderings, coeffssize, linalgs, monoms, homogenize)))
+    threaded   = [:no, :auto]
+    p          = prod(vcat(boot, map(length, [nvariables, maxdegs, nterms, npolys, grounds, orderings, coeffssize, linalgs, monoms, homogenize, threaded])))
     @info "Producing $p small random tests for groebner. This may take a minute"
 
     test_params(
         rng,
+        boot,
         nvariables,
         maxdegs,
         nterms,
@@ -1424,6 +1430,7 @@ end
         orderings,
         linalgs,
         monoms,
-        homogenize
+        homogenize,
+        threaded
     )
 end

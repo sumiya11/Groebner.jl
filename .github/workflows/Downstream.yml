@@ -18,9 +18,9 @@ jobs:
           arch: x64
       - uses: julia-actions/julia-buildpkg@latest
       - name: Clone Downstream
-        run: git clone https://gitlab.inria.fr/newrur/code
+        run: git clone https://gitlab.inria.fr/newrur/RationalUnivariateRepresentation.jl
       - name: Load this and run the downstream tests
-        shell: julia --color=yes --project=code/Julia/RationalUnivariateRepresentation.jl {0}
+        shell: julia --color=yes --project=RationalUnivariateRepresentation.jl {0}
         run: |
           using Pkg
           try

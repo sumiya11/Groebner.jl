@@ -269,6 +269,16 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
     if linalg === :auto
         linalg = :randomized
     end
+    if kwargs.function_id === :isgroebner
+        linalg =
+            if ring.ground in (:zp, :qq) &&
+               (kwargs.linalg === :randomized || kwargs.linalg === :auto) &&
+               ring.characteristic < 500 && !certify_check
+                :randomized
+            else
+                :deterministic
+            end
+    end
     linalg_sparsity = :sparse
     linalg_algorithm = LinearAlgebra(linalg, linalg_sparsity)
 

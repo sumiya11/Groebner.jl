@@ -362,6 +362,7 @@ function modular_lift_heuristic_check_partial(
     true
 end
 
+# !!! note that this function may modify the given hashtable!
 function modular_lift_randomized_check!(
     state::ModularState,
     ring::PolyRing,
@@ -370,26 +371,36 @@ function modular_lift_randomized_check!(
     hashtable::MonomialHashtable,
     params::AlgorithmParameters
 )
-    # !!! note that this function may modify the given hashtable!
-    prime = modular_random_prime(state, params.rng)
-    ring_ff, input_ff = modular_reduce_mod_p!(ring, input_zz, prime, deepcopy=true)
-    # TODO: do we really need to re-scale things to be fraction-free?
-    gb_coeffs_zz = _clear_denominators!(state.gb_coeffs_qq)
-    gb_zz = basis_deep_copy_with_new_coeffs(gb_ff, gb_coeffs_zz)
-    ring_ff, gb_ff = modular_reduce_mod_p!(ring, gb_zz, prime, deepcopy=false)
-    arithmetic = select_arithmetic(CoeffModular, prime, :auto, false)
-    basis_make_monic!(gb_ff, arithmetic, params.changematrix)
-    # Check that some polynomial is not reduced to zero
-    f4_normalform!(ring_ff, gb_ff, input_ff, hashtable, arithmetic)
-    for i in 1:(input_ff.n_processed)
-        if !isempty(input_ff.coeffs[i])
+    checks = 1
+    for _ in 1:checks
+        prime = modular_random_prime(state, params.rng)
+        ring_ff, input_ff = modular_reduce_mod_p!(ring, input_zz, prime, deepcopy=true)
+        # TODO: do we really need to re-scale things to be fraction-free?
+        gb_coeffs_zz = _clear_denominators!(state.gb_coeffs_qq)
+        gb_zz = basis_deep_copy_with_new_coeffs(gb_ff, gb_coeffs_zz)
+        ring_ff, gb_ff = modular_reduce_mod_p!(ring, gb_zz, prime, deepcopy=false)
+        arithmetic = select_arithmetic(CoeffModular, prime, :auto, false)
+        basis_make_monic!(gb_ff, arithmetic, params.changematrix)
+        # Check that some polynomial is not reduced to zero
+        f4_normalform!(ring_ff, gb_ff, input_ff, hashtable, arithmetic)
+        for i in 1:(input_ff.n_processed)
+            if !isempty(input_ff.coeffs[i])
+                return false
+            end
+        end
+        # Check that the basis is a groebner basis
+        pairset = pairset_initialize(monom_entrytype(hashtable.monoms[1]))
+        # TODO: accessing fields in this way is not very nice.
+        gb_ff.n_processed = 0
+        gb_ff.n_nonredundant = 0
+        params = struct_update(
+            AlgorithmParameters,
+            params,
+            (linalg=LinearAlgebra(:randomized, :sparse), arithmetic=arithmetic)
+        )
+        if !f4_isgroebner!(ring_ff, gb_ff, pairset, hashtable, params)
             return false
         end
-    end
-    # Check that the basis is a groebner basis
-    pairset = pairset_initialize(UInt64)
-    if !f4_isgroebner!(ring_ff, gb_ff, pairset, hashtable, arithmetic)
-        return false
     end
     true
 end
@@ -414,7 +425,10 @@ function modular_lift_certify_check!(
     end
     # Check that the basis is a groebner basis
     pairset = pairset_initialize(UInt64)
-    if !f4_isgroebner!(ring_qq, gb_qq, pairset, hashtable, params.arithmetic)
+    # TODO: accessing fields in this way is not very nice.
+    gb_qq.n_processed = 0
+    gb_qq.n_nonredundant = 0
+    if !f4_isgroebner!(ring_qq, gb_qq, pairset, hashtable, params)
         return false
     end
     true

@@ -11,3 +11,4 @@ LocalPreferences.toml
 
 # ignore editor settings
 .vscode
+.ipynb_checkpoints
