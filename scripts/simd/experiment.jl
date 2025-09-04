@@ -17,7 +17,7 @@ println("Running the following systems: ", map(first, systems))
 data = []
 for (name, sys) in systems
     @info "Running $name.."
-    t1, t2, t3, t4 = 0, 0, 0, 0
+    t1, t2, t3, t4, t5 = 0, 0, 0, 0, 0
     for _ in 1:2
         t1 = @elapsed groebner(sys; threaded=:no)
         t2 = @elapsed trace, _ = groebner_learn(sys)
@@ -25,16 +25,18 @@ for (name, sys) in systems
         t3 = @elapsed groebner_apply!(trace, sys)
         t4 = @elapsed groebner_apply!(trace, (sys, sys, sys, sys))
         t4 = @elapsed groebner_apply!(trace, (sys, sys, sys, sys))
+        t5 = @elapsed groebner_apply!(trace, (sys, sys, sys, sys, sys, sys, sys, sys))
+        t5 = @elapsed groebner_apply!(trace, (sys, sys, sys, sys, sys, sys, sys, sys))
     end
-    push!(data, [name, t1, t2, t3, t4])
+    push!(data, [name, t1, t2, t3, t4, t5])
 end
 
 matrix = permutedims(reduce(hcat, data))
 pretty_table(
     matrix, 
     column_labels=[
-        [EmptyCells(2), MultiColumn(3, "Learn & Apply")], 
-        ["Name", "Monte-Carlo", "Learn", "Apply", "Apply 4x"]
+        [EmptyCells(2), MultiColumn(4, "Learn & Apply")], 
+        ["Name", "Monte-Carlo", "Learn", "Apply", "Apply 4x", "Apply 8x"]
     ],
     title="Timings in seconds",
     formatters=[(v,i,j) -> v isa Number ? @sprintf("%.2f", v) : v],

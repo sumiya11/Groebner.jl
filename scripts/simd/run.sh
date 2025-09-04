@@ -12,7 +12,7 @@ make -j 8
 cd ../../
 cp Project.toml $JULIA/
 ./$JULIA/julia/julia --project=$JULIA -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
-./$JULIA/julia/julia -e "using InteractiveUtils; @code_native debuginfo=:none ntuple(_ -> Int32(1), 16) .+ ntuple(_ -> Int32(1), 16)"
+./$JULIA/julia/julia --project=$JULIA produce_native_code.jl
 ./$JULIA/julia/julia --project=$JULIA experiment.jl
 
 JULIA=julia_default
@@ -24,5 +24,5 @@ make -j 8
 cd ../../
 cp Project.toml $JULIA/
 ./$JULIA/julia/julia --project=$JULIA -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
-./$JULIA/julia/julia -e "using InteractiveUtils; @code_native debuginfo=:none ntuple(_ -> Int32(1), 16) .+ ntuple(_ -> Int32(1), 16)"
+./$JULIA/julia/julia --project=$JULIA produce_native_code.jl
 ./$JULIA/julia/julia --project=$JULIA experiment.jl
