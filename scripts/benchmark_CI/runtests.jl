@@ -180,7 +180,8 @@ function post(fail, table)
         table,
         column_labels=table_header,
         alignment=[:l, :r, :r, :r],
-        fit_table_in_display_vertically=false
+        fit_table_in_display_vertically=false,
+        fit_table_in_display_horizontally=false
     )
     comment_str = String(take!(io))
     println(comment_str)
