@@ -3,3 +3,5 @@ julia_default/
 mpfr/
 msolve_no_vectorize/
 msolve_default/
+mpfr_check
+mpfr_build/
