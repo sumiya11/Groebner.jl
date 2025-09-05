@@ -50,7 +50,7 @@ function trace_initialize_empty(
     params::AlgorithmParameters
 ) where {M <: Monom, C <: Coeff}
     basis = basis_initialize(ring, 0, C)
-    hashtable = hashtable_initialize(ring, params.rng, M)
+    hashtable = hashtable_initialize(ring, params.rng, M; use_divmask=params.use_divmask)
     trace = trace_initialize(ring, basis, hashtable, Int[], params)
     trace.empty = true
     trace

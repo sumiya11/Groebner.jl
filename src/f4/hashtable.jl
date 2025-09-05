@@ -67,7 +67,8 @@ hashtable_needs_resize(size, load, added) = (load + added) / size > hashtable_re
 function hashtable_initialize(
     ring::PolyRing{Ord},
     rng::AbstractRNG,
-    MonomT::T
+    MonomT::T;
+    use_divmask = true
 ) where {Ord <: AbstractMonomialOrdering, T}
     initial_size = 2^10
 
@@ -96,7 +97,7 @@ function hashtable_initialize(
     offset = 2
 
     # Initialize fast divisibility parameters.
-    use_divmask = nvars <= 32 || (MonomT <: ExponentVector)
+    use_divmask = use_divmask && (nvars <= 32 || (MonomT <: ExponentVector))
     dmbits = 8 * sizeof(DivisionMask)
     compress_divmask = nvars > dmbits
     ndivbits = div(dmbits, nvars)
