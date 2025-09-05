@@ -294,7 +294,7 @@ end
 ### 
 # Checking modular lifts in modular computation
 
-function modular_lift_check!(
+@timeit _TIMER function modular_lift_check!(
     state::ModularState,
     ring::PolyRing,
     basis_qq::Basis,
@@ -332,7 +332,7 @@ threshold_in_heuristic_check(num::BigInt, den::BigInt, modsz::Int) =
 # Checks that 
 #   ln(num) + ln(den) < C ln(modulo)
 # for all coefficients of form num/den
-function modular_lift_heuristic_check(
+@timeit _TIMER function modular_lift_heuristic_check(
     table_qq::Vector{Vector{T}},
     modulo::BigInt
 ) where {T <: CoeffQQ}
@@ -347,7 +347,7 @@ function modular_lift_heuristic_check(
     true
 end
 
-function modular_lift_heuristic_check_partial(
+@timeit _TIMER function modular_lift_heuristic_check_partial(
     table_qq::Vector{Vector{T}},
     modulo::BigInt,
     witness_set::Vector{Tuple{Int, Int}}
@@ -363,7 +363,7 @@ function modular_lift_heuristic_check_partial(
 end
 
 # !!! note that this function may modify the given hashtable!
-function modular_lift_randomized_check!(
+@timeit _TIMER function modular_lift_randomized_check!(
     state::ModularState,
     ring::PolyRing,
     input_zz::Basis,
@@ -405,7 +405,7 @@ function modular_lift_randomized_check!(
     true
 end
 
-function modular_lift_certify_check!(
+@timeit _TIMER function modular_lift_certify_check!(
     state::ModularState,
     ring::PolyRing,
     input_qq::Basis,

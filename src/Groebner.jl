@@ -59,6 +59,9 @@ import Primes: nextprime
 import Random
 import Random: AbstractRNG
 
+import TimerOutputs
+import TimerOutputs: @timeit
+
 ###
 # Initialization
 
@@ -69,8 +72,11 @@ import Random: AbstractRNG
 #    of the functions in the interface can be used to turn on/off the threading.
 const _threaded = Ref(true)
 
+const _TIMER = TimerOutputs.TimerOutput("Groebner.jl")
+
 function __init__()
     _threaded[] = !(get(ENV, "GROEBNER_NO_THREADED", "") == "1")
+    TimerOutputs.reset_timer!(_TIMER)
     nothing
 end
 
