@@ -1,0 +1,5 @@
+julia_no_vectorize/
+julia_default/
+mpfr/
+msolve_no_vectorize/
+msolve_default/

@@ -1,7 +1,5 @@
 # Test for performance regressions.
-using Pkg
-Pkg.activate(@__DIR__)
-Pkg.instantiate()
+using Pkg; Pkg.activate(@__DIR__); Pkg.resolve(); Pkg.instantiate()
 
 using ArgParse, GitHubActions, GitHub, Random, Logging
 using Test, TestSetExtensions, InteractiveUtils, PrettyTables
@@ -177,7 +175,7 @@ function post(fail, table)
         println(io, "No regressions detected✅")
     end
     table_header = ["Problem", "Master", "This commit", "Result"]
-    pretty_table(io, table, header=table_header, alignment=[:l, :r, :r, :r])
+    pretty_table(io, table, column_labels=table_header, alignment=[:l, :r, :r, :r])
     comment_str = String(take!(io))
     println(comment_str)
 end
