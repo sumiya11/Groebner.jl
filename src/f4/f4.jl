@@ -8,7 +8,7 @@
 ### 
 # Main file that defines the f4! function.
 
-function f4_initialize_structs(
+@timeit _TIMER function f4_initialize_structs(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -18,7 +18,7 @@ function f4_initialize_structs(
 ) where {M <: Monom, C <: Coeff}
     basis = basis_initialize(ring, length(monoms), C)
     pairset = pairset_initialize(monom_entrytype(M))
-    hashtable = hashtable_initialize(ring, params.rng, M)
+    hashtable = hashtable_initialize(ring, params.rng, M; use_divmask=params.use_divmask)
 
     basis_fill_data!(basis, hashtable, monoms, coeffs)
     hashtable_fill_divmasks!(hashtable)
@@ -43,7 +43,7 @@ function f4_initialize_structs(
     basis, pairset, hashtable, permutation
 end
 
-function f4_reduction!(
+@timeit _TIMER function f4_reduction!(
     ring::PolyRing,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -63,7 +63,7 @@ function f4_reduction!(
     )
 end
 
-function f4_update!(
+@timeit _TIMER function f4_update!(
     pairset::Pairset,
     basis::Basis,
     ht::MonomialHashtable,
@@ -81,7 +81,7 @@ end
 # hashtable.
 # We traverse monomials searching for a reducer for each monomial. The hashtable
 # may grow as reducers are added to the matrix, and the loop accounts for that.
-function f4_symbolic_preprocessing!(
+@timeit _TIMER function f4_symbolic_preprocessing!(
     basis::Basis,
     matrix::MacaulayMatrix,
     ht::MonomialHashtable,
@@ -103,7 +103,7 @@ function f4_symbolic_preprocessing!(
     end
 end
 
-function f4_autoreduce!(
+@timeit _TIMER function f4_autoreduce!(
     ring::PolyRing,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -287,7 +287,7 @@ function f4_find_multiplied_reducer!(
     nothing
 end
 
-function f4_select_critical_pairs!(
+@timeit _TIMER function f4_select_critical_pairs!(
     pairset::Pairset,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -404,7 +404,7 @@ function f4_add_critical_pairs_to_matrix!(
     end
 end
 
-function f4!(
+@timeit _TIMER function f4!(
     ring::PolyRing,
     basis::Basis{C},
     pairset::Pairset,
@@ -424,13 +424,9 @@ function f4!(
 
     while !isempty(pairset)
         f4_select_critical_pairs!(pairset, basis, matrix, hashtable, symbol_ht)
-
         f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
-
         f4_reduction!(ring, basis, matrix, hashtable, symbol_ht, params)
-
         f4_update!(pairset, basis, hashtable, update_ht)
-
         hashtable_reinitialize!(symbol_ht)
     end
 

@@ -13,7 +13,7 @@ const aa_exponent_type = UInt64
 
 aa_is_multivariate_ring(ring) = AbstractAlgebra.elem_type(ring) <: AbstractAlgebra.MPolyRingElem
 
-function io_convert_polynomials_to_ir(polynomials, options::KeywordArguments)
+@timeit _TIMER function io_convert_polynomials_to_ir(polynomials, options::KeywordArguments)
     isempty(polynomials) && throw(DomainError("Empty input."))
     ring = io_extract_ring(polynomials)
     if options._generic
@@ -33,7 +33,7 @@ function io_convert_polynomials_to_ir(polynomials, options::KeywordArguments)
     ring, monoms, coeffs, options
 end
 
-function io_convert_ir_to_polynomials(
+@timeit _TIMER function io_convert_ir_to_polynomials(
     ring::PolyRing,
     polynomials,
     monoms::Vector{Vector{M}},
