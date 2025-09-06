@@ -18,7 +18,7 @@ end
 
 # Table of rationals need not be initialized.
 # Reconstructs only the witness set.
-function ratrec_vec_partial!(
+@timeit _TIMER function ratrec_vec_partial!(
     table_qq::Vector{Vector{Rational{BigInt}}},
     table_zz::Vector{Vector{BigInt}},
     modulo::BigInt,
@@ -50,7 +50,7 @@ function ratrec_vec_partial!(
 end
 
 # Table of rationals need not be initialized.
-function ratrec_vec_full!(
+@timeit _TIMER function ratrec_vec_full!(
     table_qq::Vector{Vector{Rational{BigInt}}},
     table_zz::Vector{Vector{BigInt}},
     modulo::BigInt,

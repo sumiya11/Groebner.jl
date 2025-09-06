@@ -10,12 +10,12 @@ code_llvm(
     io,
     Groebner.linalg_vector_addmul_sparsedense!,
     Tuple{
-        Vector{Groebner.CompositeInt{4, Int64}},
+        Vector{Groebner.CompositeNumber{4, Int64}},
         Vector{Int32},
-        Vector{Groebner.CompositeInt{4, Int32}},
+        Vector{Groebner.CompositeNumber{4, Int32}},
         Groebner.SignedCompositeArithmeticZp{
-            Groebner.CompositeInt{4, Int64},
-            Groebner.CompositeInt{4, Int32},
+            Groebner.CompositeNumber{4, Int64},
+            Groebner.CompositeNumber{4, Int32},
             Int64,
             4
         },
@@ -35,12 +35,12 @@ code_native(
     io,
     Groebner.linalg_vector_addmul_sparsedense!,
     Tuple{
-        Vector{Groebner.CompositeInt{4, Int64}},
+        Vector{Groebner.CompositeNumber{4, Int64}},
         Vector{Int32},
-        Vector{Groebner.CompositeInt{4, Int32}},
+        Vector{Groebner.CompositeNumber{4, Int32}},
         Groebner.SignedCompositeArithmeticZp{
-            Groebner.CompositeInt{4, Int64},
-            Groebner.CompositeInt{4, Int32},
+            Groebner.CompositeNumber{4, Int64},
+            Groebner.CompositeNumber{4, Int32},
             Int64,
             4
         },

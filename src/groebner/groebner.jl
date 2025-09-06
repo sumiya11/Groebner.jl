@@ -160,7 +160,7 @@ function get_next_batchsize(primes_used::Int, prev_batchsize::Int, batchsize_sca
     max(new_batchsize, prev_batchsize)
 end
 
-function _groebner_guess_lucky_prime(
+@timeit _TIMER function _groebner_guess_lucky_prime(
     state::ModularState,
     ring::PolyRing,
     basis_zz::Basis,

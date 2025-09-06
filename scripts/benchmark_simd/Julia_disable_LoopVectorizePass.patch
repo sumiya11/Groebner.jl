@@ -1,0 +1,18 @@
+diff --git a/src/pipeline.cpp b/src/pipeline.cpp
+index 39f896b..24a7dca 100644
+--- a/src/pipeline.cpp
++++ b/src/pipeline.cpp
+@@ -492,11 +492,11 @@ static void buildVectorPipeline(FunctionPassManager &FPM, PassBuilder *PB, Optim
+     if (options.enable_vector_pipeline) {
+         //TODO look into loop vectorize options
+         FPM.addPass(InjectTLIMappings());
+-        FPM.addPass(LoopVectorizePass());
++        // FPM.addPass(LoopVectorizePass());
+         FPM.addPass(LoopLoadEliminationPass());
+         FPM.addPass(InstCombinePass());
+         FPM.addPass(SimplifyCFGPass(aggressiveSimplifyCFGOptions()));
+-        FPM.addPass(SLPVectorizerPass());
++        // FPM.addPass(SLPVectorizerPass());
+         invokeVectorizerCallbacks(FPM, PB, O);
+         FPM.addPass(VectorCombinePass());
+         FPM.addPass(ADCEPass());

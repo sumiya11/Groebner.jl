@@ -204,6 +204,8 @@ struct AlgorithmParameters{Arithmetic <: AbstractArithmetic}
 
     # The width of composite numbers in learn & apply
     composite::Int
+    # If use  divisibility masks
+    use_divmask::Bool
 
     # Multi-threading
     threaded_f4::Symbol
@@ -273,7 +275,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         linalg =
             if ring.ground in (:zp, :qq) &&
                (kwargs.linalg === :randomized || kwargs.linalg === :auto) &&
-               ring.characteristic < 500 && !certify_check
+               ring.characteristic > 500 && !certify_check
                 :randomized
             else
                 :deterministic
@@ -337,6 +339,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         modular_strategy = :classic_modular
     end
     composite = kwargs._composite
+    use_divmask = kwargs._use_divmask
 
     seed = kwargs.seed
     rng = Random.Xoshiro(seed)
@@ -371,6 +374,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         reduced,
         modular_strategy,
         composite,
+        use_divmask,
         threaded_f4,
         threaded_multimodular,
         rng,

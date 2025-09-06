@@ -110,7 +110,7 @@ end
 
 # Reconstructs only the witness set.
 # Table of big integers must be initialized.
-function crt_vec_partial!(
+@timeit _TIMER function crt_vec_partial!(
     table_zz::Vector{Vector{BigInt}},
     modulo::BigInt,
     tables_ff::Vector{Vector{Vector{T}}},
@@ -149,7 +149,7 @@ function crt_vec_partial!(
 end
 
 # Table of big integers must be initialized.
-function crt_vec_full!(
+@timeit _TIMER function crt_vec_full!(
     table_zz::Vector{Vector{BigInt}},
     modulo::BigInt,
     tables_ff::Vector{Vector{Vector{T}}},

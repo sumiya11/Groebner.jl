@@ -44,7 +44,7 @@ function matrix_compute_pivot_signature(pivots::Vector{Vector{MonomId}}, from::I
     sgn
 end
 
-function f4_reduction_learn!(
+@timeit _TIMER function f4_reduction_learn!(
     trace::Trace,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -69,7 +69,7 @@ function f4_reduction_learn!(
     push!(trace.matrix_pivot_signatures, matrix_pivot_signature)
 end
 
-function f4_reducegb_learn!(
+@timeit _TIMER function f4_reducegb_learn!(
     trace::Trace,
     ring::PolyRing,
     basis::Basis,
@@ -153,7 +153,7 @@ function f4_reducegb_learn!(
     trace.output_nonredundant_indices = copy(basis.nonredundant_indices[1:k])
 end
 
-function f4_learn!(trace::Trace, pairset::Pairset, params::AlgorithmParameters)
+@timeit _TIMER function f4_learn!(trace::Trace, pairset::Pairset, params::AlgorithmParameters)
     ring = trace.ring
     basis = trace.gb_basis
     hashtable = trace.hashtable
@@ -244,7 +244,7 @@ function matrix_fill_column_to_monom_map!(
     end
 end
 
-function f4_reduction_apply!(
+@timeit _TIMER function f4_reduction_apply!(
     trace::Trace,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -291,7 +291,7 @@ function f4_reduction_apply!(
     true, cache_column_order
 end
 
-function f4_symbolic_preprocessing!(
+@timeit _TIMER function f4_symbolic_preprocessing!(
     trace::Trace,
     f4_iteration::Int,
     basis::Basis,
@@ -362,7 +362,7 @@ function f4_symbolic_preprocessing!(
     matrix.nrows_filled_upper = nup
 end
 
-function f4_autoreduce_apply!(
+@timeit _TIMER function f4_autoreduce_apply!(
     trace::Trace,
     basis::Basis,
     matrix::MacaulayMatrix,
@@ -476,7 +476,7 @@ function f4_standardize_basis_in_apply!(ring::PolyRing, trace::Trace, arithmetic
     basis_make_monic!(basis, arithmetic, false)
 end
 
-function f4_apply!(trace::Trace, params::AlgorithmParameters)
+@timeit _TIMER function f4_apply!(trace::Trace, params::AlgorithmParameters)
     ring = trace.ring
     basis = trace.buf_basis
     hashtable = trace.hashtable

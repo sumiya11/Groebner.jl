@@ -25,7 +25,8 @@ const _supported_kw_args = (
         homogenize   = :auto,
         changematrix = false,
         _composite   = 4,
-        _generic     = false
+        _generic     = false,
+        _use_divmask = true,
     ),
     groebner_apply! = (
         seed        = 42,
@@ -96,6 +97,7 @@ mutable struct KeywordArguments
     _composite::Int
     check::Bool
     homogenize::Symbol
+    _use_divmask::Bool
     changematrix::Bool
     _generic::Bool
 end
@@ -150,6 +152,7 @@ function KeywordArguments(function_id::Symbol, kws)
     `:auto`, `:classic_modular`, `:learn_and_apply`"""
 
     _composite = get(kws, :_composite, get(default_kw_args, :_composite, 4))
+    _use_divmask = get(kws, :_use_divmask, get(default_kw_args, :_use_divmask, true))
 
     selection = get(kws, :selection, get(default_kw_args, :selection, :auto))
     @assert selection in (:auto, :normal, :sugar, :be_divided_and_perish)
@@ -180,6 +183,7 @@ function KeywordArguments(function_id::Symbol, kws)
         _composite,
         check,
         homogenize,
+        _use_divmask,
         changematrix,
         _generic
     )

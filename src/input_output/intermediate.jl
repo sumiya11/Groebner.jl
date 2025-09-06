@@ -263,7 +263,7 @@ end
 ###
 # Converting to internal representation
 
-function ir_convert_ir_to_internal(
+@timeit _TIMER function ir_convert_ir_to_internal(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -289,7 +289,7 @@ function ir_convert_ir_to_internal(
     term_sorting_permutations, ring2, monoms2, coeffs2
 end
 
-function ir_convert_internal_to_ir(
+@timeit _TIMER function ir_convert_internal_to_ir(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
