@@ -1,0 +1,27 @@
+	.text
+	.file	"monom_is_gcd_const"
+	.globl	julia_monom_is_gcd_const_12845  # -- Begin function julia_monom_is_gcd_const_12845
+	.p2align	4, 0x90
+	.type	julia_monom_is_gcd_const_12845,@function
+julia_monom_is_gcd_const_12845:         # @julia_monom_is_gcd_const_12845
+; Function Signature: monom_is_gcd_const(Groebner.PackedTuple1{UInt64, UInt8}, Groebner.PackedTuple1{UInt64, UInt8})
+# %bb.0:                                # %top
+	#DEBUG_VALUE: monom_is_gcd_const:ea <- [DW_OP_deref] [$rdi+0]
+	#DEBUG_VALUE: monom_is_gcd_const:eb <- [DW_OP_deref] [$rsi+0]
+	push	rbp
+	mov	rbp, rsp
+	mov	al, 56
+	bzhi	rcx, qword ptr [rdi], rax
+	bzhi	rax, qword ptr [rsi], rax
+	vmovq	xmm0, rcx
+	vmovq	xmm1, rax
+	vptestmb	k0, xmm0, xmm0
+	vptestmb	k1, xmm1, xmm1
+	ktestb	k1, k0
+	sete	al
+	pop	rbp
+	ret
+.Lfunc_end0:
+	.size	julia_monom_is_gcd_const_12845, .Lfunc_end0-julia_monom_is_gcd_const_12845
+                                        # -- End function
+	.section	".note.GNU-stack","",@progbits

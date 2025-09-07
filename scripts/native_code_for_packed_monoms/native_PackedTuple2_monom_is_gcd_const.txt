@@ -1,0 +1,33 @@
+	.text
+	.file	"monom_is_gcd_const"
+	.globl	julia_monom_is_gcd_const_12854  # -- Begin function julia_monom_is_gcd_const_12854
+	.p2align	4, 0x90
+	.type	julia_monom_is_gcd_const_12854,@function
+julia_monom_is_gcd_const_12854:         # @julia_monom_is_gcd_const_12854
+; Function Signature: monom_is_gcd_const(Groebner.PackedTuple2{UInt64, UInt8}, Groebner.PackedTuple2{UInt64, UInt8})
+# %bb.0:                                # %top
+	#DEBUG_VALUE: monom_is_gcd_const:ea <- [DW_OP_deref] [$rdi+0]
+	#DEBUG_VALUE: monom_is_gcd_const:eb <- [DW_OP_deref] [$rsi+0]
+	push	rbp
+	mov	rbp, rsp
+	mov	al, 56
+	bzhi	rcx, qword ptr [rdi], rax
+	bzhi	rax, qword ptr [rsi], rax
+	vmovq	xmm0, rcx
+	vmovq	xmm1, rax
+	vptestmb	k0, xmm0, xmm0
+	vptestmb	k1, xmm1, xmm1
+	vmovq	xmm0, qword ptr [rdi + 8]       # xmm0 = mem[0],zero
+	vmovq	xmm1, qword ptr [rsi + 8]       # xmm1 = mem[0],zero
+	kandb	k0, k1, k0
+	vptestmb	k1, xmm0, xmm0
+	vptestmb	k2, xmm1, xmm1
+	kandb	k1, k2, k1
+	kortestb	k0, k1
+	sete	al
+	pop	rbp
+	ret
+.Lfunc_end0:
+	.size	julia_monom_is_gcd_const_12854, .Lfunc_end0-julia_monom_is_gcd_const_12854
+                                        # -- End function
+	.section	".note.GNU-stack","",@progbits
