@@ -145,11 +145,11 @@ end
     # rem_nemo = Nemo.ZZRingElem(0)
 
     n_tasks = min(n_tasks, length(table_zz))
-    chunk_size = max(1, div(length(table_zz), n_tasks))
+    chunk_size = max(1, div(length(table_zz), n_tasks, RoundUp))
     data_chunks = [
         [i + n_tasks * (j - 1) for j in 1:chunk_size if i + n_tasks * (j - 1) <= length(table_zz)] for i in 1:n_tasks
     ]
-
+    
     tasks = Vector{Task}(undef, length(data_chunks))
     for (tid, chunk) in enumerate(data_chunks)
         task = @spawn begin

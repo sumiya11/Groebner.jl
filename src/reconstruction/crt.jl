@@ -194,7 +194,7 @@ end
     crt_precompute!(modulo, n1, n2, mults, map(UInt64, moduli))
 
     n_tasks = min(n_tasks, length(table_zz))
-    chunk_size = max(1, div(length(table_zz), n_tasks))
+    chunk_size = max(1, div(length(table_zz), n_tasks, RoundUp))
     data_chunks = [
         [i + n_tasks * (j - 1) for j in 1:chunk_size if i + n_tasks * (j - 1) <= length(table_zz)] for i in 1:n_tasks
     ]
