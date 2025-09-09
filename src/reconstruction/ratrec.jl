@@ -155,7 +155,7 @@ end
         task = @spawn begin
             local rem_nemo = zero(Nemo.ZZRingElem)
             local nemo_buf = zero(Nemo.QQFieldElem)
-            @time _ratrec_vec_full!(
+            _ratrec_vec_full!(
                 table_qq,
                 table_zz,
                 modulo,
