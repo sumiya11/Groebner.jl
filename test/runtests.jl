@@ -40,6 +40,7 @@ end
 @time @testset "All tests" verbose = true begin
     isolated_testset("arithmetic.jl")
     isolated_testset("crt.jl")
+    isolated_testset("ratrec.jl")
 
     # Different implementations of a monomial
     isolated_testset("monoms/exponentvector.jl")

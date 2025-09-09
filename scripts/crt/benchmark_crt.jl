@@ -1,4 +1,4 @@
-using Base.Threads
+using Revise, Base.Threads, Primes, Groebner
 
 function crt!(M, buf, n1, n2, ai, ci)
     Base.GMP.MPZ.set_ui!(n1, UInt(0))
@@ -30,12 +30,22 @@ function crt_vec_full!(table_zz, modulo, tables_ff, mults, moduli)
 end
 
 # Preallocate data
-M, P = 512, 101
-table_zz = [[BigInt() for _ in 1:M] for i in 1:M]
+M, P = 1024, 101
+table_zz = [[BigInt() for _ in 1:i] for i in 1:M]
 moduli = UInt64.(prevprimes(2^31-1, P))
 modulo = prod(BigInt, moduli)
 mults = [rand(1:modulo-1) for _ in 1:length(moduli)]
-tables_ff = [ [[mod(rand(UInt64), moduli[j]) for _ in 1:M] for i in 1:M] for j in 1:P]
+tables_ff = [ [[mod(rand(UInt64), moduli[j]) for _ in 1:i] for i in 1:M] for j in 1:P]
+mask = [falses(M) for _ in 1:M]
 
-@time crt_vec_full!(table_zz,modulo,tables_ff,mults,moduli)
-@time crt_vec_full!(table_zz,modulo,tables_ff,mults,moduli)
+@time Groebner.crt_vec_full!(table_zz,modulo,tables_ff,moduli,mask; n_tasks=1)
+@time Groebner.crt_vec_full!(table_zz,modulo,tables_ff,moduli,mask; n_tasks=1)
+
+@time Groebner.crt_vec_full!(table_zz,modulo,tables_ff,moduli,mask; n_tasks=8)
+@time Groebner.crt_vec_full!(table_zz,modulo,tables_ff,moduli,mask; n_tasks=8)
+
+@time Groebner.crt_vec_full!(table_zz,modulo,tables_ff,moduli,mask; n_tasks=16)
+@time Groebner.crt_vec_full!(table_zz,modulo,tables_ff,moduli,mask; n_tasks=16)
+
+@time Groebner.crt_vec_full!(table_zz,modulo,tables_ff,moduli,mask; n_tasks=32)
+@time Groebner.crt_vec_full!(table_zz,modulo,tables_ff,moduli,mask; n_tasks=32)

@@ -41,7 +41,7 @@ import Atomix
 
 import Base: *
 import Base.Threads
-import Base.Threads: nthreads, threadid
+import Base.Threads: nthreads, threadid, @spawn
 import Base.MultiplicativeInverses: UnsignedMultiplicativeInverse
 
 import Combinatorics

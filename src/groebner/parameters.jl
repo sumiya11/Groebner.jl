@@ -210,6 +210,7 @@ struct AlgorithmParameters{Arithmetic <: AbstractArithmetic}
     # Multi-threading
     threaded_f4::Symbol
     threaded_multimodular::Symbol
+    n_tasks::Int
 
     rng::Random.Xoshiro
 
@@ -360,6 +361,8 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         end
     end
 
+    n_tasks = nthreads()
+    
     AlgorithmParameters(
         target_ord,
         original_ord,
@@ -377,6 +380,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         use_divmask,
         threaded_f4,
         threaded_multimodular,
+        n_tasks,
         rng,
         changematrix
     )

@@ -3,8 +3,8 @@
 using Base.Threads
 
 function crt(x, y, z)
-    M = BigInt(2^3000+3)
-    Threads.@threads for i in 1:length(x)
+    M = BigInt(2)^3000+3
+    Threads.@threads :greedy for i in 1:length(x)
         Base.GMP.MPZ.mul!(x[i], y[i], z[i])
         Base.GMP.MPZ.fdiv_q!(x[i], z[i])
         Base.GMP.MPZ.fdiv_r!(x[i], M)

@@ -521,13 +521,15 @@ function _groebner_learn_and_apply_threaded(
             state.modulo,
             state.gb_coeffs_ff_all,
             state.used_primes,
-            state.crt_mask
+            state.crt_mask;
+            n_tasks=params.n_tasks
         )
         success_reconstruct = ratrec_vec_full!(
             state.gb_coeffs_qq,
             state.gb_coeffs_zz,
             state.modulo,
-            state.ratrec_mask
+            state.ratrec_mask,
+            n_tasks=params.n_tasks
         )
 
         # This should happen rarely
@@ -666,13 +668,15 @@ function _groebner_classic_modular(
             state.modulo,
             state.gb_coeffs_ff_all,
             state.used_primes,
-            state.crt_mask
+            state.crt_mask,
+            n_tasks=params.n_tasks
         )
         success_reconstruct = ratrec_vec_full!(
             state.gb_coeffs_qq,
             state.gb_coeffs_zz,
             state.modulo,
-            state.ratrec_mask
+            state.ratrec_mask,
+            n_tasks=params.n_tasks
         )
 
         if !success_reconstruct
