@@ -14,8 +14,8 @@ using Test, Groebner
     table_zz = [BigInt[mod(numerator(r) * invmod(denominator(r), modulo), modulo) for r in row] for row in res]
     success = Groebner.ratrec_vec_full!(table_qq, table_zz, modulo, mask)
     @test success && table_qq == res
-    for n_tasks in [1,2,3,4]
-        success = Groebner.ratrec_vec_full!(table_qq, table_zz, modulo, mask, n_tasks=n_tasks)
+    for tasks in [1,2,3,4]
+        success = Groebner.ratrec_vec_full!(table_qq, table_zz, modulo, mask, tasks=tasks)
         @test success && table_qq == res
     end
 end

@@ -125,7 +125,7 @@ end
     buf, n1, n2 = BigInt(), BigInt(), BigInt()
     mults = Vector{BigInt}(undef, length(moduli))
     for i in 1:length(mults)
-        mults[i] = BigInt(0)
+        mults[i] = BigInt()
     end
 
     crt_precompute!(modulo, n1, n2, mults, map(UInt64, moduli))
@@ -179,27 +179,23 @@ end
     tables_ff::Vector{Vector{Vector{T}}},
     moduli::Vector{U},
     mask::Vector{BitVector};
-    n_tasks=1
+    tasks=1
 ) where {T <: Integer, U <: Integer}
     @invariant length(tables_ff) == length(moduli)
     @invariant length(table_zz) == length(mask)
-    @invariant n_tasks >= 1 && !isempty(moduli)
+    @invariant tasks >= 1 && !isempty(moduli)
 
     n1, n2 = BigInt(), BigInt()
     mults = Vector{BigInt}(undef, length(moduli))
     for i in 1:length(mults)
-        mults[i] = BigInt(0)
+        mults[i] = BigInt()
     end
 
     crt_precompute!(modulo, n1, n2, mults, map(UInt64, moduli))
 
-    n_tasks = min(n_tasks, length(table_zz))
-    chunk_size = max(1, div(length(table_zz), n_tasks, RoundUp))
-    data_chunks = [
-        [i + n_tasks * (j - 1) for j in 1:chunk_size if i + n_tasks * (j - 1) <= length(table_zz)] for i in 1:n_tasks
-    ]
-
-    tasks = Vector{Task}(undef, length(data_chunks))
+    tasks = min(tasks, length(table_zz))
+    data_chunks = split_round_robin(1:length(table_zz), tasks)
+    task_results = Vector{Task}(undef, tasks)
     for (tid, chunk) in enumerate(data_chunks)
         task = @spawn begin
             local buf, n1, n2 = BigInt(), BigInt(), BigInt()
@@ -218,9 +214,9 @@ end
                 mask
             )
         end
-        tasks[tid] = task
+        task_results[tid] = task
     end
-    for task in tasks
+    for task in task_results
         wait(task)
     end
     nothing

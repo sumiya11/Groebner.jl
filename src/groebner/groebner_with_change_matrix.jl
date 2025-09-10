@@ -145,16 +145,12 @@ function _groebner_with_change_classic_modular(
     # Initialize supporting structs
     basis, pairset, hashtable =
         f4_initialize_structs(ring, monoms, coeffs, params, make_monic=false)
-
     basis_zz = clear_denominators!(basis, deepcopy=false)
-
     state = ModularState{BigInt, C, CoeffModular}(basis_zz.coeffs)
-
     prime = _groebner_guess_lucky_prime(state, ring, basis_zz, pairset, hashtable, params)
 
     # Perform reduction modulo prime and store result in basis_ff
     ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
-
     params_zp = param_mod_p(params, prime)
     f4!(ring_ff, basis_ff, pairset, hashtable, params_zp)
     # NOTE: basis_ff may not own its coefficients, one should not mutate it
@@ -167,67 +163,30 @@ function _groebner_with_change_classic_modular(
         basis_changematrix_export(basis_ff, hashtable, length(monoms))
     push!(state.changematrix_coeffs_ff_all, changematrix_coeffs)
 
-    # Reconstruct coefficients and write results to the accumulator.
     modular_prepare!(state)
-    crt_vec_full!(
-        state.gb_coeffs_zz,
-        state.modulo,
-        state.gb_coeffs_ff_all,
-        state.used_primes,
-        state.crt_mask
-    )
-    modular_crt_full_changematrix!(state)
-
-    success_reconstruct =
-        ratrec_vec_full!(state.gb_coeffs_qq, state.gb_coeffs_zz, state.modulo, state.ratrec_mask)
-
-    changematrix_success_reconstruct = modular_ratrec_full_changematrix!(state)
-
-    correct_basis = false
-    if success_reconstruct && changematrix_success_reconstruct
-        correct_basis =
-            modular_lift_check!(state, ring_ff, basis, basis_zz, basis_ff, hashtable, params)
-        # At this point, if the constructed basis is correct, we return it.
-        if correct_basis
-            gb_monoms, _ = basis_export_data(basis_ff, hashtable)
-            gb_coeffs_qq = state.gb_coeffs_qq
-            changematrix_coeffs_qq = state.changematrix_coeffs_qq
-            return gb_monoms, gb_coeffs_qq, changematrix_monoms, changematrix_coeffs_qq
-        end
-    end
+    witness_set = modular_witness_set(state.gb_coeffs_zz, params)
 
     # At this point, either the reconstruction or the correctness check failed.
     # Continue to compute Groebner bases modulo different primes in batches. 
+    batch_scaling = params.batch_scaling
+    composite = 1
+    tasks = 1
     primes_used = 1
-    batchsize = 1
-    batchsize_scaling = 0.10
+    batch = 1
+    correct_basis = false
 
-    witness_set = modular_witness_set(state.gb_coeffs_zz, params)
-
-    crt_vec_partial!(
-        state.gb_coeffs_zz,
-        state.modulo,
-        state.gb_coeffs_ff_all,
-        state.used_primes,
-        witness_set,
-        state.crt_mask
-    )
-
-    iters = 0
     while !correct_basis
-        for j in 1:batchsize
-            prime = modular_next_prime!(state)
+        batch = get_next_batch(primes_used, batch, batch_scaling, composite, tasks)
 
+        for j in 1:batch
+            prime = modular_next_prime!(state)
             ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
             params_zp = param_mod_p(params, prime)
-
             f4!(ring_ff, basis_ff, pairset, hashtable, params_zp)
-
             push!(state.used_primes, prime)
             push!(state.gb_coeffs_ff_all, basis_ff.coeffs)
             _, changematrix_coeffs = basis_changematrix_export(basis_ff, hashtable, length(monoms))
             push!(state.changematrix_coeffs_ff_all, changematrix_coeffs)
-
             primes_used += 1
         end
 
@@ -249,8 +208,6 @@ function _groebner_with_change_classic_modular(
         )
 
         if !success_reconstruct
-            iters += 1
-            batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
             continue
         end
 
@@ -258,8 +215,6 @@ function _groebner_with_change_classic_modular(
             success_check =
                 modular_lift_heuristic_check_partial(state.gb_coeffs_qq, state.modulo, witness_set)
             if !success_check
-                iters += 1
-                batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
                 continue
             end
         end
@@ -281,24 +236,17 @@ function _groebner_with_change_classic_modular(
         )
 
         if !success_reconstruct
-            iters += 1
-            batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
             continue
         end
 
         modular_crt_full_changematrix!(state)
         success_reconstruct_changematrix = modular_ratrec_full_changematrix!(state)
         if !success_reconstruct_changematrix
-            iters += 1
-            batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
             continue
         end
 
         correct_basis =
             modular_lift_check!(state, ring_ff, basis, basis_zz, basis_ff, hashtable, params)
-
-        iters += 1
-        batchsize = get_next_batchsize(primes_used, batchsize, batchsize_scaling)
     end
 
     # Construct the output basis.

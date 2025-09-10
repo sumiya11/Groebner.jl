@@ -60,8 +60,8 @@ end
     modulo = BigInt()
     tables_ff = [[[mod(res[i][j], moduli[k]) for j in 1:length(table_zz[i])] for i in 1:length(table_zz)] for k in 1:length(moduli)]
     mask = [falses(length(table_zz[i])) for i in 1:length(table_zz)]
-    for n_tasks in [1,2,3,4]
-        Groebner.crt_vec_full!(table_zz, modulo, tables_ff, moduli, mask; n_tasks=n_tasks)
+    for tasks in [1,2,3,4]
+        Groebner.crt_vec_full!(table_zz, modulo, tables_ff, moduli, mask; tasks=tasks)
         @test table_zz == res
         @test modulo == prod(BigInt, moduli)
     end

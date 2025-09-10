@@ -1247,26 +1247,45 @@ end
     @test_throws DomainError Groebner.groebner_with_change_matrix(f)
 end
 
+@testset "multi-threading, composable" begin
+    sys = Groebner.Examples.chandran(8)
+    n = 5
+    res = Vector{Any}(undef, n)
+    Base.Threads.@threads for i in 1:n
+        gb1 = Groebner.groebner(sys)
+        gb2 = Groebner.groebner(sys, tasks=1)
+        gb3 = Groebner.groebner(sys, tasks=128)
+        @eval Groebner.threading_enabled() = false
+        gb4 = Groebner.groebner(sys, tasks=128)
+        res[i] = (gb1, gb2, gb3, gb4)
+        @eval Groebner.threading_enabled() = true
+    end
+    for i in 1:n
+        @test res[i][1] == res[i][2] == res[i][3] == res[i][4]
+        @test Groebner.isgroebner(res[i][1])
+    end
+end
+
 @testset "groebner, multi-threading, Zp" begin
     @info "Testing multi-threading over Zp using $(nthreads()) threads"
 
     R, (x, y, z) = GF(2^31 - 1)["x", "y", "z"]
 
     s = [R(1), R(2), R(4)]
-    @test Groebner.groebner(s, threaded=:yes) ==
-          Groebner.groebner(s, threaded=:no) ==
-          Groebner.groebner(s, threaded=:auto) ==
+    @test Groebner.groebner(s) ==
+          Groebner.groebner(s, tasks=1) ==
+          Groebner.groebner(s, tasks=128) ==
           [R(1)]
 
     s = [x^(2^10) + 1, y^3000 + 2, z^1000 + 3]
-    @test Groebner.groebner(s, threaded=:yes) ==
-          Groebner.groebner(s, threaded=:no) ==
-          Groebner.groebner(s, threaded=:auto) ==
+    @test Groebner.groebner(s) ==
+          Groebner.groebner(s, tasks=1) ==
+          Groebner.groebner(s, tasks=128) ==
           [z^1000 + 3, y^3000 + 2, x^(2^10) + 1]
 
     linalg = [:deterministic, :randomized]
-    threaded = [:yes, :no, :auto]
-    grid = [(linalg=l, threaded=t) for l in linalg for t in threaded]
+    tasks = [:auto, 1, 4, 128]
+    grid = [(linalg=l, tasks=t) for l in linalg for t in tasks]
     for system in [
         Groebner.Examples.katsuran(3, internal_ordering=:lex, k=GF(2^31 - 1)),
         Groebner.Examples.katsuran(4, internal_ordering=:lex, k=GF(2^20 + 7)),
@@ -1295,8 +1314,8 @@ end
 
     R, (x, y) = QQ["x", "y"]
 
-    threaded = [:yes, :no, :auto]
-    grid = [(threaded=t,) for t in threaded]
+    tasks = [:auto, 1, 4, 128]
+    grid = [(tasks=t,) for t in tasks]
     for system in [
         [x - 1, y - 2],
         [x + (BigInt(2)^1000 + 1) // 2^61, x * y + BigInt(2)^(2^10)],
@@ -1334,7 +1353,7 @@ function test_params(
     linalgs,
     monoms,
     homogenizes,
-    threaded
+    tasks
 )
     for _ in 1:boot
         for nv in nvariables
@@ -1362,14 +1381,14 @@ function test_params(
                                     for linalg in linalgs
                                         for monom in monoms
                                             for homogenize in homogenizes
-                                                for thr in threaded
+                                                for thr in tasks
                                                     try
                                                         gb = Groebner.groebner(
                                                             set,
                                                             linalg=linalg,
                                                             monoms=monom,
                                                             homogenize=homogenize,
-                                                            threaded=thr
+                                                            tasks=thr
                                                         )
                                                         flag = Groebner.isgroebner(gb)
                                                         if !flag
@@ -1414,8 +1433,8 @@ end
     linalgs    = [:deterministic, :randomized]
     monoms     = [:auto, :dense, :packed]
     homogenize = [:yes, :auto]
-    threaded   = [:no, :auto]
-    p          = prod(vcat(boot, map(length, [nvariables, maxdegs, nterms, npolys, grounds, orderings, coeffssize, linalgs, monoms, homogenize, threaded])))
+    tasks      = [1, 4, 32]
+    p          = prod(vcat(boot, map(length, [nvariables, maxdegs, nterms, npolys, grounds, orderings, coeffssize, linalgs, monoms, homogenize, tasks])))
     @info "Producing $p small random tests for groebner. This may take a minute"
 
     test_params(
@@ -1431,6 +1450,6 @@ end
         linalgs,
         monoms,
         homogenize,
-        threaded
+        tasks
     )
 end

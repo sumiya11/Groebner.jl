@@ -38,19 +38,21 @@ function linalg_main!(
 
     # Decide if multi-threading should be used. Further in dispatch, the backend
     # may opt to NOT use multi-threading regardless of this setting.
-    threaded = if params.threaded_f4 === :yes && nthreads() > 1
-        # use multi-threading if explicitly requested
-        :yes
-    elseif params.threaded_multimodular === :yes && linalg.algorithm === :learn && nthreads() > 1
-        # TODO: we do not use threading at the learn stage, but we could. One of
-        # the obstactles here are frequent allocations and GC.
-        :no
-    elseif params.threaded_f4 === :auto && nthreads() > 1
-        # try to use multi-threading by default whenever possible
-        :yes
-    else
-        :no
-    end
+    # threaded = if params.threaded_f4 === :yes && nthreads() > 1
+    #     # use multi-threading if explicitly requested
+    #     :yes
+    # elseif params.threaded_multimodular === :yes && linalg.algorithm === :learn && nthreads() > 1
+    #     # TODO: we do not use threading at the learn stage, but we could. One of
+    #     # the obstactles here are frequent allocations and GC.
+    #     :no
+    # elseif params.threaded_f4 === :auto && nthreads() > 1
+    #     # try to use multi-threading by default whenever possible
+    #     :yes
+    # else
+    #     :no
+    # end
+
+    threaded = :no
 
     flag = if !isnothing(trace)
         _linalg_main_with_trace!(trace, matrix, basis, linalg, threaded, changematrix, arithmetic, rng)

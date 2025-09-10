@@ -1,7 +1,7 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
 ###
-# Auxiliary functions wrapping libflint
+# Auxiliary functions wrapping libflint.
 # Adapted from Nemo.jl/src/flint/fmpq.jl
 
 function flint_mpz_to_zz!(b::Nemo.ZZRingElem, a::BigInt)
@@ -134,23 +134,19 @@ end
     table_zz::Vector{Vector{BigInt}},
     modulo::BigInt,
     mask::Vector{BitVector};
-    n_tasks=1
+    tasks=1
 )
     @invariant length(table_qq) == length(table_zz)
     @invariant modulo > 1
+    @invariant tasks >= 1
 
     bound = ratrec_reconstruction_bound(modulo)
     nemo_bound = Nemo.ZZRingElem(bound)
     nemo_modulo = Nemo.ZZRingElem(modulo)
-    # rem_nemo = Nemo.ZZRingElem(0)
 
-    n_tasks = min(n_tasks, length(table_zz))
-    chunk_size = max(1, div(length(table_zz), n_tasks, RoundUp))
-    data_chunks = [
-        [i + n_tasks * (j - 1) for j in 1:chunk_size if i + n_tasks * (j - 1) <= length(table_zz)] for i in 1:n_tasks
-    ]
-    
-    tasks = Vector{Task}(undef, length(data_chunks))
+    tasks = min(tasks, length(table_zz))
+    data_chunks = split_round_robin(1:length(table_zz), tasks)
+    task_results = Vector{Task}(undef, length(data_chunks))
     for (tid, chunk) in enumerate(data_chunks)
         task = @spawn begin
             local rem_nemo = zero(Nemo.ZZRingElem)
@@ -168,24 +164,7 @@ end
                 chunk
             )
         end
-        tasks[tid] = task
+        task_results[tid] = task
     end
-    all(map(fetch, tasks))
-    # for task in tasks
-    #     wait(task)
-    # end
-    # nothing
-
-    # @inbounds for i in 1:length(table_zz)
-    #     @invariant length(table_zz[i]) == length(table_qq[i])
-    #     for j in 1:length(table_zz[i])
-    #         mask[i][j] && continue
-    #         mpz_to_zz!(rem_nemo, table_zz[i][j])
-    #         @invariant 0 <= rem_nemo < modulo
-    #         success, _ = ratrec_nemo!(table_qq[i][j], rem_nemo, nemo_modulo, nemo_bound, nemo_bound)
-    #         !success && return false
-    #     end
-    # end
-
-    # true
+    all(map(task -> fetch(task)::Bool, task_results))
 end
