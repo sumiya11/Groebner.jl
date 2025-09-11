@@ -1248,21 +1248,30 @@ end
 end
 
 @testset "multi-threading, composable" begin
-    sys = Groebner.Examples.chandran(8)
+    sys1 = Groebner.Examples.chandran(8)
+    sys2 = Groebner.Examples.cyclicn(7, k=GF(2^30 + 3))
     n = 5
     res = Vector{Any}(undef, n)
     Base.Threads.@threads for i in 1:n
-        gb1 = Groebner.groebner(sys)
-        gb2 = Groebner.groebner(sys, tasks=1)
-        gb3 = Groebner.groebner(sys, tasks=128)
-        @eval Groebner.threading_enabled() = false
-        gb4 = Groebner.groebner(sys, tasks=128)
-        res[i] = (gb1, gb2, gb3, gb4)
-        @eval Groebner.threading_enabled() = true
+        gb1 = Groebner.groebner(sys1)
+        gb2 = Groebner.groebner(sys1, tasks=1)
+        gb3 = Groebner.groebner(sys1, tasks=128)
+        @eval Groebner._THREADED[] = false
+        gb4 = Groebner.groebner(sys1, tasks=128)
+        @eval Groebner._THREADED[] = true
+        gb5 = Groebner.groebner(sys2)
+        gb6 = Groebner.groebner(sys2, tasks=128)
+        gb7 = Groebner.groebner(sys2, linalg=:deterministic, tasks=128)
+        _, gb8 = Groebner.groebner_learn(sys2, tasks=128)
+        @assert fetch(Threads.@spawn Groebner.isgroebner(gb5))
+        @assert all(iszero, Groebner.normalform(gb5, sys2))
+        res[i] = (gb1, gb2, gb3, gb4, gb5, gb6, gb7, gb8)
     end
     for i in 1:n
         @test res[i][1] == res[i][2] == res[i][3] == res[i][4]
         @test Groebner.isgroebner(res[i][1])
+        @test res[i][5] == res[i][6] == res[i][7] == res[i][8]
+        @test Groebner.isgroebner(res[i][5])
     end
 end
 

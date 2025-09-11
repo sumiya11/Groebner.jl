@@ -8,10 +8,10 @@
 ###
 # High level
 
-function linalg_deterministic_sparse_threaded!(
+function linalg_learn_sparse_threaded!(
+    trace::Trace,
     matrix::MacaulayMatrix,
     basis::Basis,
-    linalg::LinearAlgebra,
     tasks::Int,
     arithmetic::AbstractArithmetic
 )
@@ -19,48 +19,44 @@ function linalg_deterministic_sparse_threaded!(
     sort_matrix_lower_rows!(matrix) # for the CD part
 
     # Reduce CD with AB
-    linalg_reduce_matrix_lower_part_threaded_cas!(matrix, basis, tasks, arithmetic)
+    linalg_learn_reduce_matrix_lower_part_threaded!(trace, matrix, basis, tasks, arithmetic)
     # Interreduce CD
     linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic)
+
     true
 end
 
-###
-# Low level
-
-# internal function for multi-threading
-function _linalg_reduce_matrix_lower_part_threaded_cas!(
+function _linalg_learn_reduce_matrix_lower_part_threaded!(
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     chunk::Vector{Int},
     pivots::Vector{Vector{ColumnLabel}},
-    row_index_to_coeffs::Vector{Int},
+    row_idx_to_coeffs::Vector{Int},
     sentinels::Vector{Int8},
     arithmetic::AbstractArithmetic{AccumType, CoeffType},
-    t_local_row::Vector{AccumType}
+    t_local_row::Vector{AccumType},
+    t_local_not_reduced_to_zero::Vector{Int},
+    t_local_useful_reducers::Set{Int},
+    t_local_reducer_rows::Vector{Int}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
+    new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
     @inbounds for i in chunk
-        new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
-
-        # Select a row to be reduced from the lower part of the matrix
-        # NOTE: no copy of coefficients is needed
         sparse_row_support = matrix.lower_rows[i]
-        sparse_row_coeffs = basis.coeffs[row_index_to_coeffs[i]]
+        sparse_row_coeffs = basis.coeffs[row_idx_to_coeffs[i]]
         @invariant length(sparse_row_support) == length(sparse_row_coeffs)
 
-        # Load the coefficients into a dense array
         linalg_load_sparse_row!(t_local_row, sparse_row_support, sparse_row_coeffs)
 
+        # Additionally record the indices of rows that participated in reduction
+        # of the given row
+        empty!(t_local_reducer_rows)
         first_nnz_column = sparse_row_support[1]
 
-        # In a somewhat ideal scenario, the while loop below executes just once
         success = false
         @inbounds while !success
             @invariant 1 <= first_nnz_column <= length(t_local_row)
 
-            # Note that this call may only mutate the first three arguments, and
-            # the arguments do not overlap in memory with each other
             zeroed = linalg_reduce_dense_row_by_pivots_sparse_threadsafe0!(
                 new_sparse_row_support,
                 new_sparse_row_coeffs,
@@ -71,10 +67,11 @@ function _linalg_reduce_matrix_lower_part_threaded_cas!(
                 first_nnz_column,
                 ncols,
                 arithmetic,
-                sentinels
+                sentinels,
+                t_local_reducer_rows
             )
 
-            # If the row is fully reduced
+            # if fully reduced
             zeroed && break
 
             # Sync point. Everything before this point becomes visible to
@@ -93,6 +90,12 @@ function _linalg_reduce_matrix_lower_part_threaded_cas!(
             if success
                 # new pivot is formed, wake up from the inner loop
                 @invariant iszero(old)
+
+                # NOTE: we are not recording reducers from the lower part of the matrix
+                push!(t_local_not_reduced_to_zero, i)
+                for reducer_row in t_local_reducer_rows
+                    push!(t_local_useful_reducers, reducer_row)
+                end
 
                 linalg_row_make_monic!(new_sparse_row_coeffs, arithmetic)
 
@@ -113,6 +116,9 @@ function _linalg_reduce_matrix_lower_part_threaded_cas!(
                     Int8(2),
                     Atomix.release
                 )
+
+                new_sparse_row_support, new_sparse_row_coeffs =
+                    linalg_new_empty_sparse_row(CoeffType)
             else
                 # go for another iteration
                 first_nnz_column = new_sparse_row_support[1]
@@ -121,15 +127,8 @@ function _linalg_reduce_matrix_lower_part_threaded_cas!(
     end
 end
 
-# Given a matrix of the following form, where A is in REF,
-#   A B
-#   C D
-# reduces the lower part CD with respect to the pivots in the upper part AB.
-# As a result, a matrix of the following form is produced:
-#   A B
-#   0 D'
-# The new pivots in the D' block are known, but possibly not fully interreduced.
-function linalg_reduce_matrix_lower_part_threaded_cas!(
+function linalg_learn_reduce_matrix_lower_part_threaded!(
+    trace::Trace,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     tasks::Int,
@@ -139,7 +138,7 @@ function linalg_reduce_matrix_lower_part_threaded_cas!(
     nup, nlow = matrix_nrows_filled(matrix)
 
     # Prepare the matrix
-    pivots, row_index_to_coeffs = linalg_prepare_matrix_pivots!(matrix)
+    pivots, row_idx_to_coeffs = linalg_prepare_matrix_pivots!(matrix)
     resize!(matrix.some_coeffs, nlow)
     resize!(matrix.sentinels, ncols)
 
@@ -159,22 +158,31 @@ function linalg_reduce_matrix_lower_part_threaded_cas!(
 
     # Allocate thread-local buffers
     buffers_row = map(_ -> zeros(AccumType, ncols), 1:tasks)
+    not_reduced_to_zero = map(_ -> Vector{Int}(), 1:tasks)
+    useful_reducers = map(_ -> Set{Int}(), 1:tasks)
+    reducer_rows = map(_ -> Vector{Int}(), 1:tasks)
 
     tasks = min(tasks, nlow)
     data_chunks = split_round_robin(1:nlow, tasks)
     task_results = Vector{Task}(undef, tasks)
     for (tid, chunk) in enumerate(data_chunks)
         t_local_row = buffers_row[tid]
+        t_local_not_reduced_to_zero = not_reduced_to_zero[tid]
+        t_local_useful_reducers = useful_reducers[tid]
+        t_local_reducer_rows = reducer_rows[tid]
         task = @spawn begin
-            _linalg_reduce_matrix_lower_part_threaded_cas!(
+            _linalg_learn_reduce_matrix_lower_part_threaded!(
                 matrix,
                 basis,
                 chunk,
                 pivots,
-                row_index_to_coeffs,
+                row_idx_to_coeffs,
                 sentinels,
                 arithmetic,
                 t_local_row,
+                t_local_not_reduced_to_zero,
+                t_local_useful_reducers,
+                t_local_reducer_rows
             )
         end
         task_results[tid] = task
@@ -183,86 +191,27 @@ function linalg_reduce_matrix_lower_part_threaded_cas!(
         wait(task)
     end
 
-    true
-end
-
-function linalg_reduce_dense_row_by_pivots_sparse_threadsafe0!(
-    new_sparse_row_support::Vector{I},
-    new_sparse_row_coeffs::Vector{C},
-    row::Vector{A},
-    matrix::MacaulayMatrix{C},
-    basis::Basis{C},
-    pivots::Vector{Vector{I}},
-    start_column::Integer,
-    end_column::Integer,
-    arithmetic::AbstractArithmeticZp{A, C},
-    sentinels::Vector{Int8},
-    active_reducers=nothing;
-    ignore_column::Integer=-1
-) where {I, C <: Union{CoeffZp, CompositeCoeffZp}, A <: Union{CoeffZp, CompositeCoeffZp}}
-    _, ncols = size(matrix)
-    nleft, _ = matrix_ncols_filled(matrix)
-
-    n_nonzeros = 0
-    new_pivot_column = -1
-
-    @inbounds for i in start_column:end_column
-        # if the element is zero -- no reduction is needed
-        if iszero(row[i])
-            continue
-        end
-
-        if 2 != Atomix.get(Atomix.IndexableRef(sentinels, (i,)), Atomix.acquire)
-            if new_pivot_column == -1
-                new_pivot_column = i
-            end
-            n_nonzeros += 1
-            continue
-        end
-        # At this point, the value of pivots[i] is in sync with any other thread
-        # that modifies, modified, or will modify it
-
-        # if there is no pivot with the leading column equal to i
-        if !isassigned(pivots, i) || ignore_column == i
-            if new_pivot_column == -1
-                new_pivot_column = i
-            end
-            n_nonzeros += 1
-            continue
-        end
-        # At this point, we have determined that pivots[i] is a valid pivot.
-
-        # Locate the support and the coefficients of the pivot row
-        pivot_support = pivots[i]
-        if i <= nleft
-            # if pivot comes from the original pivots
-            pivot_coeffs = basis.coeffs[matrix.upper_to_coeffs[i]]
-            record_active_reducer(active_reducers, matrix, i)
-        else
-            pivot_coeffs = matrix.some_coeffs[matrix.lower_to_coeffs[i]]
-        end
-        @invariant length(pivot_support) == length(pivot_coeffs)
-
-        linalg_vector_addmul_sparsedense_mod_p!(row, pivot_support, pivot_coeffs, arithmetic)
-
-        @invariant iszero(row[i])
-    end
-
-    # all row elements reduced to zero!
-    if n_nonzeros == 0
-        return true
-    end
-
-    # form the resulting row in sparse format
-    resize!(new_sparse_row_support, n_nonzeros)
-    resize!(new_sparse_row_coeffs, n_nonzeros)
-    linalg_extract_sparse_row!(
-        new_sparse_row_support,
-        new_sparse_row_coeffs,
-        row,
-        convert(Int, start_column),
-        ncols
+    # Update the tracer information
+    # NOTE: we sort reducers by their original position in the array of pivots.
+    # This way, the rows are already sorted at the apply stage.
+    useful_reducers_sorted = sort(collect(reduce(union, useful_reducers)))
+    push!(
+        trace.matrix_infos,
+        (nup=matrix.nrows_filled_upper, nlow=matrix.nrows_filled_lower, ncols=ncols)
+    )
+    _not_reduced_to_zero = sort(reduce(vcat, not_reduced_to_zero))
+    push!(trace.matrix_nonzeroed_rows, _not_reduced_to_zero)
+    push!(
+        trace.matrix_upper_rows,
+        (
+            map(f -> matrix.upper_to_coeffs[f], useful_reducers_sorted),
+            map(f -> matrix.upper_to_mult[f], useful_reducers_sorted)
+        )
+    )
+    push!(
+        trace.matrix_lower_rows,
+        (row_idx_to_coeffs[_not_reduced_to_zero], matrix.lower_to_mult[_not_reduced_to_zero])
     )
 
-    false
+    true
 end

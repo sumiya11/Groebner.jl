@@ -316,7 +316,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
     if !threading_enabled()
         if _tasks isa Integer && _tasks > 1
             @info """
-            Keyword argument `tasks = $_tasks` was provided to Groebner.jl,
+            The option `tasks = $_tasks` was provided to Groebner.jl,
             however, multi-threading is disabled globally in Groebner.jl.
             The option `tasks` was ignored.
             See `Groebner.threading_enabled()` for details.""" maxlog=1
