@@ -74,7 +74,7 @@ import TimerOutputs: @timeit
 ###
 # Initialization
 
-const _THREADED = Ref(true)
+const _THREADED = Ref(false)
 
 # By default, the timer is disabled to avoid issues with multi-threading.
 # https://github.com/KristofferC/TimerOutputs.jl/issues/72
