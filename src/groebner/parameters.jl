@@ -265,7 +265,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
             linalg = :deterministic
         end
     end
-    if ring.ground == :generic
+    if ring.ground === :generic
         linalg = :deterministic
     end
     if linalg === :auto
@@ -323,7 +323,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         end
         tasks = 1
     end
-    if ring.ground == :generic
+    if ring.ground === :generic
         tasks = 1
     end
 

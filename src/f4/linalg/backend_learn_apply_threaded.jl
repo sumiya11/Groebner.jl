@@ -33,7 +33,7 @@ function _linalg_learn_reduce_matrix_lower_part_threaded!(
     pivots::Vector{Vector{ColumnLabel}},
     row_idx_to_coeffs::Vector{Int},
     sentinels::Vector{Int8},
-    arithmetic::AbstractArithmetic{AccumType, CoeffType},
+    arithmetic::AbstractArithmetic,
     t_local_row::Vector{AccumType},
     t_local_not_reduced_to_zero::Vector{Int},
     t_local_useful_reducers::Set{Int},
