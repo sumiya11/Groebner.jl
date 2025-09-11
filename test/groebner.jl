@@ -427,6 +427,8 @@ end
 
     P = prod(BigInt, prevprimes(2^31, 100))
     @test groebner([x^2 + P * x + 1]) == [x^2 + P * x + 1]
+
+    @test isgroebner(groebner(Groebner.Examples.cyclicn(7)))
 end
 
 @testset "groebner output sorted" begin
