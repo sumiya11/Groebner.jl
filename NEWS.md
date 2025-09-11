@@ -1,6 +1,6 @@
 ## Version 0.10.0
 
-- Keyword argument for `groebner` and friends is changed from `threaded` to `tasks`. This allows to specify the number of tasks used in multi-threading. 
+- Interface change: keyword argument for `groebner` and friends is changed from `threaded=:yes/:no` to `tasks=N`. This allows to specify the number of tasks used in multi-threading. 
 - Minor performance improvements.
 
 ## Version 0.9.2
