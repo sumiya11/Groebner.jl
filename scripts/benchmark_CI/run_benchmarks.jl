@@ -221,7 +221,7 @@ push!(
         result=compute_gb(
             Groebner.Examples.chandran(10, internal_ordering=:degrevlex, k=QQ),
             5,
-            tasks=1
+            # tasks=1
         )
     )
 )
