@@ -323,6 +323,9 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         end
         tasks = 1
     end
+    if ring.ground == :generic
+        tasks = 1
+    end
 
     # By default, modular computation uses learn & apply
     modular_strategy = kwargs.modular
