@@ -70,7 +70,7 @@ function io_extract_ring(polynomials)
             ground = :generic
         end
     else
-        if !(K isa AbstractAlgebra.Rationals{<:Integer} || K <: Nemo.QQField)
+        if !(K isa AbstractAlgebra.Rationals{<:Integer} || K isa Nemo.QQField)
             ground = :generic
         end
     end
