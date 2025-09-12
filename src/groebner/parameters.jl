@@ -347,10 +347,6 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
 
     changematrix = kwargs.changematrix
     if changematrix
-        println("Using change-of-matrix strategy")
-        println(target_ord)
-        println(ring)
-        println(kwargs)
         if !(target_ord isa DegRevLex)
             throw(DomainError("Only DegRevLex is supported with changematrix = true."))
         end

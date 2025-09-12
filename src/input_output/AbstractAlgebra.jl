@@ -70,16 +70,8 @@ function io_extract_ring(polynomials)
             ground = :generic
         end
     else
-        # Supported implementations of rationals are AbstractAlgebra.QQ or Nemo.QQ
-        if !(hasmethod(AbstractAlgebra.base_ring, (typeof(K),)))
+        if !(K isa AbstractAlgebra.Rationals{<:Integer} || K <: Nemo.QQField)
             ground = :generic
-        else
-            base = AbstractAlgebra.base_ring(K)
-            if !(hasmethod(AbstractAlgebra.base_ring, (typeof(base),)))
-                ground = :generic
-            elseif !(AbstractAlgebra.base_ring(base) == Union{})
-                ground = :generic
-            end
         end
     end
     if ground == :generic
