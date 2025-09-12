@@ -1,7 +1,7 @@
 name = "Groebner"
 uuid = "0b43b601-686d-58a3-8a1c-6623616c7cd4"
 authors = ["sumiya11"]
-version = "0.9.5"
+version = "0.10.0"
 
 [deps]
 AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
@@ -22,12 +22,12 @@ DynamicPolynomials = "7c1d4256-1411-5781-91ec-d7bc3513ac07"
 GroebnerDynamicPolynomialsExt = "DynamicPolynomials"
 
 [compat]
-AbstractAlgebra = "0.41, 0.42, 0.43, 0.44, 0.45, 0.46"
+AbstractAlgebra = "0.41, 0.42, 0.43, 0.44, 0.45, 0.46, 0.47"
 Atomix = "0.1, 1"
 BenchmarkTools = "1"
 Combinatorics = "1"
 DynamicPolynomials = "0.6.0"
-Nemo = "0.45.4, 0.46, 0.47, 0.48, 0.49, 0.50, 0.51"
+Nemo = "0.45.4, 0.46, 0.47, 0.48, 0.49, 0.50, 0.51, 0.52"
 PrecompileTools = "1"
 Primes = "0.5"
 TimerOutputs = "0.5"

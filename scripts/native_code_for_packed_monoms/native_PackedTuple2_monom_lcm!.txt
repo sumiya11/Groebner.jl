@@ -1,0 +1,91 @@
+	.text
+	.file	"monom_lcm!"
+	.globl	"julia_monom_lcm!_12885"        # -- Begin function julia_monom_lcm!_12885
+	.p2align	4, 0x90
+	.type	"julia_monom_lcm!_12885",@function
+"julia_monom_lcm!_12885":               # @"julia_monom_lcm!_12885"
+; Function Signature: monom_lcm!(Groebner.PackedTuple2{UInt64, UInt8}, Groebner.PackedTuple2{UInt64, UInt8}, Groebner.PackedTuple2{UInt64, UInt8})
+# %bb.0:                                # %top
+	#DEBUG_VALUE: monom_lcm!:ec <- [DW_OP_deref] [$rsi+0]
+	#DEBUG_VALUE: monom_lcm!:ea <- [DW_OP_deref] [$rdx+0]
+	#DEBUG_VALUE: monom_lcm!:eb <- [DW_OP_deref] [$rcx+0]
+	push	rbp
+	mov	rbp, rsp
+	sub	rsp, 48
+	vxorps	xmm0, xmm0, xmm0
+	vmovups	ymmword ptr [rbp - 32], ymm0
+	#APP
+	mov	rax, qword ptr fs:[0]
+	#NO_APP
+	mov	rsi, qword ptr [rax - 8]
+	mov	qword ptr [rbp - 32], 8
+	mov	rax, qword ptr [rsi]
+	mov	qword ptr [rbp - 24], rax
+	lea	rax, [rbp - 32]
+	mov	qword ptr [rsi], rax
+	vmovq	xmm0, qword ptr [rdx]           # xmm0 = mem[0],zero
+	vmovq	xmm1, qword ptr [rcx]           # xmm1 = mem[0],zero
+	vpmaxub	xmm0, xmm0, xmm1
+	vmovq	rax, xmm0
+	vmovq	xmm0, qword ptr [rdx + 8]       # xmm0 = mem[0],zero
+	vmovq	xmm1, qword ptr [rcx + 8]       # xmm1 = mem[0],zero
+	vpmaxub	xmm0, xmm0, xmm1
+	mov	cl, 56
+	bzhi	rcx, rax, rcx
+	vmovq	xmm1, rcx
+	vpxor	xmm2, xmm2, xmm2
+	vpsadbw	xmm1, xmm1, xmm2
+	vmovd	eax, xmm1
+	vpsadbw	xmm1, xmm0, xmm2
+	vmovd	edx, xmm1
+	add	dl, al
+	movzx	eax, dl
+	cmp	al, 127
+	jae	.LBB0_1
+# %bb.2:                                # %L26
+	shl	rax, 56
+	or	rax, rcx
+	mov	qword ptr [rdi], rax
+	vmovq	qword ptr [rdi + 8], xmm0
+	mov	rax, qword ptr [rbp - 24]
+	mov	qword ptr [rsi], rax
+	mov	rax, rdi
+	add	rsp, 48
+	pop	rbp
+	vzeroupper
+	ret
+.LBB0_1:                                # %L22
+	movabs	rcx, offset ijl_box_uint64
+	mov	rdi, rax
+	vzeroupper
+	call	rcx
+	movabs	rcx, offset jl_small_typeof
+	mov	rcx, qword ptr [rcx + 336]
+	mov	qword ptr [rbp - 8], rax
+	mov	qword ptr [rbp - 16], rcx
+	mov	qword ptr [rbp - 48], rax
+	mov	qword ptr [rbp - 40], rcx
+	movabs	rdi, offset ".Ljl_global#12907.jit"
+	movabs	rcx, offset ".L-Groebner.__throw_monom_overflow_error#12906.jit"
+	movabs	rax, offset ijl_invoke
+	lea	rsi, [rbp - 48]
+	mov	edx, 2
+	call	rax
+	ud2
+.Lfunc_end0:
+	.size	"julia_monom_lcm!_12885", .Lfunc_end0-"julia_monom_lcm!_12885"
+                                        # -- End function
+	.type	".L+Groebner.PackedTuple2#12887",@object # @"+Groebner.PackedTuple2#12887"
+	.section	.rodata,"a",@progbits
+	.p2align	3, 0x0
+".L+Groebner.PackedTuple2#12887":
+	.quad	".L+Groebner.PackedTuple2#12887.jit"
+	.size	".L+Groebner.PackedTuple2#12887", 8
+
+.set ".L-Groebner.__throw_monom_overflow_error#12906.jit", 139764624095424
+	.size	".L-Groebner.__throw_monom_overflow_error#12906.jit", 8
+.set ".Ljl_global#12907.jit", 139764624095792
+	.size	".Ljl_global#12907.jit", 8
+.set ".L+Groebner.PackedTuple2#12887.jit", 139764626315632
+	.size	".L+Groebner.PackedTuple2#12887.jit", 8
+	.section	".note.GNU-stack","",@progbits

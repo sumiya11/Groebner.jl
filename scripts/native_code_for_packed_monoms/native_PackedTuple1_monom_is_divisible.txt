@@ -1,0 +1,23 @@
+	.text
+	.file	"monom_is_divisible"
+	.globl	julia_monom_is_divisible_12817  # -- Begin function julia_monom_is_divisible_12817
+	.p2align	4, 0x90
+	.type	julia_monom_is_divisible_12817,@function
+julia_monom_is_divisible_12817:         # @julia_monom_is_divisible_12817
+; Function Signature: monom_is_divisible(Groebner.PackedTuple1{UInt64, UInt8}, Groebner.PackedTuple1{UInt64, UInt8})
+# %bb.0:                                # %top
+	#DEBUG_VALUE: monom_is_divisible:ea <- [DW_OP_deref] [$rdi+0]
+	#DEBUG_VALUE: monom_is_divisible:eb <- [DW_OP_deref] [$rsi+0]
+	push	rbp
+	mov	rbp, rsp
+	vmovq	xmm0, qword ptr [rdi]           # xmm0 = mem[0],zero
+	vmovq	xmm1, qword ptr [rsi]           # xmm1 = mem[0],zero
+	vpcmpltub	k0, xmm0, xmm1
+	kortestb	k0, k0
+	sete	al
+	pop	rbp
+	ret
+.Lfunc_end0:
+	.size	julia_monom_is_divisible_12817, .Lfunc_end0-julia_monom_is_divisible_12817
+                                        # -- End function
+	.section	".note.GNU-stack","",@progbits

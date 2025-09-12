@@ -125,7 +125,7 @@ end
     buf, n1, n2 = BigInt(), BigInt(), BigInt()
     mults = Vector{BigInt}(undef, length(moduli))
     for i in 1:length(mults)
-        mults[i] = BigInt(0)
+        mults[i] = BigInt()
     end
 
     crt_precompute!(modulo, n1, n2, mults, map(UInt64, moduli))
@@ -133,18 +133,42 @@ end
     rems = Vector{UInt64}(undef, length(moduli))
     @inbounds for k in 1:length(witness_set)
         i, j = witness_set[k]
-
         for t in 1:length(moduli)
             rems[t] = UInt64(tables_ff[t][i][j])
         end
-
         crt!(modulo, buf, n1, n2, rems, mults)
-
         Base.GMP.MPZ.set!(table_zz[i][j], buf)
-
         mask[i][j] = true
     end
 
+    nothing
+end
+
+function _crt_vec_full!(
+    table_zz::Vector{Vector{BigInt}},
+    modulo::BigInt,
+    buf::BigInt,
+    n1::BigInt,
+    n2::BigInt,
+    rems::Vector{UInt64},
+    tables_ff::Vector{Vector{Vector{T}}},
+    mults::Vector{BigInt},
+    moduli::Vector{U},
+    chunk::Vector{Int},
+    mask::Vector{BitVector}
+) where {T <: Integer, U <: Integer}
+    @inbounds for i in chunk
+        @invariant length(table_zz[i]) == length(mask[i])
+        for j in 1:length(table_zz[i])
+            mask[i][j] && continue
+            for k in 1:length(moduli)
+                @invariant 0 <= tables_ff[k][i][j] < moduli[k]
+                rems[k] = UInt64(tables_ff[k][i][j])
+            end
+            crt!(modulo, buf, n1, n2, rems, mults)
+            Base.GMP.MPZ.set!(table_zz[i][j], buf)
+        end
+    end
     nothing
 end
 
@@ -154,32 +178,46 @@ end
     modulo::BigInt,
     tables_ff::Vector{Vector{Vector{T}}},
     moduli::Vector{U},
-    mask::Vector{BitVector}
+    mask::Vector{BitVector};
+    tasks=1
 ) where {T <: Integer, U <: Integer}
     @invariant length(tables_ff) == length(moduli)
     @invariant length(table_zz) == length(mask)
+    @invariant tasks >= 1 && !isempty(moduli)
 
-    buf, n1, n2 = BigInt(), BigInt(), BigInt()
+    n1, n2 = BigInt(), BigInt()
     mults = Vector{BigInt}(undef, length(moduli))
     for i in 1:length(mults)
-        mults[i] = BigInt(0)
+        mults[i] = BigInt()
     end
 
     crt_precompute!(modulo, n1, n2, mults, map(UInt64, moduli))
 
-    rems = Vector{UInt64}(undef, length(moduli))
-    @inbounds for i in 1:length(table_zz)
-        for j in 1:length(table_zz[i])
-            mask[i][j] && continue
-
-            for k in 1:length(moduli)
-                @invariant 0 <= tables_ff[k][i][j] < moduli[k]
-                rems[k] = UInt64(tables_ff[k][i][j])
-            end
-
-            crt!(modulo, buf, n1, n2, rems, mults)
-
-            Base.GMP.MPZ.set!(table_zz[i][j], buf)
+    tasks = min(tasks, length(table_zz))
+    data_chunks = split_round_robin(1:length(table_zz), tasks)
+    task_results = Vector{Task}(undef, tasks)
+    for (tid, chunk) in enumerate(data_chunks)
+        task = @spawn begin
+            local buf, n1, n2 = BigInt(), BigInt(), BigInt()
+            local rems = Vector{UInt64}(undef, length(moduli))
+            _crt_vec_full!(
+                table_zz,
+                modulo,
+                buf,
+                n1,
+                n2,
+                rems,
+                tables_ff,
+                mults,
+                moduli,
+                chunk,
+                mask
+            )
         end
+        task_results[tid] = task
     end
+    for task in task_results
+        wait(task)
+    end
+    nothing
 end

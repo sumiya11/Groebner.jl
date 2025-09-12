@@ -21,7 +21,7 @@ const _supported_kw_args = (
         seed         = 42,
         selection    = :auto,
         modular      = :auto,
-        threaded     = :auto,
+        tasks        = :auto,
         homogenize   = :auto,
         changematrix = false,
         _composite   = 4,
@@ -33,7 +33,7 @@ const _supported_kw_args = (
         ordering    = InputOrdering(),
         monoms      = :auto,
         arithmetic  = :auto,
-        threaded    = :auto,
+        tasks       = :auto,
     ),
     groebner_learn = (
         seed        = 42,
@@ -41,7 +41,7 @@ const _supported_kw_args = (
         monoms      = :auto,
         arithmetic  = :auto,
         homogenize  = :auto,
-        threaded    = :auto,
+        tasks       = :auto,
     ),
     groebner_with_change_matrix = (
         reduced      = true,
@@ -53,7 +53,7 @@ const _supported_kw_args = (
         seed         = 42,
         selection    = :auto,
         modular      = :auto,
-        threaded     = :auto,
+        tasks        = :auto,
         homogenize   = :auto,
         changematrix = true,
         _composite   = 4,
@@ -88,7 +88,7 @@ mutable struct KeywordArguments
     ordering::Any
     certify::Bool
     linalg::Symbol
-    threaded::Symbol
+    tasks::Any
     monoms::Symbol
     arithmetic::Symbol
     seed::Int
@@ -125,11 +125,11 @@ function KeywordArguments(function_id::Symbol, kws)
                                                                                                   Possible choices for keyword "linalg" are:
                                                                                                   `:auto`, `:randomized`, `:deterministic`"""
 
-    threaded = get(kws, :threaded, get(default_kw_args, :threaded, :auto))
-    @assert threaded in (:auto, :no, :yes, :force_yes) """
-    Not recognized threading option: $threaded
-    Possible choices for keyword "threaded" are:
-    `:auto`, `:no`, `:yes`"""
+    tasks = get(kws, :tasks, get(default_kw_args, :tasks, :auto))
+    @assert tasks === :auto || (tasks isa Integer && tasks >= 1) """
+    Not recognized tasks option: $tasks
+    Possible choices for keyword "tasks" are:
+    `:auto`, `1`, `2`, `3`, ... (any positive integer)"""
 
     monoms = get(kws, :monoms, get(default_kw_args, :monoms, :dense))
     @assert monoms in (:auto, :dense, :packed) """
@@ -174,7 +174,7 @@ function KeywordArguments(function_id::Symbol, kws)
         ordering,
         certify,
         linalg,
-        threaded,
+        tasks,
         monoms,
         arithmetic,
         seed,

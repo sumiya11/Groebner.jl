@@ -35,27 +35,11 @@ function linalg_main!(
         linalg = params.linalg
     end
     changematrix = params.changematrix
-
-    # Decide if multi-threading should be used. Further in dispatch, the backend
-    # may opt to NOT use multi-threading regardless of this setting.
-    threaded = if params.threaded_f4 === :yes && nthreads() > 1
-        # use multi-threading if explicitly requested
-        :yes
-    elseif params.threaded_multimodular === :yes && linalg.algorithm === :learn && nthreads() > 1
-        # TODO: we do not use threading at the learn stage, but we could. One of
-        # the obstactles here are frequent allocations and GC.
-        :no
-    elseif params.threaded_f4 === :auto && nthreads() > 1
-        # try to use multi-threading by default whenever possible
-        :yes
-    else
-        :no
-    end
-
+    tasks = params.tasks
     flag = if !isnothing(trace)
-        _linalg_main_with_trace!(trace, matrix, basis, linalg, threaded, changematrix, arithmetic, rng)
+        _linalg_main_with_trace!(trace, matrix, basis, linalg, tasks, changematrix, arithmetic, rng)
     else
-        _linalg_main!(matrix, basis, linalg, threaded, changematrix, arithmetic, rng)
+        _linalg_main!(matrix, basis, linalg, tasks, changematrix, arithmetic, rng)
     end
 
     flag
@@ -141,12 +125,11 @@ end
 ###
 # Further dispatch between linear algebra backends
 
-function linalg_should_use_threading(matrix, linalg, threaded)
-    @assert threaded !== :auto
+function linalg_should_use_threading(matrix, linalg, tasks)
     nup, nlow, nleft, nright = matrix_block_sizes(matrix)
-    if threaded === :yes
+    if tasks > 1
         # Opt for single thread for small matrices
-        if nlow < 2 * nthreads()
+        if nlow < 2 * tasks
             false
         elseif nleft + nright < 1_000
             false
@@ -162,7 +145,7 @@ function _linalg_main!(
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
-    threaded::Symbol,
+    tasks::Int,
     changematrix::Bool,
     arithmetic::AbstractArithmetic,
     rng::AbstractRNG
@@ -170,14 +153,14 @@ function _linalg_main!(
     flag = if changematrix
         linalg_deterministic_sparse_changematrix!(matrix, basis, linalg, arithmetic)
     elseif linalg.algorithm === :deterministic
-        if linalg_should_use_threading(matrix, linalg, threaded)
-            linalg_deterministic_sparse_threaded!(matrix, basis, linalg, arithmetic)
+        if linalg_should_use_threading(matrix, linalg, tasks)
+            linalg_deterministic_sparse_threaded!(matrix, basis, linalg, tasks, arithmetic)
         else
             linalg_deterministic_sparse!(matrix, basis, linalg, arithmetic)
         end
     elseif linalg.algorithm === :randomized
-        if linalg_should_use_threading(matrix, linalg, threaded)
-            linalg_randomized_sparse_threaded!(matrix, basis, linalg, arithmetic, rng)
+        if linalg_should_use_threading(matrix, linalg, tasks)
+            linalg_randomized_sparse_threaded!(matrix, basis, linalg, tasks, arithmetic, rng)
         else
             linalg_randomized_sparse!(matrix, basis, linalg, arithmetic, rng)
         end
@@ -193,15 +176,15 @@ function _linalg_main_with_trace!(
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
-    threaded::Symbol,
+    tasks::Int,
     changematrix::Bool,
     arithmetic::AbstractArithmetic,
     rng::AbstractRNG
 )
     flag = if linalg.algorithm === :learn
         # At the moment, this never opts for multi-threading
-        if false && threaded === :yes
-            linalg_learn_sparse_threaded!(trace, matrix, basis, arithmetic)
+        if linalg_should_use_threading(matrix, linalg, tasks)
+            linalg_learn_sparse_threaded!(trace, matrix, basis, tasks, arithmetic)
         else
             linalg_learn_sparse!(trace, matrix, basis, arithmetic)
         end

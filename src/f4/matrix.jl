@@ -203,7 +203,7 @@ function matrix_convert_rows_to_basis_elements!(
     _, _, nl, nr = matrix_block_sizes(matrix)
     support_size = 0
     for i in 1:length(rows)
-        if isdefined(rows, i)
+        if isassigned(rows, i)
             support_size += length(rows[i])
         end
     end

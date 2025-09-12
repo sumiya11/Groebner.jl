@@ -1,0 +1,101 @@
+	.text
+	.file	"monom_hash"
+	.section	.rodata.cst16,"aM",@progbits,16
+	.p2align	4, 0x0                          # -- Begin function julia_monom_hash_12908
+.LCPI0_0:
+	.quad	8                               # 0x8
+	.quad	16                              # 0x10
+	.section	.rodata.cst32,"aM",@progbits,32
+	.p2align	5, 0x0
+.LCPI0_1:
+	.quad	4                               # 0x4
+	.quad	0                               # 0x0
+	.quad	1                               # 0x1
+	.zero	8
+.LCPI0_2:
+	.byte	255                             # 0xff
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	255                             # 0xff
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	255                             # 0xff
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	255                             # 0xff
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.byte	0                               # 0x0
+	.text
+	.globl	julia_monom_hash_12908
+	.p2align	4, 0x90
+	.type	julia_monom_hash_12908,@function
+julia_monom_hash_12908:                 # @julia_monom_hash_12908
+; Function Signature: monom_hash(Groebner.PackedTuple1{UInt64, UInt8}, Array{UInt64, 1})
+# %bb.0:                                # %top
+	#DEBUG_VALUE: monom_hash:x <- [DW_OP_deref] [$rdi+0]
+	#DEBUG_VALUE: monom_hash:b <- [DW_OP_deref] $rsi
+	#DEBUG_VALUE: monom_hash:b <- [DW_OP_deref] 0
+	push	rbp
+	mov	rbp, rsp
+	mov	rcx, qword ptr [rdi]
+	mov	rax, qword ptr [rsi]
+	vpbroadcastq	xmm0, rcx
+	movabs	rdx, offset .LCPI0_0
+	vpsrlvq	xmm1, xmm0, xmmword ptr [rdx]
+	mov	rdx, rcx
+	shr	rdx, 24
+	movabs	rsi, offset .LCPI0_1
+	vmovdqa	ymm2, ymmword ptr [rsi]
+	vpermi2q	ymm2, ymm1, ymm0
+	vpbroadcastq	ymm0, rdx
+	vpblendd	ymm0, ymm2, ymm0, 192           # ymm0 = ymm2[0,1,2,3,4,5],ymm0[6,7]
+	movabs	rdx, offset .LCPI0_2
+	vpand	ymm0, ymm0, ymmword ptr [rdx]
+	vpmullq	ymm0, ymm0, ymmword ptr [rax]
+	mov	rdx, rcx
+	shr	rdx, 32
+	movzx	edx, dl
+	imul	edx, dword ptr [rax + 32]
+	mov	rsi, rcx
+	shr	rsi, 40
+	movzx	esi, sil
+	imul	esi, dword ptr [rax + 40]
+	shr	rcx, 48
+	movzx	ecx, cl
+	imul	ecx, dword ptr [rax + 48]
+	add	ecx, esi
+	add	ecx, edx
+	vextracti128	xmm1, ymm0, 1
+	vpaddq	xmm0, xmm0, xmm1
+	vpshufd	xmm1, xmm0, 238                 # xmm1 = xmm0[2,3,2,3]
+	vpaddq	xmm0, xmm0, xmm1
+	vmovq	rax, xmm0
+	add	eax, ecx
+                                        # kill: def $eax killed $eax killed $rax
+	pop	rbp
+	vzeroupper
+	ret
+.Lfunc_end0:
+	.size	julia_monom_hash_12908, .Lfunc_end0-julia_monom_hash_12908
+                                        # -- End function
+	.section	".note.GNU-stack","",@progbits
