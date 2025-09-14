@@ -45,7 +45,7 @@ mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractMonomialOrdering}
     #= Monom divisibility =#
     use_divmask::Bool
     compress_divmask::Bool
-    divmap::Vector{UInt32}
+    divmap::Vector{DivisionMask}
     ndivvars::Int
     ndivbits::Int
 

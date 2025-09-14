@@ -205,9 +205,13 @@ function f4_select_tobereduced!(
     end
 end
 
+const _DIVMASK_CHECKS = Ref{Int}(0)
+const _DIVMASK_FALSE_POSITIVES = Ref{Int}(0)
+
 function f4_find_lead_divisor_use_divmask(i, divmask, basis)
     lead_divmasks = basis.divmasks
     @inbounds while i <= basis.n_nonredundant
+        _DIVMASK_CHECKS[] += 1
         if divmask_is_probably_divisible(divmask, lead_divmasks[i])
             break
         end
@@ -262,6 +266,7 @@ function f4_find_multiplied_reducer!(
     success, quotient = monom_is_divisible!(quotient, monom, lead)
     if !success # division mask failed for some reason
         i += 1
+        _DIVMASK_FALSE_POSITIVES[] += 1
         @goto Letsgo
     end
 
@@ -287,6 +292,8 @@ function f4_find_multiplied_reducer!(
     nothing
 end
 
+const _MAX_DEG = Ref{Int}(0)
+
 @timeit _TIMER function f4_select_critical_pairs!(
     pairset::Pairset,
     basis::Basis,
@@ -307,6 +314,7 @@ end
     f4_add_critical_pairs_to_matrix!(pairset, npairs, basis, matrix, ht, symbol_ht)
 
     deg = pairset.degrees[1]
+    _MAX_DEG[] = max(_MAX_DEG[], deg)
 
     # Remove selected pairs from the pairset.
     @inbounds for i in 1:(pairset.load - npairs)
