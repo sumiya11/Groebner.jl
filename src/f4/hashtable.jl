@@ -44,7 +44,7 @@ mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractMonomialOrdering}
 
     #= Monom divisibility =#
     use_divmask::Bool
-    compress_divmask::Bool
+    divmask_strategy::Symbol
     divmap::Vector{DivisionMask}
     ndivvars::Int
     ndivbits::Int
@@ -63,6 +63,9 @@ end
 
 hashtable_resize_threshold() = 0.4
 hashtable_needs_resize(size, load, added) = (load + added) / size > hashtable_resize_threshold()
+
+const _DIVMASK_STRATEGY_MANY_VARIABLES = Ref(:first_variables)
+@assert _DIVMASK_STRATEGY_MANY_VARIABLES[] in [:first_variables, :compact_variables]
 
 function hashtable_initialize(
     ring::PolyRing{Ord},
@@ -97,16 +100,17 @@ function hashtable_initialize(
     offset = 2
 
     # Initialize fast divisibility parameters.
-    use_divmask = use_divmask && (nvars <= 32 || (MonomT <: ExponentVector))
-    dmbits = 8 * sizeof(DivisionMask)
-    compress_divmask = nvars > dmbits
-    ndivbits = div(dmbits, nvars)
-    # division mask stores at least 1 bit
-    # per each of first ndivvars variables
-    ndivbits == 0 && (ndivbits += 1)
-    # count only first ndivvars variables for divisibility checks
-    ndivvars = min(nvars, dmbits)
-    divmap = zeros(DivisionMask, ndivvars * ndivbits)
+    strategy = :first_variables
+    nbits = 8 * sizeof(DivisionMask)
+    bits_per_var = div(nbits, nvars)
+    bits_per_var = max(bits_per_var, 1)
+    ndivvars = min(nvars, nbits)
+    divmap = zeros(DivisionMask, ndivvars * bits_per_var)
+    if nvars <= nbits
+        strategy = :first_variables
+    else
+        strategy = _DIVMASK_STRATEGY_MANY_VARIABLES[]
+    end
 
     # first stored exponent used as buffer lately
     monoms[1] = monom_construct_const(MonomT, nvars)
@@ -121,10 +125,10 @@ function hashtable_initialize(
         nvars,
         ord,
         use_divmask,
-        compress_divmask,
+        strategy,
         divmap,
         ndivvars,
-        ndivbits,
+        bits_per_var,
         size,
         load,
         offset,
@@ -173,7 +177,7 @@ function hashtable_initialize_secondary(ht::MonomialHashtable{M}) where {M <: Mo
         nvars,
         ord,
         ht.use_divmask,
-        ht.compress_divmask,
+        ht.divmask_strategy,
         divmap,
         ndivvars,
         ndivbits,
@@ -316,7 +320,7 @@ function hashtable_insert!(ht::MonomialHashtable{M}, e::M) where {M <: Monom}
         ht.ndivvars,
         ht.divmap,
         ht.ndivbits,
-        ht.compress_divmask
+        ht.divmask_strategy
     )
     @inbounds ht.labels[vidx] = NON_PIVOT_COLUMN
     @inbounds ht.hashvals[vidx] = he
@@ -363,7 +367,7 @@ function hashtable_fill_divmasks!(ht::MonomialHashtable)
         end
     end
 
-    if !ht.compress_divmask
+    if ht.divmask_strategy === :first_variables
         # Available bits >= variables
         ctr = 1
         steps = UInt32(0)
@@ -376,6 +380,7 @@ function hashtable_fill_divmasks!(ht::MonomialHashtable)
                 ctr += 1
             end
         end
+	ht.divmap = [mod(i, ht.ndivbits)+1 for i in 0:length(ht.divmap)-1]
     else
         # Available bits < variables.
         # Pack variables tighlty.
@@ -399,6 +404,8 @@ function hashtable_fill_divmasks!(ht::MonomialHashtable)
         @invariant sum(ht.divmap) == ht.nvars
     end
 
+    println("divmap = ", ht.divmap)
+
     @inbounds for vidx in (ht.offset):(ht.load)
         divmask = monom_create_divmask(
             ht.monoms[vidx],
@@ -406,7 +413,7 @@ function hashtable_fill_divmasks!(ht::MonomialHashtable)
             ht.ndivvars,
             ht.divmap,
             ht.ndivbits,
-            ht.compress_divmask
+            ht.divmask_strategy
         )
         ht.labels[vidx] = NON_PIVOT_COLUMN
         ht.divmasks[vidx] = divmask
@@ -523,7 +530,7 @@ function hashtable_insert_polynomial_multiple!(
             symbol_ht.ndivvars,
             symbol_ht.divmap,
             symbol_ht.ndivbits,
-            symbol_ht.compress_divmask
+            symbol_ht.divmask_strategy
         )
         @inbounds symbol_ht.labels[vidx] = NON_PIVOT_COLUMN
         @inbounds symbol_ht.hashvals[vidx] = newhash
