@@ -380,7 +380,7 @@ function hashtable_fill_divmasks!(ht::MonomialHashtable)
                 ctr += 1
             end
         end
-	ht.divmap = [mod(i, ht.ndivbits)+1 for i in 0:length(ht.divmap)-1]
+	    # ht.divmap = [mod(i, ht.ndivbits)+1 for i in 0:length(ht.divmap)-1]
     else
         # Available bits < variables.
         # Pack variables tighlty.
@@ -403,8 +403,6 @@ function hashtable_fill_divmasks!(ht::MonomialHashtable)
         end
         @invariant sum(ht.divmap) == ht.nvars
     end
-
-    println("divmap = ", ht.divmap)
 
     @inbounds for vidx in (ht.offset):(ht.load)
         divmask = monom_create_divmask(
