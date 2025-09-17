@@ -232,7 +232,7 @@ end
                     nvars,
                     divmap,
                     ndivbits,
-                    false
+                    :first_variables
                 )
                 @test ans == dm
             end
