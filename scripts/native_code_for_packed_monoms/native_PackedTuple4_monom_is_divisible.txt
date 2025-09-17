@@ -1,0 +1,34 @@
+	.text
+	.file	"monom_is_divisible"
+	.globl	julia_monom_is_divisible_12834  # -- Begin function julia_monom_is_divisible_12834
+	.p2align	4, 0x90
+	.type	julia_monom_is_divisible_12834,@function
+julia_monom_is_divisible_12834:         # @julia_monom_is_divisible_12834
+; Function Signature: monom_is_divisible(Groebner.PackedTuple4{UInt64, UInt8}, Groebner.PackedTuple4{UInt64, UInt8})
+# %bb.0:                                # %top
+	#DEBUG_VALUE: monom_is_divisible:ea <- [DW_OP_deref] [$rdi+0]
+	#DEBUG_VALUE: monom_is_divisible:eb <- [DW_OP_deref] [$rsi+0]
+	push	rbp
+	mov	rbp, rsp
+	vmovq	xmm0, qword ptr [rdi]           # xmm0 = mem[0],zero
+	vmovq	xmm1, qword ptr [rsi]           # xmm1 = mem[0],zero
+	vmovq	xmm2, qword ptr [rdi + 8]       # xmm2 = mem[0],zero
+	vpcmpltub	k0, xmm0, xmm1
+	vmovq	xmm0, qword ptr [rsi + 8]       # xmm0 = mem[0],zero
+	vpcmpltub	k1, xmm2, xmm0
+	vmovq	xmm0, qword ptr [rdi + 16]      # xmm0 = mem[0],zero
+	korb	k0, k0, k1
+	vmovq	xmm1, qword ptr [rsi + 16]      # xmm1 = mem[0],zero
+	vpcmpltub	k1, xmm0, xmm1
+	vmovq	xmm0, qword ptr [rdi + 24]      # xmm0 = mem[0],zero
+	vmovq	xmm1, qword ptr [rsi + 24]      # xmm1 = mem[0],zero
+	vpcmpltub	k2, xmm0, xmm1
+	korb	k0, k0, k1
+	kortestb	k0, k2
+	sete	al
+	pop	rbp
+	ret
+.Lfunc_end0:
+	.size	julia_monom_is_divisible_12834, .Lfunc_end0-julia_monom_is_divisible_12834
+                                        # -- End function
+	.section	".note.GNU-stack","",@progbits

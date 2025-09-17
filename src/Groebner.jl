@@ -27,6 +27,15 @@ It is useful to enable this when debugging the Groebner package.
 """
 invariants_enabled() = false
 
+"""
+    threading_enabled() -> Bool
+
+Specifies if multi-threading is enabled in Groebner.jl. By default, is enabled.
+To disable, set the environment variable GROEBNER_NO_THREADED or set
+`Groebner._THREADED[] = false` in the REPL.
+"""
+threading_enabled() = _THREADED[]
+
 ###
 # Imports
 
@@ -41,7 +50,7 @@ import Atomix
 
 import Base: *
 import Base.Threads
-import Base.Threads: nthreads, threadid
+import Base.Threads: nthreads, threadid, @spawn
 import Base.MultiplicativeInverses: UnsignedMultiplicativeInverse
 
 import Combinatorics
@@ -65,21 +74,20 @@ import TimerOutputs: @timeit
 ###
 # Initialization
 
-# Groebner may use multi-threading by default.
-# 1. Set the environment variable GROEBNER_NO_THREADED to 1 to disable all
-#    multi-threading in Groebner
-# 2. If GROEBNER_NO_THREADED=0, the keyword argument `threaded` provided by some
-#    of the functions in the interface can be used to turn on/off the threading.
-const _threaded = Ref(true)
+const _THREADED = Ref(true)
 
 # By default, the timer is disabled to avoid issues with multi-threading.
 # https://github.com/KristofferC/TimerOutputs.jl/issues/72
 const _TIMER = TimerOutputs.TimerOutput("Groebner.jl")
 TimerOutputs.disable_timer!(_TIMER)
 
+const _TIMER2 = TimerOutputs.TimerOutput("x")
+TimerOutputs.disable_timer!(_TIMER2)
+
 function __init__()
-    _threaded[] = !(get(ENV, "GROEBNER_NO_THREADED", "") == "1")
+    _THREADED[] = !(get(ENV, "GROEBNER_NO_THREADED", "") == "1")
     TimerOutputs.reset_timer!(_TIMER)
+    TimerOutputs.reset_timer!(_TIMER2)
     nothing
 end
 
@@ -89,6 +97,7 @@ end
 include("utils/invariants.jl")
 include("utils/tuples.jl")
 include("utils/packed.jl")
+include("utils/tasks.jl")
 
 # Test systems, such as katsura, cyclic, etc
 include("utils/examples.jl")
@@ -135,6 +144,7 @@ include("f4/linalg/backend_threaded.jl")
 include("f4/linalg/backend_randomized.jl")
 include("f4/linalg/backend_randomized_threaded.jl")
 include("f4/linalg/backend_learn_apply.jl")
+include("f4/linalg/backend_learn_apply_threaded.jl")
 
 include("f4/sort.jl")
 include("f4/f4.jl")

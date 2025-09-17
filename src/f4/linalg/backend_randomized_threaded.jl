@@ -12,6 +12,7 @@ function linalg_randomized_sparse_threaded!(
     matrix::MacaulayMatrix,
     basis::Basis,
     linalg::LinearAlgebra,
+    tasks::Int,
     arithmetic::AbstractArithmetic,
     rng::AbstractRNG
 )
@@ -19,7 +20,7 @@ function linalg_randomized_sparse_threaded!(
     sort_matrix_lower_rows!(matrix) # for the CD part
 
     # Reduce CD with AB
-    linalg_randomized_reduce_matrix_lower_part_threaded_cas!(matrix, basis, arithmetic, rng)
+    linalg_randomized_reduce_matrix_lower_part_threaded_cas!(matrix, basis, tasks, arithmetic, rng)
     # Interreduce CD
     linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic)
     true
@@ -28,57 +29,26 @@ end
 ###
 # Low level
 
-function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
+function _linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
-    arithmetic::AbstractArithmetic{AccumType, CoeffType},
-    rng::AbstractRNG
+    chunk::Vector{Int},
+    pivots::Vector{Vector{ColumnLabel}},
+    row_index_to_coeffs::Vector{Int},
+    sentinels::Vector{Int8},
+    rowsperblock::Int,
+    arithmetic::AbstractArithmetic,
+    t_local_row::Vector{AccumType},
+    t_local_rows_multipliers::Vector{AccumType},
+    t_local_rng::AbstractRNG
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
+    _, nlow = matrix_nrows_filled(matrix)
     _, ncols = size(matrix)
-    nup, nlow = matrix_nrows_filled(matrix)
-    if nthreads() == 1
-        @info """
-        Using multi-threaded linear algebra with nthreads() == 1.
-        Something probably went wrong."""
-    end
-
-    nblocks = linalg_nblocks_in_randomized(nlow)
-    rem = nlow % nblocks == 0 ? 0 : 1
-    rowsperblock = div(nlow, nblocks) + rem
-
-    # Prepare the matrix
-    pivots, row_index_to_coeffs = linalg_prepare_matrix_pivots!(matrix)
-    resize!(matrix.some_coeffs, nlow)
-    resize!(matrix.sentinels, ncols)
-
-    # If there is a pivot with the leading column i, then we set
-    #   sentinels[i] = 1.
-    # If sentinels[i] = 1, and if the pivot is synced, then we set
-    #   sentinels[i] = 2.
-    # Otherwise, sentinels[i] = 0.
-    # Once sentinels[i] becomes 1 or 2, this is unchanged.
-    sentinels = matrix.sentinels
-    @inbounds for i in 1:ncols
-        sentinels[i] = 0
-    end
-    @inbounds for i in 1:nup
-        sentinels[matrix.upper_rows[i][1]] = 2
-    end
-
-    # Allocate thread-local buffers
-    buffers_rows_multipliers = map(_ -> zeros(AccumType, rowsperblock), 1:nthreads())
-    buffers_row = map(_ -> zeros(AccumType, ncols), 1:nthreads())
-    buffers_rng = map(_ -> copy(rng), 1:nthreads())
-
-    @inbounds Base.Threads.@threads :static for i in 1:nblocks
+    for i in chunk
         nrowsupper = min(i * rowsperblock, nlow)
         nrowstotal = nrowsupper - (i - 1) * rowsperblock
         nrowstotal == 0 && continue
 
-        t_id = threadid()
-        t_local_rows_multipliers = buffers_rows_multipliers[t_id]
-        t_local_row = buffers_row[t_id]
-        t_local_rng = buffers_rng[t_id]
         new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
 
         new_pivots_count = 0
@@ -169,14 +139,83 @@ function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
                         Int8(2),
                         Atomix.release
                     )
+                    
+                    new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
                 else
                     # go for another iteration
                     first_nnz_col = new_sparse_row_support[1]
                 end
             end
-
-            new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
         end
+    end
+end
+
+function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
+    matrix::MacaulayMatrix{CoeffType},
+    basis::Basis{CoeffType},
+    tasks::Int,
+    arithmetic::AbstractArithmetic{AccumType, CoeffType},
+    rng::AbstractRNG
+) where {CoeffType <: Coeff, AccumType <: Coeff}
+    _, ncols = size(matrix)
+    nup, nlow = matrix_nrows_filled(matrix)
+
+    nblocks = linalg_nblocks_in_randomized(nlow)
+    nblocks = max(nblocks, min(nlow, tasks))
+    @assert nblocks <= nlow
+    rem = nlow % nblocks == 0 ? 0 : 1
+    rowsperblock = div(nlow, nblocks) + rem
+
+    # Prepare the matrix
+    pivots, row_index_to_coeffs = linalg_prepare_matrix_pivots!(matrix)
+    resize!(matrix.some_coeffs, nlow)
+    resize!(matrix.sentinels, ncols)
+
+    # If there is a pivot with the leading column i, then we set
+    #   sentinels[i] = 1.
+    # If sentinels[i] = 1, and if the pivot is synced, then we set
+    #   sentinels[i] = 2.
+    # Otherwise, sentinels[i] = 0.
+    # Once sentinels[i] becomes 1 or 2, this is unchanged.
+    sentinels = matrix.sentinels
+    @inbounds for i in 1:ncols
+        sentinels[i] = 0
+    end
+    @inbounds for i in 1:nup
+        sentinels[matrix.upper_rows[i][1]] = 2
+    end
+
+    # Allocate thread-local buffers
+    buffers_rows_multipliers = map(_ -> zeros(AccumType, rowsperblock), 1:tasks)
+    buffers_row = map(_ -> zeros(AccumType, ncols), 1:tasks)
+    buffers_rng = map(_ -> copy(rng), 1:tasks)
+
+    tasks = min(tasks, nblocks)
+    data_chunks = split_round_robin(1:nblocks, tasks)
+    task_results = Vector{Task}(undef, tasks)
+    for (tid, chunk) in enumerate(data_chunks)
+        t_local_rows_multipliers = buffers_rows_multipliers[tid]
+        t_local_row = buffers_row[tid]
+        t_local_rng = buffers_rng[tid]
+        task = @spawn begin
+            _linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
+                matrix,
+                basis,
+                chunk,
+                pivots,
+                row_index_to_coeffs,
+                sentinels,
+                rowsperblock,
+                arithmetic,
+                t_local_row,
+                t_local_rows_multipliers,
+                t_local_rng
+            )
+        end
+        task_results[tid] = task
+    end
+    for task in task_results
+        wait(task)
     end
 
     true

@@ -652,9 +652,9 @@ function monom_create_divmask(
     ndivvars,
     divmap,
     ndivbits,
-    compressed
+    strategy
 ) where {T, B, Mask}
-    @invariant !compressed
+    @invariant strategy == :first_variables
     ctr = one(Mask)
     res = zero(Mask)
     o = one(Mask)
@@ -679,9 +679,9 @@ function monom_create_divmask(
     ndivvars,
     divmap,
     ndivbits,
-    compressed
+    strategy
 ) where {T, B, Mask}
-    @invariant !compressed
+    @invariant strategy == :first_variables
 
     epc = div(sizeof(T), sizeof(B))
 
@@ -733,9 +733,9 @@ function monom_create_divmask(
     ndivvars,
     divmap,
     ndivbits,
-    compressed
+    strategy
 ) where {T, B, Mask}
-    @invariant !compressed
+    @invariant strategy == :first_variables
 
     epc = packed_elperchunk(T, B)
 
@@ -746,7 +746,7 @@ function monom_create_divmask(
             ndivvars,
             divmap,
             ndivbits,
-            compressed
+            strategy
         )
     end
 
@@ -799,9 +799,9 @@ function monom_create_divmask(
     ndivvars,
     divmap,
     ndivbits,
-    compressed
+    strategy
 ) where {T, B, Mask}
-    @invariant !compressed
+    @invariant strategy == :first_variables
 
     epc = packed_elperchunk(T, B)
 
@@ -812,7 +812,7 @@ function monom_create_divmask(
             ndivvars,
             divmap,
             ndivbits,
-            compressed
+            strategy
         )
     end
 

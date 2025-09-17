@@ -85,7 +85,7 @@ end
 
 record_active_reducer(active_reducers::Nothing, matrix, idx) = nothing
 function record_active_reducer(active_reducers, matrix, idx)
-    push!(active_reducers, (idx, matrix.upper_to_coeffs[idx], matrix.upper_to_mult[idx]))
+    push!(active_reducers, idx)
     nothing
 end
 
@@ -208,10 +208,9 @@ function linalg_learn_reduce_matrix_lower_part!(
     # Allocate the buffers
     row = zeros(AccumType, ncols)
     not_reduced_to_zero = Vector{Int}()
-    pivot_indices = Vector{Int}()
-    useful_reducers = Set{Tuple{Int, Int, MonomId}}()
+    useful_reducers = Set{Int}()
+    reducer_rows = Vector{Int}()
     new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
-    reducer_rows = Tuple{Int, Int, MonomId}[]
 
     @inbounds for i in 1:nlow
         sparse_row_support = matrix.lower_rows[i]
@@ -241,7 +240,6 @@ function linalg_learn_reduce_matrix_lower_part!(
 
         # NOTE: we are not recording reducers from the lower part of the matrix
         push!(not_reduced_to_zero, i)
-        push!(pivot_indices, new_sparse_row_support[1])
         for reducer_row in reducer_rows
             push!(useful_reducers, reducer_row)
         end
@@ -259,7 +257,7 @@ function linalg_learn_reduce_matrix_lower_part!(
     # Update the tracer information
     # NOTE: we sort reducers by their original position in the array of pivots.
     # This way, the rows are already sorted at the apply stage.
-    useful_reducers_sorted = sort(collect(useful_reducers), by=reducer -> reducer[1])
+    useful_reducers_sorted = sort(collect(useful_reducers))
     push!(
         trace.matrix_infos,
         (nup=matrix.nrows_filled_upper, nlow=matrix.nrows_filled_lower, ncols=ncols)
@@ -267,13 +265,15 @@ function linalg_learn_reduce_matrix_lower_part!(
     push!(trace.matrix_nonzeroed_rows, not_reduced_to_zero)
     push!(
         trace.matrix_upper_rows,
-        (map(f -> f[2], useful_reducers_sorted), map(f -> f[3], useful_reducers_sorted))
+        (
+            map(f -> matrix.upper_to_coeffs[f], useful_reducers_sorted),
+            map(f -> matrix.upper_to_mult[f], useful_reducers_sorted)
+        )
     )
     push!(
         trace.matrix_lower_rows,
         (row_idx_to_coeffs[not_reduced_to_zero], matrix.lower_to_mult[not_reduced_to_zero])
     )
-    # push!(trace.matrix_pivot_indices, map(sgn -> matrix.column_to_monom[sgn], pivot_indices))
 
     true
 end

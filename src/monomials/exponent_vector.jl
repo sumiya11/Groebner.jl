@@ -345,12 +345,12 @@ function monom_create_divmask(
     ndivvars::Int,
     divmap::Vector{U},
     ndivbits::Int,
-    compressed::Bool
+    strategy::Symbol
 ) where {T, Mask, U}
     ctr = one(Mask)
     res = zero(Mask)
     o = one(Mask)
-    if !compressed
+    if strategy === :first_variables
         # if the number of variables is small (<= 32)
         @inbounds for i in 1:ndivvars
             for _ in 1:ndivbits

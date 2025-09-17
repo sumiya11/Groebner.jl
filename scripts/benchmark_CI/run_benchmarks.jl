@@ -221,7 +221,7 @@ push!(
         result=compute_gb(
             Groebner.Examples.chandran(10, internal_ordering=:degrevlex, k=QQ),
             5,
-            threaded=:no
+            tasks=1
         )
     )
 )
@@ -229,24 +229,22 @@ push!(
 push!(
     suite,
     (
-        problem_name="groebner,threaded,AA,QQ,chandra 10",
+        problem_name="groebner,AA,QQ,chandra 10",
         type=:time,
         result=compute_gb(
             Groebner.Examples.chandran(10, internal_ordering=:degrevlex, k=QQ),
-            5,
-            threaded=:yes
+            5
         )
     )
 )
 push!(
     suite,
     (
-        problem_name="groebner,threaded,AA,2^31-1,cyclic 8",
+        problem_name="groebner,AA,2^31-1,cyclic 8",
         type=:time,
         result=compute_gb(
             Groebner.Examples.cyclicn(8, internal_ordering=:degrevlex, k=GF(2^31 - 1)),
-            5,
-            threaded=:yes
+            5
         )
     )
 )

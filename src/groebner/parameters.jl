@@ -201,6 +201,7 @@ struct AlgorithmParameters{Arithmetic <: AbstractArithmetic}
     # - :classic_modular
     # - :learn_and_apply
     modular_strategy::Symbol
+    batch_scaling::Float64
 
     # The width of composite numbers in learn & apply
     composite::Int
@@ -208,8 +209,7 @@ struct AlgorithmParameters{Arithmetic <: AbstractArithmetic}
     use_divmask::Bool
 
     # Multi-threading
-    threaded_f4::Symbol
-    threaded_multimodular::Symbol
+    tasks::Int
 
     rng::Random.Xoshiro
 
@@ -265,7 +265,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
             linalg = :deterministic
         end
     end
-    if ring.ground == :generic
+    if ring.ground === :generic
         linalg = :deterministic
     end
     if linalg === :auto
@@ -304,28 +304,27 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
 
     reduced = kwargs.reduced
 
-    threaded = kwargs.threaded
-    if !(_threaded[])
-        if threaded === :yes
-            @info """
-            Keyword argument `threaded = :yes` was provided to Groebner.jl,
-            however, multi-threading is disabled globally in Groebner.jl due to
-            the environment variable GROEBNER_NO_THREADED = 0.
-
-            Consider enabling threading by setting GROEBNER_NO_THREADED to 1."""
-        end
-        threaded = :no
-    end
-
-    if ring.ground === :zp
-        threaded_f4 = threaded
-        threaded_multimodular = :no
-    elseif ring.ground == :qq
-        threaded_f4 = :no
-        threaded_multimodular = threaded
+    tasks = 1
+    _tasks = kwargs.tasks
+    if _tasks === :auto
+        tasks = Base.Threads.nthreads()
+    elseif _tasks isa Integer
+        tasks = _tasks
     else
-        threaded_f4 = :no
-        threaded_multimodular = :no
+        @assert false "Unreachable"
+    end
+    if !threading_enabled()
+        if _tasks isa Integer && _tasks > 1
+            @info """
+            The option `tasks = $_tasks` was provided to Groebner.jl,
+            however, multi-threading is disabled globally in Groebner.jl.
+            The option `tasks` was ignored.
+            See `Groebner.threading_enabled()` for details.""" maxlog=1
+        end
+        tasks = 1
+    end
+    if ring.ground === :generic
+        tasks = 1
     end
 
     # By default, modular computation uses learn & apply
@@ -338,6 +337,8 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         # falling back to classic multi-modular algorithm.
         modular_strategy = :classic_modular
     end
+    # Use at most 10% more primes than needed.
+    batch_scaling = 0.1
     composite = kwargs._composite
     use_divmask = kwargs._use_divmask
 
@@ -373,10 +374,10 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         representation,
         reduced,
         modular_strategy,
+        batch_scaling,
         composite,
         use_divmask,
-        threaded_f4,
-        threaded_multimodular,
+        tasks,
         rng,
         changematrix
     )
