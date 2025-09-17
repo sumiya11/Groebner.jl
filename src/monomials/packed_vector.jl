@@ -692,7 +692,7 @@ function monom_create_divmask(
             ndivvars,
             divmap,
             ndivbits,
-            compressed
+            strategy
         )
     end
 
