@@ -355,6 +355,8 @@ end
 ###
 # Reducing one dense vector by many pivots.
 
+const _LINALG_REDUCE_ROW = Ref{Tuple{Int, Int}}((0,0))
+
 # Reduces the given dense row by the given pivots.
 #
 # Returns `true` if the row is reduced to zero and `false`, otherwise.
@@ -384,6 +386,8 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
 
     n_nonzeros = 0
     new_pivot_column = -1
+
+    _LINALG_REDUCE_ROW[] = _LINALG_REDUCE_ROW[] .+ (1, 0)
 
     @inbounds for i in start_column:end_column
         # if the element is zero -- no reduction is needed
@@ -455,6 +459,8 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
 
     n_nonzeros = 0
     new_pivot_column = -1
+
+    _LINALG_REDUCE_ROW[] = _LINALG_REDUCE_ROW[] .+ (1, 0)
 
     n_adds = 0
     n_safe = n_safe_consecutive_additions(arithmetic)
@@ -535,6 +541,8 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
 ) where {I, C <: Union{CoeffZp, CompositeCoeffZp}, A <: Union{CoeffZp, CompositeCoeffZp}}
     _, ncols = size(matrix)
     nleft, _ = matrix_ncols_filled(matrix)
+
+    _LINALG_REDUCE_ROW[] = _LINALG_REDUCE_ROW[] .+ (1, 0)
 
     n_nonzeros = 0
     new_pivot_column = -1
@@ -619,6 +627,8 @@ function linalg_reduce_dense_row_by_pivots_sparse!(
     n_nonzeros = 0
     new_pivot_column = -1
 
+    _LINALG_REDUCE_ROW[] = _LINALG_REDUCE_ROW[] .+ (1, 0)
+
     @inbounds for i in start_column:end_column
         # if the element is zero - no reduction is needed
         if iszero(row[i])
@@ -675,6 +685,10 @@ end
 ###
 # Basic routines for dense and sparse vectors
 
+const _LINALG_MOD_P = Ref{Tuple{Int, Int}}((0,0))
+const _LINALG_MUL_MOD_P = Ref{Tuple{Int, Int}}((0,0))
+const _LINALG_ADDMUL_MOD_P = Ref{Tuple{Int, Int}}((0,0))
+
 function linalg_new_empty_sparse_row(::Type{C}) where {C <: Coeff}
     Vector{ColumnLabel}(), Vector{C}()
 end
@@ -687,6 +701,7 @@ function linalg_dense_row_mod_p!(
 ) where {T <: Union{CoeffZp, CompositeCoeffZp}}
     # This loop is usually successfully vectorized for all kinds of arithmetic.
     # Still, the resulting code may be not optimal
+    _LINALG_MOD_P[] = _LINALG_MOD_P[] .+ (1, to - from + 1)
     @fastmath @inbounds for i in from:to
         row[i] = mod_p(row[i], arithmetic)
     end
@@ -703,6 +718,7 @@ function linalg_row_make_monic!(
     @inbounds lead = row[first_nnz_index]
     isone(lead) && return lead
 
+    _LINALG_MUL_MOD_P[] = _LINALG_MUL_MOD_P[] .+ (1, length(row) - first_nnz_index)
     @inbounds pinv = inv_mod_p(A(lead), arithmetic) % T
     @inbounds row[first_nnz_index] = one(T)
     @inbounds for i in (first_nnz_index + 1):length(row)
@@ -723,6 +739,7 @@ function linalg_row_make_monic!(
     @inbounds lead = row[first_nnz_index]
     isone(lead) && return lead
 
+    _LINALG_MUL_MOD_P[] = _LINALG_MUL_MOD_P[] .+ (1, length(row) - 1)
     @inbounds pinv = inv(lead)
     @inbounds row[1] = one(row[1])
     @inbounds for i in 2:length(row)
@@ -744,6 +761,7 @@ function linalg_vector_addmul_sparsedense_mod_p!(
     @invariant length(indices) == length(coeffs)
     @invariant !isempty(indices)
 
+    _LINALG_ADDMUL_MOD_P[] = _LINALG_ADDMUL_MOD_P[] .+ (1, length(indices))
     @inbounds mul = divisor(arithmetic) - row[indices[1]]
     @inbounds for j in 1:length(indices)
         idx = indices[j]
@@ -766,6 +784,7 @@ function linalg_vector_addmul_sparsedense!(
     @invariant length(indices) == length(coeffs)
     @invariant !isempty(indices)
 
+    _LINALG_ADDMUL_MOD_P[] = _LINALG_ADDMUL_MOD_P[] .+ (1, length(indices))
     @inbounds mul = divisor(arithmetic) - row[indices[1]]
     @inbounds for j in 1:length(indices)
         idx = indices[j]
@@ -792,6 +811,7 @@ function linalg_vector_addmul_sparsedense!(
     @invariant row[indices[1]] < typemax(T)
     @inbounds mul = row[indices[1]] % T
 
+    _LINALG_ADDMUL_MOD_P[] = _LINALG_ADDMUL_MOD_P[] .+ (1, length(indices))
     @fastmath @inbounds for j in 1:length(indices)
         idx = indices[j]
         a = row[idx] - A(mul) * A(coeffs[j])
@@ -817,6 +837,7 @@ function linalg_vector_addmul_sparsedense!(
     @invariant row[indices[1]] < typemax(T)
     @inbounds mul = row[indices[1]].data .% T
 
+    _LINALG_ADDMUL_MOD_P[] = _LINALG_ADDMUL_MOD_P[] .+ (1, length(indices))
     @fastmath @inbounds for j in 1:length(indices)
         idx = indices[j]
         a = row[idx].data .- A.(mul) .* A.(coeffs[j].data)
@@ -838,6 +859,7 @@ function linalg_vector_addmul_sparsedense!(
     @invariant length(indices) == length(coeffs)
     @invariant !isempty(indices)
 
+    _LINALG_ADDMUL_MOD_P[] = _LINALG_ADDMUL_MOD_P[] .+ (1, length(indices))
     @inbounds mul = -row[indices[1]]
     @inbounds for j in 1:length(indices)
         idx = indices[j]

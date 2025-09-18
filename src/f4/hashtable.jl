@@ -380,7 +380,7 @@ function hashtable_fill_divmasks!(ht::MonomialHashtable)
                 ctr += 1
             end
         end
-	    # ht.divmap = [mod(i, ht.ndivbits)+1 for i in 0:length(ht.divmap)-1]
+	    ht.divmap = [mod(i, ht.ndivbits)+1 for i in 0:length(ht.divmap)-1]
     else
         # Available bits < variables.
         # Pack variables tighlty.
