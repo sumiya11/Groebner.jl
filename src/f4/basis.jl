@@ -539,7 +539,7 @@ function pairset_update!(
     end
 end
 
-function basis_update!(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
+@timeit _TIMER function basis_update!(basis::Basis, ht::MonomialHashtable{M}) where {M <: Monom}
     k = 1
     lead = basis.divmasks
     nonred = basis.nonredundant_indices
