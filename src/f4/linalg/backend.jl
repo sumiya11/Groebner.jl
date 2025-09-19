@@ -46,6 +46,8 @@ end
 ###
 # Low level
 
+const _LINALG_REDUCER_ROWS = Ref{Int}(0)
+
 # Given a matrix of the following form, where A is in REF,
 #   A B
 #   C D
@@ -62,6 +64,8 @@ function linalg_reduce_matrix_lower_part!(
     _, ncols = size(matrix)
     _, nlow = matrix_nrows_filled(matrix)
 
+    _LINALG_REDUCER_ROWS[] = _LINALG_REDUCER_ROWS[] + matrix_nrows_filled(matrix)[1]
+  
     # Prepare the matrix
     pivots, row_index_to_coeffs = linalg_prepare_matrix_pivots!(matrix)
     resize!(matrix.some_coeffs, nlow)

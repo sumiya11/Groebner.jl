@@ -100,6 +100,8 @@ function linalg_apply_reduce_matrix_lower_part!(
     _, ncols = size(matrix)
     _, nlow = matrix_nrows_filled(matrix)
 
+    _LINALG_REDUCER_ROWS[] = _LINALG_REDUCER_ROWS[] + matrix_nrows_filled(matrix)[1]
+  
     # Prepare the matrix
     pivots, row_index_to_coeffs = linalg_prepare_matrix_pivots!(matrix)
     resize!(matrix.some_coeffs, nlow)
