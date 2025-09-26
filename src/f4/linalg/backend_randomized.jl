@@ -29,7 +29,7 @@ end
 # Low level
 
 # The number of blocks to split the matrix into
-function linalg_nblocks_in_randomized(nrows::Int)
+function linalg_nblocks_in_randomized(nup::Int, nrows::Int, ncols::Int)
     floor(Int, sqrt(nrows / 3)) + 1
 end
 
@@ -47,7 +47,7 @@ function linalg_randomized_reduce_matrix_lower_part!(
     rng::AbstractRNG
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
-    _, nlow = matrix_nrows_filled(matrix)
+    nup, nlow = matrix_nrows_filled(matrix)
 
     _LINALG_REDUCER_ROWS[] = _LINALG_REDUCER_ROWS[] + matrix_nrows_filled(matrix)[1]
   
@@ -56,7 +56,7 @@ function linalg_randomized_reduce_matrix_lower_part!(
     resize!(matrix.some_coeffs, matrix.nrows_filled_lower)
 
     # Set up the blocks
-    nblocks = linalg_nblocks_in_randomized(nlow)
+    nblocks = linalg_nblocks_in_randomized(nup, nlow, ncols)
     rem = nlow % nblocks == 0 ? 0 : 1
     rowsperblock = div(nlow, nblocks) + rem
 

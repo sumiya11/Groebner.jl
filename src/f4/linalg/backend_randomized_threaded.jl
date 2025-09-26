@@ -160,7 +160,7 @@ function linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
     _, ncols = size(matrix)
     nup, nlow = matrix_nrows_filled(matrix)
 
-    nblocks = linalg_nblocks_in_randomized(nlow)
+    nblocks = linalg_nblocks_in_randomized(nup, nlow, ncols)
     nblocks = max(nblocks, min(nlow, tasks))
     @assert nblocks <= nlow
     rem = nlow % nblocks == 0 ? 0 : 1
