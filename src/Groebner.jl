@@ -81,13 +81,9 @@ const _THREADED = Ref(true)
 const _TIMER = TimerOutputs.TimerOutput("Groebner.jl")
 TimerOutputs.disable_timer!(_TIMER)
 
-const _TIMER2 = TimerOutputs.TimerOutput("x")
-TimerOutputs.disable_timer!(_TIMER2)
-
 function __init__()
     _THREADED[] = !(get(ENV, "GROEBNER_NO_THREADED", "") == "1")
     TimerOutputs.reset_timer!(_TIMER)
-    TimerOutputs.reset_timer!(_TIMER2)
     nothing
 end
 

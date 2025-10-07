@@ -224,7 +224,7 @@ function _process_chunk(
     return
 end
 
-@timeit _TIMER2 function _groebner_learn_and_apply(
+function _groebner_learn_and_apply(
     ring::PolyRing,
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
@@ -235,13 +235,13 @@ end
         f4_initialize_structs(ring, monoms, coeffs, params, make_monic=false)
     basis_zz = clear_denominators!(basis, deepcopy=false)
     state = ModularState{BigInt, C, Int32}(basis_zz.coeffs)
-    @timeit _TIMER2 "_groebner_guess_lucky_prime" prime = _groebner_guess_lucky_prime(state, ring, basis_zz, pairset, hashtable, params)
+    prime = _groebner_guess_lucky_prime(state, ring, basis_zz, pairset, hashtable, params)
 
     # Learn
     ring_ff, basis_ff = modular_reduce_mod_p!(ring, basis_zz, prime, deepcopy=true)
     params_zp = param_mod_p(params, prime)
     trace = trace_initialize(ring_ff, basis_ff, hashtable, permutation, params_zp)
-    @timeit _TIMER2 "f4_learn!" f4_learn!(trace, pairset, params_zp)
+    f4_learn!(trace, pairset, params_zp)
 
     # CRT and rational reconstruction settings
     # TODO: no need to deepcopy!
@@ -296,7 +296,7 @@ end
             end
             task_results[tid] = task
         end
-        @timeit _TIMER2 "f4_apply!" for task in task_results
+        for task in task_results
             wait(task)
         end
 
@@ -309,7 +309,7 @@ end
             push!(state.gb_coeffs_ff_all, coeffs_ff_)
         end
 
-        @timeit _TIMER2 "crt_vec_partial!" crt_vec_partial!(
+        crt_vec_partial!(
             state.gb_coeffs_zz,
             state.modulo,
             state.gb_coeffs_ff_all,
@@ -317,7 +317,7 @@ end
             witness_set,
             state.crt_mask
         )
-        @timeit _TIMER2 "ratrec_vec_partial!" success_reconstruct = ratrec_vec_partial!(
+        success_reconstruct = ratrec_vec_partial!(
             state.gb_coeffs_qq,
             state.gb_coeffs_zz,
             state.modulo,
@@ -338,7 +338,7 @@ end
         end
 
         # Perform full reconstruction
-        @timeit _TIMER2 "crt_vec_full!" crt_vec_full!(
+        crt_vec_full!(
             state.gb_coeffs_zz,
             state.modulo,
             state.gb_coeffs_ff_all,
@@ -346,7 +346,7 @@ end
             state.crt_mask;
             tasks=params.tasks
         )
-        @timeit _TIMER2 "ratrec_vec_full!" success_reconstruct = ratrec_vec_full!(
+        success_reconstruct = ratrec_vec_full!(
             state.gb_coeffs_qq,
             state.gb_coeffs_zz,
             state.modulo,
@@ -359,7 +359,7 @@ end
             continue
         end
 
-        @timeit _TIMER2 "modular_lift_check!" correct_basis =
+        correct_basis =
             modular_lift_check!(state, ring_ff, basis, basis_zz, trace.gb_basis, hashtable, params)
     end
 
