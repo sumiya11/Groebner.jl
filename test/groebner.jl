@@ -645,21 +645,17 @@ end
             xs = gens(parent(case[1]))
             for vars in Combinatorics.permutations(xs)
                 for (gb_ord, _quot_aa_ord) in [
-                    (Groebner.Lex(vars), Meta.quot(:lex)),
-                    (Groebner.DegLex(vars), Meta.quot(:deglex)),
-                    (Groebner.DegRevLex(vars), Meta.quot(:degrevlex))
+                    (Groebner.Lex(vars), :lex),
+                    (Groebner.DegLex(vars), :deglex),
+                    (Groebner.DegRevLex(vars), :degrevlex)
                 ]
                     gb = Groebner.groebner(Random.shuffle(case), ordering=gb_ord)
 
                     # A hack to get the same ranking of variables as in Groebner
-                    eval(
-                        :(
-                            (__R, _) = polynomial_ring(
+                    (__R, _) = polynomial_ring(
                                 QQ,
-                                map(repr, $(vars)),
-                                internal_ordering=($_quot_aa_ord)
-                            )
-                        )
+                                map(repr, vars),
+                                internal_ordering=_quot_aa_ord
                     )
                     _xs = sort(gens(__R), by=repr)
 
