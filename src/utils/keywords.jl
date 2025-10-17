@@ -79,6 +79,9 @@ const _supported_kw_args = (
     quotient_basis = (
         ordering    = InputOrdering(),
     ),
+    autoreduce = (
+        ordering    = InputOrdering(),
+    ),
 )
 #! format: on
 

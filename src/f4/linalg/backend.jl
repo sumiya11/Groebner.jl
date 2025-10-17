@@ -136,8 +136,8 @@ function linalg_interreduce_matrix_pivots!(
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
     nleft, nright = matrix_ncols_filled(matrix)
-    nupper, _ = matrix_nrows_filled(matrix)
-
+    nup, nlow = matrix_nrows_filled(matrix)
+	
     # Prepare the matrix
     resize!(matrix.lower_rows, nright)
     pivots = matrix.pivots
@@ -200,9 +200,9 @@ function linalg_interreduce_matrix_pivots!(
             matrix.some_coeffs[matrix.lower_to_coeffs[abs_column_idx]] = new_sparse_row_coeffs
             pivots[abs_column_idx] = matrix.lower_rows[new_pivots]
         else
-            matrix.lower_rows[nupper - new_pivots + 1] = new_sparse_row_support
+            matrix.lower_rows[nup - new_pivots + 1] = new_sparse_row_support
             matrix.some_coeffs[matrix.lower_to_coeffs[abs_column_idx]] = new_sparse_row_coeffs
-            pivots[abs_column_idx] = matrix.lower_rows[nupper - new_pivots + 1]
+            pivots[abs_column_idx] = matrix.lower_rows[nup - new_pivots + 1]
         end
     end
 

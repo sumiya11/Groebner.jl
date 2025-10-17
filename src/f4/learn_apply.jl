@@ -114,6 +114,7 @@ end
 
     matrix_fill_column_to_monom_map!(matrix, symbol_ht)
 
+    __DATA[(:sht, __I)] = symbol_ht
     linalg_autoreduce!(matrix, basis, params, trace, linalg=LinearAlgebra(:learn, :sparse))
 
     matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht, params)
@@ -153,6 +154,9 @@ end
     trace.output_nonredundant_indices = copy(basis.nonredundant_indices[1:k])
 end
 
+__I = 1
+__DATA = Dict()
+
 @timeit _TIMER function f4_learn!(trace::Trace, pairset::Pairset, params::AlgorithmParameters)
     ring = trace.ring
     basis = trace.gb_basis
@@ -169,6 +173,9 @@ end
 
     f4_update!(pairset, basis, hashtable, update_ht)
 
+    global __I = 1
+    __DATA[__I] = [([monom_to_vector!(zeros(Int, ring.nvars), m) for m in hashtable.monoms[basis.monoms[i]]], basis.coeffs[i]) for i in 1:basis.n_processed]
+
     while !isempty(pairset)
         degree_i, npairs_i = f4_select_critical_pairs!(pairset, basis, matrix, hashtable, symbol_ht)
         push!(trace.critical_pair_sequence, (degree_i, npairs_i))
@@ -176,14 +183,18 @@ end
         f4_symbolic_preprocessing!(basis, matrix, hashtable, symbol_ht)
 
         f4_reduction_learn!(trace, basis, matrix, hashtable, symbol_ht, params)
-
+	
         f4_update!(pairset, basis, hashtable, update_ht)
+	
+	__I += 1
+    	__DATA[__I] = [([monom_to_vector!(zeros(Int, ring.nvars), m) for m in hashtable.monoms[basis.monoms[i]]], basis.coeffs[i]) for i in 1:basis.n_processed]
 
         hashtable_reinitialize!(symbol_ht)
     end
 
     basis_discard_redundant_elements!(basis)
 
+    __I += 1
     if params.reduced
         f4_reducegb_learn!(trace, ring, basis, matrix, hashtable, symbol_ht, params)
     end
@@ -267,7 +278,8 @@ end
     else
         matrix_fill_column_to_monom_map!(matrix, symbol_ht)
     end
-
+	
+    __DATA[(:sht, __I)] = symbol_ht
     flag = linalg_main!(matrix, basis, params, trace, linalg=LinearAlgebra(:apply, :sparse))
     !flag && return (false, false)
 
@@ -430,7 +442,8 @@ end
         matrix_fill_column_to_monom_map!(matrix, symbol_ht)
     end
 
-    flag = linalg_autoreduce!(matrix, basis, params, linalg=LinearAlgebra(:apply, :sparse))
+    __DATA[(:sht, __I)] = symbol_ht
+    flag = linalg_autoreduce!(matrix, basis, params, trace, linalg=LinearAlgebra(:apply, :sparse))
     !flag && return false
 
     matrix_convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht, params)
@@ -495,6 +508,10 @@ end
     basis_update!(basis, hashtable)
 
     cache_column_order = true
+   
+    empty!(__DATA)
+    global __I = 1
+    __DATA[__I] = [([monom_to_vector!(zeros(Int, ring.nvars), m) for m in hashtable.monoms[basis.monoms[i]]], basis.coeffs[i]) for i in 1:basis.n_processed]
 
     while iters < iters_total
         iters += 1
@@ -515,6 +532,9 @@ end
         cache_column_order = new_cache_column_order && cache_column_order
 
         basis_update!(basis, hashtable)
+	
+	global __I += 1
+        __DATA[__I] = [([monom_to_vector!(zeros(Int, ring.nvars), m) for m in hashtable.monoms[basis.monoms[i]]], basis.coeffs[i]) for i in 1:basis.n_processed]
 
         hashtable_reinitialize!(symbol_ht)
     end
@@ -533,6 +553,8 @@ end
         )
         !flag && return false
     end
+    __I += 1
+        __DATA[__I] = [([monom_to_vector!(zeros(Int, ring.nvars), m) for m in hashtable.monoms[basis.monoms[i]]], basis.coeffs[i]) for i in 1:basis.n_processed]
 
     f4_standardize_basis_in_apply!(ring, trace, params.arithmetic)
 

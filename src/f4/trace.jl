@@ -189,6 +189,10 @@ function trace_export_matrices(trace::Trace)
         matrix = (reducers=reducers, to_be_reduced=to_be_reduced)
         push!(matrices, matrix)
     end
+    # if the last iteration is interreduction
+    if length(trace.critical_pair_sequence) + 1 == length(matrices)
+        matrices[end] = (reducers=matrices[end].to_be_reduced, to_be_reduced=matrices[end].reducers)
+    end
     map(identity, matrices)
 end
 

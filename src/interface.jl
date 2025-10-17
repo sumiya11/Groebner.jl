@@ -785,3 +785,9 @@ function dimension(polynomials::AbstractVector; options...)
     result = dimension0(polynomials, keywords)
     result
 end
+
+function autoreduce(polynomials::AbstractVector; options...)
+    keywords = KeywordArguments(:autoreduce, options)
+    result = autoreduce0(polynomials, keywords)
+    result
+end

@@ -34,6 +34,7 @@ function linalg_apply_sparse!(
     # NOTE: here, we do not need to sort the rows in the upper part, as they
     # have already been collected in the right order
     sort_matrix_lower_rows!(matrix) # for the CD part
+	# TODO ASSERT THAT UPPER ARE SORTED
 
     # Reduce CD with AB
     flag = linalg_apply_reduce_matrix_lower_part!(trace, matrix, basis, arithmetic)
@@ -69,6 +70,13 @@ function linalg_apply_deterministic_sparse_interreduction!(
     # Prepare the matrix
     linalg_prepare_matrix_pivots_in_interreduction!(matrix, basis)
     # Interreduce AB
+    nup, nlow = matrix_nrows_filled(matrix)
+    sht = __DATA[(:sht, __I)]
+    __DATA[(:red_low, __I)] = [([monom_to_vector!(zeros(Int, sht.nvars), m) for m in sht.monoms[matrix.column_to_monom[matrix.upper_rows[i]]]], basis.coeffs[matrix.upper_to_coeffs[i]]) for i in 1:nup]
+    __DATA[(:red_up, __I)] = [([monom_to_vector!(zeros(Int, sht.nvars), m) for m in sht.monoms[matrix.column_to_monom[matrix.lower_rows[i]]]], basis.coeffs[matrix.lower_to_coeffs[i]]) for i in 1:nlow]
+    __DATA[(:red_low, __I)] = __DATA[(:red_low, __I)] |> reverse
+    __DATA[(:red_up, __I)] = __DATA[(:red_up, __I)] |> reverse
+    __DATA[(:col_to_monom, __I)] = Dict(1:length(matrix.column_to_monom) .=> [monom_to_vector!(zeros(Int, sht.nvars), m) for m in sht.monoms[matrix.column_to_monom]])
     flag = linalg_apply_interreduce_matrix_pivots!(
         trace,
         matrix,
@@ -98,7 +106,12 @@ function linalg_apply_reduce_matrix_lower_part!(
     arithmetic::AbstractArithmetic{AccumType, CoeffType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
-    _, nlow = matrix_nrows_filled(matrix)
+    nup, nlow = matrix_nrows_filled(matrix)
+
+    sht = __DATA[(:sht, __I)]
+    __DATA[(:red_up, __I)] = [([monom_to_vector!(zeros(Int, trace.ring.nvars), m) for m in sht.monoms[matrix.column_to_monom[matrix.upper_rows[i]]]], basis.coeffs[matrix.upper_to_coeffs[i]]) for i in 1:nup]
+    __DATA[(:red_low, __I)] = [([monom_to_vector!(zeros(Int, trace.ring.nvars), m) for m in sht.monoms[matrix.column_to_monom[matrix.lower_rows[i]]]], basis.coeffs[matrix.lower_to_coeffs[i]]) for i in 1:nlow]
+    __DATA[(:col_to_monom, __I)] = Dict(1:length(matrix.column_to_monom) .=> [monom_to_vector!(zeros(Int, trace.ring.nvars), m) for m in sht.monoms[matrix.column_to_monom]])
 
     _LINALG_REDUCER_ROWS[] = _LINALG_REDUCER_ROWS[] + matrix_nrows_filled(matrix)[1]
   
@@ -164,6 +177,7 @@ function linalg_learn_interreduce_matrix_pivots!(
     reversed_rows::Bool=false
 ) where {C <: Coeff, A <: AbstractArithmetic}
     # Perform interreduction
+
     flag, _, not_reduced_to_zero =
         linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic, reversed_rows=reversed_rows)
     !flag && return flag
