@@ -119,97 +119,28 @@ max_diam(x::AbstractVector; rel=false) = maximum(map(f -&gt; max_diam(f; rel=rel
   Installing 1 artifacts
    Installed artifact MPFI       50.0 KiB
     Updating `~/work/Groebner.jl/Groebner.jl/docs/Project.toml`
-  [e50a78b8] + MPFI v0.0.2 `https://gitlab.inria.fr/ckatsama/mpfi.jl#main`
+  [e50a78b8] + MPFI v0.0.3 `https://gitlab.inria.fr/ckatsama/mpfi.jl#main`
     Updating `~/work/Groebner.jl/Groebner.jl/docs/Manifest.toml`
-  [e50a78b8] + MPFI v0.0.2 `https://gitlab.inria.fr/ckatsama/mpfi.jl#main`
+  [e50a78b8] + MPFI v0.0.3 `https://gitlab.inria.fr/ckatsama/mpfi.jl#main`
   [e8b5fb6c] + MPFI_jll v1.5.6+0
 Precompiling packages...
-    717.6 ms  ✓ MPFI_jll
-    787.0 ms  ✓ MPFI
-  2 dependencies successfully precompiled in 4 seconds. 99 already precompiled.
+    680.0 ms  ✓ MPFI_jll
+   1690.7 ms  ✓ MPFI
+  2 dependencies successfully precompiled in 5 seconds. 99 already precompiled.
 [ Info: Computing Hexapod over QQ
- 10.758271 seconds (22.70 M allocations: 1.312 GiB, 5.24% gc time, 69.36% compilation time: 28% of which was recompilation)
+  9.818287 seconds (22.78 M allocations: 1.266 GiB, 2.89% gc time, 64.50% compilation time: 25% of which was recompilation)
 [ Info: Coefficient size (in bits): 26417.51221660290345963338930851770671711863223901550154467730075030408186732383
 [ Info: Computing Hexapod over (Zp, Interval). Precision = 1024 bits
-  4.389018 seconds (13.36 M allocations: 1.230 GiB, 4.49% gc time, 64.66% compilation time)
-┌ Error: Exception while generating log record in module Main at examples.md:159
-│   exception =
-│    MethodError: no method matching convert(::Type{DataType}, ::BigFloat)
-│    The function `convert` exists, but no method is defined for this combination of argument types.
-│
-│    Closest candidates are:
-│      convert(!Matched::Type{Any}, ::Any)
-│       @ Core boot.jl:346
-│      convert(::Type{T}, !Matched::T) where T
-│       @ Core boot.jl:347
-│
-│    Stacktrace:
-│      [1] FieldError(type::BigFloat, field::Symbol)
-│        @ Core ./boot.jl:454
-│      [2] setproperty!
-│        @ ./mpfr.jl:209 [inlined]
-│      [3] string
-│        @ ~/.julia/packages/MPFI/u0V55/src/MPFI.jl:963 [inlined]
-│      [4] print
-│        @ ~/.julia/packages/MPFI/u0V55/src/MPFI.jl:1008 [inlined]
-│      [5] print_to_string(::String, ::AbstractAlgebra.GFElem{Int64}, ::String, ::MPFI.BigInterval, ::String, ::BigFloat, ::String, ::BigFloat)
-│        @ Base ./strings/io.jl:151
-│      [6] string(::String, ::AbstractAlgebra.GFElem{Int64}, ::String, ::Vararg{Any})
-│        @ Base ./strings/io.jl:193
-│      [7] top-level scope
-│        @ examples.md:395
-│      [8] macro expansion
-│        @ logging/logging.jl:385 [inlined]
-│      [9] eval(m::Module, e::Any)
-│        @ Core ./boot.jl:489
-│     [10] #61
-│        @ ~/.julia/packages/Documenter/eoWm2/src/expander_pipeline.jl:856 [inlined]
-│     [11] cd(f::Documenter.var&quot;#61#62&quot;{Module, Expr}, dir::String)
-│        @ Base.Filesystem ./file.jl:112
-│     [12] (::Documenter.var&quot;#59#60&quot;{Documenter.Page, Module, Expr})()
-│        @ Documenter ~/.julia/packages/Documenter/eoWm2/src/expander_pipeline.jl:855
-│     [13] (::IOCapture.var&quot;#12#13&quot;{Type{InterruptException}, Documenter.var&quot;#59#60&quot;{Documenter.Page, Module, Expr}, IOContext{Base.PipeEndpoint}, IOContext{Base.PipeEndpoint}, Base.PipeEndpoint, Base.PipeEndpoint})()
-│        @ IOCapture ~/.julia/packages/IOCapture/Y5rEA/src/IOCapture.jl:170
-│     [14] with_logstate(f::IOCapture.var&quot;#12#13&quot;{Type{InterruptException}, Documenter.var&quot;#59#60&quot;{Documenter.Page, Module, Expr}, IOContext{Base.PipeEndpoint}, IOContext{Base.PipeEndpoint}, Base.PipeEndpoint, Base.PipeEndpoint}, logstate::Base.CoreLogging.LogState)
-│        @ Base.CoreLogging ./logging/logging.jl:540
-│     [15] with_logger(f::Function, logger::Base.CoreLogging.ConsoleLogger)
-│        @ Base.CoreLogging ./logging/logging.jl:651
-│     [16] capture(f::Documenter.var&quot;#59#60&quot;{Documenter.Page, Module, Expr}; rethrow::Type, color::Bool, passthrough::Bool, capture_buffer::IOBuffer, io_context::Vector{Any})
-│        @ IOCapture ~/.julia/packages/IOCapture/Y5rEA/src/IOCapture.jl:167
-│     [17] runner(::Type{Documenter.Expanders.ExampleBlocks}, node::MarkdownAST.Node{Nothing}, page::Documenter.Page, doc::Documenter.Document)
-│        @ Documenter ~/.julia/packages/Documenter/eoWm2/src/expander_pipeline.jl:854
-│     [18] dispatch(::Type{Documenter.Expanders.ExpanderPipeline}, ::MarkdownAST.Node{Nothing}, ::Vararg{Any})
-│        @ Documenter.Selectors ~/.julia/packages/Documenter/eoWm2/src/utilities/Selectors.jl:170
-│     [19] expand(doc::Documenter.Document)
-│        @ Documenter ~/.julia/packages/Documenter/eoWm2/src/expander_pipeline.jl:59
-│     [20] runner(::Type{Documenter.Builder.ExpandTemplates}, doc::Documenter.Document)
-│        @ Documenter ~/.julia/packages/Documenter/eoWm2/src/builder_pipeline.jl:224
-│     [21] dispatch(::Type{Documenter.Builder.DocumentPipeline}, x::Documenter.Document)
-│        @ Documenter.Selectors ~/.julia/packages/Documenter/eoWm2/src/utilities/Selectors.jl:170
-│     [22] #89
-│        @ ~/.julia/packages/Documenter/eoWm2/src/makedocs.jl:280 [inlined]
-│     [23] withenv(::Documenter.var&quot;#89#90&quot;{Documenter.Document}, ::Pair{String, Nothing}, ::Vararg{Pair{String, Nothing}})
-│        @ Base ./env.jl:265
-│     [24] #87
-│        @ ~/.julia/packages/Documenter/eoWm2/src/makedocs.jl:279 [inlined]
-│     [25] cd(f::Documenter.var&quot;#87#88&quot;{Documenter.Document}, dir::String)
-│        @ Base.Filesystem ./file.jl:112
-│     [26] makedocs(; debug::Bool, format::Documenter.HTMLWriter.HTML, kwargs::@Kwargs{modules::Vector{Module}, sitename::String, doctest::Bool, linkcheck::Bool, checkdocs::Symbol, warnonly::Bool, pages::Vector{Pair{String, String}}})
-│        @ Documenter ~/.julia/packages/Documenter/eoWm2/src/makedocs.jl:278
-│     [27] macro expansion
-│        @ ./timing.jl:689 [inlined]
-│     [28] top-level scope
-│        @ ~/work/Groebner.jl/Groebner.jl/docs/make.jl:353
-│     [29] include(mod::Module, _path::String)
-│        @ Base ./Base.jl:306
-│     [30] exec_options(opts::Base.JLOptions)
-│        @ Base ./client.jl:317
-│     [31] _start()
-│        @ Base ./client.jl:550
-└ @ Main examples.md:159
+  4.100453 seconds (13.38 M allocations: 1.223 GiB, 6.15% gc time, 60.92% compilation time)
+┌ Info:
+│     Inspect one coefficient in the basis:
+│     Zp         = 431552538
+│     Interval   = [-558257.179964293499103254665884651072133515775095659908229364647551150274932701193122464225536926652554734945221948132871454167527388434046874351288631103703125550348669636711860001830212776691489177970139223435794155837851688962602302837393595905189272745160736969664558696826248382490457871185395585984926123, -558257.1799642934991032546658846510721335157750956599082293646475511502749327011931224642255369266525547349452219481328714541675273884340468743512886310103610088941292176909443184882076877145224507633076925224690573253769000560850048119805654343386272229278094367421056997174640715542658495229510391361784020301]
+│     Diam       = 1.672027158919651976006869310114122419663900773436204550000460151670795840150429914233907375269285425467809952395883667076524757044947623214739602859502895661246540434127220251528902176541619250486979776928932908889218902542513617616955221317679605184401593097164187620670059611908714068108646305179096756582447e-151
+└     Diam (rel) = 1.672027158919651976006869310114122419663900773436204550000460151670795840150429914233907375269285425467809952395883667076524757044947623214739602859502895661246540434127220251528902176541619250486979776928932908889218902542513617616955221317679605184401593097164187620670059611908714068108646305179096756582447e-151
 ┌ Info:
 │     Max error      : 1.228864326279742133434060342410214649753730878890848130615480485662809941472111e-51
 └     Max error (rel): 2.127849791509757036887182607381235177361098814152126217820831601897105585301116e-77
 ┌ Info:
 │     Max diam      : 1.202460211377052991684279730262989280695122676646933719333198938473338220666243005911208907254489599815389991605688400764539497569401287751641248190538361586297178234457598088451411818969961772698669019572643689781706754158694087745157768440540233361634518715844476807816772233724409911900292268141779522198055e-132
-└     Max diam (rel): 1.202460211377052991684279730262989280695122676646933719333198938473338220666243005911208907254489599815389991605688400764539497569401287751641248190538361586297178234457598088451411818969961772698669019572643689781706754158694087745157768440540233361634518715844476807816772233724409911900292268141779522198055e-132</code></pre><p>However, if we lower MPFI precision to 256 bits, some of the intervals become NaN.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../interface/">Interface »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Saturday 11 October 2025 12:12">Saturday 11 October 2025</span>. Using Julia version 1.12.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+└     Max diam (rel): 1.202460211377052991684279730262989280695122676646933719333198938473338220666243005911208907254489599815389991605688400764539497569401287751641248190538361586297178234457598088451411818969961772698669019572643689781706754158694087745157768440540233361634518715844476807816772233724409911900292268141779522198055e-132</code></pre><p>However, if we lower MPFI precision to 256 bits, some of the intervals become NaN.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../interface/">Interface »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Friday 12 December 2025 12:39">Friday 12 December 2025</span>. Using Julia version 1.12.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
