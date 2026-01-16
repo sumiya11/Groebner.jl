@@ -51,7 +51,7 @@ end
     R, xs = polynomial_ring(QQ, ["x$i" for i in 1:1025])
     GB = Groebner.groebner(xs)
     @test GB == reverse(xs)
-    @test Groebner.normalform(GB, xs) == zeros(R, length(xs))
+    @test Groebner.normalform(GB, xs) == [zero(R) for _ in 1:length(xs)]
 end
 
 @testset "normalform orderings" begin
