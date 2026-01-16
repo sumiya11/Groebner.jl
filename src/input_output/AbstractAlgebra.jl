@@ -213,7 +213,7 @@ function _io_convert_ir_to_polynomials(
             exported[i] = origring()
             continue
         end
-        cfs = zeros(ground, Int(sum(gbexps[i][1]) + 1))
+        cfs = [zero(ground) for _ in 1:Int(sum(gbexps[i][1]) + 1)]
         for (idx, j) in enumerate(gbexps[i])
             cfs[sum(j) + 1] = ground(generic_coeff_data(gbcoeffs[i][idx]))
         end
