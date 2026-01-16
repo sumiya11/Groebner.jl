@@ -68,6 +68,8 @@ jobs:
           path: downstream
       - name: Load this and run the downstream tests
         shell: julia --color=yes --project=downstream {0}
+        env:
+          GROUP: "Core"
         run: |
           using Pkg
           try
