@@ -71,7 +71,7 @@ function noonn(n; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     without(x, k) = x[1:end .!= k]
 
     R, xs = np.polynomial_ring(k, ["x$i" for i in 1:n], internal_ordering=internal_ordering)
-    fs = zeros(R, n)
+    fs = [zero(R) for _ in 1:n]
     for i in 1:n
         other = without(xs, i)
         fs[i] = xs[i] * (10 * sum(other .^ 2) - 11) + 10
