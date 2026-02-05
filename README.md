@@ -17,7 +17,7 @@ Groebner.jl is distributed under GNU GPL v2.
 For documentation please check out https://sumiya11.github.io/Groebner.jl.
 For a simple example, see below.
 
-For development plan: [Plans for 2025](https://github.com/sumiya11/Groebner.jl/issues/177).
+For development plan: [Plans for 2026](https://github.com/sumiya11/Groebner.jl/issues/202).
 
 ## Installation
 
