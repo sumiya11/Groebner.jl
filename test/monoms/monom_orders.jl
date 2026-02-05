@@ -13,6 +13,16 @@ implementations_to_test = [
     Groebner.PackedTuple4{T, UInt8} where {T}
 ]
 
+@testset "monom orders: display" begin
+    ord = Groebner.WeightedOrdering(:x=>1, :y=>2, :z=>3)
+    io = IOBuffer()
+    show(io, MIME("text/plain"), ord)
+    str = String(take!(io))
+    str = chopprefix(str, "WeightedOrdering(")
+    str = chopsuffix(str, ")")
+    @test issubset(split(str, ","), ["x=>1", "y=>2", "z=>3"])
+end
+
 @testset "monom orders: Lex, DegLex, DegRevLex" begin
     x = [1, 1, 1, 1, 1, 0, 1, 1, 0, 1]
     y = [1, 1, 1, 1, 1, 0, 1, 1, 0, 1]

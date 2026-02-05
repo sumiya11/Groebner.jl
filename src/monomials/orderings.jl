@@ -403,9 +403,10 @@ end
 function Base.show(io::IO, ::MIME"text/plain", ord::WeightedOrdering)
     tmp = ""
     for i in 1:length(ord.variables)
-        tmp *= string(ord.variables[i]) * "=>" * string(ord.weights[i])
+        tmp *= string(ord.variables[i], "=>", ord.weights[i])
+        i < length(ord.variables) && (tmp *= ",")
     end
-    print(io, "WeightedOrdering($(tmp)")
+    print(io, "WeightedOrdering($(tmp))")
 end
 
 function Base.show(io::IO, ::MIME"text/plain", ord::ProductOrdering)
