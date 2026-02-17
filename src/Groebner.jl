@@ -107,6 +107,7 @@ include("utils/keywords.jl")
 include("monomials/exponent_vector.jl")
 include("monomials/packed_vector.jl")
 include("monomials/fixedvector.jl")
+include("monomials/fixedvector2.jl")
 
 include("arithmetic/CompositeNumber.jl")
 include("arithmetic/CoeffGeneric.jl")

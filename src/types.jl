@@ -5,7 +5,7 @@ using SmallCollections: FixedVector
 ###
 # All supported monomial implementations in F4
 
-const Monom = Union{ExponentVector{T} where {T}, AbstractPackedTuple, FixedVector}
+const Monom = Union{ExponentVector{T} where {T}, AbstractPackedTuple, FixedVector, FixedMonom}
 
 ###
 # All supported coefficient types
