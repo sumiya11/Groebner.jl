@@ -132,7 +132,7 @@ function KeywordArguments(function_id::Symbol, kws)
     `:auto`, `1`, `2`, `3`, ... (any positive integer)"""
 
     monoms = get(kws, :monoms, get(default_kw_args, :monoms, :dense))
-    @assert monoms in (:auto, :dense, :packed) """
+    @assert monoms in (:auto, :dense, :packed, :fixed) """
     Not recognized monomial representation: $monoms
     Possible choices for keyword "monoms" are:
     `:auto`, `:dense`, `:packed`"""

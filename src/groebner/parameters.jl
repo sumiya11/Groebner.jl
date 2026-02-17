@@ -85,6 +85,11 @@ function param_select_monomtype(
         end
     end
 
+    if monoms === :fixed && monom_is_supported_ordering(FixedVector, ordering)
+        N = max(8, nextpow(2, nvars+1))
+        return FixedVector{N,UInt8}
+    end
+
     # in the automatic choice, we always prefer packed representations
     if monoms === :auto
         if monom_is_supported_ordering(PackedTuple1{UInt64, ExponentSize}, ordering)
