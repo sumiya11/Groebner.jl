@@ -91,7 +91,7 @@ function param_select_monomtype(
     end
 
     if monoms === :fixed2 && monom_is_supported_ordering(FixedMonom, ordering)
-        N = max(8, nextpow(2, nvars+1))  # TODO: wrong results without "+1"
+        N = max(8, nextpow(2, nvars))
         return FixedMonom{N,UInt8}
     end
 

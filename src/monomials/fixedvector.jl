@@ -97,7 +97,7 @@ function monom_create_divmask(
     o = one(Mask)
     @inbounds for i in 1:ndivvars
         for _ in 1:ndivbits
-            if e[i + 1] >= divmap[ctr]
+            if e[i] >= divmap[ctr]
                 res |= o << ((ctr - 1) % UInt)
             end
             ctr += o
