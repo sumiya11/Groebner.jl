@@ -152,3 +152,20 @@ end
     gb = groebner(set)
     @test isgroebner(gb)
 end
+
+# https://github.com/sumiya11/Groebner.jl/issues/206
+@testset "regression, issue 206" begin
+    R, _ = polynomial_ring(GF(7), Symbol[])
+    sys = [one(R), 2*one(R)]
+    gb = groebner(sys)
+    @test gb == [one(R)]
+    @test isgroebner(gb)
+    @test dimension(gb) == -1
+
+    trace, gb = groebner_learn(sys)
+    @test gb == [one(R)]
+    flag, gb = groebner_apply!(trace, sys)
+    @test gb == [one(R)]
+
+    @test groebner([zero(R)]) == [zero(R)]
+end
