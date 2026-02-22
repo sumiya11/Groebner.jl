@@ -31,10 +31,10 @@ monom_max_vars(::Type{<:NibbleMonom{N}}) where N = 2*N
 monom_totaldeg(a::NibbleMonom) = a.deg % UInt
 monom_copy(a::NibbleMonom) = a
 monom_entrytype(::NibbleMonom) = UInt8
-monom_entrytype(::Type{<:NibbleMonom}) = UInt8
+monom_entrytype(::Type{<:NibbleMonom}) = UInt8  # TODO: shall we indicate somehow that we only have 4 bits per exponent?
 
 function monom_construct_hash_vector(rng::AbstractRNG, ::Type{NibbleMonom{N}}, ::Integer) where N
-    rand(rng, FixedVector{2*N,MonomHash})
+    rand(rng, FixedVector{N,MonomHash})
 end
 
 function monom_construct_from_vector(::Type{NibbleMonom{N}}, ev::AbstractVector) where N
@@ -47,14 +47,8 @@ function monom_construct_const(::Type{NibbleMonom{N}}, ::Integer) where N
     NibbleMonom(zero(FixedVector{N,UInt8}))
 end
 
-function monom_hash(a::NibbleMonom{N}, b::FixedVector) where N
-    @assert length(b) == 2*N
-    # sum_fast(map(*, lower(a), FixedVector(b.t[1:N]))) + sum_fast(map(*, upper(a), FixedVector(b.t[N+1:2*N])))
-    h = zero(MonomHash)
-    for i in 1:2*N
-        h += @inbounds monom_exponent(a, i)*b[i]
-    end
-    h
+function monom_hash(a::NibbleMonom{N}, b::FixedVector{N}) where N
+    sum_fast(map(*, a.ev, b))  # TODO: can we combine two exponents like this?
 end
 
 function monom_to_vector!(tmp::AbstractVector, a::NibbleMonom{N}) where N
