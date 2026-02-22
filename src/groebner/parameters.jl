@@ -95,6 +95,11 @@ function param_select_monomtype(
         return FixedMonom{N,UInt8}
     end
 
+    if monoms === :nibble && monom_is_supported_ordering(FixedMonom, ordering)
+        N = max(8, nextpow(2, nvars) ÷ 2)
+        return NibbleMonom{N}
+    end
+
     # in the automatic choice, we always prefer packed representations
     if monoms === :auto
         if monom_is_supported_ordering(PackedTuple1{UInt64, ExponentSize}, ordering)
@@ -263,7 +268,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
     linalg = kwargs.linalg
     if ring.ground === :zp && (linalg === :randomized || linalg === :auto)
         # Do not use randomized linear algebra if the field characteristic is
-        # too small. 
+        # too small.
         # TODO: In the future, it would be good to adapt randomized linear
         # algebra to this case by taking more random samples
         if ring.characteristic < 500
@@ -343,7 +348,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         modular_strategy = :learn_and_apply
     end
     if !reduced
-        # The option reduced=false was passed in the input, 
+        # The option reduced=false was passed in the input,
         # falling back to classic multi-modular algorithm.
         modular_strategy = :classic_modular
     end
