@@ -1,4 +1,4 @@
-using SmallCollections: FixedVector, SmallVector, fixedvector, sum_fast, bits
+using SmallCollections: FixedVector, SmallVector, fixedvector, sum_fast, dot_fast, bits
 
 struct NibbleMonom{N}
     ev::FixedVector{N,UInt8}
@@ -7,10 +7,9 @@ end
 
 function NibbleMonom(ev::FixedVector{N}) where N
     a = NibbleMonom(ev, zero(UInt8))
-    d = sum_fast(lower(a)) + sum_fast(upper(a))
-    a = NibbleMonom(ev, d)
-    monom_overflow_check(a)
-    a
+    d = reduce(+, lower(a); init = zero(UInt16)) + reduce(+, upper(a); init = zero(UInt16))
+    d > typemax(UInt8) && __throw_monom_overflow_error(d, UInt8)
+    NibbleMonom(ev, d % UInt8)
 end
 
 Base.@propagate_inbounds function monom_exponent(a::NibbleMonom, i::Int)
@@ -22,10 +21,6 @@ upper(a::NibbleMonom{N}) where N = a.ev .>> 4
 upper_raw(a::NibbleMonom{N}) where N = a.ev .& 0xf0
 
 monom_max_vars(a::NibbleMonom) = monom_max_vars(typeof(a))
-
-function monom_overflow_check(a::NibbleMonom)
-    signbit(signed(a.deg)) && __throw_monom_overflow_error(a.deg, UInt8)
-end
 
 monom_max_vars(::Type{<:NibbleMonom{N}}) where N = 2*N
 monom_totaldeg(a::NibbleMonom) = a.deg % UInt
@@ -48,7 +43,7 @@ function monom_construct_const(::Type{NibbleMonom{N}}, ::Integer) where N
 end
 
 function monom_hash(a::NibbleMonom{N}, b::FixedVector{N}) where N
-    sum_fast(map(*, a.ev, b))  # TODO: can we combine two exponents like this?
+    dot_fast(a.ev, b)::MonomHash  # TODO: can we combine two exponents like this?
 end
 
 function monom_to_vector!(tmp::AbstractVector, a::NibbleMonom{N}) where N
@@ -76,17 +71,20 @@ function monom_lcm!(_, a::NibbleMonom{N}, b::NibbleMonom{N}) where N
 end
 
 function monom_is_gcd_const(a::NibbleMonom{N}, b::NibbleMonom{N}) where N
-    p = bits(map(!iszero, lower(a))) & bits(map(!iszero, lower(b)))
-    q = bits(map(!iszero, upper_raw(a))) & bits(map(!iszero, upper_raw(b)))
-    iszero(p | q)
+    iszero(min.(lower(a), lower(b)) .| min.(upper_raw(a), upper_raw(b)))
 end
 
 function monom_product!(_, a::NibbleMonom{N}, b::NibbleMonom{N}) where N
-    ev = a.ev + b.ev
-    iszero((ev .⊻ a.ev .⊻ b.ev) .& 0x10) || error("overflow")  # TODO: check overflow of the high nibble
-    c = NibbleMonom(ev, a.deg + b.deg)
-    monom_overflow_check(c)
-    c
+    ev, s = Base.Checked.add_with_overflow(a.ev, b.ev)
+    lower_check = (ev .⊻ a.ev .⊻ b.ev) .& 0x10
+    if isempty(s) & iszero(lower_check)
+        d = a.deg + b.deg
+        d < a.deg && __throw_monom_overflow_error(d, typeof(d))
+        NibbleMonom(ev, d)
+    else
+        i = isempty(s) ? findfirst(!iszero, lower_check)::Int : first(s)
+        __throw_monom_overflow_error(ev[i], eltype(ev))  # TODO: does it have to be so detailed?
+    end
 end
 
 function monom_division!(_, a::NibbleMonom{N}, b::NibbleMonom{N}) where N
@@ -94,11 +92,13 @@ function monom_division!(_, a::NibbleMonom{N}, b::NibbleMonom{N}) where N
 end
 
 function monom_is_divisible(a::NibbleMonom{N}, b::NibbleMonom{N}) where N
-    all(map(>=, lower(a), lower(b)) .& map(>=, upper_raw(a), upper_raw(b)))  # TODO: use checked arithmetic?
+    first(monom_is_divisible!(a, a, b))  # the first `a` is a dummy
 end
 
-function monom_is_divisible!(c::NibbleMonom{N}, a::NibbleMonom{N}, b::NibbleMonom{N}) where N
-    monom_is_divisible(a, b) ? (true, monom_division!(c, a, b)) : (false, c)  # TODO: use checked arithmetic
+function monom_is_divisible!(_, a::NibbleMonom{N}, b::NibbleMonom{N}) where N
+    ev, s = Base.Checked.sub_with_overflow(a.ev, b.ev)
+    lower_check = iszero((ev .⊻ a.ev .⊻ b.ev) .& 0x10)
+    isempty(s) & lower_check, NibbleMonom(ev, a.deg - b.deg)
 end
 
 function monom_is_equal(a::NibbleMonom{N}, b::NibbleMonom{N}) where N
