@@ -7,7 +7,7 @@ end
 
 function FixedMonom(ev::FixedVector{N,T}) where {N,T}
     d = reduce(+, ev; init = zero(UInt16))
-    d > typemax(T) && __throw_monom_overflow_error(d, T)
+    d > typemax(T) && __throw_monom_overflow_error()
     FixedMonom(ev, d % T)
 end
 
@@ -24,7 +24,7 @@ function monom_construct_hash_vector(rng::AbstractRNG, ::Type{<:FixedMonom{N}}, 
 end
 
 function monom_construct_from_vector(::Type{FixedMonom{N,T}}, ev::AbstractVector) where {N,T}
-    all(<=(typemax(T)), ev) || __throw_monom_overflow_error(ev, typeof(ev))
+    all(<=(typemax(T)), ev) || __throw_monom_overflow_error()
     FixedMonom(fixedvector(SmallVector{N,T}(ev)))
 end
 
@@ -55,7 +55,7 @@ end
 function monom_lcm!(_, a::FixedMonom{N,T}, b::FixedMonom{N,T}) where {N,T}
     ev = map(max, a.ev, b.ev)
     d = sum_fast(ev)
-    d < a.deg && __throw_monom_overflow_error(d, typeof(d))
+    d < a.deg && __throw_monom_overflow_error()
     FixedMonom(ev, d)
 end
 
@@ -63,7 +63,7 @@ function monom_lcm!(_, a::FixedMonom{8,UInt8}, b::FixedMonom{8,UInt8})
     # conversion to UInt16 to force vectorization
     ev = max.(a.ev .% UInt16, b.ev .% UInt16)
     d = sum_fast(ev) % UInt8
-    d < a.deg && __throw_monom_overflow_error(d, typeof(d))
+    d < a.deg && __throw_monom_overflow_error()
     FixedMonom(ev .% UInt8, d)
 end
 
@@ -73,7 +73,7 @@ end
 
 function monom_product!(_, a::FixedMonom{N}, b::FixedMonom{N}) where N
     d = a.deg + b.deg
-    d < a.deg && __throw_monom_overflow_error(d, typeof(d))
+    d < a.deg && __throw_monom_overflow_error()
     FixedMonom(a.ev + b.ev, d)
 end
 

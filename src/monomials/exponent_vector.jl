@@ -16,20 +16,15 @@ const ExponentVector{T} = Vector{T} where {T <: Integer}
 # MonomialDegreeOverflow is thrown if there is a risk of monomial degree
 # overflow. If we catch a MonomialDegreeOverflow, there is some hope to recover
 # the program by restarting with a wider integer type for storing exponents.
-struct MonomialDegreeOverflow <: Exception
-    msg::String
-end
+struct MonomialDegreeOverflow <: Exception end
 
-Base.showerror(io::IO, e::MonomialDegreeOverflow) = print(io, typeof(e), ": ", e.msg)
-
-@noinline __throw_monom_overflow_error(c, B) =
-    throw(MonomialDegreeOverflow("Overflow may happen with the entry $c of type $B."))
+@noinline __throw_monom_overflow_error() = throw(MonomialDegreeOverflow())
 
 monom_overflow_threshold(::Type{T}) where {T <: Integer} = div(typemax(T), 2)
 monom_overflow_check(a::T) where {T <: Integer} = monom_overflow_check(a, T)
 
 function monom_overflow_check(a::Integer, ::Type{T}) where {T}
-    a >= monom_overflow_threshold(T) && __throw_monom_overflow_error(a, T)
+    a >= monom_overflow_threshold(T) && __throw_monom_overflow_error()
     true
 end
 
@@ -66,7 +61,7 @@ function monom_to_vector!(tmp::Vector{M}, pv::ExponentVector{T}) where {M, T}
     @invariant length(tmp) == length(pv) - 1
     if promote_type(M, T) !== M
         if !(all(i -> pv[i] < typemax(M), 2:length(pv)))
-            __throw_monom_overflow_error(-1, M)
+            __throw_monom_overflow_error()
         end
     end
     @inbounds tmp[1:end] .= pv[2:end]

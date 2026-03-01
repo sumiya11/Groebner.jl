@@ -4,7 +4,7 @@ monom_max_vars(a::FixedVector) = monom_max_vars(typeof(a))
 
 function monom_overflow_check(a::FixedVector{N,T}) where {N,T}
     c = ~a[end]
-    signbit(signed(c)) && __throw_monom_overflow_error(c, T)
+    signbit(signed(c)) && __throw_monom_overflow_error()
 end
 
 monom_max_vars(::Type{A}) where A <: FixedVector = capacity(A) - 1
@@ -19,7 +19,7 @@ end
 
 function monom_construct_from_vector(::Type{FixedVector{N,T}}, ev::AbstractVector) where {N,T}
     d = sum(ev)
-    d <= typemax(signed(T)) || __throw_monom_overflow_error(ev, typeof(ev))
+    d <= typemax(signed(T)) || __throw_monom_overflow_error()
     a = fixedvector(SmallVector{N,T}(ev))
     setindex(a, ~(d % T), N)
 end

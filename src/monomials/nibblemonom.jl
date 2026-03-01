@@ -8,7 +8,7 @@ end
 function NibbleMonom(ev::FixedVector{N}) where N
     a = NibbleMonom(ev, zero(UInt8))
     d = reduce(+, lower(a); init = zero(UInt16)) + reduce(+, upper(a); init = zero(UInt16))
-    d > typemax(UInt8) && __throw_monom_overflow_error(d, UInt8)
+    d > typemax(UInt8) && __throw_monom_overflow_error()
     NibbleMonom(ev, d % UInt8)
 end
 
@@ -33,7 +33,7 @@ function monom_construct_hash_vector(rng::AbstractRNG, ::Type{NibbleMonom{N}}, :
 end
 
 function monom_construct_from_vector(::Type{NibbleMonom{N}}, ev::AbstractVector) where N
-    all(<=(15), ev) || __throw_monom_overflow_error(ev, typeof(ev))
+    all(<=(15), ev) || __throw_monom_overflow_error()
     v = fixedvector(SmallVector{2*N,UInt8}(ev))
     ev = FixedVector{N}(view(v, 1:2:2*N-1)) .| (FixedVector{N}(view(v, 2:2:2*N)) .<< 4)
     NibbleMonom(ev)
@@ -80,11 +80,11 @@ function monom_product!(_, a::NibbleMonom{N}, b::NibbleMonom{N}) where N
     lower_check = (ev .⊻ a.ev .⊻ b.ev) .& 0x10
     if isempty(s) & iszero(lower_check)
         d = a.deg + b.deg
-        d < a.deg && __throw_monom_overflow_error(d, typeof(d))
+        d < a.deg && __throw_monom_overflow_error()
         NibbleMonom(ev, d)
     else
         i = isempty(s) ? findfirst(!iszero, lower_check)::Int : first(s)
-        __throw_monom_overflow_error(ev[i], eltype(ev))  # TODO: does it have to be so detailed?
+        __throw_monom_overflow_error()
     end
 end
 

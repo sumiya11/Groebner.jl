@@ -17,7 +17,7 @@ function monom_construct_hash_vector(rng::AbstractRNG, ::Type{<:FixedMonomNoDeg{
 end
 
 function monom_construct_from_vector(::Type{FixedMonomNoDeg{N,T}}, ev::AbstractVector) where {N,T}
-    all(<=(typemax(T)), ev) || __throw_monom_overflow_error(ev, typeof(ev))
+    all(<=(typemax(T)), ev) || __throw_monom_overflow_error()
     FixedMonomNoDeg(fixedvector(SmallVector{N,T}(ev)))
 end
 
@@ -65,7 +65,7 @@ end
 
 function monom_product!(_, a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}) where N
     ev, s = Base.Checked.add_with_overflow(a.ev, b.ev)
-    isempty(s) || __throw_monom_overflow_error(ev, typeof(ev))
+    isempty(s) || __throw_monom_overflow_error()
     FixedMonomNoDeg(ev)
 end
 
