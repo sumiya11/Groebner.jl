@@ -33,6 +33,7 @@ function monom_construct_hash_vector(rng::AbstractRNG, ::Type{NibbleMonom{N}}, :
 end
 
 function monom_construct_from_vector(::Type{NibbleMonom{N}}, ev::AbstractVector) where N
+    all(<=(15), ev) || __throw_monom_overflow_error(ev, typeof(ev))
     v = fixedvector(SmallVector{2*N,UInt8}(ev))
     ev = FixedVector{N}(view(v, 1:2:2*N-1)) .| (FixedVector{N}(view(v, 2:2:2*N)) .<< 4)
     NibbleMonom(ev)
@@ -43,7 +44,7 @@ function monom_construct_const(::Type{NibbleMonom{N}}, ::Integer) where N
 end
 
 function monom_hash(a::NibbleMonom{N}, b::FixedVector{N}) where N
-    dot_fast(a.ev, b)::MonomHash  # TODO: can we combine two exponents like this?
+    dot_fast(a.ev, b)::MonomHash
 end
 
 function monom_to_vector!(tmp::AbstractVector, a::NibbleMonom{N}) where N

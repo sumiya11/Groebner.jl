@@ -24,6 +24,7 @@ function monom_construct_hash_vector(rng::AbstractRNG, ::Type{<:FixedMonom{N}}, 
 end
 
 function monom_construct_from_vector(::Type{FixedMonom{N,T}}, ev::AbstractVector) where {N,T}
+    all(<=(typemax(T)), ev) || __throw_monom_overflow_error(ev, typeof(ev))
     FixedMonom(fixedvector(SmallVector{N,T}(ev)))
 end
 

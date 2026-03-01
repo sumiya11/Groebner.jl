@@ -17,6 +17,7 @@ function monom_construct_hash_vector(rng::AbstractRNG, ::Type{<:FixedMonomNoDeg{
 end
 
 function monom_construct_from_vector(::Type{FixedMonomNoDeg{N,T}}, ev::AbstractVector) where {N,T}
+    all(<=(typemax(T)), ev) || __throw_monom_overflow_error(ev, typeof(ev))
     FixedMonomNoDeg(fixedvector(SmallVector{N,T}(ev)))
 end
 
@@ -63,10 +64,9 @@ function monom_is_gcd_const(a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}) where 
 end
 
 function monom_product!(_, a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}) where N
-    # ev, s = Base.Checked.add_with_overflow(a.ev, b.ev)
-    # isempty(s) || __throw_monom_overflow_error(ev, typeof(ev))
-    # FixedMonomNoDeg(ev)
-    FixedMonomNoDeg(Base.Checked.checked_add(a.ev, b.ev))
+    ev, s = Base.Checked.add_with_overflow(a.ev, b.ev)
+    isempty(s) || __throw_monom_overflow_error(ev, typeof(ev))
+    FixedMonomNoDeg(ev)
 end
 
 function monom_division!(_, a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}) where N

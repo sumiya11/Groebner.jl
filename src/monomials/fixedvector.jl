@@ -18,8 +18,10 @@ function monom_construct_hash_vector(rng::AbstractRNG, ::Type{FixedVector{N,T}},
 end
 
 function monom_construct_from_vector(::Type{FixedVector{N,T}}, ev::AbstractVector) where {N,T}
-    a = fixedvector(@inbounds SmallVector{N,T}(ev))
-    setindex(a, ~sum_fast(a), N)
+    d = sum(ev)
+    d <= typemax(signed(T)) || __throw_monom_overflow_error(ev, typeof(ev))
+    a = fixedvector(SmallVector{N,T}(ev))
+    setindex(a, ~(d % T), N)
 end
 
 function monom_construct_const(::Type{FixedVector{N,T}}, ::Integer) where {N,T}
