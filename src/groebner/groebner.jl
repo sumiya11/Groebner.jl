@@ -23,6 +23,11 @@ function groebner1(
     _groebner1(ring, monoms, coeffs, options)
 end
 
+_info_possible_overflow() = @info(
+    """Possible overflow of exponent vector detected.
+    Restarting with at least 32 bits per exponent.""", maxlog = 1
+)
+
 function _groebner1(
     ring::PolyRing,
     monoms::Vector{Vector{Vector{I}}},
@@ -34,9 +39,7 @@ function _groebner1(
         return __groebner1(ring, monoms, coeffs, params)
     catch err
         if isa(err, MonomialDegreeOverflow)
-            @info """
-            Possible overflow of exponent vector detected. 
-            Restarting with at least 32 bits per exponent.""" maxlog = 1
+            _info_possible_overflow()
             params = AlgorithmParameters(ring, options; hint=:large_exponents)
             return __groebner1(ring, monoms, coeffs, params)
         else

@@ -82,9 +82,7 @@ function _leading_ideal1(
         return __leading_ideal1(ring, monoms, coeffs, params)
     catch err
         if isa(err, MonomialDegreeOverflow)
-            @info """
-            Possible overflow of exponent vector detected. 
-            Restarting with at least 32 bits per exponent.""" maxlog = 1
+            _info_possible_overflow()
             params = AlgorithmParameters(ring, options; hint=:large_exponents)
             return __leading_ideal1(ring, monoms, coeffs, params)
         else
@@ -159,9 +157,7 @@ function _quotient_basis1(
         return __quotient_basis1(ring, monoms, coeffs, params)
     catch err
         if isa(err, MonomialDegreeOverflow)
-            @info """
-            Possible overflow of exponent vector detected. 
-            Restarting with at least 32 bits per exponent.""" maxlog = 1
+            _info_possible_overflow()
             params = AlgorithmParameters(ring, options; hint=:large_exponents)
             return __quotient_basis1(ring, monoms, coeffs, params)
         else
@@ -274,9 +270,7 @@ function _dimension1(
         return __dimension1(ring, monoms, coeffs, params)
     catch err
         if isa(err, MonomialDegreeOverflow)
-            @info """
-            Possible overflow of exponent vector detected. 
-            Restarting with at least 32 bits per exponent.""" maxlog = 1
+            _info_possible_overflow()
             params = AlgorithmParameters(ring, options; hint=:large_exponents)
             return __dimension1(ring, monoms, coeffs, params)
         else
