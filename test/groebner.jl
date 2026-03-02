@@ -468,8 +468,8 @@ end
         @test Groebner.leading_ideal(gb_1, monoms=monoms) == [x * y^100, x^100 * y, y^199]
         @test Groebner.dimension([x^100 + y^2000], monoms=monoms) == 2
         @test Groebner.dimension([x^10 + y^7, y^15, z^200], monoms=monoms) == 0
-        @test length(Groebner.quotient_basis([x^100, y^10, z], ordering=Lex(), monoms=monoms)) == 1000
-        @test length(Groebner.quotient_basis([x^100, y^10, z], ordering=DegLex(), monoms=monoms)) == 1000
+        @test length(Groebner.quotient_basis([x^200, y^10, z], ordering=Lex(), monoms=monoms)) == 2000
+        @test length(Groebner.quotient_basis([x^200, y^10, z], ordering=DegLex(), monoms=monoms)) == 2000
     end
 end
 
