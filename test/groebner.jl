@@ -464,6 +464,7 @@ end
         @test Groebner.normalform(gb_3, [x, y, R(1), R(0), x^10], monoms=monoms) == [x, y, R(1), R(0), x^10]
         @test Groebner.normalform(gb_3, [x, y, R(1), R(0), x^1000], monoms=monoms) == [x, y, R(1), R(0), x^1000]
 
+        @test Groebner.leading_term.(gb_1, monoms=monoms) == [x * y^100, x^100 * y, y^199]
         @test Groebner.leading_ideal(gb_1, monoms=monoms) == [x * y^100, x^100 * y, y^199]
         @test Groebner.dimension([x^100 + y^2000], monoms=monoms) == 2
         @test Groebner.dimension([x^10 + y^7, y^15, z^200], monoms=monoms) == 0
