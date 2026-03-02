@@ -160,6 +160,8 @@ end
     gb = groebner(sys)
     @test gb == [one(R)]
     @test groebner(sys, homogenize=:yes) == gb
+    @test groebner(sys, ordering=DegRevLex()) == gb
+    @test groebner(sys, ordering=DegLex()) == gb
     @test isgroebner(gb)
     @test dimension(gb) == -1
 
