@@ -176,8 +176,8 @@ end
 function monom_isless(ea::ExponentVector, eb::ExponentVector, ::Lex{true})
     @invariant length(ea) == length(eb)
     @invariant length(ea) >= 1
-    i = 2
-    @inbounds while i < length(ea) && ea[i] == eb[i]
+    i = 1
+    @inbounds while i < length(ea) && ea[i + 1] == eb[i + 1]
         i += 1
     end
     @inbounds return ea[i] < eb[i]
