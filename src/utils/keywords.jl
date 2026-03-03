@@ -10,7 +10,9 @@ const INT_INF = typemax(Int)
 # Maps a function name from the interface to a set of supported keyword
 # arguments with their corresponding default values.
 const _supported_kw_args = (
-    dimension = (;),
+    dimension = (
+        monoms       = :auto,
+    ),
     groebner = (
         reduced      = true,
         ordering     = InputOrdering(),
@@ -62,22 +64,25 @@ const _supported_kw_args = (
         ordering    = InputOrdering(),
         certify     = false,
         seed        = 42,
-        monoms      = :dense,
+        monoms      = :auto,
         linalg      = :auto,
     ),
     leading_term = (
         ordering    = InputOrdering(),
+        monoms      = :auto,
     ),
     leading_ideal = (
         ordering    = InputOrdering(),
+        monoms      = :auto,
     ),
     normalform = (
         check       = false,
         ordering    = InputOrdering(),
-        monoms      = :dense,
+        monoms      = :auto,
     ),
     quotient_basis = (
         ordering    = InputOrdering(),
+        monoms      = :auto,
     ),
 )
 #! format: on
