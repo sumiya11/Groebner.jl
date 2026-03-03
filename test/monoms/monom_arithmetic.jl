@@ -263,3 +263,33 @@ end
         end
     end
 end
+
+@testset "monom hash sensitivity" begin
+    rng = Random.MersenneTwister(42)
+    for _ in 1:30
+        for T in degree_types_to_test
+            for EV in implementations_to_test
+                MonomType = isconcretetype(EV) ? EV : EV{T}
+                n = rand(rng, 1:50)
+                if n > Groebner.monom_max_vars(MonomType)
+                    continue
+                end
+
+                hv = Groebner.monom_construct_hash_vector(rng, MonomType, n)
+                x1 = zeros(Int, n)
+                x1[rand(rng, 1:n, 4)] .+= rand(rng, 1:3)
+
+                for i in 1:n
+                    x2 = copy(x1)
+                    x2[i] += 1
+
+                    m1 = monom_construct_from_vector(MonomType, x1)
+                    m2 = monom_construct_from_vector(MonomType, x2)
+
+                    @test !monom_is_equal(m1, m2)
+                    @test Groebner.monom_hash(m1, hv) != Groebner.monom_hash(m2, hv)
+                end
+            end
+        end
+    end
+end
