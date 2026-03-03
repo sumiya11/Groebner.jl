@@ -95,12 +95,12 @@ function param_select_monomtype(
         return FixedMonom{N,UInt8}
     end
 
-    if monoms === :fixednodeg && monom_is_supported_ordering(FixedMonom, ordering)
+    if monoms === :fixednodeg && monom_is_supported_ordering(FixedMonomNoDeg, ordering)
         N = max(8, nextpow(2, nvars))
         return FixedMonomNoDeg{N,UInt8}
     end
 
-    if monoms === :nibble && monom_is_supported_ordering(FixedMonom, ordering)
+    if monoms === :nibble && monom_is_supported_ordering(NibbleMonom, ordering)
         N = max(8, nextpow(2, nvars) ÷ 2)
         return NibbleMonom{N}
     end
