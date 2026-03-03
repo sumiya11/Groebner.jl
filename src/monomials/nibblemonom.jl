@@ -48,11 +48,6 @@ function monom_hash(a::NibbleMonom{N}, b::FixedVector{N}) where N
 end
 
 function monom_to_vector!(tmp::AbstractVector, a::NibbleMonom{N}) where N
-    #=
-    u = FixedVector{N,UInt8}(ntuple(Returns(0x0f), Val(N)))
-    copyto!(@view(tmp[1:2:end]), 1, lower(a), 1, (length(tmp)+1) ÷ 2)
-    copyto!(@view(tmp[2:2:end]), 1, upper(a), 1, length(tmp) ÷ 2)
-    =#
     for i in 1:length(tmp)
         @inbounds tmp[i] = monom_exponent(a, i)
     end
@@ -91,7 +86,6 @@ function monom_product!(_, a::NibbleMonom{N}, b::NibbleMonom{N}) where N
         d < a.deg && __throw_monom_overflow_error()
         NibbleMonom(ev, d)
     else
-        i = isempty(s) ? findfirst(!iszero, lower_check)::Int : first(s)
         __throw_monom_overflow_error()
     end
 end
