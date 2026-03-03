@@ -7,7 +7,7 @@ end
 
 function NibbleMonom(ev::FixedVector{N}) where N
     a = NibbleMonom(ev, zero(UInt8))
-    d = reduce(+, lower(a); init = zero(UInt16)) + reduce(+, upper(a); init = zero(UInt16))
+    d = reduce(+, lower(a) + upper(a); init = zero(UInt16))
     d > typemax(UInt8) && __throw_monom_overflow_error()
     NibbleMonom(ev, d % UInt8)
 end
