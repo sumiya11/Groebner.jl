@@ -60,7 +60,15 @@ function monom_to_vector!(tmp::AbstractVector, a::NibbleMonom{N}) where N
 end
 
 function monom_is_supported_ordering(::Type{<:NibbleMonom}, ::Ord) where Ord
-    Ord <: Union{DegRevLex{true}, InputOrdering}
+    Ord <: Union{DegLex{true}, DegRevLex{true}, InputOrdering}
+end
+
+function monom_isless(a::NibbleMonom{N}, b::NibbleMonom{N}, ::DegLex{true}) where N
+    a.deg != b.deg && return a.deg < b.deg
+    for (k, l) in zip(a.ev, b.ev)
+        k != l && return bitrotate(k, 4) < bitrotate(l, 4)
+    end
+    false
 end
 
 function monom_isless(a::NibbleMonom{N}, b::NibbleMonom{N}, ::DegRevLex{true}) where N
