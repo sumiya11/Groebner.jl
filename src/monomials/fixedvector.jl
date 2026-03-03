@@ -37,7 +37,11 @@ function monom_to_vector!(tmp::AbstractVector, a::FixedVector)
 end
 
 function monom_is_supported_ordering(::Type{<:FixedVector}, ::Ord) where Ord
-    Ord <: Union{DegRevLex{true}, InputOrdering}
+    Ord <: Union{DegLex{true}, DegRevLex{true}, InputOrdering}
+end
+
+function monom_isless(a::FixedVector{N}, b::FixedVector{N}, ::DegLex{true}) where N
+    a[end] > b[end] || (a[end] == b[end] && a < b)
 end
 
 function monom_isless(a::FixedVector{N}, b::FixedVector{N}, ::DegRevLex{true}) where N
