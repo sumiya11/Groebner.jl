@@ -105,6 +105,11 @@ function param_select_monomtype(
         return NibbleMonom{N}
     end
 
+    if monoms === :nibblenodeg && monom_is_supported_ordering(NibbleNoDeg, ordering)
+        N = max(8, nextpow(2, nvars) ÷ 2)
+        return NibbleNoDeg{N}
+    end
+
     # in the automatic choice, we always prefer packed representations
     if monoms === :auto
         if monom_is_supported_ordering(PackedTuple1{UInt64, ExponentSize}, ordering)

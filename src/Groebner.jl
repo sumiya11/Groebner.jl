@@ -110,6 +110,7 @@ include("monomials/fixedvector.jl")
 include("monomials/fixedvector2.jl")
 include("monomials/fixednodeg.jl")
 include("monomials/nibblemonom.jl")
+include("monomials/nibblenodeg.jl")
 
 include("arithmetic/CompositeNumber.jl")
 include("arithmetic/CoeffGeneric.jl")
