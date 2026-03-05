@@ -1,4 +1,4 @@
-using SmallCollections: FixedVector, SmallVector, fixedvector, sum_fast, dot_fast, bits
+using SmallCollections: FixedVector, SmallVector, fixedvector, sum_fast, dot_fast, bits, bitsize
 
 struct FixedMonom{N,T}
     ev::FixedVector{N,T}
@@ -49,7 +49,17 @@ function monom_isless(a::FixedMonom{N}, b::FixedMonom{N}, ::DegLex{true}) where 
 end
 
 function monom_isless(a::FixedMonom{N}, b::FixedMonom{N}, ::DegRevLex{true}) where N
-    a.deg < b.deg || (a.deg == b.deg && bits(a.ev) > bits(b.ev))
+    if bitsize(a) <= 512
+        a.deg < b.deg || (a.deg == b.deg && bits(a.ev) > bits(b.ev))
+    else
+        a.deg != b.deg && return a.deg < b.deg
+        aev = reinterpret(UInt64, a.ev)
+        bev = reinterpret(UInt64, b.ev)
+        @inbounds for i in length(aev):-1:1
+            aev[i] != bev[i] && return aev[i] > bev[i]
+        end
+        false
+    end
 end
 
 function monom_lcm!(_, a::FixedMonom{N,T}, b::FixedMonom{N,T}) where {N,T}

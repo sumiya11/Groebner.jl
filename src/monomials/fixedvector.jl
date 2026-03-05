@@ -45,7 +45,16 @@ function monom_isless(a::FixedVector{N}, b::FixedVector{N}, ::DegLex{true}) wher
 end
 
 function monom_isless(a::FixedVector{N}, b::FixedVector{N}, ::DegRevLex{true}) where N
-    bits(a) > bits(b)
+    if bitsize(a) <= 512
+        bits(a) > bits(b)
+    else
+        aev = reinterpret(UInt64, a)
+        bev = reinterpret(UInt64, b)
+        @inbounds for i in length(aev):-1:1
+            aev[i] != bev[i] && return aev[i] > bev[i]
+        end
+        false
+    end
 end
 
 function monom_lcm!(_, a::FixedVector{N,T}, b::FixedVector{N,T}) where {N,T}
