@@ -19,13 +19,11 @@ using Test, Groebner, Random
             NM,
             y
         )
-    end
 
-    N = 512
-    NM = Groebner.NibbleNoDeg{N}
-    x = [15 for i in 1:2N]
-    m = Groebner.monom_construct_from_vector(NM, x)
-    @test Groebner.monom_totaldeg(m) == sum(x)
+        y = [10, 10, 10, 10, 10]
+        m = Groebner.monom_construct_from_vector(NM, y)
+        @test_throws Groebner.MonomialDegreeOverflow Groebner.monom_product!(y,y,y)
+    end
 
     for i in 1:10
         N = 2^i
