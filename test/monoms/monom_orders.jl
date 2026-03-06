@@ -1,5 +1,6 @@
 using Test, AbstractAlgebra, Groebner
 
+supports_ordering = Groebner.monom_is_supported_ordering
 monom_construct_from_vector = Groebner.monom_construct_from_vector
 lex = (x, y) -> Groebner.monom_isless(x, y, Groebner.Lex())
 dl = (x, y) -> Groebner.monom_isless(x, y, Groebner.DegLex())
@@ -10,17 +11,42 @@ implementations_to_test = [
     Groebner.PackedTuple1{T, UInt8} where {T},
     Groebner.PackedTuple2{T, UInt8} where {T},
     Groebner.PackedTuple3{T, UInt8} where {T},
-    Groebner.PackedTuple4{T, UInt8} where {T}
+    Groebner.PackedTuple4{T, UInt8} where {T},
+    Groebner.NibbleMonom{16},
+    Groebner.NibbleNoDeg{16},
+    Groebner.FixedMonomNoDeg{16, UInt8},
+    Groebner.FixedMonom{16, UInt8}
 ]
 
+max_deg(MonomType) = typemax(Groebner.monom_entrytype(MonomType))
+max_deg(::Type{Groebner.NibbleMonom{N}}) where {N} = 15
+max_deg(::Type{Groebner.NibbleNoDeg{N}}) where {N} = 15
+
 @testset "monom orders: display" begin
+    ord_display(ord) = begin
+        io = IOBuffer()
+        show(io, MIME("text/plain"), ord)
+        String(take!(io))
+    end
+
     ord = Groebner.WeightedOrdering(:x=>1, :y=>2, :z=>3)
-    io = IOBuffer()
-    show(io, MIME("text/plain"), ord)
-    str = String(take!(io))
+    str = ord_display(ord)
     str = chopprefix(str, "WeightedOrdering(")
     str = chopsuffix(str, ")")
     @test issubset(split(str, ","), ["x=>1", "y=>2", "z=>3"])
+
+    ord1 = Groebner.Lex(3:4)
+    str1 = ord_display(ord1)
+    ord2 = Groebner.DegRevLex(1:2)
+    str2 = ord_display(ord2)
+
+    ord = Groebner.ProductOrdering(Groebner.Lex(3:4), Groebner.DegRevLex(1:2))
+    str = ord_display(ord)
+    @test occursin(str1, str)
+    @test occursin(str2, str)
+
+    ord = Groebner.MatrixOrdering([1,2,3], [0 0 0; 0 1 0; 1 1 1])
+    ord_display(ord)
 end
 
 @testset "monom orders: Lex, DegLex, DegRevLex" begin
@@ -49,143 +75,121 @@ end
 
     for T in (UInt64, UInt32, UInt16, UInt8)
         for EV in implementations_to_test
-            if EV{T} <: Groebner.AbstractPackedTuple{T, UInt8} && T == UInt8
+            MonomType = isconcretetype(EV) ? EV : EV{T}
+            if MonomType <: Groebner.AbstractPackedTuple{T, UInt8} && T == UInt8
                 continue
             end
 
-            a = monom_construct_from_vector(EV{T}, [0])
-            b = monom_construct_from_vector(EV{T}, [0])
-            @test !drl(a, b)
-            if !(EV{T} <: Groebner.AbstractPackedTuple{T})
-                @test !lex(a, b)
-                @test !dl(a, b)
-            end
+            a = monom_construct_from_vector(MonomType, [0])
+            b = monom_construct_from_vector(MonomType, [0])
+            supports_ordering(MonomType, Groebner.DegRevLex()) && @test !drl(a, b)
+            supports_ordering(MonomType, Groebner.Lex()) && @test !lex(a, b)
+            supports_ordering(MonomType, Groebner.DegLex()) && @test !dl(a, b)
 
-            a = monom_construct_from_vector(EV{T}, [0])
-            b = monom_construct_from_vector(EV{T}, [1])
-            @test drl(a, b)
-            @test !drl(b, a)
-            if !(EV{T} <: Groebner.AbstractPackedTuple{T})
-                @test lex(a, b)
-                @test dl(a, b)
-                @test !lex(b, a)
-                @test !dl(b, a)
-            end
+            a = monom_construct_from_vector(MonomType, [0])
+            b = monom_construct_from_vector(MonomType, [1])
+            supports_ordering(MonomType, Groebner.DegRevLex()) && @test drl(a, b)
+            supports_ordering(MonomType, Groebner.DegRevLex()) && @test !drl(b, a)
+            supports_ordering(MonomType, Groebner.Lex()) && @test lex(a, b)
+            supports_ordering(MonomType, Groebner.DegLex()) && @test dl(a, b)
+            supports_ordering(MonomType, Groebner.Lex()) && @test !lex(b, a)
+            supports_ordering(MonomType, Groebner.DegLex()) && @test !dl(b, a)
 
-            2 > Groebner.monom_max_vars(EV{T}) && continue
-            a = monom_construct_from_vector(EV{T}, [1, 1])
-            b = monom_construct_from_vector(EV{T}, [2, 0])
-            @test drl(a, b)
-            @test !drl(b, a)
-            if !(EV{T} <: Groebner.AbstractPackedTuple{T})
-                @test lex(a, b)
-                @test dl(a, b)
-                @test !lex(b, a)
-                @test !dl(b, a)
-            end
+            2 > Groebner.monom_max_vars(MonomType) && continue
+            a = monom_construct_from_vector(MonomType, [1, 1])
+            b = monom_construct_from_vector(MonomType, [2, 0])
+            supports_ordering(MonomType, Groebner.DegRevLex()) && @test drl(a, b)
+            supports_ordering(MonomType, Groebner.DegRevLex()) && @test !drl(b, a)
+            supports_ordering(MonomType, Groebner.Lex()) && @test lex(a, b)
+            supports_ordering(MonomType, Groebner.DegLex()) && @test dl(a, b)
+            supports_ordering(MonomType, Groebner.Lex()) && @test !lex(b, a)
+            supports_ordering(MonomType, Groebner.DegLex()) && @test !dl(b, a)
 
-            2 > Groebner.monom_max_vars(EV{T}) && continue
-            a = monom_construct_from_vector(EV{T}, [1, 1])
-            b = monom_construct_from_vector(EV{T}, [0, 2])
-            @test drl(b, a)
-            @test !drl(a, b)
-            if !(EV{T} <: Groebner.AbstractPackedTuple{T})
-                @test !lex(a, b)
-                @test !dl(a, b)
-                @test lex(b, a)
-                @test dl(b, a)
-            end
+            a = monom_construct_from_vector(MonomType, [1, 1])
+            b = monom_construct_from_vector(MonomType, [0, 2])
+            supports_ordering(MonomType, Groebner.DegRevLex()) && @test drl(b, a)
+            supports_ordering(MonomType, Groebner.DegRevLex()) && @test !drl(a, b)
+            supports_ordering(MonomType, Groebner.Lex()) && @test !lex(a, b)
+            supports_ordering(MonomType, Groebner.DegLex()) && @test !dl(a, b)
+            supports_ordering(MonomType, Groebner.Lex()) && @test lex(b, a)
+            supports_ordering(MonomType, Groebner.DegLex()) && @test dl(b, a)
 
-            2 > Groebner.monom_max_vars(EV{T}) && continue
-            a = monom_construct_from_vector(EV{T}, [1, 1])
-            b = monom_construct_from_vector(EV{T}, [1, 1])
-            @test !drl(a, b)
-            if !(EV{T} <: Groebner.AbstractPackedTuple{T})
-                @test !lex(a, b)
-                @test !dl(a, b)
-            end
+            a = monom_construct_from_vector(MonomType, [1, 1])
+            b = monom_construct_from_vector(MonomType, [1, 1])
+            supports_ordering(MonomType, Groebner.DegRevLex()) && @test !drl(a, b)
+            supports_ordering(MonomType, Groebner.Lex()) && @test !lex(a, b)
+            supports_ordering(MonomType, Groebner.DegLex()) && @test !dl(a, b)
 
-            2 > Groebner.monom_max_vars(EV{T}) && continue
-            a = monom_construct_from_vector(EV{T}, [1, 1])
-            b = monom_construct_from_vector(EV{T}, [2, 2])
-            @test !drl(b, a)
-            @test drl(a, b)
-            if !(EV{T} <: Groebner.AbstractPackedTuple{T})
-                @test lex(a, b)
-                @test dl(a, b)
-                @test !lex(b, a)
-                @test !dl(b, a)
-            end
+            a = monom_construct_from_vector(MonomType, [1, 1])
+            b = monom_construct_from_vector(MonomType, [2, 2])
+            supports_ordering(MonomType, Groebner.DegRevLex()) && @test !drl(b, a)
+            supports_ordering(MonomType, Groebner.DegRevLex()) && @test drl(a, b)
+            supports_ordering(MonomType, Groebner.Lex()) && @test lex(a, b)
+            supports_ordering(MonomType, Groebner.DegLex()) && @test dl(a, b)
+            supports_ordering(MonomType, Groebner.Lex()) && @test !lex(b, a)
+            supports_ordering(MonomType, Groebner.DegLex()) && @test !dl(b, a)
 
-            3 > Groebner.monom_max_vars(EV{T}) && continue
-            a = monom_construct_from_vector(EV{T}, [1, 0, 2])
-            b = monom_construct_from_vector(EV{T}, [2, 0, 1])
-            @test drl(a, b)
-            if !(EV{T} <: Groebner.AbstractPackedTuple{T})
-                @test lex(a, b)
-                @test dl(a, b)
-            end
+            3 > Groebner.monom_max_vars(MonomType) && continue
+            a = monom_construct_from_vector(MonomType, [1, 0, 2])
+            b = monom_construct_from_vector(MonomType, [2, 0, 1])
+            supports_ordering(MonomType, Groebner.DegRevLex()) && @test drl(a, b)
+            supports_ordering(MonomType, Groebner.Lex()) && @test lex(a, b)
+            supports_ordering(MonomType, Groebner.DegLex()) && @test dl(a, b)
 
-            3 > Groebner.monom_max_vars(EV{T}) && continue
-            a = monom_construct_from_vector(EV{T}, [1, 5, 0])
-            b = monom_construct_from_vector(EV{T}, [1, 0, 1])
+            a = monom_construct_from_vector(MonomType, [1, 5, 0])
+            b = monom_construct_from_vector(MonomType, [1, 0, 1])
             @test !drl(a, b)
 
-            25 > Groebner.monom_max_vars(EV{T}) && continue
-            a = monom_construct_from_vector(EV{T}, ones(UInt, 25))
-            b = monom_construct_from_vector(EV{T}, ones(UInt, 25))
-            @test !drl(a, b)
-            if !(EV{T} <: Groebner.AbstractPackedTuple{T})
-                @test !lex(a, b)
-                @test !dl(a, b)
-            end
+            25 > Groebner.monom_max_vars(MonomType) && continue
+            a = monom_construct_from_vector(MonomType, ones(UInt, 25))
+            b = monom_construct_from_vector(MonomType, ones(UInt, 25))
+            supports_ordering(MonomType, Groebner.DegRevLex()) && @test !drl(a, b)
+            supports_ordering(MonomType, Groebner.Lex()) && @test !lex(a, b)
+            supports_ordering(MonomType, Groebner.DegLex()) && @test !dl(a, b)
 
-            30 > Groebner.monom_max_vars(EV{T}) && continue
-            a = monom_construct_from_vector(EV{T}, ones(UInt, 30))
-            b = monom_construct_from_vector(EV{T}, ones(UInt, 30))
-            @test !drl(a, b)
-            if !(EV{T} <: Groebner.AbstractPackedTuple{T})
-                @test !lex(a, b)
-                @test !dl(a, b)
-            end
+            30 > Groebner.monom_max_vars(MonomType) && continue
+            a = monom_construct_from_vector(MonomType, ones(UInt, 30))
+            b = monom_construct_from_vector(MonomType, ones(UInt, 30))
+            supports_ordering(MonomType, Groebner.DegRevLex()) && @test !drl(a, b)
+            supports_ordering(MonomType, Groebner.Lex()) && @test !lex(a, b)
+            supports_ordering(MonomType, Groebner.DegLex()) && @test !dl(a, b)
         end
 
         # test that different implementations agree
         for n in 1:10
             k = rand(1:60)
 
+            implementations_to_test_local = map(EV -> isconcretetype(EV) ? EV : EV{T}, implementations_to_test)
             implementations_to_test_local = filter(
-                EV ->
-                    !(EV{T} <: Groebner.AbstractPackedTuple{T}) &&
-                    Groebner.monom_max_vars(EV{T}) >= k,
-                implementations_to_test
+                MT -> Groebner.monom_max_vars(MT) >= k, implementations_to_test_local
             )
 
-            t = div(typemax(UInt8), k) - 1
-            x, y = rand(1:t, k), rand(1:t, k)
-            if sum(x) >= Groebner.monom_overflow_threshold(UInt8)
-                continue
-            end
-            if sum(y) >= Groebner.monom_overflow_threshold(UInt8)
-                continue
-            end
-            as = [monom_construct_from_vector(EV{T}, x) for EV in implementations_to_test_local]
-            bs = [monom_construct_from_vector(EV{T}, y) for EV in implementations_to_test_local]
+            t = div(typemax(UInt8), 2k) - 1
+            t = min(t, div(minimum(max_deg.(implementations_to_test_local)), 2))
+            x, y = rand(0:t, k), rand(0:t, k)
+            as = [monom_construct_from_vector(MonomType, x) for MonomType in implementations_to_test_local]
+            bs = [monom_construct_from_vector(MonomType, y) for MonomType in implementations_to_test_local]
 
-            @test length(unique(map(lex, as, bs))) == 1
-            @test length(unique(map(dl, as, bs))) == 1
-            @test length(unique(map(drl, as, bs))) == 1
+            if all(supports_ordering.(implementations_to_test_local, Ref(Groebner.DegRevLex())))
+                @test length(unique(map(drl, as, bs))) == 1
+            end
+            if all(supports_ordering.(implementations_to_test_local, Ref(Groebner.Lex())))
+                @test length(unique(map(lex, as, bs))) == 1
+            end
+            if all(supports_ordering.(implementations_to_test_local, Ref(Groebner.DegLex())))
+                @test length(unique(map(dl, as, bs))) == 1
+            end
 
             # test that a < b && b < a does not happen
             for (a, b) in zip(as, bs)
-                k > Groebner.monom_max_vars(a) && continue
-                if lex(a, b)
+                k > Groebner.monom_max_vars(a) && continue 
+                if supports_ordering(typeof(a), Groebner.Lex()) && lex(a, b)
                     @test !lex(b, a)
                 end
-                if dl(a, b)
+                if supports_ordering(typeof(a), Groebner.DegLex()) && dl(a, b)
                     @test !dl(b, a)
                 end
-                if drl(a, b)
+                if supports_ordering(typeof(a), Groebner.DegRevLex()) && drl(a, b)
                     @test !drl(b, a)
                 end
             end
@@ -199,33 +203,33 @@ function test_circular_shift(a, b, n, Ord, answers)
     orders = map(i -> Groebner.ordering_transform(Ord(circshift(x, -i)), vars_to_index), 0:(n - 1))
     cmps = map(ord -> ((x, y) -> Groebner.monom_isless(x, y, ord)), orders)
 
-    for (cmp, answer) in zip(cmps, answers)
-        @test answer == cmp(a, b) && !answer == cmp(b, a)
+    for (cmp, ord, answer) in zip(cmps, orders, answers)
+        if supports_ordering(typeof(a), ord)
+            @test answer == cmp(a, b) && !answer == cmp(b, a)
+        end
     end
 end
 
 @testset "monoms, variable permutation" begin
     for T in (UInt64, UInt32, UInt16)
         for EV in implementations_to_test
-            if EV{T} <: Groebner.AbstractPackedTuple
-                continue
-            end
+            MonomType = isconcretetype(EV) ? EV : EV{T}
 
             n = 3
-            n >= Groebner.monom_max_vars(EV{T}) && continue
+            n >= Groebner.monom_max_vars(MonomType) && continue
 
-            a = monom_construct_from_vector(EV{T}, [5, 5, 3])
-            b = monom_construct_from_vector(EV{T}, [1, 1, 10])
+            a = monom_construct_from_vector(MonomType, [5, 5, 3])
+            b = monom_construct_from_vector(MonomType, [1, 1, 10])
 
             test_circular_shift(a, b, n, Groebner.Lex, [false, false, true])
             test_circular_shift(a, b, n, Groebner.DegLex, [false, false, false])
             test_circular_shift(a, b, n, Groebner.DegRevLex, [false, false, false])
 
             n = 5
-            n >= Groebner.monom_max_vars(EV{T}) && continue
+            n >= Groebner.monom_max_vars(MonomType) && continue
 
-            a = monom_construct_from_vector(EV{T}, [1, 2, 3, 4, 5])
-            b = monom_construct_from_vector(EV{T}, [4, 3, 2, 1, 5])
+            a = monom_construct_from_vector(MonomType, [1, 2, 3, 4, 5])
+            b = monom_construct_from_vector(MonomType, [4, 3, 2, 1, 5])
 
             test_circular_shift(a, b, n, Groebner.Lex, [true, true, false, false, true])
             test_circular_shift(a, b, n, Groebner.DegLex, [true, true, false, false, true])
