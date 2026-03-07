@@ -447,7 +447,7 @@ end
     @test groebner([x^(2^31)]) == [x^2^31]
     @test_throws Groebner.MonomialDegreeOverflow groebner([x^(2^33)])
 
-    for monoms in [:auto, :dense, :packed]
+    for monoms in [:auto, :dense, :packed, :nibblenodeg]
         gb_1 = [x * y^100 + y, x^100 * y + y^100, y^199 + 2147483646 * x^99 * y]
         gb_2 = [x * y^200 + y, x^200 * y + y^200, y^399 + 2147483646 * x^199 * y]
         gb_3 = [x * y^1000 + y, x^1000 * y + y^1000, y^1999 + 2147483646 * x^999 * y]
@@ -810,10 +810,11 @@ end
             Groebner.Examples.cyclicn(2, k=domain),
             Groebner.Examples.noonn(4, k=domain, internal_ordering=:degrevlex),
             Groebner.Examples.katsuran(5, k=domain, internal_ordering=:degrevlex),
-            Groebner.Examples.kinema(k=domain, internal_ordering=:degrevlex)
+            Groebner.Examples.kinema(k=domain, internal_ordering=:degrevlex),
+            Groebner.Examples.NFkB_reduced(k=GF(2^30+3), internal_ordering=:degrevlex),
         ]
             results = []
-            for monoms in [:dense, :packed]
+            for monoms in [:dense, :packed, :nibblenodeg]
                 gb = Groebner.groebner(system, monoms=monoms)
                 push!(results, gb)
                 @test Groebner.isgroebner(gb)
@@ -1445,7 +1446,7 @@ end
     coeffssize = [3, 2^31 - 1, BigInt(2)^80, BigInt(2)^2000]
     orderings  = [:degrevlex, :lex, :deglex]
     linalgs    = [:deterministic, :randomized]
-    monoms     = [:auto, :dense, :packed]
+    monoms     = [:auto, :dense, :packed, :nibblenodeg]
     homogenize = [:yes, :auto]
     tasks      = [1, 4, 32]
     p          = prod(vcat(boot, map(length, [nvariables, maxdegs, nterms, npolys, grounds, orderings, coeffssize, linalgs, monoms, homogenize, tasks])))

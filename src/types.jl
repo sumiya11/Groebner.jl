@@ -1,9 +1,11 @@
 # This file is a part of Groebner.jl. License is GNU GPL v2.
 
+using SmallCollections: FixedVector
+
 ###
 # All supported monomial implementations in F4
 
-const Monom = Union{ExponentVector{T} where {T}, AbstractPackedTuple}
+const Monom = Union{ExponentVector{T} where {T}, AbstractPackedTuple, FixedVector, FixedMonom, FixedMonomNoDeg, NibbleMonom, NibbleNoDeg}
 
 ###
 # All supported coefficient types
