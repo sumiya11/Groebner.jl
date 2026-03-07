@@ -91,34 +91,34 @@ function param_select_monomtype(
     end
 
     if monoms === :fixed2 && monom_is_supported_ordering(FixedMonom, ordering)
-        N = max(8, nextpow(2, nvars))
+        N = max(8, nextpow(2, max(nvars, 1)))
         return FixedMonom{N,UInt8}
     end
 
     if monoms === :fixednodeg && monom_is_supported_ordering(FixedMonomNoDeg, ordering)
-        N = max(8, nextpow(2, nvars))
+        N = max(8, nextpow(2, max(nvars, 1)))
         return FixedMonomNoDeg{N,UInt8}
     end
 
     if monoms === :nibble && monom_is_supported_ordering(NibbleMonom, ordering)
-        N = max(8, nextpow(2, nvars) ÷ 2)
+        N = max(8, nextpow(2, max(nvars, 1)) ÷ 2)
         return NibbleMonom{N}
     end
 
     if monoms === :nibblenodeg && monom_is_supported_ordering(NibbleNoDeg, ordering)
-        N = max(8, nextpow(2, nvars) ÷ 2)
+        N = max(8, nextpow(2, max(nvars, 1)) ÷ 2)
         return NibbleNoDeg{N}
     end
 
     # For testing only
-    if monoms === :auto && monom_is_supported_ordering(NibbleMonom, ordering)
-        N = max(8, nextpow(2, nvars) ÷ 2)
-        return NibbleMonom{N}
+    if monoms === :auto && monom_is_supported_ordering(NibbleNoDeg, ordering)
+        N = max(8, nextpow(2, max(nvars, 1)) ÷ 2)
+        return NibbleNoDeg{N}
     end
 
     # in the automatic choice, we always prefer non-allocating representations
     if monoms === :auto
-        N = max(8, nextpow(2, nvars) ÷ 2)
+        N = max(8, nextpow(2, max(nvars, 1)) ÷ 2)
         if monom_is_supported_ordering(NibbleNoDeg{N}, ordering)
             return NibbleNoDeg{N}
         end
