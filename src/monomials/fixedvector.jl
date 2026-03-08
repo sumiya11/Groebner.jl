@@ -1,8 +1,8 @@
-using SmallCollections: FixedVector, SmallVector, fixedvector, setindex, sum_fast, bits, bitsize
+using SmallCollections: FixedVector, SmallVector, fixedvector, setindex, sum_fast, bits
 
 monom_max_vars(a::FixedVector) = monom_max_vars(typeof(a))
 
-function monom_overflow_check(a::FixedVector{N,T}) where {N,T}
+function monom_overflow_check(a::FixedVector)
     c = ~a[end]
     signbit(signed(c)) && __throw_monom_overflow_error()
 end
@@ -13,7 +13,7 @@ monom_copy(a::FixedVector) = a
 monom_entrytype(a::FixedVector) = eltype(a)
 monom_entrytype(::Type{A}) where A <: FixedVector = eltype(A)
 
-function monom_construct_hash_vector(rng::AbstractRNG, ::Type{FixedVector{N,T}}, ::Integer) where {N,T}
+function monom_construct_hash_vector(rng::AbstractRNG, ::Type{<:FixedVector{N}}, ::Integer) where N
     setindex(rand(FixedVector{N,MonomHash}), zero(MonomHash), N)
 end
 
@@ -29,7 +29,7 @@ function monom_construct_const(::Type{FixedVector{N,T}}, ::Integer) where {N,T}
 end
 
 function monom_hash(a::FixedVector{N}, b::FixedVector{N}) where N
-    sum_fast(map(*, a, b)) % MonomHash
+    dot_fast(a, b) % MonomHash
 end
 
 function monom_to_vector!(tmp::AbstractVector, a::FixedVector)
@@ -45,7 +45,7 @@ function monom_isless(a::FixedVector{N}, b::FixedVector{N}, ::DegLex{true}) wher
 end
 
 function monom_isless(a::FixedVector{N}, b::FixedVector{N}, ::DegRevLex{true}) where N
-    if bitsize(a) <= 512
+    if sizeof(a) <= 64
         bits(a) > bits(b)
     else
         aev = reinterpret(UInt64, a)
@@ -85,13 +85,14 @@ function monom_division!(_, a::FixedVector{N,T}, b::FixedVector{N,T}) where {N,T
 end
 
 function monom_is_divisible(a::FixedVector{N}, b::FixedVector{N}) where N
-    m = bits(map(<, a, b))
+    m = bits(a .< b)
     l = one(m) << (N-1)
     iszero(m & ~l)
 end
 
-function monom_is_divisible!(c::FixedVector{N}, a::FixedVector{N}, b::FixedVector{N}) where N
-    monom_is_divisible(a, b) ? (true, monom_division!(c, a, b)) : (false, c)
+function monom_is_divisible!(_, a::FixedVector{N}, b::FixedVector{N}) where N
+    monom_is_divisible(a, b) ? (true, monom_division!(a, a, b)) : (false, a)
+    # the first `a` argument for `monom_division!` is a dummy
 end
 
 function monom_is_equal(a::FixedVector{N}, b::FixedVector{N}) where N
@@ -99,13 +100,13 @@ function monom_is_equal(a::FixedVector{N}, b::FixedVector{N}) where N
 end
 
 function monom_create_divmask(
-    e::FixedVector{N,T},
+    e::FixedVector,
     ::Type{Mask},
     ndivvars::Int,
     divmap::Vector{U},
     ndivbits::Int,
     strategy::Symbol
-) where {N, T, Mask, U}
+) where {Mask, U}
     @invariant strategy == :first_variables
     ctr = one(Mask)
     res = zero(Mask)

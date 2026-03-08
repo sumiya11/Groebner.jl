@@ -8,18 +8,18 @@ Base.@propagate_inbounds function monom_exponent(a::NibbleNoDeg, i::Int)
     isodd(i) ? a.ev[i ÷ 2 + 1] & 0x0f : a.ev[i ÷ 2] >> 4
 end
 
-lower(a::NibbleNoDeg{N}) where N = a.ev .& 0x0f
-upper(a::NibbleNoDeg{N}) where N = a.ev .>> 4
-upper_raw(a::NibbleNoDeg{N}) where N = a.ev .& 0xf0
+lownibbles(a::NibbleNoDeg) = a.ev .& 0x0f
+highnibbles(a::NibbleNoDeg) = a.ev .>> 4
+uppernibbles(a::NibbleNoDeg) = a.ev .& 0xf0
 
 monom_max_vars(a::NibbleNoDeg) = monom_max_vars(typeof(a))
 
 monom_max_vars(::Type{<:NibbleNoDeg{N}}) where N = 2*N
+
 function monom_totaldeg(a::NibbleNoDeg)
-    d = reduce(+, lower(a) + upper(a); init = zero(UInt16))
-    # d > typemax(UInt8) && __throw_monom_overflow_error()
-    d % UInt
+    sum_fast(lownibbles(a) + highnibbles(a); init = zero(UInt16)) % UInt
 end
+
 monom_copy(a::NibbleNoDeg) = a
 monom_entrytype(::NibbleNoDeg) = UInt8
 monom_entrytype(::Type{<:NibbleNoDeg}) = UInt8  # TODO: shall we indicate somehow that we only have 4 bits per exponent?
@@ -43,7 +43,7 @@ function monom_hash(a::NibbleNoDeg{N}, b::FixedVector{N}) where N
     dot_fast(a.ev, b)::MonomHash
 end
 
-function monom_to_vector!(tmp::AbstractVector, a::NibbleNoDeg{N}) where N
+function monom_to_vector!(tmp::AbstractVector, a::NibbleNoDeg)
     for i in 1:length(tmp)
         @inbounds tmp[i] = monom_exponent(a, i)
     end
@@ -67,19 +67,17 @@ function monom_isless(a::NibbleNoDeg{N}, b::NibbleNoDeg{N}, ::DegRevLex{true}) w
 end
 
 function monom_lcm!(_, a::NibbleNoDeg{N}, b::NibbleNoDeg{N}) where N
-    NibbleNoDeg(max.(lower(a), lower(b)) .| max.(upper_raw(a), upper_raw(b)))
+    NibbleNoDeg(max.(lownibbles(a), lownibbles(b)) .| max.(uppernibbles(a), uppernibbles(b)))
 end
 
 function monom_is_gcd_const(a::NibbleNoDeg{N}, b::NibbleNoDeg{N}) where N
-    iszero(min.(lower(a), lower(b)) .| min.(upper_raw(a), upper_raw(b)))
+    iszero(min.(lownibbles(a), lownibbles(b)) .| min.(uppernibbles(a), uppernibbles(b)))
 end
 
 function monom_product!(_, a::NibbleNoDeg{N}, b::NibbleNoDeg{N}) where N
     ev, s = Base.Checked.add_with_overflow(a.ev, b.ev)
     lower_check = (ev .⊻ a.ev .⊻ b.ev) .& 0x10
     if isempty(s) & iszero(lower_check)
-        # d = monom_totaldeg(a) + monom_totaldeg(b)
-        # d < monom_totaldeg(a) && __throw_monom_overflow_error()
         NibbleNoDeg(ev)
     else
         __throw_monom_overflow_error()
@@ -105,13 +103,13 @@ function monom_is_equal(a::NibbleNoDeg{N}, b::NibbleNoDeg{N}) where N
 end
 
 function monom_create_divmask(
-    a::NibbleNoDeg{N},
+    a::NibbleNoDeg,
     ::Type{Mask},
     ndivvars::Int,
     divmap::Vector{U},
     ndivbits::Int,
     strategy::Symbol
-) where {N, Mask, U}
+) where {Mask, U}
     @invariant strategy == :first_variables
     ctr = one(Mask)
     res = zero(Mask)

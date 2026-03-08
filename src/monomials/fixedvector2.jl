@@ -1,4 +1,4 @@
-using SmallCollections: FixedVector, SmallVector, fixedvector, sum_fast, dot_fast, bits, bitsize
+using SmallCollections: FixedVector, SmallVector, fixedvector, sum_fast, dot_fast, bits
 
 struct FixedMonom{N,T}
     ev::FixedVector{N,T}
@@ -6,7 +6,7 @@ struct FixedMonom{N,T}
 end
 
 function FixedMonom(ev::FixedVector{N,T}) where {N,T}
-    d = reduce(+, ev; init = zero(UInt16))
+    d = sum_fast(ev; init = zero(UInt16))
     d > typemax(T) && __throw_monom_overflow_error()
     FixedMonom(ev, d % T)
 end
@@ -49,7 +49,7 @@ function monom_isless(a::FixedMonom{N}, b::FixedMonom{N}, ::DegLex{true}) where 
 end
 
 function monom_isless(a::FixedMonom{N}, b::FixedMonom{N}, ::DegRevLex{true}) where N
-    if bitsize(a) <= 512
+    if sizeof(a) <= 64
         a.deg < b.deg || (a.deg == b.deg && bits(a.ev) > bits(b.ev))
     else
         a.deg != b.deg && return a.deg < b.deg
@@ -62,8 +62,8 @@ function monom_isless(a::FixedMonom{N}, b::FixedMonom{N}, ::DegRevLex{true}) whe
     end
 end
 
-function monom_lcm!(_, a::FixedMonom{N,T}, b::FixedMonom{N,T}) where {N,T}
-    ev = map(max, a.ev, b.ev)
+function monom_lcm!(_, a::FixedMonom{N}, b::FixedMonom{N}) where N
+    ev = max.(a.ev, b.ev)
     d = sum_fast(ev)
     d < a.deg && __throw_monom_overflow_error()
     FixedMonom(ev, d)
@@ -78,7 +78,7 @@ function monom_lcm!(_, a::FixedMonom{8,UInt8}, b::FixedMonom{8,UInt8})
 end
 
 function monom_is_gcd_const(a::FixedMonom{N}, b::FixedMonom{N}) where N
-    iszero(map(min, a.ev, b.ev))
+    iszero(min.(a.ev, b.ev))
 end
 
 function monom_product!(_, a::FixedMonom{N}, b::FixedMonom{N}) where N
@@ -92,7 +92,7 @@ function monom_division!(_, a::FixedMonom{N}, b::FixedMonom{N}) where N
 end
 
 function monom_is_divisible(a::FixedMonom{N}, b::FixedMonom{N}) where N
-    all(map(>=, a.ev, b.ev))
+    all(a.ev .>= b.ev)
 end
 
 function monom_is_divisible!(_, a::FixedMonom{N}, b::FixedMonom{N}) where N
@@ -105,13 +105,13 @@ function monom_is_equal(a::FixedMonom{N}, b::FixedMonom{N}) where N
 end
 
 function monom_create_divmask(
-    a::FixedMonom{N,T},
+    a::FixedMonom,
     ::Type{Mask},
     ndivvars::Int,
     divmap::Vector{U},
     ndivbits::Int,
     strategy::Symbol
-) where {N, T, Mask, U}
+) where {Mask, U}
     @invariant strategy == :first_variables
     ctr = one(Mask)
     res = zero(Mask)

@@ -7,7 +7,7 @@ end
 
 function NibbleMonom(ev::FixedVector{N}) where N
     a = NibbleMonom(ev, zero(UInt8))
-    d = reduce(+, lower(a) + upper(a); init = zero(UInt16))
+    d = sum_fast(lownibbles(a) + highnibbles(a); init = zero(UInt16))
     d > typemax(UInt8) && __throw_monom_overflow_error()
     NibbleMonom(ev, d % UInt8)
 end
@@ -16,9 +16,9 @@ Base.@propagate_inbounds function monom_exponent(a::NibbleMonom, i::Int)
     isodd(i) ? a.ev[i ÷ 2 + 1] & 0x0f : a.ev[i ÷ 2] >> 4
 end
 
-lower(a::NibbleMonom{N}) where N = a.ev .& 0x0f
-upper(a::NibbleMonom{N}) where N = a.ev .>> 4
-upper_raw(a::NibbleMonom{N}) where N = a.ev .& 0xf0
+lownibbles(a::NibbleMonom) = a.ev .& 0x0f
+highnibbles(a::NibbleMonom) = a.ev .>> 4
+uppernibbles(a::NibbleMonom) = a.ev .& 0xf0
 
 monom_max_vars(a::NibbleMonom) = monom_max_vars(typeof(a))
 
@@ -47,7 +47,7 @@ function monom_hash(a::NibbleMonom{N}, b::FixedVector{N}) where N
     dot_fast(a.ev, b)::MonomHash
 end
 
-function monom_to_vector!(tmp::AbstractVector, a::NibbleMonom{N}) where N
+function monom_to_vector!(tmp::AbstractVector, a::NibbleMonom)
     for i in 1:length(tmp)
         @inbounds tmp[i] = monom_exponent(a, i)
     end
@@ -71,11 +71,11 @@ function monom_isless(a::NibbleMonom{N}, b::NibbleMonom{N}, ::DegRevLex{true}) w
 end
 
 function monom_lcm!(_, a::NibbleMonom{N}, b::NibbleMonom{N}) where N
-    NibbleMonom(max.(lower(a), lower(b)) .| max.(upper_raw(a), upper_raw(b)))
+    NibbleMonom(max.(lownibbles(a), lownibbles(b)) .| max.(uppernibbles(a), uppernibbles(b)))
 end
 
 function monom_is_gcd_const(a::NibbleMonom{N}, b::NibbleMonom{N}) where N
-    iszero(min.(lower(a), lower(b)) .| min.(upper_raw(a), upper_raw(b)))
+    iszero(min.(lownibbles(a), lownibbles(b)) .| min.(uppernibbles(a), uppernibbles(b)))
 end
 
 function monom_product!(_, a::NibbleMonom{N}, b::NibbleMonom{N}) where N
@@ -109,13 +109,13 @@ function monom_is_equal(a::NibbleMonom{N}, b::NibbleMonom{N}) where N
 end
 
 function monom_create_divmask(
-    a::NibbleMonom{N},
+    a::NibbleMonom,
     ::Type{Mask},
     ndivvars::Int,
     divmap::Vector{U},
     ndivbits::Int,
     strategy::Symbol
-) where {N, Mask, U}
+) where {Mask, U}
     @invariant strategy == :first_variables
     ctr = one(Mask)
     res = zero(Mask)
