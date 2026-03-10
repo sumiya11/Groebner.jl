@@ -157,7 +157,8 @@ function linalg_interreduce_matrix_pivots_changematrix!(
     not_reduced_to_zero = Vector{Int}(undef, nright)
 
     # for each column in the block D..
-    @inbounds for i in 1:nright
+    colrange = reversed_rows ? (nright:-1:1) : (1:nright)
+    @inbounds for i in colrange
         abs_column_idx = ncols - i + 1
         # Check if there is a row that starts at `abs_column_idx`
         !isassigned(pivots, abs_column_idx) && continue
@@ -219,21 +220,13 @@ function linalg_interreduce_matrix_pivots_changematrix!(
         end
 
         new_pivots += 1
-        not_reduced_to_zero[new_pivots] = i
+        not_reduced_to_zero[new_pivots] = reversed_rows ? (nright - i + 1) : i
 
         # Update the row support and coefficients.
-        # TODO: maybe get rid of the reversed_rows parameter?
-        if !reversed_rows
-            compact_changematrix[new_pivots] = cm
-            matrix.lower_rows[new_pivots] = new_sparse_row_support
-            matrix.some_coeffs[matrix.lower_to_coeffs[abs_column_idx]] = new_sparse_row_coeffs
-            pivots[abs_column_idx] = matrix.lower_rows[new_pivots]
-        else
-            compact_changematrix[nupper - new_pivots + 1] = cm
-            matrix.lower_rows[nupper - new_pivots + 1] = new_sparse_row_support
-            matrix.some_coeffs[matrix.lower_to_coeffs[abs_column_idx]] = new_sparse_row_coeffs
-            pivots[abs_column_idx] = matrix.lower_rows[nupper - new_pivots + 1]
-        end
+        compact_changematrix[new_pivots] = cm
+        matrix.lower_rows[new_pivots] = new_sparse_row_support
+        matrix.some_coeffs[matrix.lower_to_coeffs[abs_column_idx]] = new_sparse_row_coeffs
+        pivots[abs_column_idx] = matrix.lower_rows[new_pivots]
     end
 
     matrix.npivots = new_pivots
