@@ -7,7 +7,7 @@ end
 monom_max_vars(a::FixedMonomNoDeg) = monom_max_vars(typeof(a))
 
 monom_max_vars(::Type{<:FixedMonomNoDeg{N}}) where N = N
-monom_totaldeg(a::FixedMonomNoDeg) = sum_fast(a.ev; init = zero(UInt16)) % UInt
+monom_totaldeg(a::FixedMonomNoDeg) = sum_fast(a.ev; init = zero(UInt16)) % UInt16
 monom_copy(a::FixedMonomNoDeg) = a
 
 function monom_construct_hash_vector(rng::AbstractRNG, ::Type{<:FixedMonomNoDeg{N}}, ::Integer) where N

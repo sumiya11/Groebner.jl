@@ -17,7 +17,7 @@ monom_max_vars(a::NibbleNoDeg) = monom_max_vars(typeof(a))
 monom_max_vars(::Type{<:NibbleNoDeg{N}}) where N = 2*N
 
 function monom_totaldeg(a::NibbleNoDeg)
-    sum_fast(lownibbles(a) + highnibbles(a); init = zero(UInt16)) % UInt
+    sum_fast(lownibbles(a) + highnibbles(a); init = zero(UInt16)) % UInt16
 end
 
 monom_copy(a::NibbleNoDeg) = a

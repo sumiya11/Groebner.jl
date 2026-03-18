@@ -8,7 +8,7 @@ function monom_overflow_check(a::FixedVector)
 end
 
 monom_max_vars(::Type{A}) where A <: FixedVector = capacity(A) - 1
-monom_totaldeg(a::FixedVector) = ~a[end] % UInt
+monom_totaldeg(a::FixedVector{N,T}) where {N,T} = ~a[end] % T
 monom_copy(a::FixedVector) = a
 
 function monom_construct_hash_vector(rng::AbstractRNG, ::Type{<:FixedVector{N}}, ::Integer) where N

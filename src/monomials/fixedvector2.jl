@@ -14,7 +14,7 @@ end
 monom_max_vars(a::FixedMonom) = monom_max_vars(typeof(a))
 
 monom_max_vars(::Type{<:FixedMonom{N}}) where N = N
-monom_totaldeg(a::FixedMonom) = a.deg % UInt
+monom_totaldeg(a::FixedMonom{N,T}) where {N,T} = a.deg % T
 monom_copy(a::FixedMonom) = a
 
 function monom_construct_hash_vector(rng::AbstractRNG, ::Type{<:FixedMonom{N}}, ::Integer) where N

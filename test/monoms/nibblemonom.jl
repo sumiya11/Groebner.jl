@@ -5,8 +5,13 @@ using Test, Groebner, Random
 
         x = [1, 2, 3, 0, 4]
         ev = Groebner.monom_construct_from_vector(NM, x)
-        @test typeof(Groebner.monom_totaldeg(ev)) === UInt
-        @test Groebner.monom_totaldeg(ev) === UInt(10)
+        if NM <: Groebner.NibbleMonom
+            @test typeof(Groebner.monom_totaldeg(ev)) === UInt8
+            @test Groebner.monom_totaldeg(ev) === UInt8(10)
+        else
+            @test typeof(Groebner.monom_totaldeg(ev)) === UInt16
+            @test Groebner.monom_totaldeg(ev) === UInt16(10)
+        end
         tmp = similar(x)
         @test Groebner.monom_to_vector!(tmp, ev) == [1, 2, 3, 0, 4]
         @test tmp == [1, 2, 3, 0, 4]
