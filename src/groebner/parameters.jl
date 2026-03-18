@@ -110,17 +110,13 @@ function param_select_monomtype(
         return NibbleNoDeg{N}
     end
 
-    # For testing only
-    if monoms === :auto && monom_is_supported_ordering(NibbleNoDeg, ordering)
-        N = max(8, nextpow(2, max(nvars, 1)) ÷ 2)
-        return NibbleNoDeg{N}
-    end
-
     # in the automatic choice, we always prefer non-allocating representations
     if monoms === :auto
-        N = max(8, nextpow(2, max(nvars, 1)) ÷ 2)
-        if monom_is_supported_ordering(NibbleNoDeg{N}, ordering)
-            return NibbleNoDeg{N}
+        if nvars > 31
+            N = max(8, nextpow(2, max(nvars, 1)) ÷ 2)
+            if monom_is_supported_ordering(NibbleMonom{N}, ordering)
+                return NibbleMonom{N}
+            end
         end
 
         if monom_is_supported_ordering(PackedTuple1{UInt64, ExponentSize}, ordering)

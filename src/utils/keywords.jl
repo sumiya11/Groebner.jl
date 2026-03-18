@@ -135,7 +135,7 @@ function KeywordArguments(function_id::Symbol, kws)
     @assert monoms in (:auto, :dense, :packed, :fixed, :fixed2, :fixednodeg, :nibble, :nibblenodeg) """
     Not recognized monomial representation: $monoms
     Possible choices for keyword "monoms" are:
-    `:auto`, `:dense`, `:packed`, `:nibblenodeg`"""
+    `:auto`, `:dense`, `:packed`, `:nibble`"""
 
     arithmetic = get(kws, :arithmetic, get(default_kw_args, :arithmetic, :auto))
     @assert arithmetic in (:auto, :delayed, :signed, :basic) """
