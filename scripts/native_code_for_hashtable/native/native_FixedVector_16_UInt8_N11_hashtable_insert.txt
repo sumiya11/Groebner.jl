@@ -1,0 +1,309 @@
+	.text
+	.file	"hashtable_insert!"
+	.section	.ltext,"axl",@progbits
+	.globl	"julia_hashtable_insert!_280912" # -- Begin function julia_hashtable_insert!_280912
+	.p2align	4, 0x90
+	.type	"julia_hashtable_insert!_280912",@function
+"julia_hashtable_insert!_280912":       # @"julia_hashtable_insert!_280912"
+; Function Signature: hashtable_insert!(Groebner.MonomialHashtable{SmallCollections.FixedVector{16, UInt8}, Groebner.DegRevLex{true, Union{}}, SmallCollections.FixedVector{16, UInt32}}, SmallCollections.FixedVector{16, UInt8})
+; ┌ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:274 within `hashtable_insert!`
+	.cfi_startproc
+# %bb.0:                                # %top
+	#DEBUG_VALUE: hashtable_insert!:ht <- [$rcx+0]
+	#DEBUG_VALUE: hashtable_insert!:e <- [$rdx+0]
+	push	rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset rbp, -16
+	mov	rbp, rsp
+	.cfi_def_cfa_register rbp
+	push	r15
+	push	r14
+	push	r12
+	push	rsi
+	push	rdi
+	push	rbx
+	sub	rsp, 48
+	.cfi_offset rbx, -64
+	.cfi_offset rdi, -56
+	.cfi_offset rsi, -48
+	.cfi_offset r12, -40
+	.cfi_offset r14, -32
+	.cfi_offset r15, -24
+	mov	rsi, rcx
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:279 within `hashtable_insert!`
+; │┌ @ C:\projects\Groebner.jl\src\monomials\fixedvector.jl:30 within `monom_hash`
+; ││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedvector.jl:300 within `map`
+; │││┌ @ none within `map_fixedvector`
+; ││││┌ @ none within `macro expansion`
+; │││││┌ @ int.jl:1013 within `*`
+; ││││││┌ @ int.jl:557 within `rem`
+; │││││││┌ @ number.jl:7 within `convert`
+; ││││││││┌ @ boot.jl:961 within `UInt32`
+; │││││││││┌ @ boot.jl:923 within `toUInt32`
+	vmovdqu	xmm0, xmmword ptr [rdx]
+	vpmovzxbd	ymm1, xmm0              # ymm1 = xmm0[0],zero,zero,zero,xmm0[1],zero,zero,zero,xmm0[2],zero,zero,zero,xmm0[3],zero,zero,zero,xmm0[4],zero,zero,zero,xmm0[5],zero,zero,zero,xmm0[6],zero,zero,zero,xmm0[7],zero,zero,zero
+	vpbroadcastq	xmm2, qword ptr [rdx + 8]
+	vpmovzxbd	ymm2, xmm2              # ymm2 = xmm2[0],zero,zero,zero,xmm2[1],zero,zero,zero,xmm2[2],zero,zero,zero,xmm2[3],zero,zero,zero,xmm2[4],zero,zero,zero,xmm2[5],zero,zero,zero,xmm2[6],zero,zero,zero,xmm2[7],zero,zero,zero
+; ││││││└└└└
+; ││││││ @ int.jl:1015 within `*` @ int.jl:88
+	vpmulld	ymm2, ymm2, ymmword ptr [rcx + 72]
+	vpmulld	ymm1, ymm1, ymmword ptr [rcx + 40]
+	vphaddd	ymm1, ymm1, ymm2
+	vpermq	ymm1, ymm1, 216                 # ymm1 = ymm1[0,2,1,3]
+; ││└└└└
+; ││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedvector.jl:353 within `sum_fast`
+; │││┌ @ reduce.jl:190 within `foldl`
+; ││││┌ @ reduce.jl:190 within `#foldl#271`
+; │││││┌ @ reduce.jl:167 within `mapfoldl`
+; ││││││┌ @ reduce.jl:167 within `#mapfoldl#270`
+; │││││││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedvector.jl:307 within `mapfoldl_impl`
+; ││││││││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedvector.jl:307 within `macro expansion`
+; │││││││││┌ @ fastmath.jl:277 within `add_fast`
+; ││││││││││┌ @ int.jl:87 within `+`
+	vextracti128	xmm2, ymm1, 1
+	vpaddd	xmm1, xmm1, xmm2
+	vpshufd	xmm2, xmm1, 238                 # xmm2 = xmm1[2,3,2,3]
+	vpaddd	xmm1, xmm1, xmm2
+	vpshufd	xmm2, xmm1, 85                  # xmm2 = xmm1[1,1,1,1]
+	vpaddd	xmm1, xmm1, xmm2
+	vmovd	ebx, xmm1
+; │└└└└└└└└└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:281 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	r9d, dword ptr [rcx + 160]
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:282 within `hashtable_insert!`
+; │┌ @ int.jl:550 within `rem`
+	lea	r10d, [r9 - 1]
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:283 within `hashtable_insert!`
+; │┌ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:265 within `hashtable_next_lookup_index`
+; ││┌ @ int.jl:353 within `&`
+	mov	ecx, ebx
+	and	ecx, r10d
+; ││└
+; ││┌ @ int.jl:87 within `+`
+	inc	ecx
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:284 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rax, qword ptr [rsi + 8]
+; │└
+; │┌ @ abstractarray.jl:1345 within `getindex` @ essentials.jl:920
+	mov	rax, qword ptr [rax]
+	movsxd	rdi, dword ptr [rax + 4*rcx - 4]
+	shl	rcx, 2
+	test	rdi, rdi
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:287 within `hashtable_insert!`
+	je	.LBB0_1
+# %bb.2:                                # %L177
+; │┌ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:269 within `hashtable_is_hash_collision`
+; ││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	r8, qword ptr [rsi + 24]
+; ││└
+; ││┌ @ abstractarray.jl:1345 within `getindex` @ essentials.jl:920
+	mov	r11, qword ptr [r8]
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:316 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	r8, qword ptr [rsi]
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:287 within `hashtable_insert!`
+; │┌ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:269 within `hashtable_is_hash_collision`
+; ││┌ @ operators.jl:321 within `!=`
+; │││┌ @ promotion.jl:637 within `==`
+	cmp	dword ptr [r11 + 4*rdi - 4], ebx
+; ││└└
+	jne	.LBB0_4
+# %bb.3:                                # %L361
+; ││ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:270 within `hashtable_is_hash_collision`
+; ││┌ @ abstractarray.jl:1345 within `getindex` @ essentials.jl:920
+	mov	r14, qword ptr [r8]
+	mov	r15, rdi
+	shl	r15, 4
+; ││└
+; ││┌ @ C:\projects\Groebner.jl\src\monomials\fixedvector.jl:83 within `monom_is_equal`
+; │││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedvector.jl:328 within `==`
+; ││││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedsmallvector.jl:95 within `all`
+; │││││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedsmallvector.jl:95 within `#all#173`
+; ││││││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedsmallvector.jl:107 within `all`
+; │││││││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedsmallvector.jl:113 within `#all#175`
+; ││││││││┌ @ operators.jl:472 within `>=`
+; │││││││││┌ @ int.jl:520 within `<=`
+	vpxor	xmm1, xmm0, xmmword ptr [r14 + r15 - 16]
+	vptest	xmm1, xmm1
+; │└└└└└└└└└
+	je	.LBB0_11
+.LBB0_4:                                # %L365
+	cmp	r9d, 2
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:295 within `hashtable_insert!`
+	jb	.LBB0_10
+# %bb.5:                                # %L372.lr.ph.split
+	mov	r14d, 1
+	jmp	.LBB0_6
+	.p2align	4, 0x90
+.LBB0_9:                                # %L585
+                                        #   in Loop: Header=BB0_6 Depth=1
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:302 within `hashtable_insert!`
+; │┌ @ int.jl:87 within `+`
+	inc	r14d
+	cmp	r9d, r14d
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:295 within `hashtable_insert!`
+	je	.LBB0_10
+.LBB0_6:                                # %L372
+                                        # =>This Inner Loop Header: Depth=1
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:296 within `hashtable_insert!`
+; │┌ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:265 within `hashtable_next_lookup_index`
+; ││┌ @ int.jl:353 within `&`
+	lea	ecx, [rbx + r14]
+	and	ecx, r10d
+; ││└
+; ││┌ @ int.jl:87 within `+`
+	inc	ecx
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:297 within `hashtable_insert!`
+; │┌ @ abstractarray.jl:1345 within `getindex` @ essentials.jl:920
+	movsxd	rdi, dword ptr [rax + 4*rcx - 4]
+	shl	rcx, 2
+	test	rdi, rdi
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:299 within `hashtable_insert!`
+	je	.LBB0_10
+# %bb.7:                                # %L399
+                                        #   in Loop: Header=BB0_6 Depth=1
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:301 within `hashtable_insert!`
+; │┌ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:269 within `hashtable_is_hash_collision`
+; ││┌ @ operators.jl:321 within `!=`
+; │││┌ @ promotion.jl:637 within `==`
+	cmp	dword ptr [r11 + 4*rdi - 4], ebx
+; ││└└
+	jne	.LBB0_9
+# %bb.8:                                # %L583
+                                        #   in Loop: Header=BB0_6 Depth=1
+; ││ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:270 within `hashtable_is_hash_collision`
+; ││┌ @ abstractarray.jl:1345 within `getindex` @ essentials.jl:920
+	mov	r15, qword ptr [r8]
+	mov	r12, rdi
+	shl	r12, 4
+; ││└
+; ││┌ @ C:\projects\Groebner.jl\src\monomials\fixedvector.jl:83 within `monom_is_equal`
+; │││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedvector.jl:328 within `==`
+; ││││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedsmallvector.jl:95 within `all`
+; │││││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedsmallvector.jl:95 within `#all#173`
+; ││││││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedsmallvector.jl:107 within `all`
+; │││││││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedsmallvector.jl:113 within `#all#175`
+; ││││││││┌ @ operators.jl:472 within `>=`
+; │││││││││┌ @ int.jl:520 within `<=`
+	vpxor	xmm1, xmm0, xmmword ptr [r15 + r12 - 16]
+	vptest	xmm1, xmm1
+	jne	.LBB0_9
+	jmp	.LBB0_11
+.LBB0_1:                                # %L365.thread
+; │└└└└└└└└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:316 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	r8, qword ptr [rsi]
+.LBB0_10:                               # %L588
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:313 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	edi, dword ptr [rsi + 168]
+; │└
+; │┌ @ int.jl:550 within `rem`
+	inc	edi
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:315 within `hashtable_insert!`
+; │┌ @ multidimensional.jl:745 within `setindex!` @ array.jl:986
+; ││┌ @ array.jl:991 within `_setindex!`
+	mov	dword ptr [rax + rcx - 4], edi
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:316 within `hashtable_insert!`
+; │┌ @ multidimensional.jl:745 within `setindex!`
+; ││┌ @ indices.jl:365 within `to_indices` @ indices.jl:368
+; │││┌ @ indices.jl:292 within `to_index` @ indices.jl:307
+; ││││┌ @ number.jl:7 within `convert`
+; │││││┌ @ boot.jl:957 within `Int64`
+; ││││││┌ @ boot.jl:876 within `toInt64`
+	movsxd	r14, edi
+; ││└└└└└
+; ││ @ multidimensional.jl:745 within `setindex!` @ array.jl:986
+; ││┌ @ array.jl:991 within `_setindex!`
+; │││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rax, qword ptr [r8]
+; │││└
+	mov	rcx, r14
+	shl	rcx, 4
+	vmovdqu	xmm0, xmmword ptr [rdx]
+	vmovdqu	xmmword ptr [rax + rcx - 16], xmm0
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:317 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rax, qword ptr [rsi + 144]
+	mov	r8, qword ptr [rsi + 136]
+	mov	r9, qword ptr [rsi + 152]
+	mov	rcx, qword ptr [rsi + 128]
+; │└
+	mov	qword ptr [rsp + 32], rcx
+	movabs	r10, offset j_monom_create_divmask_280914
+	mov	rcx, rdx
+	mov	rdx, rax
+	vzeroupper
+	call	r10
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:325 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rcx, qword ptr [rsi + 16]
+; │└
+; │┌ @ multidimensional.jl:745 within `setindex!` @ array.jl:986
+; ││┌ @ array.jl:991 within `_setindex!`
+; │││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rcx, qword ptr [rcx]
+; │││└
+	mov	dword ptr [rcx + 4*r14 - 4], 0
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:326 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rcx, qword ptr [rsi + 24]
+; │└
+; │┌ @ multidimensional.jl:745 within `setindex!` @ array.jl:986
+; ││┌ @ array.jl:991 within `_setindex!`
+; │││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rcx, qword ptr [rcx]
+; │││└
+	mov	dword ptr [rcx + 4*r14 - 4], ebx
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:327 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rcx, qword ptr [rsi + 32]
+; │└
+; │┌ @ multidimensional.jl:745 within `setindex!` @ array.jl:986
+; ││┌ @ array.jl:991 within `_setindex!`
+; │││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rcx, qword ptr [rcx]
+; │││└
+	mov	dword ptr [rcx + 4*r14 - 4], eax
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:329 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:58 within `setproperty!`
+	inc	qword ptr [rsi + 168]
+.LBB0_11:                               # %common.ret
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl within `hashtable_insert!`
+	mov	eax, edi
+	add	rsp, 48
+	pop	rbx
+	pop	rdi
+	pop	rsi
+	pop	r12
+	pop	r14
+	pop	r15
+	pop	rbp
+	vzeroupper
+	ret
+.Lfunc_end0:
+	.size	"julia_hashtable_insert!_280912", .Lfunc_end0-"julia_hashtable_insert!_280912"
+	.cfi_endproc
+; └
+                                        # -- End function
+	.section	".note.GNU-stack","",@progbits

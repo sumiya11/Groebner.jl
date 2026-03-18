@@ -17,7 +17,7 @@
     sort_input=true
 ) where {M <: Monom, C <: Coeff}
     basis = basis_initialize(ring, length(monoms), C)
-    pairset = pairset_initialize(monom_entrytype(M))
+    pairset = pairset_initialize(typeof(monom_totaldeg(monoms[1][1])))
     hashtable = hashtable_initialize(ring, params.rng, M; use_divmask=params.use_divmask)
 
     basis_fill_data!(basis, hashtable, monoms, coeffs)

@@ -18,8 +18,20 @@ implementations_to_test = [
     Groebner.PackedTuple1{T, UInt8} where {T},
     Groebner.PackedTuple2{T, UInt8} where {T},
     Groebner.PackedTuple3{T, UInt8} where {T},
-    Groebner.PackedTuple4{T, UInt8} where {T}
+    Groebner.PackedTuple4{T, UInt8} where {T},
+    Groebner.NibbleMonom{16},
+    Groebner.NibbleNoDeg{16},
+    Groebner.FixedMonomNoDeg{16, UInt8},
+    # SmallCollections.FixedVector{16, UInt8},
+    Groebner.FixedMonom{16, UInt8}
 ]
+
+max_deg(::Type{<:Groebner.ExponentVector{T}}) where {T} = typemax(T)
+max_deg(::Type{<:Groebner.AbstractPackedTuple{T, B}}) where {T, B} = typemax(B)
+max_deg(::Type{Groebner.NibbleMonom{N}}) where {N} = 15
+max_deg(::Type{Groebner.NibbleNoDeg{N}}) where {N} = 15
+max_deg(::Type{Groebner.FixedMonomNoDeg{N, T}}) where {N, T} = typemax(T)
+max_deg(::Type{Groebner.FixedMonom{N, T}}) where {N, T} = typemax(T)
 
 @testset "monom arithmetic" begin
     for T in degree_types_to_test
@@ -129,10 +141,8 @@ implementations_to_test = [
             )
 
             t = div(typemax(UInt8), 2k) - 1
-            x, y = rand(1:t, k), rand(1:t, k)
-            if sum(x) + sum(y) >= Groebner.monom_overflow_threshold(UInt8)
-                continue
-            end
+            t = min(t, div(minimum(max_deg.(implementations_to_test_local)), 2))
+            x, y = rand(0:t, k), rand(0:t, k)
             as = [monom_construct_from_vector(MT, x) for MT in implementations_to_test_local]
             bs = [monom_construct_from_vector(MT, y) for MT in implementations_to_test_local]
 
@@ -160,40 +170,9 @@ end
 
 @testset "monom division mask" begin
     nvars = 4
-    divmap = UInt32[
-        0x00000001,
-        0x00000002,
-        0x00000003,
-        0x00000004,
-        0x00000005,
-        0x00000006,
-        0x00000007,
-        0x00000008,
-        0x00000001,
-        0x00000002,
-        0x00000003,
-        0x00000004,
-        0x00000005,
-        0x00000006,
-        0x00000007,
-        0x00000008,
-        0x00000001,
-        0x00000002,
-        0x00000003,
-        0x00000004,
-        0x00000005,
-        0x00000006,
-        0x00000007,
-        0x00000008,
-        0x00000001,
-        0x00000002,
-        0x00000003,
-        0x00000004,
-        0x00000005,
-        0x00000006,
-        0x00000007,
-        0x00000008
-    ]
+    #! format: off
+    divmap = UInt32[1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8]
+    #! format: on
     ndivbits = 8
     cases = [
         (monom=UInt8[0x00, 0x00, 0x00, 0x00], mask="00000000000000000000000000000000"),
@@ -224,6 +203,10 @@ end
                 if n > Groebner.monom_max_vars(MonomType)
                     continue
                 end
+                if any(e -> e > max_deg(MonomType), monom)
+                    continue
+                end
+
                 m = monom_construct_from_vector(MonomType, monom)
                 ans = parse(Groebner.DivisionMask, mask, base=2)
                 dm = Groebner.monom_create_divmask(
@@ -250,7 +233,8 @@ end
                     continue
                 end
                 t = div(typemax(UInt8), 8 * n)
-                x, y = rand(1:max(t, 1), n), rand(1:max(t, 1), n)
+                t = min(t, div(max_deg(MonomType), 2))
+                x, y = rand(0:min(t, 7), n), rand(0:min(t, 8), n)
                 a = monom_construct_from_vector(MonomType, x)
                 b = monom_construct_from_vector(MonomType, y)
                 c = Groebner.monom_construct_const(MonomType, n)
