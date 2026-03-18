@@ -10,8 +10,6 @@ end
 monom_max_vars(::Type{A}) where A <: FixedVector = capacity(A) - 1
 monom_totaldeg(a::FixedVector) = ~a[end] % UInt
 monom_copy(a::FixedVector) = a
-monom_entrytype(a::FixedVector) = eltype(a)
-monom_entrytype(::Type{A}) where A <: FixedVector = eltype(A)
 
 function monom_construct_hash_vector(rng::AbstractRNG, ::Type{<:FixedVector{N}}, ::Integer) where N
     setindex(rand(FixedVector{N,MonomHash}), zero(MonomHash), N)

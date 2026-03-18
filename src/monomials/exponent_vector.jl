@@ -39,8 +39,6 @@ monom_max_vars(p::ExponentVector{T}) where {T} = monom_max_vars(typeof(p))
 # The return type should be as tight as possible, since F4 uses this type
 # as a hint to initialize storage for total degrees of appropriate size.
 monom_totaldeg(pv::ExponentVector) = @inbounds pv[1]
-monom_entrytype(pv::ExponentVector{T}) where {T} = T
-monom_entrytype(::Type{ExponentVector{T}}) where {T} = T
 
 monom_copy(pv::ExponentVector) = Base.copy(pv)
 

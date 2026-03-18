@@ -26,9 +26,12 @@ implementations_to_test = [
     Groebner.FixedMonom{16, UInt8}
 ]
 
-max_deg(MonomType) = typemax(Groebner.monom_entrytype(MonomType))
+max_deg(::Type{<:Groebner.ExponentVector{T}}) where {T} = typemax(T)
+max_deg(::Type{<:Groebner.AbstractPackedTuple{T, B}}) where {T, B} = typemax(B)
 max_deg(::Type{Groebner.NibbleMonom{N}}) where {N} = 15
 max_deg(::Type{Groebner.NibbleNoDeg{N}}) where {N} = 15
+max_deg(::Type{Groebner.FixedMonomNoDeg{N, T}}) where {N, T} = typemax(T)
+max_deg(::Type{Groebner.FixedMonom{N, T}}) where {N, T} = typemax(T)
 
 @testset "monom arithmetic" begin
     for T in degree_types_to_test

@@ -5,9 +5,8 @@ using Test, Groebner, Random
 
         x = [1, 2, 3, 0, 4]
         ev = Groebner.monom_construct_from_vector(NM, x)
-        @test typeof(Groebner.monom_totaldeg(ev)) === UInt64
-        @test Groebner.monom_totaldeg(ev) === UInt64(10)
-        @test Groebner.monom_entrytype(ev) === UInt8
+        @test typeof(Groebner.monom_totaldeg(ev)) === UInt
+        @test Groebner.monom_totaldeg(ev) === UInt(10)
         tmp = similar(x)
         @test Groebner.monom_to_vector!(tmp, ev) == [1, 2, 3, 0, 4]
         @test tmp == [1, 2, 3, 0, 4]
@@ -34,7 +33,7 @@ using Test, Groebner, Random
                 (rand(0:1, 2N), rand(0:1, 2N)),
                 (vcat([1,2,3], zeros(Int, 2N-3)), vcat([4,5,6], zeros(Int, 2N-3))),
             ]
-                if NM == Groebner.NibbleMonom{N} && sum(x1) + sum(x2) > typemax(Groebner.monom_entrytype(NM)) 
+                if NM == Groebner.NibbleMonom{N} && sum(x1) + sum(x2) > typemax(UInt8) 
                     continue
                 end
                 if any(>(15), x1 .+ x2) continue end

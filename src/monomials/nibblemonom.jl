@@ -25,8 +25,6 @@ monom_max_vars(a::NibbleMonom) = monom_max_vars(typeof(a))
 monom_max_vars(::Type{<:NibbleMonom{N}}) where N = 2*N
 monom_totaldeg(a::NibbleMonom) = a.deg % UInt
 monom_copy(a::NibbleMonom) = a
-monom_entrytype(::NibbleMonom) = UInt8
-monom_entrytype(::Type{<:NibbleMonom}) = UInt8  # TODO: shall we indicate somehow that we only have 4 bits per exponent?
 
 function monom_construct_hash_vector(rng::AbstractRNG, ::Type{NibbleMonom{N}}, ::Integer) where N
     rand(rng, FixedVector{N,MonomHash})

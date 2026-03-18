@@ -16,8 +16,6 @@ monom_max_vars(a::FixedMonom) = monom_max_vars(typeof(a))
 monom_max_vars(::Type{<:FixedMonom{N}}) where N = N
 monom_totaldeg(a::FixedMonom) = a.deg % UInt
 monom_copy(a::FixedMonom) = a
-monom_entrytype(::M) where M <: FixedMonom = monom_entrytype(M)
-monom_entrytype(::Type{FixedMonom{N,T}}) where {N,T} = T
 
 function monom_construct_hash_vector(rng::AbstractRNG, ::Type{<:FixedMonom{N}}, ::Integer) where N
     rand(rng, FixedVector{N,MonomHash})

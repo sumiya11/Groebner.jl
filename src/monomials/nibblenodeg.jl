@@ -21,8 +21,6 @@ function monom_totaldeg(a::NibbleNoDeg)
 end
 
 monom_copy(a::NibbleNoDeg) = a
-monom_entrytype(::NibbleNoDeg) = UInt8
-monom_entrytype(::Type{<:NibbleNoDeg}) = UInt8  # TODO: shall we indicate somehow that we only have 4 bits per exponent?
 
 function monom_construct_hash_vector(rng::AbstractRNG, ::Type{NibbleNoDeg{N}}, ::Integer) where N
     rand(rng, FixedVector{N,MonomHash})

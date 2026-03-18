@@ -6,9 +6,8 @@ using Test, Groebner
     x = [1, 2, 3, 0, 4]
     ev = Groebner.monom_construct_from_vector(EV{UInt64, UInt8}, x)
     @test ev.a1 == 0x0a00000400030201
-    @test typeof(Groebner.monom_totaldeg(ev)) === UInt64
-    @test Groebner.monom_totaldeg(ev) == UInt64(10)
-    @test Groebner.monom_entrytype(ev) === UInt8
+    @test typeof(Groebner.monom_totaldeg(ev)) === UInt8
+    @test Groebner.monom_totaldeg(ev) == UInt8(10)
     tmp = similar(x)
     @test Groebner.monom_to_vector!(tmp, ev) == [1, 2, 3, 0, 4]
     @test tmp == [1, 2, 3, 0, 4]
@@ -53,9 +52,8 @@ end
     ev = Groebner.monom_construct_from_vector(EV{UInt64, UInt8}, x)
     @test ev.a1 == 0x0a00000400030201
     @test ev.a2 == 0x0000000000000000
-    @test typeof(Groebner.monom_totaldeg(ev)) === UInt64
-    @test Groebner.monom_totaldeg(ev) == UInt64(10)
-    @test Groebner.monom_entrytype(ev) === UInt8
+    @test typeof(Groebner.monom_totaldeg(ev)) === UInt8
+    @test Groebner.monom_totaldeg(ev) == UInt8(10)
     tmp = similar(x)
     @test Groebner.monom_to_vector!(tmp, ev) == [1, 2, 3, 0, 4]
 
@@ -64,7 +62,7 @@ end
 
     ev = Groebner.monom_construct_from_vector(EV{UInt64, UInt16}, x)
     @test (ev.a1, ev.a2) == (0x000a000000000004, 0x0000000300020001)
-    @test typeof(Groebner.monom_totaldeg(ev)) === UInt64
+    @test typeof(Groebner.monom_totaldeg(ev)) === UInt16
     @test Groebner.monom_totaldeg(ev) == UInt16(10)
 
     y = [10, 20, 30, 40, 50]
@@ -106,9 +104,8 @@ end
     @test ev.a1 == 0x0a00000400030201
     @test ev.a2 == 0x0000000000000000
     @test ev.a3 == 0x0000000000000000
-    @test typeof(Groebner.monom_totaldeg(ev)) === UInt64
-    @test Groebner.monom_totaldeg(ev) == UInt64(10)
-    @test Groebner.monom_entrytype(ev) === UInt8
+    @test typeof(Groebner.monom_totaldeg(ev)) === UInt8
+    @test Groebner.monom_totaldeg(ev) == UInt8(10)
     tmp = similar(x)
     @test Groebner.monom_to_vector!(tmp, ev) == [1, 2, 3, 0, 4]
 
@@ -117,7 +114,7 @@ end
 
     ev = Groebner.monom_construct_from_vector(EV{UInt64, UInt16}, x)
     @test (ev.a1, ev.a2) == (0x000a000000000004, 0x0000000300020001)
-    @test typeof(Groebner.monom_totaldeg(ev)) === UInt64
+    @test typeof(Groebner.monom_totaldeg(ev)) === UInt16
     @test Groebner.monom_totaldeg(ev) == UInt16(10)
 
     y = [10, 20, 30, 40, 50]
@@ -157,15 +154,14 @@ end
     @test ev.a2 == 0x0000000000000000
     @test ev.a3 == 0x0000000000000000
     @test ev.a4 == 0x0000000000000000
-    @test typeof(Groebner.monom_totaldeg(ev)) === UInt64
-    @test Groebner.monom_totaldeg(ev) == UInt64(10)
-    @test Groebner.monom_entrytype(ev) === UInt8
+    @test typeof(Groebner.monom_totaldeg(ev)) === UInt8
+    @test Groebner.monom_totaldeg(ev) == UInt8(10)
     tmp = similar(x)
     @test Groebner.monom_to_vector!(tmp, ev) == [1, 2, 3, 0, 4]
 
     @test Groebner.monom_max_vars(Groebner.PackedTuple4{UInt64, UInt8}) == 31
-    @test typeof(Groebner.monom_totaldeg(ev)) === UInt64
-    @test Groebner.monom_totaldeg(ev) == UInt16(10)
+    @test typeof(Groebner.monom_totaldeg(ev)) === UInt8
+    @test Groebner.monom_totaldeg(ev) == UInt8(10)
 
     y = [10, 20, 30, 40, 50]
     @test_throws Groebner.MonomialDegreeOverflow Groebner.monom_construct_from_vector(
