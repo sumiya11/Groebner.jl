@@ -19,9 +19,6 @@ TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 [weakdeps]
 DynamicPolynomials = "7c1d4256-1411-5781-91ec-d7bc3513ac07"
 
-[sources]
-SmallCollections = {rev = "master", url = "https://github.com/matthias314/SmallCollections.jl"}
-
 [extensions]
 GroebnerDynamicPolynomialsExt = "DynamicPolynomials"
 
