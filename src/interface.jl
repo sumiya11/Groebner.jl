@@ -479,6 +479,11 @@ Checks if `polynomials` forms a Groebner basis.
     - `:nibble` for nibble representation (4 bits per exponent). 
 - `certify`: a bool, whether to use a deterministic algorithm. Default is
   `false`.
+- `monoms`: Monomial representation used in the computations. Available options
+    are:
+    - `:auto` for the automatic choice (default),
+    - `:dense` for classic dense exponent vectors,
+    - `:packed` for packed representation.
 - `seed`: The seed for randomization. Default value is `42`.
 
 ## Example
@@ -643,6 +648,11 @@ Returns the leading term of a polynomial.
     - `ProductOrdering(args...)` for block ordering,
     - `MatrixOrdering(matrix)` for matrix ordering.
     For details and examples see the corresponding documentation page.
+- `monoms`: Monomial representation used in the computations. Available options
+  are:
+    - `:auto` for the automatic choice (default),
+    - `:dense` for classic dense exponent vectors,
+    - `:packed` for packed representation.
 
 ## Notes
 
@@ -686,6 +696,11 @@ If the input is not a Groebner basis, computes a Groebner basis.
     - `ProductOrdering(args...)` for block ordering,
     - `MatrixOrdering(matrix)` for matrix ordering.
     For details and examples see the corresponding documentation page.
+- `monoms`: Monomial representation used in the computations. Available options
+  are:
+    - `:auto` for the automatic choice (default),
+    - `:dense` for classic dense exponent vectors,
+    - `:packed` for packed representation.
 
 ## Example
 
@@ -738,6 +753,11 @@ If the input is not a zero-dimensional ideal, an error is raised.
     - `ProductOrdering(args...)` for block ordering,
     - `MatrixOrdering(matrix)` for matrix ordering.
     For details and examples see the corresponding documentation page.
+- `monoms`: Monomial representation used in the computations. Available options
+  are:
+    - `:auto` for the automatic choice (default),
+    - `:dense` for classic dense exponent vectors,
+    - `:packed` for packed representation.
 
 ## Example
 
@@ -776,6 +796,14 @@ If input is not a Groebner basis, computes a Groebner basis.
 ## Returns
 
 - `dimension`: an integer, the dimension.
+
+## Possible Options
+
+- `monoms`: Monomial representation used in the computations. Available options
+  are:
+    - `:auto` for the automatic choice (default),
+    - `:dense` for classic dense exponent vectors,
+    - `:packed` for packed representation.
 
 ## Example
 

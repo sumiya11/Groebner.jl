@@ -227,7 +227,7 @@ end
 function monom_hash(x::PackedTuple4{T, B}, b::Vector{MH}) where {T, B, MH}
     epc = packed_elperchunk(T, B)
     h = _packed_vec_dot(x.a4, b, B, 0)
-    h = _packed_vec_dot(x.a3, view(b, (epc + 1):(2 * epc)), B, 0)
+    h = h + _packed_vec_dot(x.a3, view(b, (epc + 1):(2 * epc)), B, 0)
     h = h + _packed_vec_dot(x.a2, view(b, (2 * epc + 1):(3 * epc)), B, 0)
     h =
         h + _packed_vec_dot(

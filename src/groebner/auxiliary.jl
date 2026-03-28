@@ -77,8 +77,28 @@ function _leading_ideal1(
     coeffs::Vector{Vector{C}},
     options::KeywordArguments
 ) where {I <: Integer, C <: Coeff}
+    try
+        params = AlgorithmParameters(ring, options)
+        return __leading_ideal1(ring, monoms, coeffs, params)
+    catch err
+        if isa(err, MonomialDegreeOverflow)
+            _info_possible_overflow()
+            params = AlgorithmParameters(ring, options; hint=:large_exponents)
+            return __leading_ideal1(ring, monoms, coeffs, params)
+        else
+            # Something bad happened.
+            rethrow(err)
+        end
+    end
+end
+
+function __leading_ideal1(
+    ring::PolyRing,
+    monoms::Vector{Vector{Vector{I}}},
+    coeffs::Vector{Vector{C}},
+    params::AlgorithmParameters
+) where {I <: Integer, C <: Coeff}
     @invariant ir_is_valid(ring, monoms, coeffs)
-    params = AlgorithmParameters(ring, options; hint=:large_exponents)
     _, _ring, _monoms, _coeffs = ir_convert_ir_to_internal(ring, monoms, coeffs, params)
     _result_monoms, _result_coeffs = leading_ideal2(_ring, _monoms, _coeffs, params)
     result_monoms, result_coeffs =
@@ -132,8 +152,28 @@ function _quotient_basis1(
     coeffs::Vector{Vector{C}},
     options::KeywordArguments
 ) where {I <: Integer, C <: Coeff}
+    try
+        params = AlgorithmParameters(ring, options)
+        return __quotient_basis1(ring, monoms, coeffs, params)
+    catch err
+        if isa(err, MonomialDegreeOverflow)
+            _info_possible_overflow()
+            params = AlgorithmParameters(ring, options; hint=:large_exponents)
+            return __quotient_basis1(ring, monoms, coeffs, params)
+        else
+            # Something bad happened.
+            rethrow(err)
+        end
+    end
+end
+
+function __quotient_basis1(
+    ring::PolyRing,
+    monoms::Vector{Vector{Vector{I}}},
+    coeffs::Vector{Vector{C}},
+    params::AlgorithmParameters
+) where {I <: Integer, C <: Coeff}
     @invariant ir_is_valid(ring, monoms, coeffs)
-    params = AlgorithmParameters(ring, options; hint=:large_exponents)
     _, _ring, _monoms, _coeffs = ir_convert_ir_to_internal(ring, monoms, coeffs, params)
     _result_monoms, _result_coeffs = quotient_basis2(_ring, _monoms, _coeffs, params)
     result_monoms, result_coeffs =
@@ -160,7 +200,13 @@ function quotient_basis2(
        length(filter(e -> count(iszero, e) == n - 1, leading_exponents)) < n
         throw(DomainError("Input does not define a zero-dimensional ideal."))
     end
-    @invariant dimension2(ring, monoms, coeffs, params) in (-1, 0)
+    @invariant begin
+        # `dimension2` requires DegRevLex; we ensure monomials are compatible
+        if monom_is_supported_ordering(params.representation.monomtype, DegRevLex())
+            params_drl = struct_update(AlgorithmParameters, params, (target_ord=DegRevLex(),))
+            dimension2(ring, monoms, coeffs, params_drl) in (-1, 0)
+        end
+    end
     exponents_to_check = Vector{Vector{Int}}()
     exponents_checked = Set{Vector{Int}}()
     basis_exponents = Set{Vector{Int}}()
@@ -218,8 +264,29 @@ function _dimension1(
     coeffs::Vector{Vector{C}},
     options::KeywordArguments
 ) where {I <: Integer, C <: Coeff}
+    options = struct_update(KeywordArguments, options, (ordering=DegRevLex(),))
+    try
+        params = AlgorithmParameters(ring, options)
+        return __dimension1(ring, monoms, coeffs, params)
+    catch err
+        if isa(err, MonomialDegreeOverflow)
+            _info_possible_overflow()
+            params = AlgorithmParameters(ring, options; hint=:large_exponents)
+            return __dimension1(ring, monoms, coeffs, params)
+        else
+            # Something bad happened.
+            rethrow(err)
+        end
+    end
+end
+
+function __dimension1(
+    ring::PolyRing,
+    monoms::Vector{Vector{Vector{I}}},
+    coeffs::Vector{Vector{C}},
+    params::AlgorithmParameters
+) where {I <: Integer, C <: Coeff}
     @invariant ir_is_valid(ring, monoms, coeffs)
-    params = AlgorithmParameters(ring, options; hint=:large_exponents)
     _, _ring, _monoms, _coeffs = ir_convert_ir_to_internal(ring, monoms, coeffs, params)
     result = dimension2(_ring, _monoms, _coeffs, params)
     result
@@ -232,6 +299,7 @@ function dimension2(
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters
 ) where {M <: Monom, C <: Coeff}
+    @assert params.target_ord == DegRevLex()
     params = struct_update(AlgorithmParameters, params, (target_ord=DegRevLex(),))
     monoms, coeffs = leading_ideal2(ring, monoms, coeffs, params)
     # GB = {0} or GB = {1}

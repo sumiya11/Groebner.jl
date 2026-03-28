@@ -49,9 +49,7 @@ function _normalform1(
         return __normalform1(ring, monoms, coeffs, ring_tbr, monoms_tbr, coeffs_tbr, params)
     catch err
         if isa(err, MonomialDegreeOverflow)
-            @info """
-            Possible overflow of exponent vector detected. 
-            Restarting with at least 32 bits per exponent.""" maxlog = 1
+            _info_possible_overflow()
             params = AlgorithmParameters(ring, options; hint=:large_exponents)
             return __normalform1(ring, monoms, coeffs, ring_tbr, monoms_tbr, coeffs_tbr, params)
         else

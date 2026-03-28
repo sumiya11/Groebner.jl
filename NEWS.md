@@ -1,3 +1,7 @@
+## Version 0.10.4
+
+- Interface change: keyword argument `monoms` now supported (and defaulted to `:auto`) for most interface functions.
+
 ## Version 0.10.0
 
 - Interface change: keyword argument for `groebner` and friends is changed from `threaded=:yes/:no` to `tasks=N`. This allows to specify the number of tasks used in multi-threading. 
