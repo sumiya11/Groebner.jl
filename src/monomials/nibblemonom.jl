@@ -7,12 +7,14 @@ end
 
 function NibbleMonom(ev::FixedVector{N}) where N
     a = NibbleMonom(ev, zero(UInt8))
+    @invariant sum(i -> monom_exponent(a, i), 1:monom_max_vars(a)) <= typemax(UInt16)
     d = sum_fast(lownibbles(a) + highnibbles(a); init = zero(UInt16))
     d > typemax(UInt8) && __throw_monom_overflow_error()
     NibbleMonom(ev, d % UInt8)
 end
 
 Base.@propagate_inbounds function monom_exponent(a::NibbleMonom, i::Int)
+    @invariant 1 <= i <= 2 * length(a.ev)
     isodd(i) ? a.ev[i ÷ 2 + 1] & 0x0f : a.ev[i ÷ 2] >> 4
 end
 

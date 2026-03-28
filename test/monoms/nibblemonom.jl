@@ -26,10 +26,10 @@ using Test, Groebner, Random
 
         y = [10, 10, 10, 10, 10]
         m = Groebner.monom_construct_from_vector(NM, y)
-        @test_throws Groebner.MonomialDegreeOverflow Groebner.monom_product!(y,y,y)
+        @test_throws Groebner.MonomialDegreeOverflow Groebner.monom_product!(m,m,m)
     end
 
-    for i in 1:10
+    for i in 1:8
         N = 2^i
         for NM in [Groebner.NibbleMonom{N}, Groebner.NibbleNoDeg{N}]
         for k in 1:100

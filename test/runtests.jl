@@ -45,6 +45,7 @@ end
     # Different implementations of a monomial
     isolated_testset("monoms/exponentvector.jl")
     isolated_testset("monoms/packedtuples.jl")
+    isolated_testset("monoms/nibblemonom.jl")
     isolated_testset("monoms/monom_arithmetic.jl")
     isolated_testset("monoms/monom_orders.jl")
 

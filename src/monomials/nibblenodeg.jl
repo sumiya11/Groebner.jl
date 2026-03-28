@@ -5,6 +5,7 @@ struct NibbleNoDeg{N}
 end
 
 Base.@propagate_inbounds function monom_exponent(a::NibbleNoDeg, i::Int)
+    @invariant 1 <= i <= 2 * length(a.ev)
     isodd(i) ? a.ev[i ÷ 2 + 1] & 0x0f : a.ev[i ÷ 2] >> 4
 end
 
@@ -17,6 +18,7 @@ monom_max_vars(a::NibbleNoDeg) = monom_max_vars(typeof(a))
 monom_max_vars(::Type{<:NibbleNoDeg{N}}) where N = 2*N
 
 function monom_totaldeg(a::NibbleNoDeg)
+    @invariant sum(i -> monom_exponent(a, i), 1:monom_max_vars(a)) <= typemax(UInt16)
     sum_fast(lownibbles(a) + highnibbles(a); init = zero(UInt16)) % UInt16
 end
 

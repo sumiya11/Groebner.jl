@@ -6,6 +6,7 @@ struct FixedMonom{N,T}
 end
 
 function FixedMonom(ev::FixedVector{N,T}) where {N,T}
+    @invariant sum(Int, ev) <= typemax(UInt16)
     d = sum_fast(ev; init = zero(UInt16))
     d > typemax(T) && __throw_monom_overflow_error()
     FixedMonom(ev, d % T)
