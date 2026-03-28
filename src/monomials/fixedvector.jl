@@ -12,7 +12,7 @@ monom_totaldeg(a::FixedVector{N,T}) where {N,T} = ~a[end] % T
 monom_copy(a::FixedVector) = a
 
 function monom_construct_hash_vector(rng::AbstractRNG, ::Type{<:FixedVector{N}}, ::Integer) where N
-    setindex(rand(FixedVector{N,MonomHash}), zero(MonomHash), N)
+    setindex(rand(rng, FixedVector{N,MonomHash}), zero(MonomHash), N)
 end
 
 function monom_construct_from_vector(::Type{FixedVector{N,T}}, ev::AbstractVector) where {N,T}
