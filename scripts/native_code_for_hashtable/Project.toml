@@ -1,0 +1,4 @@
+[deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+Groebner = "0b43b601-686d-58a3-8a1c-6623616c7cd4"
+SmallCollections = "2b935e18-93d6-40ac-ae34-fe54c09f00e1"

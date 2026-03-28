@@ -28,7 +28,7 @@ const MonomId = Int32
 const DivisionMask = UInt32
 
 # Hashtable implements open addressing with linear scan.
-mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractMonomialOrdering}
+mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractMonomialOrdering, V <: AbstractVector{MonomHash}}
     #= Data =#
     monoms::Vector{M}
     hashtable::Vector{MonomId}
@@ -36,7 +36,7 @@ mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractMonomialOrdering}
     hashvals::Vector{MonomHash}
     divmasks::Vector{DivisionMask}
 
-    hash_vector::Vector{MonomHash}
+    hash_vector::V
 
     #= Ring information =#
     nvars::Int

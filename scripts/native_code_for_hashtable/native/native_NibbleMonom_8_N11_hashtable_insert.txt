@@ -1,0 +1,1115 @@
+	.text
+	.file	"hashtable_insert!"
+	.section	.rodata.cst32,"aM",@progbits,32
+	.p2align	5, 0x0                          # -- Begin function julia_hashtable_insert!_280966
+.LCPI0_0:
+	.long	0                               # 0x0
+	.long	1                               # 0x1
+	.long	2                               # 0x2
+	.long	3                               # 0x3
+	.long	4                               # 0x4
+	.long	5                               # 0x5
+	.long	6                               # 0x6
+	.long	7                               # 0x7
+.LCPI0_2:
+	.long	0                               # 0x0
+	.long	2                               # 0x2
+	.long	4                               # 0x4
+	.long	6                               # 0x6
+	.long	4                               # 0x4
+	.long	6                               # 0x6
+	.long	6                               # 0x6
+	.long	7                               # 0x7
+	.section	.rodata.cst4,"aM",@progbits,4
+	.p2align	2, 0x0
+.LCPI0_1:
+	.long	8                               # 0x8
+.LCPI0_3:
+	.long	1                               # 0x1
+.LCPI0_6:
+	.long	16                              # 0x10
+	.section	.rodata.cst8,"aM",@progbits,8
+	.p2align	3, 0x0
+.LCPI0_4:
+	.quad	-9223372036854775808            # 0x8000000000000000
+.LCPI0_5:
+	.quad	-9223372036854775777            # 0x800000000000001f
+	.section	.ltext,"axl",@progbits
+	.globl	"julia_hashtable_insert!_280966"
+	.p2align	4, 0x90
+	.type	"julia_hashtable_insert!_280966",@function
+"julia_hashtable_insert!_280966":       # @"julia_hashtable_insert!_280966"
+; Function Signature: hashtable_insert!(Groebner.MonomialHashtable{Groebner.NibbleMonom{8}, Groebner.DegRevLex{true, Union{}}, SmallCollections.FixedVector{8, UInt32}}, Groebner.NibbleMonom{8})
+; ┌ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:274 within `hashtable_insert!`
+	.cfi_startproc
+# %bb.0:                                # %top
+	#DEBUG_VALUE: hashtable_insert!:ht <- [$rcx+0]
+	#DEBUG_VALUE: hashtable_insert!:e <- [$rdx+0]
+	push	rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset rbp, -16
+	mov	rbp, rsp
+	.cfi_def_cfa_register rbp
+	push	r15
+	push	r14
+	push	r13
+	push	r12
+	push	rsi
+	push	rdi
+	push	rbx
+	and	rsp, -32
+	sub	rsp, 448
+	vmovdqa	xmmword ptr [rbp - 80], xmm15   # 16-byte Spill
+	vmovdqa	xmmword ptr [rbp - 96], xmm14   # 16-byte Spill
+	vmovdqa	xmmword ptr [rbp - 112], xmm13  # 16-byte Spill
+	vmovdqa	xmmword ptr [rbp - 128], xmm12  # 16-byte Spill
+	vmovaps	xmmword ptr [rbp - 144], xmm11  # 16-byte Spill
+	vmovdqa	xmmword ptr [rbp - 160], xmm10  # 16-byte Spill
+	vmovaps	xmmword ptr [rbp - 176], xmm9   # 16-byte Spill
+	vmovdqa	xmmword ptr [rbp - 192], xmm8   # 16-byte Spill
+	vmovdqa	xmmword ptr [rbp - 208], xmm7   # 16-byte Spill
+	vmovdqa	xmmword ptr [rbp - 224], xmm6   # 16-byte Spill
+	.cfi_offset rbx, -72
+	.cfi_offset rdi, -64
+	.cfi_offset rsi, -56
+	.cfi_offset r12, -48
+	.cfi_offset r13, -40
+	.cfi_offset r14, -32
+	.cfi_offset r15, -24
+	.cfi_offset xmm6, -240
+	.cfi_offset xmm7, -224
+	.cfi_offset xmm8, -208
+	.cfi_offset xmm9, -192
+	.cfi_offset xmm10, -176
+	.cfi_offset xmm11, -160
+	.cfi_offset xmm12, -144
+	.cfi_offset xmm13, -128
+	.cfi_offset xmm14, -112
+	.cfi_offset xmm15, -96
+	mov	qword ptr [rsp + 32], rdx       # 8-byte Spill
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:279 within `hashtable_insert!`
+; │┌ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:46 within `monom_hash`
+; ││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedvector.jl:364 within `dot_fast`
+; │││┌ @ broadcast.jl:894 within `materialize`
+; ││││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedvector.jl:578 within `copy`
+; │││││┌ @ none within `map_fixedvector`
+; ││││││┌ @ none within `macro expansion`
+; │││││││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\SmallCollections.jl:37 within `dot_fast`
+; ││││││││┌ @ fastmath.jl:274 within `mul_fast`
+; │││││││││┌ @ promotion.jl:404 within `promote`
+; ││││││││││┌ @ promotion.jl:379 within `_promote`
+; │││││││││││┌ @ number.jl:7 within `convert`
+; ││││││││││││┌ @ boot.jl:961 within `UInt32`
+; │││││││││││││┌ @ boot.jl:923 within `toUInt32`
+	vmovq	xmm0, qword ptr [rdx]           # xmm0 = mem[0],zero
+	vpmovzxbd	ymm1, xmm0              # ymm1 = xmm0[0],zero,zero,zero,xmm0[1],zero,zero,zero,xmm0[2],zero,zero,zero,xmm0[3],zero,zero,zero,xmm0[4],zero,zero,zero,xmm0[5],zero,zero,zero,xmm0[6],zero,zero,zero,xmm0[7],zero,zero,zero
+; │││││││││└└└└└
+; │││││││││ @ fastmath.jl:274 within `mul_fast` @ fastmath.jl:277
+; │││││││││┌ @ int.jl:88 within `*`
+	vpmulld	ymm1, ymm1, ymmword ptr [rcx + 40]
+	vextracti128	xmm2, ymm1, 1
+	vphaddd	xmm1, xmm1, xmm2
+; │││└└└└└└└
+; │││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedvector.jl:353 within `sum_fast`
+; ││││┌ @ reduce.jl:190 within `foldl`
+; │││││┌ @ reduce.jl:190 within `#foldl#271`
+; ││││││┌ @ reduce.jl:167 within `mapfoldl`
+; │││││││┌ @ reduce.jl:167 within `#mapfoldl#270`
+; ││││││││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedvector.jl:307 within `mapfoldl_impl`
+; │││││││││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedvector.jl:307 within `macro expansion`
+; ││││││││││┌ @ fastmath.jl:277 within `add_fast`
+; │││││││││││┌ @ int.jl:87 within `+`
+	vpshufd	xmm2, xmm1, 238                 # xmm2 = xmm1[2,3,2,3]
+	vpaddd	xmm1, xmm1, xmm2
+	vpshufd	xmm2, xmm1, 85                  # xmm2 = xmm1[1,1,1,1]
+	vpaddd	xmm1, xmm1, xmm2
+	vmovd	r15d, xmm1
+; │└└└└└└└└└└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:281 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	r9d, dword ptr [rcx + 128]
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:282 within `hashtable_insert!`
+; │┌ @ int.jl:550 within `rem`
+	lea	r10d, [r9 - 1]
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:283 within `hashtable_insert!`
+; │┌ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:265 within `hashtable_next_lookup_index`
+; ││┌ @ int.jl:353 within `&`
+	mov	edx, r15d
+	and	edx, r10d
+; ││└
+; ││┌ @ int.jl:87 within `+`
+	inc	edx
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:284 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rax, qword ptr [rcx + 8]
+; │└
+; │┌ @ abstractarray.jl:1345 within `getindex` @ essentials.jl:920
+	mov	r12, qword ptr [rax]
+	movsxd	rax, dword ptr [r12 + 4*rdx - 4]
+	shl	rdx, 2
+	test	rax, rax
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:287 within `hashtable_insert!`
+	je	.LBB0_1
+# %bb.2:                                # %L106
+; │┌ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:269 within `hashtable_is_hash_collision`
+; ││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	r8, qword ptr [rcx + 24]
+; ││└
+; ││┌ @ abstractarray.jl:1345 within `getindex` @ essentials.jl:920
+	mov	r11, qword ptr [r8]
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:316 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	r8, qword ptr [rcx]
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:287 within `hashtable_insert!`
+; │┌ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:269 within `hashtable_is_hash_collision`
+; ││┌ @ operators.jl:321 within `!=`
+; │││┌ @ promotion.jl:637 within `==`
+	cmp	dword ptr [r11 + 4*rax - 4], r15d
+; ││└└
+	jne	.LBB0_4
+# %bb.3:                                # %L228
+; ││ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:270 within `hashtable_is_hash_collision`
+; ││┌ @ abstractarray.jl:1345 within `getindex` @ essentials.jl:920
+	mov	rsi, qword ptr [r8]
+	lea	rdi, [rax + 8*rax]
+; ││└
+; ││┌ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:105 within `monom_is_equal`
+; │││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedvector.jl:328 within `==`
+; ││││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedsmallvector.jl:95 within `all`
+; │││││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedsmallvector.jl:95 within `#all#173`
+; ││││││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedsmallvector.jl:107 within `all`
+; │││││││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedsmallvector.jl:113 within `#all#175`
+; ││││││││┌ @ operators.jl:472 within `>=`
+; │││││││││┌ @ int.jl:520 within `<=`
+	vmovq	rbx, xmm0
+	cmp	qword ptr [rsi + rdi - 9], rbx
+; │└└└└└└└└└
+	je	.LBB0_64
+.LBB0_4:                                # %L232
+	cmp	r9d, 2
+	mov	qword ptr [rsp + 48], r15       # 8-byte Spill
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:295 within `hashtable_insert!`
+	jb	.LBB0_10
+# %bb.5:                                # %L239.lr.ph.split
+	mov	esi, 1
+	vmovq	rdi, xmm0
+	jmp	.LBB0_6
+	.p2align	4, 0x90
+.LBB0_9:                                # %L390
+                                        #   in Loop: Header=BB0_6 Depth=1
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:302 within `hashtable_insert!`
+; │┌ @ int.jl:87 within `+`
+	inc	esi
+	cmp	r9d, esi
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:295 within `hashtable_insert!`
+	je	.LBB0_10
+.LBB0_6:                                # %L239
+                                        # =>This Inner Loop Header: Depth=1
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:296 within `hashtable_insert!`
+; │┌ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:265 within `hashtable_next_lookup_index`
+; ││┌ @ int.jl:353 within `&`
+	lea	edx, [r15 + rsi]
+	and	edx, r10d
+; ││└
+; ││┌ @ int.jl:87 within `+`
+	inc	edx
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:297 within `hashtable_insert!`
+; │┌ @ abstractarray.jl:1345 within `getindex` @ essentials.jl:920
+	movsxd	rax, dword ptr [r12 + 4*rdx - 4]
+	shl	rdx, 2
+	test	rax, rax
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:299 within `hashtable_insert!`
+	je	.LBB0_10
+# %bb.7:                                # %L266
+                                        #   in Loop: Header=BB0_6 Depth=1
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:301 within `hashtable_insert!`
+; │┌ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:269 within `hashtable_is_hash_collision`
+; ││┌ @ operators.jl:321 within `!=`
+; │││┌ @ promotion.jl:637 within `==`
+	cmp	dword ptr [r11 + 4*rax - 4], r15d
+; ││└└
+	jne	.LBB0_9
+# %bb.8:                                # %L388
+                                        #   in Loop: Header=BB0_6 Depth=1
+; ││ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:270 within `hashtable_is_hash_collision`
+; ││┌ @ abstractarray.jl:1345 within `getindex` @ essentials.jl:920
+	mov	rbx, qword ptr [r8]
+	lea	r14, [rax + 8*rax]
+; ││└
+; ││┌ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:105 within `monom_is_equal`
+; │││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedvector.jl:328 within `==`
+; ││││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedsmallvector.jl:95 within `all`
+; │││││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedsmallvector.jl:95 within `#all#173`
+; ││││││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedsmallvector.jl:107 within `all`
+; │││││││┌ @ C:\Users\User\.julia\packages\SmallCollections\z2nzE\src\fixedsmallvector.jl:113 within `#all#175`
+; ││││││││┌ @ operators.jl:472 within `>=`
+; │││││││││┌ @ int.jl:520 within `<=`
+	cmp	qword ptr [rbx + r14 - 9], rdi
+	jne	.LBB0_9
+	jmp	.LBB0_64
+.LBB0_1:                                # %L232.thread
+	mov	qword ptr [rsp + 48], r15       # 8-byte Spill
+; │└└└└└└└└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:316 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	r8, qword ptr [rcx]
+.LBB0_10:                               # %L393
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:313 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	eax, dword ptr [rcx + 136]
+; │└
+; │┌ @ int.jl:550 within `rem`
+	inc	eax
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:315 within `hashtable_insert!`
+; │┌ @ multidimensional.jl:745 within `setindex!` @ array.jl:986
+; ││┌ @ array.jl:991 within `_setindex!`
+	mov	dword ptr [r12 + rdx - 4], eax
+	mov	qword ptr [rsp + 80], rax       # 8-byte Spill
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:316 within `hashtable_insert!`
+; │┌ @ multidimensional.jl:745 within `setindex!`
+; ││┌ @ indices.jl:365 within `to_indices` @ indices.jl:368
+; │││┌ @ indices.jl:292 within `to_index` @ indices.jl:307
+; ││││┌ @ number.jl:7 within `convert`
+; │││││┌ @ boot.jl:957 within `Int64`
+; ││││││┌ @ boot.jl:876 within `toInt64`
+	movsxd	rdx, eax
+; ││└└└└└
+; ││ @ multidimensional.jl:745 within `setindex!` @ array.jl:986
+; ││┌ @ array.jl:991 within `_setindex!`
+; │││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rax, qword ptr [r8]
+	mov	qword ptr [rsp + 72], rdx       # 8-byte Spill
+; │││└
+	lea	rdx, [rdx + 8*rdx]
+	mov	r9, qword ptr [rsp + 32]        # 8-byte Reload
+	movzx	r8d, byte ptr [r9 + 8]
+	mov	byte ptr [rax + rdx - 1], r8b
+	mov	r8, qword ptr [r9]
+	mov	qword ptr [rax + rdx - 9], r8
+	mov	qword ptr [rsp + 16], rcx       # 8-byte Spill
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:317 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rax, qword ptr [rcx + 112]
+	xor	r8d, r8d
+; │└
+; │┌ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:120 within `monom_create_divmask`
+; ││┌ @ range.jl:5 within `Colon`
+; │││┌ @ range.jl:415 within `UnitRange`
+; ││││┌ @ range.jl:426 within `unitrange_last`
+	test	rax, rax
+	cmovle	rax, r8
+	mov	qword ptr [rsp + 88], rax       # 8-byte Spill
+; ││└└└
+	jle	.LBB0_63
+# %bb.11:                               # %L462.preheader
+	mov	rax, qword ptr [rsp + 16]       # 8-byte Reload
+; │└
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rcx, qword ptr [rax + 120]
+	xor	r8d, r8d
+	mov	eax, 0
+	test	rcx, rcx
+	mov	qword ptr [rsp + 40], rcx       # 8-byte Spill
+	cmovg	rax, rcx
+; │└
+; │┌ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:121 within `monom_create_divmask`
+	jle	.LBB0_63
+# %bb.12:                               # %L462.preheader.split
+	mov	rcx, qword ptr [rsp + 16]       # 8-byte Reload
+	mov	rdx, qword ptr [rcx + 104]
+	mov	rdi, qword ptr [rdx]
+	lea	rcx, [rax - 1]
+	mov	qword ptr [rsp + 64], rcx       # 8-byte Spill
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:122 within `monom_create_divmask`
+; ││┌ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:16 within `monom_exponent`
+	lea	rcx, [rax + 1]
+	mov	qword ptr [rsp + 24], rcx       # 8-byte Spill
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:121 within `monom_create_divmask`
+	mov	rcx, rax
+	and	rcx, -16
+	mov	qword ptr [rsp + 56], rcx       # 8-byte Spill
+	mov	r13d, 1
+	xor	ebx, ebx
+	mov	r12d, 1
+	movabs	rdx, offset .LCPI0_0
+	vmovaps	ymm0, ymmword ptr [rdx]
+	vmovaps	ymmword ptr [rsp + 128], ymm0   # 32-byte Spill
+	movabs	rdx, offset .LCPI0_1
+	vpbroadcastd	ymm2, dword ptr [rdx]
+	movabs	rdx, offset .LCPI0_2
+	vmovdqa	ymm15, ymmword ptr [rdx]
+	movabs	rdx, offset .LCPI0_3
+	vbroadcastss	ymm0, dword ptr [rdx]
+	vmovaps	ymmword ptr [rsp + 192], ymm0   # 32-byte Spill
+	movabs	rdx, offset .LCPI0_4
+	vpbroadcastq	ymm6, qword ptr [rdx]
+	movabs	rdx, offset .LCPI0_5
+	vpbroadcastq	ymm1, qword ptr [rdx]
+	movabs	rdx, offset .LCPI0_6
+	vpbroadcastd	ymm3, dword ptr [rdx]
+	vmovdqa	ymmword ptr [rsp + 160], ymm3   # 32-byte Spill
+	xor	r8d, r8d
+	mov	r15d, 1
+	vmovdqa	ymmword ptr [rsp + 224], ymm2   # 32-byte Spill
+	jmp	.LBB0_13
+	.p2align	4, 0x90
+.LBB0_62:                               # %L544.loopexit
+                                        #   in Loop: Header=BB0_13 Depth=1
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:122 within `monom_create_divmask`
+; ││┌ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:16 within `monom_exponent`
+	add	r15d, eax
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:127 within `monom_create_divmask`
+; ││┌ @ range.jl:921 within `iterate`
+	lea	rcx, [r12 + 1]
+; │││┌ @ promotion.jl:637 within `==`
+	cmp	r12, qword ptr [rsp + 88]       # 8-byte Folded Reload
+	mov	r12, rcx
+; ││└└
+	je	.LBB0_63
+.LBB0_13:                               # %L462
+                                        # =>This Loop Header: Depth=1
+                                        #     Child Loop BB0_42 Depth 2
+                                        #     Child Loop BB0_47 Depth 2
+                                        #     Child Loop BB0_53 Depth 2
+                                        #     Child Loop BB0_21 Depth 2
+                                        #     Child Loop BB0_30 Depth 2
+	mov	rdx, r12
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:122 within `monom_create_divmask`
+; ││┌ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:16 within `monom_exponent`
+	test	r12b, 1
+	jne	.LBB0_35
+# %bb.14:                               # %L481.preheader.split.us
+                                        #   in Loop: Header=BB0_13 Depth=1
+	sar	rdx
+	mov	rcx, qword ptr [rsp + 32]       # 8-byte Reload
+	movzx	r10d, byte ptr [rcx + rdx - 1]
+	shr	r10d, 4
+	mov	r14d, 1
+	cmp	qword ptr [rsp + 40], 16        # 8-byte Folded Reload
+	jge	.LBB0_16
+# %bb.15:                               #   in Loop: Header=BB0_13 Depth=1
+	mov	r9d, r15d
+.LBB0_23:                               # %scalar.ph
+                                        #   in Loop: Header=BB0_13 Depth=1
+	test	al, 1
+	jne	.LBB0_25
+# %bb.24:                               #   in Loop: Header=BB0_13 Depth=1
+	mov	rdx, r14
+	cmp	qword ptr [rsp + 40], r14       # 8-byte Folded Reload
+	je	.LBB0_62
+	jmp	.LBB0_29
+	.p2align	4, 0x90
+.LBB0_35:                               # %L481.preheader.split
+                                        #   in Loop: Header=BB0_13 Depth=1
+	shr	rdx
+	mov	rcx, qword ptr [rsp + 32]       # 8-byte Reload
+	movzx	r14d, byte ptr [rcx + rdx]
+	and	r14d, 15
+	mov	r10d, 1
+	cmp	qword ptr [rsp + 40], 16        # 8-byte Folded Reload
+	jge	.LBB0_37
+# %bb.36:                               #   in Loop: Header=BB0_13 Depth=1
+	mov	r9d, r15d
+.LBB0_44:                               # %scalar.ph270
+                                        #   in Loop: Header=BB0_13 Depth=1
+	mov	rsi, qword ptr [rsp + 24]       # 8-byte Reload
+                                        # kill: def $esi killed $esi killed $rsi def $rsi
+	sub	esi, r10d
+	and	esi, 3
+	je	.LBB0_45
+# %bb.46:                               # %L481.prol.preheader
+                                        #   in Loop: Header=BB0_13 Depth=1
+; ││└
+	neg	rsi
+	xor	edx, edx
+	jmp	.LBB0_47
+	.p2align	4, 0x90
+.LBB0_49:                               # %L532.prol
+                                        #   in Loop: Header=BB0_47 Depth=2
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:125 within `monom_create_divmask`
+; ││┌ @ int.jl:87 within `+`
+	inc	r9d
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:126 within `monom_create_divmask`
+	dec	rdx
+	cmp	rsi, rdx
+	je	.LBB0_50
+.LBB0_47:                               # %L481.prol
+                                        #   Parent Loop BB0_13 Depth=1
+                                        # =>  This Inner Loop Header: Depth=2
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:122 within `monom_create_divmask`
+; ││┌ @ abstractarray.jl:1345 within `getindex`
+; │││┌ @ indices.jl:365 within `to_indices` @ indices.jl:368
+; ││││┌ @ indices.jl:292 within `to_index` @ indices.jl:307
+; │││││┌ @ number.jl:7 within `convert`
+; ││││││┌ @ boot.jl:957 within `Int64`
+; │││││││┌ @ boot.jl:881 within `toInt64`
+	mov	r9d, r9d
+; ││└└└└└└
+; ││┌ @ operators.jl:472 within `>=`
+; │││┌ @ promotion.jl:489 within `<=` @ int.jl:521
+	cmp	dword ptr [rdi + 4*r9 - 4], r14d
+; ││└└
+	ja	.LBB0_49
+# %bb.48:                               # %L527.prol
+                                        #   in Loop: Header=BB0_47 Depth=2
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:123 within `monom_create_divmask`
+; ││┌ @ int.jl:1015 within `-` @ int.jl:86
+	lea	r11, [r9 - 1]
+; ││└
+; ││┌ @ int.jl:535 within `<<`
+	shlx	ecx, r13d, r11d
+	cmp	r11, 32
+	cmovae	ecx, ebx
+; ││└
+; ││┌ @ int.jl:378 within `|`
+	or	r8d, ecx
+	jmp	.LBB0_49
+	.p2align	4, 0x90
+.LBB0_50:                               # %L481.prol.loopexit.loopexit
+                                        #   in Loop: Header=BB0_13 Depth=1
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:122 within `monom_create_divmask`
+; ││┌ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:16 within `monom_exponent`
+	mov	rsi, r10
+	sub	rsi, rdx
+	jmp	.LBB0_51
+	.p2align	4, 0x90
+.LBB0_16:                               # %vector.scevcheck
+                                        #   in Loop: Header=BB0_13 Depth=1
+	mov	edx, r15d
+	mov	rcx, qword ptr [rsp + 64]       # 8-byte Reload
+	add	edx, ecx
+	jb	.LBB0_17
+# %bb.18:                               # %vector.scevcheck
+                                        #   in Loop: Header=BB0_13 Depth=1
+	mov	rdx, rcx
+	shr	rdx, 32
+	jne	.LBB0_19
+# %bb.20:                               # %vector.ph
+                                        #   in Loop: Header=BB0_13 Depth=1
+	mov	rsi, rax
+	movabs	rcx, 9223372036854775792
+	and	rsi, rcx
+	lea	r9d, [r15 + rsi]
+	mov	r14, rsi
+	or	r14, 1
+	vmovd	xmm9, r8d
+	vmovd	xmm10, r15d
+	vpbroadcastd	ymm10, xmm10
+	vpaddd	ymm10, ymm10, ymmword ptr [rsp + 128] # 32-byte Folded Reload
+	vmovd	xmm11, r10d
+	vpbroadcastb	xmm12, xmm11
+	vpxor	xmm11, xmm11, xmm11
+	vpmovzxbd	ymm3, xmm12             # ymm3 = xmm12[0],zero,zero,zero,xmm12[1],zero,zero,zero,xmm12[2],zero,zero,zero,xmm12[3],zero,zero,zero,xmm12[4],zero,zero,zero,xmm12[5],zero,zero,zero,xmm12[6],zero,zero,zero,xmm12[7],zero,zero,zero
+	vmovdqa	ymmword ptr [rsp + 96], ymm3    # 32-byte Spill
+	mov	r8, qword ptr [rsp + 56]        # 8-byte Reload
+	vpcmpeqd	ymm3, ymm3, ymm3
+	vmovdqa	ymm5, ymm15
+	vmovdqa	ymm12, ymm1
+	.p2align	4, 0x90
+.LBB0_21:                               # %vector.body
+                                        #   Parent Loop BB0_13 Depth=1
+                                        # =>  This Inner Loop Header: Depth=2
+	vpaddd	ymm13, ymm10, ymm2
+; ││└
+; ││┌ @ abstractarray.jl:1345 within `getindex`
+; │││┌ @ indices.jl:365 within `to_indices` @ indices.jl:368
+; ││││┌ @ indices.jl:292 within `to_index` @ indices.jl:307
+; │││││┌ @ number.jl:7 within `convert`
+; ││││││┌ @ boot.jl:957 within `Int64`
+; │││││││┌ @ boot.jl:881 within `toInt64`
+	vextracti128	xmm14, ymm10, 1
+	vpmovzxdq	ymm14, xmm14            # ymm14 = xmm14[0],zero,xmm14[1],zero,xmm14[2],zero,xmm14[3],zero
+	vpmovzxdq	ymm15, xmm10            # ymm15 = xmm10[0],zero,xmm10[1],zero,xmm10[2],zero,xmm10[3],zero
+	vpmovzxdq	ymm0, xmm13             # ymm0 = xmm13[0],zero,xmm13[1],zero,xmm13[2],zero,xmm13[3],zero
+	vextracti128	xmm13, ymm13, 1
+	vpmovzxdq	ymm13, xmm13            # ymm13 = xmm13[0],zero,xmm13[1],zero,xmm13[2],zero,xmm13[3],zero
+; │││└└└└└
+; │││ @ abstractarray.jl:1345 within `getindex` @ essentials.jl:920
+	vmovq	rdx, xmm15
+	vmovdqu	ymm1, ymmword ptr [rdi + 4*rdx - 4]
+	vmovdqu	ymm7, ymmword ptr [rdi + 4*rdx + 28]
+	vmovdqa	ymm2, ymmword ptr [rsp + 96]    # 32-byte Reload
+; ││└
+; ││┌ @ operators.jl:472 within `>=`
+; │││┌ @ promotion.jl:489 within `<=` @ int.jl:521
+	vpminud	ymm8, ymm1, ymm2
+	vpcmpeqd	ymm1, ymm8, ymm1
+	vpminud	ymm8, ymm7, ymm2
+	vpcmpeqd	ymm7, ymm8, ymm7
+; ││└└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:123 within `monom_create_divmask`
+; ││┌ @ int.jl:1015 within `-` @ int.jl:86
+	vpaddq	ymm8, ymm14, ymm3
+	vpaddq	ymm14, ymm15, ymm3
+	vpaddq	ymm13, ymm13, ymm3
+	vpaddq	ymm0, ymm0, ymm3
+; ││└
+; ││┌ @ int.jl:535 within `<<`
+	vpermd	ymm15, ymm5, ymm14
+	vpermd	ymm4, ymm5, ymm8
+	vinserti128	ymm4, ymm15, xmm4, 1
+	vpermd	ymm15, ymm5, ymm0
+	vpermd	ymm2, ymm5, ymm13
+	vinserti128	ymm2, ymm15, xmm2, 1
+	vpxor	ymm8, ymm8, ymm6
+	vpcmpgtq	ymm8, ymm8, ymm12
+	vpxor	ymm14, ymm14, ymm6
+	vpcmpgtq	ymm14, ymm14, ymm12
+	vpackssdw	ymm8, ymm14, ymm8
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:122 within `monom_create_divmask`
+; ││┌ @ operators.jl:472 within `>=`
+; │││┌ @ promotion.jl:489 within `<=` @ int.jl:521
+	vpxor	ymm1, ymm1, ymm3
+; ││└└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:123 within `monom_create_divmask`
+; ││┌ @ int.jl:535 within `<<`
+	vpermq	ymm8, ymm8, 216                 # ymm8 = ymm8[0,2,1,3]
+	vpor	ymm1, ymm8, ymm1
+	vpxor	ymm8, ymm13, ymm6
+	vpcmpgtq	ymm8, ymm8, ymm12
+	vpxor	ymm0, ymm0, ymm6
+	vpcmpgtq	ymm0, ymm0, ymm12
+	vpackssdw	ymm0, ymm0, ymm8
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:122 within `monom_create_divmask`
+; ││┌ @ operators.jl:472 within `>=`
+; │││┌ @ promotion.jl:489 within `<=` @ int.jl:521
+	vpxor	ymm7, ymm7, ymm3
+; ││└└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:123 within `monom_create_divmask`
+; ││┌ @ int.jl:535 within `<<`
+	vpermq	ymm0, ymm0, 216                 # ymm0 = ymm0[0,2,1,3]
+	vpor	ymm0, ymm7, ymm0
+	vmovdqa	ymm7, ymmword ptr [rsp + 192]   # 32-byte Reload
+	vpsllvd	ymm4, ymm7, ymm4
+	vpxor	xmm8, xmm8, xmm8
+	vblendvps	ymm1, ymm4, ymm8, ymm1
+	vxorps	xmm4, xmm4, xmm4
+	vpor	ymm9, ymm9, ymm1
+	vpsllvd	ymm1, ymm7, ymm2
+	vmovdqa	ymm2, ymmword ptr [rsp + 224]   # 32-byte Reload
+	vblendvps	ymm0, ymm1, ymm4, ymm0
+	vpor	ymm11, ymm11, ymm0
+	vpaddd	ymm10, ymm10, ymmword ptr [rsp + 160] # 32-byte Folded Reload
+	add	r8, -16
+	jne	.LBB0_21
+# %bb.22:                               # %middle.block
+                                        #   in Loop: Header=BB0_13 Depth=1
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:126 within `monom_create_divmask`
+	vpor	ymm0, ymm11, ymm9
+	vextracti128	xmm1, ymm0, 1
+	vpor	xmm0, xmm0, xmm1
+	vpshufd	xmm1, xmm0, 238                 # xmm1 = xmm0[2,3,2,3]
+	vpor	xmm0, xmm0, xmm1
+	vpshufd	xmm1, xmm0, 85                  # xmm1 = xmm0[1,1,1,1]
+	vpor	xmm0, xmm0, xmm1
+	vmovd	r8d, xmm0
+	cmp	rax, rsi
+	vmovdqa	ymm15, ymm5
+	vmovdqa	ymm1, ymm12
+	je	.LBB0_62
+	jmp	.LBB0_23
+	.p2align	4, 0x90
+.LBB0_37:                               # %vector.scevcheck268
+                                        #   in Loop: Header=BB0_13 Depth=1
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:122 within `monom_create_divmask`
+; ││┌ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:16 within `monom_exponent`
+	mov	edx, r15d
+	mov	rcx, qword ptr [rsp + 64]       # 8-byte Reload
+	add	edx, ecx
+	jb	.LBB0_38
+# %bb.39:                               # %vector.scevcheck268
+                                        #   in Loop: Header=BB0_13 Depth=1
+	mov	rdx, rcx
+	shr	rdx, 32
+	jne	.LBB0_40
+# %bb.41:                               # %vector.ph272
+                                        #   in Loop: Header=BB0_13 Depth=1
+	mov	rsi, rax
+	movabs	rcx, 9223372036854775792
+	and	rsi, rcx
+	lea	r9d, [r15 + rsi]
+	mov	r10, rsi
+	or	r10, 1
+	vmovd	xmm9, r8d
+	vpcmpeqd	ymm3, ymm3, ymm3
+	vmovd	xmm0, r15d
+	vpbroadcastd	ymm0, xmm0
+	vpaddd	ymm10, ymm0, ymmword ptr [rsp + 128] # 32-byte Folded Reload
+	vmovd	xmm0, r14d
+	vpbroadcastd	ymm0, xmm0
+	vmovdqa	ymmword ptr [rsp + 96], ymm0    # 32-byte Spill
+	vxorps	xmm11, xmm11, xmm11
+	mov	r8, qword ptr [rsp + 56]        # 8-byte Reload
+	vmovdqa	ymm12, ymm1
+	.p2align	4, 0x90
+.LBB0_42:                               # %vector.body281
+                                        #   Parent Loop BB0_13 Depth=1
+                                        # =>  This Inner Loop Header: Depth=2
+	vpaddd	ymm0, ymm10, ymm2
+; ││└
+; ││┌ @ abstractarray.jl:1345 within `getindex`
+; │││┌ @ indices.jl:365 within `to_indices` @ indices.jl:368
+; ││││┌ @ indices.jl:292 within `to_index` @ indices.jl:307
+; │││││┌ @ number.jl:7 within `convert`
+; ││││││┌ @ boot.jl:957 within `Int64`
+; │││││││┌ @ boot.jl:881 within `toInt64`
+	vextracti128	xmm1, ymm10, 1
+	vpmovzxdq	ymm1, xmm1              # ymm1 = xmm1[0],zero,xmm1[1],zero,xmm1[2],zero,xmm1[3],zero
+	vpmovzxdq	ymm2, xmm10             # ymm2 = xmm10[0],zero,xmm10[1],zero,xmm10[2],zero,xmm10[3],zero
+	vpmovzxdq	ymm4, xmm0              # ymm4 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero
+	vextracti128	xmm0, ymm0, 1
+	vpmovzxdq	ymm0, xmm0              # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero
+; │││└└└└└
+; │││ @ abstractarray.jl:1345 within `getindex` @ essentials.jl:920
+	vmovq	rdx, xmm2
+	vmovdqu	ymm7, ymmword ptr [rdi + 4*rdx - 4]
+	vmovdqu	ymm8, ymmword ptr [rdi + 4*rdx + 28]
+	vmovdqa	ymm5, ymmword ptr [rsp + 96]    # 32-byte Reload
+; ││└
+; ││┌ @ operators.jl:472 within `>=`
+; │││┌ @ promotion.jl:489 within `<=` @ int.jl:521
+	vpminud	ymm13, ymm7, ymm5
+	vpcmpeqd	ymm7, ymm13, ymm7
+	vpminud	ymm13, ymm8, ymm5
+	vpcmpeqd	ymm8, ymm8, ymm13
+; ││└└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:123 within `monom_create_divmask`
+; ││┌ @ int.jl:1015 within `-` @ int.jl:86
+	vpaddq	ymm1, ymm1, ymm3
+	vpaddq	ymm2, ymm2, ymm3
+	vpaddq	ymm0, ymm0, ymm3
+	vpaddq	ymm4, ymm4, ymm3
+; ││└
+; ││┌ @ int.jl:535 within `<<`
+	vpermd	ymm13, ymm15, ymm2
+	vpermd	ymm14, ymm15, ymm1
+	vinserti128	ymm13, ymm13, xmm14, 1
+	vpermd	ymm14, ymm15, ymm4
+	vmovdqa	ymm5, ymm15
+	vpermd	ymm15, ymm15, ymm0
+	vinserti128	ymm14, ymm14, xmm15, 1
+	vmovdqa	ymm15, ymm5
+	vpxor	ymm1, ymm1, ymm6
+	vpcmpgtq	ymm1, ymm1, ymm12
+	vpxor	ymm2, ymm2, ymm6
+	vpcmpgtq	ymm2, ymm2, ymm12
+	vpackssdw	ymm1, ymm2, ymm1
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:122 within `monom_create_divmask`
+; ││┌ @ operators.jl:472 within `>=`
+; │││┌ @ promotion.jl:489 within `<=` @ int.jl:521
+	vpxor	ymm2, ymm7, ymm3
+	vmovdqa	ymm5, ymmword ptr [rsp + 192]   # 32-byte Reload
+; ││└└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:123 within `monom_create_divmask`
+; ││┌ @ int.jl:535 within `<<`
+	vpermq	ymm1, ymm1, 216                 # ymm1 = ymm1[0,2,1,3]
+	vpor	ymm1, ymm2, ymm1
+	vpxor	ymm0, ymm0, ymm6
+	vpcmpgtq	ymm0, ymm0, ymm12
+	vpxor	ymm2, ymm4, ymm6
+	vpxor	xmm4, xmm4, xmm4
+	vpcmpgtq	ymm2, ymm2, ymm12
+	vpackssdw	ymm0, ymm2, ymm0
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:122 within `monom_create_divmask`
+; ││┌ @ operators.jl:472 within `>=`
+; │││┌ @ promotion.jl:489 within `<=` @ int.jl:521
+	vpxor	ymm2, ymm8, ymm3
+; ││└└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:123 within `monom_create_divmask`
+; ││┌ @ int.jl:535 within `<<`
+	vpermq	ymm0, ymm0, 216                 # ymm0 = ymm0[0,2,1,3]
+	vpor	ymm0, ymm2, ymm0
+	vpsllvd	ymm2, ymm5, ymm13
+	vblendvps	ymm1, ymm2, ymm4, ymm1
+	vmovdqa	ymm2, ymmword ptr [rsp + 224]   # 32-byte Reload
+	vpor	ymm9, ymm9, ymm1
+	vpsllvd	ymm1, ymm5, ymm14
+	vblendvps	ymm0, ymm1, ymm4, ymm0
+	vorps	ymm11, ymm11, ymm0
+	vpaddd	ymm10, ymm10, ymmword ptr [rsp + 160] # 32-byte Folded Reload
+	add	r8, -16
+	jne	.LBB0_42
+# %bb.43:                               # %middle.block269
+                                        #   in Loop: Header=BB0_13 Depth=1
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:126 within `monom_create_divmask`
+	vorps	ymm0, ymm11, ymm9
+	vextractf128	xmm1, ymm0, 1
+	vorps	xmm0, xmm0, xmm1
+	vshufps	xmm1, xmm0, xmm0, 238           # xmm1 = xmm0[2,3,2,3]
+	vorps	xmm0, xmm0, xmm1
+	vshufps	xmm1, xmm0, xmm0, 85            # xmm1 = xmm0[1,1,1,1]
+	vorps	xmm0, xmm0, xmm1
+	vmovd	r8d, xmm0
+	cmp	rax, rsi
+	vmovdqa	ymm1, ymm12
+	je	.LBB0_62
+	jmp	.LBB0_44
+	.p2align	4, 0x90
+.LBB0_25:                               # %L481.us.prol.preheader
+                                        #   in Loop: Header=BB0_13 Depth=1
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:122 within `monom_create_divmask`
+; ││┌ @ abstractarray.jl:1345 within `getindex`
+; │││┌ @ indices.jl:365 within `to_indices` @ indices.jl:368
+; ││││┌ @ indices.jl:292 within `to_index` @ indices.jl:307
+; │││││┌ @ number.jl:7 within `convert`
+; ││││││┌ @ boot.jl:957 within `Int64`
+; │││││││┌ @ boot.jl:881 within `toInt64`
+	mov	edx, r9d
+; ││└└└└└└
+; ││┌ @ operators.jl:472 within `>=`
+; │││┌ @ promotion.jl:489 within `<=` @ int.jl:521
+	cmp	dword ptr [rdi + 4*rdx - 4], r10d
+; ││└└
+	ja	.LBB0_27
+# %bb.26:                               # %L527.us.prol
+                                        #   in Loop: Header=BB0_13 Depth=1
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:123 within `monom_create_divmask`
+; ││┌ @ int.jl:1015 within `-` @ int.jl:86
+	dec	rdx
+; ││└
+; ││┌ @ int.jl:535 within `<<`
+	shlx	esi, r13d, edx
+	cmp	rdx, 32
+	cmovae	esi, ebx
+; ││└
+; ││┌ @ int.jl:378 within `|`
+	or	r8d, esi
+.LBB0_27:                               # %L532.us.prol
+                                        #   in Loop: Header=BB0_13 Depth=1
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:125 within `monom_create_divmask`
+; ││┌ @ int.jl:87 within `+`
+	inc	r9d
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:126 within `monom_create_divmask`
+; ││┌ @ range.jl:921 within `iterate`
+	lea	rdx, [r14 + 1]
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:122 within `monom_create_divmask`
+; ││┌ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:16 within `monom_exponent`
+	cmp	qword ptr [rsp + 40], r14       # 8-byte Folded Reload
+	je	.LBB0_62
+.LBB0_29:                               # %L481.us.preheader
+                                        #   in Loop: Header=BB0_13 Depth=1
+	mov	rsi, qword ptr [rsp + 24]       # 8-byte Reload
+; ││└
+	sub	rsi, rdx
+	movzx	r10d, r10b
+	jmp	.LBB0_30
+	.p2align	4, 0x90
+.LBB0_34:                               # %L532.us.1
+                                        #   in Loop: Header=BB0_30 Depth=2
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:125 within `monom_create_divmask`
+; ││┌ @ int.jl:87 within `+`
+	add	r9d, 2
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:126 within `monom_create_divmask`
+; ││┌ @ range.jl:921 within `iterate`
+; │││┌ @ promotion.jl:637 within `==`
+	add	rsi, -2
+; ││└└
+	je	.LBB0_62
+.LBB0_30:                               # %L481.us
+                                        #   Parent Loop BB0_13 Depth=1
+                                        # =>  This Inner Loop Header: Depth=2
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:122 within `monom_create_divmask`
+; ││┌ @ abstractarray.jl:1345 within `getindex`
+; │││┌ @ indices.jl:365 within `to_indices` @ indices.jl:368
+; ││││┌ @ indices.jl:292 within `to_index` @ indices.jl:307
+; │││││┌ @ number.jl:7 within `convert`
+; ││││││┌ @ boot.jl:957 within `Int64`
+; │││││││┌ @ boot.jl:881 within `toInt64`
+	mov	r9d, r9d
+; ││└└└└└└
+; ││┌ @ operators.jl:472 within `>=`
+; │││┌ @ promotion.jl:489 within `<=` @ int.jl:521
+	cmp	dword ptr [rdi + 4*r9 - 4], r10d
+; ││└└
+	ja	.LBB0_32
+# %bb.31:                               # %L527.us
+                                        #   in Loop: Header=BB0_30 Depth=2
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:123 within `monom_create_divmask`
+; ││┌ @ int.jl:1015 within `-` @ int.jl:86
+	lea	rdx, [r9 - 1]
+; ││└
+; ││┌ @ int.jl:535 within `<<`
+	shlx	r14d, r13d, edx
+	cmp	rdx, 32
+	cmovae	r14d, ebx
+; ││└
+; ││┌ @ int.jl:378 within `|`
+	or	r8d, r14d
+.LBB0_32:                               # %L532.us
+                                        #   in Loop: Header=BB0_30 Depth=2
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:125 within `monom_create_divmask`
+; ││┌ @ int.jl:87 within `+`
+	lea	edx, [r9 + 1]
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:122 within `monom_create_divmask`
+; ││┌ @ operators.jl:472 within `>=`
+; │││┌ @ promotion.jl:489 within `<=` @ int.jl:521
+	cmp	dword ptr [rdi + 4*rdx - 4], r10d
+; ││└└
+	ja	.LBB0_34
+# %bb.33:                               # %L527.us.1
+                                        #   in Loop: Header=BB0_30 Depth=2
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:123 within `monom_create_divmask`
+; ││┌ @ int.jl:1015 within `-` @ int.jl:86
+	dec	rdx
+; ││└
+; ││┌ @ int.jl:535 within `<<`
+	shlx	r14d, r13d, edx
+	cmp	rdx, 32
+	cmovae	r14d, ebx
+; ││└
+; ││┌ @ int.jl:378 within `|`
+	or	r8d, r14d
+	jmp	.LBB0_34
+.LBB0_45:                               #   in Loop: Header=BB0_13 Depth=1
+	mov	rsi, r10
+.LBB0_51:                               # %L481.prol.loopexit
+                                        #   in Loop: Header=BB0_13 Depth=1
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:122 within `monom_create_divmask`
+; ││┌ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:16 within `monom_exponent`
+	mov	rcx, rax
+	sub	rcx, r10
+	cmp	rcx, 3
+	jb	.LBB0_62
+# %bb.52:                               # %L481.preheader
+                                        #   in Loop: Header=BB0_13 Depth=1
+	mov	r10, qword ptr [rsp + 24]       # 8-byte Reload
+; ││└
+	sub	r10, rsi
+	jmp	.LBB0_53
+	.p2align	4, 0x90
+.LBB0_61:                               # %L532.3
+                                        #   in Loop: Header=BB0_53 Depth=2
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:125 within `monom_create_divmask`
+; ││┌ @ int.jl:87 within `+`
+	add	r9d, 4
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:126 within `monom_create_divmask`
+; ││┌ @ range.jl:921 within `iterate`
+; │││┌ @ promotion.jl:637 within `==`
+	add	r10, -4
+; ││└└
+	je	.LBB0_62
+.LBB0_53:                               # %L481
+                                        #   Parent Loop BB0_13 Depth=1
+                                        # =>  This Inner Loop Header: Depth=2
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:122 within `monom_create_divmask`
+; ││┌ @ abstractarray.jl:1345 within `getindex`
+; │││┌ @ indices.jl:365 within `to_indices` @ indices.jl:368
+; ││││┌ @ indices.jl:292 within `to_index` @ indices.jl:307
+; │││││┌ @ number.jl:7 within `convert`
+; ││││││┌ @ boot.jl:957 within `Int64`
+; │││││││┌ @ boot.jl:881 within `toInt64`
+	mov	r9d, r9d
+; ││└└└└└└
+; ││┌ @ operators.jl:472 within `>=`
+; │││┌ @ promotion.jl:489 within `<=` @ int.jl:521
+	cmp	dword ptr [rdi + 4*r9 - 4], r14d
+; ││└└
+	ja	.LBB0_55
+# %bb.54:                               # %L527
+                                        #   in Loop: Header=BB0_53 Depth=2
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:123 within `monom_create_divmask`
+; ││┌ @ int.jl:1015 within `-` @ int.jl:86
+	lea	rcx, [r9 - 1]
+; ││└
+; ││┌ @ int.jl:535 within `<<`
+	shlx	edx, r13d, ecx
+	cmp	rcx, 32
+	cmovae	edx, ebx
+; ││└
+; ││┌ @ int.jl:378 within `|`
+	or	r8d, edx
+.LBB0_55:                               # %L532
+                                        #   in Loop: Header=BB0_53 Depth=2
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:125 within `monom_create_divmask`
+; ││┌ @ int.jl:87 within `+`
+	lea	edx, [r9 + 1]
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:122 within `monom_create_divmask`
+; ││┌ @ operators.jl:472 within `>=`
+; │││┌ @ promotion.jl:489 within `<=` @ int.jl:521
+	cmp	dword ptr [rdi + 4*rdx - 4], r14d
+; ││└└
+	ja	.LBB0_57
+# %bb.56:                               # %L527.1
+                                        #   in Loop: Header=BB0_53 Depth=2
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:123 within `monom_create_divmask`
+; ││┌ @ int.jl:1015 within `-` @ int.jl:86
+	dec	rdx
+; ││└
+; ││┌ @ int.jl:535 within `<<`
+	shlx	ecx, r13d, edx
+	cmp	rdx, 32
+	cmovae	ecx, ebx
+; ││└
+; ││┌ @ int.jl:378 within `|`
+	or	r8d, ecx
+.LBB0_57:                               # %L532.1
+                                        #   in Loop: Header=BB0_53 Depth=2
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:125 within `monom_create_divmask`
+; ││┌ @ int.jl:87 within `+`
+	lea	edx, [r9 + 2]
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:122 within `monom_create_divmask`
+; ││┌ @ operators.jl:472 within `>=`
+; │││┌ @ promotion.jl:489 within `<=` @ int.jl:521
+	cmp	dword ptr [rdi + 4*rdx - 4], r14d
+; ││└└
+	ja	.LBB0_59
+# %bb.58:                               # %L527.2
+                                        #   in Loop: Header=BB0_53 Depth=2
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:123 within `monom_create_divmask`
+; ││┌ @ int.jl:1015 within `-` @ int.jl:86
+	dec	rdx
+; ││└
+; ││┌ @ int.jl:535 within `<<`
+	shlx	ecx, r13d, edx
+	cmp	rdx, 32
+	cmovae	ecx, ebx
+; ││└
+; ││┌ @ int.jl:378 within `|`
+	or	r8d, ecx
+.LBB0_59:                               # %L532.2
+                                        #   in Loop: Header=BB0_53 Depth=2
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:125 within `monom_create_divmask`
+; ││┌ @ int.jl:87 within `+`
+	lea	edx, [r9 + 3]
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:122 within `monom_create_divmask`
+; ││┌ @ operators.jl:472 within `>=`
+; │││┌ @ promotion.jl:489 within `<=` @ int.jl:521
+	cmp	dword ptr [rdi + 4*rdx - 4], r14d
+; ││└└
+	ja	.LBB0_61
+# %bb.60:                               # %L527.3
+                                        #   in Loop: Header=BB0_53 Depth=2
+; ││ @ C:\projects\Groebner.jl\src\monomials\nibblemonom.jl:123 within `monom_create_divmask`
+; ││┌ @ int.jl:1015 within `-` @ int.jl:86
+	dec	rdx
+; ││└
+; ││┌ @ int.jl:535 within `<<`
+	shlx	ecx, r13d, edx
+	cmp	rdx, 32
+	cmovae	ecx, ebx
+; ││└
+; ││┌ @ int.jl:378 within `|`
+	or	r8d, ecx
+	jmp	.LBB0_61
+.LBB0_19:                               #   in Loop: Header=BB0_13 Depth=1
+	mov	r9d, r15d
+	jmp	.LBB0_23
+.LBB0_40:                               #   in Loop: Header=BB0_13 Depth=1
+	mov	r9d, r15d
+	jmp	.LBB0_44
+.LBB0_17:                               #   in Loop: Header=BB0_13 Depth=1
+	mov	r9d, r15d
+	jmp	.LBB0_23
+.LBB0_38:                               #   in Loop: Header=BB0_13 Depth=1
+	mov	r9d, r15d
+	jmp	.LBB0_44
+.LBB0_63:                               # %L559
+	mov	rcx, qword ptr [rsp + 16]       # 8-byte Reload
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:325 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rax, qword ptr [rcx + 16]
+; │└
+; │┌ @ multidimensional.jl:745 within `setindex!` @ array.jl:986
+; ││┌ @ array.jl:991 within `_setindex!`
+; │││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rax, qword ptr [rax]
+	mov	r9, qword ptr [rsp + 72]        # 8-byte Reload
+; │││└
+	mov	dword ptr [rax + 4*r9 - 4], 0
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:326 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rax, qword ptr [rcx + 24]
+; │└
+; │┌ @ multidimensional.jl:745 within `setindex!` @ array.jl:986
+; ││┌ @ array.jl:991 within `_setindex!`
+; │││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rax, qword ptr [rax]
+	mov	rdx, qword ptr [rsp + 48]       # 8-byte Reload
+; │││└
+	mov	dword ptr [rax + 4*r9 - 4], edx
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:327 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rax, qword ptr [rcx + 32]
+; │└
+; │┌ @ multidimensional.jl:745 within `setindex!` @ array.jl:986
+; ││┌ @ array.jl:991 within `_setindex!`
+; │││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rax, qword ptr [rax]
+; │││└
+	mov	dword ptr [rax + 4*r9 - 4], r8d
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:329 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:58 within `setproperty!`
+	inc	qword ptr [rcx + 136]
+	mov	rax, qword ptr [rsp + 80]       # 8-byte Reload
+.LBB0_64:                               # %common.ret
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl within `hashtable_insert!`
+                                        # kill: def $eax killed $eax killed $rax
+	vmovaps	xmm6, xmmword ptr [rbp - 224]   # 16-byte Reload
+	vmovaps	xmm7, xmmword ptr [rbp - 208]   # 16-byte Reload
+	vmovaps	xmm8, xmmword ptr [rbp - 192]   # 16-byte Reload
+	vmovaps	xmm9, xmmword ptr [rbp - 176]   # 16-byte Reload
+	vmovaps	xmm10, xmmword ptr [rbp - 160]  # 16-byte Reload
+	vmovaps	xmm11, xmmword ptr [rbp - 144]  # 16-byte Reload
+	vmovaps	xmm12, xmmword ptr [rbp - 128]  # 16-byte Reload
+	vmovaps	xmm13, xmmword ptr [rbp - 112]  # 16-byte Reload
+	vmovaps	xmm14, xmmword ptr [rbp - 96]   # 16-byte Reload
+	vmovaps	xmm15, xmmword ptr [rbp - 80]   # 16-byte Reload
+	lea	rsp, [rbp - 56]
+	pop	rbx
+	pop	rdi
+	pop	rsi
+	pop	r12
+	pop	r13
+	pop	r14
+	pop	r15
+	pop	rbp
+	vzeroupper
+	ret
+.Lfunc_end0:
+	.size	"julia_hashtable_insert!_280966", .Lfunc_end0-"julia_hashtable_insert!_280966"
+	.cfi_endproc
+; └
+                                        # -- End function
+	.section	".note.GNU-stack","",@progbits
