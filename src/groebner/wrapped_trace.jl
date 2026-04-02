@@ -8,14 +8,17 @@ mutable struct WrappedTrace
     recorded_traces::Dict{Any, Any}   # Dict{Key, Trace}
     sys_support::Vector{Vector{Vector{IR_exponent}}}
     gb_support::Vector{Vector{Vector{IR_exponent}}}
+    target_ord::AbstractMonomialOrdering
 
-    WrappedTrace(sys_support, gb_support) = new(Dict{Any, Any}(), sys_support, gb_support)
+    WrappedTrace(sys_support, gb_support, target_ord) =
+        new(Dict{Any, Any}(), sys_support, gb_support, target_ord)
 end
 
 function wrapped_trace_assert_compatible(trace::Trace, ring::PolyRing, key)
     @assert key <: CoeffGeneric ?
             trace.representation.coefftype <: CoeffGeneric :
             trace.representation.coefftype == key
+    @assert trace.ring.ord == ring.ord
     @assert trace.ring.ground == ring.ground
     if key <: CoeffGeneric
         @assert typeof(trace.ring.characteristic) == typeof(ring.characteristic)
@@ -31,6 +34,9 @@ function wrapped_trace_save!(wrapped_trace::WrappedTrace, specialized_trace::Tra
     @assert key <: CoeffGeneric ?
             specialized_trace.representation.coefftype <: CoeffGeneric :
             specialized_trace.representation.coefftype == key
+    if !isempty(wrapped_trace.recorded_traces)
+        @assert first(values(wrapped_trace.recorded_traces)).ring.ord == specialized_trace.ring.ord
+    end
     wrapped_trace.recorded_traces[key] = specialized_trace
 end
 
@@ -41,6 +47,8 @@ function wrapped_trace_create_suitable_trace!(
     ::Type{CoeffType}
 ) where {CoeffType <: Coeff}
     requested_key = CoeffType <: CoeffGeneric ? CoeffType : params.representation.coefftype
+    first(values(wrapped_trace.recorded_traces)).ring.ord != ring.ord &&
+        throw(DomainError("ordering invalid in trace"))
     # Try to find a suitable trace among the existing ones
     if haskey(wrapped_trace.recorded_traces, requested_key)
         trace = wrapped_trace.recorded_traces[requested_key]
@@ -56,7 +64,7 @@ function wrapped_trace_create_suitable_trace!(
 
     # Otherwise, create a new trace based on one of the existing ones
     default_trace = first(values(wrapped_trace.recorded_traces))
-    if requested_key <: CoeffGeneric
+    if requested_key <: Union{CoeffGeneric, CoeffQQ}
         for trace in values(wrapped_trace.recorded_traces)
             if typeof(trace.ring.characteristic) == typeof(ring.characteristic)
                 default_trace = trace
@@ -64,7 +72,6 @@ function wrapped_trace_create_suitable_trace!(
             end
         end
     end
-    default_trace.ring.ord != ring.ord && throw(DomainError("ordering invalid in trace"))
     new_trace = trace_copy(default_trace, params.representation, requested_key)
     new_char =
         requested_key <: Union{CoeffGeneric, CoeffQQ} ?

@@ -117,14 +117,15 @@ end
     # flag, gb_2 = Groebner.groebner_apply!(trace, system2)
     # @test_broken gb_2 == [y2 + (2^56 + 99) // K2(2^50), x2 - 1 // K2(2^49 + 1)]
 
-    # Going from one monomial ordering to another is not allowed
+    # The trace ordering is reused unless an incompatible ordering is requested.
     K1, K2 = GF(2^31 - 1), GF(2^60 + 33)
     R, (x, y) = polynomial_ring(K1, ["x", "y"], internal_ordering=:lex)
     R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], internal_ordering=:degrevlex)
     system = [x + 1, y - 1]
     system2 = [x2 + 1, y2 - 1]
     trace, gb_1 = Groebner.groebner_learn(system)
-    @test_throws DomainError Groebner.groebner_apply!(trace, system2)
+    flag, gb_2 = Groebner.groebner_apply!(trace, system2)
+    @test flag && gb_2 == Groebner.groebner(system2; ordering=Groebner.Lex())
 
     K1, K2 = GF(2^31 - 1), GF(2^60 + 33)
     R, (x, y) = polynomial_ring(K1, ["x", "y"], internal_ordering=:lex)
@@ -318,6 +319,23 @@ end
         ])
     end
 
+    @testset "equivalent orderings recognized" begin
+        p = nextprime(big(2)^100)
+        K = GF(p)
+        R, (x1, y1) = polynomial_ring(K, ["x", "y"], internal_ordering=:degrevlex)
+        sys = [x1 * y1 + 2 * y1 + 3, x1 + 4 * y1 + 5]
+
+        Rt, (t,) = polynomial_ring(GF(101), ["t"])
+        Kt = fraction_field(Rt)
+        R, (x2, y2) = polynomial_ring(Kt, ["x", "y"], internal_ordering=:degrevlex)
+        sys_rat = [x2 * y2 + Kt(t) * y2 + one(Kt), x2 + Kt(t + 1) * y2 + Kt(2)]
+
+        trace, _ = Groebner.groebner_learn(sys; ordering=Groebner.Lex(y1, x1))
+        flag, gb2 = Groebner.groebner_apply!(trace, sys_rat; ordering=Groebner.Lex(y2, x2))
+        @test flag
+        @test gb2 == Groebner.groebner(sys_rat; ordering=Groebner.Lex(y2, x2))
+    end
+
     @testset "forced generic agrees" begin
         K = GF(2^30 + 3)
         sys1 = Groebner.Examples.katsuran(4, internal_ordering=:degrevlex, k=K)
@@ -408,6 +426,7 @@ end
 
     flag, gb_2_apply = Groebner.groebner_apply!(trace_2, [y, x + 2y^2 + 3])
     @test flag && gb_2 == gb_2_apply
+    @test_throws DomainError Groebner.groebner_apply!(trace_2, [y, x + 2y^2 + 3], ordering=Groebner.Lex())
 
     K = GF(2^31 - 1)
     n = 10
