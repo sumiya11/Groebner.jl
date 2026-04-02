@@ -12,36 +12,71 @@ mutable struct WrappedTrace
     WrappedTrace(sys_support, gb_support) = new(Dict{Any, Any}(), sys_support, gb_support)
 end
 
-function wrapped_trace_save!(wrapped_trace::WrappedTrace, specialized_trace)
-    wrapped_trace.recorded_traces[specialized_trace.representation.coefftype] = specialized_trace
+function wrapped_trace_assert_compatible(trace::Trace, ring::PolyRing, key)
+    @assert key <: CoeffGeneric ?
+            trace.representation.coefftype <: CoeffGeneric :
+            trace.representation.coefftype == key
+    @assert trace.ring.ground == ring.ground
+    if key <: CoeffGeneric
+        @assert typeof(trace.ring.characteristic) == typeof(ring.characteristic)
+        @assert trace.ring.characteristic == ring.characteristic
+    else
+        @assert trace.ring.characteristic == typeof(trace.ring.characteristic)(ring.characteristic)
+    end
+    nothing
+end
+
+function wrapped_trace_save!(wrapped_trace::WrappedTrace, specialized_trace::Trace{CoeffType}) where {CoeffType <: Coeff}
+    key = CoeffType <: CoeffGeneric ? CoeffType : specialized_trace.representation.coefftype
+    @assert key <: CoeffGeneric ?
+            specialized_trace.representation.coefftype <: CoeffGeneric :
+            specialized_trace.representation.coefftype == key
+    wrapped_trace.recorded_traces[key] = specialized_trace
 end
 
 function wrapped_trace_create_suitable_trace!(
     wrapped_trace::WrappedTrace,
     ring::PolyRing,
-    params::AlgorithmParameters
-)
+    params::AlgorithmParameters,
+    ::Type{CoeffType}
+) where {CoeffType <: Coeff}
+    requested_key = CoeffType <: CoeffGeneric ? CoeffType : params.representation.coefftype
     # Try to find a suitable trace among the existing ones
-    if haskey(wrapped_trace.recorded_traces, params.representation.coefftype)
-        trace = wrapped_trace.recorded_traces[params.representation.coefftype]
+    if haskey(wrapped_trace.recorded_traces, requested_key)
+        trace = wrapped_trace.recorded_traces[requested_key]
         trace.ring = PolyRing(
             trace.ring.nvars,
             trace.ring.ord,
-            typeof(trace.ring.characteristic)(ring.characteristic)
+            typeof(trace.ring.characteristic)(ring.characteristic),
+            trace.ring.ground
         )
+        wrapped_trace_assert_compatible(trace, ring, requested_key)
         return trace
     end
 
     # Otherwise, create a new trace based on one of the existing ones
     default_trace = first(values(wrapped_trace.recorded_traces))
-    new_trace = trace_copy(default_trace, params.representation)
-    new_trace.ring.ord != ring.ord && throw(DomainError("ordering invalid in trace"))
+    if requested_key <: CoeffGeneric
+        for trace in values(wrapped_trace.recorded_traces)
+            if typeof(trace.ring.characteristic) == typeof(ring.characteristic)
+                default_trace = trace
+                break
+            end
+        end
+    end
+    default_trace.ring.ord != ring.ord && throw(DomainError("ordering invalid in trace"))
+    new_trace = trace_copy(default_trace, params.representation, requested_key)
+    new_char =
+        requested_key <: Union{CoeffGeneric, CoeffQQ} ?
+        ring.characteristic :
+        convert(requested_key, ring.characteristic)
     new_trace.ring = PolyRing(
         ring.nvars,
         ring.ord,
-        convert(params.representation.coefftype, ring.characteristic),
+        new_char,
         ring.ground
     )
+    wrapped_trace_assert_compatible(new_trace, ring, requested_key)
     wrapped_trace_save!(wrapped_trace, new_trace)
 
     # the resulting trace may be in a invalid state, and needs to be filled with

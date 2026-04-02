@@ -106,7 +106,7 @@ function _groebner_learn2(
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters
-) where {M <: Monom, C <: CoeffZp}
+) where {M <: Monom, C <: Coeff}
     trace, basis, pairset, hashtable =
         f4_initialize_structs_with_trace(ring, monoms, coeffs, params)
     f4_learn!(trace, pairset, params)
@@ -216,7 +216,7 @@ function __groebner_apply1!(
     flag = wrapped_trace_check_input(wrapped_trace, monoms, coeffs)
     !flag && return flag, coeffs
 
-    trace = wrapped_trace_create_suitable_trace!(wrapped_trace, ring, params)
+    trace = wrapped_trace_create_suitable_trace!(wrapped_trace, ring, params, C)
 
     _monoms = filter(!isempty, monoms)
     _coeffs = filter(!isempty, coeffs)

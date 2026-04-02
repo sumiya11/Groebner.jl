@@ -36,6 +36,7 @@ const _supported_kw_args = (
         monoms      = :auto,
         arithmetic  = :auto,
         tasks       = :auto,
+        _generic     = false,
     ),
     groebner_learn = (
         seed        = 42,
@@ -44,6 +45,7 @@ const _supported_kw_args = (
         arithmetic  = :auto,
         homogenize  = :auto,
         tasks       = :auto,
+        _generic     = false,
     ),
     groebner_with_change_matrix = (
         reduced      = true,

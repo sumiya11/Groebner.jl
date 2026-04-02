@@ -95,7 +95,7 @@ function linalg_apply_reduce_matrix_lower_part!(
     trace::Trace,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
-    arithmetic::AbstractArithmetic{AccumType, CoeffType}
+    arithmetic::AbstractArithmetic{AccumType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
     _, nlow = matrix_nrows_filled(matrix)
@@ -105,7 +105,7 @@ function linalg_apply_reduce_matrix_lower_part!(
     resize!(matrix.some_coeffs, nlow)
 
     # Allocate the buffers
-    row = zeros(AccumType, ncols)
+    row = [AccumType(zero(basis.coeffs[1][1])) for _ in 1:ncols]
     new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
 
     @inbounds for i in 1:nlow
@@ -196,7 +196,7 @@ function linalg_learn_reduce_matrix_lower_part!(
     trace::Trace,
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
-    arithmetic::AbstractArithmetic{AccumType, CoeffType}
+    arithmetic::AbstractArithmetic{AccumType}
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
     nup, nlow = matrix_nrows_filled(matrix)
@@ -206,7 +206,7 @@ function linalg_learn_reduce_matrix_lower_part!(
     resize!(matrix.some_coeffs, nlow)
 
     # Allocate the buffers
-    row = zeros(AccumType, ncols)
+    row = [AccumType(zero(basis.coeffs[1][1])) for _ in 1:ncols]
     not_reduced_to_zero = Vector{Int}()
     useful_reducers = Set{Int}()
     reducer_rows = Vector{Int}()

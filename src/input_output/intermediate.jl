@@ -215,10 +215,17 @@ function ir_extract_coeffs_raw!(trace, coeffs::Vector{Vector{C}}) where {C <: Co
     end
 
     if trace.params.homogenize
-        @invariant trace.ring.ground == :zp
-        trace.buf_basis.coeffs[length(coeffs) + 1][1] = one(CoeffsType)
-        trace.buf_basis.coeffs[length(coeffs) + 1][2] =
-            trace.ring.characteristic - one(typeof(trace.ring.characteristic))
+        if trace.ring.ground == :zp
+            o = one(trace.buf_basis.coeffs[1][1])
+            trace.buf_basis.coeffs[length(coeffs) + 1][1] = o
+            trace.buf_basis.coeffs[length(coeffs) + 1][2] = trace.ring.characteristic - o
+        elseif trace.ring.ground == :generic
+            o = one(trace.buf_basis.coeffs[1][1])
+            trace.buf_basis.coeffs[length(coeffs) + 1][1] = o
+            trace.buf_basis.coeffs[length(coeffs) + 1][2] = -o
+        else
+            @assert false
+        end
     end
 
     true
