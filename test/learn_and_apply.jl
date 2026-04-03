@@ -1,4 +1,5 @@
 using Test, Random, AbstractAlgebra, Primes, Groebner
+using BitIntegers: UInt256
 
 @testset "learn & apply, same field" begin
     K = AbstractAlgebra.GF(2^31 - 1)
@@ -218,6 +219,10 @@ end
 @testset "learn & apply, generic" begin
     trace_keys(trace) = Set(keys(trace.recorded_traces))
     coeff_key(K) = Groebner.CoeffGeneric{typeof(one(K))}
+    native_or_generic_key(K) =
+        BigInt(AbstractAlgebra.characteristic(K)) <= BigInt(typemax(UInt256)) ?
+        Groebner.tight_unsigned_int_type(BigInt(AbstractAlgebra.characteristic(K))) :
+        Groebner.CoeffGeneric{typeof(one(K))}
     generic_coeff_data(sys) = map(f -> Groebner.CoeffGeneric.(collect(coefficients(f))), sys)
 
     # 1. learn specialized, apply generic.
@@ -231,7 +236,7 @@ end
         trace, _ = Groebner.groebner_learn(sys)
         flag, _ = Groebner.groebner_apply!(trace, sys_generic)
         @test flag
-        @test trace_keys(trace) == Set([UInt32, coeff_key(K_generic)])
+        @test trace_keys(trace) == Set([UInt32, native_or_generic_key(K_generic)])
     end
 
     # 2. learn generic, apply generic.
@@ -246,7 +251,7 @@ end
         flag1, _ = Groebner.groebner_apply!(trace, sys_generic)
         flag2, _ = Groebner.groebner_apply!(trace, sys_generic)
         @test flag1 && flag2
-        @test trace_keys(trace) == Set([coeff_key(K)])
+        @test trace_keys(trace) == Set([native_or_generic_key(K)])
     end
 
     # 3. learn generic, apply specialized, then apply over Z/pZ(t).
@@ -267,7 +272,7 @@ end
         flag3, _ = Groebner.groebner_apply!(trace, sys)
         flag4, _ = Groebner.groebner_apply!(trace, sys_rat)
         @test flag1 && flag2 && flag3 && flag4
-        @test trace_keys(trace) == Set([UInt32, coeff_key(K_generic), coeff_key(Kt)])
+        @test trace_keys(trace) == Set([UInt32, native_or_generic_key(K_generic), coeff_key(Kt)])
     end
 
     # 4. learn specialized, then visit many specialized and generic.
@@ -313,10 +318,24 @@ end
             UInt16,
             UInt32,
             UInt64,
-            coeff_key(K_generic_1),
+            native_or_generic_key(K_generic_1),
             coeff_key(Kt),
             Rational{BigInt}
         ])
+    end
+
+    @testset "native UInt256 prime field" begin
+        p = prevprime(big(2)^255)
+        K = GF(p)
+        R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:degrevlex)
+        sys = [x * y + 2 * y + 3, x + 4 * y + 5]
+
+        trace, gb1 = Groebner.groebner_learn(sys)
+        flag, gb2 = Groebner.groebner_apply!(trace, sys)
+
+        @test flag
+        @test gb1 == gb2 == Groebner.groebner(sys)
+        @test trace_keys(trace) == Set([UInt256])
     end
 
     @testset "equivalent orderings recognized" begin
@@ -405,7 +424,7 @@ end
         @test flag1 && flag2
         @test strip_generic(gb_apply_coeffs1) == coeff_data(gb_apply2)
         @test trace_keys(trace1) == Set([coeff_key(K)])
-        @test trace_keys(trace1) == trace_keys(trace2)
+        @test trace_keys(trace2) == Set([native_or_generic_key(K)])
     end
 end
 
@@ -727,6 +746,11 @@ end
         @assert length(primes) > 4
         systems_zp =
             map(p -> map(f -> AbstractAlgebra.map_coefficients(c -> GF(p)(c), f), system), primes)
+        batch_homogeneous(batch) = begin
+            keywords = Groebner.KeywordArguments(:groebner_apply!, (;))
+            ir_batch = map(f -> Groebner.io_convert_polynomials_to_ir(f, deepcopy(keywords)), batch)
+            ir_batch isa (NTuple{N, T} where {N, T})
+        end
 
         trace, gb_0 = Groebner.groebner_learn(systems_zp[1])
 
@@ -736,8 +760,12 @@ end
         flag, (gb,) = Groebner.groebner_apply!(trace, (systems_zp[2],))
         @test gb == Groebner.groebner(systems_zp[2])
 
-        flag, gbs = Groebner.groebner_apply!(trace, (systems_zp[2:5]...,))
-        @test collect(gbs) == map(Groebner.groebner, systems_zp[2:5])
+        if batch_homogeneous((systems_zp[2:5]...,))
+            flag, gbs = Groebner.groebner_apply!(trace, (systems_zp[2:5]...,))
+            @test collect(gbs) == map(Groebner.groebner, systems_zp[2:5])
+        else
+            @test_throws AssertionError Groebner.groebner_apply!(trace, (systems_zp[2:5]...,))
+        end
     end
 
     kat = Groebner.Examples.katsuran(8, k=ZZ, internal_ordering=:degrevlex)

@@ -138,7 +138,7 @@ end
 tight_signed_int_type(x::CompositeNumber{N, T}) where {N, T} =
     CompositeNumber{N, mapreduce(tight_signed_int_type, promote_type, x.data)}
 tight_unsigned_int_type(x::CompositeNumber{N, T}) where {N, T} =
-    CompositeNumber{N, mapreduce(tight_signed_int_type, promote_type, x.data)}
+    CompositeNumber{N, mapreduce(tight_unsigned_int_type, promote_type, x.data)}
 
 function tight_signed_int_type(x::T) where {T <: Integer}
     types = (Int8, Int16, Int32, Int64, Int128)
@@ -148,7 +148,7 @@ function tight_signed_int_type(x::T) where {T <: Integer}
 end
 
 function tight_unsigned_int_type(x::T) where {T <: Integer}
-    types = (UInt8, UInt16, UInt32, UInt64, UInt128)
+    types = (UInt8, UInt16, UInt32, UInt64, UInt128, UInt256)
     idx = findfirst(T -> x <= typemax(T), types)
     @assert !isnothing(idx)
     types[idx]
@@ -171,27 +171,54 @@ function param_select_coefftype(
     if iszero(char)
         return Rational{BigInt}, true
     end
-    @assert char > 0
-    @assert char < typemax(UInt64)
+    if char isa CompositeCoeffZp
+        if arithmetic === :signed
+            tight_signed_type = tight_signed_int_type(char)
+            coefftype = if !using_wide_type_for_coeffs
+                tight_signed_type
+            else
+                widen(tight_signed_type)
+            end
+            return coefftype, using_wide_type_for_coeffs
+        end
 
-    tight_signed_type = tight_signed_int_type(char)
+        # Composite learn/apply stores coefficients in a widened machine type.
+        tight_unsigned_type = tight_unsigned_int_type(char)
+        coefftype = if tight_unsigned_type <: CompositeNumber{N, UInt128} where {N}
+            CompositeNumber{tight_unsigned_type.parameters[1], UInt256}
+        else
+            widen(tight_unsigned_type)
+        end
+        return coefftype, false
+    end
+    big_char = BigInt(char)
+    @assert big_char > 0
+    @assert big_char <= BigInt(typemax(UInt256))
 
     if arithmetic === :signed
-        if typemax(Int32) < char < typemax(UInt32) || typemax(Int64) < char < typemax(UInt64)
+        if big_char > typemax(Int128) ||
+           typemax(Int32) < big_char < typemax(UInt32) ||
+           typemax(Int64) < big_char < typemax(UInt64)
             @info "Cannot use $(arithmetic) arithmetic with characteristic $char"
             @assert false
-        elseif !using_wide_type_for_coeffs
+        end
+
+        tight_signed_type = tight_signed_int_type(big_char)
+        if !using_wide_type_for_coeffs
             return tight_signed_type, using_wide_type_for_coeffs
         else
             return widen(tight_signed_type), using_wide_type_for_coeffs
         end
     end
 
-    tight_unsigned_type = tight_unsigned_int_type(char)
+    tight_unsigned_type = tight_unsigned_int_type(big_char)
+    if tight_unsigned_type === UInt256 && using_wide_type_for_coeffs
+        using_wide_type_for_coeffs = false
+    end
     tight_unsigned_type = if !using_wide_type_for_coeffs
         tight_unsigned_type
     else
-        widen(tight_unsigned_type)
+        tight_unsigned_type === UInt128 ? UInt256 : widen(tight_unsigned_type)
     end
 
     tight_unsigned_type, using_wide_type_for_coeffs
