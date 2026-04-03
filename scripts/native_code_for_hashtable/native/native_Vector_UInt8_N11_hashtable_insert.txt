@@ -1,0 +1,619 @@
+	.text
+	.file	"hashtable_insert!"
+	.section	.ltext,"axl",@progbits
+	.globl	"julia_hashtable_insert!_280886" # -- Begin function julia_hashtable_insert!_280886
+	.p2align	4, 0x90
+	.type	"julia_hashtable_insert!_280886",@function
+"julia_hashtable_insert!_280886":       # @"julia_hashtable_insert!_280886"
+; Function Signature: hashtable_insert!(Groebner.MonomialHashtable{Array{UInt8, 1}, Groebner.DegRevLex{true, Union{}}, Array{UInt32, 1}}, Array{UInt8, 1})
+; ┌ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:274 within `hashtable_insert!`
+	.cfi_startproc
+# %bb.0:                                # %top
+	#DEBUG_VALUE: hashtable_insert!:ht <- [$rcx+0]
+	#DEBUG_VALUE: hashtable_insert!:e <- [$rdx+0]
+	push	rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset rbp, -16
+	mov	rbp, rsp
+	.cfi_def_cfa_register rbp
+	push	r15
+	push	r14
+	push	r13
+	push	r12
+	push	rsi
+	push	rdi
+	push	rbx
+	sub	rsp, 168
+	vmovdqa	xmmword ptr [rbp - 80], xmm8    # 16-byte Spill
+	vmovdqa	xmmword ptr [rbp - 96], xmm7    # 16-byte Spill
+	vmovdqa	xmmword ptr [rbp - 112], xmm6   # 16-byte Spill
+	.cfi_offset rbx, -72
+	.cfi_offset rdi, -64
+	.cfi_offset rsi, -56
+	.cfi_offset r12, -48
+	.cfi_offset r13, -40
+	.cfi_offset r14, -32
+	.cfi_offset r15, -24
+	.cfi_offset xmm6, -128
+	.cfi_offset xmm7, -112
+	.cfi_offset xmm8, -96
+	mov	rsi, rdx
+	mov	rdi, rcx
+	movabs	rax, 140736089457488
+	vpxor	xmm0, xmm0, xmm0
+	vmovdqu	ymmword ptr [rbp - 176], ymm0
+	add	rax, 651543984
+	vzeroupper
+	call	rax
+	mov	r11, rsi
+	mov	qword ptr [rbp - 176], 8
+	mov	rcx, qword ptr [rax]
+	mov	qword ptr [rbp - 168], rcx
+	lea	rcx, [rbp - 176]
+	mov	qword ptr [rax], rcx
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:279 within `hashtable_insert!`
+; │┌ @ C:\projects\Groebner.jl\src\monomials\exponent_vector.jl:87 within `monom_hash`
+; ││┌ @ essentials.jl:11 within `length`
+	mov	r8, qword ptr [rsi + 16]
+	xor	esi, esi
+; ││└
+; ││┌ @ range.jl:5 within `Colon`
+; │││┌ @ range.jl:415 within `UnitRange`
+; ││││┌ @ range.jl:426 within `unitrange_last`
+	mov	ebx, 0
+	test	r8, r8
+	cmovg	rbx, r8
+	mov	qword ptr [rbp - 120], r11      # 8-byte Spill
+; ││└└└
+	jle	.LBB0_8
+# %bb.1:                                # %L23.preheader
+; │└
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rdx, qword ptr [rdi + 40]
+	mov	rcx, qword ptr [r11]
+	mov	rdx, qword ptr [rdx]
+; │└
+; │┌ @ C:\projects\Groebner.jl\src\monomials\exponent_vector.jl:89 within `monom_hash`
+	cmp	r8, 32
+	jge	.LBB0_3
+# %bb.2:
+	xor	esi, esi
+	mov	r9d, 1
+	jmp	.LBB0_6
+.LBB0_3:                                # %vector.ph
+	movabs	r10, 9223372036854775776
+	and	r10, rbx
+	lea	r9, [r10 + 1]
+	vpxor	xmm0, xmm0, xmm0
+	xor	r11d, r11d
+	vpxor	xmm1, xmm1, xmm1
+	vpxor	xmm2, xmm2, xmm2
+	vpxor	xmm3, xmm3, xmm3
+	.p2align	4, 0x90
+.LBB0_4:                                # %vector.body
+                                        # =>This Inner Loop Header: Depth=1
+; ││ @ C:\projects\Groebner.jl\src\monomials\exponent_vector.jl:88 within `monom_hash`
+; ││┌ @ essentials.jl:920 within `getindex`
+	vpmovzxbd	ymm4, qword ptr [rcx + r11] # ymm4 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpmovzxbd	ymm5, qword ptr [rcx + r11 + 8] # ymm5 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+; ││└
+; ││┌ @ int.jl:88 within `*`
+	vpmulld	ymm4, ymm4, ymmword ptr [rdx + 4*r11]
+; ││└
+; ││┌ @ essentials.jl:920 within `getindex`
+	vpmovzxbd	ymm6, qword ptr [rcx + r11 + 16] # ymm6 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+; ││└
+; ││┌ @ int.jl:88 within `*`
+	vextracti128	xmm7, ymm4, 1
+	vphaddd	xmm4, xmm4, xmm7
+; ││└
+; ││┌ @ essentials.jl:920 within `getindex`
+	vpmovzxbd	ymm7, qword ptr [rcx + r11 + 24] # ymm7 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+; ││└
+; ││┌ @ int.jl:88 within `*`
+	vpmulld	ymm5, ymm5, ymmword ptr [rdx + 4*r11 + 32]
+	vextracti128	xmm8, ymm5, 1
+	vphaddd	xmm5, xmm5, xmm8
+	vpmulld	ymm6, ymm6, ymmword ptr [rdx + 4*r11 + 64]
+; ││└
+; ││┌ @ int.jl:87 within `+`
+	vpaddd	ymm0, ymm4, ymm0
+; ││└
+; ││┌ @ int.jl:88 within `*`
+	vextracti128	xmm4, ymm6, 1
+	vphaddd	xmm4, xmm6, xmm4
+; ││└
+; ││┌ @ int.jl:87 within `+`
+	vpaddd	ymm1, ymm5, ymm1
+	vpaddd	ymm2, ymm4, ymm2
+; ││└
+; ││┌ @ int.jl:88 within `*`
+	vpmulld	ymm4, ymm7, ymmword ptr [rdx + 4*r11 + 96]
+	vextracti128	xmm5, ymm4, 1
+	vphaddd	xmm4, xmm4, xmm5
+; ││└
+; ││┌ @ int.jl:87 within `+`
+	vpaddd	ymm3, ymm4, ymm3
+	add	r11, 32
+	cmp	r10, r11
+	jne	.LBB0_4
+# %bb.5:                                # %middle.block
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\exponent_vector.jl:89 within `monom_hash`
+	vpaddd	ymm0, ymm1, ymm0
+	vpaddd	ymm0, ymm2, ymm0
+	vpaddd	ymm0, ymm3, ymm0
+	vextracti128	xmm1, ymm0, 1
+	vpaddd	xmm0, xmm0, xmm1
+	vpshufd	xmm1, xmm0, 238                 # xmm1 = xmm0[2,3,2,3]
+	vpaddd	xmm0, xmm0, xmm1
+	vpshufd	xmm1, xmm0, 85                  # xmm1 = xmm0[1,1,1,1]
+	vpaddd	xmm0, xmm0, xmm1
+	vmovd	esi, xmm0
+	cmp	rbx, r10
+	mov	r11, qword ptr [rbp - 120]      # 8-byte Reload
+	je	.LBB0_8
+.LBB0_6:                                # %scalar.ph
+	dec	r9
+	.p2align	4, 0x90
+.LBB0_7:                                # %L23
+                                        # =>This Inner Loop Header: Depth=1
+; ││ @ C:\projects\Groebner.jl\src\monomials\exponent_vector.jl:88 within `monom_hash`
+; ││┌ @ essentials.jl:920 within `getindex`
+	movzx	r10d, byte ptr [rcx + r9]
+; ││└
+; ││┌ @ int.jl:88 within `*`
+	imul	r10d, dword ptr [rdx + 4*r9]
+; ││└
+; ││┌ @ int.jl:87 within `+`
+	add	esi, r10d
+; ││└
+; ││ @ C:\projects\Groebner.jl\src\monomials\exponent_vector.jl:89 within `monom_hash`
+; ││┌ @ range.jl:921 within `iterate`
+; │││┌ @ promotion.jl:637 within `==`
+	inc	r9
+	cmp	rbx, r9
+; ││└└
+	jne	.LBB0_7
+.LBB0_8:                                # %L78
+	mov	qword ptr [rbp - 136], rax      # 8-byte Spill
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:281 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	r12d, dword ptr [rdi + 104]
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:282 within `hashtable_insert!`
+; │┌ @ int.jl:550 within `rem`
+	lea	r13d, [r12 - 1]
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:283 within `hashtable_insert!`
+; │┌ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:265 within `hashtable_next_lookup_index`
+; ││┌ @ int.jl:353 within `&`
+	mov	r14d, r13d
+	and	r14d, esi
+; ││└
+; ││┌ @ int.jl:87 within `+`
+	inc	r14d
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:284 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rax, qword ptr [rdi + 8]
+; │└
+; │┌ @ abstractarray.jl:1345 within `getindex` @ essentials.jl:920
+	mov	rax, qword ptr [rax]
+	movsxd	r15, dword ptr [rax + 4*r14 - 4]
+	shl	r14, 2
+	test	r15, r15
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:287 within `hashtable_insert!`
+	je	.LBB0_26
+# %bb.9:                                # %L108
+; │┌ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:269 within `hashtable_is_hash_collision`
+; ││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rax, qword ptr [rdi + 24]
+; ││└
+; ││┌ @ abstractarray.jl:1345 within `getindex` @ essentials.jl:920
+	mov	rax, qword ptr [rax]
+; ││└
+; ││┌ @ operators.jl:321 within `!=`
+; │││┌ @ promotion.jl:637 within `==`
+	cmp	dword ptr [rax + 4*r15 - 4], esi
+; ││└└
+	jne	.LBB0_16
+# %bb.10:                               # %L133
+; ││ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:270 within `hashtable_is_hash_collision`
+; ││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rax, qword ptr [rdi]
+; ││└
+; ││┌ @ abstractarray.jl:1345 within `getindex` @ essentials.jl:920
+	mov	rax, qword ptr [rax]
+	mov	rax, qword ptr [rax + 8*r15 - 8]
+	test	rax, rax
+	je	.LBB0_11
+# %bb.15:                               # %pass223
+; ││└
+; ││┌ @ C:\projects\Groebner.jl\src\monomials\exponent_vector.jl:332 within `monom_is_equal`
+; │││┌ @ array.jl:2108 within `==` @ promotion.jl:637
+	cmp	qword ptr [rax + 16], r8
+; ││││ @ array.jl:2108 within `==`
+	jne	.LBB0_16
+# %bb.12:                               # %L187
+; ││││ @ array.jl:2109 within `==`
+; ││││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rcx, qword ptr [rax]
+	mov	rax, qword ptr [rax + 8]
+; ││││└
+; ││││ @ array.jl:2110 within `==`
+; ││││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rdx, qword ptr [r11]
+	mov	r9, qword ptr [r11 + 8]
+	mov	qword ptr [rbp - 152], r9
+	mov	qword ptr [rbp - 160], rax
+; ││││└
+; ││││ @ array.jl:2116 within `==`
+; ││││┌ @ cmem.jl:56 within `memcmp`
+	movabs	rax, offset .Ljlplt_memcmp_280901_got.jit
+	vzeroupper
+	call	rax
+	mov	r11, qword ptr [rbp - 120]      # 8-byte Reload
+; ││││└
+; ││││ @ array.jl:2119 within `==` @ promotion.jl:637
+	test	eax, eax
+; │└└└
+	je	.LBB0_13
+.LBB0_16:                               # %L191
+	cmp	r12d, 2
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:295 within `hashtable_insert!`
+	jae	.LBB0_17
+.LBB0_26:                               # %L309
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:313 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	r15d, dword ptr [rdi + 112]
+; │└
+; │┌ @ int.jl:550 within `rem`
+	inc	r15d
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:315 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rax, qword ptr [rdi + 8]
+; │└
+; │┌ @ multidimensional.jl:745 within `setindex!` @ array.jl:986
+; ││┌ @ array.jl:991 within `_setindex!`
+; │││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rax, qword ptr [rax]
+; │││└
+	mov	dword ptr [rax + r14 - 4], r15d
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:316 within `hashtable_insert!`
+; │┌ @ C:\projects\Groebner.jl\src\monomials\exponent_vector.jl:48 within `monom_copy`
+; ││┌ @ array.jl:354 within `copy`
+; │││┌ @ essentials.jl:11 within `length`
+	mov	r14, qword ptr [r11 + 16]
+; │││└
+; │││┌ @ boot.jl:588 within `GenericMemory`
+	test	r14, r14
+	je	.LBB0_27
+# %bb.33:                               # %nonemptymem
+	movabs	rax, 9223372036854775776
+	or	rax, 31
+	cmp	r14, rax
+	jae	.LBB0_34
+# %bb.28:                               # %L372
+	mov	rax, qword ptr [r11]
+	mov	qword ptr [rbp - 128], rax      # 8-byte Spill
+	mov	rax, qword ptr [r11 + 8]
+	mov	r13, qword ptr [rbp - 136]      # 8-byte Reload
+	mov	rcx, qword ptr [r13 + 16]
+	mov	qword ptr [rbp - 160], rax
+	movabs	r8, offset ".L+Core.GenericMemory#280889.jit"
+	movabs	rax, offset jl_alloc_genericmemory_unchecked
+	mov	rdx, r14
+	vzeroupper
+	call	rax
+	mov	r12, rax
+	mov	qword ptr [rax], r14
+; │││└
+; │││ @ array.jl:355 within `copy`
+; │││┌ @ boot.jl:593 within `memoryref`
+	mov	rbx, qword ptr [rax + 8]
+	movabs	rax, offset memmove
+; │││└
+; │││┌ @ genericmemory.jl:125 within `unsafe_copyto!`
+; ││││┌ @ cmem.jl:28 within `memmove`
+	mov	rcx, rbx
+	mov	rdx, qword ptr [rbp - 128]      # 8-byte Reload
+	mov	r8, r14
+	call	rax
+	mov	rax, qword ptr [rbp - 120]      # 8-byte Reload
+; │││└└
+; │││ @ array.jl:356 within `copy`
+; │││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rax, qword ptr [rax + 16]
+	mov	qword ptr [rbp - 128], rax      # 8-byte Spill
+	jmp	.LBB0_29
+.LBB0_27:                               # %L309.L377_crit_edge
+	movabs	rax, offset ".Ljl_global#280888.jit"+8
+; │││└
+; │││┌ @ boot.jl:593 within `memoryref`
+	mov	rbx, qword ptr [rax]
+	movabs	r12, offset ".Ljl_global#280888.jit"
+	xor	eax, eax
+	mov	qword ptr [rbp - 128], rax      # 8-byte Spill
+	mov	r13, qword ptr [rbp - 136]      # 8-byte Reload
+.LBB0_29:                               # %L377
+	mov	qword ptr [rbp - 160], r12
+; │││└
+	mov	rcx, qword ptr [r13 + 16]
+	movabs	rax, offset ijl_gc_small_alloc
+	mov	edx, 408
+	mov	r8d, 32
+	movabs	r14, 140736089457488
+	mov	r9, r14
+	vzeroupper
+	call	rax
+	mov	qword ptr [rax - 8], r14
+	mov	qword ptr [rax], rbx
+	mov	qword ptr [rax + 8], r12
+	mov	rcx, qword ptr [rbp - 128]      # 8-byte Reload
+	mov	qword ptr [rax + 16], rcx
+; │└└
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rcx, qword ptr [rdi]
+; │└
+; │┌ @ multidimensional.jl:745 within `setindex!`
+; ││┌ @ indices.jl:365 within `to_indices` @ indices.jl:368
+; │││┌ @ indices.jl:292 within `to_index` @ indices.jl:307
+; ││││┌ @ number.jl:7 within `convert`
+; │││││┌ @ boot.jl:957 within `Int64`
+; ││││││┌ @ boot.jl:876 within `toInt64`
+	movsxd	rbx, r15d
+; ││└└└└└
+; ││ @ multidimensional.jl:745 within `setindex!` @ array.jl:986
+; ││┌ @ array.jl:991 within `_setindex!`
+; │││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rdx, qword ptr [rcx]
+	mov	rcx, qword ptr [rcx + 8]
+; │││└
+	mov	qword ptr [rdx + 8*rbx - 8], rax
+	mov	rdx, qword ptr [rcx - 8]
+	not	edx
+	test	dl, 3
+	jne	.LBB0_32
+# %bb.30:                               # %may_trigger_wb
+	mov	rax, qword ptr [rax - 8]
+	test	al, 1
+	je	.LBB0_31
+.LBB0_32:
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:317 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rdx, qword ptr [rdi + 88]
+	mov	r8, qword ptr [rdi + 80]
+	mov	r9, qword ptr [rdi + 96]
+	mov	rax, qword ptr [rdi + 72]
+	mov	qword ptr [rbp - 152], r8
+	mov	qword ptr [rbp - 160], rax
+; │└
+	mov	qword ptr [rsp + 32], rax
+	movabs	rax, offset j_monom_create_divmask_280891
+	mov	rcx, qword ptr [rbp - 120]      # 8-byte Reload
+	call	rax
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:325 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rcx, qword ptr [rdi + 16]
+; │└
+; │┌ @ multidimensional.jl:745 within `setindex!` @ array.jl:986
+; ││┌ @ array.jl:991 within `_setindex!`
+; │││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rcx, qword ptr [rcx]
+; │││└
+	mov	dword ptr [rcx + 4*rbx - 4], 0
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:326 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rcx, qword ptr [rdi + 24]
+; │└
+; │┌ @ multidimensional.jl:745 within `setindex!` @ array.jl:986
+; ││┌ @ array.jl:991 within `_setindex!`
+; │││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rcx, qword ptr [rcx]
+; │││└
+	mov	dword ptr [rcx + 4*rbx - 4], esi
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:327 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rcx, qword ptr [rdi + 32]
+; │└
+; │┌ @ multidimensional.jl:745 within `setindex!` @ array.jl:986
+; ││┌ @ array.jl:991 within `_setindex!`
+; │││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rcx, qword ptr [rcx]
+; │││└
+	mov	dword ptr [rcx + 4*rbx - 4], eax
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:329 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:58 within `setproperty!`
+	inc	qword ptr [rdi + 112]
+.LBB0_14:                               # %common.ret
+	mov	rax, qword ptr [rbp - 168]
+	mov	qword ptr [r13], rax
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl within `hashtable_insert!`
+	mov	eax, r15d
+	vmovaps	xmm6, xmmword ptr [rbp - 112]   # 16-byte Reload
+	vmovaps	xmm7, xmmword ptr [rbp - 96]    # 16-byte Reload
+	vmovaps	xmm8, xmmword ptr [rbp - 80]    # 16-byte Reload
+	add	rsp, 168
+	pop	rbx
+	pop	rdi
+	pop	rsi
+	pop	r12
+	pop	r13
+	pop	r14
+	pop	r15
+	pop	rbp
+	ret
+.LBB0_17:                               # %L198.lr.ph.split
+	mov	ebx, 1
+	jmp	.LBB0_18
+	.p2align	4, 0x90
+.LBB0_25:                               # %L306
+                                        #   in Loop: Header=BB0_18 Depth=1
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:302 within `hashtable_insert!`
+; │┌ @ int.jl:87 within `+`
+	inc	ebx
+	cmp	r12d, ebx
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:295 within `hashtable_insert!`
+	je	.LBB0_26
+.LBB0_18:                               # %L198
+                                        # =>This Inner Loop Header: Depth=1
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:296 within `hashtable_insert!`
+; │┌ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:265 within `hashtable_next_lookup_index`
+; ││┌ @ int.jl:353 within `&`
+	lea	r14d, [rsi + rbx]
+	and	r14d, r13d
+; ││└
+; ││┌ @ int.jl:87 within `+`
+	inc	r14d
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:297 within `hashtable_insert!`
+; │┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rax, qword ptr [rdi + 8]
+; │└
+; │┌ @ abstractarray.jl:1345 within `getindex` @ essentials.jl:920
+	mov	rax, qword ptr [rax]
+	movsxd	r15, dword ptr [rax + 4*r14 - 4]
+	shl	r14, 2
+	test	r15, r15
+; │└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:299 within `hashtable_insert!`
+	je	.LBB0_26
+# %bb.19:                               # %L225
+                                        #   in Loop: Header=BB0_18 Depth=1
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:301 within `hashtable_insert!`
+; │┌ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:269 within `hashtable_is_hash_collision`
+; ││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rax, qword ptr [rdi + 24]
+; ││└
+; ││┌ @ abstractarray.jl:1345 within `getindex` @ essentials.jl:920
+	mov	rax, qword ptr [rax]
+; ││└
+; ││┌ @ operators.jl:321 within `!=`
+; │││┌ @ promotion.jl:637 within `==`
+	cmp	dword ptr [rax + 4*r15 - 4], esi
+; ││└└
+	jne	.LBB0_25
+# %bb.20:                               # %L250
+                                        #   in Loop: Header=BB0_18 Depth=1
+; ││ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:270 within `hashtable_is_hash_collision`
+; ││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rax, qword ptr [rdi]
+; ││└
+; ││┌ @ abstractarray.jl:1345 within `getindex` @ essentials.jl:920
+	mov	rax, qword ptr [rax]
+	mov	rax, qword ptr [rax + 8*r15 - 8]
+	test	rax, rax
+	je	.LBB0_21
+# %bb.24:                               # %pass198
+                                        #   in Loop: Header=BB0_18 Depth=1
+; ││└
+; ││┌ @ C:\projects\Groebner.jl\src\monomials\exponent_vector.jl:332 within `monom_is_equal`
+; │││┌ @ array.jl:2107 within `==`
+; ││││┌ @ essentials.jl:11 within `length`
+	mov	r8, qword ptr [rax + 16]
+; ││││└
+; ││││ @ array.jl:2108 within `==` @ promotion.jl:637
+	cmp	r8, qword ptr [r11 + 16]
+; ││││ @ array.jl:2108 within `==`
+	jne	.LBB0_25
+# %bb.22:                               # %L304
+                                        #   in Loop: Header=BB0_18 Depth=1
+; ││││ @ array.jl:2109 within `==`
+; ││││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rcx, qword ptr [rax]
+	mov	rax, qword ptr [rax + 8]
+; ││││└
+; ││││ @ array.jl:2110 within `==`
+; ││││┌ @ Base_compiler.jl:54 within `getproperty`
+	mov	rdx, qword ptr [r11]
+	mov	r9, qword ptr [r11 + 8]
+	mov	qword ptr [rbp - 152], r9
+	mov	qword ptr [rbp - 160], rax
+; ││││└
+; ││││ @ array.jl:2116 within `==`
+; ││││┌ @ cmem.jl:56 within `memcmp`
+	movabs	rax, offset .Ljlplt_memcmp_280901_got.jit
+	vzeroupper
+	call	rax
+	mov	r11, qword ptr [rbp - 120]      # 8-byte Reload
+; ││││└
+; ││││ @ array.jl:2119 within `==` @ promotion.jl:637
+	test	eax, eax
+; │└└└
+	jne	.LBB0_25
+# %bb.23:
+	mov	r13, qword ptr [rbp - 136]      # 8-byte Reload
+	jmp	.LBB0_14
+.LBB0_13:
+	mov	r13, qword ptr [rbp - 136]      # 8-byte Reload
+	jmp	.LBB0_14
+.LBB0_31:                               # %trigger_wb
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:316 within `hashtable_insert!`
+; │┌ @ multidimensional.jl:745 within `setindex!` @ array.jl:986
+; ││┌ @ array.jl:991 within `_setindex!`
+	movabs	rax, offset ijl_gc_queue_root
+	call	rax
+	jmp	.LBB0_32
+.LBB0_21:                               # %fail197
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:301 within `hashtable_insert!`
+; │┌ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:270 within `hashtable_is_hash_collision`
+; ││┌ @ abstractarray.jl:1345 within `getindex` @ essentials.jl:920
+	movabs	rax, offset jl_undefref_exception
+	mov	rcx, qword ptr [rax]
+	movabs	rax, offset ijl_throw
+	vzeroupper
+	call	rax
+.LBB0_34:                               # %fail
+; │└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:316 within `hashtable_insert!`
+; │┌ @ C:\projects\Groebner.jl\src\monomials\exponent_vector.jl:48 within `monom_copy`
+; ││┌ @ array.jl:354 within `copy`
+; │││┌ @ boot.jl:588 within `GenericMemory`
+	movabs	rcx, offset ".L_j_str_invalid GenericMemory siz...#1"
+	movabs	rax, offset jl_argument_error
+	vzeroupper
+	call	rax
+.LBB0_11:                               # %fail222
+; │└└└
+; │ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:287 within `hashtable_insert!`
+; │┌ @ C:\projects\Groebner.jl\src\f4\hashtable.jl:270 within `hashtable_is_hash_collision`
+; ││┌ @ abstractarray.jl:1345 within `getindex` @ essentials.jl:920
+	movabs	rax, offset jl_undefref_exception
+	mov	rcx, qword ptr [rax]
+	movabs	rax, offset ijl_throw
+	vzeroupper
+	call	rax
+.Lfunc_end0:
+	.size	"julia_hashtable_insert!_280886", .Lfunc_end0-"julia_hashtable_insert!_280886"
+	.cfi_endproc
+; └└└
+                                        # -- End function
+	.type	".L_j_str_invalid GenericMemory siz...#1",@object # @"_j_str_invalid GenericMemory siz...#1"
+	.section	.rodata.str1.1,"aMSl",@progbits,1
+".L_j_str_invalid GenericMemory siz...#1":
+	.asciz	"invalid GenericMemory size: the number of elements is either negative or too large for system address width"
+	.size	".L_j_str_invalid GenericMemory siz...#1", 108
+
+.set ".Ljl_sym#convert#280898.jit", 1807334178392
+	.size	".Ljl_sym#convert#280898.jit", 8
+.set ".Ljl_global#280888.jit", 140736032487568
+	.size	".Ljl_global#280888.jit", 8
+.set ".L+Core.GenericMemory#280889.jit", 140736089455248
+	.size	".L+Core.GenericMemory#280889.jit", 8
+.set ".L+Core.Array#280890.jit", 140736089457488
+	.size	".L+Core.Array#280890.jit", 8
+.set .Ljlplt_memcmp_280901_got.jit, 140704307531248
+	.size	.Ljlplt_memcmp_280901_got.jit, 8
+	.section	".note.GNU-stack","",@progbits

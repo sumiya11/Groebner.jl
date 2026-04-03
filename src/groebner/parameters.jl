@@ -85,8 +85,40 @@ function param_select_monomtype(
         end
     end
 
-    # in the automatic choice, we always prefer packed representations
+    if monoms === :fixed && monom_is_supported_ordering(FixedVector, ordering)
+        N = max(8, nextpow(2, nvars+1))
+        return FixedVector{N,UInt8}
+    end
+
+    if monoms === :fixed2 && monom_is_supported_ordering(FixedMonom, ordering)
+        N = max(8, nextpow(2, max(nvars, 1)))
+        return FixedMonom{N,UInt8}
+    end
+
+    if monoms === :fixednodeg && monom_is_supported_ordering(FixedMonomNoDeg, ordering)
+        N = max(8, nextpow(2, max(nvars, 1)))
+        return FixedMonomNoDeg{N,UInt8}
+    end
+
+    if monoms === :nibble && monom_is_supported_ordering(NibbleMonom, ordering)
+        N = max(8, nextpow(2, max(nvars, 1)) ÷ 2)
+        return NibbleMonom{N}
+    end
+
+    if monoms === :nibblenodeg && monom_is_supported_ordering(NibbleNoDeg, ordering)
+        N = max(8, nextpow(2, max(nvars, 1)) ÷ 2)
+        return NibbleNoDeg{N}
+    end
+
+    # in the automatic choice, we always prefer non-allocating representations
     if monoms === :auto
+        if nvars > 31
+            N = max(8, nextpow(2, max(nvars, 1)) ÷ 2)
+            if monom_is_supported_ordering(NibbleMonom{N}, ordering)
+                return NibbleMonom{N}
+            end
+        end
+
         if monom_is_supported_ordering(PackedTuple1{UInt64, ExponentSize}, ordering)
             if nvars < variables_per_word
                 return PackedTuple1{UInt64, ExponentSize}
@@ -253,7 +285,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
     linalg = kwargs.linalg
     if ring.ground === :zp && (linalg === :randomized || linalg === :auto)
         # Do not use randomized linear algebra if the field characteristic is
-        # too small. 
+        # too small.
         # TODO: In the future, it would be good to adapt randomized linear
         # algebra to this case by taking more random samples
         if ring.characteristic < 500
@@ -333,7 +365,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         modular_strategy = :learn_and_apply
     end
     if !reduced
-        # The option reduced=false was passed in the input, 
+        # The option reduced=false was passed in the input,
         # falling back to classic multi-modular algorithm.
         modular_strategy = :classic_modular
     end

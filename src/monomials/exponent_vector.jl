@@ -16,20 +16,15 @@ const ExponentVector{T} = Vector{T} where {T <: Integer}
 # MonomialDegreeOverflow is thrown if there is a risk of monomial degree
 # overflow. If we catch a MonomialDegreeOverflow, there is some hope to recover
 # the program by restarting with a wider integer type for storing exponents.
-struct MonomialDegreeOverflow <: Exception
-    msg::String
-end
+struct MonomialDegreeOverflow <: Exception end
 
-Base.showerror(io::IO, e::MonomialDegreeOverflow) = print(io, typeof(e), ": ", e.msg)
-
-@noinline __throw_monom_overflow_error(c, B) =
-    throw(MonomialDegreeOverflow("Overflow may happen with the entry $c of type $B."))
+@noinline __throw_monom_overflow_error() = throw(MonomialDegreeOverflow())
 
 monom_overflow_threshold(::Type{T}) where {T <: Integer} = div(typemax(T), 2)
 monom_overflow_check(a::T) where {T <: Integer} = monom_overflow_check(a, T)
 
 function monom_overflow_check(a::Integer, ::Type{T}) where {T}
-    a >= monom_overflow_threshold(T) && __throw_monom_overflow_error(a, T)
+    a >= monom_overflow_threshold(T) && __throw_monom_overflow_error()
     true
 end
 
@@ -41,9 +36,9 @@ end
 monom_max_vars(::Type{ExponentVector{T}}) where {T} = 2^32
 monom_max_vars(p::ExponentVector{T}) where {T} = monom_max_vars(typeof(p))
 
+# The return type should be as tight as possible, since F4 uses this type
+# as a hint to initialize storage for total degrees of appropriate size.
 monom_totaldeg(pv::ExponentVector) = @inbounds pv[1]
-monom_entrytype(pv::ExponentVector{T}) where {T} = T
-monom_entrytype(::Type{ExponentVector{T}}) where {T} = T
 
 monom_copy(pv::ExponentVector) = Base.copy(pv)
 
@@ -66,7 +61,7 @@ function monom_to_vector!(tmp::Vector{M}, pv::ExponentVector{T}) where {M, T}
     @invariant length(tmp) == length(pv) - 1
     if promote_type(M, T) !== M
         if !(all(i -> pv[i] < typemax(M), 2:length(pv)))
-            __throw_monom_overflow_error(-1, M)
+            __throw_monom_overflow_error()
         end
     end
     @inbounds tmp[1:end] .= pv[2:end]

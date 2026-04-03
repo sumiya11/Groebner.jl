@@ -55,10 +55,8 @@ const _defined_packed_tuples =
 for (op, n) in _defined_packed_tuples
     @eval begin
         monom_max_vars(::Type{$op{T, B}}) where {T, B} = $n * packed_elperchunk(T, B) - 1
-        monom_totaldeg(a::$op{T, B}) where {T, B} = a.a1 >> (8 * (sizeof(T) - sizeof(B)))
+        monom_totaldeg(a::$op{T, B}) where {T, B} = (a.a1 >> (8 * (sizeof(T) - sizeof(B)))) % B
         monom_copy(a::$op{T, B}) where {T, B} = a
-        monom_entrytype(a::$op{T, B}) where {T, B} = B
-        monom_entrytype(a::Type{$op{T, B}}) where {T, B} = B
     end
 
     @eval begin

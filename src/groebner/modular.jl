@@ -389,7 +389,7 @@ end
             end
         end
         # Check that the basis is a groebner basis
-        pairset = pairset_initialize(monom_entrytype(hashtable.monoms[1]))
+        pairset = pairset_initialize(typeof(monom_totaldeg(hashtable.monoms[1])))
         # TODO: accessing fields in this way is not very nice.
         gb_ff.n_processed = 0
         gb_ff.n_nonredundant = 0
@@ -424,7 +424,7 @@ end
         end
     end
     # Check that the basis is a groebner basis
-    pairset = pairset_initialize(UInt64)
+    pairset = pairset_initialize(typeof(monom_totaldeg(hashtable.monoms[1])))
     # TODO: accessing fields in this way is not very nice.
     gb_qq.n_processed = 0
     gb_qq.n_nonredundant = 0
