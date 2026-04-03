@@ -28,6 +28,6 @@ end
 
 struct ArithmeticGeneric{CoeffType, AccumType} <: AbstractArithmetic{CoeffType, AccumType} end
 
-function select_arithmetic(::Type{CoeffGeneric}, _, _, _)
-    ArithmeticGeneric{CoeffGeneric, CoeffGeneric}()
+function select_arithmetic(::Type{CoeffType}, _, _, _) where {CoeffType <: CoeffGeneric}
+    ArithmeticGeneric{CoeffType, CoeffType}()
 end

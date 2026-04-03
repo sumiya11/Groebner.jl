@@ -62,7 +62,7 @@ function __groebner_learn1(
     trace.representation = params.representation
     trace.term_sorting_permutations = term_sorting_permutations
 
-    wrapped_trace = WrappedTrace(monoms, gb_monoms)
+    wrapped_trace = WrappedTrace(monoms, gb_monoms, params.target_ord)
     wrapped_trace_save!(wrapped_trace, trace)
 
     wrapped_trace, gb_monoms, gb_coeffs
@@ -106,7 +106,7 @@ function _groebner_learn2(
     monoms::Vector{Vector{M}},
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters
-) where {M <: Monom, C <: CoeffZp}
+) where {M <: Monom, C <: Coeff}
     trace, basis, pairset, hashtable =
         f4_initialize_structs_with_trace(ring, monoms, coeffs, params)
     f4_learn!(trace, pairset, params)
@@ -204,7 +204,15 @@ function __groebner_apply1!(
     coeffs::Vector{Vector{C}},
     options::KeywordArguments
 ) where {I <: Integer, C <: Coeff}
+    if options.ordering === InputOrdering() || options.ordering === nothing
+        options.ordering = wrapped_trace.target_ord
+    end
+    if options.homogenize === :auto
+        options.homogenize = first(values(wrapped_trace.recorded_traces)).params.homogenize ? :yes : :no
+    end
+
     params = AlgorithmParameters(ring, options)
+    ring = PolyRing(ring.nvars, params.target_ord, ring.characteristic, ring.ground)
 
     if params.homogenize
         new_ord = extend_ordering_in_homogenization(ring.nvars, ring.ord)
@@ -216,7 +224,7 @@ function __groebner_apply1!(
     flag = wrapped_trace_check_input(wrapped_trace, monoms, coeffs)
     !flag && return flag, coeffs
 
-    trace = wrapped_trace_create_suitable_trace!(wrapped_trace, ring, params)
+    trace = wrapped_trace_create_suitable_trace!(wrapped_trace, ring, params, C)
 
     _monoms = filter(!isempty, monoms)
     _coeffs = filter(!isempty, coeffs)
@@ -241,8 +249,6 @@ function __groebner_apply1!(
     for i in 1:length(wrapped_trace.gb_support)
         @assert length(gb_coeffs2[i]) == length(wrapped_trace.gb_support[i])
     end
-
-    options.ordering = ring.ord
 
     flag, gb_coeffs2
 end

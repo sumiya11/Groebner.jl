@@ -96,24 +96,20 @@ end
 
 function trace_copy(
     trace::Trace{C1, C3, M, Ord1, Ord2},
-    repr::PolynomialRepresentation
-) where {C1 <: Coeff, C3 <: Coeff, M <: Monom, Ord1, Ord2}
-    C2 = repr.coefftype
+    repr::PolynomialRepresentation,
+    ::Type{C2}
+) where {C1 <: Coeff, C3 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
     new_sparse_row_coeffs = Vector{Vector{C2}}()
     new_input_basis = basis_shallow_copy_with_new_coeffs(trace.input_basis, new_sparse_row_coeffs)
 
     new_buf_basis_coeffs = Vector{Vector{C2}}(undef, length(trace.buf_basis.coeffs))
-    # for i in 1:length(trace.buf_basis.coeffs)
     for i in 1:(trace.buf_basis.n_filled)
-        # !isassigned(trace.buf_basis.coeffs, i) && continue
         new_buf_basis_coeffs[i] = Vector{C2}(undef, length(trace.buf_basis.coeffs[i]))
     end
     new_buf_basis = basis_shallow_copy_with_new_coeffs(trace.buf_basis, new_buf_basis_coeffs)
 
     new_gb_basis_coeffs = Vector{Vector{C2}}(undef, length(trace.gb_basis.coeffs))
-    # for i in 1:length(trace.gb_basis.coeffs)
     for i in 1:(trace.gb_basis.n_filled)
-        # !isassigned(trace.gb_basis.coeffs, i) && continue
         new_gb_basis_coeffs[i] = Vector{C2}(undef, length(trace.gb_basis.coeffs[i]))
     end
     new_gb_basis = basis_shallow_copy_with_new_coeffs(trace.gb_basis, new_gb_basis_coeffs)
@@ -123,7 +119,8 @@ function trace_copy(
         C2,
         repr.using_wide_type_for_coeffs
     )
-    new_ring = PolyRing(trace.ring.nvars, trace.ring.ord, zero(C2), trace.ring.ground)
+    new_char = C2 <: Union{CoeffGeneric, CoeffQQ} ? trace.ring.characteristic : zero(C2)
+    new_ring = PolyRing(trace.ring.nvars, trace.ring.ord, new_char, trace.ring.ground)
 
     Trace(
         trace.stopwatch,

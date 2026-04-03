@@ -223,8 +223,8 @@ See also `groebner_apply!`.
 
 ## Arguments
 
-- `polynomials`: an array of polynomials. Must be polynomials from
-  AbstractAlgebra.jl or Nemo.jl over `GF(p)` or `Native.GF(p)`.
+- `polynomials`: an array of polynomials. Supports polynomials from
+    AbstractAlgebra.jl and Nemo.jl.
 
 ## Returns
 
@@ -335,6 +335,8 @@ Observe the better amortized performance of the composite `groebner_apply!`.
 ## Notes
 
 - The function is thread-safe.
+- For AbstractAlgebra.jl and Nemo.jl, the function is most efficient for
+    polynomials over `GF(p)`, `Native.GF(p)`.
 """
 function groebner_learn(polynomials::AbstractVector; options...)
     keywords = KeywordArguments(:groebner_learn, options)
@@ -362,11 +364,10 @@ See also `groebner_learn`.
 ## Arguments
 
 - `trace`: a trace produced by `groebner_learn`.
-- `polynomials`: an array of polynomials. Must be polynomials from
-    AbstractAlgebra.jl or Nemo.jl over `GF(p)` or `Nemo.GF(p)`. It is possible
-    to supply a tuple of `N` arrays of polynomials to compute `N` Groebner bases
-    simultaneously. This could be more efficient overall than computing them in
-    separate.
+- `polynomials`: an array of polynomials. Supports polynomials from
+    AbstractAlgebra.jl or Nemo.jl. Alternatively, it is possible to supply
+    a tuple of `N` arrays of polynomials to compute `N` Groebner bases
+    simultaneously. This could be more efficient than computing them separately.
 
 ## Returns
 
@@ -374,11 +375,13 @@ Returns a tuple (`success`, `basis`).
 
 - `success`: a bool, whether the call succeeded.
 - `basis`: an array of polynomials, a Groebner basis.
+    With tuple input, this is a tuple, a Groebner basis for each element in the batch.
 
 ## Possible Options
 
 The `groebner_apply!` function automatically inherits most parameters from the
-given `trace`.
+given `trace`. In particular, it reuses the monomial ordering and the
+homogenization strategy used during the learning phase.
 
 ## Example
 
@@ -388,9 +391,9 @@ For examples, see the documentation of `groebner_learn`.
 
 - In general, `success` may be a false positive. The probability of a false
   positive is considered to be low enough in some practical applications.
-
 - This function is **not** thread-safe since it mutates `trace`.
-
+- For AbstractAlgebra.jl and Nemo.jl, the function is most efficient for
+    polynomials over `GF(p)`, `Native.GF(p)`.
 - This function is **not** safe against program interruptions. For example,
     pressing `Ctrl + C` while `groebner_apply!(trace, ...)` is running may leave
     `trace` corrupted.

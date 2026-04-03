@@ -262,7 +262,11 @@ function _groebner_learn_and_apply(
     batch = composite * tasks
 
     # Initialize a tracer that computes the bases using composite numbers
-    trace_x = trace_copy(trace, PolynomialRepresentation(M, CompositeNumber{composite, Int32}, false))
+    trace_x = trace_copy(
+        trace,
+        PolynomialRepresentation(M, CompositeNumber{composite, Int32}, false),
+        CompositeNumber{composite, Int32}
+    )
 
     # Task local buffers
     task_results = Vector{Task}(undef, tasks)

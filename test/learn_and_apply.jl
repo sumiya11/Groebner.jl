@@ -117,14 +117,15 @@ end
     # flag, gb_2 = Groebner.groebner_apply!(trace, system2)
     # @test_broken gb_2 == [y2 + (2^56 + 99) // K2(2^50), x2 - 1 // K2(2^49 + 1)]
 
-    # Going from one monomial ordering to another is not allowed
+    # The trace ordering is reused unless an incompatible ordering is requested.
     K1, K2 = GF(2^31 - 1), GF(2^60 + 33)
     R, (x, y) = polynomial_ring(K1, ["x", "y"], internal_ordering=:lex)
     R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], internal_ordering=:degrevlex)
     system = [x + 1, y - 1]
     system2 = [x2 + 1, y2 - 1]
     trace, gb_1 = Groebner.groebner_learn(system)
-    @test_throws DomainError Groebner.groebner_apply!(trace, system2)
+    flag, gb_2 = Groebner.groebner_apply!(trace, system2)
+    @test flag && gb_2 == Groebner.groebner(system2; ordering=Groebner.Lex())
 
     K1, K2 = GF(2^31 - 1), GF(2^60 + 33)
     R, (x, y) = polynomial_ring(K1, ["x", "y"], internal_ordering=:lex)
@@ -215,8 +216,197 @@ end
 end
 
 @testset "learn & apply, generic" begin
-    R, (x, y) = AbstractAlgebra.GF(nextprime(big(2)^100))["x", "y"]
-    @test_throws DomainError groebner_learn([x, y])
+    trace_keys(trace) = Set(keys(trace.recorded_traces))
+    coeff_key(K) = Groebner.CoeffGeneric{typeof(one(K))}
+    generic_coeff_data(sys) = map(f -> Groebner.CoeffGeneric.(collect(coefficients(f))), sys)
+
+    # 1. learn specialized, apply generic.
+    begin
+        p, generic_p = 2^30 + 3, nextprime(big(2)^100)
+        K, K_generic = GF(p), GF(generic_p)
+        R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:degrevlex)
+        sys = [x * y + 2 * y + 3, x + 4 * y + 5]
+        R, (x, y) = polynomial_ring(K_generic, ["x", "y"], internal_ordering=:degrevlex)
+        sys_generic = [x * y + 7 * y + 11, x + 13 * y + 17]
+        trace, _ = Groebner.groebner_learn(sys)
+        flag, _ = Groebner.groebner_apply!(trace, sys_generic)
+        @test flag
+        @test trace_keys(trace) == Set([UInt32, coeff_key(K_generic)])
+    end
+
+    # 2. learn generic, apply generic.
+    begin
+        p, generic_p = nextprime(big(2)^100), nextprime(big(2)^110)
+        K, K_generic = GF(p), GF(generic_p)
+        R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:degrevlex)
+        sys = [x * y + 2 * y + 3, x + 4 * y + 5]
+        R, (x, y) = polynomial_ring(K_generic, ["x", "y"], internal_ordering=:degrevlex)
+        sys_generic = [x * y + 7 * y + 11, x + 13 * y + 17]
+        trace, _ = Groebner.groebner_learn(sys)
+        flag1, _ = Groebner.groebner_apply!(trace, sys_generic)
+        flag2, _ = Groebner.groebner_apply!(trace, sys_generic)
+        @test flag1 && flag2
+        @test trace_keys(trace) == Set([coeff_key(K)])
+    end
+
+    # 3. learn generic, apply specialized, then apply over Z/pZ(t).
+    begin
+        p, generic_p = 2^30 + 3, nextprime(big(2)^100)
+        K, K_generic = GF(p), GF(generic_p)
+        Rt, (t,) = polynomial_ring(GF(101), ["t"])
+        Kt = fraction_field(Rt)
+        R, (x, y) = polynomial_ring(K_generic, ["x", "y"], internal_ordering=:degrevlex)
+        sys_generic = [x * y + 2 * y + 3, x + 4 * y + 5]
+        R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:degrevlex)
+        sys = [x * y + 7 * y + 11, x + 13 * y + 17]
+        R, (x, y) = polynomial_ring(Kt, ["x", "y"], internal_ordering=:degrevlex)
+        sys_rat = [x * y + Kt(t) * y + one(Kt), x + Kt(t + 1) * y + Kt(2)]
+        trace, _ = Groebner.groebner_learn(sys_generic)
+        flag1, _ = Groebner.groebner_apply!(trace, sys)
+        flag2, _ = Groebner.groebner_apply!(trace, sys_rat)
+        flag3, _ = Groebner.groebner_apply!(trace, sys)
+        flag4, _ = Groebner.groebner_apply!(trace, sys_rat)
+        @test flag1 && flag2 && flag3 && flag4
+        @test trace_keys(trace) == Set([UInt32, coeff_key(K_generic), coeff_key(Kt)])
+    end
+
+    # 4. learn specialized, then visit many specialized and generic.
+    begin
+        p8, p16, p32, p64 = 251, 65521, 2^30 + 3, nextprime(big(2)^40)
+        generic_p1 = nextprime(big(2)^100)
+        generic_p2 = nextprime(generic_p1 + 1000)
+
+        K8, K16, K32, K64 = GF(p8), GF(p16), GF(p32), GF(p64)
+        K_generic_1 = GF(generic_p1)
+        K_generic_2 = GF(generic_p2)
+        Rt, (t,) = polynomial_ring(GF(101), ["t"])
+        Kt = fraction_field(Rt)
+
+        R, (x, y) = polynomial_ring(K32, ["x", "y"], internal_ordering=:degrevlex)
+        sys32 = [x * y + 2 * y + 3, x + 4 * y + 5]
+        R, (x, y) = polynomial_ring(K8, ["x", "y"], internal_ordering=:degrevlex)
+        sys8 = [x * y + 7 * y + 11, x + 13 * y + 17]
+        R, (x, y) = polynomial_ring(K16, ["x", "y"], internal_ordering=:degrevlex)
+        sys16 = [x * y + 19 * y + 23, x + 29 * y + 31]
+        R, (x, y) = polynomial_ring(K64, ["x", "y"], internal_ordering=:degrevlex)
+        sys64 = [x * y + 37 * y + 41, x + 43 * y + 47]
+        R, (x, y) = polynomial_ring(K_generic_1, ["x", "y"], internal_ordering=:degrevlex)
+        sys_generic_1 = [x * y + 53 * y + 59, x + 61 * y + 67]
+        R, (x, y) = polynomial_ring(K_generic_2, ["x", "y"], internal_ordering=:degrevlex)
+        sys_generic_2 = [x * y + 71 * y + 73, x + 79 * y + 83]
+        R, (x, y) = polynomial_ring(Kt, ["x", "y"], internal_ordering=:degrevlex)
+        sys_rat_1 = [x * y + Kt(t) * y + one(Kt), x + Kt(t + 1) * y + Kt(2)]
+        sys_rat_2 = [x * y + Kt(t + 3) * y + Kt(5), x + Kt(t + 7) * y + Kt(11)]
+        R, (x, y) = polynomial_ring(QQ, ["x", "y"], internal_ordering=:degrevlex)
+        sys_qq = [x * y + 89 * y + 97, x + 101 * y + 103]
+
+        trace, _ = Groebner.groebner_learn(sys32)
+        for sys in (sys8, sys16, sys64, sys_generic_1, sys_generic_2, sys_rat_1, sys_rat_2)
+            flag, _ = Groebner.groebner_apply!(trace, sys)
+            @test flag
+        end
+        flag, _ = Groebner.groebner_apply!(trace, sys_qq)
+        @test flag
+
+        @test trace_keys(trace) == Set([
+            UInt8,
+            UInt16,
+            UInt32,
+            UInt64,
+            coeff_key(K_generic_1),
+            coeff_key(Kt),
+            Rational{BigInt}
+        ])
+    end
+
+    @testset "equivalent orderings recognized" begin
+        p = nextprime(big(2)^100)
+        K = GF(p)
+        R, (x1, y1) = polynomial_ring(K, ["x", "y"], internal_ordering=:degrevlex)
+        sys = [x1 * y1 + 2 * y1 + 3, x1 + 4 * y1 + 5]
+
+        Rt, (t,) = polynomial_ring(GF(101), ["t"])
+        Kt = fraction_field(Rt)
+        R, (x2, y2) = polynomial_ring(Kt, ["x", "y"], internal_ordering=:degrevlex)
+        sys_rat = [x2 * y2 + Kt(t) * y2 + one(Kt), x2 + Kt(t + 1) * y2 + Kt(2)]
+
+        trace, _ = Groebner.groebner_learn(sys; ordering=Groebner.Lex(y1, x1))
+        flag, gb2 = Groebner.groebner_apply!(trace, sys_rat; ordering=Groebner.Lex(y2, x2))
+        @test flag
+        @test gb2 == Groebner.groebner(sys_rat; ordering=Groebner.Lex(y2, x2))
+    end
+
+    @testset "forced generic agrees" begin
+        K = GF(2^30 + 3)
+        sys1 = Groebner.Examples.katsuran(4, internal_ordering=:degrevlex, k=K)
+        sys2 = Groebner.Examples.katsuran(4, internal_ordering=:lex, k=K)
+
+        for sys in (sys1, sys2)
+            gb = Groebner.groebner(sys)
+
+            trace_spec, gb_spec = Groebner.groebner_learn(sys)
+            trace_gen, gb_gen = Groebner.groebner_learn(sys; _generic=true)
+
+            flag_gen_spec, gb_apply_gen_spec = Groebner.groebner_apply!(trace_gen, sys)
+            flag_spec_gen, gb_apply_spec_gen = Groebner.groebner_apply!(
+                trace_spec,
+                sys;
+                _generic=true
+            )
+
+            @test gb_spec == gb_gen == gb
+            @test flag_gen_spec && gb_apply_gen_spec == gb
+            @test flag_spec_gen && gb_apply_spec_gen == gb
+            @test trace_keys(trace_spec) == Set([UInt32, coeff_key(K)])
+            @test trace_keys(trace_gen) == Set([UInt32, coeff_key(K)])
+        end
+    end
+
+    @testset "generic reuse after failure" begin
+        K = GF(2^30 + 3)
+        R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:degrevlex)
+        sys_ok = [x + 1, x * y + 7 * y]
+        sys_fail = [x + 1, x * y + y]
+
+        trace, gb = Groebner.groebner_learn(sys_ok; _generic=true)
+        flag_fail, _ = Groebner.groebner_apply!(trace, sys_fail; _generic=true)
+        flag_ok, gb_ok = Groebner.groebner_apply!(trace, sys_ok; _generic=true)
+
+        @test !flag_fail
+        @test flag_ok && gb_ok == gb == Groebner.groebner(sys_ok)
+        @test trace_keys(trace) == Set([coeff_key(K)])
+    end
+
+    monom_data(sys) = map(f -> collect(exponent_vectors(f)), sys)
+    coeff_data(sys) = map(f -> collect(coefficients(f)), sys)
+    strip_generic(coeffs) = map(c -> Groebner.generic_coeff_data.(c), coeffs)
+    @testset "generic low level" begin
+        p = nextprime(big(2)^100)
+        p2 = nextprime(p + 1000)
+        K, K2 = GF(p), GF(p2)
+        R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:degrevlex)
+        sys1 = [x * y + 2 * y + 3, x + 4 * y + 5]
+        R, (x, y) = polynomial_ring(K2, ["x", "y"], internal_ordering=:degrevlex)
+        sys2 = [x * y + 7 * y + 11, x + 13 * y + 17]
+
+        ring = Groebner.PolyRing(2, Groebner.DegRevLex(), UInt(0), :generic)
+        monoms1 = monom_data(sys1)
+        coeffs1 = generic_coeff_data(sys1)
+        monoms2 = monom_data(sys2)
+        coeffs2 = generic_coeff_data(sys2)
+
+        trace1, gb_monoms1, gb_coeffs1 = Groebner.groebner_learn(ring, monoms1, coeffs1)
+        trace2, gb2 = Groebner.groebner_learn(sys1)
+        flag1, gb_apply_coeffs1 = Groebner.groebner_apply!(trace1, ring, monoms2, coeffs2)
+        flag2, gb_apply2 = Groebner.groebner_apply!(trace2, sys2)
+
+        @test gb_monoms1 == monom_data(gb2)
+        @test strip_generic(gb_coeffs1) == coeff_data(gb2)
+        @test flag1 && flag2
+        @test strip_generic(gb_apply_coeffs1) == coeff_data(gb_apply2)
+        @test trace_keys(trace1) == Set([coeff_key(K)])
+        @test trace_keys(trace1) == trace_keys(trace2)
+    end
 end
 
 @testset "learn & apply, orderings" begin
@@ -236,6 +426,7 @@ end
 
     flag, gb_2_apply = Groebner.groebner_apply!(trace_2, [y, x + 2y^2 + 3])
     @test flag && gb_2 == gb_2_apply
+    @test_throws DomainError Groebner.groebner_apply!(trace_2, [y, x + 2y^2 + 3], ordering=Groebner.Lex())
 
     K = GF(2^31 - 1)
     n = 10
