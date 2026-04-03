@@ -97,7 +97,8 @@ end
 function trace_copy(
     trace::Trace{C1, C3, M, Ord1, Ord2},
     repr::PolynomialRepresentation,
-    ::Type{C2}
+    ::Type{C2},
+    new_ring_char=trace.ring.characteristic
 ) where {C1 <: Coeff, C3 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
     new_sparse_row_coeffs = Vector{Vector{C2}}()
     new_input_basis = basis_shallow_copy_with_new_coeffs(trace.input_basis, new_sparse_row_coeffs)
@@ -119,7 +120,7 @@ function trace_copy(
         C2,
         repr.using_wide_type_for_coeffs
     )
-    new_char = C2 <: Union{CoeffGeneric, CoeffQQ} ? trace.ring.characteristic : zero(C2)
+    new_char = C2 <: Union{CoeffGeneric, CoeffQQ} ? new_ring_char : zero(C2)
     new_ring = PolyRing(trace.ring.nvars, trace.ring.ord, new_char, trace.ring.ground)
 
     Trace(

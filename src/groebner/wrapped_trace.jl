@@ -74,7 +74,7 @@ function wrapped_trace_create_suitable_trace!(
             end
         end
     end
-    new_trace = trace_copy(default_trace, params.representation, requested_key)
+    new_trace = trace_copy(default_trace, params.representation, requested_key, ring.characteristic)
     new_char =
         requested_key <: Union{CoeffGeneric, CoeffQQ} ?
         ring.characteristic :
