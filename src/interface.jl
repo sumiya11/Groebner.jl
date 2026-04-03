@@ -380,8 +380,8 @@ Returns a tuple (`success`, `basis`).
 ## Possible Options
 
 The `groebner_apply!` function automatically inherits most parameters from the
-given `trace`. In particular, uses the monomial ordering used during the
-learning phase. 
+given `trace`. In particular, it reuses the monomial ordering and the
+homogenization strategy used during the learning phase.
 
 ## Example
 

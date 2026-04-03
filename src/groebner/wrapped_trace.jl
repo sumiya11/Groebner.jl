@@ -35,7 +35,9 @@ function wrapped_trace_save!(wrapped_trace::WrappedTrace, specialized_trace::Tra
             specialized_trace.representation.coefftype <: CoeffGeneric :
             specialized_trace.representation.coefftype == key
     if !isempty(wrapped_trace.recorded_traces)
-        @assert first(values(wrapped_trace.recorded_traces)).ring.ord == specialized_trace.ring.ord
+        reference_trace = first(values(wrapped_trace.recorded_traces))
+        @assert reference_trace.params.homogenize == specialized_trace.params.homogenize
+        @assert reference_trace.ring.ord == specialized_trace.ring.ord
     end
     wrapped_trace.recorded_traces[key] = specialized_trace
 end
@@ -47,23 +49,23 @@ function wrapped_trace_create_suitable_trace!(
     ::Type{CoeffType}
 ) where {CoeffType <: Coeff}
     requested_key = CoeffType <: CoeffGeneric ? CoeffType : params.representation.coefftype
-    first(values(wrapped_trace.recorded_traces)).ring.ord != ring.ord &&
-        throw(DomainError("ordering invalid in trace"))
     # Try to find a suitable trace among the existing ones
     if haskey(wrapped_trace.recorded_traces, requested_key)
         trace = wrapped_trace.recorded_traces[requested_key]
+        trace.ring.ord != ring.ord && throw(DomainError("ordering invalid in trace"))
         trace.ring = PolyRing(
             trace.ring.nvars,
             trace.ring.ord,
             typeof(trace.ring.characteristic)(ring.characteristic),
             trace.ring.ground
         )
-        wrapped_trace_assert_compatible(trace, ring, requested_key)
+        @invariant wrapped_trace_assert_compatible(trace, ring, requested_key)
         return trace
     end
 
     # Otherwise, create a new trace based on one of the existing ones
     default_trace = first(values(wrapped_trace.recorded_traces))
+    default_trace.ring.ord != ring.ord && throw(DomainError("ordering invalid in trace"))
     if requested_key <: Union{CoeffGeneric, CoeffQQ}
         for trace in values(wrapped_trace.recorded_traces)
             if typeof(trace.ring.characteristic) == typeof(ring.characteristic)
@@ -83,7 +85,7 @@ function wrapped_trace_create_suitable_trace!(
         new_char,
         ring.ground
     )
-    wrapped_trace_assert_compatible(new_trace, ring, requested_key)
+    @invariant wrapped_trace_assert_compatible(new_trace, ring, requested_key)
     wrapped_trace_save!(wrapped_trace, new_trace)
 
     # the resulting trace may be in a invalid state, and needs to be filled with

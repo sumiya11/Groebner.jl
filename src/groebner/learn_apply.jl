@@ -207,6 +207,9 @@ function __groebner_apply1!(
     if options.ordering === InputOrdering() || options.ordering === nothing
         options.ordering = wrapped_trace.target_ord
     end
+    if options.homogenize === :auto
+        options.homogenize = first(values(wrapped_trace.recorded_traces)).params.homogenize ? :yes : :no
+    end
 
     params = AlgorithmParameters(ring, options)
     ring = PolyRing(ring.nvars, params.target_ord, ring.characteristic, ring.ground)

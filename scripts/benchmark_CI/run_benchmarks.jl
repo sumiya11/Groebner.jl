@@ -249,9 +249,8 @@ push!(
     )
 )
 
-function learn_and_apply(system)
+function learn_and_apply(system; trials=8)
     times = []
-    trials = 7
     graph, gb = groebner_learn(system)
     for _ in 1:trials
         GC.gc()
@@ -268,7 +267,8 @@ push!(
         problem_name="apply,AA,2^31-1,cyclic 7",
         type=:time,
         result=learn_and_apply(
-            Groebner.Examples.cyclicn(7, internal_ordering=:degrevlex, k=GF(2^31 - 1))
+            Groebner.Examples.cyclicn(7, internal_ordering=:degrevlex, k=GF(2^31 - 1)),
+            trials=15
         )
     )
 )
@@ -282,7 +282,8 @@ push!(
                 7,
                 internal_ordering=:degrevlex,
                 k=nemo_make_prime_finite_field(2^31 - 1)
-            )
+            ),
+            trials=15
         )
     )
 )
