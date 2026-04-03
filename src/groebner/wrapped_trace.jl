@@ -26,7 +26,7 @@ function wrapped_trace_assert_compatible(trace::Trace, ring::PolyRing, key)
     else
         @assert trace.ring.characteristic == typeof(trace.ring.characteristic)(ring.characteristic)
     end
-    nothing
+    true
 end
 
 function wrapped_trace_save!(wrapped_trace::WrappedTrace, specialized_trace::Trace{CoeffType}) where {CoeffType <: Coeff}
