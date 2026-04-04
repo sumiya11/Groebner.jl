@@ -102,7 +102,7 @@ function hashtable_initialize(
     # Initialize fast divisibility parameters.
     strategy = :first_variables
     nbits = 8 * sizeof(DivisionMask)
-    bits_per_var = div(nbits, nvars)
+    bits_per_var = (nvars == 0) ? 0 : div(nbits, nvars)
     bits_per_var = max(bits_per_var, 1)
     ndivvars = min(nvars, nbits)
     divmap = zeros(DivisionMask, ndivvars * bits_per_var)

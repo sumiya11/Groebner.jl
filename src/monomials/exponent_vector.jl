@@ -96,7 +96,7 @@ end
 # DegRevLex monomial comparison. 
 function monom_isless(ea::ExponentVector, eb::ExponentVector, ::DegRevLex{true})
     @invariant length(ea) == length(eb)
-    @invariant length(ea) > 1
+    @invariant length(ea) >= 1
     if monom_totaldeg(ea) < monom_totaldeg(eb)
         return true
     elseif monom_totaldeg(ea) != monom_totaldeg(eb)
@@ -112,7 +112,7 @@ end
 # DegRevLex monomial comparison (shuffled variables).
 function monom_isless(ea::ExponentVector{T}, eb::ExponentVector{T}, ord::DegRevLex{false}) where {T}
     @invariant length(ea) == length(eb)
-    @invariant length(ea) > 1
+    @invariant length(ea) >= 1
     variables = ordering_variables(ord)
     eatotaldeg = zero(T)
     ebtotaldeg = zero(T)
@@ -135,7 +135,7 @@ end
 # DegLex monomial comparison.
 function monom_isless(ea::ExponentVector, eb::ExponentVector, ::DegLex{true})
     @invariant length(ea) == length(eb)
-    @invariant length(ea) > 1
+    @invariant length(ea) >= 1
     if monom_totaldeg(ea) < monom_totaldeg(eb)
         return true
     elseif monom_totaldeg(ea) != monom_totaldeg(eb)
@@ -147,7 +147,7 @@ end
 # DegLex monomial comparison (shuffled variables).
 function monom_isless(ea::ExponentVector{T}, eb::ExponentVector{T}, ord::DegLex{false}) where {T}
     @invariant length(ea) == length(eb)
-    @invariant length(ea) > 1
+    @invariant length(ea) >= 1
     variables = ordering_variables(ord)
     eatotaldeg = zero(T)
     ebtotaldeg = zero(T)
@@ -170,9 +170,9 @@ end
 # Lex monomial comparison.
 function monom_isless(ea::ExponentVector, eb::ExponentVector, ::Lex{true})
     @invariant length(ea) == length(eb)
-    @invariant length(ea) > 1
-    i = 2
-    @inbounds while i < length(ea) && ea[i] == eb[i]
+    @invariant length(ea) >= 1
+    i = 1
+    @inbounds while i < length(ea) && ea[i + 1] == eb[i + 1]
         i += 1
     end
     @inbounds return ea[i] < eb[i]
@@ -182,7 +182,7 @@ end
 function monom_isless(ea::ExponentVector, eb::ExponentVector, ord::Lex{false})
     variables = ordering_variables(ord)
     @invariant length(ea) == length(eb)
-    @invariant length(ea) > 1
+    @invariant length(ea) >= 1
     i = 1
     @inbounds while i < length(variables) && ea[variables[i] + 1] == eb[variables[i] + 1]
         i += 1
@@ -199,7 +199,7 @@ function monom_isless(
     weights = ord.weights
     variables = ordering_variables(ord)
     @invariant length(ea) == length(eb)
-    @invariant length(ea) > 1
+    @invariant length(ea) >= 1
     sa, sb = zero(U), zero(U)
     @inbounds for i in 1:length(variables)
         sa += ea[variables[i] + 1] * weights[i]
