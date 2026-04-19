@@ -1,32 +1,36 @@
 using SmallCollections: FixedVector, SmallVector, fixedvector, sum_fast, bits
 
-struct FixedMonomNoDeg{N,T}
-    ev::FixedVector{N,T}
+struct FixedMonomNoDeg{N, T}
+    ev::FixedVector{N, T}
 end
 
 monom_max_vars(a::FixedMonomNoDeg) = monom_max_vars(typeof(a))
 
-monom_max_vars(::Type{<:FixedMonomNoDeg{N}}) where N = N
+monom_max_vars(::Type{<:FixedMonomNoDeg{N}}) where {N} = N
 function monom_totaldeg(a::FixedMonomNoDeg)
     @invariant sum(Int, a.ev) <= typemax(UInt16)
-    sum_fast(a.ev; init = zero(UInt16)) % UInt16
+    sum_fast(a.ev; init=zero(UInt16)) % UInt16
 end
 monom_copy(a::FixedMonomNoDeg) = a
 
-function monom_construct_hash_vector(rng::AbstractRNG, ::Type{<:FixedMonomNoDeg{N}}, ::Integer) where N
-    rand(rng, FixedVector{N,MonomHash})
+function monom_construct_hash_vector(
+    rng::AbstractRNG,
+    ::Type{<:FixedMonomNoDeg{N}},
+    ::Integer
+) where {N}
+    rand(rng, FixedVector{N, MonomHash})
 end
 
-function monom_construct_from_vector(::Type{FixedMonomNoDeg{N,T}}, ev::AbstractVector) where {N,T}
+function monom_construct_from_vector(::Type{FixedMonomNoDeg{N, T}}, ev::AbstractVector) where {N, T}
     all(<=(typemax(T)), ev) || __throw_monom_overflow_error()
-    FixedMonomNoDeg(fixedvector(SmallVector{N,T}(ev)))
+    FixedMonomNoDeg(fixedvector(SmallVector{N, T}(ev)))
 end
 
-function monom_construct_const(::Type{FixedMonomNoDeg{N,T}}, ::Integer) where {N,T}
-    FixedMonomNoDeg(zero(FixedVector{N,T}))
+function monom_construct_const(::Type{FixedMonomNoDeg{N, T}}, ::Integer) where {N, T}
+    FixedMonomNoDeg(zero(FixedVector{N, T}))
 end
 
-function monom_hash(a::FixedMonomNoDeg{N}, b::FixedVector{N}) where N
+function monom_hash(a::FixedMonomNoDeg{N}, b::FixedVector{N}) where {N}
     dot_fast(a.ev, b) % MonomHash
 end
 
@@ -34,17 +38,17 @@ function monom_to_vector!(tmp::AbstractVector, a::FixedMonomNoDeg)
     copyto!(tmp, 1, a.ev, 1, length(tmp))
 end
 
-function monom_is_supported_ordering(::Type{<:FixedMonomNoDeg}, ::Ord) where Ord
+function monom_is_supported_ordering(::Type{<:FixedMonomNoDeg}, ::Ord) where {Ord}
     Ord <: Union{DegLex{true}, DegRevLex{true}, InputOrdering}
 end
 
-function monom_isless(a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}, ::DegLex{true}) where N
+function monom_isless(a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}, ::DegLex{true}) where {N}
     adeg = monom_totaldeg(a)
     bdeg = monom_totaldeg(b)
     adeg < bdeg || (adeg == bdeg && a.ev < b.ev)
 end
 
-function monom_isless(a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}, ::DegRevLex{true}) where N
+function monom_isless(a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}, ::DegRevLex{true}) where {N}
     adeg = monom_totaldeg(a)
     bdeg = monom_totaldeg(b)
     if sizeof(a) <= 64
@@ -60,40 +64,40 @@ function monom_isless(a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}, ::DegRevLex{
     end
 end
 
-function monom_lcm!(_, a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}) where N
+function monom_lcm!(_, a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}) where {N}
     FixedMonomNoDeg(max.(a.ev, b.ev))
 end
 
-function monom_lcm!(_, a::FixedMonomNoDeg{8,UInt8}, b::FixedMonomNoDeg{8,UInt8})
+function monom_lcm!(_, a::FixedMonomNoDeg{8, UInt8}, b::FixedMonomNoDeg{8, UInt8})
     # conversion to UInt16 to force vectorization
     ev = max.(a.ev .% UInt16, b.ev .% UInt16)
     FixedMonomNoDeg(ev .% UInt8)
 end
 
-function monom_is_gcd_const(a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}) where N
+function monom_is_gcd_const(a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}) where {N}
     iszero(min.(a.ev, b.ev))
 end
 
-function monom_product!(_, a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}) where N
+function monom_product!(_, a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}) where {N}
     ev, s = Base.Checked.add_with_overflow(a.ev, b.ev)
     isempty(s) || __throw_monom_overflow_error()
     FixedMonomNoDeg(ev)
 end
 
-function monom_division!(_, a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}) where N
+function monom_division!(_, a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}) where {N}
     FixedMonomNoDeg(a.ev - b.ev)
 end
 
-function monom_is_divisible(a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}) where N
+function monom_is_divisible(a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}) where {N}
     all(a.ev .>= b.ev)
 end
 
-function monom_is_divisible!(_, a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}) where N
+function monom_is_divisible!(_, a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}) where {N}
     ev, s = Base.Checked.sub_with_overflow(a.ev, b.ev)
     isempty(s), FixedMonomNoDeg(ev)
 end
 
-function monom_is_equal(a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}) where N
+function monom_is_equal(a::FixedMonomNoDeg{N}, b::FixedMonomNoDeg{N}) where {N}
     a.ev == b.ev
 end
 

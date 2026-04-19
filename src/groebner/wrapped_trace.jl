@@ -15,8 +15,7 @@ mutable struct WrappedTrace
 end
 
 function wrapped_trace_assert_compatible(trace::Trace, ring::PolyRing, key)
-    @assert key <: CoeffGeneric ?
-            trace.representation.coefftype <: CoeffGeneric :
+    @assert key <: CoeffGeneric ? trace.representation.coefftype <: CoeffGeneric :
             trace.representation.coefftype == key
     @assert trace.ring.ord == ring.ord
     @assert trace.ring.ground == ring.ground
@@ -29,10 +28,12 @@ function wrapped_trace_assert_compatible(trace::Trace, ring::PolyRing, key)
     true
 end
 
-function wrapped_trace_save!(wrapped_trace::WrappedTrace, specialized_trace::Trace{CoeffType}) where {CoeffType <: Coeff}
+function wrapped_trace_save!(
+    wrapped_trace::WrappedTrace,
+    specialized_trace::Trace{CoeffType}
+) where {CoeffType <: Coeff}
     key = CoeffType <: CoeffGeneric ? CoeffType : specialized_trace.representation.coefftype
-    @assert key <: CoeffGeneric ?
-            specialized_trace.representation.coefftype <: CoeffGeneric :
+    @assert key <: CoeffGeneric ? specialized_trace.representation.coefftype <: CoeffGeneric :
             specialized_trace.representation.coefftype == key
     if !isempty(wrapped_trace.recorded_traces)
         reference_trace = first(values(wrapped_trace.recorded_traces))
@@ -76,15 +77,9 @@ function wrapped_trace_create_suitable_trace!(
     end
     new_trace = trace_copy(default_trace, params.representation, requested_key)
     new_char =
-        requested_key <: Union{CoeffGeneric, CoeffQQ} ?
-        ring.characteristic :
+        requested_key <: Union{CoeffGeneric, CoeffQQ} ? ring.characteristic :
         convert(requested_key, ring.characteristic)
-    new_trace.ring = PolyRing(
-        ring.nvars,
-        ring.ord,
-        new_char,
-        ring.ground
-    )
+    new_trace.ring = PolyRing(ring.nvars, ring.ord, new_char, ring.ground)
     @invariant wrapped_trace_assert_compatible(new_trace, ring, requested_key)
     wrapped_trace_save!(wrapped_trace, new_trace)
 

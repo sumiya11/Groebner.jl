@@ -25,7 +25,8 @@ end
 
 _info_possible_overflow() = @info(
     """Possible overflow of exponent vector detected.
-    Restarting with at least 32 bits per exponent.""", maxlog = 1
+    Restarting with at least 32 bits per exponent.""",
+    maxlog = 1
 )
 
 function _groebner1(
@@ -207,7 +208,7 @@ function _process_chunk(
     trace::Trace,
     primes::Vector{Int32},
     params::AlgorithmParameters,
-    gb_coeffs::Vector{Tuple{Int32, Vector{Vector{Int32}}}},
+    gb_coeffs::Vector{Tuple{Int32, Vector{Vector{Int32}}}}
 )
     for i in 1:length(chunk)
         primes_x = ntuple(k -> primes[(i - 1) * composite + k], composite)

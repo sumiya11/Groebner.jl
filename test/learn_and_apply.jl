@@ -348,11 +348,8 @@ end
             trace_gen, gb_gen = Groebner.groebner_learn(sys; _generic=true)
 
             flag_gen_spec, gb_apply_gen_spec = Groebner.groebner_apply!(trace_gen, sys)
-            flag_spec_gen, gb_apply_spec_gen = Groebner.groebner_apply!(
-                trace_spec,
-                sys;
-                _generic=true
-            )
+            flag_spec_gen, gb_apply_spec_gen =
+                Groebner.groebner_apply!(trace_spec, sys; _generic=true)
 
             @test gb_spec == gb_gen == gb
             @test flag_gen_spec && gb_apply_gen_spec == gb
@@ -426,7 +423,11 @@ end
 
     flag, gb_2_apply = Groebner.groebner_apply!(trace_2, [y, x + 2y^2 + 3])
     @test flag && gb_2 == gb_2_apply
-    @test_throws DomainError Groebner.groebner_apply!(trace_2, [y, x + 2y^2 + 3], ordering=Groebner.Lex())
+    @test_throws DomainError Groebner.groebner_apply!(
+        trace_2,
+        [y, x + 2y^2 + 3],
+        ordering=Groebner.Lex()
+    )
 
     K = GF(2^31 - 1)
     n = 10
@@ -697,7 +698,8 @@ end
     R, (x, y) = polynomial_ring(AbstractAlgebra.ZZ, ["x", "y"], internal_ordering=:degrevlex)
     sys_qq = [44x^2 + x + 2^50, y^10 - 10 * y^5 - 99]
     sys_gf = map(
-        j -> map(poly -> AbstractAlgebra.map_coefficients(c -> (k=ks[j]; k(c)), poly), sys_qq),
+        j ->
+            map(poly -> AbstractAlgebra.map_coefficients(c -> (k = ks[j]; k(c)), poly), sys_qq),
         1:length(ks)
     )
 

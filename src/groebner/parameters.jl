@@ -86,18 +86,18 @@ function param_select_monomtype(
     end
 
     if monoms === :fixed && monom_is_supported_ordering(FixedVector, ordering)
-        N = max(8, nextpow(2, nvars+1))
-        return FixedVector{N,UInt8}
+        N = max(8, nextpow(2, nvars + 1))
+        return FixedVector{N, UInt8}
     end
 
     if monoms === :fixed2 && monom_is_supported_ordering(FixedMonom, ordering)
         N = max(8, nextpow(2, max(nvars, 1)))
-        return FixedMonom{N,UInt8}
+        return FixedMonom{N, UInt8}
     end
 
     if monoms === :fixednodeg && monom_is_supported_ordering(FixedMonomNoDeg, ordering)
         N = max(8, nextpow(2, max(nvars, 1)))
-        return FixedMonomNoDeg{N,UInt8}
+        return FixedMonomNoDeg{N, UInt8}
     end
 
     if monoms === :nibble && monom_is_supported_ordering(NibbleMonom, ordering)
@@ -307,7 +307,8 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
         linalg =
             if ring.ground in (:zp, :qq) &&
                (kwargs.linalg === :randomized || kwargs.linalg === :auto) &&
-               ring.characteristic > 500 && !certify_check
+               ring.characteristic > 500 &&
+               !certify_check
                 :randomized
             else
                 :deterministic
@@ -351,7 +352,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
             The option `tasks = $_tasks` was provided to Groebner.jl,
             however, multi-threading is disabled globally in Groebner.jl.
             The option `tasks` was ignored.
-            See `Groebner.threading_enabled()` for details.""" maxlog=1
+            See `Groebner.threading_enabled()` for details.""" maxlog = 1
         end
         tasks = 1
     end

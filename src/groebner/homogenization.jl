@@ -45,7 +45,7 @@ function homogenize_generators(
     new_nvars = nvars + 1
     new_monoms = Vector{Vector{Vector{T}}}(undef, length(monoms))
     @inbounds for i in 1:length(monoms)
-        D = maximum(monom_totaldeg, monoms[i]; init = zero(T))
+        D = maximum(monom_totaldeg, monoms[i]; init=zero(T))
         new_monoms[i] = Vector{Vector{T}}(undef, length(monoms[i]))
         for j in 1:length(monoms[i])
             # `+ 1` since exponent vectors also store the total degree
