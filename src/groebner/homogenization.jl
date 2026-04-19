@@ -3,15 +3,6 @@
 ###
 # Homogenization & saturation
 
-function maximum_totaldeg(ring::PolyRing, monoms::Vector{Vector{T}}) where {T}
-    D = zero(T)
-    @inbounds for i in 1:length(monoms)
-        d = monom_totaldeg(monoms[i])
-        D = max(d, D)
-    end
-    D
-end
-
 function extend_ordering_in_homogenization(
     nvars::Int,
     ord::Ord,
@@ -54,7 +45,7 @@ function homogenize_generators(
     new_nvars = nvars + 1
     new_monoms = Vector{Vector{Vector{T}}}(undef, length(monoms))
     @inbounds for i in 1:length(monoms)
-        D = maximum_totaldeg(ring, monoms[i])
+        D = maximum(monom_totaldeg, monoms[i]; init = zero(T))
         new_monoms[i] = Vector{Vector{T}}(undef, length(monoms[i]))
         for j in 1:length(monoms[i])
             # `+ 1` since exponent vectors also store the total degree
