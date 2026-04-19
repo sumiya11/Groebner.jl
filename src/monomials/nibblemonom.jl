@@ -1,14 +1,14 @@
 using SmallCollections: FixedVector, SmallVector, fixedvector, sum_fast, dot_fast, bits
 
 struct NibbleMonom{N}
-    ev::FixedVector{N,UInt8}
+    ev::FixedVector{N, UInt8}
     deg::UInt8
 end
 
-function NibbleMonom(ev::FixedVector{N}) where N
+function NibbleMonom(ev::FixedVector{N}) where {N}
     a = NibbleMonom(ev, zero(UInt8))
     @invariant sum(i -> monom_exponent(a, i), 1:monom_max_vars(a)) <= typemax(UInt16)
-    d = sum_fast(lownibbles(a) + highnibbles(a); init = zero(UInt16))
+    d = sum_fast(lownibbles(a) + highnibbles(a); init=zero(UInt16))
     d > typemax(UInt8) && __throw_monom_overflow_error()
     NibbleMonom(ev, d % UInt8)
 end
@@ -24,26 +24,26 @@ uppernibbles(a::NibbleMonom) = a.ev .& 0xf0
 
 monom_max_vars(a::NibbleMonom) = monom_max_vars(typeof(a))
 
-monom_max_vars(::Type{<:NibbleMonom{N}}) where N = 2*N
+monom_max_vars(::Type{<:NibbleMonom{N}}) where {N} = 2 * N
 monom_totaldeg(a::NibbleMonom) = a.deg % UInt8
 monom_copy(a::NibbleMonom) = a
 
-function monom_construct_hash_vector(rng::AbstractRNG, ::Type{NibbleMonom{N}}, ::Integer) where N
-    rand(rng, FixedVector{N,MonomHash})
+function monom_construct_hash_vector(rng::AbstractRNG, ::Type{NibbleMonom{N}}, ::Integer) where {N}
+    rand(rng, FixedVector{N, MonomHash})
 end
 
-function monom_construct_from_vector(::Type{NibbleMonom{N}}, ev::AbstractVector) where N
+function monom_construct_from_vector(::Type{NibbleMonom{N}}, ev::AbstractVector) where {N}
     all(<=(15), ev) || __throw_monom_overflow_error()
-    v = fixedvector(SmallVector{2*N,UInt8}(ev))
-    ev = FixedVector{N}(view(v, 1:2:2*N-1)) .| (FixedVector{N}(view(v, 2:2:2*N)) .<< 4)
+    v = fixedvector(SmallVector{2 * N, UInt8}(ev))
+    ev = FixedVector{N}(view(v, 1:2:(2 * N - 1))) .| (FixedVector{N}(view(v, 2:2:(2 * N))) .<< 4)
     NibbleMonom(ev)
 end
 
-function monom_construct_const(::Type{NibbleMonom{N}}, ::Integer) where N
-    NibbleMonom(zero(FixedVector{N,UInt8}))
+function monom_construct_const(::Type{NibbleMonom{N}}, ::Integer) where {N}
+    NibbleMonom(zero(FixedVector{N, UInt8}))
 end
 
-function monom_hash(a::NibbleMonom{N}, b::FixedVector{N}) where N
+function monom_hash(a::NibbleMonom{N}, b::FixedVector{N}) where {N}
     dot_fast(a.ev, b)::MonomHash
 end
 
@@ -54,11 +54,11 @@ function monom_to_vector!(tmp::AbstractVector, a::NibbleMonom)
     tmp
 end
 
-function monom_is_supported_ordering(::Type{<:NibbleMonom}, ::Ord) where Ord
+function monom_is_supported_ordering(::Type{<:NibbleMonom}, ::Ord) where {Ord}
     Ord <: Union{DegLex{true}, DegRevLex{true}, InputOrdering}
 end
 
-function monom_isless(a::NibbleMonom{N}, b::NibbleMonom{N}, ::DegLex{true}) where N
+function monom_isless(a::NibbleMonom{N}, b::NibbleMonom{N}, ::DegLex{true}) where {N}
     a.deg != b.deg && return a.deg < b.deg
     for (k, l) in zip(a.ev, b.ev)
         k != l && return bitrotate(k, 4) < bitrotate(l, 4)
@@ -66,19 +66,19 @@ function monom_isless(a::NibbleMonom{N}, b::NibbleMonom{N}, ::DegLex{true}) wher
     false
 end
 
-function monom_isless(a::NibbleMonom{N}, b::NibbleMonom{N}, ::DegRevLex{true}) where N
+function monom_isless(a::NibbleMonom{N}, b::NibbleMonom{N}, ::DegRevLex{true}) where {N}
     a.deg < b.deg || (a.deg == b.deg && bits(a.ev) > bits(b.ev))
 end
 
-function monom_lcm!(_, a::NibbleMonom{N}, b::NibbleMonom{N}) where N
+function monom_lcm!(_, a::NibbleMonom{N}, b::NibbleMonom{N}) where {N}
     NibbleMonom(max.(lownibbles(a), lownibbles(b)) .| max.(uppernibbles(a), uppernibbles(b)))
 end
 
-function monom_is_gcd_const(a::NibbleMonom{N}, b::NibbleMonom{N}) where N
+function monom_is_gcd_const(a::NibbleMonom{N}, b::NibbleMonom{N}) where {N}
     iszero(min.(lownibbles(a), lownibbles(b)) .| min.(uppernibbles(a), uppernibbles(b)))
 end
 
-function monom_product!(_, a::NibbleMonom{N}, b::NibbleMonom{N}) where N
+function monom_product!(_, a::NibbleMonom{N}, b::NibbleMonom{N}) where {N}
     ev, s = Base.Checked.add_with_overflow(a.ev, b.ev)
     lower_check = (ev .⊻ a.ev .⊻ b.ev) .& 0x10
     if isempty(s) & iszero(lower_check)
@@ -90,21 +90,21 @@ function monom_product!(_, a::NibbleMonom{N}, b::NibbleMonom{N}) where N
     end
 end
 
-function monom_division!(_, a::NibbleMonom{N}, b::NibbleMonom{N}) where N
+function monom_division!(_, a::NibbleMonom{N}, b::NibbleMonom{N}) where {N}
     NibbleMonom(a.ev - b.ev, a.deg - b.deg)
 end
 
-function monom_is_divisible(a::NibbleMonom{N}, b::NibbleMonom{N}) where N
+function monom_is_divisible(a::NibbleMonom{N}, b::NibbleMonom{N}) where {N}
     first(monom_is_divisible!(a, a, b))  # the first `a` is a dummy
 end
 
-function monom_is_divisible!(_, a::NibbleMonom{N}, b::NibbleMonom{N}) where N
+function monom_is_divisible!(_, a::NibbleMonom{N}, b::NibbleMonom{N}) where {N}
     ev, s = Base.Checked.sub_with_overflow(a.ev, b.ev)
     lower_check = iszero((ev .⊻ a.ev .⊻ b.ev) .& 0x10)
     isempty(s) & lower_check, NibbleMonom(ev, a.deg - b.deg)
 end
 
-function monom_is_equal(a::NibbleMonom{N}, b::NibbleMonom{N}) where N
+function monom_is_equal(a::NibbleMonom{N}, b::NibbleMonom{N}) where {N}
     a.ev == b.ev
 end
 

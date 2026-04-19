@@ -139,8 +139,9 @@ function _linalg_randomized_reduce_matrix_lower_part_threaded_cas!(
                         Int8(2),
                         Atomix.release
                     )
-                    
-                    new_sparse_row_support, new_sparse_row_coeffs = linalg_new_empty_sparse_row(CoeffType)
+
+                    new_sparse_row_support, new_sparse_row_coeffs =
+                        linalg_new_empty_sparse_row(CoeffType)
                 else
                     # go for another iteration
                     first_nnz_col = new_sparse_row_support[1]

@@ -174,7 +174,7 @@ function linalg_reduce_matrix_lower_part_threaded_cas!(
                 row_index_to_coeffs,
                 sentinels,
                 arithmetic,
-                t_local_row,
+                t_local_row
             )
         end
         task_results[tid] = task

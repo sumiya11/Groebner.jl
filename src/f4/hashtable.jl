@@ -28,7 +28,11 @@ const MonomId = Int32
 const DivisionMask = UInt32
 
 # Hashtable implements open addressing with linear scan.
-mutable struct MonomialHashtable{M <: Monom, Ord <: AbstractMonomialOrdering, V <: AbstractVector{MonomHash}}
+mutable struct MonomialHashtable{
+    M <: Monom,
+    Ord <: AbstractMonomialOrdering,
+    V <: AbstractVector{MonomHash}
+}
     #= Data =#
     monoms::Vector{M}
     hashtable::Vector{MonomId}
@@ -71,7 +75,7 @@ function hashtable_initialize(
     ring::PolyRing{Ord},
     rng::AbstractRNG,
     MonomT::T;
-    use_divmask = true
+    use_divmask=true
 ) where {Ord <: AbstractMonomialOrdering, T}
     initial_size = 2^10
 
@@ -380,7 +384,7 @@ function hashtable_fill_divmasks!(ht::MonomialHashtable)
                 ctr += 1
             end
         end
-	    # ht.divmap = [mod(i, ht.ndivbits)+1 for i in 0:length(ht.divmap)-1]
+        # ht.divmap = [mod(i, ht.ndivbits)+1 for i in 0:length(ht.divmap)-1]
     else
         # Available bits < variables.
         # Pack variables tighlty.

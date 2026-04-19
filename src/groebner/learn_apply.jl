@@ -208,7 +208,8 @@ function __groebner_apply1!(
         options.ordering = wrapped_trace.target_ord
     end
     if options.homogenize === :auto
-        options.homogenize = first(values(wrapped_trace.recorded_traces)).params.homogenize ? :yes : :no
+        options.homogenize =
+            first(values(wrapped_trace.recorded_traces)).params.homogenize ? :yes : :no
     end
 
     params = AlgorithmParameters(ring, options)

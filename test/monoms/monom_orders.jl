@@ -32,7 +32,7 @@ max_deg(::Type{Groebner.FixedMonom{N, T}}) where {N, T} = typemax(T)
         String(take!(io))
     end
 
-    ord = Groebner.WeightedOrdering(:x=>1, :y=>2, :z=>3)
+    ord = Groebner.WeightedOrdering(:x => 1, :y => 2, :z => 3)
     str = ord_display(ord)
     str = chopprefix(str, "WeightedOrdering(")
     str = chopsuffix(str, ")")
@@ -48,7 +48,7 @@ max_deg(::Type{Groebner.FixedMonom{N, T}}) where {N, T} = typemax(T)
     @test occursin(str1, str)
     @test occursin(str2, str)
 
-    ord = Groebner.MatrixOrdering([1,2,3], [0 0 0; 0 1 0; 1 1 1])
+    ord = Groebner.MatrixOrdering([1, 2, 3], [0 0 0; 0 1 0; 1 1 1])
     ord_display(ord)
 end
 
@@ -162,16 +162,22 @@ end
         for n in 1:10
             k = rand(1:60)
 
-            implementations_to_test_local = map(EV -> isconcretetype(EV) ? EV : EV{T}, implementations_to_test)
-            implementations_to_test_local = filter(
-                MT -> Groebner.monom_max_vars(MT) >= k, implementations_to_test_local
-            )
+            implementations_to_test_local =
+                map(EV -> isconcretetype(EV) ? EV : EV{T}, implementations_to_test)
+            implementations_to_test_local =
+                filter(MT -> Groebner.monom_max_vars(MT) >= k, implementations_to_test_local)
 
             t = div(typemax(UInt8), 2k) - 1
             t = min(t, div(minimum(max_deg.(implementations_to_test_local)), 2))
             x, y = rand(0:t, k), rand(0:t, k)
-            as = [monom_construct_from_vector(MonomType, x) for MonomType in implementations_to_test_local]
-            bs = [monom_construct_from_vector(MonomType, y) for MonomType in implementations_to_test_local]
+            as = [
+                monom_construct_from_vector(MonomType, x) for
+                MonomType in implementations_to_test_local
+            ]
+            bs = [
+                monom_construct_from_vector(MonomType, y) for
+                MonomType in implementations_to_test_local
+            ]
 
             if all(supports_ordering.(implementations_to_test_local, Ref(Groebner.DegRevLex())))
                 @test length(unique(map(drl, as, bs))) == 1
@@ -185,7 +191,7 @@ end
 
             # test that a < b && b < a does not happen
             for (a, b) in zip(as, bs)
-                k > Groebner.monom_max_vars(a) && continue 
+                k > Groebner.monom_max_vars(a) && continue
                 if supports_ordering(typeof(a), Groebner.Lex()) && lex(a, b)
                     @test !lex(b, a)
                 end
