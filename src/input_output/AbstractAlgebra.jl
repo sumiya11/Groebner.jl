@@ -57,9 +57,10 @@ function io_extract_ring(polynomials)
         throw(DomainError("Coefficient ring must be a field, but got: $K"))
     end
     ch = AbstractAlgebra.characteristic(R)
+    big_ch = BigInt(ch)
     ground = iszero(ch) ? :qq : :zp
-    # Only characteristics < 2^64 are supported natively
-    if (ch > typemax(UInt64))
+    # Only prime fields with characteristics up to UInt256 are supported natively
+    if big_ch > BigInt(typemax(UInt256))
         ground = :generic
     end
     if !iszero(ch)
@@ -88,7 +89,7 @@ function io_extract_ring(polynomials)
     end
     # type unstable:
     ordT = ordering_sym2typed(ord)
-    ch_uint = ground == :zp ? UInt(ch) : UInt(0)
+    ch_uint = ground == :zp ? tight_unsigned_int_type(big_ch)(big_ch) : UInt(0)
     ring = PolyRing(nv, ordT, ch_uint, ground)
     ring
 end
@@ -103,21 +104,22 @@ function io_extract_coeffs_ir(ring::PolyRing, polys)
     end
 end
 
-io_lift_coeff_ff(c) = UInt64(AbstractAlgebra.lift(c))
-io_lift_coeff_ff(c::AbstractAlgebra.GFElem) = AbstractAlgebra.data(c)
-io_lift_coeff_ff(c::Union{Nemo.FqFieldElem, Nemo.fpFieldElem}) =
-    UInt64(AbstractAlgebra.lift(Nemo.ZZ, c))
+io_lift_coeff_ff(::Type{T}, c) where {T <: Integer} = T(AbstractAlgebra.lift(c))
+io_lift_coeff_ff(::Type{T}, c::AbstractAlgebra.GFElem) where {T <: Integer} =
+    T(AbstractAlgebra.data(c))
+io_lift_coeff_ff(::Type{T}, c::Union{Nemo.FqFieldElem, Nemo.fpFieldElem}) where {T <: Integer} =
+    T(BigInt(AbstractAlgebra.lift(Nemo.ZZ, c)))
 
-function io_extract_coeffs_ir_ff(ring::PolyRing{T}, polys) where {T}
-    res = Vector{Vector{UInt64}}(undef, length(polys))
+function io_extract_coeffs_ir_ff(ring::PolyRing{Ord, T}, polys) where {Ord, T <: Integer}
+    res = Vector{Vector{T}}(undef, length(polys))
     for i in 1:length(polys)
         poly = polys[i]
         if !aa_is_multivariate_ring(parent(polys[1]))
-            res[i] = map(io_lift_coeff_ff, AbstractAlgebra.coefficients(poly))
+            res[i] = map(c -> io_lift_coeff_ff(T, c), AbstractAlgebra.coefficients(poly))
             reverse!(res[i])
             filter!(!iszero, res[i])
         else
-            res[i] = map(io_lift_coeff_ff, AbstractAlgebra.coefficients(poly))
+            res[i] = map(c -> io_lift_coeff_ff(T, c), AbstractAlgebra.coefficients(poly))
         end
     end
     res
