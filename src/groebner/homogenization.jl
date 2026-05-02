@@ -79,7 +79,7 @@ function dehomogenize_generators(
     ring_desat, monoms, coeffs, params = desaturate_generators(ring, monoms, coeffs, params)
     @assert length(monoms) == length(coeffs)
     nvars = ring_desat.nvars
-    @assert nvars > 1
+    @assert nvars >= 1
     new_nvars = nvars - 1
     new_monoms = Vector{Vector{Vector{T}}}(undef, length(monoms))
     reduced_to_zero = Vector{Int}()
