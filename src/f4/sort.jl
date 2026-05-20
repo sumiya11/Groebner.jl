@@ -6,10 +6,16 @@
 # https://github.com/algebraic-solving/msolve/blob/master/COPYING
 
 # y, s.t. y >= x and n | y.
-align_up(x::Integer, n::Integer) = (x + (n - 1)) & (~(n - 1))
+function align_up(x::Integer, n::Integer)
+    @invariant n > 0
+    cld(x, n) * n
+end
 
 # y, s.t y <= x and n | y.
-align_down(x::Integer, n::Integer) = x ⊻ (n - 1)
+function align_down(x::Integer, n::Integer)
+    @invariant n > 0
+    fld(x, n) * n
+end
 
 ### 
 # Sorting monomials, polynomials, and other things.
