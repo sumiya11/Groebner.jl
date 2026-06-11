@@ -11,7 +11,14 @@ latex_platform = _IS_GITHUB_ACTIONS ? "docker" : "native"
 
 # Documentation structure
 
-PAGES = ["Home"      => "index.md", "Examples"  => "examples.md", "Interface" => "interface.md"]
+PAGES = [
+    "Home" => "index.md",
+    "Examples" => "examples.md",
+    "Interface" => "interface.md",
+    "Papers" => [
+        "Groebner.jl: Fast Gröbner Tracing in Julia" => "papers/fast-groebner-tracing-in-julia.md"
+    ]
+]
 
 # Build the HTML documentation
 
