@@ -97,7 +97,5 @@ sys_cfs = map(f -> collect(coefficients(f)), sys)
 cfs_hybrid = map(c -> Groebner.CoeffGeneric.(to_hybrid.(c)), sys_cfs)
 
 ring = Groebner.PolyRing(6, DegRevLex(), 0, :generic)
-gb_exps, gb_cfs = groebner(ring, sys_exps, cfs_hybrid)
-
-gb_cfs[1][1:2]  # the first two coefficients
+gb_exps, gb_cfs = groebner(ring, sys_exps, cfs_hybrid);
 ```

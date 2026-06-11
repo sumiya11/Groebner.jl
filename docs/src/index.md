@@ -24,7 +24,7 @@ Groebner.jl features:
 
 ## Contacts
 
-This library is maintained by Alexander Demin ([asdemin_2@edu.hse.ru](mailto:asdemin_2@edu.hse.ru)).
+This library is maintained by Alexander Demin ([demin@lix.polytechnique.fr](mailto:demin@lix.polytechnique.fr)).
 
 ## Citation
 
