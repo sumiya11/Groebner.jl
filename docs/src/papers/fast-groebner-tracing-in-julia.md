@@ -18,7 +18,8 @@ R, (x, y, z) = K["x", "y", "z"]
 
 F = [t * x^2 * y + y^3, x * y^2 + 3 // t * z]
 
-G = groebner(F)
+G = groebner(F);
+(length(G), isgroebner(G))
 ```
 
 ## Learn and apply
@@ -34,7 +35,8 @@ kat_zp2 = map(f -> change_base_ring(GF(2^30 + 7), f), kat)
 trace, _ = groebner_learn(kat_zp1)
 success, gb = groebner_apply!(trace, kat_zp2)
 
-success && isgroebner(gb)
+@assert success && isgroebner(gb)
+length(gb)
 ```
 
 ## Timing the apply phase
@@ -57,7 +59,8 @@ kat_zp5 = map(f -> change_base_ring(GF(2^30 + 19), f), kat)
 
 success, (gb2, gb3, gb4, gb5) = groebner_apply!(trace, (kat_zp2, kat_zp3, kat_zp4, kat_zp5))
 
-success && all(isgroebner, (gb2, gb3, gb4, gb5))
+@assert success && all(isgroebner, (gb2, gb3, gb4, gb5))
+map(length, (gb2, gb3, gb4, gb5))
 ```
 
 ## Hybrid exact-numeric coefficients
