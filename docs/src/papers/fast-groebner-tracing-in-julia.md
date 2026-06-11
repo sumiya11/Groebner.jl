@@ -19,7 +19,8 @@ R, (x, y, z) = K["x", "y", "z"]
 F = [t * x^2 * y + y^3, x * y^2 + 3 // t * z]
 
 G = groebner(F);
-(length(G), isgroebner(G))
+@assert isgroebner(G)
+nothing
 ```
 
 ## Learn and apply
@@ -36,18 +37,22 @@ trace, _ = groebner_learn(kat_zp1)
 success, gb = groebner_apply!(trace, kat_zp2)
 
 @assert success && isgroebner(gb)
-length(gb)
+nothing
 ```
 
 ## Timing the apply phase
 
-```@example paper_trace
-using BenchmarkTools
-@btime groebner(kat_zp2);
-```
+The paper reports these timings using `BenchmarkTools`. Here we run one timing pass without rendering benchmark output into the page so the examples remain lightweight in CI.
 
 ```@example paper_trace
-@btime groebner_apply!(trace, kat_zp2);
+trace_timing, _ = groebner_learn(kat_zp1)
+
+groebner_time = @elapsed groebner(kat_zp2)
+apply_time = @elapsed groebner_apply!(trace_timing, kat_zp2)
+
+@assert groebner_time >= 0
+@assert apply_time >= 0
+nothing
 ```
 
 ## Batched application over several primes
@@ -60,7 +65,7 @@ kat_zp5 = map(f -> change_base_ring(GF(2^30 + 19), f), kat)
 success, (gb2, gb3, gb4, gb5) = groebner_apply!(trace, (kat_zp2, kat_zp3, kat_zp4, kat_zp5))
 
 @assert success && all(isgroebner, (gb2, gb3, gb4, gb5))
-map(length, (gb2, gb3, gb4, gb5))
+nothing
 ```
 
 ## Hybrid exact-numeric coefficients
@@ -101,4 +106,8 @@ cfs_hybrid = map(c -> Groebner.CoeffGeneric.(to_hybrid.(c)), sys_cfs)
 
 ring = Groebner.PolyRing(6, DegRevLex(), 0, :generic)
 gb_exps, gb_cfs = groebner(ring, sys_exps, cfs_hybrid);
+
+@assert !isempty(gb_exps)
+@assert length(gb_exps) == length(gb_cfs)
+nothing
 ```
