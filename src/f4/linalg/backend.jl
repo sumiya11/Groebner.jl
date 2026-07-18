@@ -693,15 +693,16 @@ function linalg_dense_row_mod_p!(
     nothing
 end
 
+# Returns false when the row has 0 at the first_nnz_index position,
+# but a nonzero was expected.
 function linalg_row_make_monic!(
     row::Vector{T},
     arithmetic::AbstractArithmeticZp{A, T},
     first_nnz_index::Int=1
-) where {A <: Union{CoeffZp, CompositeCoeffZp}, T <: Union{CoeffZp, CompositeCoeffZp}}
-    @invariant !iszero(row[first_nnz_index])
-
+) where {A <: CoeffZp, T <: CoeffZp}
     @inbounds lead = row[first_nnz_index]
-    isone(lead) && return lead
+    iszero(lead) && return false, lead
+    isone(lead) && return true, lead
 
     @inbounds pinv = inv_mod_p(A(lead), arithmetic) % T
     @inbounds row[first_nnz_index] = one(T)
@@ -709,7 +710,26 @@ function linalg_row_make_monic!(
         row[i] = mod_p(A(row[i]) * A(pinv), arithmetic) % T
     end
 
-    pinv
+    true, pinv
+end
+
+function linalg_row_make_monic!(
+    row::Vector{T},
+    arithmetic::AbstractArithmeticZp{A, T},
+    first_nnz_index::Int=1
+) where {A <: CompositeCoeffZp, T <: CompositeCoeffZp}
+    @inbounds lead = row[first_nnz_index]
+    # Composite coefficients are invertible only when every component is nonzero.
+    any(iszero, lead.data) && return false, lead
+    isone(lead) && return true, lead
+
+    @inbounds pinv = inv_mod_p(A(lead), arithmetic) % T
+    @inbounds row[first_nnz_index] = one(T)
+    @inbounds for i in (first_nnz_index + 1):length(row)
+        row[i] = mod_p(A(row[i]) * A(pinv), arithmetic) % T
+    end
+
+    true, pinv
 end
 
 # Generic fallback
@@ -718,10 +738,9 @@ function linalg_row_make_monic!(
     arithmetic::AbstractArithmetic,
     first_nnz_index::Int=1
 ) where {T <: Coeff}
-    @invariant !iszero(row[first_nnz_index])
-
     @inbounds lead = row[first_nnz_index]
-    isone(lead) && return lead
+    iszero(lead) && return false, lead
+    isone(lead) && return true, lead
 
     @inbounds pinv = inv(lead)
     @inbounds row[1] = one(row[1])
@@ -729,7 +748,7 @@ function linalg_row_make_monic!(
         row[i] = row[i] * pinv
     end
 
-    pinv
+    true, pinv
 end
 
 # Linear combination of dense vector and sparse vector

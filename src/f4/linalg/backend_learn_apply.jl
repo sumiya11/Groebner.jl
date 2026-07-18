@@ -140,7 +140,8 @@ function linalg_apply_reduce_matrix_lower_part!(
         end
 
         @invariant length(new_sparse_row_coeffs) == length(new_sparse_row_support)
-        linalg_row_make_monic!(new_sparse_row_coeffs, arithmetic)
+        success, _ = linalg_row_make_monic!(new_sparse_row_coeffs, arithmetic)
+        !success && return false
 
         # Store the new row in the matrix, AND add it to the active pivots
         matrix.some_coeffs[i] = new_sparse_row_coeffs
