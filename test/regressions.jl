@@ -1,5 +1,24 @@
 using Test, Primes, Groebner, AbstractAlgebra
 
+@testset "regression, generic alignment" begin
+    @test Groebner.align_up(13, 20) == 20
+    @test Groebner.align_up(21, 20) == 40
+    @test Groebner.align_up(29, 20) == 40
+
+    @test Groebner.align_down(13, 20) == 0
+    @test Groebner.align_down(21, 20) == 20
+    @test Groebner.align_down(40, 20) == 40
+
+    for tasks in 1:16
+        composite = 4
+        batch = composite * tasks
+        for primes_used in 1:1000
+            batch = Groebner.get_next_batch(primes_used, batch, 0.1, composite, tasks)
+            @test batch % (composite * tasks) == 0
+        end
+    end
+end
+
 @testset "regression, SI.jl normalform" begin
     R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"])
 

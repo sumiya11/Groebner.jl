@@ -280,7 +280,7 @@ function _groebner_learn_and_apply(
 
     while !correct_basis
         batch = get_next_batch(primes_used, batch, batch_scaling, composite, tasks)
-        @invariant iszero(batch % composite) && iszero(batch % tasks)
+        @invariant iszero(batch % (composite * tasks))
 
         tasklocal_primes =
             [map(_ -> Int32(modular_next_prime!(state)), 1:div(batch, tasks)) for _ in 1:tasks]
