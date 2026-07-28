@@ -261,7 +261,12 @@ function groebner_apply2!(trace, params)
         @info "Trace might be corrupted. Recovering..." maxlog = 1
         trace.nfail += 1
         empty!(trace.matrix_sorted_columns)
-        trace.buf_basis = basis_deepcopy(trace.input_basis)
+        C = eltype(eltype(trace.buf_basis.coeffs))
+        coeffs = Vector{Vector{C}}(undef, length(trace.input_basis.monoms))
+        for i in 1:(trace.input_basis.n_filled)
+            coeffs[i] = Vector{C}(undef, length(trace.input_basis.monoms[i]))
+        end
+        trace.buf_basis = basis_deep_copy_with_new_coeffs(trace.input_basis, coeffs)
         return flag, ring, gb_coeffs
     end
     flag, ring, gb_coeffs
