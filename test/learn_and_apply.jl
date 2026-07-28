@@ -698,8 +698,7 @@ end
     R, (x, y) = polynomial_ring(AbstractAlgebra.ZZ, ["x", "y"], internal_ordering=:degrevlex)
     sys_qq = [44x^2 + x + 2^50, y^10 - 10 * y^5 - 99]
     sys_gf = map(
-        j ->
-            map(poly -> AbstractAlgebra.map_coefficients(c -> (k = ks[j]; k(c)), poly), sys_qq),
+        j -> map(poly -> AbstractAlgebra.map_coefficients(c -> (k=ks[j]; k(c)), poly), sys_qq),
         1:length(ks)
     )
 
@@ -764,21 +763,14 @@ end
         [x + y, x + (first(bad_primes) + 1) * y + 1]
     end
 
-    trace, _ = Groebner.groebner_learn(
-        system(251),
-        ordering=Groebner.DegRevLex()
-    )
+    trace, _ = Groebner.groebner_learn(system(251), ordering=Groebner.DegRevLex())
 
     bad_systems = map(system, bad_primes)
-    success, _ = Groebner.groebner_apply!(
-        trace, bad_systems, ordering=Groebner.DegRevLex()
-    )
+    success, _ = Groebner.groebner_apply!(trace, bad_systems, ordering=Groebner.DegRevLex())
     @test !success
 
     good_systems = map(system, good_primes)
-    success, bases = Groebner.groebner_apply!(
-        trace, good_systems, ordering=Groebner.DegRevLex()
-    )
+    success, bases = Groebner.groebner_apply!(trace, good_systems, ordering=Groebner.DegRevLex())
     @test success
     @test collect(bases) == map(
         system -> Groebner.groebner(system, ordering=Groebner.DegRevLex()),
