@@ -145,6 +145,25 @@ end
     @test true
 end
 
+@testset "regression, non-invertible composite pivot" begin
+    R, (x, y, z) = polynomial_ring(QQ, ["x", "y", "z"])
+
+    # Using a batch of 4 primes, some pivot vanishes modulo the first prime,
+    # but does not vanish modulo the other three primes in the batch.
+    p = BigInt(Primes.prevprime(Groebner.FIRST_LUCKY_PRIME_CANDIDATE - 1))
+    system = [x^2 + p * y + 1, x * y + z + 1]
+
+    gb = Groebner.groebner(system; homogenize=:no, tasks=1, _composite=4)
+    expected = [
+        y^3 + 1 // p * y^2 + 1 // p * z^2 + 2 // p * z + 1 // p,
+        x * z + x - p * y^2 - y,
+        x * y + z + 1,
+        x^2 + p * y + 1
+    ]
+
+    @test gb == expected
+end
+
 # https://github.com/sumiya11/Groebner.jl/issues/175
 @testset "regression, basis" begin
     R, (x1, x2) = polynomial_ring(QQ, ["x1", "x2"], internal_ordering=:deglex)
