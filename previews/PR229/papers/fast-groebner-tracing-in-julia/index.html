@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Groebner.jl: Fast Gröbner Tracing in Julia · Groebner.jl</title><meta name="title" content="Groebner.jl: Fast Gröbner Tracing in Julia · Groebner.jl"/><meta property="og:title" content="Groebner.jl: Fast Gröbner Tracing in Julia · Groebner.jl"/><meta property="twitter:title" content="Groebner.jl: Fast Gröbner Tracing in Julia · Groebner.jl"/><meta name="description" content="Documentation for Groebner.jl."/><meta property="og:description" content="Documentation for Groebner.jl."/><meta property="twitter:description" content="Documentation for Groebner.jl."/><script async src="https://www.googletagmanager.com/gtag/js?id=G-09PS33NY4L"></script><script>  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-09PS33NY4L', {'page_path': location.pathname + location.search + location.hash});
+</script><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img class="docs-light-only" src="../../assets/logo.svg" alt="Groebner.jl logo"/><img class="docs-dark-only" src="../../assets/logo-dark.svg" alt="Groebner.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Groebner.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../examples/">Examples</a></li><li><a class="tocitem" href="../../interface/">Interface</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Groebner.jl: Fast Gröbner Tracing in Julia</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Groebner.jl: Fast Gröbner Tracing in Julia</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/sumiya11/Groebner.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/sumiya11/Groebner.jl/blob/master/docs/src/papers/fast-groebner-tracing-in-julia.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Groebner.jl:-Fast-Gröbner-Tracing-in-Julia"><a class="docs-heading-anchor" href="#Groebner.jl:-Fast-Gröbner-Tracing-in-Julia">Groebner.jl: Fast Gröbner Tracing in Julia</a><a id="Groebner.jl:-Fast-Gröbner-Tracing-in-Julia-1"></a><a class="docs-heading-anchor-permalink" href="#Groebner.jl:-Fast-Gröbner-Tracing-in-Julia" title="Permalink"></a></h1><p>This page mirrors the code snippets from the paper <em>Groebner.jl: Fast Gröbner Tracing in Julia</em> that appeared in the proceedings of the <a href="https://icms-conference.org/2026/">International Congress on Mathematical Software 2026</a>.</p><h2 id="Setup"><a class="docs-heading-anchor" href="#Setup">Setup</a><a id="Setup-1"></a><a class="docs-heading-anchor-permalink" href="#Setup" title="Permalink"></a></h2><pre><code class="language-julia hljs">using Pkg; Pkg.add(&quot;Groebner&quot;); Pkg.add(&quot;Nemo&quot;)</code></pre><h2 id="Generic-coefficient-arithmetic"><a class="docs-heading-anchor" href="#Generic-coefficient-arithmetic">Generic coefficient arithmetic</a><a id="Generic-coefficient-arithmetic-1"></a><a class="docs-heading-anchor-permalink" href="#Generic-coefficient-arithmetic" title="Permalink"></a></h2><pre><code class="language-julia hljs">using Groebner, Nemo
+
+K, t = rational_function_field(QQ, &quot;t&quot;)
+R, (x, y, z) = K[&quot;x&quot;, &quot;y&quot;, &quot;z&quot;]
+
+F = [t * x^2 * y + y^3, x * y^2 + 3 // t * z]
+
+G = groebner(F);
+@assert isgroebner(G)
+nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌ Warning: Groebner.jl does not have a native implementation for the given field: Rational function field over QQ.
+│ Falling back to a generic implementation (may be slow).
+│ If this is unexpected, please consider submitting a GitHub issue.
+└ @ Groebner ~/work/Groebner.jl/Groebner.jl/src/input_output/AbstractAlgebra.jl:78
+┌ Warning: Groebner.jl does not have a native implementation for the given field: Rational function field over QQ.
+│ Falling back to a generic implementation (may be slow).
+│ If this is unexpected, please consider submitting a GitHub issue.
+└ @ Groebner ~/work/Groebner.jl/Groebner.jl/src/input_output/AbstractAlgebra.jl:78</code></pre><h2 id="Learn-and-apply"><a class="docs-heading-anchor" href="#Learn-and-apply">Learn and apply</a><a id="Learn-and-apply-1"></a><a class="docs-heading-anchor-permalink" href="#Learn-and-apply" title="Permalink"></a></h2><pre><code class="language-julia hljs">using Groebner, Nemo
+
+kat = Groebner.Examples.katsuran(10)
+
+kat_zp1 = map(f -&gt; change_base_ring(GF(2^30 + 3), f), kat)
+kat_zp2 = map(f -&gt; change_base_ring(GF(2^30 + 7), f), kat)
+
+trace, _ = groebner_learn(kat_zp1)
+success, gb = groebner_apply!(trace, kat_zp2)
+
+@assert success &amp;&amp; isgroebner(gb)
+nothing</code></pre><h2 id="Timing-the-apply-phase"><a class="docs-heading-anchor" href="#Timing-the-apply-phase">Timing the apply phase</a><a id="Timing-the-apply-phase-1"></a><a class="docs-heading-anchor-permalink" href="#Timing-the-apply-phase" title="Permalink"></a></h2><p>The paper reports these timings using <code>BenchmarkTools</code>. Here we run one timing pass without rendering benchmark output into the page so the examples remain lightweight in CI.</p><pre><code class="language-julia hljs">trace_timing, _ = groebner_learn(kat_zp1)
+
+groebner_time = @elapsed groebner(kat_zp2)
+apply_time = @elapsed groebner_apply!(trace_timing, kat_zp2)
+
+@assert groebner_time &gt;= 0
+@assert apply_time &gt;= 0
+nothing</code></pre><h2 id="Batched-application-over-several-primes"><a class="docs-heading-anchor" href="#Batched-application-over-several-primes">Batched application over several primes</a><a id="Batched-application-over-several-primes-1"></a><a class="docs-heading-anchor-permalink" href="#Batched-application-over-several-primes" title="Permalink"></a></h2><pre><code class="language-julia hljs">kat_zp3 = map(f -&gt; change_base_ring(GF(2^30 + 9), f), kat)
+kat_zp4 = map(f -&gt; change_base_ring(GF(2^30 + 15), f), kat)
+kat_zp5 = map(f -&gt; change_base_ring(GF(2^30 + 19), f), kat)
+
+success, (gb2, gb3, gb4, gb5) = groebner_apply!(trace, (kat_zp2, kat_zp3, kat_zp4, kat_zp5))
+
+@assert success &amp;&amp; all(isgroebner, (gb2, gb3, gb4, gb5))
+nothing</code></pre><h2 id="Hybrid-exact-numeric-coefficients"><a class="docs-heading-anchor" href="#Hybrid-exact-numeric-coefficients">Hybrid exact-numeric coefficients</a><a id="Hybrid-exact-numeric-coefficients-1"></a><a class="docs-heading-anchor-permalink" href="#Hybrid-exact-numeric-coefficients" title="Permalink"></a></h2><pre><code class="language-julia hljs">import Base: +, -, *, zero, one, inv, iszero, isone
+
+const M = 256
+setprecision(BigFloat, M)
+
+struct Hybrid{Zp, Float}
+    a::Zp
+    b::Float
+end
+
+iszero(x::Hybrid) = iszero(x.a)
+isone(x::Hybrid) = isone(x.a)
+zero(x::Hybrid) = Hybrid(zero(x.a), zero(x.b))
+one(x::Hybrid) = Hybrid(one(x.a), one(x.b))
+
++(x::Hybrid, y::Hybrid) = Hybrid(x.a + y.a, x.b + y.b)
+-(x::Hybrid, y::Hybrid) = Hybrid(x.a - y.a, x.b - y.b)
+*(x::Hybrid, y::Hybrid) = Hybrid(x.a * y.a, x.b * y.b)
+inv(x::Hybrid) = Hybrid(inv(x.a), inv(x.b))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">inv (generic function with 130 methods)</code></pre><pre><code class="language-julia hljs">using Groebner, Nemo
+
+to_hybrid(q) = Hybrid(GF(2^30 + 3)(q), BigFloat(q))
+
+sys = Groebner.Examples.hexapod(k = QQ)
+
+sys_exps = map(f -&gt; collect(exponent_vectors(f)), sys)
+sys_cfs = map(f -&gt; collect(coefficients(f)), sys)
+
+cfs_hybrid = map(c -&gt; Groebner.CoeffGeneric.(to_hybrid.(c)), sys_cfs)
+
+ring = Groebner.PolyRing(6, DegRevLex(), 0, :generic)
+gb_exps, gb_cfs = groebner(ring, sys_exps, cfs_hybrid);
+
+@assert !isempty(gb_exps)
+@assert length(gb_exps) == length(gb_cfs)
+nothing</code></pre></article><nav class="docs-footer"><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 28 July 2026 22:43">Tuesday 28 July 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
