@@ -326,16 +326,18 @@ end
 function linalg_prepare_matrix_pivots_in_interreduction!(matrix::MacaulayMatrix, basis::Basis)
     _, ncols = size(matrix)
     nup, nlow = matrix_nrows_filled(matrix)
+    nrows = nup + nlow
+    row_or_column_size = max(nrows, ncols)
 
     resize!(matrix.lower_rows, ncols)
-    resize!(matrix.upper_to_coeffs, ncols)
-    resize!(matrix.upper_to_mult, ncols)
+    resize!(matrix.upper_to_coeffs, row_or_column_size)
+    resize!(matrix.upper_to_mult, row_or_column_size)
     resize!(matrix.lower_to_coeffs, ncols)
     resize!(matrix.lower_to_mult, ncols)
-    resize!(matrix.some_coeffs, ncols)
+    resize!(matrix.some_coeffs, row_or_column_size)
 
     pivots = Vector{Vector{ColumnLabel}}(undef, ncols)
-    @inbounds for i in 1:(nup + nlow)
+    @inbounds for i in 1:nrows
         pivots[matrix.upper_rows[i][1]] = matrix.upper_rows[i]
         matrix.lower_to_coeffs[matrix.upper_rows[i][1]] = i
         matrix.some_coeffs[i] = copy(basis.coeffs[matrix.upper_to_coeffs[i]])
