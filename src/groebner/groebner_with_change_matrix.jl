@@ -140,6 +140,8 @@ function _groebner_with_change_classic_modular(
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffQQ}
+    input_denominators = map(cfs -> common_denominator!(BigInt(), cfs), coeffs)
+
     # Initialize supporting structs
     basis, pairset, hashtable =
         f4_initialize_structs(ring, monoms, coeffs, params, make_monic=false)
@@ -251,6 +253,16 @@ function _groebner_with_change_classic_modular(
     gb_monoms, _ = basis_export_data(basis_ff, hashtable)
     gb_coeffs_qq = state.gb_coeffs_qq
     changematrix_coeffs_qq = state.changematrix_coeffs_qq
+
+    # The modular computation clears the denominators of input polynomials.
+    # Rescale the columns so that the change matrix refers to the original input.
+    for row in changematrix_coeffs_qq
+        for (column, denominator) in zip(row, input_denominators)
+            for i in eachindex(column)
+                column[i] *= denominator
+            end
+        end
+    end
 
     gb_monoms, gb_coeffs_qq, changematrix_monoms, changematrix_coeffs_qq
 end

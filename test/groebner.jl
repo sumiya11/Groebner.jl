@@ -1248,6 +1248,13 @@ end
         end
     end
 
+    R, (x, y) = polynomial_ring(QQ, ["x", "y"], internal_ordering=:degrevlex)
+    f = [(3 // 1) * y + (1 // 2) * x^2, 11 // 1 + (7 // 1) * y + x * y]
+    g, m = Groebner.groebner_with_change_matrix(f)
+    @test m * f == g
+    @test size(m) == (length(g), length(f))
+    @test Groebner.isgroebner(g)
+
     f = Groebner.Examples.katsuran(4, k=QQ, internal_ordering=:lex)
     g, m = Groebner.groebner_with_change_matrix(f, ordering=Groebner.DegRevLex())
     @test m * f == g
