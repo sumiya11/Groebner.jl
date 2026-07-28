@@ -755,6 +755,37 @@ end
     test_learn_apply(cyc_lex, ps2)
 end
 
+@testset "learn & apply, recover after failed batch" begin
+    bad_primes = (241, 239, 233, 229)
+    good_primes = (227, 223, 211, 199)
+
+    function system(characteristic)
+        R, (x, y) = polynomial_ring(GF(characteristic), ["x", "y"])
+        [x + y, x + (first(bad_primes) + 1) * y + 1]
+    end
+
+    trace, _ = Groebner.groebner_learn(
+        system(251),
+        ordering=Groebner.DegRevLex()
+    )
+
+    bad_systems = map(system, bad_primes)
+    success, _ = Groebner.groebner_apply!(
+        trace, bad_systems, ordering=Groebner.DegRevLex()
+    )
+    @test !success
+
+    good_systems = map(system, good_primes)
+    success, bases = Groebner.groebner_apply!(
+        trace, good_systems, ordering=Groebner.DegRevLex()
+    )
+    @test success
+    @test collect(bases) == map(
+        system -> Groebner.groebner(system, ordering=Groebner.DegRevLex()),
+        collect(good_systems)
+    )
+end
+
 @testset "learn & apply low level, in batches" begin
     ring0 = Groebner.PolyRing(2, Groebner.DegLex(), 5)
     ring1 = Groebner.PolyRing(2, Groebner.DegLex(), 7)
