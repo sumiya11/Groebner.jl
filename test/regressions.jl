@@ -190,3 +190,10 @@ end
     gb = groebner(set)
     @test isgroebner(gb)
 end
+
+@testset "regression, dimension with duplicate generators" begin
+    R, x = polynomial_ring(QQ, ["x$i" for i in 1:5])
+    system = [x[1]^2 - 1, x[1]^2 - 1, x[2]^2 - 2, x[2]^2 - 2]
+
+    @test dimension(system) == 3
+end

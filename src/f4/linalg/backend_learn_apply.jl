@@ -55,7 +55,7 @@ function linalg_learn_deterministic_sparse_interreduction!(
     # Prepare the matrix
     linalg_prepare_matrix_pivots_in_interreduction!(matrix, basis)
     # Interreduce AB
-    linalg_learn_interreduce_matrix_pivots!(trace, matrix, basis, arithmetic, reversed_rows=true)
+    linalg_learn_interreduce_matrix_pivots!(trace, matrix, basis, arithmetic, left_to_right=true)
 
     true
 end
@@ -74,7 +74,7 @@ function linalg_apply_deterministic_sparse_interreduction!(
         matrix,
         basis,
         arithmetic,
-        reversed_rows=true
+        left_to_right=true
     )
 
     flag
@@ -160,11 +160,11 @@ function linalg_learn_interreduce_matrix_pivots!(
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
     arithmetic::A;
-    reversed_rows::Bool=false
+    left_to_right::Bool=false
 ) where {C <: Coeff, A <: AbstractArithmetic}
     # Perform interreduction
     flag, _, not_reduced_to_zero =
-        linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic, reversed_rows=reversed_rows)
+        linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic, left_to_right=left_to_right)
     !flag && return flag
 
     # Update the computation trace
@@ -186,10 +186,10 @@ function linalg_apply_interreduce_matrix_pivots!(
     matrix::MacaulayMatrix{C},
     basis::Basis{C},
     arithmetic::A;
-    reversed_rows::Bool=false
+    left_to_right::Bool=false
 ) where {C <: Coeff, A <: AbstractArithmetic}
     flag, any_zeroed, _ =
-        linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic, reversed_rows=reversed_rows)
+        linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic, left_to_right=left_to_right)
     flag && !any_zeroed
 end
 

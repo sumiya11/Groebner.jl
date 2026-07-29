@@ -39,7 +39,7 @@ function linalg_deterministic_sparse_interreduction!(
     # Prepare the matrix
     linalg_prepare_matrix_pivots_in_interreduction!(matrix, basis)
     # Interreduce AB
-    linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic, reversed_rows=true)
+    linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic, left_to_right=true)
     true
 end
 
@@ -128,11 +128,10 @@ function linalg_interreduce_matrix_pivots!(
     matrix::MacaulayMatrix{CoeffType},
     basis::Basis{CoeffType},
     arithmetic::AbstractArithmetic{AccumType};
-    reversed_rows::Bool=false
+    left_to_right::Bool=false
 ) where {CoeffType <: Coeff, AccumType <: Coeff}
     _, ncols = size(matrix)
     nleft, nright = matrix_ncols_filled(matrix)
-    nupper, _ = matrix_nrows_filled(matrix)
 
     # Prepare the matrix
     resize!(matrix.lower_rows, nright)
@@ -145,9 +144,10 @@ function linalg_interreduce_matrix_pivots!(
     # Indices of rows that did no reduce to zero
     not_reduced_to_zero = Vector{Int}(undef, nright)
 
-    # for each column in the block D..
-    @inbounds for i in 1:nright
-        abs_column_idx = ncols - i + 1
+    # Visit pivot columns in the order in which output rows should be stored.
+    # Ordinary F4 reduction goes 1...n, whereas final autoreduction n...1.
+    column_indices = left_to_right ? ((nleft + 1):ncols) : (ncols:-1:(nleft + 1))
+    @inbounds for abs_column_idx in column_indices
         # Check if there is a row that starts at `abs_column_idx`
         !isassigned(pivots, abs_column_idx) && continue
 
@@ -187,19 +187,13 @@ function linalg_interreduce_matrix_pivots!(
         end
 
         new_pivots += 1
-        not_reduced_to_zero[new_pivots] = i
+        not_reduced_to_zero[new_pivots] =
+            left_to_right ? (abs_column_idx - nleft) : (ncols - abs_column_idx + 1)
 
         # Update the row support and coefficients.
-        # TODO: maybe get rid of the reversed_rows parameter?
-        if !reversed_rows
-            matrix.lower_rows[new_pivots] = new_sparse_row_support
-            matrix.some_coeffs[matrix.lower_to_coeffs[abs_column_idx]] = new_sparse_row_coeffs
-            pivots[abs_column_idx] = matrix.lower_rows[new_pivots]
-        else
-            matrix.lower_rows[nupper - new_pivots + 1] = new_sparse_row_support
-            matrix.some_coeffs[matrix.lower_to_coeffs[abs_column_idx]] = new_sparse_row_coeffs
-            pivots[abs_column_idx] = matrix.lower_rows[nupper - new_pivots + 1]
-        end
+        matrix.lower_rows[new_pivots] = new_sparse_row_support
+        matrix.some_coeffs[matrix.lower_to_coeffs[abs_column_idx]] = new_sparse_row_coeffs
+        pivots[abs_column_idx] = matrix.lower_rows[new_pivots]
     end
 
     matrix.npivots = new_pivots
@@ -332,16 +326,18 @@ end
 function linalg_prepare_matrix_pivots_in_interreduction!(matrix::MacaulayMatrix, basis::Basis)
     _, ncols = size(matrix)
     nup, nlow = matrix_nrows_filled(matrix)
+    nrows = nup + nlow
+    row_or_column_size = max(nrows, ncols)
 
     resize!(matrix.lower_rows, ncols)
-    resize!(matrix.upper_to_coeffs, ncols)
-    resize!(matrix.upper_to_mult, ncols)
+    resize!(matrix.upper_to_coeffs, row_or_column_size)
+    resize!(matrix.upper_to_mult, row_or_column_size)
     resize!(matrix.lower_to_coeffs, ncols)
     resize!(matrix.lower_to_mult, ncols)
-    resize!(matrix.some_coeffs, ncols)
+    resize!(matrix.some_coeffs, row_or_column_size)
 
     pivots = Vector{Vector{ColumnLabel}}(undef, ncols)
-    @inbounds for i in 1:(nup + nlow)
+    @inbounds for i in 1:nrows
         pivots[matrix.upper_rows[i][1]] = matrix.upper_rows[i]
         matrix.lower_to_coeffs[matrix.upper_rows[i][1]] = i
         matrix.some_coeffs[i] = copy(basis.coeffs[matrix.upper_to_coeffs[i]])
