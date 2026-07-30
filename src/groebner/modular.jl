@@ -314,9 +314,7 @@ end
 
     _, input_ff = modular_reduce_mod_p!(ring, input_zz, prime, deepcopy=true)
 
-    @invariant gb_ff.n_nonredundant ==
-        length(state.gb_coeffs_qq) ==
-        length(changematrix_monoms)
+    @invariant gb_ff.n_nonredundant == length(state.gb_coeffs_qq) == length(changematrix_monoms)
     @invariant length(input_permutation) == input_ff.n_filled
     @invariant length(changematrix_monoms) == length(state.changematrix_coeffs_qq)
 
@@ -348,8 +346,7 @@ end
             for (matrix_monom, matrix_coeff) in zip(matrix_monoms, matrix_coeffs)
                 matrix_coeff_mod_p = CoeffModular(
                     mod(
-                        numerator(matrix_coeff) *
-                        invmod(denominator(matrix_coeff), prime_big),
+                        numerator(matrix_coeff) * invmod(denominator(matrix_coeff), prime_big),
                         prime_big
                     )
                 )
