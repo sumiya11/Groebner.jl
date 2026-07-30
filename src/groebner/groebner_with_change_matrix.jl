@@ -143,7 +143,7 @@ function _groebner_with_change_classic_modular(
     input_denominators = map(cfs -> common_denominator!(BigInt(), cfs), coeffs)
 
     # Initialize supporting structs
-    basis, pairset, hashtable =
+    basis, pairset, hashtable, input_permutation =
         f4_initialize_structs(ring, monoms, coeffs, params, make_monic=false)
     basis_zz = clear_denominators!(basis, deepcopy=false)
     state = ModularState{BigInt, C, CoeffModular}(basis_zz.coeffs)
@@ -245,6 +245,18 @@ function _groebner_with_change_classic_modular(
             continue
         end
 
+        if !modular_lift_changematrix_check!(
+            state,
+            ring,
+            basis_zz,
+            basis_ff,
+            input_permutation,
+            changematrix_monoms,
+            hashtable,
+            params
+        )
+            continue
+        end
         correct_basis =
             modular_lift_check!(state, ring_ff, basis, basis_zz, basis_ff, hashtable, params)
     end

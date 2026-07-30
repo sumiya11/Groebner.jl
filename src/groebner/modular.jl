@@ -291,6 +291,82 @@ function modular_crt_full_changematrix!(state::ModularState)
     end
 end
 
+@timeit _TIMER function modular_lift_changematrix_check!(
+    state::ModularState,
+    ring::PolyRing,
+    input_zz::Basis,
+    gb_ff::Basis,
+    input_permutation::Vector{Int},
+    changematrix_monoms::Vector{Vector{Vector{M}}},
+    hashtable::MonomialHashtable{M},
+    params::AlgorithmParameters
+) where {M <: Monom}
+    prime = modular_random_prime(state, params.rng)
+    prime_big = BigInt(prime)
+    while any(c -> iszero(mod(denominator(c), prime_big)), Iterators.flatten(state.gb_coeffs_qq)) ||
+        any(
+            c -> iszero(mod(denominator(c), prime_big)),
+            Iterators.flatten(Iterators.flatten(state.changematrix_coeffs_qq))
+        )
+        prime = modular_random_prime(state, params.rng)
+        prime_big = BigInt(prime)
+    end
+
+    _, input_ff = modular_reduce_mod_p!(ring, input_zz, prime, deepcopy=true)
+
+    @invariant gb_ff.n_nonredundant == length(state.gb_coeffs_qq) == length(changematrix_monoms)
+    @invariant length(input_permutation) == input_ff.n_filled
+    @invariant length(changematrix_monoms) == length(state.changematrix_coeffs_qq)
+
+    # The input basis is sorted internally, while change-matrix columns refer
+    # to the original input order.
+    inverse_input_permutation = invperm(input_permutation)
+    @inbounds for row_idx in 1:length(changematrix_monoms)
+        residual = Dict{MonomId, CoeffModular}()
+
+        gb_idx = gb_ff.nonredundant_indices[row_idx]
+        for (monom_id, coeff) in zip(gb_ff.monoms[gb_idx], state.gb_coeffs_qq[row_idx])
+            coeff_mod_p = CoeffModular(
+                mod(numerator(coeff) * invmod(denominator(coeff), prime_big), prime_big)
+            )
+            coeff_mod_p = iszero(coeff_mod_p) ? coeff_mod_p : prime - coeff_mod_p
+            residual[monom_id] =
+                mod(get(residual, monom_id, zero(CoeffModular)) + coeff_mod_p, prime)
+            iszero(residual[monom_id]) && delete!(residual, monom_id)
+        end
+
+        for column_idx in 1:length(changematrix_monoms[row_idx])
+            input_idx = inverse_input_permutation[column_idx]
+            matrix_monoms = changematrix_monoms[row_idx][column_idx]
+            matrix_coeffs = state.changematrix_coeffs_qq[row_idx][column_idx]
+            input_monoms = input_ff.monoms[input_idx]
+            input_coeffs = input_ff.coeffs[input_idx]
+            hashtable_resize_if_needed!(hashtable, length(matrix_monoms) * length(input_monoms))
+
+            for (matrix_monom, matrix_coeff) in zip(matrix_monoms, matrix_coeffs)
+                matrix_coeff_mod_p = CoeffModular(
+                    mod(
+                        numerator(matrix_coeff) * invmod(denominator(matrix_coeff), prime_big),
+                        prime_big
+                    )
+                )
+                for (input_monom_id, input_coeff) in zip(input_monoms, input_coeffs)
+                    input_monom = hashtable.monoms[input_monom_id]
+                    product = monom_product!(monom_copy(matrix_monom), matrix_monom, input_monom)
+                    product_id = hashtable_insert!(hashtable, product)
+                    coeff_mod_p = mod(matrix_coeff_mod_p * input_coeff, prime)
+                    residual[product_id] =
+                        mod(get(residual, product_id, zero(CoeffModular)) + coeff_mod_p, prime)
+                    iszero(residual[product_id]) && delete!(residual, product_id)
+                end
+            end
+        end
+
+        !isempty(residual) && return false
+    end
+    true
+end
+
 ### 
 # Checking modular lifts in modular computation
 
