@@ -197,3 +197,14 @@ end
 
     @test dimension(system) == 3
 end
+
+# https://github.com/sumiya11/Groebner.jl/issues/219
+@testset "regression, rational change matrix reconstruction" begin
+    R, (x,) = polynomial_ring(QQ, ["x"])
+    coefficient = big(10)^10 + 1
+    system = [coefficient * x + 1, x]
+
+    basis, matrix = groebner_with_change_matrix(system; ordering=DegRevLex())
+
+    @test matrix * system == basis
+end
