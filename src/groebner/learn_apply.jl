@@ -145,6 +145,7 @@ function groebner_apply_batch0!(
     ir_batch = map(f -> io_convert_polynomials_to_ir(f, deepcopy(options)), batch)
     options = ir_batch[1][end]
     ir_batch = map(f -> f[1:3], ir_batch)
+    @assert ir_batch isa (NTuple{N, U} where {N, U}) "Expected homogeneous batch."
     flag, gb_batch = _groebner_apply_batch1!(wrapped_trace, ir_batch, options)
     !flag && return (flag, batch)
     result_ir = map(

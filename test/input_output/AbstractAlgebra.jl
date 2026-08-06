@@ -15,8 +15,8 @@ using AbstractAlgebra, Test, Primes, Groebner
 end
 
 @testset "AbstractAlgebra.jl, input-output" begin
-    # R, (x, y) = AbstractAlgebra.GF(Primes.nextprime(BigInt(2)^100))["x", "y"]
-    # @test_throws DomainError Groebner.groebner([x, y])
+    R, (x, y) = AbstractAlgebra.GF(Primes.prevprime(BigInt(2)^255))["x", "y"]
+    @test Groebner.isgroebner(Groebner.groebner([x + y, x * y + 1]))
 
     R, (x, y) = AbstractAlgebra.ZZ["x", "y"]
     @test_throws DomainError Groebner.groebner([x, y])

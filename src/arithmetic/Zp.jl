@@ -334,7 +334,13 @@ function select_arithmetic(
     else
         # If the coefficients are stored tightly, say, using UInt32 paired with
         # characteristic = 2^31-1, then we need a bigger accumulator
-        widen(CoeffType)
+        if CoeffType === UInt128
+            UInt256
+        elseif CoeffType <: CompositeNumber{N, UInt128} where {N}
+            CompositeNumber{N, UInt256}
+        else
+            widen(CoeffType)
+        end
     end
 
     if CoeffType <: CompositeCoeffZp

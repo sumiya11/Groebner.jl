@@ -47,6 +47,7 @@ import AbstractAlgebra
 import AbstractAlgebra: base_ring, elem_type
 
 import Atomix
+import BitIntegers: UInt256, UInt512
 
 import Base: *
 import Base.Threads

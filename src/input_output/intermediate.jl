@@ -233,17 +233,17 @@ end
 
 # Packed coefficients utils
 
-function ir_pack_coeffs(batch::NTuple{N, T}) where {N, T}
+function ir_pack_coeffs(batch::NTuple{N, Tuple{R,E,Vector{Vector{CoeffType}}}}) where {N, R, E, CoeffType <: IR_coeff}
     ring = batch[1][1]
     ch = CompositeNumber(map(el -> el[1].characteristic, batch))
     new_ring = PolyRing(ring.nvars, ring.ord, ch, ring.ground)
     monoms = batch[1][2]
-    coeffs = Vector{Vector{CompositeNumber{N, UInt64}}}(undef, length(monoms))
+    coeffs = Vector{Vector{CompositeNumber{N, CoeffType}}}(undef, length(monoms))
     @assert allequal(map(el -> el[2], batch))
-    for i in 1:length(batch[1][2])
-        coeffs[i] = Vector{CompositeNumber{N, UInt64}}(undef, length(batch[1][2][i]))
+    @inbounds for i in 1:length(batch[1][2])
+        coeffs[i] = Vector{CompositeNumber{N, CoeffType}}(undef, length(batch[1][2][i]))
         for j in 1:length(batch[1][2][i])
-            coeffs[i][j] = CompositeNumber(ntuple(k -> batch[k][3][i][j], N))
+            coeffs[i][j] = CompositeNumber{N, CoeffType}(ntuple(k -> batch[k][3][i][j], N))
         end
     end
     true, new_ring, monoms, coeffs
