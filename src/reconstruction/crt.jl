@@ -5,38 +5,41 @@
 
 # Auxiliary functions allowing to avoid overflow
 # on Windows for numbers between 32 and 64 bits
-function my_set_ui!(a::BigInt, b::UInt64)
+function my_set_ui!(a::BigInt, b::Unsigned)
+    bb = b % UInt64
     @static if Culong == UInt64
-        Base.GMP.MPZ.set_ui!(a, b)
+        Base.GMP.MPZ.set_ui!(a, bb)
     else
-        if b < 2^32
-            Base.GMP.MPZ.set_ui!(a, b)
+        if bb < 2^32
+            Base.GMP.MPZ.set_ui!(a, bb)
         else
-            Base.GMP.MPZ.set!(a, BigInt(b))
+            Base.GMP.MPZ.set!(a, BigInt(bb))
         end
     end
 end
 
-function my_mul_ui!(a::BigInt, b::BigInt, c::UInt64)
+function my_mul_ui!(a::BigInt, b::BigInt, c::Unsigned)
+    cc = c % UInt64
     @static if Culong == UInt64
-        Base.GMP.MPZ.mul_ui!(a, b, c)
+        Base.GMP.MPZ.mul_ui!(a, b, cc)
     else
-        if c < 2^32
-            Base.GMP.MPZ.mul_ui!(a, b, c)
+        if cc < 2^32
+            Base.GMP.MPZ.mul_ui!(a, b, cc)
         else
-            Base.GMP.MPZ.mul!(a, b, BigInt(c))
+            Base.GMP.MPZ.mul!(a, b, BigInt(cc))
         end
     end
 end
 
-function my_mul_ui!(a::BigInt, b::UInt64)
+function my_mul_ui!(a::BigInt, b::Unsigned)
+    bb = b % UInt64
     @static if Culong == UInt64
-        Base.GMP.MPZ.mul_ui!(a, b)
+        Base.GMP.MPZ.mul_ui!(a, bb)
     else
-        if b < 2^32
-            Base.GMP.MPZ.mul_ui!(a, b)
+        if bb < 2^32
+            Base.GMP.MPZ.mul_ui!(a, bb)
         else
-            Base.GMP.MPZ.mul!(a, BigInt(b))
+            Base.GMP.MPZ.mul!(a, BigInt(bb))
         end
     end
 end
@@ -128,13 +131,13 @@ end
         mults[i] = BigInt()
     end
 
-    crt_precompute!(modulo, n1, n2, mults, map(UInt64, moduli))
+    crt_precompute!(modulo, n1, n2, mults, map(UInt, moduli))
 
-    rems = Vector{UInt64}(undef, length(moduli))
+    rems = Vector{UInt}(undef, length(moduli))
     @inbounds for k in 1:length(witness_set)
         i, j = witness_set[k]
         for t in 1:length(moduli)
-            rems[t] = UInt64(tables_ff[t][i][j])
+            rems[t] = UInt(tables_ff[t][i][j])
         end
         crt!(modulo, buf, n1, n2, rems, mults)
         Base.GMP.MPZ.set!(table_zz[i][j], buf)
@@ -150,7 +153,7 @@ function _crt_vec_full!(
     buf::BigInt,
     n1::BigInt,
     n2::BigInt,
-    rems::Vector{UInt64},
+    rems::Vector{UInt},
     tables_ff::Vector{Vector{Vector{T}}},
     mults::Vector{BigInt},
     moduli::Vector{U},
@@ -163,7 +166,7 @@ function _crt_vec_full!(
             mask[i][j] && continue
             for k in 1:length(moduli)
                 @invariant 0 <= tables_ff[k][i][j] < moduli[k]
-                rems[k] = UInt64(tables_ff[k][i][j])
+                rems[k] = UInt(tables_ff[k][i][j])
             end
             crt!(modulo, buf, n1, n2, rems, mults)
             Base.GMP.MPZ.set!(table_zz[i][j], buf)
@@ -191,7 +194,7 @@ end
         mults[i] = BigInt()
     end
 
-    crt_precompute!(modulo, n1, n2, mults, map(UInt64, moduli))
+    crt_precompute!(modulo, n1, n2, mults, map(UInt, moduli))
 
     tasks = min(tasks, length(table_zz))
     data_chunks = split_round_robin(1:length(table_zz), tasks)
@@ -199,7 +202,7 @@ end
     for (tid, chunk) in enumerate(data_chunks)
         task = @spawn begin
             local buf, n1, n2 = BigInt(), BigInt(), BigInt()
-            local rems = Vector{UInt64}(undef, length(moduli))
+            local rems = Vector{UInt}(undef, length(moduli))
             _crt_vec_full!(
                 table_zz,
                 modulo,
