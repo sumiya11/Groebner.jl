@@ -11,7 +11,7 @@ using Test, Nemo, Groebner
     end
 
     for ff in [
-        Nemo.Native.GF(2^31 - 1),
+        Nemo.Native.GF(Int64(2)^31 - 1),
         Nemo.Native.GF(2^62 + 135),
         Nemo.GF(2^62 + 135),
         Nemo.GF(Nemo.ZZRingElem(2^62 + 135)),
@@ -83,10 +83,10 @@ end
     nemo_orderings_to_test = [:lex, :deglex, :degrevlex]
     nemo_grounds_to_test = [
         Nemo.Native.GF(2^62 + 135),
-        Nemo.Native.GF(2^31 - 1),
+        Nemo.Native.GF(Int64(2)^31 - 1),
         Nemo.Native.GF(17),
         Nemo.GF(2^62 + 135),
-        Nemo.GF(2^31 - 1),
+        Nemo.GF(Int64(2)^31 - 1),
         Nemo.QQ
     ]
 
@@ -104,14 +104,14 @@ end
         end
     end
 
-    c = Groebner.Examples.cyclicn(6, k=Nemo.GF(2^30 + 3))
+    c = Groebner.Examples.cyclicn(6, k=Nemo.GF(Int64(2)^30 + 3))
     gb1 = Groebner.groebner(c)
     trace, gb2 = Groebner.groebner_learn(c)
     flag, gb3 = Groebner.groebner_apply!(trace, c)
     flag, _gb4 = Groebner.groebner_apply!(trace, (c, c, c, c))
     @test gb1 == gb2 == gb3 == _gb4[1]
 
-    c = Groebner.Examples.cyclicn(6, k=Nemo.Native.GF(2^30 + 3))
+    c = Groebner.Examples.cyclicn(6, k=Nemo.Native.GF(Int64(2)^30 + 3))
     gb1 = Groebner.groebner(c)
     trace, gb2 = Groebner.groebner_learn(c)
     flag, gb3 = Groebner.groebner_apply!(trace, c)

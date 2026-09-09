@@ -20,7 +20,7 @@ using Test, Primes, Groebner, AbstractAlgebra
 end
 
 @testset "regression, SI.jl normalform" begin
-    R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"])
+    R, (x, y, z) = polynomial_ring(GF(Int64(2)^31 - 1), ["x", "y", "z"])
 
     @test Groebner.normalform([x], R(0)) == R(0)
     @test Groebner.normalform([x], R(1)) == R(1)
@@ -30,7 +30,7 @@ end
 end
 
 @testset "regression, ordering of empty" begin
-    R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], internal_ordering=:lex)
+    R, (x, y) = polynomial_ring(GF(Int64(2)^31 - 1), ["x", "y"], internal_ordering=:lex)
 
     ord = Groebner.DegRevLex()
     gb1 = Groebner.groebner([x, y], ordering=ord)

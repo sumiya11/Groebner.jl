@@ -60,11 +60,14 @@ Writes the answer to `buf` inplace.
 - `ci`: an array of numbers, with `ci[i] = πi * invmod(πi, mi)`, `πi = M / mi`
 
 Then, `x` is obtained as `x = ∑ ci[i] ai[i] mod M`.
+
+Always use `UInt64` buffers so 32-bit Julia (`UInt === UInt32`) can still
+carry moduli larger than `typemax(UInt32)`.
 """
-function crt!(M::BigInt, buf::BigInt, n1::BigInt, n2::BigInt, ai::Vector{UInt}, ci::Vector{BigInt})
+function crt!(M::BigInt, buf::BigInt, n1::BigInt, n2::BigInt, ai::Vector{UInt64}, ci::Vector{BigInt})
     @invariant length(ai) == length(ci)
 
-    my_set_ui!(n1, UInt(0))
+    my_set_ui!(n1, UInt64(0))
     for i in 1:length(ai)
         my_mul_ui!(n2, ci[i], ai[i])
         Base.GMP.MPZ.add!(n1, n2)
@@ -88,7 +91,7 @@ function crt_precompute!(
     n1::BigInt,
     n2::BigInt,
     ci::Vector{BigInt},
-    moduli::Vector{UInt}
+    moduli::Vector{UInt64}
 )
     @invariant length(ci) == length(moduli)
 
@@ -131,13 +134,13 @@ end
         mults[i] = BigInt()
     end
 
-    crt_precompute!(modulo, n1, n2, mults, map(UInt, moduli))
+    crt_precompute!(modulo, n1, n2, mults, map(UInt64, moduli))
 
-    rems = Vector{UInt}(undef, length(moduli))
+    rems = Vector{UInt64}(undef, length(moduli))
     @inbounds for k in 1:length(witness_set)
         i, j = witness_set[k]
         for t in 1:length(moduli)
-            rems[t] = UInt(tables_ff[t][i][j])
+            rems[t] = UInt64(tables_ff[t][i][j])
         end
         crt!(modulo, buf, n1, n2, rems, mults)
         Base.GMP.MPZ.set!(table_zz[i][j], buf)
@@ -153,7 +156,7 @@ function _crt_vec_full!(
     buf::BigInt,
     n1::BigInt,
     n2::BigInt,
-    rems::Vector{UInt},
+    rems::Vector{UInt64},
     tables_ff::Vector{Vector{Vector{T}}},
     mults::Vector{BigInt},
     moduli::Vector{U},
@@ -166,7 +169,7 @@ function _crt_vec_full!(
             mask[i][j] && continue
             for k in 1:length(moduli)
                 @invariant 0 <= tables_ff[k][i][j] < moduli[k]
-                rems[k] = UInt(tables_ff[k][i][j])
+                rems[k] = UInt64(tables_ff[k][i][j])
             end
             crt!(modulo, buf, n1, n2, rems, mults)
             Base.GMP.MPZ.set!(table_zz[i][j], buf)
@@ -194,7 +197,7 @@ end
         mults[i] = BigInt()
     end
 
-    crt_precompute!(modulo, n1, n2, mults, map(UInt, moduli))
+    crt_precompute!(modulo, n1, n2, mults, map(UInt64, moduli))
 
     tasks = min(tasks, length(table_zz))
     data_chunks = split_round_robin(1:length(table_zz), tasks)
@@ -202,7 +205,7 @@ end
     for (tid, chunk) in enumerate(data_chunks)
         task = @spawn begin
             local buf, n1, n2 = BigInt(), BigInt(), BigInt()
-            local rems = Vector{UInt}(undef, length(moduli))
+            local rems = Vector{UInt64}(undef, length(moduli))
             _crt_vec_full!(
                 table_zz,
                 modulo,

@@ -1,7 +1,7 @@
 using Test, AbstractAlgebra, Base.Threads, Combinatorics, Primes, Random, Groebner
 
 @testset "groebner basic" begin
-    R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], internal_ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(GF(Int64(2)^31 - 1), ["x", "y"], internal_ordering=:degrevlex)
 
     @test_throws DomainError Groebner.groebner([])
     @test_throws DomainError Groebner.groebner([1])
@@ -14,7 +14,7 @@ using Test, AbstractAlgebra, Base.Threads, Combinatorics, Primes, Random, Groebn
     @test Groebner.groebner([x^2 + y, y * x - 1, R(1), y^4]) == [R(1)]
     @test Groebner.groebner([2x, 3y, 4x + 5y]) == [y, x]
 
-    R, (x1, x2) = polynomial_ring(GF(2^31 - 1), ["x1", "x2"], internal_ordering=:degrevlex)
+    R, (x1, x2) = polynomial_ring(GF(Int64(2)^31 - 1), ["x1", "x2"], internal_ordering=:degrevlex)
 
     fs = [x1^2 * x2^2 + 2 * x1^2 * x2, x1^2 * x2^2 + 3 * x1^2 * x2 + 5 * x1 * x2^2, x1^2 * x2^2]
     @test Groebner.groebner(fs) == [x1 * x2^2, x1^2 * x2]
@@ -40,8 +40,8 @@ function test_low_level_interface(ring, sys; passthrough...)
 end
 
 @testset "groebner low level" begin
-    R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], internal_ordering=:degrevlex)
-    ring_ff = Groebner.PolyRing(2, Groebner.DegRevLex(), 2^31 - 1)
+    R, (x, y) = polynomial_ring(GF(Int64(2)^31 - 1), ["x", "y"], internal_ordering=:degrevlex)
+    ring_ff = Groebner.PolyRing(2, Groebner.DegRevLex(), Int64(2)^31 - 1)
     ring_ff2 = Groebner.PolyRing(2, Groebner.DegRevLex(), 2^32 - 5)
     ring_qq = Groebner.PolyRing(2, Groebner.DegRevLex(), 0)
 
@@ -56,7 +56,7 @@ end
         [[1]]
     )
     @test_throws DomainError Groebner.groebner(
-        Groebner.PolyRing(2, Groebner.InputOrdering(), 2^31 - 1),
+        Groebner.PolyRing(2, Groebner.InputOrdering(), Int64(2)^31 - 1),
         [[[0, 0]]],
         [[1]]
     )
@@ -95,17 +95,17 @@ end
           Groebner.groebner(ring_ff, [[[0, 1], [0, 0], [0, 0]]], [[1, 2, 3]])
     @test ([[[0, 1], [0, 0]]], [[1, 5]]) ==
           Groebner.groebner(ring_qq, [[[0, 1], [0, 0], [0, 0]]], [[1, 2, 3]])
-    @test ([[[0, 1], [0, 0]]], [[1, 2^31 - 2]]) ==
+    @test ([[[0, 1], [0, 0]]], [[1, Int64(2)^31 - 2]]) ==
           Groebner.groebner(ring_ff, [[[0, 1], [0, 0], [0, 0]]], [[1, 2, -3]])
     @test ([[[0, 1]]], [[1]]) ==
           Groebner.groebner(ring_ff, [[[0, 1], [0, 0], [0, 0]]], [[1, 3, -3]])
     @test ([Vector{Vector{Int}}()], [Int[]]) == Groebner.groebner(ring_ff, [[[0, 1]]], [[0]])
     @test ([Vector{Vector{Int}}()], [Int[]]) == Groebner.groebner(ring_qq, [[[0, 1]]], [[0]])
-    @test ([[[1, 1]]], [[1]]) == Groebner.groebner(ring_ff, [[[1, 1]]], [[2^31]])
+    @test ([[[1, 1]]], [[1]]) == Groebner.groebner(ring_ff, [[[1, 1]]], [[Int64(2)^31]])
     @test ([[[1, 1], [1, 0]]], [[1, 5]]) == Groebner.groebner(
         ring_ff2,
         [[[1, 1], [1, 0], [1, 0], [0, 0], [0, 0], [0, 0]]],
-        [[1, 2^31, 2^31, 2^31, 2^31, -5]]
+        [[1, Int64(2)^31, Int64(2)^31, Int64(2)^31, Int64(2)^31, -5]]
     )
 
     # Sorting on the fly
@@ -113,8 +113,8 @@ end
     @test ([[[1, 1], [0, 0]]], [[1, 3 // 4]]) ==
           Groebner.groebner(ring_qq, [[[0, 0], [1, 1]]], [[3, 4]])
 
-    ring_gf = Groebner.PolyRing(5, Groebner.Lex(), 2^30 + 3)
-    sys = Groebner.Examples.cyclicn(5, k=GF(2^30 + 3), internal_ordering=:lex)
+    ring_gf = Groebner.PolyRing(5, Groebner.Lex(), Int64(2)^30 + 3)
+    sys = Groebner.Examples.cyclicn(5, k=GF(Int64(2)^30 + 3), internal_ordering=:lex)
     perm = map(i -> shuffle(collect(1:length(sys[i]))), 1:length(sys))
     monoms = map(i -> collect(exponent_vectors(sys[i]))[perm[i]], 1:length(sys))
     coeffs = map(i -> collect(UInt64.(lift.(coefficients(sys[i]))))[perm[i]], 1:length(sys))
@@ -135,8 +135,8 @@ end
     ring = Groebner.PolyRing(5, Groebner.DegRevLex(), 2^40 + 15)
     test_low_level_interface(ring, sys)
 
-    sys = Groebner.Examples.cyclicn(5, k=GF(2^30 + 3), internal_ordering=:lex)
-    ring = Groebner.PolyRing(5, Groebner.Lex(), 2^30 + 3)
+    sys = Groebner.Examples.cyclicn(5, k=GF(Int64(2)^30 + 3), internal_ordering=:lex)
+    ring = Groebner.PolyRing(5, Groebner.Lex(), Int64(2)^30 + 3)
     test_low_level_interface(ring, sys)
 
     sys = Groebner.Examples.cyclicn(5, k=QQ)
@@ -199,7 +199,7 @@ end
 end
 
 @testset "groebner reduced=false" begin
-    R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], internal_ordering=:lex)
+    R, (x, y) = polynomial_ring(GF(Int64(2)^31 - 1), ["x", "y"], internal_ordering=:lex)
 
     fs = [x + y^2, x * y - y^2]
     gb = Groebner.groebner(fs, reduced=false)
@@ -229,16 +229,16 @@ end
 @testset "groebner ground fields" begin
     # Large fields
     fields = [
-        GF(2^20 + 7),
-        GF(2^29 - 3),
-        GF(2^29 + 11),
-        GF(2^30 - 35),
-        GF(2^30 + 3),
-        GF(2^31 - 1),
-        GF(2^31 + 11),
-        GF(2^32 + 15)
+        GF(Int64(2)^20 + 7),
+        GF(Int64(2)^29 - 3),
+        GF(Int64(2)^29 + 11),
+        GF(Int64(2)^30 - 35),
+        GF(Int64(2)^30 + 3),
+        GF(Int64(2)^31 - 1),
+        GF(Int64(2)^31 + 11),
+        GF(Int64(2)^32 + 15)
     ]
-    fields = vcat(fields, map(GF, Primes.nextprimes(2^20, 10)))
+    fields = vcat(fields, map(GF, Primes.nextprimes(Int64(2)^20, 10)))
     for field in fields
         R, (x, y) = field["x", "y"]
 
@@ -312,18 +312,18 @@ end
         @test Groebner.groebner([4x + 1], modular=modular) == [x + 1 // 4]
         @test Groebner.groebner([x + 5], modular=modular) == [x + 5]
         @test Groebner.groebner([x + 2^10], modular=modular) == [x + 2^10]
-        @test Groebner.groebner([x + 2^30], modular=modular) == [x + 2^30]
-        @test Groebner.groebner([x + 2^30 + 3], modular=modular) == [x + 2^30 + 3]
-        @test Groebner.groebner([x + 2^31 - 1], modular=modular) == [x + 2^31 - 1]
-        @test Groebner.groebner([x + 2^31 - 1, x^2], modular=modular) == [1]
+        @test Groebner.groebner([x + Int64(2)^30], modular=modular) == [x + Int64(2)^30]
+        @test Groebner.groebner([x + Int64(2)^30 + 3], modular=modular) == [x + Int64(2)^30 + 3]
+        @test Groebner.groebner([x + Int64(2)^31 - 1], modular=modular) == [x + Int64(2)^31 - 1]
+        @test Groebner.groebner([x + Int64(2)^31 - 1, x^2], modular=modular) == [1]
         @test Groebner.groebner([(3232323 // 7777)x + 7777 // 3232323], modular=modular) ==
               [x + 60481729 // 10447911976329]
-        @test Groebner.groebner([((2^31 - 1) // 1)x + 1], modular=modular) == [x + 1 // 2147483647]
-        @test Groebner.groebner([(1 // (2^31 - 1))x + 1], modular=modular) == [x + 2147483647]
+        @test Groebner.groebner([((Int64(2)^31 - 1) // 1)x + 1], modular=modular) == [x + 1 // 2147483647]
+        @test Groebner.groebner([(1 // (Int64(2)^31 - 1))x + 1], modular=modular) == [x + 2147483647]
         @test Groebner.groebner(
-            [1 // (2^30 + 3) * x^2 + (2^30 + 3)x + 1 // (1073741831)],
+            [1 // (Int64(2)^30 + 3) * x^2 + (Int64(2)^30 + 3)x + 1 // (1073741831)],
             modular=modular
-        ) == [x^2 + 1152921511049297929x + (2^30 + 3) // 1073741831]
+        ) == [x^2 + 1152921511049297929x + (Int64(2)^30 + 3) // 1073741831]
 
         R, (x, y) = polynomial_ring(QQ, ["x", "y"], internal_ordering=:degrevlex)
 
@@ -412,11 +412,11 @@ end
         w^3
     ]
 
-    G = [(2^30 + 3)x, (1 // (2^30 + 3))y]
+    G = [(Int64(2)^30 + 3)x, (1 // (Int64(2)^30 + 3))y]
     G = Groebner.groebner(G)
     @test G == [y, x]
 
-    G = [(2^31 - 1) * x + y, (1 // (2^31 - 1)) * y + 1]
+    G = [(Int64(2)^31 - 1) * x + y, (1 // (Int64(2)^31 - 1)) * y + 1]
     G = Groebner.groebner(G)
     @test G == [y + 2147483647, x - 1]
 
@@ -425,14 +425,14 @@ end
     G = Groebner.groebner(fs)
     @test G == [y + 2131232232097 // 222222221111123 * z, x]
 
-    P = prod(BigInt, prevprimes(2^31, 100))
+    P = prod(BigInt, prevprimes(Int64(2)^31, 100))
     @test groebner([x^2 + P * x + 1]) == [x^2 + P * x + 1]
 
     @test isgroebner(groebner(Groebner.Examples.cyclicn(7)))
 end
 
 @testset "groebner output sorted" begin
-    for K in [GF(11), GF(307), GF(12007), GF(2^31 - 1), QQ]
+    for K in [GF(11), GF(307), GF(12007), GF(Int64(2)^31 - 1), QQ]
         R, (x, y, z) = polynomial_ring(K, ["x", "y", "z"], internal_ordering=:lex)
 
         @test Groebner.groebner([x, y]) == Groebner.groebner([y, x]) == [y, x]
@@ -442,10 +442,10 @@ end
 end
 
 @testset "monomial overflow" begin
-    R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"], internal_ordering=:degrevlex)
+    R, (x, y, z) = polynomial_ring(GF(Int64(2)^31 - 1), ["x", "y", "z"], internal_ordering=:degrevlex)
 
-    @test groebner([x^(2^31)]) == [x^2^31]
-    @test_throws Groebner.MonomialDegreeOverflow groebner([x^(2^33)])
+    @test groebner([x^(Int64(2)^31)]) == [x^Int64(2)^31]
+    @test_throws Groebner.MonomialDegreeOverflow groebner([x^(Int64(2)^33)])
 
     for monoms in [:auto, :dense, :packed, :nibblenodeg]
         gb_1 = [x * y^100 + y, x^100 * y + y^100, y^199 + 2147483646 * x^99 * y]
@@ -480,12 +480,12 @@ end
 end
 
 @testset "groebner reduced=true" begin
-    root = Groebner.Examples.rootn(3, k=GF(2^31 - 1), internal_ordering=:degrevlex)
+    root = Groebner.Examples.rootn(3, k=GF(Int64(2)^31 - 1), internal_ordering=:degrevlex)
     x1, x2, x3 = gens(parent(first(root)))
     gb = Groebner.groebner(root, reduced=true)
     @test gb == [x1 + x2 + x3, x2^2 + x2 * x3 + x3^2, x3^3 + 2147483646]
 
-    root = Groebner.Examples.rootn(6, k=GF(2^31 - 1), internal_ordering=:degrevlex)
+    root = Groebner.Examples.rootn(6, k=GF(Int64(2)^31 - 1), internal_ordering=:degrevlex)
     x1, x2, x3, x4, x5, x6 = gens(parent(first(root)))
     gb = Groebner.groebner(root, reduced=true)
     #! format: off
@@ -499,7 +499,7 @@ end
     ]
     #! format: on
 
-    ku = Groebner.Examples.ku10(k=GF(2^31 - 1), internal_ordering=:degrevlex)
+    ku = Groebner.Examples.ku10(k=GF(Int64(2)^31 - 1), internal_ordering=:degrevlex)
     x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = gens(parent(first(ku)))
     gb = Groebner.groebner(ku, reduced=true)
 
@@ -518,7 +518,7 @@ end
 end
 
 @testset "groebner certify" begin
-    R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"], internal_ordering=:lex)
+    R, (x, y, z) = polynomial_ring(GF(Int64(2)^31 - 1), ["x", "y", "z"], internal_ordering=:lex)
 
     @test Groebner.groebner([x, y], certify=true) == [y, x]
     @test Groebner.groebner([y, x], certify=true) == [y, x]
@@ -565,7 +565,7 @@ end
     system = [
         x1 + BigInt(10)^100 // BigInt(7)^50 * x2,
         BigInt(90) * x1 * x2 + BigInt(19)^50 + x10^3,
-        BigInt(2^31 - 1) * x1^2 + BigInt(2^30 + 2)^10 * x2^2
+        BigInt(Int64(2)^31 - 1) * x1^2 + BigInt(Int64(2)^30 + 2)^10 * x2^2
     ]
     @test Groebner.groebner(system) == Groebner.groebner(system, certify=true)
 end
@@ -807,13 +807,13 @@ end
 end
 
 @testset "groebner monoms" begin
-    for domain in (GF(2^31 - 1), QQ)
+    for domain in (GF(Int64(2)^31 - 1), QQ)
         for system in [
             Groebner.Examples.cyclicn(2, k=domain),
             Groebner.Examples.noonn(4, k=domain, internal_ordering=:degrevlex),
             Groebner.Examples.katsuran(5, k=domain, internal_ordering=:degrevlex),
             Groebner.Examples.kinema(k=domain, internal_ordering=:degrevlex),
-            Groebner.Examples.NFkB_reduced(k=GF(2^30 + 3), internal_ordering=:degrevlex)
+            Groebner.Examples.NFkB_reduced(k=GF(Int64(2)^30 + 3), internal_ordering=:degrevlex)
         ]
             results = []
             for monoms in [:dense, :packed, :nibblenodeg]
@@ -827,7 +827,7 @@ end
 end
 
 @testset "groebner zeros" begin
-    for field in [GF(2), GF(2^31 - 1), QQ]
+    for field in [GF(2), GF(Int64(2)^31 - 1), QQ]
         R, (x, y, z) = polynomial_ring(field, ["x", "y", "z"], internal_ordering=:lex)
 
         @test Groebner.groebner([x - x]) == [R(0)]
@@ -839,7 +839,7 @@ end
 end
 
 @testset "isgroebner zeros" begin
-    for field in [GF(2), GF(2^31 - 1), QQ]
+    for field in [GF(2), GF(Int64(2)^31 - 1), QQ]
         R, (x, y, z) = polynomial_ring(field, ["x", "y", "z"], internal_ordering=:lex)
 
         @test Groebner.isgroebner([x - x])
@@ -852,7 +852,7 @@ end
 end
 
 @testset "normalform zeros" begin
-    for field in [GF(2), GF(2^31 - 1), QQ]
+    for field in [GF(2), GF(Int64(2)^31 - 1), QQ]
         R, (x, y, z) = polynomial_ring(field, ["x", "y", "z"], internal_ordering=:lex)
 
         @test Groebner.normalform([R(0)], [R(0)]) == [R(0)]
@@ -901,7 +901,7 @@ end
 end
 
 @testset "groebner linear algebra" begin
-    R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"], internal_ordering=:lex)
+    R, (x, y, z) = polynomial_ring(GF(Int64(2)^31 - 1), ["x", "y", "z"], internal_ordering=:lex)
 
     for linalg in [:deterministic, :randomized]
         @test Groebner.groebner([x, y], linalg=linalg) == Groebner.groebner([y, x]) == [y, x]
@@ -909,19 +909,19 @@ end
         fs = [x^2 + y, x * y]
         @test Groebner.groebner(fs, linalg=linalg) == Groebner.groebner(fs) == [y^2, x * y, x^2 + y]
 
-        root = Groebner.Examples.rootn(3, k=GF(2^31 - 1), internal_ordering=:degrevlex)
+        root = Groebner.Examples.rootn(3, k=GF(Int64(2)^31 - 1), internal_ordering=:degrevlex)
         x1, x2, x3 = gens(parent(first(root)))
         gb1 = Groebner.groebner(root, linalg=linalg)
         gb2 = Groebner.groebner(root)
         @test gb1 == gb2 == [x1 + x2 + x3, x2^2 + x2 * x3 + x3^2, x3^3 + 2147483646]
 
-        root = Groebner.Examples.rootn(6, k=GF(2^31 - 1), internal_ordering=:degrevlex)
+        root = Groebner.Examples.rootn(6, k=GF(Int64(2)^31 - 1), internal_ordering=:degrevlex)
         x1, x2, x3, x4, x5, x6 = gens(parent(first(root)))
         gb1 = Groebner.groebner(root, linalg=linalg)
         gb2 = Groebner.groebner(root)
         @test gb1 == gb2
 
-        ku = Groebner.Examples.ku10(k=GF(2^31 - 1), internal_ordering=:degrevlex)
+        ku = Groebner.Examples.ku10(k=GF(Int64(2)^31 - 1), internal_ordering=:degrevlex)
         x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = gens(parent(first(ku)))
         gb1 = Groebner.groebner(ku)
         gb2 = Groebner.groebner(ku, linalg=linalg)
@@ -964,34 +964,34 @@ end
     R, (x1, x2, x3, x4) =
         polynomial_ring(QQ, ["x1", "x2", "x3", "x4"], internal_ordering=:degrevlex)
 
-    N = prod(map(BigInt, nextprimes(2^30 + 3, 5)))
+    N = prod(map(BigInt, nextprimes(Int64(2)^30 + 3, 5)))
     system, result = get_test_system1(R, N)
     # this should take about 10 primes
     gb = Groebner.groebner(system)
     @test gb == result
 
-    N = prod(map(BigInt, nextprimes(2^31 - 1, 5)))
+    N = prod(map(BigInt, nextprimes(Int64(2)^31 - 1, 5)))
     system, result = get_test_system1(R, N)
     # this should take about 10 primes
     gb = Groebner.groebner(system)
     @test gb == result
 
-    N = prod(map(BigInt, nextprimes(2^31 - 1, 100)))
+    N = prod(map(BigInt, nextprimes(Int64(2)^31 - 1, 100)))
     system, result = get_test_system1(R, N)
     # around 200 primes are required
     gb = Groebner.groebner(system)
     @test gb == result
 
-    N = prod(map(BigInt, nextprimes(2^31 - 1, 5_000)))
+    N = prod(map(BigInt, nextprimes(Int64(2)^31 - 1, 5_000)))
     # around 10k primes are required
     system, result = get_test_system1(R, N)
     gb = Groebner.groebner(system)
     @test gb == result
 
-    system = [x1 - (2^31 - 1) * x2 - (2^30 + 3) * x3]
+    system = [x1 - (Int64(2)^31 - 1) * x2 - (Int64(2)^30 + 3) * x3]
     @test Groebner.groebner(system) == system
 
-    for start_of_range in [2^10, 2^20, 2^30, 2^40]
+    for start_of_range in [2^10, 2^20, Int64(2)^30, 2^40]
         for size_of_range in [10, 100, 1000]
             N = prod(Primes.nextprimes(BigInt(start_of_range), size_of_range))
             system = [x1 + N // (N + 1), x3 - (N + 1) // (N - 1), x2 + 42]
@@ -1066,7 +1066,7 @@ end
     end
 end
 
-# For Lex, DegLex, and DegRevLex, we can have total degrees up to 2^31
+# For Lex, DegLex, and DegRevLex, we can have total degrees up to Int64(2)^31
 @testset "groebner large exponents" begin
     R, (x, y) = polynomial_ring(QQ, ["x", "y"], internal_ordering=:degrevlex)
 
@@ -1102,11 +1102,11 @@ end
         @test gb == [x^v + y^u, y^(v + u) + x^(v - u), x^u * y^v - 1]
     end
 
-    # total degree 2^30
+    # total degree Int64(2)^30
     f = [x^1073741824 + y]
     @test f == Groebner.groebner(f)
 
-    # total degree 2^31
+    # total degree Int64(2)^31
     f = [x^1073741824 * y^1073741824 + y]
     @test f == Groebner.groebner(f)
 
@@ -1216,14 +1216,14 @@ end
 end
 
 @testset "groebner, change matrix" begin
-    R, (x, y, z) = polynomial_ring(GF(2^30 + 3), ["x", "y", "z"], internal_ordering=:degrevlex)
+    R, (x, y, z) = polynomial_ring(GF(Int64(2)^30 + 3), ["x", "y", "z"], internal_ordering=:degrevlex)
     f = [x * y * z - 1, x * y + x * z + y * z, x + y + z]
     g, m = Groebner.groebner_with_change_matrix(f)
     @test m * f == g
     @test size(m) == (length(g), length(f))
     @test Groebner.isgroebner(g)
 
-    for ground in [GF(2^30 + 3), QQ]
+    for ground in [GF(Int64(2)^30 + 3), QQ]
         R, (x, y) = polynomial_ring(ground, ["x", "y"], internal_ordering=:degrevlex)
 
         cases = [
@@ -1264,7 +1264,7 @@ end
 
 @testset "multi-threading, composable" begin
     sys1 = Groebner.Examples.chandran(8)
-    sys2 = Groebner.Examples.cyclicn(7, k=GF(2^30 + 3))
+    sys2 = Groebner.Examples.cyclicn(7, k=GF(Int64(2)^30 + 3))
     n = 5
     res = Vector{Any}(undef, n)
     Base.Threads.@threads for i in 1:n
@@ -1293,7 +1293,7 @@ end
 @testset "groebner, multi-threading, Zp" begin
     @info "Testing multi-threading over Zp using $(nthreads()) threads"
 
-    R, (x, y, z) = GF(2^31 - 1)["x", "y", "z"]
+    R, (x, y, z) = GF(Int64(2)^31 - 1)["x", "y", "z"]
 
     s = [R(1), R(2), R(4)]
     @test Groebner.groebner(s) ==
@@ -1311,15 +1311,15 @@ end
     tasks = [:auto, 1, 4, 128]
     grid = [(linalg=l, tasks=t) for l in linalg for t in tasks]
     for system in [
-        Groebner.Examples.katsuran(3, internal_ordering=:lex, k=GF(2^31 - 1)),
-        Groebner.Examples.katsuran(4, internal_ordering=:lex, k=GF(2^20 + 7)),
-        Groebner.Examples.katsuran(7, internal_ordering=:degrevlex, k=GF(2^31 - 1)),
-        Groebner.Examples.eco5(internal_ordering=:deglex, k=GF(2^20 + 7)),
-        Groebner.Examples.eco5(internal_ordering=:degrevlex, k=GF(2^20 + 7)),
-        Groebner.Examples.cyclicn(5, internal_ordering=:degrevlex, k=GF(2^20 + 7)),
-        Groebner.Examples.cyclicn(6, internal_ordering=:degrevlex, k=GF(2^20 + 7)),
-        Groebner.Examples.ojika4(internal_ordering=:lex, k=GF(2^20 + 7)),
-        Groebner.Examples.henrion5(internal_ordering=:degrevlex, k=GF(2^20 + 7)),
+        Groebner.Examples.katsuran(3, internal_ordering=:lex, k=GF(Int64(2)^31 - 1)),
+        Groebner.Examples.katsuran(4, internal_ordering=:lex, k=GF(Int64(2)^20 + 7)),
+        Groebner.Examples.katsuran(7, internal_ordering=:degrevlex, k=GF(Int64(2)^31 - 1)),
+        Groebner.Examples.eco5(internal_ordering=:deglex, k=GF(Int64(2)^20 + 7)),
+        Groebner.Examples.eco5(internal_ordering=:degrevlex, k=GF(Int64(2)^20 + 7)),
+        Groebner.Examples.cyclicn(5, internal_ordering=:degrevlex, k=GF(Int64(2)^20 + 7)),
+        Groebner.Examples.cyclicn(6, internal_ordering=:degrevlex, k=GF(Int64(2)^20 + 7)),
+        Groebner.Examples.ojika4(internal_ordering=:lex, k=GF(Int64(2)^20 + 7)),
+        Groebner.Examples.henrion5(internal_ordering=:degrevlex, k=GF(Int64(2)^20 + 7)),
         Groebner.Examples.noonn(6, internal_ordering=:degrevlex, k=GF(2^10 + 7)),
         Groebner.Examples.ku10(internal_ordering=:degrevlex, k=GF(2^10 + 7))
     ]
@@ -1452,7 +1452,7 @@ end
     nterms     = [1, 2, 4]
     npolys     = [1, 4, 100]
     grounds    = [GF(1031), GF(2^50 + 55), AbstractAlgebra.QQ]
-    coeffssize = [3, 2^31 - 1, BigInt(2)^80, BigInt(2)^2000]
+    coeffssize = [3, Int64(2)^31 - 1, BigInt(2)^80, BigInt(2)^2000]
     orderings  = [:degrevlex, :lex, :deglex]
     linalgs    = [:deterministic, :randomized]
     monoms     = [:auto, :dense, :packed, :nibblenodeg]
