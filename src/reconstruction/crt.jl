@@ -64,7 +64,14 @@ Then, `x` is obtained as `x = ∑ ci[i] ai[i] mod M`.
 Always use `UInt64` buffers so 32-bit Julia (`UInt === UInt32`) can still
 carry moduli larger than `typemax(UInt32)`.
 """
-function crt!(M::BigInt, buf::BigInt, n1::BigInt, n2::BigInt, ai::Vector{UInt64}, ci::Vector{BigInt})
+function crt!(
+    M::BigInt,
+    buf::BigInt,
+    n1::BigInt,
+    n2::BigInt,
+    ai::Vector{UInt64},
+    ci::Vector{BigInt}
+)
     @invariant length(ai) == length(ci)
 
     my_set_ui!(n1, UInt64(0))

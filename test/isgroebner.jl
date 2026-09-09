@@ -6,7 +6,8 @@ using Test, AbstractAlgebra, Groebner
     @test Groebner.isgroebner([x, x, x, x])
     @test !Groebner.isgroebner([x^2, x^2 + 1])
 
-    R, (x, y, z) = polynomial_ring(GF(Int64(2)^31 - 1), ["x", "y", "z"], internal_ordering=:degrevlex)
+    R, (x, y, z) =
+        polynomial_ring(GF(Int64(2)^31 - 1), ["x", "y", "z"], internal_ordering=:degrevlex)
 
     @test Groebner.isgroebner([R(1)])
     @test Groebner.isgroebner([x])

@@ -318,8 +318,10 @@ end
         @test Groebner.groebner([x + Int64(2)^31 - 1, x^2], modular=modular) == [1]
         @test Groebner.groebner([(3232323 // 7777)x + 7777 // 3232323], modular=modular) ==
               [x + 60481729 // 10447911976329]
-        @test Groebner.groebner([((Int64(2)^31 - 1) // 1)x + 1], modular=modular) == [x + 1 // 2147483647]
-        @test Groebner.groebner([(1 // (Int64(2)^31 - 1))x + 1], modular=modular) == [x + 2147483647]
+        @test Groebner.groebner([((Int64(2)^31 - 1) // 1)x + 1], modular=modular) ==
+              [x + 1 // 2147483647]
+        @test Groebner.groebner([(1 // (Int64(2)^31 - 1))x + 1], modular=modular) ==
+              [x + 2147483647]
         @test Groebner.groebner(
             [1 // (Int64(2)^30 + 3) * x^2 + (Int64(2)^30 + 3)x + 1 // (1073741831)],
             modular=modular
@@ -442,7 +444,8 @@ end
 end
 
 @testset "monomial overflow" begin
-    R, (x, y, z) = polynomial_ring(GF(Int64(2)^31 - 1), ["x", "y", "z"], internal_ordering=:degrevlex)
+    R, (x, y, z) =
+        polynomial_ring(GF(Int64(2)^31 - 1), ["x", "y", "z"], internal_ordering=:degrevlex)
 
     @test groebner([x^(Int64(2)^31)]) == [x^Int64(2)^31]
     @test_throws Groebner.MonomialDegreeOverflow groebner([x^(Int64(2)^33)])
@@ -1216,7 +1219,8 @@ end
 end
 
 @testset "groebner, change matrix" begin
-    R, (x, y, z) = polynomial_ring(GF(Int64(2)^30 + 3), ["x", "y", "z"], internal_ordering=:degrevlex)
+    R, (x, y, z) =
+        polynomial_ring(GF(Int64(2)^30 + 3), ["x", "y", "z"], internal_ordering=:degrevlex)
     f = [x * y * z - 1, x * y + x * z + y * z, x + y + z]
     g, m = Groebner.groebner_with_change_matrix(f)
     @test m * f == g

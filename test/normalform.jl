@@ -30,7 +30,8 @@ using Test, Groebner, AbstractAlgebra, Random
     @test Groebner.normalform(G, x^2 + y^2) == y - y * x - 1
     @test Groebner.normalform(G, y^3) == Groebner.normalform(G, y^4) == y
 
-    R, (x, y, z) = polynomial_ring(GF(Int64(2)^31 - 1), ["x", "y", "z"], internal_ordering=:degrevlex)
+    R, (x, y, z) =
+        polynomial_ring(GF(Int64(2)^31 - 1), ["x", "y", "z"], internal_ordering=:degrevlex)
     G = [x^2 + y, y^2 + x]
     @test Groebner.normalform(G, x^2 + y^2) == -x - y
 
