@@ -1,6 +1,7 @@
 name = "Groebner"
 uuid = "0b43b601-686d-58a3-8a1c-6623616c7cd4"
-version = "0.10.7"
+version = "0.10.8"
+version = "0.10.8"
 authors = ["sumiya11"]
 
 [deps]
