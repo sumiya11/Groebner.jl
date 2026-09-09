@@ -1,7 +1,7 @@
 using Test, Groebner, AbstractAlgebra, Random
 
 @testset "normalform" begin
-    R, x = polynomial_ring(GF(2^31 - 1), "x")
+    R, x = polynomial_ring(GF(Int64(2)^31 - 1), "x")
 
     @test Groebner.normalform([x], R(0)) == R(0)
     @test Groebner.normalform([x], R(1)) == R(1)
@@ -9,7 +9,7 @@ using Test, Groebner, AbstractAlgebra, Random
     @test Groebner.normalform([x], [R(1)]) == [R(1)]
     @test Groebner.normalform([x], [x, R(5), x + 1]) == [R(0), R(5), R(1)]
 
-    R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"])
+    R, (x, y, z) = polynomial_ring(GF(Int64(2)^31 - 1), ["x", "y", "z"])
 
     @test Groebner.normalform([x], R(0)) == R(0)
     @test Groebner.normalform([x], R(1)) == R(1)
@@ -30,7 +30,8 @@ using Test, Groebner, AbstractAlgebra, Random
     @test Groebner.normalform(G, x^2 + y^2) == y - y * x - 1
     @test Groebner.normalform(G, y^3) == Groebner.normalform(G, y^4) == y
 
-    R, (x, y, z) = polynomial_ring(GF(2^31 - 1), ["x", "y", "z"], internal_ordering=:degrevlex)
+    R, (x, y, z) =
+        polynomial_ring(GF(Int64(2)^31 - 1), ["x", "y", "z"], internal_ordering=:degrevlex)
     G = [x^2 + y, y^2 + x]
     @test Groebner.normalform(G, x^2 + y^2) == -x - y
 
@@ -64,7 +65,7 @@ end
 end
 
 @testset "normalform of an array" begin
-    for field in [GF(17), GF(2^31 - 1), QQ]
+    for field in [GF(17), GF(Int64(2)^31 - 1), QQ]
         R, (x, y) = polynomial_ring(field, ["x", "y"])
         gb = [x, y]
         @test Groebner.normalform(gb, [x, y + 1]) == [R(0), R(1)]
@@ -178,7 +179,7 @@ end
     exps = [2, 4, 3]
     nterms = [2, 3]
     npolys = [2, 3]
-    grounds = [GF(2^31 - 1), QQ]
+    grounds = [GF(Int64(2)^31 - 1), QQ]
     coeffssize = [3, 1000, 2^31 - 1]
     orderings = [:deglex, :lex, :degrevlex]
     orderings_groebner =

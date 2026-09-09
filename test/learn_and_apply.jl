@@ -1,7 +1,7 @@
 using Test, Random, AbstractAlgebra, Primes, Groebner
 
 @testset "learn & apply, same field" begin
-    K = AbstractAlgebra.GF(2^31 - 1)
+    K = AbstractAlgebra.GF(Int64(2)^31 - 1)
     R, (x, y) = polynomial_ring(K, ["x", "y"]; internal_ordering=:degrevlex)
     trace, gb1 = Groebner.groebner_learn([x, y])
     flag, gb2 = Groebner.groebner_apply!(trace, [x, y])
@@ -9,7 +9,7 @@ using Test, Random, AbstractAlgebra, Primes, Groebner
 
     show(trace)
 
-    K = AbstractAlgebra.GF(2^31 - 1)
+    K = AbstractAlgebra.GF(Int64(2)^31 - 1)
     R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:degrevlex)
     R2, xs = polynomial_ring(K, ["x$i" for i in 1:30], internal_ordering=:degrevlex)
 
@@ -107,7 +107,7 @@ end
 
     # Going from small characteristic to large is not allowed
     # NOTE: it should be allowed
-    K1, K2 = GF(2^31 - 1), GF(2^60 + 33)
+    K1, K2 = GF(Int64(2)^31 - 1), GF(2^60 + 33)
     R, (x, y) = polynomial_ring(K1, ["x", "y"], internal_ordering=:degrevlex)
     R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], internal_ordering=:degrevlex)
     system2 = [(2^49 + 1) * x2 - 1, (2^50) * y2 + (2^56 + 99)]
@@ -118,7 +118,7 @@ end
     # @test_broken gb_2 == [y2 + (2^56 + 99) // K2(2^50), x2 - 1 // K2(2^49 + 1)]
 
     # The trace ordering is reused unless an incompatible ordering is requested.
-    K1, K2 = GF(2^31 - 1), GF(2^60 + 33)
+    K1, K2 = GF(Int64(2)^31 - 1), GF(2^60 + 33)
     R, (x, y) = polynomial_ring(K1, ["x", "y"], internal_ordering=:lex)
     R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], internal_ordering=:degrevlex)
     system = [x + 1, y - 1]
@@ -127,7 +127,7 @@ end
     flag, gb_2 = Groebner.groebner_apply!(trace, system2)
     @test flag && gb_2 == Groebner.groebner(system2; ordering=Groebner.Lex())
 
-    K1, K2 = GF(2^31 - 1), GF(2^60 + 33)
+    K1, K2 = GF(Int64(2)^31 - 1), GF(2^60 + 33)
     R, (x, y) = polynomial_ring(K1, ["x", "y"], internal_ordering=:lex)
     R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], internal_ordering=:degrevlex)
     system = [x + 1, y - 1]
@@ -167,10 +167,10 @@ end
     ]
 
     # Some bigger tests
-    K = AbstractAlgebra.GF(2^31 - 1)
+    K = AbstractAlgebra.GF(Int64(2)^31 - 1)
     Ks = [
-        AbstractAlgebra.GF(2^31 - 1),
-        AbstractAlgebra.GF(2^30 + 3),
+        AbstractAlgebra.GF(Int64(2)^31 - 1),
+        AbstractAlgebra.GF(Int64(2)^30 + 3),
         AbstractAlgebra.GF(2^31 + 11),
         AbstractAlgebra.GF(2^20 + 7),
         AbstractAlgebra.GF(2^20 + 13),
@@ -200,7 +200,7 @@ end
         end
     end
 
-    K1 = GF(2^31 - 1)
+    K1 = GF(Int64(2)^31 - 1)
     R, (x, y) = polynomial_ring(ZZ, ["x", "y"], internal_ordering=:lex)
     system = [BigInt(2)^1000 * x + (BigInt(2)^1001 + 1) * y + 1]
     system_zp = map(f -> AbstractAlgebra.map_coefficients(c -> K1(BigInt(c)), f), system)
@@ -337,7 +337,7 @@ end
     end
 
     @testset "forced generic agrees" begin
-        K = GF(2^30 + 3)
+        K = GF(Int64(2)^30 + 3)
         sys1 = Groebner.Examples.katsuran(4, internal_ordering=:degrevlex, k=K)
         sys2 = Groebner.Examples.katsuran(4, internal_ordering=:lex, k=K)
 
@@ -360,7 +360,7 @@ end
     end
 
     @testset "generic reuse after failure" begin
-        K = GF(2^30 + 3)
+        K = GF(Int64(2)^30 + 3)
         R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:degrevlex)
         sys_ok = [x + 1, x * y + 7 * y]
         sys_fail = [x + 1, x * y + y]
@@ -407,7 +407,7 @@ end
 end
 
 @testset "learn & apply, orderings" begin
-    K = GF(2^31 - 1)
+    K = GF(Int64(2)^31 - 1)
     R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:lex)
 
     ord_1 = Groebner.Lex()
@@ -429,7 +429,7 @@ end
         ordering=Groebner.Lex()
     )
 
-    K = GF(2^31 - 1)
+    K = GF(Int64(2)^31 - 1)
     n = 10
     R, x = polynomial_ring(K, [["x$i" for i in 1:n]...], internal_ordering=:degrevlex)
     F = (x .+ (1:n) .* circshift(x, 1)) .^ 2
@@ -460,7 +460,7 @@ end
 end
 
 @testset "learn & apply, copy trace" begin
-    K1, K2 = GF(2^30 + 3), GF(2^31 - 1)
+    K1, K2 = GF(Int64(2)^30 + 3), GF(Int64(2)^31 - 1)
     R1, (x1, y1) = polynomial_ring(K1, ["x", "y"])
     R2, (x2, y2) = polynomial_ring(K2, ["x", "y"])
 
@@ -479,7 +479,7 @@ end
 end
 
 @testset "learn & apply, tricky" begin
-    for K in [GF(2^31 - 1), GF(2^62 + 135)]
+    for K in [GF(Int64(2)^31 - 1), GF(2^62 + 135)]
         R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:degrevlex)
 
         s = [x^100 * y + y^100, x * y^100 + y]
@@ -501,7 +501,7 @@ end
         end
     end
 
-    K = AbstractAlgebra.GF(2^31 - 1)
+    K = AbstractAlgebra.GF(Int64(2)^31 - 1)
     R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:degrevlex)
 
     # s-poly of x + 1 and x*y + 7y is y - 7y.
@@ -595,7 +595,7 @@ end
         @test (flag3, gb_coeffs3) == (flag4, gb_coeffs4)
     end
 
-    R, (x, y) = polynomial_ring(GF(2^31 - 1), ["x", "y"], internal_ordering=:degrevlex)
+    R, (x, y) = polynomial_ring(GF(Int64(2)^31 - 1), ["x", "y"], internal_ordering=:degrevlex)
 
     ring = Groebner.PolyRing(2, Groebner.DegRevLex(), 2^31 - 1)
     @test_throws DomainError Groebner.groebner_learn(ring, [], [])
@@ -634,7 +634,7 @@ end
     ring = Groebner.PolyRing(5, Groebner.DegRevLex(), 2^40 + 15)
     test_low_level_interface(ring, sys)
 
-    sys = Groebner.Examples.cyclicn(5, k=GF(2^30 + 3))
+    sys = Groebner.Examples.cyclicn(5, k=GF(Int64(2)^30 + 3))
     ring = Groebner.PolyRing(5, Groebner.DegRevLex(), 2^30 + 3)
     test_low_level_interface(ring, sys; ordering=Groebner.DegRevLex())
 end

@@ -48,7 +48,7 @@ end
     @test_throws DomainError Groebner.quotient_basis([R(0)])
 
     for k in [
-        AbstractAlgebra.GF(2^30 + 3),
+        AbstractAlgebra.GF(Int64(2)^30 + 3),
         fraction_field(AbstractAlgebra.QQ["t"][1]),
         AbstractAlgebra.QQ
     ]
@@ -73,7 +73,7 @@ end
     @test_throws DomainError Groebner.dimension([])
 
     n = 100
-    R, x = polynomial_ring(AbstractAlgebra.GF(2^30 + 3), ["x$i" for i in 1:n])
+    R, x = polynomial_ring(AbstractAlgebra.GF(Int64(2)^30 + 3), ["x$i" for i in 1:n])
     @test Groebner.dimension([sum(x)]) == n - 1
     @test Groebner.dimension([sum(x), prod(x), sum([i for i in 1:n] .* x)]) == n - 3
 end

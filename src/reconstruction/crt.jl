@@ -5,38 +5,41 @@
 
 # Auxiliary functions allowing to avoid overflow
 # on Windows for numbers between 32 and 64 bits
-function my_set_ui!(a::BigInt, b::UInt64)
+function my_set_ui!(a::BigInt, b::Unsigned)
+    bb = b % UInt64
     @static if Culong == UInt64
-        Base.GMP.MPZ.set_ui!(a, b)
+        Base.GMP.MPZ.set_ui!(a, bb)
     else
-        if b < 2^32
-            Base.GMP.MPZ.set_ui!(a, b)
+        if bb < 2^32
+            Base.GMP.MPZ.set_ui!(a, bb)
         else
-            Base.GMP.MPZ.set!(a, BigInt(b))
+            Base.GMP.MPZ.set!(a, BigInt(bb))
         end
     end
 end
 
-function my_mul_ui!(a::BigInt, b::BigInt, c::UInt64)
+function my_mul_ui!(a::BigInt, b::BigInt, c::Unsigned)
+    cc = c % UInt64
     @static if Culong == UInt64
-        Base.GMP.MPZ.mul_ui!(a, b, c)
+        Base.GMP.MPZ.mul_ui!(a, b, cc)
     else
-        if c < 2^32
-            Base.GMP.MPZ.mul_ui!(a, b, c)
+        if cc < 2^32
+            Base.GMP.MPZ.mul_ui!(a, b, cc)
         else
-            Base.GMP.MPZ.mul!(a, b, BigInt(c))
+            Base.GMP.MPZ.mul!(a, b, BigInt(cc))
         end
     end
 end
 
-function my_mul_ui!(a::BigInt, b::UInt64)
+function my_mul_ui!(a::BigInt, b::Unsigned)
+    bb = b % UInt64
     @static if Culong == UInt64
-        Base.GMP.MPZ.mul_ui!(a, b)
+        Base.GMP.MPZ.mul_ui!(a, bb)
     else
-        if b < 2^32
-            Base.GMP.MPZ.mul_ui!(a, b)
+        if bb < 2^32
+            Base.GMP.MPZ.mul_ui!(a, bb)
         else
-            Base.GMP.MPZ.mul!(a, BigInt(b))
+            Base.GMP.MPZ.mul!(a, BigInt(bb))
         end
     end
 end
@@ -57,11 +60,21 @@ Writes the answer to `buf` inplace.
 - `ci`: an array of numbers, with `ci[i] = πi * invmod(πi, mi)`, `πi = M / mi`
 
 Then, `x` is obtained as `x = ∑ ci[i] ai[i] mod M`.
+
+Always use `UInt64` buffers so 32-bit Julia (`UInt === UInt32`) can still
+carry moduli larger than `typemax(UInt32)`.
 """
-function crt!(M::BigInt, buf::BigInt, n1::BigInt, n2::BigInt, ai::Vector{UInt}, ci::Vector{BigInt})
+function crt!(
+    M::BigInt,
+    buf::BigInt,
+    n1::BigInt,
+    n2::BigInt,
+    ai::Vector{UInt64},
+    ci::Vector{BigInt}
+)
     @invariant length(ai) == length(ci)
 
-    my_set_ui!(n1, UInt(0))
+    my_set_ui!(n1, UInt64(0))
     for i in 1:length(ai)
         my_mul_ui!(n2, ci[i], ai[i])
         Base.GMP.MPZ.add!(n1, n2)
@@ -85,7 +98,7 @@ function crt_precompute!(
     n1::BigInt,
     n2::BigInt,
     ci::Vector{BigInt},
-    moduli::Vector{UInt}
+    moduli::Vector{UInt64}
 )
     @invariant length(ci) == length(moduli)
 

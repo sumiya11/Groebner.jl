@@ -9,7 +9,8 @@
 # https://github.com/Nemocas/AbstractAlgebra.jl/issues/1542
 
 const aa_supported_orderings = (:lex, :deglex, :degrevlex)
-const aa_exponent_type = UInt64
+# AbstractAlgebra.Generic.MPoly expects Matrix{UInt} (UInt32 on 32-bit, UInt64 on 64-bit).
+const aa_exponent_type = UInt
 
 aa_is_multivariate_ring(ring) = AbstractAlgebra.elem_type(ring) <: AbstractAlgebra.MPolyRingElem
 
