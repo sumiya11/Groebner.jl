@@ -259,7 +259,7 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
 
     heuristic_check = true
     randomized_check = true
-    certify_check = kwargs.certify
+    certify_check = kwargs.certify || kwargs.linalg === :las_vegas
 
     homogenize = if kwargs.homogenize === :yes
         true
@@ -283,6 +283,12 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
     # multi-modular tracing may compute Groebner bases in Zp for
     # checking/verification, and they benefit from linalg = :randomized.
     linalg = kwargs.linalg
+    if linalg === :las_vegas && ring.ground !== :zp
+        throw(DomainError(
+            ring.ground,
+            "The option linalg=:las_vegas is only supported over finite prime fields."
+        ))
+    end
     if ring.ground === :zp && (linalg === :randomized || linalg === :auto)
         # Do not use randomized linear algebra if the field characteristic is
         # too small.
@@ -296,6 +302,11 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
             end
             linalg = :deterministic
         end
+    end
+    if linalg === :las_vegas
+        # A deterministic check makes randomized linear algebra safe even over
+        # small fields, where `linalg=:randomized` by itself is disabled.
+        linalg = :randomized
     end
     if ring.ground === :generic
         linalg = :deterministic

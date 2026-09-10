@@ -943,6 +943,20 @@ end
     end
 end
 
+@testset "groebner Las-Vegas linear algebra" begin
+    for field in (GF(17), GF(2^31 - 1))
+        R, (x, y, z) = polynomial_ring(field, ["x", "y", "z"], internal_ordering=:degrevlex)
+        fs = [x^2 + y, x * y + z, z^2 + x]
+        gb = Groebner.groebner(fs, linalg=:las_vegas)
+
+        @test gb == Groebner.groebner(fs, linalg=:deterministic)
+        @test Groebner.isgroebner(gb, certify=true)
+    end
+
+    R, (x, y) = polynomial_ring(QQ, ["x", "y"])
+    @test_throws DomainError Groebner.groebner([x^2 + y, x * y], linalg=:las_vegas)
+end
+
 @testset "groebner modular-hard problems" begin
     function get_test_system1(R, N)
         (x1, x2, x3, x4) = AbstractAlgebra.gens(R)
