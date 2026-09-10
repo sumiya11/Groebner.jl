@@ -103,10 +103,19 @@ function _groebner2(
     coeffs::Vector{Vector{C}},
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffZp}
-    basis, pairset, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
-    f4!(ring, basis, pairset, hashtable, params)
-    gbmonoms, gbcoeffs = basis_export_data(basis, hashtable)
-    gbmonoms, gbcoeffs
+    check_params = if params.certify_check
+        struct_update(AlgorithmParameters, params, (linalg=LinearAlgebra(:deterministic, :sparse),))
+    else
+        params
+    end
+    while true
+        basis, pairset, hashtable = f4_initialize_structs(ring, monoms, coeffs, params)
+        f4!(ring, basis, pairset, hashtable, params)
+        if !params.certify_check ||
+           f4_isgroebner_after_f4!(ring, basis, pairset, hashtable, check_params)
+            return basis_export_data(basis, hashtable)
+        end
+    end
 end
 
 ###

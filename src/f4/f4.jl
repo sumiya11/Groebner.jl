@@ -473,6 +473,22 @@ function f4_isgroebner!(
     linalg_isgroebner!(matrix, basis, params)
 end
 
+# Check a basis immediately after `f4!`, reusing its internal representation.
+# This avoids exporting the basis only to import it again in `isgroebner`.
+function f4_isgroebner_after_f4!(
+    ring::PolyRing,
+    basis::Basis,
+    pairset::Pairset,
+    hashtable::MonomialHashtable,
+    params::AlgorithmParameters
+)
+    @invariant basis.n_processed == basis.n_nonredundant == basis.n_filled
+    @invariant isempty(pairset)
+    basis.n_processed = 0
+    basis.n_nonredundant = 0
+    f4_isgroebner!(ring, basis, pairset, hashtable, params)
+end
+
 function f4_normalform!(
     ring::PolyRing,
     basis::Basis{C},
