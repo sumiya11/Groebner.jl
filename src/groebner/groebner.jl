@@ -104,11 +104,7 @@ function _groebner2(
     params::AlgorithmParameters
 ) where {M <: Monom, C <: CoeffZp}
     check_params = if params.certify_check
-        struct_update(
-            AlgorithmParameters,
-            params,
-            (linalg=LinearAlgebra(:deterministic, :sparse),)
-        )
+        struct_update(AlgorithmParameters, params, (linalg=LinearAlgebra(:deterministic, :sparse),))
     else
         params
     end

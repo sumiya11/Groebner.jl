@@ -284,10 +284,12 @@ function AlgorithmParameters(ring::PolyRing, kwargs::KeywordArguments; hint=:non
     # checking/verification, and they benefit from linalg = :randomized.
     linalg = kwargs.linalg
     if linalg === :las_vegas && ring.ground !== :zp
-        throw(DomainError(
-            ring.ground,
-            "The option linalg=:las_vegas is only supported over finite prime fields."
-        ))
+        throw(
+            DomainError(
+                ring.ground,
+                "The option linalg=:las_vegas is only supported over integers mod p."
+            )
+        )
     end
     if ring.ground === :zp && (linalg === :randomized || linalg === :auto)
         # Do not use randomized linear algebra if the field characteristic is

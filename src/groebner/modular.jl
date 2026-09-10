@@ -304,10 +304,10 @@ end
     prime = modular_random_prime(state, params.rng)
     prime_big = BigInt(prime)
     while any(c -> iszero(mod(denominator(c), prime_big)), Iterators.flatten(state.gb_coeffs_qq)) ||
-        any(
-            c -> iszero(mod(denominator(c), prime_big)),
-            Iterators.flatten(Iterators.flatten(state.changematrix_coeffs_qq))
-        )
+          any(
+        c -> iszero(mod(denominator(c), prime_big)),
+        Iterators.flatten(Iterators.flatten(state.changematrix_coeffs_qq))
+    )
         prime = modular_random_prime(state, params.rng)
         prime_big = BigInt(prime)
     end

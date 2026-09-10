@@ -126,11 +126,18 @@ function KeywordArguments(function_id::Symbol, kws)
     certify = get(kws, :certify, get(default_kw_args, :certify, false))
 
     linalg = get(kws, :linalg, get(default_kw_args, :linalg, :auto))
-    @assert linalg in
-            (:auto, :randomized, :deterministic, :las_vegas, :experimental_1, :experimental_2, :experimental_3) """
-                                                                                                              Not recognized linear algebra option: $linalg
-                                                                                                              Possible choices for keyword "linalg" are:
-                                                                                                              `:auto`, `:randomized`, `:deterministic`, `:las_vegas`"""
+    @assert linalg in (
+        :auto,
+        :randomized,
+        :deterministic,
+        :las_vegas,
+        :experimental_1,
+        :experimental_2,
+        :experimental_3
+    ) """
+    Not recognized linear algebra option: $linalg
+    Possible choices for keyword "linalg" are:
+    `:auto`, `:randomized`, `:deterministic`, `:las_vegas`"""
     @assert linalg !== :las_vegas || function_id === :groebner """
     The option `linalg=:las_vegas` is only supported by Groebner.groebner."""
 
