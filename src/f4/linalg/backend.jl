@@ -144,9 +144,8 @@ function linalg_interreduce_matrix_pivots!(
     # Indices of rows that did no reduce to zero
     not_reduced_to_zero = Vector{Int}(undef, nright)
 
-    # Visit pivot columns in the order in which output rows should be stored.
-    # Ordinary F4 reduction goes 1...n, whereas final autoreduction n...1.
-    column_indices = left_to_right ? ((nleft + 1):ncols) : (ncols:-1:(nleft + 1))
+    # Always interreduce from right to left.
+    column_indices = ncols:-1:(nleft + 1)
     @inbounds for abs_column_idx in column_indices
         # Check if there is a row that starts at `abs_column_idx`
         !isassigned(pivots, abs_column_idx) && continue
@@ -199,6 +198,11 @@ function linalg_interreduce_matrix_pivots!(
     matrix.npivots = new_pivots
     resize!(matrix.lower_rows, new_pivots)
     resize!(not_reduced_to_zero, new_pivots)
+
+    if left_to_right
+        reverse!(matrix.lower_rows)
+        reverse!(not_reduced_to_zero)
+    end
 
     true, any_zeroed, not_reduced_to_zero
 end
