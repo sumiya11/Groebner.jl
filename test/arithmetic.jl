@@ -1,9 +1,9 @@
 using Test, Primes, Groebner
 
 @testset "arithmetic in Zp" begin
-    a = Groebner.select_arithmetic(UInt32, 2^31 - 1, :auto, false)
+    a = Groebner.select_arithmetic(UInt32, Int64(2)^31 - 1, :auto, false)
     @test a isa Groebner.SpecializedArithmeticZp{UInt64, UInt32}
-    a = Groebner.select_arithmetic(UInt64, 2^31 - 1, :auto, true)
+    a = Groebner.select_arithmetic(UInt64, Int64(2)^31 - 1, :auto, true)
     @test a isa Groebner.SpecializedArithmeticZp{UInt64, UInt64}
 
     a = Groebner.select_arithmetic(UInt32, Primes.prevprime(2^27 - 1), :auto, false)

@@ -12,6 +12,9 @@ const aa_supported_orderings = (:lex, :deglex, :degrevlex)
 # AbstractAlgebra.Generic.MPoly expects Matrix{UInt} (UInt32 on 32-bit, UInt64 on 64-bit).
 const aa_exponent_type = UInt
 
+aa_to_uint64(n) = UInt64(n)
+aa_to_uint64(n::Nemo.ZZRingElem) = UInt64(BigInt(n))
+
 aa_is_multivariate_ring(ring) = AbstractAlgebra.elem_type(ring) <: AbstractAlgebra.MPolyRingElem
 
 @timeit _TIMER function io_convert_polynomials_to_ir(polynomials, options::KeywordArguments)
@@ -89,7 +92,7 @@ function io_extract_ring(polynomials)
     end
     # type unstable:
     ordT = ordering_sym2typed(ord)
-    ch_uint = ground == :zp ? UInt(ch) : UInt(0)
+    ch_uint = ground == :zp ? aa_to_uint64(ch) : UInt64(0)
     ring = PolyRing(nv, ordT, ch_uint, ground)
     ring
 end
@@ -107,7 +110,10 @@ end
 io_lift_coeff_ff(c) = UInt64(AbstractAlgebra.lift(c))
 io_lift_coeff_ff(c::AbstractAlgebra.GFElem) = AbstractAlgebra.data(c)
 io_lift_coeff_ff(c::Union{Nemo.FqFieldElem, Nemo.fpFieldElem}) =
-    UInt64(AbstractAlgebra.lift(Nemo.ZZ, c))
+    aa_to_uint64(AbstractAlgebra.lift(Nemo.ZZ, c))
+@static if isdefined(Nemo, :FpFieldElem)
+    io_lift_coeff_ff(c::Nemo.FpFieldElem) = aa_to_uint64(AbstractAlgebra.lift(Nemo.ZZ, c))
+end
 
 function io_extract_coeffs_ir_ff(ring::PolyRing{T}, polys) where {T}
     res = Vector{Vector{UInt64}}(undef, length(polys))

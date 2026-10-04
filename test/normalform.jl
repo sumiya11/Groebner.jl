@@ -180,7 +180,7 @@ end
     nterms = [2, 3]
     npolys = [2, 3]
     grounds = [GF(Int64(2)^31 - 1), QQ]
-    coeffssize = [3, 1000, 2^31 - 1]
+    coeffssize = [3, 1000, Int64(2)^31 - 1]
     orderings = [:deglex, :lex, :degrevlex]
     orderings_groebner =
         [Groebner.InputOrdering(), Groebner.Lex(), Groebner.DegLex(), Groebner.DegRevLex()]

@@ -292,7 +292,7 @@ function f4_find_multiplied_reducer!(
     nothing
 end
 
-const _MAX_DEG = Ref{Int}(0)
+const _MAX_DEG = Ref{UInt64}(0)
 
 @timeit _TIMER function f4_select_critical_pairs!(
     pairset::Pairset,

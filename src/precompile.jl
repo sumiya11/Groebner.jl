@@ -19,7 +19,10 @@
         quotient_basis(arr)
         # dimension(arr)
 
-        R, (x, y) = AbstractAlgebra.polynomial_ring(AbstractAlgebra.GF(2^31 - 1), ["x", "y"])
+        R, (x, y) = AbstractAlgebra.polynomial_ring(
+            AbstractAlgebra.GF(Int64(2)^31 - 1),
+            ["x", "y"]
+        )
         arr = [x^2 * y + x * y + 1, x * y^5 + y^4 + 1]
         gb = groebner(arr, ordering=DegRevLex())
 
@@ -27,7 +30,7 @@
         flag, gb = groebner_apply!(trace, arr)
 
         R, (x, y) = AbstractAlgebra.polynomial_ring(
-            AbstractAlgebra.GF(2^31 - 1),
+            AbstractAlgebra.GF(Int64(2)^31 - 1),
             ["x", "y"],
             internal_ordering=:degrevlex
         )

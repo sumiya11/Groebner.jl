@@ -3,6 +3,8 @@ using Test, Groebner
 @testset "exponent vector" begin
     PV{T} = Groebner.ExponentVector{T} where {T}
 
+    @test Groebner.monom_max_vars(PV{UInt64}) == Int64(2)^32
+
     x = [1, 2, 3, 0, 4]
     ev = Groebner.monom_construct_from_vector(PV{UInt64}, x)
     @test ev == UInt64.([10, 1, 2, 3, 0, 4])

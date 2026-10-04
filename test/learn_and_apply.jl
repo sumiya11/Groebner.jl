@@ -107,10 +107,13 @@ end
 
     # Going from small characteristic to large is not allowed
     # NOTE: it should be allowed
-    K1, K2 = GF(Int64(2)^31 - 1), GF(2^60 + 33)
+    K1, K2 = GF(Int64(2)^31 - 1), GF(Int64(2)^60 + 33)
     R, (x, y) = polynomial_ring(K1, ["x", "y"], internal_ordering=:degrevlex)
     R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], internal_ordering=:degrevlex)
-    system2 = [(2^49 + 1) * x2 - 1, (2^50) * y2 + (2^56 + 99)]
+    system2 = [
+        (Int64(2)^49 + 1) * x2 - 1,
+        Int64(2)^50 * y2 + (Int64(2)^56 + 99)
+    ]
     system = map(f -> AbstractAlgebra.map_coefficients(c -> K1(data(c)), f), system2)
     trace, gb_1 = Groebner.groebner_learn(system)
     # TODO
@@ -118,7 +121,7 @@ end
     # @test_broken gb_2 == [y2 + (2^56 + 99) // K2(2^50), x2 - 1 // K2(2^49 + 1)]
 
     # The trace ordering is reused unless an incompatible ordering is requested.
-    K1, K2 = GF(Int64(2)^31 - 1), GF(2^60 + 33)
+    K1, K2 = GF(Int64(2)^31 - 1), GF(Int64(2)^60 + 33)
     R, (x, y) = polynomial_ring(K1, ["x", "y"], internal_ordering=:lex)
     R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], internal_ordering=:degrevlex)
     system = [x + 1, y - 1]
@@ -127,7 +130,7 @@ end
     flag, gb_2 = Groebner.groebner_apply!(trace, system2)
     @test flag && gb_2 == Groebner.groebner(system2; ordering=Groebner.Lex())
 
-    K1, K2 = GF(Int64(2)^31 - 1), GF(2^60 + 33)
+    K1, K2 = GF(Int64(2)^31 - 1), GF(Int64(2)^60 + 33)
     R, (x, y) = polynomial_ring(K1, ["x", "y"], internal_ordering=:lex)
     R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], internal_ordering=:degrevlex)
     system = [x + 1, y - 1]
@@ -171,7 +174,7 @@ end
     Ks = [
         AbstractAlgebra.GF(Int64(2)^31 - 1),
         AbstractAlgebra.GF(Int64(2)^30 + 3),
-        AbstractAlgebra.GF(2^31 + 11),
+        AbstractAlgebra.GF(Int64(2)^31 + 11),
         AbstractAlgebra.GF(2^20 + 7),
         AbstractAlgebra.GF(2^20 + 13),
         AbstractAlgebra.GF(2^20 + 25),
@@ -206,7 +209,7 @@ end
     system_zp = map(f -> AbstractAlgebra.map_coefficients(c -> K1(BigInt(c)), f), system)
     _x, _y = gens(parent(system_zp[1]))
     trace, gb_1 = Groebner.groebner_learn(system_zp; ordering=Groebner.DegRevLex(_y, _x))
-    for K in Primes.nextprimes(2^31, 200)
+    for K in Primes.nextprimes(Int64(2)^31, 200)
         system_zp = map(f -> AbstractAlgebra.map_coefficients(c -> GF(K)(BigInt(c)), f), system)
         _x, _y = gens(parent(system_zp[1]))
         true_gb = Groebner.groebner(system_zp; ordering=Groebner.DegRevLex(_y, _x))
@@ -479,7 +482,7 @@ end
 end
 
 @testset "learn & apply, tricky" begin
-    for K in [GF(Int64(2)^31 - 1), GF(2^62 + 135)]
+    for K in [GF(Int64(2)^31 - 1), GF(Int64(2)^62 + 135)]
         R, (x, y) = polynomial_ring(K, ["x", "y"], internal_ordering=:degrevlex)
 
         s = [x^100 * y + y^100, x * y^100 + y]
@@ -597,7 +600,7 @@ end
 
     R, (x, y) = polynomial_ring(GF(Int64(2)^31 - 1), ["x", "y"], internal_ordering=:degrevlex)
 
-    ring = Groebner.PolyRing(2, Groebner.DegRevLex(), 2^31 - 1)
+    ring = Groebner.PolyRing(2, Groebner.DegRevLex(), Int64(2)^31 - 1)
     @test_throws DomainError Groebner.groebner_learn(ring, [], [])
     @test ([[[0, 0]]], [[1]]) == Groebner.groebner_learn(ring, [[[0, 0]]], [[1]])[2:3]
     @test ([[[1, 1]]], [[1]]) == Groebner.groebner_learn(ring, [[[1, 1]]], [[2]])[2:3]
@@ -630,8 +633,8 @@ end
     flag4, gb4 = Groebner.groebner_apply!(trace, ring4, [[[0, 0], [1, 1]]], [[1, -1]])
     @test !flag1 && !flag2 && flag3 && flag4
 
-    sys = Groebner.Examples.cyclicn(5, k=GF(2^40 + 15))
-    ring = Groebner.PolyRing(5, Groebner.DegRevLex(), 2^40 + 15)
+    sys = Groebner.Examples.cyclicn(5, k=GF(Int64(2)^40 + 15))
+    ring = Groebner.PolyRing(5, Groebner.DegRevLex(), Int64(2)^40 + 15)
     test_low_level_interface(ring, sys)
 
     sys = Groebner.Examples.cyclicn(5, k=GF(Int64(2)^30 + 3))
@@ -696,7 +699,7 @@ end
     ks = map(GF, Primes.nextprimes(2^30, 40))
 
     R, (x, y) = polynomial_ring(AbstractAlgebra.ZZ, ["x", "y"], internal_ordering=:degrevlex)
-    sys_qq = [44x^2 + x + 2^50, y^10 - 10 * y^5 - 99]
+    sys_qq = [44x^2 + x + Int64(2)^50, y^10 - 10 * y^5 - 99]
     sys_gf = map(
         j ->
             map(poly -> AbstractAlgebra.map_coefficients(c -> (k = ks[j]; k(c)), poly), sys_qq),
@@ -747,7 +750,13 @@ end
     cyc_lex = Groebner.Examples.cyclicn(5, k=ZZ, internal_ordering=:lex)
 
     ps1 = Primes.nextprimes(2^30, 5)
-    ps2 = [2^31 - 1, 2^30 + 3, 2^32 + 15, 2^40 + 15, 2^30 + 3]
+    ps2 = [
+        Int64(2)^31 - 1,
+        Int64(2)^30 + 3,
+        Int64(2)^32 + 15,
+        Int64(2)^40 + 15,
+        Int64(2)^30 + 3
+    ]
 
     test_learn_apply(kat, ps1)
     test_learn_apply(kat, ps2)

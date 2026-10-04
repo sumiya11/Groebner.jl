@@ -195,7 +195,7 @@ function econ(n; np=AbstractAlgebra, k=np.QQ, internal_ordering=:degrevlex)
     )
 end
 
-function eco5(; np=AbstractAlgebra, k=np.GF(2^31 - 1), internal_ordering=:degrevlex)
+function eco5(; np=AbstractAlgebra, k=np.GF(Int64(2)^31 - 1), internal_ordering=:degrevlex)
     _, (x1, x2, x3, x4, x5) =
         np.polynomial_ring(k, ["x$i" for i in 1:5], internal_ordering=internal_ordering)
     [

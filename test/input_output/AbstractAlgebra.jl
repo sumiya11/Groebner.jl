@@ -1,12 +1,12 @@
 using AbstractAlgebra, Test, Primes, Groebner
 
 @testset "AbstractAlgebra.jl, univariate" begin
-    R, x = polynomial_ring(GF(2^62 + 135), "x")
+    R, x = polynomial_ring(GF(Int64(2)^62 + 135), "x")
     @test Groebner.groebner([R(2)]) == [R(1)]
     @test Groebner.groebner([R(0), R(0)]) == [R(0)]
     @test Groebner.groebner([R(0), R(3), R(0)]) == [R(1)]
 
-    for ground in [GF(Int64(2)^31 - 1), GF(2^62 + 135), QQ]
+    for ground in [GF(Int64(2)^31 - 1), GF(Int64(2)^62 + 135), QQ]
         for gb_ord in [Groebner.Lex(), Groebner.DegLex(), Groebner.DegRevLex()]
             R, x = polynomial_ring(ground, "x")
             @test Groebner.groebner([x^2 - 4, x + 2], ordering=gb_ord) == [x + 2]
@@ -31,7 +31,7 @@ end
 
     aa_orderings_to_test = [:lex, :degrevlex, :deglex]
     aa_grounds_to_test = [
-        AbstractAlgebra.GF(2^62 + 135),
+        AbstractAlgebra.GF(Int64(2)^62 + 135),
         AbstractAlgebra.GF(Int64(2)^31 - 1),
         AbstractAlgebra.GF(17),
         AbstractAlgebra.QQ
@@ -62,7 +62,10 @@ end
             @test parent(first(Groebner.groebner([x]))) == R
 
             R, (x, y) = polynomial_ring(ground, ["x", "y"], internal_ordering=ord)
-            fs = [x^2 * y + 3, (2^31 - 5) * x - (2^31 - 4) * y]
+            fs = [
+                x^2 * y + 3,
+                (Int64(2)^31 - 5) * x - (Int64(2)^31 - 4) * y
+            ]
             gb = Groebner.groebner(fs)
             @test parent(gb[1]) == R
             @test all(

@@ -10,7 +10,7 @@ function my_set_ui!(a::BigInt, b::Unsigned)
     @static if Culong == UInt64
         Base.GMP.MPZ.set_ui!(a, bb)
     else
-        if bb < 2^32
+        if bb <= typemax(UInt32)
             Base.GMP.MPZ.set_ui!(a, bb)
         else
             Base.GMP.MPZ.set!(a, BigInt(bb))
@@ -23,7 +23,7 @@ function my_mul_ui!(a::BigInt, b::BigInt, c::Unsigned)
     @static if Culong == UInt64
         Base.GMP.MPZ.mul_ui!(a, b, cc)
     else
-        if cc < 2^32
+        if cc <= typemax(UInt32)
             Base.GMP.MPZ.mul_ui!(a, b, cc)
         else
             Base.GMP.MPZ.mul!(a, b, BigInt(cc))
@@ -36,7 +36,7 @@ function my_mul_ui!(a::BigInt, b::Unsigned)
     @static if Culong == UInt64
         Base.GMP.MPZ.mul_ui!(a, bb)
     else
-        if bb < 2^32
+        if bb <= typemax(UInt32)
             Base.GMP.MPZ.mul_ui!(a, bb)
         else
             Base.GMP.MPZ.mul!(a, BigInt(bb))

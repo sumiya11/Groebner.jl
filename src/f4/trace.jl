@@ -30,7 +30,7 @@ mutable struct Trace{C1 <: Coeff, C2 <: Coeff, M <: Monom, Ord1, Ord2}
     matrix_pivot_indices::Vector{Vector{Int}}
     matrix_is_columns_cached::Bool
 
-    critical_pair_sequence::Vector{Tuple{Int, Int}}
+    critical_pair_sequence::Vector{Tuple{UInt64, Int}}
 
     output_nonredundant_indices::Vector{Int}
     nonredundant_indices_before_reduce::Vector{Int}
@@ -83,7 +83,7 @@ function trace_initialize(
         Vector{UInt64}(),
         Vector{Vector{Int}}(),
         false,
-        Vector{Tuple{Int, Int}}(),
+        Vector{Tuple{UInt64, Int}}(),
         Vector{Int}(),
         Vector{Int}(),
         Vector{Int}(),
