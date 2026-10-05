@@ -2,7 +2,7 @@
 
 # The sequence of lucky prime candidates is decreasing and deterministic.
 # Make sure this number is at most 31 bits to be able to use signed ints.
-const FIRST_LUCKY_PRIME_CANDIDATE = 2^31 - 1
+const FIRST_LUCKY_PRIME_CANDIDATE = Int64(2)^31 - 1
 
 const RANDOM_PRIME_LB = 2^29
 const RANDOM_PRIME_UB = 2^30

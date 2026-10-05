@@ -42,7 +42,7 @@ end
 @testset "groebner low level" begin
     R, (x, y) = polynomial_ring(GF(Int64(2)^31 - 1), ["x", "y"], internal_ordering=:degrevlex)
     ring_ff = Groebner.PolyRing(2, Groebner.DegRevLex(), Int64(2)^31 - 1)
-    ring_ff2 = Groebner.PolyRing(2, Groebner.DegRevLex(), 2^32 - 5)
+    ring_ff2 = Groebner.PolyRing(2, Groebner.DegRevLex(), Int64(2)^32 - 5)
     ring_qq = Groebner.PolyRing(2, Groebner.DegRevLex(), 0)
 
     @test_throws DomainError Groebner.groebner(
@@ -131,8 +131,8 @@ end
     @test ([[[2, 2], [0, 3]]], [[1, 4]]) ==
           Groebner.groebner(ring, [[[0, 3], [2, 2], [2, 1]]], [[1, 2, 0]])
 
-    sys = Groebner.Examples.cyclicn(5, k=GF(2^40 + 15))
-    ring = Groebner.PolyRing(5, Groebner.DegRevLex(), 2^40 + 15)
+    sys = Groebner.Examples.cyclicn(5, k=GF(Int64(2)^40 + 15))
+    ring = Groebner.PolyRing(5, Groebner.DegRevLex(), Int64(2)^40 + 15)
     test_low_level_interface(ring, sys)
 
     sys = Groebner.Examples.cyclicn(5, k=GF(Int64(2)^30 + 3), internal_ordering=:lex)
@@ -165,8 +165,8 @@ end
     # - QQ
     n = 5
     syss = [
-        Groebner.Examples.cyclicn(n, k=GF(2^40 + 15)),
-        Groebner.Examples.cyclicn(n, k=GF(2^40 + 15), internal_ordering=:lex),
+        Groebner.Examples.cyclicn(n, k=GF(Int64(2)^40 + 15)),
+        Groebner.Examples.cyclicn(n, k=GF(Int64(2)^40 + 15), internal_ordering=:lex),
         Groebner.Examples.cyclicn(n, k=GF(2)),
         Groebner.Examples.cyclicn(n, k=GF(nextprime(big(2)^1000))),
         Groebner.Examples.cyclicn(n, k=GF(nextprime(big(2)^1000)), internal_ordering=:lex),
@@ -447,8 +447,20 @@ end
     R, (x, y, z) =
         polynomial_ring(GF(Int64(2)^31 - 1), ["x", "y", "z"], internal_ordering=:degrevlex)
 
-    @test groebner([x^(Int64(2)^31)]) == [x^Int64(2)^31]
-    @test_throws Groebner.MonomialDegreeOverflow groebner([x^(Int64(2)^33)])
+    if Sys.WORD_SIZE == 64
+        @test groebner([x^(Int64(2)^31)]) == [x^Int64(2)^31]
+        @test_throws Groebner.MonomialDegreeOverflow groebner([x^(Int64(2)^33)])
+    else
+        # AbstractAlgebra cannot construct exponents this large on 32-bit platforms,
+        # so exercise Groebner's architecture-independent low-level interface instead.
+        ring = Groebner.PolyRing(1, Groebner.DegRevLex(), Int64(2)^31 - 1)
+        @test Groebner.groebner(ring, [[[Int64(2)^31]]], [[1]]) == ([[[Int64(2)^31]]], [[1]])
+        @test_throws Groebner.MonomialDegreeOverflow Groebner.groebner(
+            ring,
+            [[[Int64(2)^33]]],
+            [[1]]
+        )
+    end
 
     for monoms in [:auto, :dense, :packed, :nibblenodeg]
         gb_1 = [x * y^100 + y, x^100 * y + y^100, y^199 + 2147483646 * x^99 * y]
@@ -947,7 +959,7 @@ end
 end
 
 @testset "groebner Las-Vegas linear algebra" begin
-    for field in (GF(17), GF(2^31 - 1))
+    for field in (GF(17), GF(Int64(2)^31 - 1))
         R, (x, y, z) = polynomial_ring(field, ["x", "y", "z"], internal_ordering=:degrevlex)
         fs = [x^2 + y, x * y + z, z^2 + x]
         gb = Groebner.groebner(fs, linalg=:las_vegas)
@@ -1008,7 +1020,7 @@ end
     system = [x1 - (Int64(2)^31 - 1) * x2 - (Int64(2)^30 + 3) * x3]
     @test Groebner.groebner(system) == system
 
-    for start_of_range in [2^10, 2^20, Int64(2)^30, 2^40]
+    for start_of_range in [Int64(2)^10, Int64(2)^20, Int64(2)^30, Int64(2)^40]
         for size_of_range in [10, 100, 1000]
             N = prod(Primes.nextprimes(BigInt(start_of_range), size_of_range))
             system = [x1 + N // (N + 1), x3 - (N + 1) // (N - 1), x2 + 42]
@@ -1101,7 +1113,7 @@ end
 
     # up to 5^6 < 2^14
     for i in 1:6
-        u, v = 3^i, 5^i
+        u, v = Int64(3)^i, Int64(5)^i
         f = [x^u * y^v - 1, x^v + y^u]
         gb = Groebner.groebner(f)
         @test gb == [x^v + y^u, y^(v + u) + x^(v - u), x^u * y^v - 1]
@@ -1113,23 +1125,35 @@ end
 
     # up to 5^13 < 2^32
     for i in 7:13
-        u, v = 3^i, 5^i
+        u, v = Int64(3)^i, Int64(5)^i
         f = [x^u * y^v - 1, x^v + y^u]
         gb = Groebner.groebner(f)
         @test gb == [x^v + y^u, y^(v + u) + x^(v - u), x^u * y^v - 1]
     end
 
     # total degree Int64(2)^30
-    f = [x^1073741824 + y]
+    f = [x^(Int64(2)^30) + y]
     @test f == Groebner.groebner(f)
 
-    # total degree Int64(2)^31
-    f = [x^1073741824 * y^1073741824 + y]
-    @test f == Groebner.groebner(f)
+    if Sys.WORD_SIZE == 64
+        # total degree Int64(2)^31
+        f = [x^(Int64(2)^30) * y^(Int64(2)^30) + y]
+        @test f == Groebner.groebner(f)
 
-    # this should fail.
-    f = [x^4294967295 * y^4294967295 + y]
-    @test_throws Groebner.MonomialDegreeOverflow f == Groebner.groebner(f)
+        # this should fail.
+        f = [x^4294967295 * y^4294967295 + y]
+        @test_throws Groebner.MonomialDegreeOverflow f == Groebner.groebner(f)
+    else
+        # AbstractAlgebra cannot multiply monomials of this total degree on
+        # 32-bit platforms, so use Groebner's low-level interface.
+        ring = Groebner.PolyRing(2, Groebner.DegRevLex(), 0)
+        monoms = [[[Int64(2)^30, Int64(2)^30], [0, 1]]]
+        coeffs = [[1, 1]]
+        @test Groebner.groebner(ring, monoms, coeffs) == (monoms, coeffs)
+
+        monoms = [[[Int64(2)^32 - 1, Int64(2)^32 - 1], [0, 1]]]
+        @test_throws Groebner.MonomialDegreeOverflow Groebner.groebner(ring, monoms, coeffs)
+    end
 
     for i in [8, 16, 32, 64]
         u, v = i >> 1, i
@@ -1139,7 +1163,7 @@ end
 end
 
 @testset "homogenization, basic" begin
-    for field in [GF(113), GF(2^10 + 7), GF(2^62 + 135), QQ]
+    for field in [GF(113), GF(2^10 + 7), GF(Int64(2)^62 + 135), QQ]
         R, x = polynomial_ring(field, "x")
         @test Groebner.groebner([x^2 - 1, (x + 1) * x^2], homogenize=:yes) == [x + 1]
         @test Groebner.groebner([x^2 - 1, (x + 1) * x^2], homogenize=:no) == [x + 1]
@@ -1175,7 +1199,7 @@ end
 end
 
 @testset "homogenization, orderings" begin
-    for field in [GF(113), GF(2^62 + 135), QQ]
+    for field in [GF(113), GF(Int64(2)^62 + 135), QQ]
         # Test that the basis obtained with the use of homogenization
         # *coincides* with the one obtained without it
         R, (x, y, z) = polynomial_ring(field, ["x", "y", "z"])
@@ -1360,7 +1384,7 @@ end
     grid = [(tasks=t,) for t in tasks]
     for system in [
         [x - 1, y - 2],
-        [x + (BigInt(2)^1000 + 1) // 2^61, x * y + BigInt(2)^(2^10)],
+        [x + (BigInt(2)^1000 + 1) // Int64(2)^61, x * y + BigInt(2)^(2^10)],
         Groebner.Examples.katsuran(3, internal_ordering=:lex, k=QQ),
         Groebner.Examples.katsuran(4, internal_ordering=:lex, k=QQ),
         Groebner.Examples.eco5(internal_ordering=:degrevlex, k=QQ),
@@ -1469,7 +1493,7 @@ end
     maxdegs    = [2, 4]
     nterms     = [1, 2, 4]
     npolys     = [1, 4, 100]
-    grounds    = [GF(1031), GF(2^50 + 55), AbstractAlgebra.QQ]
+    grounds    = [GF(1031), GF(Int64(2)^50 + 55), AbstractAlgebra.QQ]
     coeffssize = [3, Int64(2)^31 - 1, BigInt(2)^80, BigInt(2)^2000]
     orderings  = [:degrevlex, :lex, :deglex]
     linalgs    = [:deterministic, :randomized]

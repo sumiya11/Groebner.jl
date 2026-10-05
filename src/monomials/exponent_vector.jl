@@ -33,7 +33,7 @@ function monom_overflow_check(e::ExponentVector{T}) where {T}
     monom_overflow_check(monom_totaldeg(e))
 end
 
-monom_max_vars(::Type{ExponentVector{T}}) where {T} = 2^32
+monom_max_vars(::Type{ExponentVector{T}}) where {T} = Int64(2)^32
 monom_max_vars(p::ExponentVector{T}) where {T} = monom_max_vars(typeof(p))
 
 # The return type should be as tight as possible, since F4 uses this type
