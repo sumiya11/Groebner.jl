@@ -110,10 +110,7 @@ end
     K1, K2 = GF(Int64(2)^31 - 1), GF(Int64(2)^60 + 33)
     R, (x, y) = polynomial_ring(K1, ["x", "y"], internal_ordering=:degrevlex)
     R2, (x2, y2) = polynomial_ring(K2, ["x", "y"], internal_ordering=:degrevlex)
-    system2 = [
-        (Int64(2)^49 + 1) * x2 - 1,
-        Int64(2)^50 * y2 + (Int64(2)^56 + 99)
-    ]
+    system2 = [(Int64(2)^49 + 1) * x2 - 1, Int64(2)^50 * y2 + (Int64(2)^56 + 99)]
     system = map(f -> AbstractAlgebra.map_coefficients(c -> K1(data(c)), f), system2)
     trace, gb_1 = Groebner.groebner_learn(system)
     # TODO
@@ -750,13 +747,7 @@ end
     cyc_lex = Groebner.Examples.cyclicn(5, k=ZZ, internal_ordering=:lex)
 
     ps1 = Primes.nextprimes(2^30, 5)
-    ps2 = [
-        Int64(2)^31 - 1,
-        Int64(2)^30 + 3,
-        Int64(2)^32 + 15,
-        Int64(2)^40 + 15,
-        Int64(2)^30 + 3
-    ]
+    ps2 = [Int64(2)^31 - 1, Int64(2)^30 + 3, Int64(2)^32 + 15, Int64(2)^40 + 15, Int64(2)^30 + 3]
 
     test_learn_apply(kat, ps1)
     test_learn_apply(kat, ps2)

@@ -454,8 +454,7 @@ end
         # AbstractAlgebra cannot construct exponents this large on 32-bit platforms,
         # so exercise Groebner's architecture-independent low-level interface instead.
         ring = Groebner.PolyRing(1, Groebner.DegRevLex(), Int64(2)^31 - 1)
-        @test Groebner.groebner(ring, [[[Int64(2)^31]]], [[1]]) ==
-              ([[[Int64(2)^31]]], [[1]])
+        @test Groebner.groebner(ring, [[[Int64(2)^31]]], [[1]]) == ([[[Int64(2)^31]]], [[1]])
         @test_throws Groebner.MonomialDegreeOverflow Groebner.groebner(
             ring,
             [[[Int64(2)^33]]],

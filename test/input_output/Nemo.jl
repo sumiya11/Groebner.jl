@@ -4,10 +4,7 @@ nemo_native_gf(n) = Nemo.Native.GF(Sys.WORD_SIZE == 32 ? Nemo.ZZRingElem(n) : n)
 nemo_gf(n) = Nemo.GF(Sys.WORD_SIZE == 32 ? Nemo.ZZRingElem(n) : n)
 
 @testset "Nemo.jl, univariate" begin
-    for ff in [
-        nemo_native_gf(Int64(2)^62 + 135),
-        nemo_gf(Int64(2)^62 + 135)
-    ]
+    for ff in [nemo_native_gf(Int64(2)^62 + 135), nemo_gf(Int64(2)^62 + 135)]
         R, x = Nemo.polynomial_ring(ff, "x")
         @test Groebner.groebner([R(2)]) == [R(1)]
         @test Groebner.groebner([R(0), R(0)]) == [R(0)]
@@ -103,10 +100,7 @@ end
             @test gb == [(x + 8)]
 
             R, (x, y) = Nemo.polynomial_ring(ground, ["x", "y"], internal_ordering=ord)
-            fs = [
-                x^2 * y + 3,
-                (Int64(2)^31 - 5) * x - (Int64(2)^31 - 4) * y
-            ]
+            fs = [x^2 * y + 3, (Int64(2)^31 - 5) * x - (Int64(2)^31 - 4) * y]
             gb = Groebner.groebner(fs)
             @test parent(gb[1]) == R
             @test Groebner.isgroebner(gb)

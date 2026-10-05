@@ -62,10 +62,7 @@ end
             @test parent(first(Groebner.groebner([x]))) == R
 
             R, (x, y) = polynomial_ring(ground, ["x", "y"], internal_ordering=ord)
-            fs = [
-                x^2 * y + 3,
-                (Int64(2)^31 - 5) * x - (Int64(2)^31 - 4) * y
-            ]
+            fs = [x^2 * y + 3, (Int64(2)^31 - 5) * x - (Int64(2)^31 - 4) * y]
             gb = Groebner.groebner(fs)
             @test parent(gb[1]) == R
             @test all(
