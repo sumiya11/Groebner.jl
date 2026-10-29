@@ -2,6 +2,9 @@
 
 Benchmarks for `Groebner.jl`, `Maple`, `msolve`, `OpenF4`, `Singular`.
 
+Optional `polymojo` and `polymojocertified` backends are also available. See
+[Poly Mojo setup, timing modes, and validation](generate/polymojo/README.md).
+
 The definitions of benchmark systems can be found in `benchmark_systems.jl`.
 
 Computed bases will be verified against short SHA certificate, which are assumed to

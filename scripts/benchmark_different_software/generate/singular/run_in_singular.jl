@@ -42,7 +42,7 @@ function aa_system_to_singular(system)
         R_s, _ = Singular.polynomial_ring(
             ground_s,
             map(string, symbols(R)),
-            internal_ordering=:degrevlex
+            ordering=:degrevlex
         )
         system_s = map(
             f -> AbstractAlgebra.change_base_ring(
@@ -57,7 +57,7 @@ function aa_system_to_singular(system)
         R_s, _ = Singular.polynomial_ring(
             ground_s,
             map(string, symbols(R)),
-            internal_ordering=:degrevlex
+            ordering=:degrevlex
         )
         system_s = map(
             f -> AbstractAlgebra.change_base_ring(
