@@ -110,10 +110,10 @@ function benchmark_set_2()
         ("reimer 7", Groebner.Examples.reimern(7, k=ground_field)),
         ("reimer 8", Groebner.Examples.reimern(8, k=ground_field)),
         # ("reimer 9", Groebner.Examples.reimern(9, k=ground_field)),
-        ("chandra 11", Groebner.chandran(11, k=ground_field)),
-        ("chandra 12", Groebner.chandran(12, k=ground_field)),
-        ("chandra 13", Groebner.chandran(13, k=ground_field)),
-        ("chandra 14", Groebner.chandran(14, k=ground_field))
+        ("chandra 11", Groebner.Examples.chandran(11, k=ground_field)),
+        ("chandra 12", Groebner.Examples.chandran(12, k=ground_field)),
+        ("chandra 13", Groebner.Examples.chandran(13, k=ground_field)),
+        ("chandra 14", Groebner.Examples.chandran(14, k=ground_field))
     ]
 
     (name="Integers modulo 1031", field=ground_field, systems=systems)
