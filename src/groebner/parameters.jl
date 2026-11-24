@@ -63,8 +63,8 @@ function param_select_monomtype(
 
     ExponentSize = UInt8
     variables_per_word = div(sizeof(UInt), sizeof(ExponentSize))
-    # if dense representation is requested
-    if monoms === :dense
+    # SmallCollections.bits supports at most 1024 bits, or 256 four-bit exponents.
+    if monoms === :dense || (nvars > 256 && monoms in (:auto, :nibble, :nibblenodeg))
         @assert monom_is_supported_ordering(ExponentVector{ExponentSize}, ordering)
         return ExponentVector{ExponentSize}
     end
