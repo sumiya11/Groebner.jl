@@ -198,6 +198,17 @@ end
     @test dimension(system) == 3
 end
 
+@testset "regression, degrevlex at the nibble variable limit" begin
+    for n in (256, 257)
+        _, x = polynomial_ring(GF(65521), ["x$i" for i in 1:n], internal_ordering=:degrevlex)
+        system = [x[1] * x[2] + x[1], x[2] * x[end] + x[3]]
+        expected = [system[2], x[1] * x[3] - x[1] * x[end], system[1]]
+        @test groebner(system) == expected
+        @test groebner(system; monoms=:nibble) == expected
+        @test groebner(system; monoms=:nibblenodeg) == expected
+    end
+end
+
 # https://github.com/sumiya11/Groebner.jl/issues/219
 @testset "regression, rational change matrix reconstruction" begin
     R, (x,) = polynomial_ring(QQ, ["x"])
