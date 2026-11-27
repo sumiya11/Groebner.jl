@@ -1,0 +1,13 @@
+[workspace]
+name = "groebner-polymojo-benchmarks"
+channels = ["https://conda.modular.com/max", "https://repo.prefix.dev/modular-community", "conda-forge"]
+platforms = ["linux-64"]
+
+[dependencies]
+mojo = "==1.2.0"
+apn_mojo = "==1.0.2"
+poly_mojo = "==1.0.2"
+python = "3.12.*"
+
+[tasks]
+build-driver = "python ../build.py"

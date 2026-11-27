@@ -8,7 +8,9 @@ using Statistics
 
 using Groebner
 
-Groebner.logging_enabled() = false
+if isdefined(Groebner, :logging_enabled)
+    @eval Groebner.logging_enabled() = false
+end
 Groebner.invariants_enabled() = false
 
 logger = Logging.ConsoleLogger(stdout, Logging.Info)
@@ -37,7 +39,8 @@ path = (@__DIR__) * "/$BENCHMARK_DIR/$PROBLEM_NAME/$PROBLEM_NAME.jl"
 include(path)
 
 # Compile
-groebner(system, threaded=:no)
+const single_thread_options = isdefined(Base, :pkgversion) && Base.pkgversion(Groebner) >= v"0.10" ? (; tasks=1) : (; threaded=:no)
+groebner(system; single_thread_options...)
 
 function process_system()
     @info "Processing $PROBLEM_NAME"
@@ -50,7 +53,7 @@ function process_system()
     end
     for iter in 1:NUM_RUNS
         @info "Computing GB.." iter
-        timing = @timed result = groebner(system, threaded=:no)
+        timing = @timed result = groebner(system; single_thread_options...)
         @debug "Result is" result
         if VALIDATE
             output_fn = (@__DIR__) * "/$BENCHMARK_DIR/$PROBLEM_NAME/$(output_filename())"

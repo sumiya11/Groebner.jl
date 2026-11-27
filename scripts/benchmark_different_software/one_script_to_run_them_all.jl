@@ -19,6 +19,7 @@ include("benchmark_systems.jl")
 
 # Load the code to generate benchmarks for different software
 include("generate/benchmark_generators.jl")
+include("generate/polymojo/generate.jl")
 
 # Load the code to compute the certificate of a groebner basis
 include("generate/basis_certificate.jl")
@@ -31,7 +32,7 @@ const _progressbar_color = :light_green
 const _progressbar_value_color = :light_green
 progressbar_enabled() = Logging.Info <= Logging.min_enabled_level(current_logger()) < Logging.Warn
 
-const _available_backends = ["groebner", "singular", "maplefgb", "mgb", "msolve", "openf4"]
+const _available_backends = ["groebner", "singular", "maplefgb", "mgb", "msolve", "openf4", "polymojo", "polymojocertified"]
 
 const _skip_singular = false
 const _skip_openf4 = false
@@ -52,6 +53,8 @@ function parse_commandline()
             - mgb
             - msolve
             - openf4
+            - polymojo
+            - polymojocertified
             - ALL"""
             arg_type = String
             required = true
@@ -76,6 +79,10 @@ function parse_commandline()
             arg_type = String
             default = "msolve"
             required = false
+        "--bpolymojo"
+            help = "Prebuilt Poly Mojo benchmark bridge; compile it before running cases."
+            arg_type = String
+            default = get(ENV, "POLY_MOJO_DRIVER", "")
         "--suite"
             help = """
             The index of the benchmark suite.
@@ -115,7 +122,9 @@ end
 #! format: on
 
 function generate_benchmark_file(backend, name, system, dir, validate, nruns, time_filename, args)
-    if backend == "groebner"
+    if backend in ("polymojo", "polymojocertified")
+        generate_benchmark_file_for_polymojo(system, dir)
+    elseif backend == "groebner"
         benchmark_source = generate_benchmark_source_for_groebner(
             name,
             system,
@@ -192,7 +201,12 @@ function get_command_to_run_benchmark(
     validate,
     args
 )
-    if backend == "groebner"
+    if backend in ("polymojo", "polymojocertified")
+        dir = joinpath(@__DIR__, get_benchmark_dir(backend, problem_set_id), problem_name)
+        mode = backend == "polymojocertified" ? "certified" : "plain"
+        return Cmd([abspath(args["bpolymojo"]), joinpath(dir, "input"), dir,
+                    problem_name, string(problem_num_runs), mode, string(validate)])
+    elseif backend == "groebner"
         return Cmd([
             "julia",
             (@__DIR__) * "/generate/groebner/run_in_groebner.jl",
@@ -589,6 +603,8 @@ function collect_timings(args, names)
             :total_time_apply_4x,
             :total_time_apply_8x
         ]
+    elseif backend == "polymojocertified"
+        targets = [:total_time, :verification_time]
     else
         targets = [:total_time]
     end
@@ -777,36 +793,36 @@ function collect_all_timings(args, runtimes, systems)
     \t$(join(map(string, backends), "\n\t"))
     """
 
-    _target = targets[1]
-    formatting_style = CATEGORY_FORMAT[_target]
+    columns = comparison_columns(backends)
+    compute_columns = [i + 1 for (i, col) in enumerate(columns) if col.target == :total_time]
     conf = set_pt_conf(tf=tf_markdown, alignment=:c)
     title = "Benchmark results"
-    header = vcat("System", backends)
+    header = vcat("System", [col.label for col in columns])
     vec_of_vecs = Vector{Vector{Any}}()
     for name in systems
         row = [name]
-        for backend in backends
-            if haskey(runtimes[backend], name) && haskey(runtimes[backend][name], _target)
-                push!(row, formatting_style(runtimes[backend][name][_target]))
+        for col in columns
+            if haskey(runtimes[col.backend], name) && haskey(runtimes[col.backend][name], col.target)
+                push!(row, CATEGORY_FORMAT[col.target](runtimes[col.backend][name][col.target]))
             else
                 push!(row, "-")
             end
         end
         push!(vec_of_vecs, row)
     end
-    table = Array{Any, 2}(undef, length(vec_of_vecs), length(backends) + 1)
+    table = Array{Any, 2}(undef, length(vec_of_vecs), length(columns) + 1)
     for i in 1:length(vec_of_vecs)
-        for j in 1:(length(backends) + 1)
+        for j in 1:(length(columns) + 1)
             table[i, j] = vec_of_vecs[i][j]
         end
     end
     println()
     h1 = Highlighter(
         (data, i, j) ->
-            j > 1 &&
+            j in compute_columns &&
             strip(data[i, j]) != "-" &&
             parse(Float64, data[i, j]) ==
-            minimum(map(x -> parse(Float64, x), filter(x -> strip(x) != "-", data[i, 2:end]))),
+            minimum(map(x -> parse(Float64, x), filter(x -> strip(x) != "-", data[i, compute_columns]))),
         bold=true
     )
     pretty_table_with_conf(
@@ -839,21 +855,16 @@ function collect_all_timings(args, runtimes, systems)
 
     """
 
-    makecolname(target) = HUMAN_READABLE_CATEGORIES[target]
-    columns = backends
-    resulting_md *= "|Model|" * join(map(string, columns), "|") * "|\n"
+    resulting_md *= "|Model|" * join([col.label for col in columns], "|") * "|\n"
     resulting_md *= "|:----|" * join(["---" for _ in columns], "|") * "|\n"
     for name in systems
         resulting_md *= "|$name|"
-        for backend in backends
-            model_data = runtimes[backend][name]
-            for target in targets
-                if !haskey(model_data, target)
-                    resulting_md *= " - " * "|"
-                else
-                    formatting_style = CATEGORY_FORMAT[target]
-                    resulting_md *= formatting_style(model_data[target]) * "|"
-                end
+        for col in columns
+            model_data = get(runtimes[col.backend], name, Dict())
+            if !haskey(model_data, col.target)
+                resulting_md *= " - " * "|"
+            else
+                resulting_md *= CATEGORY_FORMAT[col.target](model_data[col.target]) * "|"
             end
         end
         resulting_md *= "\n"
@@ -886,7 +897,13 @@ end
 function check_args(args)
     backend = args["backend"]
     @assert backend in
-            ("groebner", "singular", "maplefgb", "mgb", "openf4", "msolve", "learn_apply", "ALL")
+            ("groebner", "singular", "maplefgb", "mgb", "openf4", "msolve", "learn_apply", "polymojo", "polymojocertified", "ALL")
+    if backend in ("polymojo", "polymojocertified")
+        driver = args["bpolymojo"]
+        !isempty(driver) && Sys.which(abspath(driver)) !== nothing || error(
+            "Set --bpolymojo or POLY_MOJO_DRIVER to the executable produced by generate/polymojo/build.py"
+        )
+    end
     if backend == "openf4" && args["suite"] in [3, 7]
         throw("Running benchmarks over the rationals is not possible for openf4")
     end
@@ -970,4 +987,6 @@ function main()
     end
 end
 
-main()
+if abspath(PROGRAM_FILE) == @__FILE__
+    main()
+end
