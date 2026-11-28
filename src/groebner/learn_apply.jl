@@ -260,6 +260,7 @@ function groebner_apply2!(trace, params)
         # Recover trace
         @info "Trace might be corrupted. Recovering..." maxlog = 1
         trace.nfail += 1
+        _replay_forget!(trace)
         empty!(trace.matrix_sorted_columns)
         C = eltype(eltype(trace.buf_basis.coeffs))
         coeffs = Vector{Vector{C}}(undef, length(trace.input_basis.monoms))
