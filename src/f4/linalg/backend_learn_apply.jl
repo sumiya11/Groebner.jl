@@ -18,7 +18,11 @@ function linalg_learn_sparse!(
     sort_matrix_lower_rows!(matrix) # for the CD part
 
     # Reduce CD with AB
-    linalg_learn_reduce_matrix_lower_part!(trace, matrix, basis, arithmetic)
+    if _blk_use(arithmetic, matrix)
+        _blk_dispatch(trace, matrix, basis, arithmetic, true)
+    else
+        linalg_learn_reduce_matrix_lower_part!(trace, matrix, basis, arithmetic)
+    end
     # Interreduce CD
     linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic)
 
@@ -36,7 +40,11 @@ function linalg_apply_sparse!(
     sort_matrix_lower_rows!(matrix) # for the CD part
 
     # Reduce CD with AB
-    flag = linalg_apply_reduce_matrix_lower_part!(trace, matrix, basis, arithmetic)
+    flag = if _blk_use(arithmetic, matrix)
+        _blk_dispatch(trace, matrix, basis, arithmetic, false)
+    else
+        linalg_apply_reduce_matrix_lower_part!(trace, matrix, basis, arithmetic)
+    end
     if !flag
         return flag
     end
