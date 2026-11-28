@@ -268,8 +268,10 @@ end
         matrix_fill_column_to_monom_map!(matrix, symbol_ht)
     end
 
+    cap = _replay_capture_start(trace, matrix, params.arithmetic)
     flag = linalg_main!(matrix, basis, params, trace, linalg=LinearAlgebra(:apply, :sparse))
     !flag && return (false, false)
+    cap === nothing || _replay_capture_end!(trace, cap, matrix)
 
     matrix_convert_rows_to_basis_elements!(matrix, basis, ht, symbol_ht, params)
 
@@ -430,8 +432,10 @@ end
         matrix_fill_column_to_monom_map!(matrix, symbol_ht)
     end
 
+    acap = _replay_capture_start(trace, matrix, params.arithmetic)
     flag = linalg_autoreduce!(matrix, basis, params, linalg=LinearAlgebra(:apply, :sparse))
     !flag && return false
+    acap === nothing || _replay_capture_auto!(trace, acap, matrix, basis.n_processed)
 
     matrix_convert_rows_to_basis_elements!(matrix, basis, hashtable, symbol_ht, params)
 
@@ -496,8 +500,15 @@ end
 
     cache_column_order = true
 
+    rep = _replay_get(trace, iters_total, params.arithmetic)
     while iters < iters_total
         iters += 1
+
+        if rep !== nothing
+            _replay_iteration!(rep[iters], trace, basis, matrix, params) || return false
+            basis_update!(basis, hashtable)
+            continue
+        end
 
         f4_symbolic_preprocessing!(trace, iters, basis, matrix, hashtable, symbol_ht)
 
@@ -519,7 +530,10 @@ end
         hashtable_reinitialize!(symbol_ht)
     end
 
-    if params.reduced
+    ra = rep === nothing ? nothing : _replay_auto(trace)
+    if params.reduced && ra !== nothing
+        _replay_autoreduce!(ra, trace, basis, params) || return false
+    elseif params.reduced
         symbol_ht = hashtable_initialize_secondary(hashtable)
         flag = f4_autoreduce_apply!(
             trace,
@@ -535,6 +549,7 @@ end
     end
 
     f4_standardize_basis_in_apply!(ring, trace, params.arithmetic)
+    _replay_mark_done!(trace)
 
     trace.napply += 1
 

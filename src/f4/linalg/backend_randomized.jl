@@ -18,8 +18,12 @@ function linalg_randomized_sparse!(
     sort_matrix_upper_rows!(matrix) # for the AB part
     sort_matrix_lower_rows!(matrix) # for the CD part
 
-    # Reduce CD with AB
-    linalg_randomized_reduce_matrix_lower_part!(matrix, basis, arithmetic, rng)
+    # Reduce CD with AB, by blocks of random combinations where the arithmetic allows it
+    if _blk_use(arithmetic, matrix)
+        _blk_random_dispatch(matrix, basis, arithmetic, rng)
+    else
+        linalg_randomized_reduce_matrix_lower_part!(matrix, basis, arithmetic, rng)
+    end
     # Interreduce CD
     linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic)
     true

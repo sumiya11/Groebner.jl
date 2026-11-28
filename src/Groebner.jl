@@ -146,6 +146,8 @@ include("f4/linalg/backend_randomized.jl")
 include("f4/linalg/backend_randomized_threaded.jl")
 include("f4/linalg/backend_learn_apply.jl")
 include("f4/linalg/backend_learn_apply_threaded.jl")
+include("f4/linalg/backend_blocked.jl")
+include("f4/replay.jl")
 
 include("f4/sort.jl")
 include("f4/f4.jl")
