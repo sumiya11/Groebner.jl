@@ -22,8 +22,12 @@ function linalg_deterministic_sparse!(
         @invariant matrix.upper_rows[i][1] == i
     end
 
-    # Reduce CD with AB
-    linalg_reduce_matrix_lower_part!(matrix, basis, arithmetic)
+    # Reduce CD with AB, by blocks of rows where the arithmetic allows it
+    if _blk_use(arithmetic, matrix)
+        _blk_dispatch(nothing, matrix, basis, arithmetic, true)
+    else
+        linalg_reduce_matrix_lower_part!(matrix, basis, arithmetic)
+    end
     # Interreduce CD
     linalg_interreduce_matrix_pivots!(matrix, basis, arithmetic)
     true
